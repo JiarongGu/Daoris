@@ -39,11 +39,8 @@ public sealed class SignedOutWaitTests : IDisposable
         }
 
         new HarnessSettings().WithDefault("fake", "account-1").WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
-        _adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new TestAgent(
-                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
-        });
+        _adapters = TestDoors.Registry([Adapter("fake", new TestAgent(
+                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true))]);
     }
 
     public void Dispose()

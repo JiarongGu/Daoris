@@ -60,7 +60,7 @@ public sealed class AgentSettingsTests : IDisposable
         Assert.Equal("settings.json", AgentSettings.FileName);
         var adapters = ProviderRegistry.Built();
         var declaring = adapters.Names
-            .Where(name => adapters.AgentNamed(name) is { SettingsFile: { Length: > 0 } })
+            .Where(name => adapters.AgentNamed(name) is { Accounts.SettingsFile: { Length: > 0 } })
             .Order(StringComparer.Ordinal)
             .ToArray();
 

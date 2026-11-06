@@ -223,7 +223,7 @@ public sealed class ProvidersBuiltTests
         Assert.Equal(("Claude Code", "Anthropic", "CC"), Identity(set.AgentNamed("claude-code-acp")!));
         Assert.Equal(("Codex", "OpenAI", "Cx"), Identity(set.AgentNamed("codex-acp")!));
         Assert.Equal(("DeepSeek Harness", "DeepSeek", "DH"), Identity(set.AgentNamed("dsh")!));
-        static (string?, string?, string?) Identity(TestAgent toolchain) => (toolchain.Product, toolchain.Maker, toolchain.Mark);
+        static (string?, string?, string?) Identity(AccountAgent toolchain) => (toolchain.Product, toolchain.Maker, toolchain.Mark);
     }
 
     [Fact]

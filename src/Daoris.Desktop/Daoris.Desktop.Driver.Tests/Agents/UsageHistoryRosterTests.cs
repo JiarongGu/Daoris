@@ -100,12 +100,9 @@ public sealed class UsageHistoryRosterTests : IDisposable
     private static UsageQuestion Codex => new CodexUsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded);
 
     private HarnessRoster Asked(UsageQuestion question) =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new TestAgent(
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
-                Usage: question)),
-        }), DaorisHome.Entry(_home, HomeEntry.Harnesses))
+                Usage: question))]), DaorisHome.Entry(_home, HomeEntry.Harnesses))
         {
             Clock = () => _now,
             AskingUsage = (_, _, _) => Task.FromResult(_answer),

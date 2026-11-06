@@ -57,12 +57,9 @@ public sealed class CurveMoveTests : IDisposable
 
     private HarnessRoster Roster()
     {
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["talk"] = Talk("talk", new TestAgent(
+        var adapters = TestDoors.Registry([Talk("talk", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
-                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
-        });
+                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], [])))]);
         return new HarnessRoster(adapters, Settings)
         {
             Clock = () => _now,

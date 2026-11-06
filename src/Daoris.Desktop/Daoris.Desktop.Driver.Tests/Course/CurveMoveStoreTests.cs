@@ -181,12 +181,9 @@ public sealed class CurveMoveStoreTests : IDisposable
         var ledger = new ChatLedger { Opens = opens }.Register("engine", _root);
         var client = ledger.Client();
         ledger.Chat("c1", "working", "talk", _root, profile: "account-1");
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["talk"] = Talk(new TestAgent(
+        var adapters = TestDoors.Registry([Talk(new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
-                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
-        });
+                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], [])))]);
         var events = Events;
         var roster = new HarnessRoster(adapters, Settings) { Clock = () => Now };
         var context = new ChatContext(client, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), output: null, roster, events);

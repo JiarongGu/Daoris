@@ -106,7 +106,7 @@ public sealed class StandInShimProcessTests : IDisposable
         Assert.Equal(resume ? ["initialize", "session/resume", "session/prompt", "session/close"] : ["initialize", "session/new", "session/prompt", "session/close"], methodsNew);
     }
 
-    private async Task<IReadOnlyList<string>> Wire(Provider adapter, string seen, bool resume)
+    private async Task<IReadOnlyList<string>> Wire(AgentDoor adapter, string seen, bool resume)
     {
         var path = Path.Combine(_home, seen);
         using var process = Process.Start(ProviderRegistry.Built().Start(adapter, Target(), Command(Acp(), path)))!;
@@ -140,10 +140,11 @@ public sealed class StandInShimProcessTests : IDisposable
     {
         var count = Path.Combine(_home, "ran.txt");
         var script = Script("fail.mjs", $"import {{ appendFileSync }} from 'node:fs'; appendFileSync({System.Text.Json.JsonSerializer.Serialize(count)}, 'ran\\n'); process.exit(3);");
-        var door = new LegacyDoor(Provider(), ResumingDoor());
-        var info = ProviderRegistry.Built().Resume(door, Target(), Command(script), "c-1")!;
+        var registry = TestDoors.Registry(Provider());
+        var door = registry.Door("resuming");
+        var info = registry.Resume(door, Target(), Command(script), "c-1")!;
 
-        Assert.True(door.Resumes);
+        Assert.True(door.Can.Resumes);
         Assert.Null(door.StructuredOutput());
         var (_, exit) = await Ran(info);
         Assert.Equal(3, exit);

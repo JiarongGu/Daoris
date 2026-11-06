@@ -52,11 +52,8 @@ public sealed class AccountRotationTests : IDisposable
     private static Provider Adapter(string name, TestAgent? toolchain, Transport wire = Transport.Native) => TestDoors.Door(name, toolchain, transport: wire);
 
     private HarnessRoster Roster(string binary) =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new TestAgent(
-                Binary: [binary], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
-        }), Settings)
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
+                Binary: [binary], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true))]), Settings)
         {
             Clock = () => _now,
             Zone = Zone,

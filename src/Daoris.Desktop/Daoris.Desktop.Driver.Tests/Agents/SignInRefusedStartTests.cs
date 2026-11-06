@@ -54,11 +54,8 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     /// <summary>An agent with accounts, present by a look, with no login question: only a reading says an account is signed out.</summary>
     private HarnessRoster Fake() =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new TestAgent(
-                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
-        }), Settings)
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
+                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true))]), Settings)
         {
             Clock = () => _now,
             Zone = Zone,
@@ -350,7 +347,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         using var runner = Runner(service, roster);
 
         Assert.NotNull(RefusedAccounts.SignInRefused(roster, adapter, "account-1", Refusal));
-        Assert.NotNull(runner.SignedOut(new ChatAgent(adapter), "account-2", Refusal));
+        Assert.NotNull(runner.SignedOut(new ChatAgent(ProviderRegistry.Built(), adapter), "account-2", Refusal));
         var held = await roster.SelectAsync("fake", FakeConfig, null, null);
         var again = await roster.SelectAsync("fake", FakeConfig, null, null);
 
@@ -525,12 +522,9 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     /// <summary>The fake agent with Claude Code's sign-in words declared, so a conversation's refused turn can be read on it.</summary>
     private HarnessRoster FakeSigningIn() =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new TestAgent(
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
-                SignIn: ClaudeSignIn.Words)),
-        }), Settings)
+                SignIn: ClaudeSignIn.Words))]), Settings)
         {
             Clock = () => _now,
             Zone = Zone,

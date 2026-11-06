@@ -56,7 +56,7 @@ public sealed class ReviewerPlanTests : IDisposable
                 AccountOf: real.AccountOf, ProbeByPresence: true, Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }
 
-        return new HarnessRoster(new ProviderRegistry(adapters), Settings) { Clock = () => Now, Zone = Zone };
+        return new HarnessRoster(TestDoors.Registry(adapters), Settings) { Clock = () => Now, Zone = Zone };
     }
 
     private void Cool(string agent) =>

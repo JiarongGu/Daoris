@@ -13,7 +13,7 @@ public sealed class PinInstallTests : IDisposable
 
     public void Dispose() => ConformanceScratch.Remove(_home);
 
-    private static TestAgent Toolchain(string door) => ProviderRegistry.Built().AgentNamed(door)!;
+    private static AccountAgent Toolchain(string door) => ProviderRegistry.Built().AgentNamed(door)!;
 
     [Fact]
     public void A_channel_program_not_yet_installed_is_staged_from_its_channel()
@@ -23,7 +23,7 @@ public sealed class PinInstallTests : IDisposable
         var plan = PinInstall.Plan(toolchain, _home, "claude-code", "2.1.287", ["stand-in-npm"]);
 
         Assert.Equal(PinWay.Channel, plan.Way);
-        Assert.Equal(toolchain.Channel, plan.Channel);
+        Assert.Equal(toolchain.Program.Channel, plan.Channel);
         Assert.Equal(HarnessSettings.ManagedHome(_home, "claude-code", "2.1.287"), plan.Where);
         Assert.Null(plan.Command);
     }
@@ -38,12 +38,12 @@ public sealed class PinInstallTests : IDisposable
     public void A_package_program_is_installed_by_the_package_managers_command_under_the_folder_daoris_keeps_it_in()
     {
         var toolchain = Toolchain("claude-code-acp");
-        Assert.True(toolchain.Channel is not { Length: > 0 } && toolchain.Package is { Length: > 0 });
+        Assert.True(toolchain.Program.Channel is not { Length: > 0 } && toolchain.Program.Package is { Length: > 0 });
 
         var plan = PinInstall.Plan(toolchain, _home, "claude-code-acp", "1.2.3", ["stand-in-npm"]);
 
         Assert.Equal(PinWay.Package, plan.Way);
-        Assert.Equal(["stand-in-npm", "install", "--prefix", plan.Where, $"{toolchain.Package}@1.2.3"], plan.Command);
+        Assert.Equal(["stand-in-npm", "install", "--prefix", plan.Where, $"{toolchain.Program.Package}@1.2.3"], plan.Command);
     }
 
     [Fact]

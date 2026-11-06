@@ -36,7 +36,7 @@ public sealed class DoorUpdateTests : IDisposable
         GitSeed.Remove(_home);
     }
 
-    private static TestAgent Built(string name) => ProviderRegistry.Built().AgentNamed(name)!;
+    private static AccountAgent Built(string name) => ProviderRegistry.Built().AgentNamed(name)!;
 
     // ——— Which Update a door has, which is what the roster tells the page.
 
@@ -270,7 +270,7 @@ public sealed class DoorUpdateTests : IDisposable
     private static readonly string[] Harmless = ["node", "-e", "process.exit(7)"];
 
     private Task<int> UpdateAsync(
-        TestAgent toolchain, string harness, string? pinned,
+        AccountAgent toolchain, string harness, string? pinned,
         IReadOnlyList<string>? npm = null, HttpMessageHandler? transport = null, bool ownCommand = false) =>
         HarnessActions.UpdateAsync(
             toolchain, ownCommand ? null : Harmless, _home, harness, pinned, _pinned.Add, _said.Add,
@@ -279,7 +279,7 @@ public sealed class DoorUpdateTests : IDisposable
     /// <summary>An install at a version, in npm's layout or the vendor's.</summary>
     private void Installed(string harness, string version, bool vendor = false)
     {
-        var binary = Built(harness).Binary[0];
+        var binary = Built(harness).Program.Binary[0];
         var where = HarnessSettings.ManagedHome(_home, harness, version);
         var bin = vendor ? Path.Combine(where, "bin") : Path.Combine(where, "node_modules", ".bin");
         Directory.CreateDirectory(bin);

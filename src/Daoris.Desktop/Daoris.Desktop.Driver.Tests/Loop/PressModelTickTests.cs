@@ -67,12 +67,7 @@ public sealed class PressModelTickTests : IDisposable
     private static readonly ActorChoice Sonnet = new("acp-stub", "sonnet", "low");
 
     /// <summary>The stand-ins' adapters: the built stub's protocol door, and a second door onto another tool's accounts.</summary>
-    private static ProviderRegistry Adapters() => new(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["stub"] = BuiltDoors.Stub,
-        ["acp-stub"] = BuiltDoors.AcpStub,
-        ["acp-other"] = WalkAgentTickTests.AcpOtherAdapter(),
-    });
+    private static ProviderRegistry Adapters() => TestDoors.Registry([.. TestDoors.Shipped("stub", "acp-stub"), WalkAgentTickTests.AcpOtherAdapter()]);
 
     private DriverConfig Config(IReadOnlyList<ActorChoice> order) => ActorChoices.With(
         DriverConfig.Empty with

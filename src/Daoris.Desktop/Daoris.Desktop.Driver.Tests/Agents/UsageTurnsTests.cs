@@ -311,7 +311,8 @@ public sealed class UsageTurnsTests : IDisposable
             TurnBinding.Of(adapters, adapters.Door("codex-acp"), "account-2"));
         // The tool's own sign-in is named as its readings name it; an agent with no accounts has none to name.
         Assert.Equal(AccountWindows.Own, TurnBinding.Of(adapters, adapters.Door("claude-code"), null).Account);
-        Assert.Equal(new TurnBinding(null, null, "bare", UsageHistory.MeaningUnknown), TurnBinding.Of(adapters, Bare("bare"), "account-1"));
+        var bare = TestDoors.Registry(Bare("bare"));
+        Assert.Equal(new TurnBinding(null, null, "bare", UsageHistory.MeaningUnknown), TurnBinding.Of(bare, bare.Door("bare"), "account-1"));
     }
 
     // ——— The model: what the door's split agrees on with the turn's total.

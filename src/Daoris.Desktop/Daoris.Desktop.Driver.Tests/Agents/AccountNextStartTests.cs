@@ -45,11 +45,7 @@ public sealed class AccountNextStartTests : IDisposable
         AccountOf: accountOf, WeekFixed: true);
 
     private HarnessRoster Roster() =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", Toolchain()),
-            ["fake-door"] = Adapter("fake-door", Toolchain(accountOf: "fake")),
-        }), Settings)
+        new(TestDoors.Registry([Adapter("fake", Toolchain()), Adapter("fake-door", Toolchain(accountOf: "fake"))]), Settings)
         {
             Clock = () => _now,
             Zone = TimeZoneInfo.Utc,

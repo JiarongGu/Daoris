@@ -189,7 +189,7 @@ public sealed class ChatRunnerTests : IDisposable
               "servers": [ { "name": "tickets", "command": ["node", "tickets.mjs"] } ] }
             """);
         var talk = new PipeTalk(Path.Combine(_home, "no-such-harness.exe"));
-        var own = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = talk.Door });
+        var own = TestDoors.Registry([talk.Door]);
         // The live set, as the driver's tick hands the roster it: this set and the plugin's agent.
         var live = own.WithPlugins(PluginCatalog.Load(_home, own.Names));
         Assert.Equal("acme.agent", live.DeclaredBy("acme-agent"));

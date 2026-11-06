@@ -195,7 +195,7 @@ public sealed class WorkspaceTrustTests : IDisposable
         var adapters = ProviderRegistry.Built();
 
         var trusting = adapters.Names
-            .Where(name => adapters.AgentNamed(name) is { TrustFile: { Length: > 0 } })
+            .Where(name => adapters.AgentNamed(name) is { Home.TrustFile: { Length: > 0 } })
             .Order(StringComparer.Ordinal)
             .ToArray();
 

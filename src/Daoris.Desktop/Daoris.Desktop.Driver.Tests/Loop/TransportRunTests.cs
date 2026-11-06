@@ -34,7 +34,7 @@ public sealed class TransportRunTests : IDisposable
     {
         var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(_service, DriverConfig.Empty, adapters, _home, _processes);
-        return new TransportRun(new DriverTransportHost(driver), adapters.Door(door), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
+        return new TransportRun(new DriverTransportHost(driver), adapters, adapters.Door(door), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
     }
 
     private static SessionTarget Target() => new(
@@ -47,8 +47,8 @@ public sealed class TransportRunTests : IDisposable
         ServiceUrl: "http://localhost:5177");
 
     /// <summary>A run that goes on as its executor handed it: the target and the selection its resume is prepared from, or neither.</summary>
-    private TransportRun GoingOn(ITransportHost host, Provider adapter, bool handed = true) =>
-        new(host, adapter, new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person)
+    private TransportRun GoingOn(ITransportHost host, AgentDoor adapter, bool handed = true) =>
+        new(host, ProviderRegistry.Built(), adapter, new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person)
         {
             Target = handed ? Target() : null,
             Request = handed ? SpawnRequests.Of(Target(), null) : null,
@@ -325,9 +325,9 @@ internal sealed class RecordingTransportHost(string home, SessionProcesses proce
 
     public IReadOnlyList<string>? Command(string adapter) => Commands;
 
-    public ProcessStartInfo Prepared(Provider adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next)
+    public ProcessStartInfo Prepared(AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next)
     {
-        Asked.Add($"prepare {adapter.Name}");
+        Asked.Add($"prepare {adapter.Id.Value}");
         return next;
     }
 

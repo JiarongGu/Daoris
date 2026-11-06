@@ -147,7 +147,7 @@ public sealed class GatedStartsTests : IDisposable
         Assert.Empty(_seen);
     }
 
-    private static Provider Stub => ProviderRegistry.Built().Door("stub");
+    private static AgentDoor Stub => ProviderRegistry.Built().Door("stub");
 
     private SessionTarget Target() => new("q-1", "title", "body", "asker", "repo", _home, "http://svc");
 

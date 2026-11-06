@@ -50,12 +50,9 @@ public sealed class RefusedByTheHarnessTests : IDisposable
         TestDoors.Door("fake", toolchain, wire, dialect: structured ? TestDoors.StreamJson : null);
 
     private HarnessRoster Roster(Transport wire = Transport.Native, bool structured = true) =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter(wire, structured, new TestAgent(
+        new(TestDoors.Registry([Adapter(wire, structured, new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
-                Refused: "API Error: 401")),
-        }), Settings)
+                Refused: "API Error: 401"))]), Settings)
         {
             Clock = () => Seen,
             Zone = Zone,

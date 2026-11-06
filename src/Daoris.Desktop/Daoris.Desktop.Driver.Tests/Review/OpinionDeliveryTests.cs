@@ -617,7 +617,7 @@ public sealed class OpinionDeliveryTests : IDisposable
                 Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }
 
-        var set = new ProviderRegistry(adapters);
+        var set = TestDoors.Registry(adapters);
         return (set, new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 

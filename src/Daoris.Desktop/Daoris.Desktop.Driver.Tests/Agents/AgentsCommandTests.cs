@@ -570,9 +570,7 @@ public sealed class AgentsCommandTests : IDisposable
             string[] install = OperatingSystem.IsWindows()
                 ? [Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/d", "/c", $"exit {exits}"]
                 : ["/bin/sh", "-c", $"exit {exits}"];
-            var set = new ProviderRegistry(
-                new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase),
-                new Dictionary<string, TestAgent> { ["stand-in"] = new(["stand-in"], ["--version"], Install: install) });
+            var set = TestDoors.Registry(TestDoors.Holder("stand-in", new TestAgent(["stand-in"], ["--version"], Install: install)));
 
             var exit = await AgentsCommand.RunAsync(["install", "stand-in"], _held.World(adapters: set, path: ""), CancellationToken.None);
 
@@ -681,9 +679,7 @@ public sealed class AgentsCommandTests : IDisposable
                 [shell[0]], ["--version"], ProfileVariable: "STAND_IN_HOME",
                 LoginArguments: [.. shell.Skip(1), $"exit {exits}"],
                 LoginCheck: new LoginQuestion([.. shell.Skip(1), "echo Logged in as seat@work.example"], "Logged in", "Not logged in", Account: @"as (\S+)"));
-            return new ProviderRegistry(
-                new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase),
-                new Dictionary<string, TestAgent> { ["stand-in"] = toolchain });
+            return TestDoors.Registry(TestDoors.Holder("stand-in", toolchain));
         }
 
         /// <summary>

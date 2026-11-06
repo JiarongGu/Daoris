@@ -18,7 +18,7 @@ public sealed class HelpAccessTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static ChatAgent Adapter(string name) => new(ProviderRegistry.Built().Door(name));
+    private static ChatAgent Adapter(string name) => new(ProviderRegistry.Built(), ProviderRegistry.Built().Door(name));
 
     /// <summary>Restricted is Ask Daoris as it ran: the agent's asking mode asked for on the protocol door, no flag on the native one.</summary>
     [Theory]

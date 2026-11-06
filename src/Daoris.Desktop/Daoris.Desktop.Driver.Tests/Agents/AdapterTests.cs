@@ -28,10 +28,10 @@ public sealed class AdapterTests
     {
         var adapter = ProviderRegistry.Built().Door(name);
         // A new start must replace the attribution an earlier maker left on the target.
-        var target = TargetPrompt.ForStart(Target() with { CommitTrailer = "old maker's instruction" }, adapter);
+        var target = TargetPrompt.ForStart(Target() with { CommitTrailer = "old maker's instruction" }, ProviderRegistry.Built(), adapter);
         var composed = TargetPrompt.Composed(target);
         var process = ChatRunner.ProcessTold(
-            new ResolvedCommits(new CommitRule(CommitRules.Ask, null), CommitRules.DefaultSource), null, agent: new ChatAgent(adapter));
+            new ResolvedCommits(new CommitRule(CommitRules.Ask, null), CommitRules.DefaultSource), null, agent: new ChatAgent(ProviderRegistry.Built(), adapter));
         foreach (var words in new[] { composed.Text, process.Words })
         {
             Assert.Contains($"`{name}`", words);
@@ -83,7 +83,7 @@ public sealed class AdapterTests
     {
         var adapter = ProviderRegistry.Built().Door(runs);
         var left = new EarlierMaker(ran, maker, model is null ? [] : [model]);
-        var target = TargetPrompt.ForStart(Target() with { CutOff = "it ran out of credits.", InFlight = [" M src/app.cs"], LeftBy = left }, adapter);
+        var target = TargetPrompt.ForStart(Target() with { CutOff = "it ran out of credits.", InFlight = [" M src/app.cs"], LeftBy = left }, ProviderRegistry.Built(), adapter);
         var words = TargetPrompt.Compose(target);
 
         Assert.Contains($"This start runs on `{runs}`", words);
@@ -101,9 +101,9 @@ public sealed class AdapterTests
         var adapter = ProviderRegistry.Built().Door(runs);
         var left = new EarlierMaker(ran, maker, ["the-model"]);
         var target = TargetPrompt.ForStart(
-            Target() with { CutOff = "it ended.", InFlight = uncommitted ? [" M src/app.cs"] : [], LeftBy = left }, adapter);
+            Target() with { CutOff = "it ended.", InFlight = uncommitted ? [" M src/app.cs"] : [], LeftBy = left }, ProviderRegistry.Built(), adapter);
 
-        Assert.Equal(TargetPrompt.ForStart(Target() with { CutOff = "it ended." }, adapter).CommitTrailer, target.CommitTrailer);
+        Assert.Equal(TargetPrompt.ForStart(Target() with { CutOff = "it ended." }, ProviderRegistry.Built(), adapter).CommitTrailer, target.CommitTrailer);
         Assert.DoesNotContain("The part of this line before you", TargetPrompt.Compose(target));
     }
 
@@ -432,7 +432,7 @@ public sealed class AdapterTests
 
         foreach (var name in talking)
         {
-            var info = adapters.Resolve(name).PrepareChat(chat, ["agent"]);
+            var info = adapters.Chat(name, chat, ["agent"]);
 
             Assert.True(info.Environment.TryGetValue(IntakeRoom.SessionVariable, out var session), name);
             Assert.Equal("c1a2b3c4", session);

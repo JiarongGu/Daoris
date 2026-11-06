@@ -181,12 +181,9 @@ public sealed class HandOverMoveStoreTests : IDisposable
         // Its turns are this shell's own (a record in a live state that no turn here holds is another process's, which a press refuses).
         ledger.Chat("c1", "stopped", "talk", _root, profile: "account-1");
         ledger.Chat("q1s", "stopped", "talk", _root, kind: "driven", quest: "q1", profile: "account-1");
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["talk"] = Talk(new TestAgent(
+        var adapters = TestDoors.Registry([Talk(new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
-                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
-        });
+                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], [])))]);
         var events = Events;
         var roster = new HarnessRoster(adapters, Settings) { Clock = () => Now };
         var context = new ChatContext(client, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), output: null, roster, events);

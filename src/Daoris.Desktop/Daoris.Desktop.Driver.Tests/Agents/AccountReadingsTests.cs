@@ -67,7 +67,7 @@ public sealed class AccountReadingsTests
     {
         var adapters = ProviderRegistry.Built();
         var declaring = adapters.Names
-            .Where(name => adapters.AgentNamed(name) is { Windows: not null })
+            .Where(name => adapters.AgentNamed(name) is { Tables.Windows: not null })
             .Order(StringComparer.Ordinal)
             .ToArray();
 

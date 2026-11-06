@@ -80,10 +80,7 @@ public sealed class ClaudeUsageProcessTests : IDisposable
         Usage: Question);
 
     private HarnessRoster Roster() =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["door"] = Adapter("door", Toolchain),
-        }), Settings);
+        new(TestDoors.Registry([Adapter("door", Toolchain)]), Settings);
 
     // The explicit command names the CLI's harness, as `driver.json`'s `commands` may name `claude-code`.
     private DriverConfig Config => DriverConfig.Empty with

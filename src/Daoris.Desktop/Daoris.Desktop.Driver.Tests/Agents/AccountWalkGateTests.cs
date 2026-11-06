@@ -66,13 +66,10 @@ public sealed class AccountWalkGateTests : IDisposable
     private HarnessRoster Roster(
         Func<string, Task<LoginState>>? status = null, bool usage = false,
         Func<string, Task<IReadOnlyList<WindowReading>?>>? windows = null, TimeSpan? patience = null, bool asks = false) =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new TestAgent(
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
                 LoginCheck: asks ? new LoginQuestion(["auth", "status"], @"""loggedIn""\s*:\s*true", @"""loggedIn""\s*:\s*false") : null,
-                Usage: usage ? Question : null)),
-        }), Settings)
+                Usage: usage ? Question : null))]), Settings)
         {
             Clock = () => _now,
             Asking = status is null ? null : (_, account, _) => status(account),

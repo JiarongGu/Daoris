@@ -168,12 +168,12 @@ public sealed class ParticipantsBoundaryTests : IDisposable
     {
         var access = AccessRules.ResolveLevels(
             new AccessSetting { Pauses = new Dictionary<string, string> { [AccessRules.Permissions] = permissions } }, null, null);
-        var refused = DrivenAccess.For(access, "engine", NoModes());
+        var refused = DrivenAccess.For(access, "engine", NoModes().Doors[0]);
         Assert.NotNull(refused.Refusal);
         Assert.Contains("`no-modes`", refused.Refusal, StringComparison.Ordinal);
-        Assert.Null(DrivenAccess.For(AccessRules.ResolveLevels(null, null, null), "engine", NoModes()).Refusal);
+        Assert.Null(DrivenAccess.For(AccessRules.ResolveLevels(null, null, null), "engine", NoModes().Doors[0]).Refusal);
 
-        var help = HelpAccess.For(HelpModes.Full, new ChatAgent(NoModes()));
+        var help = HelpAccess.For(HelpModes.Full, new ChatAgent(TestDoors.Registry(NoModes()), NoModes().Doors[0]));
         Assert.Contains("`no-modes`", help.Refusal, StringComparison.Ordinal);
     }
 

@@ -183,7 +183,7 @@ public sealed class StartRoleTests : IDisposable
         }
 
         settings.Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
-        var set = new ProviderRegistry(adapters);
+        var set = TestDoors.Registry(adapters);
         var store = DesktopStore.LocationIn(_home);
         RoleCatalog.Write(store, RoleChange.Set(RoleCatalogTests.Working("engine-build", "build", new RoleScope(RoleScope.Repository, "engine"))), () => StoreSettled.Yes);
         RoleCatalog.Write(store, RoleChange.Set(RoleCatalogTests.Working("frontend", "build", new RoleScope(RoleScope.Workspace, "default"))), () => StoreSettled.Yes);

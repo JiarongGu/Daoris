@@ -95,7 +95,7 @@ public sealed class AgentSignInProcessTests : IDisposable
 
         var set = ProviderRegistry.Built();
         var settings = new HarnessSettings().WithVersion(Agent, Stubbed);
-        foreach (var name in set.Names.Where(name => name != Agent && set.AgentNamed(name) is { Binary.Count: > 0 }))
+        foreach (var name in set.Names.Where(name => name != Agent && set.AgentNamed(name) is { Program.Binary.Count: > 0 }))
         {
             settings = settings.WithVersion(name, "0.0.0-none");
         }

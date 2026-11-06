@@ -49,6 +49,15 @@ internal sealed record TestAgent(
     /// <summary>Its accounts' words, with its error words where the reader is its provider.</summary>
     public TablesPart Tables(bool withErrors) => new(Limits, Windows, SignIn, Refused, withErrors ? ErrorWords : null);
 
+    /// <summary>The facts a shipped or declared agent states, written again as a test's own, for it to change some and register.</summary>
+    public static TestAgent Of(AccountAgent agent) => new(
+        agent.Program.Binary, agent.Program.VersionArguments, agent.Home.Variable, agent.Program.Install, agent.Program.UpdateArguments,
+        agent.Accounts.LoginArguments, agent.Accounts.Login, agent.Program.Package, agent.AccountOf, agent.Home.TrustFile,
+        agent.Program.ProbeByPresence, agent.Program.PinnedEnvironment, agent.Product, agent.Maker, agent.Accounts.KeyVariable,
+        agent.Tables.Refused, agent.Program.Channel, agent.Accounts.SettingsFile, agent.Tables.Limits, agent.Accounts.WeekFixed,
+        agent.Tables.Windows, agent.Tables.SignIn, agent.Usage, agent.Mark, agent.Home.OwnHome, agent.TurnReport,
+        agent.Accounts.DeviceLoginArguments, agent.Accounts.LoginPorts, agent.Tables.ErrorWords);
+
     /// <summary>The agent where a probe or an account verb reads only its facts, not its name.</summary>
     public static implicit operator AccountAgent(TestAgent agent) => agent.Agent("a-test-agent");
 

@@ -36,12 +36,9 @@ public sealed class RoleStructureTests : IDisposable
 
     /// <summary>The fake agent, present by a file look, whose every status and usage question is written down and fails.</summary>
     private HarnessRoster Roster() =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new TestAgent(
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
-                LoginCheck: new LoginQuestion(["auth", "status"], @"""loggedIn""\s*:\s*true", @"""loggedIn""\s*:\s*false"))),
-        }), Settings)
+                LoginCheck: new LoginQuestion(["auth", "status"], @"""loggedIn""\s*:\s*true", @"""loggedIn""\s*:\s*false")))]), Settings)
         {
             Clock = () => Now,
             Asking = (_, account, _) =>

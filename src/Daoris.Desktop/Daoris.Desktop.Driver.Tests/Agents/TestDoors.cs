@@ -27,6 +27,18 @@ internal static class TestDoors
     /// <summary>The registry of the providers a test gives.</summary>
     public static ProviderRegistry Registry(params IEnumerable<Provider> providers) => new(providers);
 
+    /// <summary>The shipped providers that own <paramref name="doors"/>, each narrowed to the doors named: a registry of some stand-ins and no other agent.</summary>
+    public static IReadOnlyList<Provider> Shipped(params string[] doors)
+    {
+        var built = ProviderRegistry.Built();
+        return [.. doors.Select(id => built.Provider(built.ProviderOf(built.Door(id).Id)))
+            .DistinctBy(provider => provider.Id.Value)
+            .Select(provider => provider with
+            {
+                Doors = [.. provider.Doors.Where(door => doors.Contains(door.Id.Value, StringComparer.OrdinalIgnoreCase))],
+            })];
+    }
+
     /// <summary>The registry of the providers a test names, each under its door's name.</summary>
     public static ProviderRegistry Registry(IReadOnlyDictionary<string, Provider> named) => new(named.Values);
 
@@ -45,6 +57,9 @@ internal static class TestDoors
             Doors = [.. provider.Doors.Select(door => door.Id == shipped.Id ? door with { Postures = postures } : door)],
         };
     }
+
+    /// <summary>The agent <paramref name="id"/> that has no door here and states its program and accounts: what a door's account key names (a holder).</summary>
+    public static Provider Holder(string id, TestAgent agent) => ProviderOf(Registered(id, agent), agent) with { Doors = [] };
 
     /// <summary>The door's record alone, for a test that reads a door without its provider.</summary>
     public static AgentDoor Registered(

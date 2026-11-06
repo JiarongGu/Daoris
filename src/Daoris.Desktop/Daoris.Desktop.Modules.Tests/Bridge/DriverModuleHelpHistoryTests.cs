@@ -258,7 +258,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         var output = new StringWriter { NewLine = "\n" };
         var world = new SessionsWorld(
             new ServiceClient("http://stand-in", null, new HttpClient(ledger, disposeHandler: false)), loop.Home, DriverConfig.Load(loop.ConfigPath), false, null);
-        var code = await HelpCommand.RunAsync(HelpCommand.Read(words, out _)!, world, adapter => loop.Harnesses.Adapters.Resolve(adapter).Resumes, output);
+        var code = await HelpCommand.RunAsync(HelpCommand.Read(words, out _)!, world, adapter => loop.Harnesses.Adapters.Door(adapter).Can.Resumes, output);
         return (output.ToString().TrimEnd('\n'), code);
     }
 

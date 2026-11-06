@@ -486,15 +486,15 @@ public sealed class ReleaseChannelTests : IDisposable
     [Fact]
     public async Task The_window_pins_codex_from_its_maker_s_channel()
     {
-        var toolchain = CodexAccounts.Toolchain;
-        Assert.Equal(CodexReleases.Channel, toolchain.Channel);
+        var toolchain = ProviderRegistry.Built().AgentNamed(CodexAccounts.Agent)!;
+        Assert.Equal(CodexReleases.Channel, toolchain.Program.Channel);
         var release = CodexRelease("0.156.1", CodexReleaseDownloads.Current(), windows: OperatingSystem.IsWindows());
         var transport = new Served(release.Files);
 
         var code = await HarnessActions.PinAsync(toolchain, _home, "codex", "0.156.1", _ => { }, CancellationToken.None, transport: transport);
 
         Assert.Equal(0, code);
-        Assert.NotNull(HarnessSettings.ManagedBinary(_home, "codex", "0.156.1", toolchain.Binary));
+        Assert.NotNull(HarnessSettings.ManagedBinary(_home, "codex", "0.156.1", toolchain.Program.Binary));
     }
 
     // ——— Each run stages under its own name (the alone-path design §1.4).

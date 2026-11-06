@@ -81,7 +81,7 @@ public sealed class ReviewerChoiceTests : IDisposable
             adapters[name] = Adapter(name, Like(name, binary));
         }
 
-        var set = new ProviderRegistry(adapters).WithPlugins(PluginCatalog.Load(_home, adapters.Keys));
+        var set = TestDoors.Registry(adapters).WithPlugins(PluginCatalog.Load(_home, adapters.Keys));
         return new HarnessRoster(set, Settings) { Clock = () => Now, Zone = Zone };
     }
 

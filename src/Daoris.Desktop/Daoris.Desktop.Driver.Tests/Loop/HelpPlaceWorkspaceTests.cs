@@ -35,17 +35,17 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
             name, toolchain, transport: Transport.Protocol, interactive: interactive,
             postures: new PosturesPart(null, null, full, null), spawn: new TestDoors.RefusingSpawn("a placing test spawns nothing"));
 
+    private ProviderRegistry _adapters = null!;
+
     private ChatRunner Runner(ChatLedger ledger, string? full = null)
     {
         TestAgent Toolchain(string variable) =>
             new(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: variable, ProbeByPresence: true);
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["door"] = Door(Toolchain("DOOR_HOME"), full),
+        var adapters = _adapters = TestDoors.Registry(
+            Door(Toolchain("DOOR_HOME"), full),
             // MODELROLE1d: a second agent with a mode that asks nothing, and one that holds no conversation, for the actors' walks.
-            ["full-door"] = Door(Toolchain("FULL_DOOR_HOME"), "bypassPermissions", "full-door"),
-            ["mute"] = Door(Toolchain("MUTE_HOME"), name: "mute", interactive: false),
-        });
+            Door(Toolchain("FULL_DOOR_HOME"), "bypassPermissions", "full-door"),
+            Door(Toolchain("MUTE_HOME"), name: "mute", interactive: false));
         var settings = DaorisHome.Entry(_home, HomeEntry.Harnesses);
         foreach (var account in new[] { "home", "office" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "door", account));
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "full-door", "home"));
@@ -181,7 +181,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         var full = Config.WithHelpMode(HelpModes.Full);
         var ask = new ResumeAsk("conv-1", [], "— your words are the next turn of its own conversation.");
         async Task<ChatStart> GoOnAsync() => await runner.RunAsync(
-            "ask-daoris", id, "goes on", new ChatAgent(placed.Adapter!), placed.Selection!, full, runner.HelpPlace(HelpRoom.PathOf(_home, "alpha"), [], "alpha"),
+            "ask-daoris", id, "goes on", new ChatAgent(_adapters, placed.Adapter!), placed.Selection!, full, runner.HelpPlace(HelpRoom.PathOf(_home, "alpha"), [], "alpha"),
             null, CancellationToken.None, new GoingOn((await ledger.Client().RecordAsync(id))!, ask));
 
         var went = await GoOnAsync();

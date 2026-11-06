@@ -925,7 +925,7 @@ public sealed class IntakeTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
         }).StaffIntake(recording.Name);
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider> { [recording.Name] = recording.Door });
+        var adapters = TestDoors.Registry([recording.Door]);
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -954,7 +954,7 @@ public sealed class IntakeTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
         }).StaffIntake(recording.Name);
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider> { [recording.Name] = recording.Door });
+        var adapters = TestDoors.Registry([recording.Door]);
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

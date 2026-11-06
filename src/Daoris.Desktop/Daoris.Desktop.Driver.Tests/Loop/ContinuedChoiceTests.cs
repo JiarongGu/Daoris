@@ -46,11 +46,7 @@ public sealed class ContinuedChoiceTests : IDisposable
     private ProviderRegistry Adapters()
     {
         var present = new TestAgent(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        return TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["first"] = Adapter("first", present),
-            ["second"] = Adapter("second", present),
-        });
+        return TestDoors.Registry([Adapter("first", present), Adapter("second", present)]);
     }
 
     /// <summary>Build's order: <c>first</c> · opus, then <c>second</c> · sonnet; the legacy <c>adapter</c> key written through as <c>first</c>.</summary>

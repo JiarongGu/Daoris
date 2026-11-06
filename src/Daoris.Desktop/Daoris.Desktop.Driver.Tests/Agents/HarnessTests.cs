@@ -470,10 +470,7 @@ public sealed class HarnessProbeTests : IDisposable
     public async Task A_door_with_nothing_to_run_on_this_machine_is_not_on_the_roster()
     {
         var roster = new HarnessRoster(
-            TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["stub"] = BuiltDoors.Stub,
-            }),
+            TestDoors.Registry([.. TestDoors.Shipped("stub")]),
             DaorisHome.Entry(_home, HomeEntry.Harnesses));
 
         Assert.Empty(await roster.RosterAsync(DriverConfig.Empty));
@@ -765,10 +762,7 @@ public sealed class HarnessSelectionTests : IDisposable
     private static Provider FakeAdapter(TestAgent? toolchain, Transport wire = Transport.Native) => TestDoors.Door("fake", toolchain, transport: wire);
 
     private static ProviderRegistry Set(TestAgent? toolchain, Transport wire = Transport.Native) =>
-        new(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = FakeAdapter(toolchain, wire),
-        });
+        TestDoors.Registry(FakeAdapter(toolchain, wire));
 
     private string Present()
     {

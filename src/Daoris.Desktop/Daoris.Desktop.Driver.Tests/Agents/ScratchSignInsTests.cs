@@ -19,7 +19,7 @@ public sealed class ScratchSignInsTests : IDisposable
 
     private string Home => Path.Combine(_root, "home");
 
-    private static TestAgent Claude => ProviderRegistry.Built().AgentNamed("claude-code")!;
+    private static AccountAgent Claude => ProviderRegistry.Built().AgentNamed("claude-code")!;
 
     [Fact]
     public void A_scratch_home_is_one_under_fixtures_or_the_temporary_folder()
@@ -40,7 +40,7 @@ public sealed class ScratchSignInsTests : IDisposable
 
         Assert.True(ScratchSignIns.IsReal(Claude, ["claude"]));
         Assert.True(ScratchSignIns.IsReal(Claude, ["claude.exe", "--x"]));
-        Assert.True(ScratchSignIns.IsReal(CodexAccounts.Toolchain, ["codex"]));
+        Assert.True(ScratchSignIns.IsReal(ProviderRegistry.Built().AgentNamed("codex")!, ["codex"]));
         // A stub named like the real one, by its path, as a pin's managed binary under the scratch home is.
         Assert.False(ScratchSignIns.IsReal(Claude, [stub]));
         Assert.False(ScratchSignIns.IsReal(Claude, ["node", "claude.mjs"]));

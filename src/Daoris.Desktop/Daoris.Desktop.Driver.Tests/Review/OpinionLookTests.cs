@@ -382,7 +382,7 @@ public sealed class OpinionLookTests : IDisposable
                 Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }
 
-        var set = new ProviderRegistry(adapters);
+        var set = TestDoors.Registry(adapters);
         return new Daoris.Driver.Driver(host.Client(), drained ? InstallUpdate.Drained(Config()) : Config(), set, _home, harnesses: new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Passes = (ask, choice, _) =>

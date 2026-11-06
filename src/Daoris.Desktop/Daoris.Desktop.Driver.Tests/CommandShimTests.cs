@@ -86,7 +86,7 @@ public sealed class CommandShimTests : IDisposable
         foreach (var (info, adapter) in new[] { (driven, acp), (chat, pipe) })
         {
             info.Environment["PATH"] = _folder;
-            Shell.Equip(info, adapter.Toolchain!, profileHome: null);
+            Shell.Equip(info, ProviderRegistry.Built().AgentNamed(adapter.Id.Value)!, profileHome: null);
         }
 
         Assert.Equal(Path.Combine(_folder, "claude-agent-acp.cmd"), driven.FileName, ignoreCase: true);
@@ -108,7 +108,7 @@ public sealed class CommandShimTests : IDisposable
         var info = ProviderRegistry.Built().Start(pipe, Target(), command: null);
         info.Environment["PATH"] = _folder;
 
-        Shell.Equip(info, pipe.Toolchain!, profileHome: null);
+        Shell.Equip(info, ProviderRegistry.Built().AgentNamed(pipe.Id.Value)!, profileHome: null);
 
         Assert.Equal(Path.Combine(_folder, "claude.cmd"), info.FileName, ignoreCase: true);
         Assert.True(info.RedirectStandardInput);

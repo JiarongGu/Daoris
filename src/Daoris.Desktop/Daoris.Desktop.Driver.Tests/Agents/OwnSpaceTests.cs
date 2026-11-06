@@ -42,11 +42,7 @@ public sealed class OwnSpaceTests : IDisposable
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
 
     private HarnessRoster Roster() => new(
-        TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", Real),
-            ["double"] = Adapter("double", Real with { RunsInOwnHome = true }),
-        }),
+        TestDoors.Registry([Adapter("fake", Real), Adapter("double", Real with { RunsInOwnHome = true })]),
         Settings);
 
     private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
@@ -222,7 +218,7 @@ public sealed class OwnSpaceTests : IDisposable
     {
         var built = ProviderRegistry.Built();
         var exempt = built.Names
-            .Where(name => built.AgentNamed(name) is { RunsInOwnHome: true })
+            .Where(name => built.AgentNamed(name) is { Home.OwnHome: true })
             .Order(StringComparer.Ordinal);
 
         Assert.Equal(["acp-stub", "alt-acp-stub", "alt-stub", "stub"], exempt);

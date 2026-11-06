@@ -48,10 +48,7 @@ public sealed class ApiKeyAccountTests : IDisposable
     }
 
     private HarnessRoster Roster(TestAgent toolchain) => new(
-        TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = FakeAdapter(toolchain),
-        }),
+        TestDoors.Registry([FakeAdapter(toolchain)]),
         Settings);
 
     private static DriverConfig Config() => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };

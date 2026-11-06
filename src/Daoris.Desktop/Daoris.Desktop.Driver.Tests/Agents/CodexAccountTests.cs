@@ -42,7 +42,7 @@ public sealed class CodexAccountTests : IDisposable
         // device code beside it, since a workspace may refuse either.
         Assert.Equal(["login"], agent.Accounts.LoginArguments!);
         Assert.Equal(["login", "--device-auth"], agent.Accounts.DeviceLoginArguments!);
-        Assert.Equal([1455, 1457], agent.LoginPorts!);
+        Assert.Equal([1455, 1457], agent.Accounts.LoginPorts!);
         Assert.Equal(["login", "status"], agent.Accounts.Login!.Arguments);
         Assert.Equal(["codex"], Roster().AccountAgentOf("codex-acp")!.Program.Binary);
         // The door itself still has none: it runs `codex` and reads the home `codex` signed into (ACP3).
@@ -64,7 +64,7 @@ public sealed class CodexAccountTests : IDisposable
         var prepared = 0;
         foreach (var door in ProviderRegistry.Built().Names)
         {
-            if (roster.AccountAgentOf(door) is not { Toolchain.LoginArguments: not null } agent) continue;
+            if (roster.AccountAgentOf(door) is not { Accounts.LoginArguments: not null } agent) continue;
             // A command named for the agent, so the binary prepared is never PATH's, which a scratch home refuses (LIVELOGIN1).
             var named = DriverConfig.Empty with { Commands = new Dictionary<string, IReadOnlyList<string>> { [agent.Name] = ["node", "stub.mjs"] } };
             var run = roster.SignInCommand(door, named)!;
@@ -104,7 +104,7 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal("claude-code", roster.AccountAgentOf("claude-code")!.Name);
         Assert.Equal("dsh", roster.AccountAgentOf("dsh")!.Name);
         var built = ProviderRegistry.Built();
-        Assert.Same(CodexAccounts.Toolchain, built.AgentNamed("codex"));
+        Assert.Same(CodexAccounts.Program, built.AgentNamed("codex")!.Program);
         Assert.Null(built.AgentNamed("nobody"));
         Assert.Equal(CodexAccounts.Agent, built.OwnerOfAgent("codex-acp").Value);
         Assert.Equal("claude-code", built.OwnerOfAgent("claude-code-acp").Value);
@@ -353,18 +353,12 @@ public sealed class CodexAccountTests : IDisposable
         var command = Path.Combine(_home, "door-here");
         File.WriteAllText(command, "");
         return new HarnessRoster(
-            new ProviderRegistry(
-                new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["fake-door"] = Door("fake-door", new TestAgent(
-                        Binary: [command], VersionArguments: [], ProfileVariable: "FAKE_HOME", AccountOf: "fake", ProbeByPresence: true)),
-                },
-                new Dictionary<string, TestAgent>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["fake"] = new(
-                        Binary: ["fake-agent-never-run"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME",
-                        LoginArguments: ["login"], LoginCheck: new LoginQuestion(["login", "status"], "^in", "^out")),
-                }),
+            TestDoors.Registry(
+                Door("fake-door", new TestAgent(
+                    Binary: [command], VersionArguments: [], ProfileVariable: "FAKE_HOME", AccountOf: "fake", ProbeByPresence: true)),
+                TestDoors.Holder("fake", new TestAgent(
+                    Binary: ["fake-agent-never-run"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME",
+                    LoginArguments: ["login"], LoginCheck: new LoginQuestion(["login", "status"], "^in", "^out")))),
             DaorisHome.Entry(_home, HomeEntry.Harnesses))
         {
             Clock = () => Now,

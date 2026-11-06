@@ -69,10 +69,7 @@ public sealed class CodexUsageProcessTests : IDisposable
         Usage: Question);
 
     private HarnessRoster Roster() =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["door"] = Adapter("door", Toolchain),
-        }), Settings);
+        new(TestDoors.Registry([Adapter("door", Toolchain)]), Settings);
 
     // The explicit command names the server's harness, as `driver.json`'s `commands` may name `codex`.
     private DriverConfig Config => DriverConfig.Empty with

@@ -254,7 +254,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
             var adapter = ProviderRegistry.Built().Door(name);
-            var target = TargetPrompt.ForStart(bounded, adapter);
+            var target = TargetPrompt.ForStart(bounded, ProviderRegistry.Built(), adapter);
             var composed = TargetPrompt.Composed(target);
             var filed = TargetPrompt.Filed(target);
             output.WriteLine($"{name}: the whole first prompt {composed.Text.Length:N0} characters, its block {(filed ? "filed" : "inline")} "

@@ -255,12 +255,9 @@ public sealed class AccountWindowsTests : IDisposable
     private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Native);
 
     private HarnessRoster Roster() =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new TestAgent(
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
                 Binary: ["fake"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", Limits: ClaudeLimits.Words,
-                WeekFixed: true)),
-        }), DaorisHome.Entry(_home, HomeEntry.Harnesses))
+                WeekFixed: true))]), DaorisHome.Entry(_home, HomeEntry.Harnesses))
         {
             Clock = () => Seen,
             Zone = Zone,

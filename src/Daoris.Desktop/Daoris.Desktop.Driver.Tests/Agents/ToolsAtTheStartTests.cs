@@ -32,7 +32,7 @@ public sealed class ToolsAtTheStartTests
         foreach (var name in adapters.Names)
         {
             var adapter = adapters.Door(name);
-            if (adapter.Toolchain?.Product == "Claude Code")
+            if (ProviderRegistry.Built().AgentNamed(adapter.Id.Value)?.Product == "Claude Code")
             {
                 claude.Add(name);
                 Assert.Equal(new Dictionary<string, string> { [Variable] = "false" }, adapter.Spawned().ToolsUpFront);

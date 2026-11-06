@@ -47,7 +47,7 @@ public sealed class OpinionRecheckTests : IDisposable
                 RunsInOwnHome: true));
         }
 
-        var set = new ProviderRegistry(adapters);
+        var set = TestDoors.Registry(adapters);
         return (set, new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 

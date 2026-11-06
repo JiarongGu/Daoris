@@ -56,11 +56,7 @@ public sealed class ChatGoOnTests : IDisposable
 
     private ChatRunner Runner(ChatLedger ledger, SessionEvents events, List<AccountLine>? lines = null)
     {
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["talk"] = Talk(),
-            ["acp-stub"] = BuiltDoors.AcpStub,
-        });
+        var adapters = TestDoors.Registry([.. TestDoors.Shipped("acp-stub"), Talk()]);
         var client = ledger.Client();
         if (lines is not null) client.AccountLined += line => { lock (lines) lines.Add(line); };
         return new ChatRunner(
@@ -376,7 +372,7 @@ public sealed class ChatGoOnTests : IDisposable
         var events = Events;
         using var runner = Runner(ledger, events);
         // Its run has concluded the record and holds the conversation still, as its watch does until its last disposal.
-        runner.Context.Talking["c1"] = new ChatAgent(Talk());
+        runner.Context.Talking["c1"] = new ChatAgent(TestDoors.Registry(Talk()), TestDoors.Registry(Talk()).Door("talk"));
 
         events.Append("c1", Shown("w1", "Also log the port."));
         await Task.Delay(300);

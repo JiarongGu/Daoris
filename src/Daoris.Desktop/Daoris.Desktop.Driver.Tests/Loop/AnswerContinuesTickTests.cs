@@ -215,8 +215,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         await ParkedAsync(service, Driver(service, "resumes"));
         await new ServiceClient(service.Url, null).SayAsync("s1", "Port 8080.");
         var built = ProviderRegistry.Built();
-        var without = new ProviderRegistry(
-            built.Names.Where(name => name != "acp-stub").ToDictionary(name => name, built.Resolve, StringComparer.OrdinalIgnoreCase));
+        var without = TestDoors.Registry(TestDoors.Shipped([.. built.Names.Where(name => name != "acp-stub")]));
         var heard = Heard().Length;
 
         var look = await Driver(service, "resumes", set: without).RunOnceAsync().WaitAsync(Poll.Patience);
@@ -346,8 +345,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
     {
         // Every built adapter, the stub whose accounts the protocol stub runs as among them, with the protocol stub postured.
         var built = ProviderRegistry.Built();
-        var adapters = new ProviderRegistry(built.Names.ToDictionary(
-            name => name, name => name == "acp-stub" ? PosturedStub() : built.Door(name), StringComparer.OrdinalIgnoreCase));
+        var adapters = TestDoors.Registry([.. Providers.Built().Where(provider => provider.Id.Value != "stub"), PosturedStub()]);
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), Config(Agent(), "modes", permissions), adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

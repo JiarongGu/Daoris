@@ -311,12 +311,12 @@ public sealed class PermissionSpawnTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Actors = StaffedRoles.On(adapter.Name),
+            Actors = StaffedRoles.On(adapter.Id.Value),
             TestBound = 1,
-            Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter.Name] = command },
+            Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter.Id.Value] = command },
         };
         config = configure?.Invoke(config) ?? config;
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider> { [adapter.Name] = adapter });
+        var adapters = TestDoors.Registry([adapter]);
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

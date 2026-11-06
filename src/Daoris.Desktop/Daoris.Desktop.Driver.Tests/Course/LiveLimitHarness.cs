@@ -123,7 +123,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         var events = Events;
         Limited(events, "working", null);
 
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry([Talk()]);
         var context = new ChatContext(
             Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
@@ -169,12 +169,9 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
         foreach (var (key, word) in keep ?? new Dictionary<string, string> { ["k1"] = Word }) Ledger.For("c1").Say(key, word);
 
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["talk"] = CurveTalk(new TestAgent(
+        var adapters = TestDoors.Registry([CurveTalk(new TestAgent(
                 Binary: [TalkCommand], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
-                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
-        });
+                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], [])))]);
         var context = new ChatContext(
             Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)) { Clock = () => CurveNow }, events);
@@ -213,12 +210,8 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
         foreach (var (key, word) in keep ?? new Dictionary<string, string> { ["k1"] = Word }) Ledger.For("c1").Say(key, word);
 
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["talk"] = Talk(),
-            ["acp-stub"] = CurveTalk(new TestAgent(
-                Binary: [TalkCommand], VersionArguments: ["--version"], ProfileVariable: "STUB_HOME", AccountOf: "stub", ProbeByPresence: true), "acp-stub"),
-        });
+        var adapters = TestDoors.Registry([Talk(), CurveTalk(new TestAgent(
+                Binary: [TalkCommand], VersionArguments: ["--version"], ProfileVariable: "STUB_HOME", AccountOf: "stub", ProbeByPresence: true), "acp-stub")]);
         var context = new ChatContext(
             Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
@@ -253,7 +246,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         var events = Events;
         Limited(events, "stopped", keep);
 
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry([Talk()]);
         var context = new ChatContext(
             Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);

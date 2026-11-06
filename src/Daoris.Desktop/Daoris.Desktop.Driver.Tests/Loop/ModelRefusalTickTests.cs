@@ -234,9 +234,7 @@ public sealed class ModelRefusalTickTests : IDisposable
     private (Daoris.Driver.Driver Driver, HarnessRoster Roster) PipeDriver(string url, string refuses)
     {
         var built = ProviderRegistry.Built();
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(
-            built.Names.Select(name => KeyValuePair.Create(name, built.Door(name))).Append(KeyValuePair.Create(PipeStub.Named, PipeStub.Door())),
-            StringComparer.OrdinalIgnoreCase));
+        var adapters = TestDoors.Registry([.. Providers.Built(), PipeStub.Door()]);
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         var config = ActorChoices.With(
             DriverConfig.Empty with

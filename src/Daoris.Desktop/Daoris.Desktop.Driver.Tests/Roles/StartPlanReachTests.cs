@@ -29,11 +29,7 @@ public sealed class StartPlanReachTests : IDisposable
         foreach (var agent in new[] { "cool", "fine" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, "account-1"));
         new HarnessSettings().WithDefault("cool", "account-1").WithDefault("fine", "account-1").Save(Settings);
         var present = new TestAgent(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        _adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["cool"] = Adapter("cool", present),
-            ["fine"] = Adapter("fine", present),
-        });
+        _adapters = TestDoors.Registry([Adapter("cool", present), Adapter("fine", present)]);
         _roster = new HarnessRoster(_adapters, Settings);
     }
 

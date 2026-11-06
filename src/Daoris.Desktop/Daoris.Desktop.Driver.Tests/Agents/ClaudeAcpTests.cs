@@ -93,9 +93,9 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void The_account_seam_is_the_one_the_pipe_door_already_uses()
     {
-        var toolchain = Adapter().Toolchain;
+        var toolchain = ProviderRegistry.Built().AgentNamed(Adapter().Id.Value);
 
-        Assert.Equal("CLAUDE_CONFIG_DIR", toolchain?.ProfileVariable);
+        Assert.Equal("CLAUDE_CONFIG_DIR", toolchain?.Home.Variable);
     }
 
     /// <summary>
@@ -106,12 +106,12 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void The_adapter_is_a_package_the_toolchain_can_pin()
     {
-        var toolchain = Adapter().Toolchain;
+        var toolchain = ProviderRegistry.Built().AgentNamed(Adapter().Id.Value);
 
-        Assert.Equal("@agentclientprotocol/claude-agent-acp", toolchain?.Package);
-        Assert.NotNull(toolchain?.Install);
+        Assert.Equal("@agentclientprotocol/claude-agent-acp", toolchain?.Program.Package);
+        Assert.NotNull(toolchain?.Program.Install);
         // Its version question is its own, asked of the binary that will actually run.
-        Assert.NotEmpty(toolchain!.VersionArguments);
+        Assert.NotEmpty(toolchain!.Program.VersionArguments);
     }
 
     /// <summary>
@@ -122,18 +122,18 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void The_protocol_door_and_the_pipe_door_are_pinned_separately()
     {
-        var acp = Adapter().Toolchain;
+        var acp = ProviderRegistry.Built().AgentNamed(Adapter().Id.Value);
         var pipe = ProviderRegistry.Built().AgentNamed("claude-code");
 
         // Since AGT2b they do not even share a SOURCE: `claude` pins from Anthropic's release bucket,
         // verified, and the adapter — which ships only on npm — from its package.
         Assert.Equal(ClaudeReleases.Channel, pipe?.Program.Channel);
         Assert.Null(pipe?.Program.Package);
-        Assert.Null(acp?.Channel);
-        Assert.NotNull(acp?.Package);
-        Assert.NotEqual(acp?.Binary[0], pipe?.Program.Binary[0]);
+        Assert.Null(acp?.Program.Channel);
+        Assert.NotNull(acp?.Program.Package);
+        Assert.NotEqual(acp?.Program.Binary[0], pipe?.Program.Binary[0]);
         // The binary is the PACKAGE's name, not the adapter's — verified against the installed one.
-        Assert.Equal("claude-agent-acp", acp?.Binary[0]);
+        Assert.Equal("claude-agent-acp", acp?.Program.Binary[0]);
     }
 
     /// <summary>
@@ -149,7 +149,7 @@ public sealed class ClaudeAcpTests : IDisposable
 
         // Exactly what the driver does at spawn, with what the roster resolved.
         Shell.Equip(
-            info, adapter.Toolchain!,
+            info, ProviderRegistry.Built().AgentNamed(adapter.Id.Value)!,
             profileHome: Path.Combine(_home, "profile"),
             binary: null,
             seam: each => adapter.Spawned().PointAtClaude(each, "C:/somewhere/.daoris/toolchain/claude-code/2.1.278/claude.cmd"));
@@ -172,7 +172,7 @@ public sealed class ClaudeAcpTests : IDisposable
     {
         var pipe = ProviderRegistry.Built().Door("claude-code");
         var info = ProviderRegistry.Built().Start(pipe, Target(_home), null);
-        Shell.Equip(info, pipe.Toolchain!, profileHome: null, binary: null, seam: null);
+        Shell.Equip(info, ProviderRegistry.Built().AgentNamed(pipe.Id.Value)!, profileHome: null, binary: null, seam: null);
 
         Assert.False(info.Environment.ContainsKey(ClaudeAcp.ExecutableVariable));
     }

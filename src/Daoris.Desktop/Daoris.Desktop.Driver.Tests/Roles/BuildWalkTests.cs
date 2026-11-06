@@ -51,12 +51,7 @@ public sealed class BuildWalkTests : IDisposable
     private Daoris.Driver.Driver Driver(params ActorChoice[] build)
     {
         var present = new TestAgent(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["cool"] = Adapter("cool", present),
-            ["fine"] = Adapter("fine", present),
-            ["piped"] = Adapter("piped", present, Transport.Native),
-        });
+        var adapters = TestDoors.Registry([Adapter("cool", present), Adapter("fine", present), Adapter("piped", present, Transport.Native)]);
         var roster = _roster = new HarnessRoster(adapters, Settings) { Clock = () => Now, Zone = Zone };
         var config = ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("cool"), Drivable = ["engine"] }, "build", build);
         return new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), config, adapters, _home, harnesses: roster) { Log = _log };

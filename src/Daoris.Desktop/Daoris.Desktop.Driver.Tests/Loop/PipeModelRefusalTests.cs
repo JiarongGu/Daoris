@@ -60,7 +60,7 @@ public sealed class PipeModelRefusalTests : IDisposable
 
     private Daoris.Driver.Driver Driver(ServiceClient service)
     {
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["fake"] = Adapter() });
+        var adapters = TestDoors.Registry([Adapter()]);
         return new(service, DriverConfig.Empty with { Actors = StaffedRoles.On("fake") }, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }

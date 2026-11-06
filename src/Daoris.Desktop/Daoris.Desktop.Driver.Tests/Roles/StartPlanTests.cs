@@ -43,12 +43,7 @@ public sealed class StartPlanTests : IDisposable
 
         new HarnessSettings().WithDefault("cool", "account-1").WithDefault("fine", "account-1").WithDefault("piped", "account-1").Save(Settings);
         var present = new TestAgent(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        _adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["cool"] = Adapter("cool", present),
-            ["fine"] = Adapter("fine", present),
-            ["piped"] = Adapter("piped", present, Transport.Native),
-        });
+        _adapters = TestDoors.Registry([Adapter("cool", present), Adapter("fine", present), Adapter("piped", present, Transport.Native)]);
         _roster = new HarnessRoster(_adapters, Settings) { Clock = () => Now, Zone = Zone };
     }
 
@@ -67,7 +62,7 @@ public sealed class StartPlanTests : IDisposable
     /// <summary>A quest's plan over <paramref name="choices"/> as the work's seeded role's order, its passes said under <c>quest:q1</c>.</summary>
     private StartPlan Plan(string work, params ActorChoice[] choices) => Plan(work, null, choices);
 
-    private StartPlan Plan(string work, Func<ActorEffective, Provider, (string Code, string Why)?>? gate, params ActorChoice[] choices)
+    private StartPlan Plan(string work, Func<ActorEffective, AgentDoor, (string Code, string Why)?>? gate, params ActorChoice[] choices)
     {
         var config = ActorChoices.With(StaffedRoles.Config("cool"),StartPlan.RoleOf(work), choices);
         return new StartPlan(work, config, _roster, _adapters, _memory)

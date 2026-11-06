@@ -31,25 +31,25 @@ public sealed class BrainstormWalkTests : IDisposable
     private string Command => Path.Combine(_home, "agent-here");
 
     /// <summary>A real door's identity over a toolchain that is present by its file and asks nothing.</summary>
-    private static Provider Door(Provider real, TestAgent toolchain) =>
-        TestDoors.Door(real.Name, toolchain, real.Transport, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
+    private static Provider Door(AgentDoor real, TestAgent toolchain) =>
+        TestDoors.Door(real.Id.Value, toolchain, real.Transport, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
-    private TestAgent Quiet(TestAgent real) =>
-        real with { Binary = [Command], VersionArguments = [], LoginCheck = null, ProbeByPresence = true, Install = null, Channel = null };
+    private TestAgent Quiet(AccountAgent real) =>
+        TestAgent.Of(real) with { Binary = [Command], VersionArguments = [], LoginCheck = null, ProbeByPresence = true, Install = null, Channel = null };
 
     /// <summary>The real doors and the agents whose accounts they run as, quiet; <paramref name="installed"/> says whether the binary is there.</summary>
     private HarnessRoster Roster(bool installed = true)
     {
         if (installed) File.WriteAllText(Command, "");
         var built = ProviderRegistry.Built();
-        var adapters = new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase);
+        var providers = new List<Provider>();
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
-            adapters[name] = Door(built.Door(name), Quiet(built.AgentNamed(name)!));
+            providers.Add(Door(built.Door(name), Quiet(built.AgentNamed(name)!)));
         }
 
-        var owners = new Dictionary<string, TestAgent>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = Quiet(CodexAccounts.Toolchain) };
-        return new HarnessRoster(new ProviderRegistry(adapters, owners), Settings) { Clock = () => Now, Zone = Zone };
+        providers.Add(TestDoors.Holder(CodexAccounts.Agent, Quiet(built.AgentNamed(CodexAccounts.Agent)!)));
+        return new HarnessRoster(TestDoors.Registry(providers), Settings) { Clock = () => Now, Zone = Zone };
     }
 
     /// <summary>The agent whose accounts the door runs as, and its account folders, with the first the default.</summary>

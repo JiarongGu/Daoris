@@ -30,7 +30,7 @@ public sealed class DriverWatchAdaptersTests : IDisposable
     }
 
     private static ProviderRegistry Only(string name) =>
-        new(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { [name] = ProviderRegistry.Built().Door(name) });
+        TestDoors.Registry(TestDoors.Shipped(name));
 
     private DriverWatch Watch(ProviderRegistry? adapters, HarnessRoster? harnesses = null)
     {

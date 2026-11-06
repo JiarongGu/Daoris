@@ -29,11 +29,7 @@ public sealed class BrainstormVoicePlanTests : IDisposable
         // `voice` runs by a bare name only its pinned install answers; `other` is present wherever it is asked.
         var voice = new TestAgent(Binary: ["voice-pinned"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
         var other = new TestAgent(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["voice"] = Adapter("voice", voice),
-            ["other"] = Adapter("other", other),
-        });
+        var adapters = TestDoors.Registry([Adapter("voice", voice), Adapter("other", other)]);
         foreach (var agent in new[] { "voice", "other" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, "account-1"));
         _roster = new HarnessRoster(adapters, Settings) { Clock = () => Now, Zone = Zone };
     }

@@ -31,7 +31,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
         service.Chat("c1", root, ("w1", "go on"));
         new HarnessConversations(Home).Keep("c1", "talk", "conv-c1");
         var loop = Loop();
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry([Talk()]);
         using var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         using var chat = new ChatRunner(client, adapters, Home, loop.Processes,
             harnesses: new HarnessRoster(adapters, HarnessSettingsPath), events: loop.Events);
@@ -62,7 +62,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
         service.Chat("d1", root, ("w3", "One more."), kind: "driven");
         new HarnessConversations(Home).Keep("c1", "talk", "conv-c1");
         var loop = Loop();
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry([Talk()]);
         using var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         using var chat = new ChatRunner(
             client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);
@@ -94,7 +94,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
         service.Chat("c1", root, ("w1", "Also log the port."));
         new HarnessConversations(Home).Keep("c1", "talk", "conv-c1");
         var loop = Loop();
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry([Talk()]);
         using var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         using var chat = new ChatRunner(
             client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);

@@ -58,11 +58,8 @@ public sealed class AccountNamesSaidTests : IDisposable
     private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
     private HarnessRoster Fake() =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new TestAgent(
-                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
-        }), Settings)
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
+                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true))]), Settings)
         {
             Clock = () => _now,
             Zone = Zone,

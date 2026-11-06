@@ -31,11 +31,7 @@ public sealed class HandOverRunnerTests : IDisposable
 
     private ChatRunner Runner(ChatLedger ledger)
     {
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["talk"] = Talk("talk"),
-            ["other"] = Talk("other"),
-        });
+        var adapters = TestDoors.Registry([Talk("talk"), Talk("other")]);
         return new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

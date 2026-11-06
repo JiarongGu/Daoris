@@ -154,10 +154,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         {
             var service = new DriverModuleStartFromTests.StandIn(root);
             var loop = Loop();
-            var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["talk"] = Refusing("talk"), ["other"] = Refusing("other"),
-            });
+            var adapters = TestDoors.Registry([Refusing("talk"), Refusing("other")]);
             var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
             var chat = new ChatRunner(
                 client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);

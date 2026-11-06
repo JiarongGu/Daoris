@@ -356,21 +356,21 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Equal("edits", adapter.Postures.Ordinary);
         Assert.True(adapter.Can.Interactive);
 
-        var info = adapter.Prepare(Target(_home), command: null);
+        var info = adapters.Start(adapter, Target(_home), command: null);
         Assert.Equal(Path.Combine(folder, "agent.mjs"), info.FileName);
         Assert.Contains("--acp", info.ArgumentList);
         // A protocol-door session is written to, frame by frame.
         Assert.True(info.RedirectStandardInput);
 
         // The machine's configured command still outranks the declared one, like every adapter.
-        Assert.Equal("elsewhere", adapter.Prepare(Target(_home), ["elsewhere", "--acp"]).FileName);
+        Assert.Equal("elsewhere", adapters.Start(adapter, Target(_home), ["elsewhere", "--acp"]).FileName);
 
-        var toolchain = adapter.Toolchain!;
-        Assert.Equal("ACME_HOME", toolchain.ProfileVariable);
-        Assert.Equal("@acme/agent", toolchain.Package);
-        Assert.Equal(["npm", "install", "-g", "@acme/agent"], toolchain.Install);
-        Assert.Equal(Path.Combine(folder, "agent.mjs"), toolchain.Binary[0]);
-        Assert.Equal(["--version"], toolchain.VersionArguments);
+        var toolchain = adapters.AgentNamed("acme-agent")!;
+        Assert.Equal("ACME_HOME", toolchain.Home.Variable);
+        Assert.Equal("@acme/agent", toolchain.Program.Package);
+        Assert.Equal(["npm", "install", "-g", "@acme/agent"], toolchain.Program.Install);
+        Assert.Equal(Path.Combine(folder, "agent.mjs"), toolchain.Program.Binary[0]);
+        Assert.Equal(["--version"], toolchain.Program.VersionArguments);
     }
 
     /// <summary>
@@ -382,21 +382,21 @@ public sealed class PluginCatalogTests : IDisposable
     {
         var folder = Plugin("plain", """{ "id": "plain", "harnesses": [ { "name": "plain-agent", "command": ["${plugin}/agent.mjs"] } ] }""");
         File.WriteAllText(Path.Combine(folder, "agent.mjs"), "// would wait on stdin forever if it were run\n");
-        var adapter = Built().WithPlugins(PluginCatalog.Load(_home)).Door("plain-agent");
-        Assert.True(adapter.Toolchain!.ProbeByPresence);
+        var plain = Built().WithPlugins(PluginCatalog.Load(_home)).AgentNamed("plain-agent")!;
+        Assert.True(plain.Program.ProbeByPresence);
 
         var clock = System.Diagnostics.Stopwatch.StartNew();
-        var report = await HarnessProbe.ProbeAsync("plain-agent", adapter.Toolchain!, null, new HarnessSettings(), _home);
+        var report = await HarnessProbe.ProbeAsync("plain-agent", plain, null, new HarnessSettings(), _home);
 
         Assert.True(report.Present, report.Problem);
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(15), $"took {clock.Elapsed}");
 
-        var missing = PluginDoors.Adapter(new PluginHarness("gone", [Path.Combine(folder, "gone.mjs")]), "plain");
-        Assert.False((await HarnessProbe.ProbeAsync("gone", missing.Toolchain!, null, new HarnessSettings(), _home)).Present);
+        var missing = PluginDoors.Provider(new PluginHarness("gone", [Path.Combine(folder, "gone.mjs")]), "plain");
+        Assert.False((await HarnessProbe.ProbeAsync("gone", new ProviderRegistry([missing], []).AgentNamed("gone")!, null, new HarnessSettings(), _home)).Present);
 
         // One that DOES declare a version question is run, like every built-in harness.
-        var asked = PluginDoors.Adapter(new PluginHarness("asked", ["x"], VersionArguments: ["--version"]), "plain");
-        Assert.False(asked.Toolchain!.ProbeByPresence);
+        var asked = PluginDoors.Provider(new PluginHarness("asked", ["x"], VersionArguments: ["--version"]), "plain");
+        Assert.False(new ProviderRegistry([asked], []).AgentNamed("asked")!.Program.ProbeByPresence);
     }
 
     /// <summary>A wire that carries no posture asks for nothing (ACP3): null, never a guessed mode.</summary>
@@ -405,10 +405,10 @@ public sealed class PluginCatalogTests : IDisposable
     {
         Plugin("plain", """{ "id": "plain", "harnesses": [ { "name": "plain-agent", "command": ["plain"] } ] }""");
 
-        var adapter = Built().WithPlugins(PluginCatalog.Load(_home)).Door("plain-agent");
+        var adapters = Built().WithPlugins(PluginCatalog.Load(_home));
 
-        Assert.Null(adapter.Postures.Ordinary);
-        Assert.Null(adapter.Toolchain!.ProfileVariable);
+        Assert.Null(adapters.Door("plain-agent").Postures.Ordinary);
+        Assert.Null(adapters.AgentNamed("plain-agent")!.Home.Variable);
     }
 
     [Fact]

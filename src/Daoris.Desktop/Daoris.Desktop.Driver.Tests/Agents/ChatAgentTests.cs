@@ -38,19 +38,19 @@ public sealed class ChatAgentTests : IDisposable
     public void It_reads_its_door_as_the_adapter_beneath_it_says_it(string door)
     {
         var adapter = ProviderRegistry.Built().Door(door);
-        var agent = new ChatAgent(adapter);
+        var agent = new ChatAgent(ProviderRegistry.Built(), adapter);
 
         Assert.Equal(adapter.Id.Value, agent.Name);
-        Assert.Equal(adapter.Abilities(), agent.Abilities);
+        Assert.Equal(adapter.Can, agent.Abilities);
         Assert.Equal(adapter.Can.TakesSettings, agent.TakesSettings);
         Assert.Equal(adapter.Postures.Ordinary, agent.Posture);
         Assert.Equal(adapter.Postures.Full, agent.FullPosture);
-        Assert.Equal(adapter.Toolchain?.ErrorWords?.TypedFailures == true, agent.TypedFailures);
+        Assert.Equal(ProviderRegistry.Built().AgentNamed(adapter.Id.Value)?.Tables.ErrorWords?.TypedFailures == true, agent.TypedFailures);
         Assert.Equal(adapter.FrameMessage("the person's words"), agent.FrameMessage("the person's words"));
         // An interrupt names itself by a fresh request id each time it is framed; all else of it is the door's.
         Assert.Equal(Fresh(adapter.FrameInterrupt()), Fresh(agent.FrameInterrupt()));
         Assert.Equal(adapter.StructuredOutput() is null, agent.StructuredOutput() is null);
-        Assert.Equal(CommitTrailers.For(adapter), agent.Trailers());
+        Assert.Equal(CommitTrailers.For(ProviderRegistry.Built(), adapter), agent.Trailers());
         Assert.Equal(TurnBinding.Of(ProviderRegistry.Built(), adapter, "account-1"), agent.Binding(ProviderRegistry.Built(), "account-1"));
     }
 
@@ -62,9 +62,9 @@ public sealed class ChatAgentTests : IDisposable
         var request = SpawnRequests.Chat("engine", Path.GetTempPath(), "http://localhost:5177", "c1");
         var selection = new HarnessSelection(null);
 
-        var info = new ChatAgent(adapter).Prepare(request, selection);
-        var expected = adapter.PrepareChat(request);
-        SpawnEquipment.Equip(adapter, expected, selection);
+        var info = new ChatAgent(ProviderRegistry.Built(), adapter).Prepare(request, selection);
+        var expected = ProviderRegistry.Built().Chat(adapter, request);
+        SpawnEquipment.Equip(ProviderRegistry.Built(), adapter, expected, selection);
 
         Assert.Equal(expected.FileName, info.FileName);
         Assert.Equal(expected.ArgumentList, info.ArgumentList);

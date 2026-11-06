@@ -27,8 +27,8 @@ public sealed class CommitTrailersRegistryTests
     {
         var adapter = ProviderRegistry.Built().Door(door);
 
-        Assert.Equal(maker, CommitTrailers.MakerOf(adapter));
-        Assert.Equal(adapter.Toolchain?.Maker, CommitTrailers.MakerOf(adapter));
+        Assert.Equal(maker, ProviderRegistry.Built().MakerOf(adapter));
+        Assert.Equal(ProviderRegistry.Built().AgentNamed(adapter.Id.Value)?.Maker, ProviderRegistry.Built().MakerOf(adapter));
     }
 
     [Theory]
@@ -48,8 +48,8 @@ public sealed class CommitTrailersRegistryTests
         Assert.Contains("Co-Authored-By: Codex (OpenAI, MODEL) <noreply@openai.com>", CommitTrailers.For(adapters, adapters.Door("acme-openai")));
         Assert.Contains("made by Anthropic. Use the model actually running this session", CommitTrailers.For(adapters, adapters.Door("acme-anthropic")));
         Assert.Contains("<your maker's attribution address>", CommitTrailers.For(adapters, adapters.Door("acme-none")));
-        Assert.Equal("OpenAI", CommitTrailers.MakerOf(adapters.Door("acme-openai")));
-        Assert.Null(CommitTrailers.MakerOf(adapters.Door("acme-none")));
+        Assert.Equal("OpenAI", adapters.MakerOf(adapters.Door("acme-openai")));
+        Assert.Null(adapters.MakerOf(adapters.Door("acme-none")));
     }
 
     private sealed class Declared(IEnumerable<DeclaredDoor> doors) : IAgentPlugins

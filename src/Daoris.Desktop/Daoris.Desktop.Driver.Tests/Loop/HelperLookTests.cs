@@ -1310,7 +1310,7 @@ public sealed class HelperLookTests : IDisposable
         var ledger = new ChatLedger().Register("engine", root);
         ledger.Chat("s1", "completed", "talk", root).Helped(word, host.HelperHands[0].Text, helper: Helper);
         new HarnessConversations(_home).Keep("s1", "talk", "conv-s1");
-        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry([Talk()]);
         using var runner = new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: driver.Context.Events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

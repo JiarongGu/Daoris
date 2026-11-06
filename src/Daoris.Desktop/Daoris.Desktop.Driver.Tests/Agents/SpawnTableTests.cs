@@ -187,8 +187,8 @@ public sealed class SpawnTableTests
     [InlineData("acp-stub", true)]
     public void Claude_Code_s_seam_is_taken_where_the_door_runs_claude(string door, bool seam)
     {
-        Assert.Equal(seam, ProviderRegistry.Built().Door(door).Spawned().ClaudeSeam());
-        Assert.False(UnmeasuredProtocolDoor().TakesClaudeSeam());
+        Assert.Equal(seam, ProviderRegistry.Built().Door(door).Spawned().ClaudeSeam);
+        Assert.False(TestDoors.Registry(UnmeasuredProtocolDoor()).Door("plugin-door").Spawned().ClaudeSeam);
     }
 
     /// <summary>The seam on the process: both variables where a managed <c>claude</c> is handed, neither where none is.</summary>
@@ -197,14 +197,14 @@ public sealed class SpawnTableTests
     {
         var acp = ProviderRegistry.Built().Door("claude-code-acp");
         var pointed = ProviderRegistry.Built().Start(acp, Target(), null);
-        Shell.Equip(pointed, acp.Toolchain!, profileHome: null, seam: each => acp.Spawned().PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
+        Shell.Equip(pointed, ProviderRegistry.Built().AgentNamed(acp.Id.Value)!, profileHome: null, seam: each => acp.Spawned().PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
         Assert.Equal("C:/toolchain/claude-code/2.1.300/claude.exe", pointed.Environment[ClaudeAcp.ExecutableVariable]);
         Assert.Equal("1", pointed.Environment["DISABLE_UPDATES"]);
 
         var codex = ProviderRegistry.Built().Door("codex-acp");
         var plain = ProviderRegistry.Built().Start(codex, Target(), null);
         plain.Environment.Remove(ClaudeAcp.ExecutableVariable);
-        Shell.Equip(plain, codex.Toolchain!, profileHome: null, seam: each => codex.Spawned().PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
+        Shell.Equip(plain, ProviderRegistry.Built().AgentNamed(codex.Id.Value)!, profileHome: null, seam: each => codex.Spawned().PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
         Assert.False(plain.Environment.ContainsKey(ClaudeAcp.ExecutableVariable));
     }
 
@@ -224,7 +224,7 @@ public sealed class SpawnTableTests
             File.WriteAllText(shim, "@echo off\r\n");
             var pipe = ProviderRegistry.Built().Door("claude-code");
             var info = ProviderRegistry.Built().Start(pipe, Target(), [shim]);
-            Shell.Equip(info, pipe.Toolchain!, profileHome: null);
+            Shell.Equip(info, ProviderRegistry.Built().AgentNamed(pipe.Id.Value)!, profileHome: null);
             pipe.Spawned().HandServers(info, @"C:\one&two\servers.json");
 
             Assert.Equal(shim, info.FileName);

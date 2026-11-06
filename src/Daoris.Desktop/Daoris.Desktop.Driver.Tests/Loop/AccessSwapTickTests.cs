@@ -84,8 +84,7 @@ public sealed class AccessSwapTickTests : IDisposable
         }).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Asking)] }).Save(ConfigPath);
         await using var service = SaidStandIn.Start(_repository);
         var built = ProviderRegistry.Built();
-        var adapters = new ProviderRegistry(built.Names.ToDictionary(
-            name => name, name => name == "acp-stub" ? PosturedStub() : built.Door(name), StringComparer.OrdinalIgnoreCase));
+        var adapters = TestDoors.Registry([.. Providers.Built().Where(provider => provider.Id.Value != "stub"), PosturedStub()]);
         var processes = new SessionProcesses();
 
         var tick = Look(service, adapters, processes).RunOnceAsync();

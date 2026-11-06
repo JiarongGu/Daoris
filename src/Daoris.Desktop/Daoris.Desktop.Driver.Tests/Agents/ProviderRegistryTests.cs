@@ -106,7 +106,7 @@ public sealed class ProviderRegistryTests : IDisposable
         foreach (var name in ProviderRegistry.Built().Names)
         {
             var adapter = ProviderRegistry.Built().Door(name);
-            var abilities = adapter.Abilities();
+            var abilities = adapter.Can;
             var protocol = adapter.Transport == Transport.Protocol;
             Assert.Equal(protocol, abilities.ServersOnWire);
             Assert.Equal(protocol, abilities.RulesOnWire);
@@ -275,9 +275,9 @@ public sealed class ProviderRegistryTests : IDisposable
     /// </summary>
     private static List<string> Disagreeing(ProviderRegistry set)
     {
-        TestAgent? Owners(string owner)
+        AccountAgent? Owners(string owner)
         {
-            TestAgent? door = null;
+            AccountAgent? door = null;
             foreach (var name in set.Names)
             {
                 var toolchain = set.AgentNamed(name);
@@ -290,11 +290,11 @@ public sealed class ProviderRegistryTests : IDisposable
         }
 
         return [.. set.Names.Where(name =>
-            set.AgentNamed(name) is { } own && own.Home.StartsInOwnHome != Owners(AccountKeyOf(own, name))!.StartsInOwnHome)];
+            set.AgentNamed(name) is { } own && own.Home.StartsInOwnHome != Owners(AccountKeyOf(own, name))!.Home.StartsInOwnHome)];
     }
 
     /// <summary>The account key as the retired <c>TestAgent.Owner</c> spelled it: the declared <c>accountOf</c>, else the name.</summary>
-    private static string AccountKeyOf(TestAgent toolchain, string name) => toolchain.AccountOf is { Length: > 0 } owner ? owner : name;
+    private static string AccountKeyOf(AccountAgent toolchain, string name) => toolchain.AccountOf is { Length: > 0 } owner ? owner : name;
 
     /// <summary>
     /// Row a's proof (the design §11): over the built set and each plugin case, the registry answers for every door the account key
@@ -546,9 +546,9 @@ public sealed class ProviderRegistryTests : IDisposable
 
         // codex lends its holder's sign-in alone: no words and no usage question.
         var holder = registry.Provider("codex").Lent.Required;
-        Assert.Same(CodexAccounts.Toolchain.LoginCheck, holder.Accounts.Login);
-        Assert.Equal(CodexAccounts.Toolchain.DeviceLoginArguments, holder.Accounts.DeviceLoginArguments);
-        Assert.Equal(CodexAccounts.Toolchain.LoginPorts, holder.Accounts.LoginPorts);
+        Assert.Same(CodexAccounts.Pool.Login, holder.Accounts.Login);
+        Assert.Equal(CodexAccounts.Pool.DeviceLoginArguments, holder.Accounts.DeviceLoginArguments);
+        Assert.Equal(CodexAccounts.Pool.LoginPorts, holder.Accounts.LoginPorts);
         Assert.Equal(TablesPart.None, holder.Tables);
         Assert.Null(holder.Usage.Question);
 

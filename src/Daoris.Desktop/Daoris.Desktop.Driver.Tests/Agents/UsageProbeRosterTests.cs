@@ -40,14 +40,10 @@ public sealed class UsageProbeRosterTests : IDisposable
     private static readonly UsageQuestion Question = new CodexUsageQuestion("fake", ["fake-agent", "app-server"], CodexUsage.Question.Recorded);
 
     private HarnessRoster Roster(string? home = null) =>
-        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new TestAgent(
-                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
-            ["fake-door"] = Adapter("fake-door", new TestAgent(
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
+                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)), Adapter("fake-door", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
-                AccountOf: "fake", Usage: Question, Limits: ClaudeLimits.Words)),
-        }), DaorisHome.Entry(home ?? _home, HomeEntry.Harnesses))
+                AccountOf: "fake", Usage: Question, Limits: ClaudeLimits.Words))]), DaorisHome.Entry(home ?? _home, HomeEntry.Harnesses))
         {
             Clock = () => _now,
             AskingUsage = (owner, account, _) =>

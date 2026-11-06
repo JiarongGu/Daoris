@@ -64,7 +64,7 @@ public sealed class DeclaredDoorsTests : IDisposable
         Assert.Equal("named", set.DeclaredBy("named-door"));
         Assert.True(abilities.Interactive);
         Assert.False(abilities.TakesSettings);
-        Assert.Null(set.Door("named-door").RuleLanguage());
+        Assert.Null(set.RuleLanguage(set.Door("named-door")));
         Assert.False(set.Door("named-door").Dialect.IsKnown);
         Assert.Null(set.AgentNamed("named-door")!.Tables.Limits);
     }
