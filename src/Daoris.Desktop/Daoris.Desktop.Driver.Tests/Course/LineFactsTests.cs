@@ -54,7 +54,7 @@ public sealed class LineFactsTests : IDisposable
             ["s1 person", "s1 alone helper", "s2 alone opinion supervisor", "s2 daoris"],
             facts.GoOns.Select(goOn => string.Join(" ", new[] { goOn.Session, goOn.By }.Concat(goOn.Answered))));
         var alone = Assert.Single(facts.Counts, count => count.Count == "answers-alone");
-        Assert.Equal((0, "exact", new CountWatch(AnswersAlone.Bound, SupervisorRules.Hold, SupervisorRules.Machine)), (alone.N, alone.Known, alone.Watch));
+        Assert.Equal((0, "exact", new CountWatch(SupervisorRuleBook.AnswersAloneBound, SupervisorRules.Hold, SupervisorRules.Machine)), (alone.N, alone.Known, alone.Watch));
         Assert.DoesNotContain(facts.Counts, count => count.Count == "failures");
     }
 

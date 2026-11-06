@@ -186,10 +186,10 @@ public sealed record CourseLater(string Agent, string? Choice = null, string? Ac
 /// files by the executor, which writes the hold's marks; its bound; and whether the person's press released the held answer.
 /// </summary>
 /// <param name="Count">The go-ons by answers alone at the line's end, in a row.</param>
-/// <param name="Bound">How many the line takes in a row (<see cref="AnswersAlone.Bound"/>).</param>
+/// <param name="Bound">How many the line takes in a row: its answers-alone rule's number.</param>
 /// <param name="Released">The person's *Go on with this answer* let it go on (<see cref="HeldNoteCodes.AnswersPassed"/>).</param>
 /// <param name="Kept">The person kept the answer with *Not now*: it goes on only beside words of theirs (<see cref="HeldNoteCodes.AnswersKept"/>).</param>
-public sealed record CourseAlone(int Count, int Bound = AnswersAlone.Bound, bool Released = false, bool Kept = false)
+public sealed record CourseAlone(int Count, int Bound, bool Released = false, bool Kept = false)
 {
     /// <summary>Whether one more go-on by answers alone would be held.</summary>
     public bool AtBound => !Released && Count >= Bound;

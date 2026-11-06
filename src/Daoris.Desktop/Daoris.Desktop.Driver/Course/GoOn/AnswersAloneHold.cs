@@ -36,8 +36,8 @@ public sealed class AnswersAloneHold(
         return SupervisorRuleBook.AnswersAloneAt(RuledLine.Of(home, records.GetValueOrDefault(session), LineKeys.Of(session, records).Key).In(book));
     }
 
-    /// <summary>The number a held line was held at: its rule's.</summary>
-    public int HeldAt(string session, IReadOnlyDictionary<string, PriorSession> records) => At(session, records) ?? AnswersAlone.Bound;
+    /// <summary>The number a held line was held at: its rule's; null where no rule holds it now, which nothing then names.</summary>
+    public int? HeldAt(string session, IReadOnlyDictionary<string, PriorSession> records) => At(session, records);
 
     /// <summary>
     /// Whether going on with <paramref name="words"/> on <paramref name="record"/> now would take its line on by answers alone past the
@@ -143,7 +143,7 @@ public sealed class AnswersAloneHold(
         ContinuationAdmissions.History(session, records, part => LineCountsRead.EventsOf(events, part));
 
     /// <summary>
-    /// Whether the line admits the go-on now: judged and reserved inside its admission at <see cref="AnswersAlone.Bound"/>, the line read
+    /// Whether the line admits the go-on now: judged and reserved inside its admission at its rule's number, the line read
     /// by its one key. Without the service's records, or without the admissions, it is admitted: nothing counts it.
     /// </summary>
     private bool Admits(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, IReadOnlyList<SaidWordView> words)

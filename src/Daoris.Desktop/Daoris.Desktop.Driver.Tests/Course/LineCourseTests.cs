@@ -109,7 +109,7 @@ public sealed class LineCourseTests
     private static CourseFacts Picking(CourseFacts facts) => facts with { Account = (facts.Account ?? new CourseAccount()) with { Picked = true } };
 
     private static CourseFacts Alone(CourseFacts facts, int count, bool released = false, bool kept = false) =>
-        facts with { Alone = new CourseAlone(count, Released: released, Kept: kept) };
+        facts with { Alone = new CourseAlone(count, SupervisorRuleBook.AnswersAloneBound, Released: released, Kept: kept) };
 
     private static CourseFacts Pressed(CourseFacts facts, CoursePressKind kind, string? agent = null, string? account = null, CourseFromWhy? why = null, CourseFromBy? by = null, string? intent = null) =>
         facts with { Press = new CoursePress(kind, agent, account, intent, why, by) };
