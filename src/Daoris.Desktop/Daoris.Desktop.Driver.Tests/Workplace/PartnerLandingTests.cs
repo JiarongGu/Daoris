@@ -129,7 +129,8 @@ public sealed class PartnerLandingTests : IDisposable
     public async Task Discard_removes_the_ref_at_the_commit_it_froze_and_the_copy_and_nothing_else()
     {
         var (root, _) = await HandedAsync();
-        var copy = Path.Combine(_scratch, "copy");
+        // Where the piece's copy is made: a copy anywhere else is no copy of a piece's, and is never removed.
+        var copy = PartnerPass.CopyFor(_home, null, "reports", "p1");
         Directory.CreateDirectory(copy);
         File.WriteAllText(Path.Combine(copy, "left.txt"), "left");
         Files.WriteState(Files.ReadState("p1")! with { Copy = copy, CopyRemoved = false });
