@@ -12,7 +12,7 @@ namespace Daoris.Knowledge;
 /// <c>to</c> may name everyone or a repository the ask's messages were posted from or to; a part of the ask's lines elsewhere is the
 /// holder's, never addressed from here.
 /// </remarks>
-public sealed class TeammateAskChannel(ChannelStore store)
+public sealed class TeammateAskChannel(ChannelStore store, Func<string, CancellationToken, Task<bool>>? holderGone = null)
 {
     private const string Everyone = "everyone";
 
@@ -79,6 +79,62 @@ public sealed class TeammateAskChannel(ChannelStore store)
             Origin = origin,
         };
     }
+
+    /// <summary>
+    /// An entry's acknowledgments of the mirrored messages, by message id: what the driver's look reads to hand a part here what its
+    /// entry has not settled. A claim whose holder no longer runs is read as none, so the entry's next part takes it.
+    /// </summary>
+    public async Task<IReadOnlyDictionary<string, ChannelAck>> AcknowledgedAsync(string askId, string entry, CancellationToken ct)
+    {
+        var held = (await store.AcksOfAsync(askId, ct).ConfigureAwait(false))
+            .Where(row => string.Equals(row.Entry, entry, StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(row => row.Message, row => row.Ack, StringComparer.Ordinal);
+        foreach (var (message, ack) in held.ToList())
+        {
+            if (ack is { State: ChannelAcks.Taking, Session: { } holder } && await GoneAsync(holder, ct).ConfigureAwait(false)) held.Remove(message);
+        }
+
+        return held;
+    }
+
+    /// <summary>
+    /// An entry acknowledging mirrored messages by their ids, as on an ask held here: a claim is one part's only, the rest raise what the
+    /// entry holds. Only messages this machine holds count. Null where none of that ask is mirrored here.
+    /// </summary>
+    /// <returns>The messages whose acknowledgment changed.</returns>
+    public async Task<IReadOnlyList<string>?> AcknowledgeAsync(
+        string askId, string entry, string? session, string state, IReadOnlyList<string> messages, DateTimeOffset now, CancellationToken ct)
+    {
+        var mirrored = (await store.OfAsync(askId, ct).ConfigureAwait(false)).Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
+        if (mirrored.Count == 0) return null;
+        if (!ChannelAcks.Known(state) || string.IsNullOrWhiteSpace(entry) || entry == ChannelDesk.PersonEntry) return [];
+
+        var held = await store.AcksOfAsync(askId, ct).ConfigureAwait(false);
+        var changed = new List<string>();
+        foreach (var id in messages.Where(mirrored.Contains).Distinct(StringComparer.Ordinal))
+        {
+            bool moved;
+            if (state == ChannelAcks.Taking)
+            {
+                if (string.IsNullOrWhiteSpace(session)) continue;
+                var current = held.FirstOrDefault(row => row.Message == id && string.Equals(row.Entry, entry, StringComparison.OrdinalIgnoreCase)).Ack;
+                var stale = current is { State: ChannelAcks.Taking, Session: { } holder } && holder != session && await GoneAsync(holder, ct).ConfigureAwait(false)
+                    ? current.Session
+                    : null;
+                moved = await store.ClaimAsync(askId, entry, id, session, stale, now, ct).ConfigureAwait(false);
+            }
+            else
+            {
+                moved = await store.AcknowledgeAsync(askId, entry, id, state, session, now, ct).ConfigureAwait(false);
+            }
+
+            if (moved) changed.Add(id);
+        }
+
+        return changed;
+    }
+
+    private async Task<bool> GoneAsync(string holder, CancellationToken ct) => holderGone is not null && await holderGone(holder, ct).ConfigureAwait(false);
 
     /// <summary>Whether a message is for an entry: to its repository or to everyone, and posted by no part of the entry itself.</summary>
     private static bool IsFor(ChannelMessage message, string entry)

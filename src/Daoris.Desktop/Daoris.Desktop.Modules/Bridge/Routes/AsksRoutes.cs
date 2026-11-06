@@ -131,6 +131,23 @@ public sealed class AsksRoutes(DriverLoop loop)
         return ChannelAnswers.Line(await service.Addressed.LineAsync(session, cancellationToken).ConfigureAwait(false));
     }
 
+    /// <summary>
+    /// The person's post on a line's own channel (COMMS1k): their words to everyone on it or one of its repositories (<c>to</c>), which a
+    /// part of the line takes at its look as it takes their words. Answers <c>posted</c> with the message kept, or the service's code
+    /// where it refused. It moves the asks' key, which holds each line's channel.
+    /// </summary>
+    [DriverRoute("CHANNEL_LINE_POST", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("CHANNEL_LINE_POST", Session = "session")]
+    [GroundSession("CHANNEL_LINE_POST", "session")]
+    [Says("CHANNEL_LINE_POST", "session:session", "text:words")]
+    [Publishes("CHANNEL_LINE_POST", StateScopes.Asks)]
+    private async Task<object?> ChannelLinePostAsync(LineChannelPostPress press, CancellationToken cancellationToken)
+    {
+        var session = ActField.Needs(press.Session, "session");
+        var service = _loop.Service ?? throw NotReady();
+        return ChannelAnswers.Posted(await service.Addressed.PostLineAsync(session, press.Text ?? "", press.To, ct: cancellationToken).ConfigureAwait(false));
+    }
+
     /// <summary>The ask a route is about, as the service names it.</summary>
     /// <exception cref="DriverException">None named: the driver's sentence, said verbatim.</exception>
     private static string Asked(string? named) =>
