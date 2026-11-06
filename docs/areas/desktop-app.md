@@ -220,15 +220,17 @@ web paths are under `src/Daoris.Web/src/`.
     with a head and three folded sections. The tree (`setup/SetupList.tsx`) is a WAI tree: one row in the tab order, ↑ ↓ Home
     End walk it, → and ← open, close and climb, Enter chooses; a workspace opens by its chevron or →, apart from being chosen.
     A row's second line is a need (⚠ and its first reason), *Held*, *Adoption running*, or how it lands; the *Needs attention*
-    chip carries the count of places in hand that need a look. It stays dark until `daoris.agents.setup` is `on`. (from D221, D150)
+    chip carries the count of places in hand that need a look. The chosen place is kept across searches and pages
+    (`setup/useKeptPlace.ts`). It stays dark until `daoris.agents.setup` is `on`. (from D221, D150)
 59. An agent's page heads in one line. Each account is one row with one act by its state. An account is read only when
     the person presses or something has run, never on a timer. (from D152, D150)
 60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration, Workflow
     and Setup; a workspace's are Details, Branches, Workflow and Setup. (from D150, D147)
 61. Knowledge is one place with two modes, Search (the default) and Convergence. The Map is a read-only view of the
     workspace's repositories and what moved between them, plus the code map, drawn on the canvas. The code map holds
-    its modules in their folders, folded together or one at a time; a cycle, across folders too, is one card in the
-    nearest folder holding it; its lines run around its cards. Each zoom says less about the same cards: a repository,
+    its modules in their folders, folded together or one at a time (each open folder's header has its *Fold*); a cycle, across folders too, is one card in the
+    nearest folder holding it; its lines run around its cards, within a work budget of grid cells rather than a count of
+    lines or cards. The cards are one list whose items say their place among all (`aria-setsize`, `aria-posinset`). Each zoom says less about the same cards: a repository,
     module or folder has its words at the full tier, its name alone at the chip tier and nothing inside at the dot
     tier, and the chosen and the focused keep their name beside the card at every tier. One choice stands forward on
     both levels (its lines and neighbours at full ink, the rest at 40%), is said once in one polite line under the
@@ -301,7 +303,8 @@ web paths are under `src/Daoris.Web/src/`.
 - **MAPUX1**: the Map's UI and UX (`docs/2026-11-06-map-ux-design.md`). Built: the tiers' content, the choice forward, its
   line and the detail's door to the repository's page, *Back to the map* choosing and revealing the repository, find on
   the level shown, the list as one tree, the empty and failing cases, and *Which quests* opening on the last 30 days.
-  Open: the measured Tab order and the installed window (MAPUX1g).
+  The Tab order is measured on both levels (`measured/mapTab.spec.ts`: the drawing one stop, the list one row). Open: the
+  installed window (MAPUX1g).
 - **MEETUX1a–d**: meetings and brainstorms in Sessions: started, followed, read, and in *What needs you*.
 - **PERSONDOOR2** (no row filed): the boundary between the person and their agents that D156 §7 names, and the machine
   key moved off a session's connector.
