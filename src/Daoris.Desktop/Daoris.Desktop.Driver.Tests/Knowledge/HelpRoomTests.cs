@@ -128,7 +128,7 @@ public sealed class HelpRoomTests : IDisposable
         ];
 
         var machine = HelpRoom.Describe(
-            DriverConfig.Empty, new Snapshot([], [], []), [], roster, _ => "Claude Code", asks: 0, []);
+            DriverConfig.Empty, new Snapshot([], [], []), [], roster, asks: 0, [], facts: ProviderRegistry.Of(AdapterSet.Built()).Facts);
         var room = HelpRoom.Render(machine);
 
         Assert.Contains(
@@ -303,7 +303,7 @@ public sealed class HelpRoomTests : IDisposable
             new("a2", "work", "stream the tiles", "Published", "named") { Quests = ["q1"] },
         ];
         var machine = HelpRoom.Describe(
-            config, snapshot, lines, roster, adapter => adapter == "claude-code" ? "Claude Code" : null, asks: 1, standing);
+            config, snapshot, lines, roster, asks: 1, standing, facts: ProviderRegistry.Of(AdapterSet.Built()).Facts);
 
         var report = Assert.Single(machine.Repositories, repository => repository.Name == "console-ui");
         Assert.True(report.Drivable && report.OwnTree && report.Checkout && !report.Held);
@@ -329,7 +329,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("/work/console-ui", room);
         Assert.Contains("- `console-ui` (workspace `work`)\n", room);
         var unread = HelpRoom.Describe(
-            config.WithWorkspaceReadAcross("work", false), snapshot, lines, roster, _ => null, asks: 1, standing);
+            config.WithWorkspaceReadAcross("work", false), snapshot, lines, roster, asks: 1, standing);
         Assert.DoesNotContain("/work/console-ui", HelpRoom.Render(unread));
     }
 
@@ -359,7 +359,7 @@ public sealed class HelpRoomTests : IDisposable
 
         var described = HelpRoom.Describe(
             DriverConfig.Empty.WithStanding("Engine", "dev only", DateTimeOffset.UnixEpoch),
-            new Snapshot([], [new RepoView("engine", Adopted: true, Root: null)], []), [], [], _ => null, asks: 0, []);
+            new Snapshot([], [new RepoView("engine", Adopted: true, Root: null)], []), [], [], asks: 0, []);
         Assert.Equal("dev only", Assert.Single(described.Repositories).Standing);
     }
 

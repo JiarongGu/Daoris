@@ -400,7 +400,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     failure: failed, otherWay, switchWay,
   } = useHarnessRun();
   const onError = failure(notify);
-  const door = tool.doors[0]!.harness;
+  const door = tool.lead ?? tool.name;
   const product = tool.product ?? tool.name;
   const use = agentOf(accounts.data, tool.name);
   const busy = acting || act.isPending || accountUse.isPending || ruleAct.isPending || ruleAnswer.busy;
@@ -451,7 +451,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     installTaken.current = true;
     onInstallTaken?.();
     // An agent Daoris has no installer for is never run one (INSTALLDOOR1): the driver refuses it, and its page says how.
-    if (!tool.present && tool.doors[0]!.installs !== false) run(door, 'install');
+    if (!tool.present && tool.acts?.installs) run(door, 'install');
   }, [install, onInstallTaken, tool.present, tool.doors, run, door]);
 
   const labelOf = (name: string | null) => {

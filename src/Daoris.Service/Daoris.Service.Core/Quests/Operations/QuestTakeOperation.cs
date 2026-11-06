@@ -37,16 +37,14 @@ internal sealed class QuestTakeOperation : IQuestOperation
     /// unchanged, and says <see cref="QuestMove.ClaimLost"/> where the state allowed it but this machine's take on the quest lost
     /// (WAITCLAIM2).
     /// </returns>
-    /// <param name="asked">The clock's moment the caller asked at, before it queued for the write, so a take measures that wait (FABRIC-CLOSE1w).</param>
     /// <param name="answers">How a done answers the quest's requirements (DRIFT1d); a departure among them holds the chain's next step.</param>
     /// <param name="whileOpen">A decline that applies only while the quest is open (PAUSE1c); ignored on any other move.</param>
     /// <param name="noteParts">The note's parts beside it (QUESTCLOSE1b1); only with a note.</param>
     /// <param name="byAgent">An agent's done, refused on a quest a closure graph binds or a step its source's reopen holds (FABRIC-CLOSE1a).</param>
-    /// <param name="taker">Who takes (FABRIC-CLOSE1o), which a take judges the bind named for it by; null names no session.</param>
     /// <param name="session">The session closing it through its connector (HANDBACK1), kept on a done or a decline.</param>
     internal async Task<QuestMove> MoveAsync(
-        QuestTx tx, string id, QuestStatus status, string? note, DateTimeOffset now, long asked, IReadOnlyList<QuestAnswer>? answers,
-        bool whileOpen, string? noteParts, bool byAgent, QuestTaker? taker, string? session)
+        QuestTx tx, string id, QuestStatus status, string? note, DateTimeOffset now, IReadOnlyList<QuestAnswer>? answers,
+        bool whileOpen, string? noteParts, bool byAgent, string? session)
     {
         var held = await tx.FindAsync(id).ConfigureAwait(false);
 
@@ -99,27 +97,6 @@ internal sealed class QuestTakeOperation : IQuestOperation
                 NoteParts: noteParts, Submission: found, Session: session)).ConfigureAwait(false);
         var moved = QuestLog.Replay([.. history, operation])!;
 
-        // FABRIC-CLOSE1l (CLOSE1f): a take whose graph the driver named binds in this same write, judged by the replay's rule as
-        // every bind is, so no agent's done can land between the take and its bind. FABRIC-CLOSE1o: the row is consumed here
-        // whatever it makes of it, and binds only for its owner, judged at the take's own moment, never by a look before it.
-        // FABRIC-CLOSE1w: that moment is the one inside this write, the caller's advanced by the wait for it, so a take queued past
-        // the expiry binds nothing. The operations keep the caller's moment, as every verb's do.
-        var takeBind = QuestTakeBind.None;
-        if (status == QuestStatus.Taken && await tx.Of<QuestBindOperation>().TakeBindAsync(tx, id).ConfigureAwait(false) is { } named)
-        {
-            takeBind = named.Judge(taker, history, moved.Workspace, now + tx.Time.GetElapsedTime(asked));
-            var bind = new QuestOperation(id, QuestOperationKind.Bound, tx.Machine, 0, now, named.Graph);
-            if (takeBind == QuestTakeBind.Bound && QuestLog.Applies(moved, bind))
-            {
-                var bound = await tx.AppendAsync(bind).ConfigureAwait(false);
-                moved = QuestLog.Replay([.. history, operation, bound])!;
-            }
-            else if (takeBind == QuestTakeBind.Bound)
-            {
-                takeBind = QuestTakeBind.None;
-            }
-        }
-
         await tx.WriteCacheAsync(moved).ConfigureAwait(false);
 
         // A close that finishes a chain's step publishes the next one IN THE SAME TRANSACTION (D65 §4): there is no moment at which the
@@ -128,6 +105,6 @@ internal sealed class QuestTakeOperation : IQuestOperation
         Quest? followUp = null;
         if (status == QuestStatus.Done && !moved.Held) followUp = await tx.PublishNextAsync(moved, now).ConfigureAwait(false);
 
-        return new QuestMove(moved, Moved: true, followUp) { TakeBind = takeBind };
+        return new QuestMove(moved, Moved: true, followUp);
     }
 }

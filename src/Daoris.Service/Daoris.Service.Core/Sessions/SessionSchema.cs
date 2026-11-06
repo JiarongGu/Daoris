@@ -152,7 +152,14 @@ internal static class SessionSchema
         // CHATTAKE1 (D167, the design's §1.2 rule 2): the quest a conversation took, which `took` alone never said. It travels, as the
         // entry does, since a teammate's reader keys the quest by it. A record from before says none, which is the old reading.
         await SchemaColumns.EnsureAsync(db, "sessions", "took_quest", "took_quest TEXT NULL", ct).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(db, "sessions", "took_bind", "took_bind TEXT NULL", ct).ConfigureAwait(false);
+
+        // The take's bind is gone with the column that said why one did not bind.
+        if (await SchemaColumns.HasAsync(db, "sessions", "took_bind", ct).ConfigureAwait(false))
+        {
+            await using var dropBind = db.Command();
+            dropBind.CommandText = "ALTER TABLE sessions DROP COLUMN took_bind";
+            await dropBind.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
 
         // HELPMODE1a2 (D183 point 3): the access mode an Ask Daoris record's run got. This machine's own, as `opinion` is: no wire carries
         // it, and a help record from before says none, which reads as restricted, what it ran under.

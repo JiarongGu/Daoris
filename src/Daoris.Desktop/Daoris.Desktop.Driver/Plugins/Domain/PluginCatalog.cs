@@ -436,7 +436,10 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                         Maker: Text(row, "maker")?.Trim() is { Length: > 0 } maker ? maker : null,
                         // OWNSPACE1c (D175): only JSON true says the agent's own home is nobody's; the CLI reads it the same.
                         OwnHome: row.ValueKind == JsonValueKind.Object
-                            && row.TryGetProperty("ownHome", out var ownHome) && ownHome.ValueKind == JsonValueKind.True));
+                            && row.TryGetProperty("ownHome", out var ownHome) && ownHome.ValueKind == JsonValueKind.True,
+                        // COAGENT1e: the harness's own words for its two other postures, read as `product` is.
+                        FullPosture: Text(row, "fullPosture")?.Trim() is { Length: > 0 } full ? full : null,
+                        AskingPosture: Text(row, "askingPosture")?.Trim() is { Length: > 0 } asking ? asking : null));
                 }
             }
 

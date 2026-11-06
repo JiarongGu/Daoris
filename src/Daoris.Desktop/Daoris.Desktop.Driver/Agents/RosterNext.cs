@@ -74,7 +74,9 @@ internal sealed class RosterNext(HarnessRoster roster)
         var scope = roster.Settings.Set(agent);
         var toolchain = OwnersToolchain(agent);
         if (toolchain is not null) scope = roster.Walked(scope, agent, toolchain);
-        if (toolchain is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null) return new NextStart(null, NextReason.NoAccount, []);
+        // The card speaks for the account's own door; each other door whose answer differs is said apart (s-ix o1 to o3).
+        var doors = toolchain is null ? [] : DoorsDiffering(agent, toolchain.StartsInOwnHome);
+        if (toolchain is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null) return new NextStart(null, NextReason.NoAccount, []) { Doors = doors };
 
         var now = roster.Clock();
         IReadOnlyList<string> present;
@@ -95,7 +97,30 @@ internal sealed class RosterNext(HarnessRoster roster)
             { IsReady: true, Account: { } named } ready when SaidOut(reads, named) => ready with { Readiness = AccountReadiness.SignedOut },
             var state => state,
         }).ToList();
-        return AccountRotation.Next(scope, kind, tried, present, facts, now);
+        return AccountRotation.Next(scope, kind, tried, present, facts, now) with { Doors = doors };
+    }
+
+    /// <summary>The doors onto <paramref name="owner"/>'s accounts whose start-in-own-home answer is not <paramref name="cardState"/>, in ordinal order.</summary>
+    private IReadOnlyList<DoorStart> DoorsDiffering(string owner, bool cardState)
+    {
+        var differing = new List<DoorStart>();
+        foreach (var name in roster.Adapters.Names.Order(StringComparer.Ordinal))
+        {
+            HarnessToolchain? toolchain;
+            try
+            {
+                toolchain = roster.Adapters.Resolve(name).Toolchain;
+            }
+            catch (DriverException)
+            {
+                continue;
+            }
+
+            if (toolchain is null || !string.Equals(roster.Adapters.Registry.OwnerOfAgent(name).Value, owner, StringComparison.OrdinalIgnoreCase)) continue;
+            if (toolchain.StartsInOwnHome != cardState) differing.Add(new DoorStart(name, toolchain.StartsInOwnHome));
+        }
+
+        return differing;
     }
 
     /// <summary>

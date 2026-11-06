@@ -48,6 +48,9 @@ internal static class AgentListCommand
                 Say($"  {name,-Name} {state}");
             }
 
+            // What an installed agent can do, from its sheet; one not installed is no session to ask it of.
+            if (report.Present && set.Registry.Facts.Of(name)?.Door(name) is { } sheet) Say($"{Under}{SheetLine.Of(sheet)}");
+
             if (!report.Present && toolchain.Install is not null) Say($"{Under}`daoris agent install {name}` installs it, with its own installer");
 
             // The pin, and whether it is in force (TOOL2/D57): a pin whose directory is not there is said missing, with what the driver does

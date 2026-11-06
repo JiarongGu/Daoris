@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// it and the line the look reports. Built with the facts of the start it concludes, and handed to the hold as its conclusion.
 /// </summary>
 internal sealed class RunConclusion(
-    IRunWiring wiring, RunRound run, RunEndings endings, ISessionAdapter adapter, SessionTarget target, ClosureBound? closure, string transcript)
+    IRunWiring wiring, RunRound run, RunEndings endings, ISessionAdapter adapter, SessionTarget target, string transcript)
 {
     public async Task<StartRun> ConcludeAsync(int? exitCode, AcpUsage? used, string? turnFailed, HarnessEnding ended, CancellationToken ct)
     {
@@ -152,16 +152,8 @@ internal sealed class RunConclusion(
         // A session waiting on its own helper goes on in this tree with the answer, so it keeps it, as a park does.
         var waitsOnHelper = HelperWaits.Ended(conclusion.Parts);
         endings.HoldsTree = SessionStates.IsParked(conclusion.State) || swappedOn || waitsOnHelper;
-        // A take its start named a graph for that went unbound (an expired bind, a remote since) is said here once, beside its take's
-        // own answer, since its next start reads it unbound and names nothing.
         return new StartRun(
-            $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}"
-            + ClosureBinding.UnboundAtEnd(
-                closure, after,
-                // Why, read off the session's record only where there is something to say.
-                closure is { Bound: true } && after is { Status: "Taken" or "Done", Closure: null or "" }
-                    ? await StartTargets.TookBindOrNullAsync(service, sessionId, ct).ConfigureAwait(false)
-                    : null),
+            $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",
             true,
             // The stop flag is the "whose decision was this" answer, read once, used for both. A park is not an ending: the record
             // waits on the person, and the attention watch says so from the active list. Nor is a run ended for a changed setup, whose

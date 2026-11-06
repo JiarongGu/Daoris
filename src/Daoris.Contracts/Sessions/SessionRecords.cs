@@ -60,7 +60,6 @@ public sealed record SaidWordResponse(
 /// <param name="Piece">The piece a partner's record writes.</param>
 /// <param name="HelpMode">The access mode an Ask Daoris record's run got.</param>
 /// <param name="Resolved">The downloaded versions its starts were handed.</param>
-/// <param name="TookBind">Why the closure graph named for its take did not bind it.</param>
 public sealed record SessionResponse(
     string Id, string? Quest, string Repository, string Adapter, [property: PageType(SessionPageTypes.State)] string State,
     string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated,
@@ -69,7 +68,7 @@ public sealed record SessionResponse(
     IReadOnlyList<SaidWordResponse>? Said = null,
     [property: PageType(SessionPageTypes.NoteParts)] JsonElement? NoteParts = null,
     string? Opinion = null, string? Serves = null, string? From = null, string? FromWhy = null, string? FromBy = null,
-    string? Entry = null, string? HelpMode = null, IReadOnlyDictionary<string, string>? Access = null, string? TookBind = null,
+    string? Entry = null, string? HelpMode = null, IReadOnlyDictionary<string, string>? Access = null,
     IReadOnlyList<string>? Resolved = null, string? Piece = null, string? TookQuest = null,
     string? Actor = null, string? Choice = null,
     [property: PageType(SessionPageTypes.Asked)] JsonElement? Asked = null,

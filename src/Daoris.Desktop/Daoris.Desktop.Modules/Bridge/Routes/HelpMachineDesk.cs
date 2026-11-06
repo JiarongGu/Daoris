@@ -63,7 +63,7 @@ internal sealed class HelpMachineDesk(DriverContext context)
         // And the branches landings made here, so a hand-off names one the record holds.
         var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
         return HelpRoom.Describe(
-            config, whole.Snapshot, read.Lines, whole.Roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, whole.Standing,
+            config, whole.Snapshot, read.Lines, whole.Roster, asks, whole.Standing,
             plugins, new LandedBranches(_loop.Home).All(),
             // The install's own plugins, which the helper may propose installing by id.
             PluginOffers.Load(context.OffersFolder, _loop.Home, AdapterSet.Built().Names),
@@ -80,7 +80,7 @@ internal sealed class HelpMachineDesk(DriverContext context)
             HelpGrants.Read(_loop.Home, plugins), read.Work?.Units, read.Work?.Unread, read.Work?.Recovery,
             read.NotReadYet,
             // What each line waits on.
-            waits: read.Waits);
+            waits: read.Waits, facts: _loop.Harnesses.Adapters.Registry.Facts);
     }
 
     /// <summary>

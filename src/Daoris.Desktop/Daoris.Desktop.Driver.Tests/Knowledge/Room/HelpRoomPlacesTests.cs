@@ -65,7 +65,7 @@ public sealed class HelpRoomPlacesTests
             "- Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), "
             + "`branches` (a repository's Branches), `history` (a repository's History), "
             + "`workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), "
-            + "`workspace-workflow` (a workspace's Workflow), `workspace-setup` (a workspace's Setup), "
+            + "`workspace-workflow` (a workspace's Workflow), "
             + "`workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).",
             places);
         Assert.Contains(

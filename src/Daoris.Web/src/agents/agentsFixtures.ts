@@ -1,4 +1,4 @@
-import { byTool, type Tool, type ToolDoor } from './tools';
+import { byTool, toolOf, type AgentSheet, type SheetRow, type Tool, type ToolDoor } from './tools';
 import { type AccountSaid, type AgentAccounts, type PoolReceipt, USE_DEFAULTS } from '../settings/accounts/accounts';
 import type { AgentRulesState } from '../settings/repository/AgentRules';
 import { scopeOf } from '../settings/accounts/accountsFixtures';
@@ -12,6 +12,42 @@ const minutesFrom = (minutes: number) => new Date(Date.now() + minutes * 60_000)
 
 /** When the accounts were read: an hour and a quarter ago, today. */
 export const READ = minutesFrom(-75);
+
+/**
+ * The roster's `agents` half as a driver would answer it for these doors: each agent once, its account acts from its doors'
+ * own flags (a door that says nothing signs in and installs), its doors named for it first, each with the rows given.
+ */
+export function sheetsOf(doors: readonly ToolDoor[], rows: (door: ToolDoor) => SheetRow[] = () => []): AgentSheet[] {
+  const names = [...new Set(doors.map(toolOf))];
+  return names.map((name) => {
+    const own = doors.filter((door) => toolOf(door) === name);
+    const ordered = [...own.filter((door) => door.harness === name), ...own.filter((door) => door.harness !== name)];
+    return {
+      id: name,
+      product: ordered.map((door) => door.product).find(Boolean) ?? null,
+      maker: ordered.map((door) => door.maker).find(Boolean) ?? null,
+      mark: ordered.map((door) => door.mark).find(Boolean) ?? null,
+      standIn: false,
+      acts: {
+        signsIn: ordered.some((door) => door.signsIn !== false),
+        takesKey: ordered.some((door) => Boolean(door.takesKey)),
+        deviceCode: ordered.some((door) => Boolean(door.deviceCode)),
+        installs: ordered.some((door) => door.installs !== false),
+      },
+      doors: ordered.map((door) => ({ door: door.harness, wire: door.wire === 'acp' ? 'acp' as const : 'pipe' as const, rows: rows(door) })),
+      lead: ordered[0]?.harness ?? null,
+    };
+  });
+}
+
+/** A bridge's `invoke` whose roster answer carries the `agents` half made from its doors, unless the test wrote its own. */
+export const sheeted = (invoke: (...call: any[]) => Promise<unknown>) => async (...call: any[]): Promise<unknown> => {
+  const answer = await invoke(...call) as { harnesses?: ToolDoor[]; agents?: unknown } | null;
+  return call[1] !== 'HARNESSES' || !answer?.harnesses || answer.agents ? answer : { ...answer, agents: sheetsOf(answer.harnesses) };
+};
+
+/** The roster's tools with their sheet, as the place builds them from a roster that carries `agents`. */
+export const toolsOf = (doors: readonly ToolDoor[], rows?: (door: ToolDoor) => SheetRow[]): Tool[] => byTool(doors, sheetsOf(doors, rows));
 
 const CLAUDE: ToolDoor = {
   harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4 (Claude Code)',
@@ -50,7 +86,28 @@ const DECLARED: ToolDoor = {
 
 /** The roster as the place reads it, a door a row, and the agents a person has, each once. */
 export const DOORS: ToolDoor[] = [CLAUDE, CLAUDE_ACP, CODEX, DSH, DECLARED];
-export const TOOLS: Tool[] = byTool(DOORS);
+const row = (capability: string, value: string | null, source: SheetRow['source'], fallback = ''): SheetRow => ({
+  capability, value, source, evidence: source === 'absent' ? null : `${capability} evidence`, applies: 'any', fallback,
+});
+
+/** A door's sheet as a driver answers it: the native door declares most, the protocol door's come from its opening. */
+function sheetRows(door: ToolDoor): SheetRow[] {
+  const protocol = door.wire === 'acp';
+  return [
+    row('door', protocol ? 'protocol' : 'native', 'declared'),
+    row('conversation', 'yes', 'declared'),
+    row('resume', protocol ? 'yes' : 'no', protocol ? 'negotiated' : 'declared'),
+    row('words-at-next-step', protocol ? 'yes' : 'no', 'declared'),
+    row('steering', null, 'absent', 'Now waits for the turn to end.'),
+    row('postures', 'ordinary, asking, full', 'declared'),
+    row('takes-rules', door.takesRules ? 'yes' : 'no', 'declared'),
+    row('held-requests', protocol ? 'yes' : 'no', protocol ? 'measured' : 'declared'),
+    row('servers-on-wire', protocol ? 'yes' : 'no', 'declared'),
+    row('confinement', null, 'absent', 'A partner is not confined.'),
+  ];
+}
+
+export const TOOLS: Tool[] = toolsOf(DOORS, sheetRows);
 export const CLAUDE_TOOL = TOOLS.find((tool) => tool.name === 'claude-code')!;
 export const CODEX_TOOL = TOOLS.find((tool) => tool.name === 'codex')!;
 export const DSH_TOOL = TOOLS.find((tool) => tool.name === 'dsh')!;
@@ -61,7 +118,7 @@ export const DSH_TOOL = TOOLS.find((tool) => tool.name === 'dsh')!;
  * named no organisation, only its plan. Each row says what tells it apart, once.
  */
 const ORGS_HOME = 'C:/somewhere/data/harnesses/claude-code';
-export const ORGS_TOOL: Tool = byTool([{
+export const ORGS_TOOL: Tool = toolsOf([{
   ...CLAUDE, ownLogin: 'in', ownAccount: 'person@example.invalid', ownOrg: 'Org A',
   ownPlan: 'max',
   profiles: [
@@ -144,7 +201,7 @@ export const CODEX_USE: AgentAccounts = {
  * Codex with no account of Daoris's, and your own sign-in's windows read at a press before POOL1c (CODEXUSE3): a reading kept
  * that the page no longer shows, since Daoris never asks your own sign-in (D197 point 3).
  */
-export const CODEX_OWN_TOOL: Tool = byTool([{ ...CODEX, profiles: [] }])[0]!;
+export const CODEX_OWN_TOOL: Tool = toolsOf([{ ...CODEX, profiles: [] }])[0]!;
 
 const OWN_READ: AgentAccounts['own'] & { said: AccountSaid } = {
   said: {
@@ -174,7 +231,7 @@ const CODEX_READ_DOOR: ToolDoor = {
   ],
 };
 
-export const CODEX_READ_TOOL: Tool = byTool([CODEX_READ_DOOR])[0]!;
+export const CODEX_READ_TOOL: Tool = toolsOf([CODEX_READ_DOOR])[0]!;
 
 export const CODEX_READ_USE: AgentAccounts = {
   agent: 'codex',
@@ -226,7 +283,7 @@ const INSTALL_DOOR: ToolDoor = {
   ],
 };
 
-export const INSTALL_TOOL: Tool = byTool([
+export const INSTALL_TOOL: Tool = toolsOf([
   INSTALL_DOOR, { ...CLAUDE_ACP, version: '0.84.0', profiles: INSTALL_DOOR.profiles },
 ])[0]!;
 
@@ -267,7 +324,7 @@ const READINGS_DOOR: ToolDoor = {
   ],
 };
 
-export const READINGS_TOOL: Tool = byTool([READINGS_DOOR])[0]!;
+export const READINGS_TOOL: Tool = toolsOf([READINGS_DOOR])[0]!;
 
 export const READINGS_USE: AgentAccounts = {
   agent: 'claude-code',

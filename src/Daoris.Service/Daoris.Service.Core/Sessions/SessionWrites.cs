@@ -201,7 +201,7 @@ internal sealed class SessionWrites(SessionStore store)
     /// Mark that this session took its quest itself (STANDDOWN2) — said by the session's own connector
     /// at the moment of the take. False when there is no such record of this machine's.
     /// </summary>
-    public Task<bool> MarkTookAsync(string id, string? quest = null, CancellationToken ct = default, string? bind = null) => _db.RunAsync<bool>(async () =>
+    public Task<bool> MarkTookAsync(string id, string? quest = null, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
         // CHATTAKE1: a chat has no quest of its own, so the quest it took is named here, which keeps an earlier take's id when none is said.
@@ -211,19 +211,7 @@ internal sealed class SessionWrites(SessionStore store)
             : $"UPDATE sessions SET took = 1, took_quest = $quest, revision = {NextRevision} WHERE id = $id AND origin IS NULL";
         command.Parameters.AddWithValue("$id", id);
         if (quest is not null) command.Parameters.AddWithValue("$quest", quest);
-        if (await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) == 0) return false;
-
-        // CLOSETAKE1: why the take's graph did not bind, kept on this machine's record alone (no revision: it is not pushed).
-        if (bind is not null)
-        {
-            await using var kept = _db.Command();
-            kept.CommandText = "UPDATE sessions SET took_bind = $bind WHERE id = $id AND origin IS NULL";
-            kept.Parameters.AddWithValue("$id", id);
-            kept.Parameters.AddWithValue("$bind", bind);
-            await kept.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        }
-
-        return true;
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) != 0;
     }, ct);
 
     /// <summary>D205's later door: this machine's record only, without a sync revision. Omitted members keep their value.</summary>

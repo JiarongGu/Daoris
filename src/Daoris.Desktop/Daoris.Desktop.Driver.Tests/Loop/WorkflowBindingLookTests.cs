@@ -148,7 +148,15 @@ public sealed class WorkflowBindingLookTests : IDisposable
             service, config, _home, new SessionProcesses(), sync: null,
             harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
-            Runner = runs.Runner,
+            // A start binds its run before its take, and the look says what it bound: the stand-in's run binds as the real start does.
+            Runner = async (start, opened, ct) =>
+            {
+                var bound = await WorkflowRunStart.AtStartAsync(
+                    new WorkflowStarted(start.Quest, start.Workspace), new StartWorld(service), _home, DriverConfig.Parse(File.ReadAllText(config)), [],
+                    () => DateTimeOffset.UtcNow, ct);
+                if (bound.Came == WorkflowBindCame.Bound) runs.Keeping!.Bound(bound);
+                return await runs.Runner(start, opened, ct);
+            },
         };
         runs.Keeping = watch.Running;
         return (watch, runs);

@@ -39,7 +39,6 @@ public static class SessionAnswers
         Entry: s.Entry,
         HelpMode: loopback ? s.HelpMode : null,
         Access: loopback ? s.Access : null,
-        TookBind: loopback ? s.TookBind : null,
         Resolved: loopback ? s.Resolved : null,
         Piece: loopback ? s.Piece : null,
         TookQuest: loopback ? s.TookQuest : null,

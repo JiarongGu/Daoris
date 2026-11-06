@@ -2,7 +2,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>Answering a quest: take, done, ready, decline or wait.</summary>
 internal sealed class QuestResponses(
-    QuestStore quests, QuestReviews reviews, QuestAnswering answering, QuestReadies readies, QuestGraphBinds binds, QuestRemoteClaims claims)
+    QuestStore quests, QuestReviews reviews, QuestAnswering answering, QuestReadies readies, QuestRemoteClaims claims)
 {
     /// <summary>
     /// Answer a quest: take, done, or decline. Declining without a reason is refused — a bare refusal
@@ -16,8 +16,8 @@ internal sealed class QuestResponses(
         IReadOnlyList<QuestAnswer>? answers,
         // A decline that applies only while the quest is open (D132 point 10): an abandon's.
         bool whileOpen,
-        // The session answering, as its connector's intake names it: a take binds the graph named for that session only.
-        // A done or a decline keeps it on its operation, as a ready's submission does (D219): which session wrote the handback.
+        // The session answering, as its connector's intake names it. A done or a decline keeps it on its operation, as a ready's
+        // submission does (D219): which session wrote the handback.
         string? session,
         // The note is a session's handback (D219): the connector's `quest_respond`, so a close whose note only points
         // elsewhere is refused. Every other door, the person's among them, keeps its words as given.
@@ -107,7 +107,6 @@ internal sealed class QuestResponses(
         // it reads at that moment, never by a look taken here before it.
         var move = await quests.MoveAsync(
                 id.TrimStart('#'), status.Value, reason, now, ct, answered, whileOpen, byAgent: status == QuestStatus.Done,
-                taker: status == QuestStatus.Taken ? new QuestTaker(session, binds.SyncsThroughRemote) : null,
                 // A close names the session that wrote its handback, in the same write.
                 session: status == QuestStatus.Taken ? null : session)
             .ConfigureAwait(false);
@@ -146,8 +145,6 @@ internal sealed class QuestResponses(
             return new(
                 QuestRespondRefusal.None,
                 $"Quest `#{move.Quest.Id}` is now {move.Quest.Status}.{await answering.AnsweredAsync(move.Quest, ct).ConfigureAwait(false)}"
-                + QuestGraphBinds.BoundAtTake(move.Quest)
-                + QuestGraphBinds.UnboundAtTake(move.TakeBind)
                 // Only the next sync can say whether another machine took it first, so the answer says
                 // what that would mean; a quest nobody shares has no other machine to take it.
                 + (whileOpen && await claims.SharedAtAsync(move.Quest, ct).ConfigureAwait(false) is not null
@@ -155,7 +152,7 @@ internal sealed class QuestResponses(
                       + "sync keeps this decline on the quest as a conflict, and the take stands."
                     : "")
                 + QuestWords.Then(move.FollowUp),
-                move.Quest) { TakeBind = move.TakeBind };
+                move.Quest);
         }
 
         // A close on the winner's take, made after the pass that found this machine's take lost: the stand-down

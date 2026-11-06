@@ -73,15 +73,13 @@ export const PLACE_KEPT: readonly { was: HelpPlace; now: HelpPlace }[] = [
 ];
 
 /**
- * A workspace's page's parts (UX6g2b, D150 §4.3): its three tabs and its setup's sections (`workspace-setup` is its first), each the door that opens it.
+ * A workspace's page's parts (UX6g2b, D150 §4.3): its three tabs and its two sections, each the door that opens it.
  * Prefixed, since a repository's page has three of the tabs' names.
  */
 const WORKSPACE_PARTS: Readonly<Record<string, Pick<StarterDoor, 'workspaceTab' | 'workspaceSection'>>> = {
   'workspace-details': { workspaceTab: 'details' },
   'workspace-branches': { workspaceTab: 'branches' },
   'workspace-workflow': { workspaceTab: 'workflow' },
-  // The workspace's setup is its place's now: the same door as its defaults, the first of its sections.
-  'workspace-setup': { workspaceSection: 'defaults' },
   'workspace-defaults': { workspaceSection: 'defaults' },
   'workspace-remote': { workspaceSection: 'remote' },
 };
@@ -130,9 +128,9 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
   { within: 'projects', part: 'add' }, { within: 'projects', part: 'import' }, { within: 'projects', part: 'setup' },
   // UX6h4: a repository's Branches and History tabs (UX6h1), likewise on the repository Repositories has chosen.
   { within: 'projects', part: 'branches' }, { within: 'projects', part: 'history' },
-  // UX6g2b (D161 §3, D150 §4.3): a workspace's page's four tabs and its Setup's two sections (`WORKSPACE_PARTS`).
+  // UX6g2b (D161 §3, D150 §4.3): a workspace's page's tabs and its two sections (`WORKSPACE_PARTS`).
   { within: 'projects', part: 'workspace-details' }, { within: 'projects', part: 'workspace-branches' },
-  { within: 'projects', part: 'workspace-workflow' }, { within: 'projects', part: 'workspace-setup' },
+  { within: 'projects', part: 'workspace-workflow' },
   { within: 'projects', part: 'workspace-defaults' }, { within: 'projects', part: 'workspace-remote' },
   // UX6i2a: Knowledge's two modes (UX6i), by the names its list's choice shows.
   { within: 'knowledge', part: 'search' }, { within: 'knowledge', part: 'convergence' },

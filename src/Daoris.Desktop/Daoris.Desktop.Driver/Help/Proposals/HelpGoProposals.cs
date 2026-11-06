@@ -359,10 +359,10 @@ public static class HelpPlaces
         ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"), ("projects", "setup", "a repository's Setup"),
         // UX6h4: a repository's Branches and History tabs (UX6h1), named apart from a workspace's Branches; likewise no repository.
         ("projects", "branches", "a repository's Branches"), ("projects", "history", "a repository's History"),
-        // UX6g2b (D161 §3, D150 §4.3): a workspace's page's four tabs and its Setup's two sections, prefixed since a
-        // repository's page has three of the tabs' names; a go to one names no workspace, so the one in view opens.
+        // UX6g2b (D161 §3, D150 §4.3): a workspace's page's tabs and its two sections, prefixed since a repository's page has
+        // three of the tabs' names; a go to one names no workspace, so the one in view opens.
         ("projects", "workspace-details", "a workspace's Details"), ("projects", "workspace-branches", "a workspace's Branches"),
-        ("projects", "workspace-workflow", "a workspace's Workflow"), ("projects", "workspace-setup", "a workspace's Setup"),
+        ("projects", "workspace-workflow", "a workspace's Workflow"),
         ("projects", "workspace-defaults", "a workspace's Defaults"), ("projects", "workspace-remote", "a workspace's Remote and reach"),
         // UX6i2a: Knowledge's two modes (UX6i), by the names its list's choice shows.
         ("knowledge", "search", "Search"), ("knowledge", "convergence", "Convergence"),

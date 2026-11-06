@@ -19,7 +19,7 @@ namespace Daoris.Knowledge;
 /// push (D69), so a take that lost is known before any work starts.</para>
 ///
 /// <para>The exchange is the root that wires: each responsibility is a type of its own
-/// (<see cref="QuestPublishing"/>, <see cref="QuestResponses"/>, <see cref="QuestGraphBinds"/>, <see cref="QuestReadies"/>,
+/// (<see cref="QuestPublishing"/>, <see cref="QuestResponses"/>,<see cref="QuestReadies"/>,
 /// <see cref="QuestGraphCloses"/>, <see cref="QuestPersonMoves"/>, <see cref="QuestBringForwards"/>, <see cref="QuestEvidenceReads"/>,
 /// <see cref="QuestAnswering"/>, <see cref="QuestDeletes"/>, <see cref="QuestWorkflowKinds"/>, <see cref="QuestReceived"/>,
 /// <see cref="QuestCarry"/>), and each door here is one line to it.</para>
@@ -60,7 +60,6 @@ public sealed class QuestExchange
     private readonly QuestReceived received;
     private readonly QuestWorkflowKinds kinds;
     private readonly QuestResponses responses;
-    private readonly QuestGraphBinds binds;
     private readonly QuestGraphCloses closes;
     private readonly QuestPersonMoves personMoves;
     private readonly QuestBringForwards bringForwards;
@@ -90,10 +89,9 @@ public sealed class QuestExchange
         kinds = new(quests, asks);
         var claims = new QuestRemoteClaims(service, quests, remotes);
         var answering = new QuestAnswering(asks, reviews);
-        binds = new(quests, remotes);
         publishing = new(service, quests, remotes, asks, reviews, carry, new QuestRequirementJudge(asks), kinds);
         received = new(carry);
-        responses = new(quests, reviews, answering, new QuestReadies(quests, reviews, answering), binds, claims);
+        responses = new(quests, reviews, answering, new QuestReadies(quests, reviews, answering), claims);
         closes = new(quests);
         personMoves = new(quests, reviews);
         bringForwards = new(quests, service, sessions, claims);
@@ -158,11 +156,6 @@ public sealed class QuestExchange
 
     /// <summary>The lost take's words for a move the store refused with <see cref="QuestMove.ClaimLost"/>.</summary>
     internal static string LostTake(string id, string what, QuestMove move) => QuestWords.LostTake(id, what, move);
-
-    /// <summary>The driver binds a taken quest to the graph that closes it; see <see cref="QuestGraphBinds.BindAsync"/>.</summary>
-    public Task<QuestRespondOutcome> BindAsync(
-        string id, string? graph, DateTimeOffset now, CancellationToken ct = default, bool atTake = false, string? session = null) =>
-        binds.BindAsync(id, graph, now, ct, atTake, session);
 
     /// <summary>The graph's close door; see <see cref="QuestGraphCloses.CloseAsync"/>.</summary>
     public Task<QuestCloseOutcome> CloseAsync(

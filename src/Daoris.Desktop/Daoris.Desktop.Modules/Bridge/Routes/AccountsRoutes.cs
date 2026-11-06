@@ -140,6 +140,8 @@ public sealed class AccountsRoutes(DriverLoop loop)
             next.Unused,
             next.Seen,
             Others = next.Others.Select(held => new { held.Account, Hold = Code(held.Hold.ToString()), held.Until }).ToArray(),
+            // The card speaks for the account's own door; each other door that answers differently is said apart.
+            Doors = next.Doors.Select(door => new { door.Door, door.StartsInOwnHome }).ToArray(),
         };
 
         static string Code(string name) => JsonNamingPolicy.CamelCase.ConvertName(name);

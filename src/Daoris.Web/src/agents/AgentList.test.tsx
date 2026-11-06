@@ -5,10 +5,9 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
-import { byTool } from './tools';
 import { AgentList, AgentStrip } from './AgentList';
 import { agentRows } from './agents';
-import { CLAUDE_USE, CODEX_USE, TOOLS } from './agentsFixtures';
+import { CLAUDE_USE, CODEX_USE, TOOLS, toolsOf } from './agentsFixtures';
 
 // The Agents list closed to its strip (D118 §3a; ACCTUX2): each agent a mark a person tells from its neighbours, where the
 // first character alone drew Claude Code and Codex both `C`.
@@ -35,7 +34,7 @@ describe('the agent list, an agent Daoris has no installer for', () => {
   beforeEach(() => i18n.changeLanguage('en'));
   afterEach(cleanup);
 
-  const rows = (installs?: boolean) => agentRows(byTool([
+  const rows = (installs?: boolean) => agentRows(toolsOf([
     { harness: 'forge', product: 'Forge', maker: 'Acme', present: false, profiles: [], ...(installs === undefined ? {} : { installs }) },
   ]), undefined);
 

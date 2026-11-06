@@ -49,7 +49,7 @@ public sealed class HelpRoomMachineNowTests
                 "Example.Lands", "1.0.0", Convert.ToBase64String(new byte[64]), Path.Combine(home, "feed"))));
 
             var machine = HelpRoom.Describe(
-                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: PluginCatalog.Load(home));
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0, plugins: PluginCatalog.Load(home));
 
             var plugin = Assert.Single(machine.Plugins);
             Assert.Equal(("example.lands", false, null), (plugin.Id, plugin.Enabled, plugin.Problem));
@@ -92,7 +92,7 @@ public sealed class HelpRoomMachineNowTests
             Pushed = true, PullRequest = "https://example.test/pr/9",
         };
 
-        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, landed: [landed]);
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0, landed: [landed]);
 
         Assert.Equal(new HelpLanded("engine", "feature/q2-second", "s2a3b4c5", true, "https://example.test/pr/9"), Assert.Single(machine.Landed));
     }
@@ -111,7 +111,7 @@ public sealed class HelpRoomMachineNowTests
                 AcceptedBy = acceptedBy, Rule = new LandedRule(null, AutoAccept: true, LandingSource.Workspace) { Access = access },
             };
 
-        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0,
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0,
             landed: [Landed("s1", AcceptedBy.Auto, "machine"), Landed("s2", AcceptedBy.Auto, null), Landed("s3", AcceptedBy.Person, "machine")]);
 
         Assert.Equal(new string?[] { "machine", null, null }, machine.Landed.Select(landed => landed.Access));
@@ -192,7 +192,7 @@ public sealed class HelpRoomMachineNowTests
         Assert.True(active.Single(session => session.Id == "s3").Answered);
         Assert.False(active.Single(session => session.Id == "s4").Answered);
 
-        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], active), [], [], _ => null, asks: 0);
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], active), [], [], asks: 0);
 
         Assert.Equal(
             [new HelpWaitingSession("s1", "console-ui"), new HelpWaitingSession("s4", "engine"), new HelpWaitingSession("s6", "ask #a1") { Ask = "a1" }],
@@ -243,7 +243,7 @@ public sealed class HelpRoomMachineNowTests
             Archived = new Dictionary<string, DateTimeOffset> { ["a1"] = DateTimeOffset.UtcNow },
         };
 
-        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, sessions: look);
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0, sessions: look);
 
         var sessions = machine.Sessions!;
         Assert.Equal((1, 0, 1, 0, 13), (sessions.You, sessions.Review, sessions.Working, sessions.Later, sessions.Ended));
@@ -251,7 +251,7 @@ public sealed class HelpRoomMachineNowTests
         Assert.Equal(new HelpEndedSession("e12", "game"), sessions.Listed[0]);
         Assert.Equal(3, sessions.Ended - sessions.Listed.Count);
         Assert.DoesNotContain(sessions.Listed, each => each.Id is "h1" or "laptop/t1" or "a1");
-        Assert.Null(HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0).Sessions);
+        Assert.Null(HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0).Sessions);
     }
 
     /// <summary>
@@ -280,7 +280,7 @@ public sealed class HelpRoomMachineNowTests
             .WithPausedAsk("a2none00", new WorkPause(null, none))
             .WithPausedAsk("a1b2c3d4", new WorkPause(null, none));
 
-        var machine = HelpRoom.Describe(config, new Snapshot([], [], []), [], [], _ => null, asks: 0);
+        var machine = HelpRoom.Describe(config, new Snapshot([], [], []), [], [], asks: 0);
 
         Assert.Equal(
             [new PausedBy(WorkScope.Ask, "a1b2c3d4"), new PausedBy(WorkScope.Ask, "a2none00"), new PausedBy(WorkScope.Quest, "q9d0aa00")],
@@ -326,17 +326,17 @@ public sealed class HelpRoomMachineNowTests
     {
         var reading = new HistoryReading("work") { Quests = 1 };
 
-        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, history: [reading]);
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0, history: [reading]);
 
         Assert.Same(reading, Assert.Single(machine.History!));
-        Assert.Null(HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0).History);
+        Assert.Null(HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0).History);
     }
 
     [Fact]
     public void The_held_quests_are_described_from_the_loops_last_look()
     {
         var machine = HelpRoom.Describe(
-            DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, held: [new HeldQuest("q2taken0", "engine", "s7")]);
+            DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0, held: [new HeldQuest("q2taken0", "engine", "s7")]);
 
         Assert.Equal(new HeldQuest("q2taken0", "engine", "s7"), Assert.Single(machine.Held));
     }
@@ -364,19 +364,19 @@ public sealed class HelpRoomMachineNowTests
     {
         var files = new HelpBrowserFacts("daoris", "system", "offer", ["https://site.example/board"]);
 
-        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, browser: files);
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0, browser: files);
 
         var browser = machine.Browser!;
         Assert.Equal(("daoris", "system", "offer"), (browser.Browser, browser.Links, browser.Extensions));
         Assert.Equal(["https://site.example/board"], browser.Favorites);
-        Assert.Null(HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0).Browser);
+        Assert.Null(HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0).Browser);
     }
 
     [Fact]
     public void The_parked_quests_are_described_from_the_loops_last_tick()
     {
         var machine = HelpRoom.Describe(
-            DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, parked: [new ParkedQuest("q1a2b3c4", "engine")]);
+            DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0, parked: [new ParkedQuest("q1a2b3c4", "engine")]);
 
         Assert.Equal(new ParkedQuest("q1a2b3c4", "engine"), Assert.Single(machine.Parked));
     }

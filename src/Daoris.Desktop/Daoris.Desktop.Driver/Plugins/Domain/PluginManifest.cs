@@ -22,6 +22,14 @@ namespace Daoris.Driver;
 /// <paramref name="ProfileVariable"/> otherwise always takes a Daoris account. Only JSON <c>true</c> says it; never a reason to
 /// refuse the plugin. A built-in harness never reads it. Twin: the CLI's <c>ownHome</c>.
 /// </param>
+/// <param name="FullPosture">
+/// The harness's own mode that asks nothing (COAGENT1e, the co-agent design §3.4), as <c>posture</c> names its ordinary one: the word
+/// a full-access start hands it, where a start would otherwise be refused naming the agent. Trimmed; null where none is declared.
+/// </param>
+/// <param name="AskingPosture">
+/// The harness's own mode that asks the person (COAGENT1e), the word a start under the asking posture hands it, so a request it holds
+/// reaches the person; null where none is declared, and such a start is refused naming the agent.
+/// </param>
 public sealed record PluginHarness(
     string Name,
     IReadOnlyList<string> Command,
@@ -33,7 +41,9 @@ public sealed record PluginHarness(
     string? AccountOf = null,
     string? Product = null,
     string? Maker = null,
-    bool OwnHome = false);
+    bool OwnHome = false,
+    string? FullPosture = null,
+    string? AskingPosture = null);
 
 /// <summary>
 /// What a plugin speaks (D64 §4): the process, and the points it listens on.

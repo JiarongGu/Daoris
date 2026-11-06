@@ -450,7 +450,7 @@ public sealed class McpToolsTests : McpToolsFixture
             then: [new QuestStep("Owner", "Check {parent}", "Look at it.")]);
         var owner = new QuestTools(_quests, exchange, In("Owner"), intake: new IntakeScope(null, "s0a1b2c3"));
         await owner.RespondToQuestAsync(quest.Id, "take");
-        Assert.Equal(QuestRespondRefusal.None, (await exchange.BindAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Refusal);
+        Assert.True((await exchange.Store.SeedBound(quest.Id, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
 
         await owner.RespondToQuestAsync(quest.Id, "ready", "Built.");
 
@@ -477,7 +477,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var quest = await _quests.PublishAsync("Asker", "Owner", "Write the bridge report", "For the review.", DateTimeOffset.UtcNow);
         var owner = new QuestTools(_quests, exchange, In("Owner"), intake: new IntakeScope(null, "s0a1b2c3"));
         await owner.RespondToQuestAsync(quest.Id, "take");
-        Assert.Equal(QuestRespondRefusal.None, (await exchange.BindAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Refusal);
+        Assert.True((await exchange.Store.SeedBound(quest.Id, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
         await owner.RespondToQuestAsync(quest.Id, "ready", "Built.");
         var submitted = (await _quests.FindAsync(quest.Id))!.Submission!;
 
