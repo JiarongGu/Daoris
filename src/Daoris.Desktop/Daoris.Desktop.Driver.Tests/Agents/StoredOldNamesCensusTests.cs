@@ -90,7 +90,7 @@ public sealed class StoredOldNamesCensusTests : IDisposable
             "Daoris.Desktop/Daoris.Desktop.Driver/Agents/Registry/RecordIds.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Store/DesktopStoreSteps.cs",
         ],
-        ["Ask Daoris's wired file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpWired.cs"],
+        ["Ask Daoris's wired file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/WiredFilesStep.cs"],
         ["the usage entries"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Agents/Usage.cs",
@@ -123,6 +123,7 @@ public sealed class StoredOldNamesCensusTests : IDisposable
         ["the driver's state"] = ["Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverStateSlice.cs"],
         ["not a seam's word"] =
         [
+            "Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpWired.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Platform/DaorisHome.cs",
             "Daoris.Service/Daoris.Service.Core/Platform/DaorisHome.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Service/RunningAddress.cs",

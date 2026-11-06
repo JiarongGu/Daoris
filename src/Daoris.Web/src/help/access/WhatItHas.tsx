@@ -93,7 +93,7 @@ function Receipt({ receipt, onDoor, onMode }: {
             {t(full ? 'help.mode.full' : 'help.mode.restricted')}
           </span>
         </Field>
-        <Field name="agent">{[receipt.harness, receipt.version].filter(Boolean).join(' ')}</Field>
+        <Field name="agent">{[receipt.door, receipt.version].filter(Boolean).join(' ')}</Field>
         <Field name="account">{receipt.account ?? <span className="text-ink-soft">{t('help.wired.account.own')}</span>}</Field>
         <Field name="folder"><PathText path={receipt.folder} /></Field>
         <Field name="tools">

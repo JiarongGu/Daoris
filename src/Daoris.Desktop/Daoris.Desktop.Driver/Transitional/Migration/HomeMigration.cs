@@ -42,6 +42,7 @@ public static class HomeMigration
         new TurnMarksStep(),
         new StoreNamesStep(),
         new BindingFilesStep(),
+        new WiredFilesStep(),
     ];
 
     /// <summary>

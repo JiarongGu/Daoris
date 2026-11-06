@@ -39,7 +39,7 @@ public sealed class HelpHousekeepingTests : IDisposable
     private void Handed(string session, params string[] housekeeping) =>
         new HelpWired(_home).Keep(session, new HelpReceipt
         {
-            At = DateTimeOffset.UtcNow, Harness = "codex-acp", Folder = HelpRoom.PathOf(_home, "aurora"), Housekeeping = housekeeping,
+            At = DateTimeOffset.UtcNow, Door = "codex-acp", Folder = HelpRoom.PathOf(_home, "aurora"), Housekeeping = housekeeping,
         });
 
     /// <summary>

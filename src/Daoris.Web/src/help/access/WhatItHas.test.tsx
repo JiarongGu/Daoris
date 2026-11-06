@@ -12,8 +12,8 @@ import { WhatItHas } from './WhatItHas';
 // disclosure, and a conversation from before said as not recorded.
 
 const RESTRICTED: HelpReceipt = {
-  at: '2026-10-19T10:00:00+00:00', start: 'going-on', mode: 'restricted', harness: 'claude-code-acp', version: '0.9.1',
-  account: 'personal', door: 'acp', posture: 'default', permissionMode: null, folder: 'C:/daoris/help/room',
+  at: '2026-10-19T10:00:00+00:00', start: 'going-on', mode: 'restricted', door: 'claude-code-acp', version: '0.9.1',
+  account: 'personal', transport: 'protocol', posture: 'default', permissionMode: null, folder: 'C:/daoris/help/room',
   tools: ['mcp__daoris-knowledge__search', 'mcp__daoris-knowledge__read'],
   skills: [{ name: 'browser:look', state: 'unverified', why: null }, { name: 'notes:write', state: 'withheld', why: 'no-door' }],
   servers: [

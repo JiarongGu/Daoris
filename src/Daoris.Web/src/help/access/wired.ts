@@ -42,11 +42,12 @@ export type HelpReceipt = {
   start: string;
   /** The mode it ran under, the effective one. */
   mode: string;
-  harness: string;
+  /** The door it ran on, by its id. */
+  door: string;
   version: string | null;
   account: string | null;
-  /** `pipe` (the native door) or `acp` (the protocol door). */
-  door: string;
+  /** `native` or `protocol`. */
+  transport: string;
   posture: string | null;
   permissionMode: string | null;
   folder: string;
