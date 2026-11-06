@@ -163,8 +163,8 @@ example's `node --test`.
 
 - PLUGHOOK1d: ask a pull request's state again once the first pull request opens.
 - FABRIC-PERFORM1l: keep a pull request's fields in the work wire's evidence (`WorkWire.cs:354`).
-- EVENTHOOK1b's rest: the driver's own conversations (an intake's, a helper's, a reviewer's park) told by their marks
-  (`docs/2026-10-24-event-hook-design.md` §9). EVENTHOOK1c's proofs through the built host are `RelayHostProcessTests` (another act's lease
+- EVENTHOOK1b is built whole: the kit's entry and the ending's adapter are in, and an intake's, a helper's and a reviewer's park are
+  not told (D244's note). EVENTHOOK1c's proofs through the built host are `RelayHostProcessTests` (another act's lease
   held for the whole wait, an unwritable lease, a `bin` entry at both places, two `--where` at once, a newer build laid out while a relay
   runs, a plugin through a shim, and the host's own `drive --once` starting the plugin into its job; the swap is a build laid out beside
   the relay's, not the launcher's own rename of `app/`); steps 2 and 3 across real elevations stay unmeasured (UAC off here), `PipeAcross`

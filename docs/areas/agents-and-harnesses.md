@@ -254,8 +254,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     assembly. In the driver the layer is named by `Agents/Layer/` and the providers' folders alone, a vendor's registration and
     options by its folder alone, with no `global using` of it and no layer-own id (`LayerCensusTests`). `Agents/Layer/`, each
     provider folder's `Layer/` and their tests compile only under `DaorisLyntaiLayer`. There Codex's usage question is read through
-    the layer (`LayerUsageRead`, bound when the driver loads) and Claude Code's by today's reader, since the layer's reader reads the
-    installed server's answer as unknown; without it today's readers read both. A layer door's failure enters as a `NormalizedFailure`, built in
+    the layer (`LayerUsageRead`, bound when the driver loads), and Claude Code's too, Lyntai's reader keeping the installed server's
+    null-id model scope; without it today's readers read both. A layer door's failure enters as a `NormalizedFailure`, built in
     `Agents/Layer/` alone and answered by `AgentErrors.OfNormalized` with no table read. (from D213, D248)
 
 ## Where a change goes
@@ -478,10 +478,10 @@ Agents page, and `orient-index` and `code-map` once files move.
   windows are read through the layer where the driver carries it (`LayerUsageRead` over each provider folder's `Layer/` vendor,
   Lyntai's AG21 to AG24): today's command, environment, working folder, client name, patience and exchange order, any version read
   without a probe, the reading named as today's readers name it (a Claude limit row scoped by an object keeps no scope, as today's)
-  and the history's source `layer:<question>`. Claude Code's has its layer vendor and stays on today's reader: the installed server
-  names a scoped row's model with a null `id`, which the layer's reader reads as an unknown answer. The oracle over every recorded
+  and the history's source `layer:<question>`. Claude Code's has its layer vendor and is bound too (`55e372916`): the installed server
+  names a scoped row's model with a null `id`, which Lyntai's reader keeps as the scope. The oracle over every recorded
   answer and both readers' fixtures (`LayerUsageParityTests`) finds the two alike but for named gaps: Claude's server starts with
-  `-p` on the layer (measured to change no answer), and a value the layer's reader cannot recognise, that null `id` among them,
+  `-p` on the layer (measured to change no answer), and a value the layer's reader cannot recognise
   reads its whole answer unknown where today's keeps the rest for the history. The other moves wait on the capabilities requested
   in `docs/2026-11-06-lyntai-requests.md`.
 - **AGENTINFRA1**: an execution-neutral run for remote APIs and hosted runtimes, with scoped availability and explicit
