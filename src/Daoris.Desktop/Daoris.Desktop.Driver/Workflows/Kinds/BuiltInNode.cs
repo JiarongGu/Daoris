@@ -17,6 +17,11 @@ public abstract class BuiltInNode : INodeKind
 
     public virtual string? Problem(NodeDeclaration node) => null;
 
+    public virtual IEnumerable<WireProblem> Problems(NodeGraph graph, NodeDeclaration node) => [];
+
+    /// <summary>The outcomes a node of it is reached with, which its declaration writes; none where its kind is no decision.</summary>
+    public virtual IReadOnlyList<string> Outcomes => [];
+
     public virtual NodePart Part(NodeDeclaration node) => NodePart.Automatic(node.Kind);
 
     public virtual string Offered => PaletteKind.Alone;

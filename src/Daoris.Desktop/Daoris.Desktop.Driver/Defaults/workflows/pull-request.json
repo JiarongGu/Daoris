@@ -21,8 +21,9 @@
       { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "branch" } },
       { "id": "push", "kind": "push", "version": 1, "reach": "performed" },
       { "id": "pull-request", "kind": "github-pull-request/pull-request", "version": 1, "reach": "performed" },
-      { "id": "monitor", "kind": "monitor", "version": 1, "reach": "observed" },
-      { "id": "tidy", "kind": "tidy", "version": 1, "reach": "performed" }
+      { "id": "monitor", "kind": "monitor", "version": 1, "reach": "observed", "outcomes": ["merged", "closed"] },
+      { "id": "tidy", "kind": "tidy", "version": 1, "reach": "performed" },
+      { "id": "closed", "kind": "human", "version": 1, "reach": "pressed" }
     ],
     "wires": [
       { "id": "a", "kind": "after", "from": "work", "to": "requests" },
@@ -33,7 +34,8 @@
       { "id": "c", "kind": "after", "from": "landing", "to": "push" },
       { "id": "d", "kind": "after", "from": "push", "to": "pull-request" },
       { "id": "m", "kind": "after", "from": "pull-request", "to": "monitor" },
-      { "id": "t", "kind": "after", "from": "monitor", "to": "tidy" }
+      { "id": "t", "kind": "when", "from": "monitor", "to": "tidy", "outcome": "merged" },
+      { "id": "x", "kind": "when", "from": "monitor", "to": "closed", "outcome": "closed" }
     ]
   }
 }

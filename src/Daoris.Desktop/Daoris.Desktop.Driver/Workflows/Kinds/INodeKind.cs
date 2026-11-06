@@ -24,6 +24,12 @@ public interface INodeKind
     /// </summary>
     string? Problem(NodeDeclaration node);
 
+    /// <summary>
+    /// What the save refuses of where <paramref name="node"/> stands in <paramref name="graph"/> by its kind's own rules, each against the node it is
+    /// about; the rules every graph is held to are <see cref="NodeGraphs.Problems"/>'.
+    /// </summary>
+    IEnumerable<WireProblem> Problems(NodeGraph graph, NodeDeclaration node);
+
     /// <summary>Its part on the run view: the step it is drawn as, who takes part and their press, and what a version's person part reads it as.</summary>
     NodePart Part(NodeDeclaration node);
 

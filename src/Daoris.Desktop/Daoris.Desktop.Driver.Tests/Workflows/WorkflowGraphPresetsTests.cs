@@ -63,6 +63,11 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Equal(preset == "pull-request" ? "\"branch\"" : "\"integrate\"", land.Options["method"]);
         Assert.Equal(preset == "pull-request", kinds.Contains(NodeKinds.Push) && kinds.Any(kind => kind.EndsWith("/pull-request", StringComparison.Ordinal)));
         Assert.Equal(preset != "pull-request", kinds.Contains(NodeKinds.Integrate));
+        // D245's note: the pull request's monitor routes merged to the tidy and closed to a person's task.
+        var routes = version.Graph.Wires.Where(wire => wire.Kind == WireKinds.When)
+            .Select(wire => (wire.From!.Node, wire.Outcome, version.Graph.Nodes.Single(node => node.Id == wire.To.Node).Kind));
+        (string, string?, string)[] shipped = preset == "pull-request" ? [("monitor", "merged", NodeKinds.Tidy), ("monitor", "closed", NodeKinds.Human)] : [];
+        Assert.Equal(shipped, routes);
         // LANDNODE1c2: the person's Accept is a review before the land, and a preset with no press holds none.
         Assert.Equal(preset != "integrated-no-press", kinds.Contains(NodeKinds.Review));
     }
