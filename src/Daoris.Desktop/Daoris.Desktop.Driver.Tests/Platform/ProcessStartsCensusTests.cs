@@ -134,6 +134,8 @@ public sealed class ProcessStartsCensusTests
         // (the loop's, or a person's for a run going on with the person's words, and a conversation's, ONEWAY1h-iii); its go-on and its retry
         // are a person's (ONEWAY1h-ii). A press, a terminal, and the host the window waits on.
         ["Daoris.Desktop.Driver/Agents/TransportRun.cs"] = StartClass.Person,
+        // The layer's runner (AGENTLYNTAI1 1b-i): its class is its start's, handed in its seat as the run over today's transports hands its.
+        ["Daoris.Desktop.Driver/Agents/Layer/LauncherRunner.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs"] = StartClass.Person,
@@ -184,6 +186,8 @@ public sealed class ProcessStartsCensusTests
         // reviewers, brainstorm passes, workflow nodes, carry-ons and partners (ONEWAY1h-i), a native run's go-on with the person's words
         // (MSG1b) and its resume's one retry (SESSCTX1c) since ONEWAY1h-ii, and a conversation, Ask Daoris's among them, since ONEWAY1h-iii.
         ["Daoris.Desktop.Driver/Agents/TransportRun.cs"] = "piece is null ? ContainedKind.Agent : ContainedKind.Piece",
+        // The layer's runner (AGENTLYNTAI1 1b-i, the agent-lyntai design §5.5): a layer door's turn or read, its kind its seat's.
+        ["Daoris.Desktop.Driver/Agents/Layer/LauncherRunner.cs"] = "seat.Kind",
         // A plugin's hook program, and the kit's trial of it.
         ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = "ContainedKind.Plugin",
         ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = "ContainedKind.Plugin",
