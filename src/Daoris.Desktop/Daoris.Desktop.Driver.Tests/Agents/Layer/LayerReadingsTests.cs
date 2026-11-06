@@ -1,0 +1,136 @@
+using Daoris.Driver;
+using Lyntai.Agents;
+using Lyntai.Inference;
+using SessionEnded = Lyntai.Agents.SessionEnded;
+using SessionStarted = Lyntai.Agents.SessionStarted;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// The events' translation (the agent-lyntai design §5.4): each layer event read once into the readings today's native capture hands its
+/// writer for the same thing, in its order (a failure first, then the conversation named, the lines shown, the events kept), one terminal
+/// a turn, its failure entering through the ingress and a stop Daoris asked read as a stop. On events the tests make.
+/// </summary>
+public sealed class LayerReadingsTests
+{
+    private static readonly DateTimeOffset Now = new(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);
+
+    private static LayerReadings Readings() => new("pipe", new FixedClock(Now), TimeSpan.FromHours(1));
+
+    [Fact]
+    public void The_agent_s_words_are_its_lines_shown_and_one_message_kept()
+    {
+        var readings = Readings().Read(new TextDelta("first\nsecond"));
+
+        Assert.Collection(
+            readings,
+            each => Assert.Equal("first", Assert.IsType<WireReading.Shown>(each).Text),
+            each => Assert.Equal("second", Assert.IsType<WireReading.Shown>(each).Text),
+            each => Assert.Equal(
+                (SessionEventKind.Message, "first\nsecond"),
+                (Assert.IsType<WireReading.Said>(each).Event.Kind, ((WireReading.Said)each).Event.Text)));
+    }
+
+    [Fact]
+    public void The_conversation_is_named_once_and_the_first_id_kept()
+    {
+        var translation = Readings();
+
+        var first = translation.Read(new SessionStarted("conv-1"));
+        var again = translation.Read(new SessionStarted("conv-2"));
+
+        Assert.Equal("conv-1", Assert.IsType<WireReading.ConversationNamed>(Assert.Single(first)).Conversation);
+        Assert.Empty(again);
+        Assert.Equal("conv-1", translation.Conversation);
+    }
+
+    [Fact]
+    public void A_tool_call_and_its_result_are_said_by_the_call_s_name_never_its_id()
+    {
+        var translation = Readings();
+
+        var called = translation.Read(new ToolCall("Read", """{"path":"a"}""", "c1"));
+        var returned = translation.Read(new ToolResult("c1", "its words", IsError: false));
+        var failed = translation.Read(new ToolResult("c9", "", IsError: true));
+
+        Assert.Equal("→ Read", Assert.IsType<WireReading.Shown>(called[0]).Text);
+        var call = Assert.IsType<WireReading.Said>(called[1]).Event;
+        Assert.Equal((SessionEventKind.Tool, "c1", "in_progress"), (call.Kind, call.Id, call.Status));
+        Assert.Equal("  ✓ Read", Assert.IsType<WireReading.Shown>(returned[0]).Text);
+        var result = Assert.IsType<WireReading.Said>(returned[1]).Event;
+        Assert.Equal(("completed", "its words"), (result.Status, Assert.Single(result.Content!).Text));
+        Assert.Equal("  ✗ a tool failed", Assert.IsType<WireReading.Shown>(failed[0]).Text);
+    }
+
+    [Fact]
+    public void A_turn_that_ended_is_its_line_and_its_turn_with_the_reported_counts()
+    {
+        var translation = Readings();
+
+        Assert.Empty(translation.Read(new UsageFinal(10, 20, 3, 4, "the-model")));
+        var ended = translation.Read(new SessionEnded(ProviderVerdict.Ok, false, "success", "conv-1", "done", null));
+
+        Assert.Equal("— the turn ended: success", Assert.IsType<WireReading.Shown>(ended[0]).Text);
+        var turn = Assert.IsType<WireReading.Said>(ended[1]).Event;
+        Assert.Equal((SessionEventKind.Turn, "end_turn"), (turn.Kind, turn.StopReason));
+        Assert.Equal(new TurnTokens(10, 20, 3, 4), turn.Tokens);
+        Assert.Null(translation.Failure);
+    }
+
+    [Fact]
+    public void A_failed_turn_s_failure_is_its_first_reading_and_enters_through_the_ingress()
+    {
+        var translation = Readings();
+
+        var ended = translation.Read(new SessionEnded(ProviderVerdict.Failed, true, "error_during_execution", null, null, "the words")
+        {
+            Failure = new AgentFailure(AgentFailureKind.Limit, "tests:limit"),
+        });
+
+        var failed = Assert.IsType<WireReading.Failed>(ended[0]).Failure;
+        Assert.Equal(("pipe", DoorWhere.Result, "the words"), (failed.Door, failed.Where, failed.Words));
+        Assert.Equal(("layer:tests:limit", AgentErrorKind.Limit), (translation.Failure!.By, translation.Failure.Kind));
+        Assert.Equal("— the turn failed (error_during_execution): the words", Assert.IsType<WireReading.Shown>(ended[1]).Text);
+    }
+
+    [Fact]
+    public void One_terminal_a_turn()
+    {
+        var translation = Readings();
+
+        translation.Read(new SessionEnded(ProviderVerdict.Ok, false, "success", null, null, null));
+
+        Assert.Empty(translation.Read(new SessionEnded(ProviderVerdict.Failed, true, null, null, null, "late")));
+        Assert.Null(translation.Failure);
+    }
+
+    [Fact]
+    public void A_stop_daoris_asked_before_the_terminal_is_a_stop_never_the_fatal_exit()
+    {
+        var translation = Readings();
+        translation.Stop();
+
+        var ended = translation.Read(new SessionEnded(ProviderVerdict.Failed, true, null, null, null, "exited 1")
+        {
+            Failure = new AgentFailure(AgentFailureKind.Fatal, "process.exit"),
+        });
+
+        Assert.DoesNotContain(ended, each => each is WireReading.Failed);
+        Assert.Equal("— the turn was stopped", Assert.IsType<WireReading.Shown>(ended[0]).Text);
+        Assert.Equal("cancelled", Assert.IsType<WireReading.Said>(ended[1]).Event.StopReason);
+        Assert.Null(translation.Failure);
+    }
+
+    [Fact]
+    public void What_the_layer_s_members_do_not_carry_yet_is_no_reading()
+    {
+        var translation = Readings();
+
+        Assert.Empty(translation.Read(new UsageLive(1, 2, 3)));
+    }
+
+    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+    }
+}
