@@ -44,7 +44,7 @@ internal sealed class PartnerActRunner(
 
         var reference = PieceRefs.Of(ask.Id);
         var lead = await context.Service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
-        var root = lead?.Tree is { Length: > 0 } tree ? await rootOf(tree, ct).ConfigureAwait(false) : null;
+        var root = await CheckoutAsync(lead, ct).ConfigureAwait(false);
         if (root is null)
         {
             return Line(LookClass.Retry, $"partner  piece `{ask.Id}` cannot be discarded yet: its repository's checkout could not be read. It is tried again at the next look.");
@@ -93,6 +93,17 @@ internal sealed class PartnerActRunner(
         return await keep(ask, ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// The repository's checkout the piece's ref is in: read from the lead's tree while it stands, else from the registry by the lead's
+    /// repository, since a landed lead's tree is tidied away (<see cref="PieceLandedReads"/>). Null where neither is here.
+    /// </summary>
+    private async Task<string?> CheckoutAsync(PriorSession? lead, CancellationToken ct)
+    {
+        if (lead is null) return null;
+        if (lead.Tree is { Length: > 0 } tree && await rootOf(tree, ct).ConfigureAwait(false) is { } root) return root;
+        return await PieceLandedReads.CheckoutAsync(context.Service.RegistryAsync, lead.Repository, lead.Workspace, ct).ConfigureAwait(false);
+    }
+
     /// <summary>Whether the partner's job is gone, ending what a restart left running; a line where it could not be told.</summary>
     private async Task<LookLine?> EndJobAsync(PartnerAsk ask, PartnerState state)
     {
@@ -111,13 +122,21 @@ internal sealed class PartnerActRunner(
     /// <summary>
     /// Whether a handed piece was taken in (the design §2.3 step 10): its frozen commit read as an ancestor of the lead's branch by
     /// <c>merge-base --is-ancestor</c>, recorded with the lead's commit and never unset. A lead whose record ended <c>completed</c>
-    /// and whose tree's branch does not hold the commit leaves the piece <see cref="PartnerStates.NotTakenIn"/>. Null where nothing moved.
+    /// and whose tree's branch does not hold the commit leaves the piece <see cref="PartnerStates.NotTakenIn"/>. Where the lead's tree is
+    /// gone, the piece is read at its landing: against the commit the lead's landing recorded, in the repository's checkout. Null where
+    /// nothing moved.
     /// </summary>
     public async Task<LookLine?> TakenInAsync(PartnerAsk ask, PartnerState? state, PartnerFiles files, CancellationToken ct)
     {
         if (state is not { Commit: { Length: > 0 } commit } || !PartnerTakenIn.Reads(state.State)) return null;
         var lead = await context.Service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
-        if (lead?.Tree is not { Length: > 0 } tree || !Directory.Exists(tree)) return null;
+        if (lead?.Tree is not { Length: > 0 } tree) return null;
+        if (!Directory.Exists(tree))
+        {
+            var root = await CheckoutAsync(lead, ct).ConfigureAwait(false);
+            if (root is null || await PieceLandedReads.ReadAsync(context.Trees.Recorded, ask.Asker, root, commit, ct).ConfigureAwait(false) is not { } read) return null;
+            return Said(ask, files, PartnerTakenIn.Next(state, read.Tip, read.Ancestor, landed: true, DateTimeOffset.UtcNow));
+        }
 
         var (headCode, head, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "-q", "HEAD"], ct).ConfigureAwait(false);
         var tip = headCode == 0 ? head.Trim() : null;
@@ -129,7 +148,13 @@ internal sealed class PartnerActRunner(
         }
 
         var landed = string.Equals(lead.State, "completed", StringComparison.Ordinal);
-        if (PartnerTakenIn.Next(state, tip, ancestor, landed, DateTimeOffset.UtcNow) is not { } next) return null;
+        return Said(ask, files, PartnerTakenIn.Next(state, tip, ancestor, landed, DateTimeOffset.UtcNow));
+    }
+
+    /// <summary>The verdict written and said; null where nothing moved.</summary>
+    private static LookLine? Said(PartnerAsk ask, PartnerFiles files, PartnerState? verdict)
+    {
+        if (verdict is not { } next) return null;
         files.WriteState(next);
         return Line(LookClass.Progress, next.State == PartnerStates.TakenIn
             ? $"partner  piece `{ask.Id}` is taken in by session {ask.Asker}'s branch at {TextBounds.ShortCommit(next.TakenBy ?? "", 7)}."

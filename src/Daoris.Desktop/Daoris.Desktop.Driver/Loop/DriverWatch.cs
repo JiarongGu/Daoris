@@ -146,7 +146,7 @@ public sealed class DriverWatch(
     /// Handed to every look's driver (<see cref="Driver.HandsOver"/>): the shell's chat runner's hand-over of a conversation whose
     /// agent asked (MIXAGENT1c). Null in the headless host, which runs no conversation.
     /// </summary>
-    public Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver { get; init; }
+    public Func<string, string, HandOverStep?, CancellationToken, Task<HandedOver>>? HandsOver { get; init; }
 
     /// <summary>
     /// Handed to every look's driver (<see cref="Driver.SendsBack"/>): the shell's chat runner, which takes a chat run's findings into its

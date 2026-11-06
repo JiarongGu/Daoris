@@ -283,9 +283,9 @@ internal sealed class LoopRun(
             FirstScreen = FirstScreenAsync,
             Reviews = loop.Reviews,
             Heard = loop.HeardMove,
-            HandsOver = (session, agent, token) => chat.HandOverAsync(
+            HandsOver = (session, agent, step, token) => chat.HandOverAsync(
                 session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DriverConfig.Load(loop.ConfigPath),
-                onEnded: (ended, state) => DriverLoop.Ended(eventBus, ended, state), token),
+                onEnded: (ended, state) => DriverLoop.Ended(eventBus, ended, state), token, step?.Model, step?.Effort),
             SendsBack = chat,
             GoesOnLost = (session, why, token) => chat.GoOnLostAsync(
                 session, why, DriverConfig.Load(loop.ConfigPath), onEnded: (ended, state) => DriverLoop.Ended(eventBus, ended, state), token),

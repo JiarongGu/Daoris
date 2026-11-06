@@ -125,6 +125,56 @@ public sealed class PartnerLandingTests : IDisposable
         Assert.Equal(piece, (await GitAsync(root, "rev-parse", "--verify", PieceRefs.Of("p1"))).Trim());
     }
 
+    /// <summary>
+    /// A lead whose work landed and whose tree is gone: the look reads the repository's checkout from the registry, and the piece against
+    /// the commit the lead's landing recorded.
+    /// </summary>
+    private Daoris.Driver.Driver Landed(string root, string tip)
+    {
+        new LandedBranches(_home).Record(new LandedBranch("reports", "default", "daoris/s1", "main", tip, "s1", "q1", "Work q1", At));
+        var gone = Path.Combine(_scratch, "trees", "s1");
+        return new(new OpinionStandIn().Session("s1", "completed", tree: gone).Registered("reports", root).Client(),
+            DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = 3 }, ProviderRegistry.Built(), _home);
+    }
+
+    /// <summary>
+    /// 🔴 The verdict at the landing, where the lead's tree is gone (the design §2.4): a piece the lead's landed commit does not hold is not
+    /// taken in, its ref kept; one it holds is taken in, recorded with that commit. Read in the repository's own checkout, which the
+    /// registry names, since the tree's checkout can no longer be asked.
+    /// </summary>
+    [Fact]
+    public async Task At_the_landing_with_the_leads_tree_gone_the_piece_is_read_against_the_commit_that_landed()
+    {
+        var (root, piece) = await HandedAsync();
+        var landedWithout = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+
+        await Look(Landed(root, landedWithout));
+
+        Assert.Equal(PartnerStates.NotTakenIn, Files.ReadState("p1")!.State);
+        Assert.Equal(piece, (await GitAsync(root, "rev-parse", "--verify", PieceRefs.Of("p1"))).Trim());
+
+        await GitAsync(root, "merge", "--no-ff", "--quiet", "-m", "take it in", PieceRefs.Of("p1"));
+        var landedWith = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        await Look(Landed(root, landedWith));
+
+        var state = Files.ReadState("p1")!;
+        Assert.Equal((PartnerStates.TakenIn, landedWith), (state.State, state.TakenBy));
+    }
+
+    /// <summary>🔴 A piece not taken in at its lead's landing is discarded with the lead's tree gone: its ref is removed in the registry's checkout.</summary>
+    [Fact]
+    public async Task A_piece_not_taken_in_at_the_landing_is_discarded_with_the_leads_tree_gone()
+    {
+        var (root, _) = await HandedAsync(PartnerStates.NotTakenIn);
+        Assert.True(PartnerPersonAct.Ask(_home, "p1", PartnerPersonActs.Discard, At).Acted);
+
+        var said = await Look(Landed(root, (await GitAsync(root, "rev-parse", "HEAD")).Trim()));
+
+        Assert.Equal(PartnerStates.Discarded, Files.ReadState("p1")!.State);
+        Assert.Equal("", (await GitAsync(root, "for-each-ref", PieceRefs.Prefix)).Trim());
+        Assert.Contains("is discarded", Assert.Single(said));
+    }
+
     [Fact]
     public async Task Discard_removes_the_ref_at_the_commit_it_froze_and_the_copy_and_nothing_else()
     {

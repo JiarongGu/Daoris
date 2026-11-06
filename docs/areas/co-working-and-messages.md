@@ -162,7 +162,10 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
     driven or a conversation (`StartAdmission.LeadsPiece`, the page's `leadsPieces`); a conversation hears a piece's answer as a turn
     of its own between its turns, queued behind a turn in flight, as a helper's answer is. Only the person asks one today. A handed piece is
     taken in when the look first reads its commit as an ancestor of the lead's tree's branch (recorded with the lead's commit, never
-    unset; a cherry-pick is not that), and not taken in when the lead's record completed without it. The person's *Discard…* (a piece
+    unset; a cherry-pick is not that), and not taken in when the lead's record completed without it. Where the lead's tree is gone,
+    it is read at the lead's landing: against the commit the landing recorded, in the checkout the registry names
+    (`PieceLandedReads`), which a Discard reads too. A partner's record lands at no door: the press, the plan, the terminal's
+    verb and a run's `land` refuse it in one sentence naming the lead's merge (`PieceLandings`). The person's *Discard…* (a piece
     holding work or a copy, never one taken in) and *Hand over what it left* (an uncertain one) are an act file, `<id>.act.json`,
     from the page's `SESSION_PARTNER_ACT` or `sessions partner <piece> --discard | --hand-over`; the look removes the ref at the commit
     it froze and the copy, or keeps, imports and hands the work, and is the one writer of the state. (from D199)
@@ -235,7 +238,7 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 
 **Tests that pin it.** Driver: `ExchangesTests`, `ChannelReachTests`, `ChannelNextStepTickTests`, `ChannelCommandTests`,
 `DrivenInboxTests`, `DaorisWordsTests`, `AnswersAloneTests`, `AnswersAloneHoldTests`, `HelperJudgeTests`, `HelperLookTests`,
-`HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `PartnerActsTests`, `PartnerLandingTests` (git half), `PartnerChatProcessTests`, `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
+`HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `PartnerActsTests`, `PartnerLandingTests` (git half), `PieceLandingsTests`, `PartnerProcessTests`, `PartnerChatProcessTests`, `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
 `Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`, `ChannelMemberVerbTests`. Service: `ChannelTests`, `ChannelPartsTests`, `TeammateAskChannelTests`, `ChannelSyncTests`, `ChannelMembersTests`, `ChannelMemberDoorsTests`,
 `SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, `BrainstormDeskTests`, `MeetingDeskTests`, `McpChannelToolTests`,
 `McpRoleFilterTests`, `ToolClassesTests`. Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`, `ChannelJoinPipeTests`,
@@ -268,7 +271,7 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 
 - **STEER3**: measure Codex's `turn/steer` and Claude Code's stream-json input before a level uses them. **MSG1h**, **MSG1i**: next-step words on Codex and on the native door.
 - **COWORKUX1** (row i): the lead's wait on its own partner. *Work alongside* in the dialog is a disabled choice that says a second request runs alongside by itself; a press that starts one has no home yet.
-- **COAGENT1b2** (built: *Discard…*, *Hand over what it left*, the taken-in read; left: the not-taken-in verdict at the landing's own moment where the lead's tree is gone, the retention proof through tidy, clear and sync, and the partner's real-process case). The lead's own `partner_ask` has no row.
+- **COAGENT1b2**: the retention proof through tidy, clear and sync (a piece's ref and its box kept through each). The lead's own `partner_ask` has no row.
 - **CHANNELJOIN1** (`docs/2026-11-06-event-channel-design.md` §5; built: the member in the service and its doors, the join under the
   person's Confirm and the terminal's verb, the head's outside agents with *Remove*, the chip's *outside Daoris*, the card's `untold`
   words, the glossary's *outside agent* and the look's end of a membership; `channel.posted` told at `work/event` from each message
