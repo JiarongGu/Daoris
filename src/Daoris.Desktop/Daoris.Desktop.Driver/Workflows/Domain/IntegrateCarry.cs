@@ -32,7 +32,7 @@ public static class IntegrateCarry
     public static IReadOnlyList<string> Cannots(string repository, NodeGraph graph, LandingIntegrate? policy, Landing landing, AcceptedGates? accepted)
     {
         var integrate = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Integrate);
-        if (graph.Nodes.FirstOrDefault(node => NodeKinds.IsLanding(node.Kind)) is not { } land || integrate is null) return [];
+        if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } land || integrate is null) return [];
 
         var said = new List<string>();
         if (integrate is not null)

@@ -12,13 +12,6 @@ public sealed record PaletteKind(
     string? SkipBy, IReadOnlyList<NodeOptionField> Options, IReadOnlyList<string> Leaves, IReadOnlyList<string> RoleTakes, string Offered = PaletteKind.Alone)
 {
     public const string Alone = "alone";
-
-    /// <summary>How the editor offers <paramref name="kind"/>: the steps a landing's method brings are its tail.</summary>
-    public static string OfferedOf(string kind) => kind switch
-    {
-        NodeKinds.Integrate => $"tail:{LandNodes.Integrate}",
-        _ => Alone,
-    };
 }
 
 /// <summary>
@@ -43,30 +36,20 @@ public sealed record PalettePlugin(string Plugin, IReadOnlyList<PaletteStep> Ste
 public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnlyList<PaletteWire> Wires, IReadOnlyList<PalettePlugin> Plugins)
 {
     /// <summary>
-    /// The works a role must take to take a step of <paramref name="kind"/> (ROLESTEP1b): the work step as design work, which a build role takes
-    /// too, and the second opinion as a review. Empty for every other kind, which no agent session takes.
-    /// </summary>
-    public static IReadOnlyList<string> RoleTakesOf(string kind) => kind switch
-    {
-        NodeKinds.Claimed => [RoleWork.Design, RoleWork.Build],
-        NodeKinds.Opinion => [RoleWork.Review],
-        _ => [],
-    };
-
-    /// <summary>
-    /// The palette, built from the code's own tables: each built-in kind's authority and options, each wire kind with the kinds that may leave
-    /// it (a failed wire only a kind something can fail, a rejected wire only a kind a person may reject, a decision's route none, since no
-    /// built-in is one, and a wait none, since its source is another unit's), and the plugins' declared steps.
+    /// The palette, built from the kinds' own units (<see cref="NodeKit"/>), in the kit's order: each built-in kind's authority, options, role and
+    /// offer, each wire kind with the kinds that may leave it (a failed wire only a kind something can fail, a rejected wire only a kind a person
+    /// may reject, a decision's route none, since no built-in is one, and a wait none, since its source is another unit's), and the plugins'
+    /// declared steps.
     /// </summary>
     public static WorkflowPalette Build(IEnumerable<(string Plugin, IReadOnlyList<NodeDeclaration> Steps)> plugins)
     {
-        var kinds = NodeKinds.BuiltIn
-            .Select(kind => NodeAuthorities.BuiltIn[kind])
-            .Select(each => new PaletteKind(each.Kind, each.Reach, each.ReachBy, each.FailureBy, each.PersonJudges, each.PersonSkips, each.MayEnd,
-                each.Evidenced, each.SkipBy, NodeOptionFields.Of(each.Kind), Leaving(each, decision: false), RoleTakesOf(each.Kind), PaletteKind.OfferedOf(each.Kind)))
+        var units = NodeKit.Built.Units;
+        var kinds = units
+            .Select(unit => (Row: unit.Row, Unit: unit))
+            .Select(each => new PaletteKind(each.Row.Kind, each.Row.Reach, each.Row.ReachBy, each.Row.FailureBy, each.Row.PersonJudges, each.Row.PersonSkips,
+                each.Row.MayEnd, each.Row.Evidenced, each.Row.SkipBy, each.Unit.Options, Leaving(each.Row, decision: false), each.Unit.RoleTakes, each.Unit.Offered))
             .ToArray();
-        IReadOnlyList<string> Leaves(Func<NodeAuthority, bool> may) =>
-            [.. NodeKinds.BuiltIn.Where(kind => may(NodeAuthorities.BuiltIn[kind]))];
+        IReadOnlyList<string> Leaves(Func<NodeAuthority, bool> may) => [.. units.Where(unit => may(unit.Row)).Select(unit => unit.Row.Kind)];
         var wires = WireKinds.All.Select(kind => new PaletteWire(
             kind,
             WireKinds.Eligibility.Contains(kind),

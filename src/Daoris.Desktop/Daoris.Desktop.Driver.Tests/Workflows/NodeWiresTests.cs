@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class NodeWiresTests
 {
     private static NodeDeclaration Node(string id, string kind) =>
-        new(id, kind, 1, NodeAuthorities.BuiltIn.TryGetValue(kind, out var builtIn) ? builtIn.Reach : NodeReach.Performed);
+        new(id, kind, 1, NodeKit.Row(kind)?.Reach ?? NodeReach.Performed);
 
     private static Dictionary<string, string> Ports(string name, string schema) => new() { [name] = schema };
 

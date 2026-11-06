@@ -18,7 +18,7 @@ public sealed class WireEvaluationTests
     internal static readonly WireRun Base = new("graph-1", "run-1") { Revisions = new Dictionary<string, string?> { [Unit] = "tip-1" } };
 
     internal static NodeDeclaration Node(string id, string kind = Plugin) =>
-        new(id, kind, 1, NodeAuthorities.BuiltIn.TryGetValue(kind, out var builtIn) ? builtIn.Reach : NodeReach.Performed);
+        new(id, kind, 1, NodeKit.Row(kind)?.Reach ?? NodeReach.Performed);
 
     internal static Dictionary<string, string> Ports(string name, string schema) => new() { [name] = schema };
 

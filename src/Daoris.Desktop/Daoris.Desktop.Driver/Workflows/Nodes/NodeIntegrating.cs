@@ -12,13 +12,13 @@ internal sealed class NodeIntegrating(
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, IntegrationCardWait> _cards = new(StringComparer.Ordinal);
 
-    private IntegrateNode? _integrateNode;
+    private IntegrateStart? _integrateStart;
 
-    private RequestNode? _requestNode;
+    private RequestStart? _requestStart;
 
-    private IntegrateNode Integrate => _integrateNode ??= new IntegrateNode(records, integration, clock) { Lines = lines };
+    private IntegrateStart Integrate => _integrateStart ??= new IntegrateStart(records, integration, clock) { Lines = lines };
 
-    private RequestNode Request => _requestNode ??= new RequestNode(records, requests, clock);
+    private RequestStart Request => _requestStart ??= new RequestStart(records, requests, clock);
 
     /// <summary>The landed branches whose <c>integrate</c> waits for the owner's card, as each unit's last judgement found it, oldest landing first.</summary>
     public IReadOnlyList<IntegrationCardWait> CardWaits(IReadOnlyDictionary<string, GovernedUnit> governed) =>

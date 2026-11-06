@@ -94,7 +94,7 @@ public static class HoldNodes
             Acceptance = binding with { Evidence = new NodePort(BuiltInNodes.EvidenceSchema(node.Kind), $"{record}#{unit.Id}", revision, binding.Id) },
         };
 
-        if (!NodeKinds.IsHold(node.Kind)) return Seen(null, "this kind is not a hold") with { Refused = NodeRefusal.NotObserved };
+        if (!Options.ContainsKey(node.Kind)) return Seen(null, "this kind is not a hold") with { Refused = NodeRefusal.NotObserved };
         if (binding.Observes != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
         {
             return Seen(null, "its binding names another subject, node or version") with { Refused = NodeRefusal.NotBound };

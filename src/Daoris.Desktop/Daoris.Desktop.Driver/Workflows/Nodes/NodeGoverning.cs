@@ -366,11 +366,11 @@ internal static class NodeGoverning
     /// the <c>opinion</c> and <c>look</c> on their gates, a <c>stop</c> on its path and an <c>all</c> join on its members included. A pressed
     /// node's task and a waited node's wait are not the runtime's to start.
     /// </summary>
-    public static bool Begins(string kind) => NodeAuthorities.BuiltIn.TryGetValue(kind, out var builtIn) && builtIn.Reach == NodeReach.Observed;
+    public static bool Begins(string kind) => NodeKit.Row(kind)?.Reach == NodeReach.Observed;
 
-    private static bool Performs(NodeDeclaration node) => node.Reach == NodeReach.Performed && NodeKinds.IsPlugin(node.Kind);
+    private static bool Performs(NodeDeclaration node) => node.Reach == NodeReach.Performed && NodeKit.IsPlugin(node.Kind);
 
-    private static bool Observes(NodeDeclaration node) => node.Reach == NodeReach.Observed && NodeKinds.IsPlugin(node.Kind);
+    private static bool Observes(NodeDeclaration node) => node.Reach == NodeReach.Observed && NodeKit.IsPlugin(node.Kind);
 
     /// <summary>Whether a graph names a plugin's performed or observed node: what arms the runtime and makes a unit governed.</summary>
     private static bool Acts(NodeGraph? graph) => graph?.Nodes.Any(node => Performs(node) || Observes(node)) == true;

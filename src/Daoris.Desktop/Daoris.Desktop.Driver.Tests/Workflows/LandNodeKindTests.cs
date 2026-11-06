@@ -14,7 +14,7 @@ public sealed class LandNodeKindTests
 
     private static NodeDeclaration Node(string id, string kind, string? options = null)
     {
-        var reach = NodeAuthorities.BuiltIn.TryGetValue(kind, out var builtIn) ? builtIn.Reach : NodeReach.Performed;
+        var reach = NodeKit.Row(kind)?.Reach ?? NodeReach.Performed;
         return new NodeDeclaration(id, kind, 1, reach)
         {
             Options = options is null ? new Dictionary<string, string>()
@@ -32,9 +32,9 @@ public sealed class LandNodeKindTests
     [Fact]
     public void Land_is_performed_by_daoris_reached_and_failed_by_the_landing_record_and_never_skipped()
     {
-        Assert.Contains(NodeKinds.Land, NodeKinds.BuiltIn);
+        Assert.Contains(NodeKinds.Land, NodeKit.Kinds);
         Assert.Equal("land", NodeKinds.Land);
-        var authority = NodeAuthorities.BuiltIn[NodeKinds.Land];
+        var authority = NodeKit.Row(NodeKinds.Land)!;
         Assert.Equal((NodeReach.Performed, NodeSource.Landing, NodeSource.Landing), (authority.Reach, authority.ReachBy, authority.FailureBy));
         Assert.Equal((false, false, true, true), (authority.PersonJudges, authority.PersonSkips, authority.MayEnd, authority.Evidenced));
         Assert.Null(authority.SkipBy);
@@ -49,7 +49,7 @@ public sealed class LandNodeKindTests
     [Fact]
     public void An_older_build_whose_table_omits_land_reads_it_as_no_kind_and_holds_the_graph_whole()
     {
-        var older = NodeAuthorities.BuiltIn.Where(pair => pair.Key != NodeKinds.Land).ToDictionary(pair => pair.Key, pair => pair.Value);
+        var older = NodeKit.Built.Without(NodeKinds.Land);
 
         Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(Land(), older));
         Assert.Null(NodeAuthorities.Of(Land(), older));
@@ -200,7 +200,7 @@ public sealed class LandNodeKindTests
     [Fact]
     public void A_review_is_the_persons_accept_before_every_landing_and_never_skipped()
     {
-        var authority = NodeAuthorities.BuiltIn[NodeKinds.Review];
+        var authority = NodeKit.Row(NodeKinds.Review)!;
         Assert.Equal((NodeReach.Pressed, NodeSource.Person, (string?)null), (authority.Reach, authority.ReachBy, authority.FailureBy));
         Assert.Equal((false, false, false), (authority.PersonSkips, authority.MayEnd, authority.Evidenced));
 
@@ -212,7 +212,7 @@ public sealed class LandNodeKindTests
         Assert.Contains(GraphRefusal.ProtectedOrder, Codes(beside));
         Assert.Contains(GraphRefusal.ProtectedWire, Codes(Chain(Claimed(), review, Node("qa", NodeKinds.Human), Land(), Line())));
 
-        var older = NodeAuthorities.BuiltIn.Where(pair => pair.Key != NodeKinds.Review).ToDictionary(pair => pair.Key, pair => pair.Value);
+        var older = NodeKit.Built.Without(NodeKinds.Review);
         Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(review, older));
     }
 

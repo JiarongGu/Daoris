@@ -67,7 +67,7 @@ public static class PluginSteps
     private static readonly Regex SchemaParts =
         new(@"^(?<owner>[^/]+)/[a-z0-9]+(?:[.-][a-z0-9]+)*@[1-9][0-9]*\z", RegexOptions.CultureInvariant);
 
-    /// <summary>A plugin's step's kind and id: <c>&lt;plugin&gt;/&lt;step&gt;</c>, a plugin's own node (<see cref="NodeKinds.IsPlugin"/>).</summary>
+    /// <summary>A plugin's step's kind and id: <c>&lt;plugin&gt;/&lt;step&gt;</c>, a plugin's own node (<see cref="NodeKit.IsPlugin"/>).</summary>
     public static string KindOf(string plugin, string step) => $"{plugin}/{step}";
 
     /// <summary>

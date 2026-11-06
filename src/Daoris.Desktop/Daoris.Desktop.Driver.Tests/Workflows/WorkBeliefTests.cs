@@ -109,7 +109,7 @@ public sealed class WorkBeliefTests
         Assert.True(NodeAuthorities.Of(Deploy)!.OnPluginWord);
         foreach (var kind in new[] { NodeKinds.Push, NodeKinds.Land, NodeKinds.Line, NodeKinds.Claimed, NodeKinds.Human, NodeKinds.WaitUnit, NodeKinds.QuestClose })
         {
-            Assert.False(NodeAuthorities.BuiltIn[kind].OnPluginWord, kind);
+            Assert.False(NodeKit.Row(kind)!.OnPluginWord, kind);
         }
     }
 

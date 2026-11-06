@@ -12,10 +12,7 @@ public static class NodeOptionTypes
 /// <summary>One option a kind's node takes: its name, its type, the choices of a <c>choice</c>, and whether the node needs it written.</summary>
 public sealed record NodeOptionField(string Name, string Type, IReadOnlyList<string> Choices, bool Required);
 
-/// <summary>
-/// The options each built-in kind reads, with the choices the code holds for them. A kind not listed takes none. Land's
-/// <c>accept</c> is not listed: the person's Accept completes the review step, and the landing step has none.
-/// </summary>
+/// <summary>The fields a kind's options are written with (<see cref="INodeKind.Options"/>), and the one option two kinds share.</summary>
 public static class NodeOptionFields
 {
     /// <summary>
@@ -24,43 +21,11 @@ public static class NodeOptionFields
     /// </summary>
     public const string Role = "role";
 
-    private static NodeOptionField Choice(string name, IReadOnlyList<string> choices, bool required = false) => new(name, NodeOptionTypes.Choice, choices, required);
+    public static NodeOptionField Choice(string name, IReadOnlyList<string> choices, bool required = false) => new(name, NodeOptionTypes.Choice, choices, required);
 
-    private static NodeOptionField Text(string name, bool required = false) => new(name, NodeOptionTypes.Text, [], required);
+    public static NodeOptionField Text(string name, bool required = false) => new(name, NodeOptionTypes.Text, [], required);
 
-    private static readonly IReadOnlyDictionary<string, IReadOnlyList<NodeOptionField>> Table = new Dictionary<string, IReadOnlyList<NodeOptionField>>(StringComparer.Ordinal)
-    {
-        [NodeKinds.Claimed] = [Text(Role)],
-        [NodeKinds.Opinion] = [Text(Role)],
-        [NodeKinds.Land] =
-        [
-            Choice("method", LandNodes.Methods),
-            Text("target"),
-            Text("pattern"),
-            Text("plugin"),
-            Text(LandNodes.KeyOption),
-            new("squash", NodeOptionTypes.Switch, [], false),
-            Text("message"),
-        ],
-        [NodeKinds.Integrate] = [Choice("request", LandingIntegrate.Requests), Choice("conflicts", LandingIntegrate.ConflictChoices)],
-        [NodeKinds.Request] =
-        [
-            Text("to", required: true),
-            Text("title", required: true),
-            Text("body", required: true),
-            Choice("start", RequestOptions.Starts),
-            Choice("until", RequestOptions.Untils),
-            Choice("declined", RequestOptions.Declines),
-        ],
-        [NodeKinds.Check] = [new("gates", NodeOptionTypes.Names, [], false)],
-        [NodeKinds.GoAhead] = [Text("act")],
-        // LANDNODE1k: each hold's switches, on where not written.
-        [NodeKinds.QuestHolds] = [.. HoldNodes.Options[NodeKinds.QuestHolds].Select(Switch)],
-        [NodeKinds.ContentHolds] = [.. HoldNodes.Options[NodeKinds.ContentHolds].Select(Switch)],
-    };
+    public static NodeOptionField Switch(string name) => new(name, NodeOptionTypes.Switch, [], false);
 
-    private static NodeOptionField Switch(string name) => new(name, NodeOptionTypes.Switch, [], false);
-
-    /// <summary>The options a built-in kind takes, in the order an editor lists them.</summary>
-    public static IReadOnlyList<NodeOptionField> Of(string kind) => Table.TryGetValue(kind, out var fields) ? fields : [];
+    public static NodeOptionField Names(string name) => new(name, NodeOptionTypes.Names, [], false);
 }

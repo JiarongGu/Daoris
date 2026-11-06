@@ -14,8 +14,25 @@ namespace Daoris.Driver;
 /// <para><b>Bound to its commit and its work.</b> A verdict read at another commit than the binding's, with no commit read, or for another
 /// repository says nothing, and every other state of the gate is the person's still to answer: the look waits, never reached on a guess.</para>
 /// </remarks>
-public static class LookNode
+[NodeKind(NodeKinds.Look, NodeGroup.You, NodeKinds.Review)]
+public sealed class LookNode : BuiltInNode
 {
+    /// <summary>
+    /// §E4: the look is its gate, observed, and the person's <i>reviewed</i> is what reaches it. FABRIC-WIRE1h: the review gate's record passes it
+    /// over where the chain's or the ask's choice turns it off for this work.
+    /// </summary>
+    public override NodeAuthority Row { get; } =
+        new(NodeKinds.Look, NodeReach.Observed, NodeSource.Person, null, true, true, true, false) { SkipBy = NodeSource.Review };
+
+    public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Branch;
+
+    public override NodePart Part(NodeDeclaration node) =>
+        new(WorkflowKinds.Look, WorkflowParticipation.AgentAndYou, WorkflowExecutor.Agent, WorkflowPress.Reviewed, WorkflowKinds.Look);
+
+    public override string? Title => "Your look";
+
+    public override NodeLook Look => NodeLook.You;
+
     /// <summary>What the review gate says of <paramref name="node"/> for <paramref name="unit"/>'s work: an outcome its records keep, or none.</summary>
     public static NodeObservation Observe(WorkUnit unit, NodeDeclaration node, NodeAcceptance binding, ReviewGateState? gate)
     {

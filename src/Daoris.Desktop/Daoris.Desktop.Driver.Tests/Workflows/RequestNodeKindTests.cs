@@ -38,7 +38,7 @@ public sealed class RequestNodeKindTests
     public void A_requests_reach_and_failure_are_the_commitments_as_a_wait_units_are()
     {
         var authority = NodeAuthorities.Of(Request())!;
-        var waitUnit = NodeAuthorities.BuiltIn[NodeKinds.WaitUnit];
+        var waitUnit = NodeKit.Row(NodeKinds.WaitUnit)!;
 
         Assert.Equal(NodeReach.Waited, authority.Reach);
         Assert.Equal((waitUnit.ReachBy, waitUnit.FailureBy), (authority.ReachBy, authority.FailureBy));
@@ -62,7 +62,7 @@ public sealed class RequestNodeKindTests
     [Fact]
     public void A_build_before_the_kind_reads_it_as_unknown()
     {
-        var older = NodeAuthorities.BuiltIn.Where(row => row.Key != NodeKinds.Request).ToDictionary();
+        var older = NodeKit.Built.Without(NodeKinds.Request);
 
         Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(Request(), older));
     }

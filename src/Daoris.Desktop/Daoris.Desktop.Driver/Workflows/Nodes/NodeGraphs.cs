@@ -318,7 +318,7 @@ public static class NodeGraphs
 
         // LANDNODE1k: each hold once, in a graph that lands, and before every landing by the work.requests reading (StartsWithout), so a hold after
         // the landing or beside it in an `anyOf` is refused alike. Each is said once, against the hold.
-        foreach (var same in byId.Values.Where(node => NodeKinds.IsHold(node.Kind)).GroupBy(node => node.Kind, StringComparer.Ordinal))
+        foreach (var same in byId.Values.Where(node => HoldNodes.Options.ContainsKey(node.Kind)).GroupBy(node => node.Kind, StringComparer.Ordinal))
         {
             var each = same.ToList();
             foreach (var again in each.Skip(1))
@@ -369,7 +369,7 @@ public static class NodeGraphs
         // FABRIC-GRAPH1g: §C4's second rule names the one observed node of an event's plugin step, so two of a plugin's step in one graph are
         // reached by neither (`not-named`, counted only). Said when saved, naming both.
         var firstObserved = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var node in graph.Nodes.Where(node => saved && node.Reach == NodeReach.Observed && NodeKinds.IsPlugin(node.Kind)))
+        foreach (var node in graph.Nodes.Where(node => saved && node.Reach == NodeReach.Observed && NodeKit.IsPlugin(node.Kind)))
         {
             if (!firstObserved.TryAdd(node.Kind, node.Id))
             {

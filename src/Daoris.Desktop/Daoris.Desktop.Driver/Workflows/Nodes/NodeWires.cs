@@ -321,11 +321,11 @@ public static class NodeWires
 
     /// <summary>
     /// The schema a <c>data</c> wire takes from <paramref name="port"/> on <paramref name="node"/>: a declared output's, or its evidence's
-    /// (its declared <see cref="NodeDeclaration.Evidence"/>, else an observed built-in's record); null where it has no such port.
+    /// (its declared <see cref="NodeDeclaration.Evidence"/>, else its kind's, <see cref="INodeKind.Evidence"/>); null where it has no such port.
     /// </summary>
     public static string? SourceSchema(NodeDeclaration node, string port) =>
         port == WireEnd.Evidence
-            ? node.Evidence ?? (BuiltInNodes.Observed.Contains(node.Kind) ? BuiltInNodes.EvidenceSchema(node.Kind) : null)
+            ? node.Evidence ?? NodeKit.Of(node.Kind)?.Evidence
             : node.Outputs.TryGetValue(port, out var schema) ? schema : null;
 
     /// <summary>Whether <paramref name="wire"/> ends at this graph's <paramref name="node"/>.</summary>

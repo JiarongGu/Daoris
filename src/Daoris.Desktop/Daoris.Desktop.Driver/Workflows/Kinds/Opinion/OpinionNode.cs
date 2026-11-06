@@ -18,8 +18,30 @@ namespace Daoris.Driver;
 /// the gate says now. A kept <i>unavailable</i> passes it over; any other, or none kept (a landing from before the record kept one, or one
 /// no rule asked of), reaches it.</para>
 /// </remarks>
-public static class OpinionNode
+[NodeKind(NodeKinds.Opinion, NodeGroup.Checks, NodeKinds.Check)]
+public sealed class OpinionNode : BuiltInNode
 {
+    /// <summary>
+    /// FABRIC-WORKFLOW2: D157's opinion never fails (a required one waits), and the person may pass it over, as its gate's unavailable reads as
+    /// skipped. FABRIC-WIRE1g: the gate's own record passes it over where its rule asks none, or an optional one none could be had.
+    /// </summary>
+    public override NodeAuthority Row { get; } =
+        new(NodeKinds.Opinion, NodeReach.Observed, NodeSource.Opinion, null, false, true, true, true) { SkipBy = NodeSource.Opinion };
+
+    public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Branch;
+
+    public override IReadOnlyList<NodeOptionField> Options { get; } = [NodeOptionFields.Text(NodeOptionFields.Role)];
+
+    public override NodePart Part(NodeDeclaration node) =>
+        new(WorkflowKinds.Opinion, WorkflowParticipation.Agent, WorkflowExecutor.Agent, Lowered: WorkflowKinds.Opinion);
+
+    /// <summary>The second opinion is a review's work.</summary>
+    public override IReadOnlyList<string> RoleTakes { get; } = [RoleWork.Review];
+
+    public override string? Title => "Second opinion";
+
+    public override NodeLook Look => NodeLook.Check;
+
     /// <summary>Where the gate's record is kept, by name (<c>&lt;home&gt;/opinions/gates/&lt;chain&gt;.json</c>): what a reach's evidence names.</summary>
     public const string GateRecord = "opinions/gates";
 

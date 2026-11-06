@@ -258,7 +258,7 @@ public static class WorkflowOperations
         RoleCatalog? catalogue = null;
         foreach (var node in graph.Nodes)
         {
-            if (WorkflowPalette.RoleTakesOf(node.Kind) is not [var work, ..]) continue;
+            if (NodeKit.Of(node.Kind)?.RoleTakes is not [var work, ..]) continue;
             if (!node.Options.TryGetValue(NodeOptionFields.Role, out var written) || NodeOptions.Value(written) is null or "") continue;
             if (NodeOptions.Value(written) is not string role)
             {

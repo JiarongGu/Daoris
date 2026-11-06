@@ -82,7 +82,7 @@ public sealed class WorkflowDraftToldTests
         };
         var compact = WorkflowPalette.Build([("local-release", [find])]).Compact();
 
-        Assert.All(NodeKinds.BuiltIn, kind => Assert.Contains($"- `{kind}`:", compact));
+        Assert.All(NodeKit.Kinds,kind => Assert.Contains($"- `{kind}`:", compact));
         Assert.Contains("options `method` (choice: ", compact);
         Assert.Contains("- `local-release/find` v1: performed; outcomes `release`, `none`; outputs `release` (local-release/release@1, on `release`)", compact);
         Assert.Equal(WorkflowPalette.DigestOf(compact), WorkflowPalette.DigestOf(WorkflowPalette.Build([("local-release", [find])]).Compact()));

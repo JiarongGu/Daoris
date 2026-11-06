@@ -53,35 +53,11 @@ public static class WorkflowRunWords
     };
 
     /// <summary>
-    /// A step's title, as <c>daoris workflow show</c> names it; a graph run's node of a kind no step has (FABRIC-CUTOVER1e) by its
-    /// kind, a plugin's by its node and its plugin.
+    /// A step's title, as <c>daoris workflow show</c> names it: the title of the kind it is drawn from (<see cref="INodeKind.Title"/>), a plugin's by
+    /// its node and its plugin; an older steps version's pull request by its own; any other by its id.
     /// </summary>
-    public static string Title(WorkflowStep step) => step.Kind switch
-    {
-        WorkflowKinds.Work => "The work",
-        WorkflowKinds.Opinion => "Second opinion",
-        WorkflowKinds.Look => "Your look",
-        WorkflowKinds.Landing => "The landing",
-        WorkflowKinds.PullRequest => "The pull request",
-        NodeKinds.Human => "Your task",
-        NodeKinds.Review => "Your Accept",
-        NodeKinds.Push => "The push",
-        NodeKinds.Monitor => "The pull request's watch",
-        NodeKinds.Tidy => "The chain's clean-up",
-        NodeKinds.Line => "On the line",
-        NodeKinds.QuestClose => "The quest's close",
-        NodeKinds.All => "The join",
-        NodeKinds.Stop => "Stop",
-        NodeKinds.WaitUnit => "Other work",
-        NodeKinds.Check => "The checks",
-        NodeKinds.Integrate => "The integration",
-        NodeKinds.Request => "The quest to another repository",
-        NodeKinds.WorkRequests => "The work's requests",
-        NodeKinds.QuestHolds => "The quest's holds",
-        NodeKinds.ContentHolds => "What the line holds",
-        var plugin when NodeKinds.IsPlugin(plugin) => $"{plugin[(plugin.IndexOf('/') + 1)..]} by `{plugin[..plugin.IndexOf('/')]}`",
-        _ => step.Id,
-    };
+    public static string Title(WorkflowStep step) =>
+        step.Kind == WorkflowKinds.PullRequest ? "The pull request" : NodeKit.Drawn(step.Kind)?.Title ?? step.Id;
 
     /// <summary>A state's word; one these words do not hold, as the driver spells it.</summary>
     public static string State(string state) => state switch

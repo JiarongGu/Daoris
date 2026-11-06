@@ -148,7 +148,7 @@ internal sealed class NodeTelling(NodeRecordFiles records, IWorkRuntimePort port
                 }
 
                 // A check is no plugin's, and no plugin is told of it.
-                if (!NodeKinds.IsPlugin(each.Declared[id].Kind)) continue;
+                if (!NodeKit.IsPlugin(each.Declared[id].Kind)) continue;
                 if ((each.Scope is null ? Told(each, tips) : RunFrame(each, record, id, tips)) is not { } frame) continue;
                 var kind = each.Declared[id].Kind;
                 var plugin = NodeGoverning.PluginOf(kind);

@@ -18,7 +18,7 @@ public sealed class GateNodesTests
 
     private static readonly NodeScope Scope = new("graph-1", "run-1");
 
-    private static NodeDeclaration Node(string kind) => new(kind, kind, 1, NodeAuthorities.BuiltIn[kind].Reach)
+    private static NodeDeclaration Node(string kind) => new(kind, kind, 1, NodeKit.Row(kind)!.Reach)
     {
         Options = kind == NodeKinds.GoAhead ? new Dictionary<string, string> { ["act"] = WorkflowSteps.Quoted(Act) } : new Dictionary<string, string>(),
     };

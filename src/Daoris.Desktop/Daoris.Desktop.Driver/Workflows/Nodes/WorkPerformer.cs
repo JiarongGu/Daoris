@@ -154,7 +154,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         var unit = binding.Unit;
         // FABRIC-PIPELINE1d: the one kind Daoris performs this way beside a plugin's, its attempt naming the executor.
         var check = node.Kind == NodeKinds.Check && Checks is not null;
-        if (!(NodeKinds.IsPlugin(node.Kind) || check) || node.Reach != NodeReach.Performed) return new(unit, node.Id, PerformedWhat.Refused, NotPlugin);
+        if (!(NodeKit.IsPlugin(node.Kind) || check) || node.Reach != NodeReach.Performed) return new(unit, node.Id, PerformedWhat.Refused, NotPlugin);
 
         // §D6: the attempt (invocation, key, revision, inputs, deadline, state) on the unit's record first, with its start and its firings.
         var now = clock();
@@ -210,7 +210,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         // FABRIC-CLOSE1b: Daoris's own close is asked after by its closer, which sends the same close again; no plugin is asked about it.
         // INTEGRATE1p: nor about a request, which its node publishes again under its key.
         var due = records.All().Records
-            .SelectMany(record => record.Attempts.Where(attempt => attempt.Plugin != QuestClosing.Sender && attempt.Plugin != RequestNode.Sender && Asked(attempt, now))
+            .SelectMany(record => record.Attempts.Where(attempt => attempt.Plugin != QuestClosing.Sender && attempt.Plugin != RequestStart.Sender && Asked(attempt, now))
                 .Select(attempt => (record.Unit, Attempt: attempt, Key: $"{record.Unit}\n{attempt.Call.Invocation}")))
             .OrderBy(each => each.Key, StringComparer.Ordinal).ToList();
         var next = _reconciled is null ? 0 : due.FindIndex(each => string.CompareOrdinal(each.Key, _reconciled) > 0);

@@ -177,7 +177,7 @@ public static class WorkflowGraphRuns
             .OrderBy(session => session.Created ?? DateTimeOffset.MinValue)
             .ToList();
         var newestHere = sessions.LastOrDefault(session => !session.Teammate);
-        var handed = graph.Nodes.FirstOrDefault(node => NodeKinds.IsLanding(node.Kind));
+        var handed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land);
         NodeStatus StatusOf(string node) => statuses.GetValueOrDefault(node) ?? NodeLifecycle.Start(self, node);
 
         // The run's branch: the one its newest session here worked, as its tree is named and this machine's records follow it (TREEFOLLOW1);
@@ -359,31 +359,16 @@ public static class WorkflowGraphRuns
             if (value is not null && settings.All(setting => setting.Name != name)) settings.Add(new WorkflowSetting(name, value));
         }
 
-        var rule = process?.Landing;
         // LANDNODE1c2: a `land` waits on no press of its own; the person's Accept is its `review`'s.
-        if (node.Kind == NodeKinds.Land) Default("accept", "automatic");
-        if (NodeKinds.IsLanding(node.Kind))
+        if (node.Kind == NodeKinds.Land)
         {
-            Default("form", rule?.Form);
-            Default("accept", rule is null ? null : rule.AutoAccept ? "automatic" : "you");
+            Default("accept", "automatic");
+            Default("form", process?.Landing?.Form);
         }
 
-        if (NodeKinds.IsPlugin(node.Kind)) Default("plugin", node.Kind[..node.Kind.IndexOf('/')]);
+        if (NodeKit.IsPlugin(node.Kind)) Default("plugin", node.Kind[..node.Kind.IndexOf('/')]);
 
-        var automatic = settings.FirstOrDefault(setting => setting.Name == "accept")?.Value is "automatic";
-        var (kind, participation, executor, press) = node.Kind switch
-        {
-            NodeKinds.Claimed => (WorkflowKinds.Work, WorkflowParticipation.Agent, WorkflowExecutor.Agent, (string?)null),
-            NodeKinds.Opinion => (WorkflowKinds.Opinion, WorkflowParticipation.Agent, WorkflowExecutor.Agent, null),
-            NodeKinds.Look => (WorkflowKinds.Look, WorkflowParticipation.AgentAndYou, WorkflowExecutor.Agent, WorkflowPress.Reviewed),
-            NodeKinds.Land => (WorkflowKinds.Landing, automatic ? WorkflowParticipation.Automatic : WorkflowParticipation.You, WorkflowExecutor.Daoris,
-                automatic ? null : WorkflowPress.Accept),
-            NodeKinds.GoAhead => (WorkflowKinds.GoAhead, WorkflowParticipation.You, WorkflowExecutor.Daoris, null),
-            NodeKinds.Human => (NodeKinds.Human, WorkflowParticipation.You, WorkflowExecutor.Daoris, null),
-            NodeKinds.Review => (NodeKinds.Review, WorkflowParticipation.You, WorkflowExecutor.Daoris, WorkflowPress.Accept),
-            _ when NodeKinds.IsPlugin(node.Kind) => (node.Kind, WorkflowParticipation.Automatic, WorkflowExecutor.Plugin, null),
-            _ => (node.Kind, WorkflowParticipation.Automatic, WorkflowExecutor.Daoris, null),
-        };
+        var (kind, participation, executor, press, _) = NodeKit.Of(node.Kind)?.Part(node) ?? NodePart.Automatic(node.Kind);
         return new WorkflowStep(node.Id, kind, participation, executor, press,
             new WorkflowSource("workflow", process?.Binding?.Level ?? level ?? WorkflowLevels.Repository), settings, WorkflowRuntime.Built, null);
     }
