@@ -75,4 +75,47 @@ public static class HookFrames
         scopes = frame.Scopes.ToArray(),
         sessions = frame.Sessions?.ToArray(),
     };
+
+    /// <summary>
+    /// <c>work/event</c>'s frame (EVENTHOOK1b, the event hook design §4.3), every name spelled here and each field checked against
+    /// <see cref="WorkEventGrammar"/> as it is built: an optional field that fails, or whose source holds none, is left out; an event whose
+    /// required field fails is an <see cref="WorkEventKinds.Missed"/> frame in its place, naming that field as unsent.
+    /// </summary>
+    public static WorkEventFrame Event(WorkEvent told, string run, long seq, int missed, IReadOnlySet<string> adapters)
+    {
+        var frame = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["run"] = run,
+            ["seq"] = seq,
+            ["missed"] = missed,
+            ["kind"] = told.Kind,
+            ["at"] = WorkEventGrammar.TimeOf(told.At),
+        };
+        if (!WorkEventGrammar.Fields.TryGetValue(told.Kind, out var fields)) return Missed("kind");
+
+        (string Name, object? Value)[] carried =
+        [
+            ("session", told.Session), ("quest", told.Quest), ("ask", told.Ask), ("state", told.State?.ToLowerInvariant()),
+            ("adapter", told.Adapter), ("strikes", told.Strikes), ("code", told.Code),
+        ];
+        foreach (var (name, value) in carried)
+        {
+            var required = fields.Required.Contains(name);
+            if (!required && !fields.Optional.Contains(name)) continue;
+            if (value is not null && WorkEventGrammar.Fits(name, value, adapters)) frame[name] = value;
+            else if (required) return Missed(name);
+        }
+
+        return new WorkEventFrame(frame, null);
+
+        WorkEventFrame Missed(string field) => new(
+            new Dictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["run"] = run, ["seq"] = seq, ["missed"] = missed, ["kind"] = WorkEventKinds.Missed, ["at"] = WorkEventGrammar.TimeOf(told.At),
+            },
+            field);
+    }
 }
+
+/// <summary>A <c>work/event</c> frame as built, and the required field whose failure made it <c>events.missed</c>, or null.</summary>
+public sealed record WorkEventFrame(IReadOnlyDictionary<string, object?> Frame, string? Unsent);
