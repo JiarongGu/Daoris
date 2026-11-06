@@ -2,10 +2,10 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The children a native door's stream says (AGENTPROVIDER1l, COWORKVIEW1a): Claude Code's <c>stream-json</c> announces a subagent with a
-/// <c>system</c> <c>task_started</c> of <c>local_agent</c>, its parent, depth, type and task's description beside it, and ends it with its
-/// <c>task_notification</c> in the wire's word. Each is read from the line's one <see cref="NativeFrame"/> into one
+/// <c>system</c> <c>task_started</c> of <c>local_agent</c>, the call that started it, its parent, depth, type and task's description beside it,
+/// and ends it with its <c>task_notification</c> in the wire's word. Each is read from the line's one <see cref="NativeFrame"/> into one
 /// <see cref="WireReading.ChildSeen"/> or <see cref="WireReading.ChildEnded"/>, once per child however the wire repeats it; a background
-/// command's task is no child, and every other line says none.
+/// command's task is no child (<see cref="NativeTasks"/>), and every other line says none.
 /// </summary>
 /// <remarks>One per capture: an end is read only for a start its own stream said.</remarks>
 internal sealed class NativeChildren
@@ -23,6 +23,7 @@ internal sealed class NativeChildren
                 return _seen.Add(child)
                     ? new WireReading.ChildSeen(child, ChildSignal.Stream)
                     {
+                        Call = frame.Text("tool_use_id"),
                         Parent = frame.Text("parent_task_id"),
                         Depth = Json.Int(frame.Root, "spawn_depth") is int depth and > 0 ? depth : null,
                         Type = frame.Text("subagent_type"),
