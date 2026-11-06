@@ -96,7 +96,9 @@ public sealed record AddressedPart(string Session, DrivenInbox Inbox);
 ///
 /// <para><b>The cost.</b> One read of the channel per part a look reaches: each part this loop runs of a line of work on an ask, or
 /// its newest part parked or ended while its ask has a quest open; a claim per message a part can take. A line of work whose ask has
-/// no quest open is not read: its next part, if one comes, is handed what waited.</para>
+/// no quest open is not read: its next part, if one comes, is handed what waited. A teammate's ask, held on another machine, is read and
+/// acknowledged the same way from the messages the sync mirrored here, so a part on its quest is handed them at its look and need not
+/// call <c>channel_read</c> itself.</para>
 /// </remarks>
 public sealed class ChannelReach
 {

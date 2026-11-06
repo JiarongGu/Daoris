@@ -300,6 +300,8 @@ public static class PersonDoors
         // posts through the connector's tool, which is marked as its claim. Their read mark is theirs to move, and a driver's, for a part;
         // NOTIFY2g: on a teammate's ask too, classed as a local ask's mark is.
         new("POST", "/api/asks/{id}/channel", DoorClass.Person, "a message on an ask's channel") { Marks = OwnerMark.None("a message on the ask's channel, which names no quest") },
+        // COMMS1k: the person's words on a line's own channel, a line on no ask held here.
+        new("POST", "/api/channel/line", DoorClass.Person, "a message on a line's own channel") { Marks = OwnerMark.None("a message on a line's own channel, which names no quest") },
         new("POST", "/api/asks/{id}/channel/read", DoorClass.Person, "an entry's read mark on an ask's channel") { Marks = OwnerMark.None("a read mark") },
         new("POST", "/api/quests/{id}/accept", DoorClass.Person, "the yes to a departure") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:accepted") },
         new("POST", "/api/quests/{id}/done", DoorClass.Person, "a quest's done of their own") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "note:quest.person-done") },

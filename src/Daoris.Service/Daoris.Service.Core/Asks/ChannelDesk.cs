@@ -25,7 +25,7 @@ public sealed class ChannelDesk(
     public ChannelParts Parts => _parts ??= new(this, store, ledger, facts);
 
     /// <summary>A teammate's ask's channel, which the person and a session here on it post to and read (SESSONE2i).</summary>
-    private TeammateAskChannel Teammates => new(store);
+    private TeammateAskChannel Teammates => new(store, StaleAsync);
 
     /// <summary>A line's own channel as the person reads it (COMMS1k).</summary>
     public LineChannel Line => new(this, store);
@@ -120,9 +120,11 @@ public sealed class ChannelDesk(
         if (mirrored.Count == 0) return null;
 
         var mark = await store.MarkAsync(id, entry, ct).ConfigureAwait(false);
-        return new ChannelRead(
+        var read = new ChannelRead(
             [.. mirrored.Where(m => since is null || m.At > since).OrderBy(m => m.At)], [],
             mirrored.Count(m => Counts(m, entry) && (mark is null || m.At > mark)), mark);
+        // A part here on the ask is handed what its entry has not settled, so the look reads its acknowledgments as an ask's.
+        return entry == PersonEntry ? read : read with { Acknowledged = await Teammates.AcknowledgedAsync(id, entry, ct).ConfigureAwait(false) };
     }
 
     /// <summary>
@@ -216,7 +218,11 @@ public sealed class ChannelDesk(
         string askId, string entry, string? session, string state, IReadOnlyList<string> messages, DateTimeOffset now,
         CancellationToken ct = default)
     {
-        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask) return null;
+        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask)
+        {
+            return await Teammates.AcknowledgeAsync(askId.TrimStart('#'), entry, session, state, messages, now, ct).ConfigureAwait(false);
+        }
+
         if (!ChannelAcks.Known(state) || string.IsNullOrWhiteSpace(entry) || entry == PersonEntry) return [];
 
         var held = await AcknowledgedAsync(ask.Id, entry, ct).ConfigureAwait(false);

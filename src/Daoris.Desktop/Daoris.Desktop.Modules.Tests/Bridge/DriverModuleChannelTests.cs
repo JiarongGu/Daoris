@@ -141,6 +141,32 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// COMMS1k: <c>CHANNEL_LINE_POST</c> is the person's post on a line's own channel, to everyone or one repository; it answers the message
+    /// kept as <c>CHANNEL_POST</c> does, and the service's code where it refused.
+    /// </summary>
+    [Fact]
+    public async Task CHANNEL_LINE_POST_posts_on_a_lines_own_channel_and_answers_the_services_code_where_it_refused()
+    {
+        var refuse = false;
+        var (module, service) = await UpAsync(new StandIn(_ => refuse
+            ? (HttpStatusCode.BadRequest, """{"error":"bad-to","code":"bad-to"}""")
+            : (HttpStatusCode.OK, """
+                {"message":{"kind":"message","at":"2026-11-06T09:01:00Z","id":"cccccccccc","person":true,"text":"Use v4 from now on.","urgent":true,"channel":"session:c1"}}
+                """)));
+
+        var posted = await AnswerAsync(module, "CHANNEL_LINE_POST", new { session = "q1", text = "Use v4 from now on." });
+        refuse = true;
+        var refused = await AnswerAsync(module, "CHANNEL_LINE_POST", new { session = "q1", text = "Use v4.", to = "nowhere" });
+
+        Assert.Equal(["POST /api/channel/line"], service.Requests.Distinct());
+        Assert.Contains("\"to\":\"nowhere\"", service.Bodies.Last());
+        Assert.True(posted.GetProperty("posted").GetBoolean());
+        Assert.Equal(("cccccccccc", "session:c1"), (posted.GetProperty("message").GetProperty("id").GetString(), posted.GetProperty("message").GetProperty("channel").GetString()));
+        Assert.False(refused.GetProperty("posted").GetBoolean());
+        Assert.Equal("bad-to", refused.GetProperty("code").GetString());
+    }
+
+    /// <summary>
     /// 🔴 COWORK1d (the message-urgency design §8.4): each message answers the page its level, and what it reached in each repository it
     /// addresses, as the service read them for the person; a message from before says neither.
     /// </summary>
