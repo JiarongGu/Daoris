@@ -101,30 +101,25 @@ public sealed class SwitchActs(ActJournal journal)
 
     private static async Task<State?> StateAsync(string root, string name, CancellationToken ct)
     {
-        var head = await ActCommits.HeadAsync(root, ct).ConfigureAwait(false);
-        if (head.Unread) return null;
-        var (symbolic, branch, _) = await WorkingTree.GitAsync(root, ["symbolic-ref", "-q", "HEAD"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
-        if (symbolic is not (0 or 1)) return null;
-        var from = symbolic == 0 ? branch.Trim() : null;
+        if (await PlanStatus.ReadAsync(root, ct).ConfigureAwait(false) is not { } status) return null;
+        var from = status.Branch is null ? null : "refs/heads/" + status.Branch;
         var (found, tip, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", "refs/heads/" + name + "^{commit}"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
         if (found is not (0 or 1)) return null;
         var toHead = found == 0 ? tip.Trim() : null;
         var (listed, trees, _) = await WorkingTree.GitAsync(root, ["worktree", "list", "--porcelain"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
         if (listed != 0) return null;
-        var (status, changed, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=no", "--no-renames"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
-        if (status != 0) return null;
 
         var elsewhere = Elsewhere(trees, root, "refs/heads/" + name);
-        var dirty = changed.Split('\0', StringSplitOptions.RemoveEmptyEntries).Length > 0;
+        var dirty = status.Tracked > 0;
         string? why = null;
         if (name.Length == 0 || name.StartsWith('-')) why = "that is no branch name";
         else if (name.StartsWith("daoris/", StringComparison.Ordinal)) why = "`daoris/` branches are Daoris's own and are not switched to here";
-        else if (head.Id is null) why = "this checkout has no commit yet";
+        else if (status.Head is null) why = "this checkout has no commit yet";
         else if (toHead is null) why = $"there is no local branch `{name}`";
         else if (from == "refs/heads/" + name) why = $"the checkout is on `{name}` already";
         else if (elsewhere is not null) why = $"`{name}` is checked out in another tree, `{elsewhere}`";
         else if (dirty) why = "tracked files are changed here; commit or stash them first, since a switch never carries them";
-        return new(from, head.Id, toHead, dirty, elsewhere, why);
+        return new(from, status.Head, toHead, dirty, elsewhere, why);
     }
 
     /// <summary>The folder name of another tree that has <paramref name="reference"/> out, or null.</summary>

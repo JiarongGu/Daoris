@@ -142,10 +142,9 @@ public sealed class CommitActs(ActJournal journal)
         if (symbolic is not (0 or 1)) return null;
         var tree = await ActCommits.TreeAsync(root, gitDir, ct).ConfigureAwait(false);
         if (head.Id is null) return new(null, symbolic == 0 ? branch.Trim() : null, tree, null, [], null);
-        var message = await ActCommits.MessageAsync(root, head.Id, ct).ConfigureAwait(false);
-        var parents = await ActCommits.ParentsAsync(root, head.Id, ct).ConfigureAwait(false);
-        var (code, headTree, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", head.Id + "^{tree}"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
-        return message is null || parents is null || code != 0 ? null : new(head.Id, symbolic == 0 ? branch.Trim() : null, tree, message, parents, headTree.Trim());
+        return await ActCommits.FactsAsync(root, head.Id, ct).ConfigureAwait(false) is not { } facts
+            ? null
+            : new(head.Id, symbolic == 0 ? branch.Trim() : null, tree, facts.Message, facts.Parents, facts.Tree);
     }
 
     /// <summary>Why the act would change nothing: no staged change (and, for an amend, no new message); null where it would.</summary>
