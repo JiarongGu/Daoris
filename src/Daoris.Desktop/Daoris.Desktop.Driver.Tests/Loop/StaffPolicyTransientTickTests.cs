@@ -62,12 +62,7 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
 
     private Daoris.Driver.Driver Protocol(SaidStandIn service, MovedClock clock, string? policy, string firstMode = "overloaded", string secondMode = "serves")
     {
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["stub"] = BuiltDoors.Stub,
-            ["acp-stub"] = BuiltDoors.AcpStub,
-            ["acp-other"] = WalkAgentTickTests.AcpOtherAdapter(),
-        });
+        var adapters = TestDoors.Registry([.. TestDoors.Shipped("stub", "acp-stub"), WalkAgentTickTests.AcpOtherAdapter()]);
         var config = ActorChoices.With(
             DriverConfig.Empty with
             {

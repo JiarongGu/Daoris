@@ -29,7 +29,7 @@ namespace Daoris.Driver;
 /// <para>The token <see cref="OpenAsync"/> or <see cref="ResumeAsync"/> is given governs the whole run, as the token <c>HoldAsync</c> is
 /// given does: the protocol door's session is driven on it, and the native capture reads on it.</para>
 /// </remarks>
-internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter, TransportStart start) : AgentRun, IAsyncDisposable
+internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapters, AgentDoor adapter, TransportStart start) : AgentRun, IAsyncDisposable
 {
     /// <summary>The ability a line on a protocol door's input is refused as: its words are requests on its session, <see cref="Words"/>' (D246).</summary>
     public const string LinesAbility = "a line written to a protocol door's process";
@@ -114,7 +114,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// Whether the run admits a native go-on with held words (MSG1b): a native door that resumes, handed the target and the selection its
     /// resume is prepared from. Where it admits none, its executor holds no words for it.
     /// </summary>
-    public bool GoesOn => !IsProtocol && adapter.Resumes && _start.Target is not null && _start.Selection is not null;
+    public bool GoesOn => !IsProtocol && adapter.Can.Resumes && _start.Target is not null && _start.Selection is not null;
 
     private bool IsProtocol => adapter.Transport == Transport.Protocol;
 
@@ -144,7 +144,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     public override Task ResumeAsync(string conversation, CancellationToken ct, IResumeState? state = null)
     {
-        if (!adapter.Resumes) return Refused("a resume");
+        if (!adapter.Can.Resumes) return Refused("a resume");
         _resume = state;
         return _opened is null ? BeginAsync(conversation, ct) : NextProcessAsync(conversation, ct);
     }
@@ -221,9 +221,9 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         if (!GoesOn) throw Unsupported("a go-on");
 
         var (target, selection) = (_start.Target!, _start.Selection!);
-        var next = adapter.PrepareResume(_start.Request! with { Resume = conversation }) ?? throw Unsupported("a resume");
-        if (_carriers.Settings is not null) adapter.HandSettings(next, _carriers.Settings);
-        if (_carriers.Servers is not null) adapter.HandServers(next, _carriers.Servers);
+        var next = adapters.Resume(adapter, _start.Request! with { Resume = conversation }) ?? throw Unsupported("a resume");
+        if (_carriers.Settings is not null) adapter.Spawned().HandSettings(next, _carriers.Settings);
+        if (_carriers.Servers is not null) adapter.Spawned().HandServers(next, _carriers.Servers);
         var info = host.Prepared(adapter, target, selection, next);
 
         var sessionId = SessionOf();
@@ -409,7 +409,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         var process = await host.SpawnedAsync(
                     proc, () => AgentStarts.StartAsync(info, piece is null ? ContainedKind.Agent : ContainedKind.Piece, whose, host.Home, host.Log, ct, piece))
                 .ConfigureAwait(false)
-            ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
+            ?? throw new DriverException($"the {adapter.Id.Value} adapter's process did not start");
         _kept.Add(process);
         _kept.Add(host.Processes.Track(sessionId, process, _start.RefusesInput, _start.DrivesBrowser));
         _kept.Add(new Disposer(() => SessionProcesses.EndIfRunning(process)));
@@ -456,7 +456,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     {
         var id = SessionOf();
         var sink = Sink();
-        var protocol = _start.Protocol ?? throw new InvalidOperationException($"the `{adapter.Name}` run was handed no protocol session to open.");
+        var protocol = _start.Protocol ?? throw new InvalidOperationException($"the `{adapter.Id.Value}` run was handed no protocol session to open.");
         var file = _file = AgentContext.Current.OpenTranscript(TranscriptOf(), append: conversation is not null);
 
         void Line(string text)

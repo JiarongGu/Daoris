@@ -40,15 +40,12 @@ public sealed class HelpGoOnTests : IDisposable
 
         public List<SpawnRequest> Asked { get; } = [];
 
-        public ISessionAdapter Door { get; }
+        public Provider Door { get; }
     }
 
     private ChatRunner Runner(ChatLedger ledger, Native native, SessionEvents events)
     {
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            [native.Door.Name] = native.Door,
-        });
+        var adapters = TestDoors.Registry([native.Door]);
         return new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -136,10 +133,7 @@ public sealed class HelpGoOnTests : IDisposable
         AccountCooling.Cool(
             _home, new CoolingEntry("stub", "account-1", DateTimeOffset.UtcNow.AddHours(2), true, "session", DateTimeOffset.UtcNow, "s0"),
             DateTimeOffset.UtcNow);
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["acp-stub"] = BuiltDoors.AcpStub,
-        });
+        var adapters = TestDoors.Registry([.. TestDoors.Shipped("acp-stub")]);
         var events = Events;
         using var runner = new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,

@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Auto</b> is today's (D81): the adapter's own posture, nothing named. <b>Asking</b> is the harness's asking mode
-/// (<see cref="ISessionAdapter.AskingPosture"/>), and <b>unrestricted</b> its mode that asks nothing (<see cref="ISessionAdapter.FullPosture"/>),
+/// (<see cref="AgentDoor.AskingPosture"/>), and <b>unrestricted</b> its mode that asks nothing (<see cref="AgentDoor.FullPosture"/>),
 /// each required on the protocol door, so an agent that does not offer it fails the open rather than running in its own mode under
 /// that label (D183 point 3). A harness that names none is refused before any record opens, naming it (D183 point 1).</para>
 ///
@@ -47,13 +47,13 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
     /// where they name the same. Only the permission prompts are compared: every other pause applies at its own point (AUTONOMY1c).
     /// </summary>
     /// <param name="now">The driver's file as it reads now, not as the look that started the session read it.</param>
-    public DrivenAccess? ChangedIn(DriverConfig now, ISessionAdapter adapter)
+    public DrivenAccess? ChangedIn(DriverConfig now, AgentDoor adapter)
     {
         return DrivenAccessChanges.ChangedIn(this, now, adapter);
     }
 
     /// <summary>The same change as a swap from what it started under (ACCESSSWAP1b); null where <paramref name="now"/> names the same.</summary>
-    public SetupSwap? SwapIn(DriverConfig now, ISessionAdapter adapter) =>
+    public SetupSwap? SwapIn(DriverConfig now, AgentDoor adapter) =>
         DrivenAccessChanges.SwapIn(this, now, adapter);
 
     /// <summary>
@@ -86,26 +86,26 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
     /// The access a driven start of <paramref name="repository"/> gets on <paramref name="adapter"/> under <paramref name="access"/>'s
     /// permission prompts: auto as it always ran; asking or unrestricted in the harness's mode for it, or refused where it names none.
     /// </summary>
-    public static DrivenAccess For(ResolvedAccess access, string repository, ISessionAdapter adapter)
+    public static DrivenAccess For(ResolvedAccess access, string repository, AgentDoor adapter)
     {
         var permissions = access.Value(AccessRules.Permissions);
-        var keeps = adapter.TakesSettings
+        var keeps = adapter.Can.TakesSettings
             ? "the person's own denies, and the tree guard where it is on, still hold"
             : "this agent takes no rules, so the person's own denies and the tree guard do not reach it";
         if (permissions is not (AccessRules.Asking or AccessRules.Unrestricted))
         {
-            var own = !adapter.Abilities().SetAtOpen ? "the permission mode driven sessions always ran in there"
-                : adapter.AcpPosture is { Length: > 0 } posture ? $"it asks for the agent's {new PostureAsked(posture).Spelled()} mode, the first it offers"
+            var own = !adapter.Can.SetAtOpen ? "the permission mode driven sessions always ran in there"
+                : adapter.Postures.Ordinary is { Length: > 0 } posture ? $"it asks for the agent's {new PostureAsked(posture).Spelled()} mode, the first it offers"
                 : "the agent's own mode, which Daoris does not set";
-            return new(AccessRules.Auto, $"Permission prompts: auto on `{adapter.Name}`, {own} (D81); {keeps}.") { Repository = repository };
+            return new(AccessRules.Auto, $"Permission prompts: auto on `{adapter.Id.Value}`, {own} (D81); {keeps}.") { Repository = repository };
         }
 
         var unrestricted = permissions == AccessRules.Unrestricted;
         var kind = unrestricted ? "mode that asks nothing" : "asking mode";
-        if ((unrestricted ? adapter.FullPosture : adapter.AskingPosture) is not { Length: > 0 } mode)
+        if ((unrestricted ? adapter.Postures.Full : adapter.Postures.Asking) is not { Length: > 0 } mode)
         {
             var refusal = $"`{repository}`'s permission prompts are `{permissions}`, set for "
-                + $"{AccessRules.Whose(access.Source(AccessRules.Permissions))}, and Daoris knows no {kind} of `{adapter.Name}`'s, so it does "
+                + $"{AccessRules.Whose(access.Source(AccessRules.Permissions))}, and Daoris knows no {kind} of `{adapter.Id.Value}`'s, so it does "
                 + $"not start there in another mode under that name. {WayOn(repository)}";
             return new(permissions, refusal) { Refusal = refusal, Repository = repository };
         }
@@ -114,19 +114,19 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
         // has no wire to hold one on, since the harness answers its own asks under `-p`.
         var waits = $"each request waits for the person to allow it once or refuse it, and one nobody answers in "
             + $"{(int)HeldPermissions.Bound.TotalMinutes} minutes is refused";
-        var abilities = adapter.Abilities();
+        var abilities = adapter.Can;
         var does = unrestricted
             ? "which asks nothing"
             : !abilities.HeldOnWire
                 ? "where a tool its rules do not allow is refused: the native door has no wire to hold a request on, so it cannot hold one "
                   + "for the person, and the session uses only what its rules allow"
-                : !adapter.TakesSettings
+                : !adapter.Can.TakesSettings
                     ? $"which asks before acting; {waits}, and this agent takes no rules, so it does unasked only what that mode allows"
                     : $"which asks before any tool its rules do not allow; {waits}";
         // A door whose mode is set at its open carries it in its posture; any other takes a permission mode on its command line.
         var said = !abilities.SetAtOpen
-            ? $"Permission prompts: {permissions} on `{adapter.Name}`, the `{mode}` permission mode, {does}; {keeps}."
-            : $"Permission prompts: {permissions} on `{adapter.Name}`, the agent's `{mode}` mode, {does}; {keeps}.";
+            ? $"Permission prompts: {permissions} on `{adapter.Id.Value}`, the `{mode}` permission mode, {does}; {keeps}."
+            : $"Permission prompts: {permissions} on `{adapter.Id.Value}`, the agent's `{mode}` mode, {does}; {keeps}.";
         // The protocol door's asking mode carries the mark that holds its requests for the person (AcpSession.PersonAnswers).
         return !abilities.SetAtOpen
             ? new(permissions, said) { PermissionMode = mode, Repository = repository }
@@ -209,14 +209,14 @@ public static class DrivenAccessChanges
 {
     extension(IAgentAccess started)
     {
-        public DrivenAccess? ChangedIn(DriverConfig now, ISessionAdapter adapter)
+        public DrivenAccess? ChangedIn(DriverConfig now, AgentDoor adapter)
         {
             var got = DrivenAccess.For(AccessRules.Resolve(now, started.Repository, started.Workspace), started.Repository, adapter)
                 with { Workspace = started.Workspace };
             return got.Permissions == started.Permissions ? null : got;
         }
 
-        public SetupSwap? SwapIn(DriverConfig now, ISessionAdapter adapter) =>
+        public SetupSwap? SwapIn(DriverConfig now, AgentDoor adapter) =>
             started.ChangedIn(now, adapter) is { } got ? new SetupSwap(started.Permissions, got.Permissions) : null;
     }
 }

@@ -264,7 +264,7 @@ public static class ClaudeTrust
     /// their profile folder. Before, the own home was always the profile folder, whatever the variable said.
     /// </summary>
     /// <param name="profileHome">The Daoris account's home the session runs in, or null for the tool's own home.</param>
-    /// <param name="variable">The harness's configuration-home variable, <see cref="HarnessToolchain.ProfileVariable"/>.</param>
+    /// <param name="variable">The harness's configuration-home variable, <see cref="AccountAgent.ProfileVariable"/>.</param>
     /// <param name="read">How the environment is read; null reads this process's, which the session inherits.</param>
     public static string PathFor(string trustFile, string? profileHome, string? variable, Func<string, string?>? read = null)
     {

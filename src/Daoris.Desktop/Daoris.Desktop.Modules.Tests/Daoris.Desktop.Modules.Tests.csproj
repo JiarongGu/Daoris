@@ -31,6 +31,7 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestHomes.cs" Link="TestHomes.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Roles\StaffedRoles.cs" Link="StaffedRoles.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Agents\TestDoors.cs" Link="TestDoors.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Agents\TestAgent.cs" Link="TestAgent.cs" />
     <!-- The safe removal of a test's scratch home (SCRATCHLEAK1), with the git runner its seeds are built by, held once. -->
     <Compile Include="..\Daoris.Desktop.Driver.Tests\GitFixture.cs" Link="GitFixture.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\FixtureSpawns.cs" Link="FixtureSpawns.cs" />

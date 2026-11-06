@@ -22,27 +22,27 @@ public sealed class RuleLanguageTests : IDisposable
         var built = ProviderRegistry.Built();
         foreach (var door in new[] { "claude-code", "claude-code-acp" })
         {
-            var home = built.Resolve(door).Home();
+            var home = built.Door(door).Home;
             Assert.Equal("CLAUDE_CONFIG_DIR", home.Variable);
             Assert.Equal(ClaudeTrust.FileName, home.TrustFile);
         }
 
-        Assert.Null(built.Resolve("codex-acp").Home().TrustFile);
-        Assert.Equal("CODEX_HOME", built.Resolve("codex-acp").Home().Variable);
-        Assert.Null(built.Resolve("dsh").Home().TrustFile);
-        Assert.Equal(new DoorHome(null, false, null), TestDoors.Door("stand-agent").Home());
+        Assert.Null(built.Door("codex-acp").Home.TrustFile);
+        Assert.Equal("CODEX_HOME", built.Door("codex-acp").Home.Variable);
+        Assert.Null(built.Door("dsh").Home.TrustFile);
+        Assert.Equal(new DoorHome(null, false, null), TestDoors.Door("stand-agent").Doors[0].Home);
     }
 
     [Fact]
     public void Each_built_door_takes_its_providers_language_and_a_provider_stating_none_takes_none()
     {
         var built = ProviderRegistry.Built();
-        Assert.Same(ClaudeRules.Language, built.Resolve("claude-code").RuleLanguage());
-        Assert.Same(ClaudeRules.Language, built.Resolve("claude-code-acp").RuleLanguage());
+        Assert.Same(ClaudeRules.Language, built.RuleLanguage(built.Door("claude-code")));
+        Assert.Same(ClaudeRules.Language, built.RuleLanguage(built.Door("claude-code-acp")));
         foreach (var door in new[] { "codex-acp", "dsh", "stub", "acp-stub" })
         {
-            Assert.Null(built.Resolve(door).RuleLanguage());
-            Assert.False(built.Resolve(door).TakesSettings);
+            Assert.Null(built.RuleLanguage(built.Door(door)));
+            Assert.False(built.Door(door).Can.TakesSettings);
         }
 
         var registry = built;

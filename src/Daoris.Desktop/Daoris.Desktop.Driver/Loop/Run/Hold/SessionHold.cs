@@ -67,7 +67,7 @@ internal sealed class SessionHold(IRunWiring wiring)
     /// null, as for every run but a driven quest session's, ends at the first failure.
     /// </param>
     public async Task<T> HoldAsync<T>(
-        string actor, ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
+        string actor, AgentDoor adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, HarnessEnding, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
@@ -90,7 +90,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         var whose = resume is null ? StartClass.Background : StartClass.Person;
 
         // What the start asked of its door's spawn, which its asked choice is read from and a go-on asks again naming its conversation.
-        var request = SpawnRequests.Of(target, context.Config.Commands.GetValueOrDefault(adapter.Name));
+        var request = SpawnRequests.Of(target, context.Config.Commands.GetValueOrDefault(adapter.Id.Value));
 
         // The run holds the process, its capture and its wait; the steps below are this hold's own, between the spawn and the open. The
         // spawn keeps the downloads the start is handed and brackets its process's lineage; it is tracked so who drives Daoris's browser
@@ -99,7 +99,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         {
             RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Piece = piece, Moved = moved, Target = target, Request = request, Selection = goesOnAs,
         };
-        await using var run = new TransportRun(wiring.Transport, adapter, start);
+        await using var run = new TransportRun(wiring.Transport, context.Adapters, adapter, start);
         await run.SpawnAsync(sessionId, ct).ConfigureAwait(false);
         spawned?.Invoke();
 
@@ -113,7 +113,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         }
         actor = prior?.Actor ?? actor;
         if (taken is { } role) context.Conversations.KeepRole(sessionId, role.Role, role.Revision);
-        var asked = ActorAsked.ForSpawn(adapter.Name, request, info.Environment, adapter.ChoiceVariables(), prior?.Asked);
+        var asked = ActorAsked.ForSpawn(adapter.Id.Value, request, info.Environment, adapter.Spawned().ChoiceVariables, prior?.Asked);
 
         // The entry a new start's walk took; a continuation keeps its record's own.
         var choice = target.Choice ?? prior?.Choice ?? "before";
@@ -131,7 +131,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         using var watched = minutes is null && target.Opinion is null && target.Helper is null && target.Brainstorm is null && target.Piece is null
             ? wiring.Watch.Watch(
                 sessionId,
-                new WatchedRun(target.Ask is null ? SessionWatch.Quest : SessionWatch.Intake, target.Ask is null ? target.QuestId : null, adapter.Name)
+                new WatchedRun(target.Ask is null ? SessionWatch.Quest : SessionWatch.Intake, target.Ask is null ? target.QuestId : null, adapter.Id.Value)
                 {
                     Tree = cwd,
                 })
@@ -146,7 +146,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         // Each door ends the same way: the record is concluded from the exit code and what the session was for, never from what the
         // session said about itself. A resume's prompt is the answer as it is, the conversation already holding the target; after it,
         // the answers to the go-aheads it asked since its start.
-        var composed = resume is null ? TargetPrompt.Composed(TargetPrompt.ForStart(target, adapter)) : null;
+        var composed = resume is null ? TargetPrompt.Composed(TargetPrompt.ForStart(target, context.Adapters, adapter)) : null;
         var prompt = resume?.Prompt ?? composed!.Text;
 
         // What the target was composed of, kept beside it on its event with the rules handed beside it. A resume composes nothing, so
@@ -157,12 +157,12 @@ internal sealed class SessionHold(IRunWiring wiring)
 
         // A quest's session keeps the id its harness names, which an answer to a park resumes. Never an intake's, answered through its
         // ask; nor a reviewer's, each pass a fresh conversation.
-        var keepAs = target.OneTurn ? null : adapter.Name;
+        var keepAs = target.OneTurn ? null : adapter.Id.Value;
 
         // What the person tells a quest's session while it works, held for the protocol door to hand over between turns; on the native
         // door, held until it ends and gone on with in its own conversation. Never a one-turn run's, framed as one prompt.
         var held = run.GoesOn && !target.OneTurn ? context.Processes.OpenInbox(sessionId) : null;
-        var abilities = adapter.Abilities();
+        var abilities = adapter.Can;
         var inbox = abilities.WordsAtNextStep && !target.OneTurn ? context.Processes.OpenInbox(sessionId) : held;
         using var unheld = new Disposer(() => inbox?.Close());
         if (held is not null)
@@ -214,7 +214,7 @@ internal sealed class SessionHold(IRunWiring wiring)
             ? null
             : options =>
             {
-                if (AgentOffers.Offered(home, adapter.Name, offers.Version, offers.Account, Values("model"), Values("thought_level"), DateTimeOffset.UtcNow)
+                if (AgentOffers.Offered(home, adapter.Id.Value, offers.Version, offers.Account, Values("model"), Values("thought_level"), DateTimeOffset.UtcNow)
                     is { } unkept)
                 {
                     log?.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", unkept)]);
@@ -228,24 +228,24 @@ internal sealed class SessionHold(IRunWiring wiring)
             : async refusal =>
             {
                 // The refusal is a reading the run said before this re-ask, which the offers store's part of its sink kept (below).
-                log?.Write("info", "actor.refused", [("actor", actor), ("session", sessionId), ("agent", adapter.Name), ("model", refusal.Value),
+                log?.Write("info", "actor.refused", [("actor", actor), ("session", sessionId), ("agent", adapter.Id.Value), ("model", refusal.Value),
                     ("code", refusal.Code)]);
                 if (await reask(refusal).ConfigureAwait(false) is not { } later) return null;
 
                 // The same-account move: the record's choice and asked move through their later door, and the opening note says both,
                 // the refused entry passed on this account.
-                var refusedEntry = new ActorEffective(adapter.Name, refusal.Value, null, choice);
-                var ranEntry = new ActorEffective(adapter.Name, later.Asked.NamedModel, later.Asked.Effort.Value, later.Choice);
+                var refusedEntry = new ActorEffective(adapter.Id.Value, refusal.Value, null, choice);
+                var ranEntry = new ActorEffective(adapter.Id.Value, later.Asked.NamedModel, later.Asked.Effort.Value, later.Choice);
                 var why = $"`{offers.Account ?? "its own sign-in"}` did not offer `{refusal.Value}`";
                 RotatedOpening.SayActor(context.Events, sessionId, actor, ranEntry, [new BuildPass(refusedEntry, refusal.Code, why)]);
                 ActorMoves.Write(log, actor, sessionId, refusedEntry.From, later.Choice, "model-refused");
                 if (target.QuestId is { } movedLine)
                 {
-                    wiring.CountMove(movedLine, actor, StaffConditions.ModelRefused, new ActorEffective(adapter.Name, refusal.Value, asked.Effort.Value, choice), later.Choice);
+                    wiring.CountMove(movedLine, actor, StaffConditions.ModelRefused, new ActorEffective(adapter.Id.Value, refusal.Value, asked.Effort.Value, choice), later.Choice);
                 }
 
                 choice = later.Choice;
-                UsageTurns.ChoiceBound(home, context.Events, sessionId, new StaffKey(adapter.Name, later.Asked.NamedModel, later.Asked.Effort.Value).Text);
+                UsageTurns.ChoiceBound(home, context.Events, sessionId, new StaffKey(adapter.Id.Value, later.Asked.NamedModel, later.Asked.Effort.Value).Text);
                 await service.TryKeepActorAsync(
                         sessionId, log, choice, later.Asked, ct: CancellationToken.None,
                         chosen: new ActorChosen(prior?.Chosen?.Rule ?? StaffRules.Order, StaffBy.Moved, "model-refused", refusedEntry.From))
@@ -286,7 +286,7 @@ internal sealed class SessionHold(IRunWiring wiring)
 
                 // The posture rides with it because it is the adapter's: harnesses name the same boundary differently, and one does not
                 // name it on the wire. A driven session's asking or unrestricted permission prompts name the adapter's mode, required.
-                target.Access?.Posture ?? SessionRules.PassPosture(target, adapter) ?? adapter.AcpPosture, scope, rules.Meta,
+                target.Access?.Posture ?? SessionRules.PassPosture(target, adapter) ?? adapter.Postures.Ordinary, scope, rules.Meta,
                 handedPlan ?? ConnectorPlans.For(sessionId, null, context.Servers), inbox, resume, keepAs, waitsOnBackground, noConnector, ending,
                 unoffered: target.Access is { } access ? access.Unoffered : SessionRules.PassPosture(target, adapter) is not null ? BrainstormPermissions.Unoffered : null,
                 setupChanged: setupChanged,
@@ -296,7 +296,7 @@ internal sealed class SessionHold(IRunWiring wiring)
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, log, choice, notCarried, ct: CancellationToken.None),
                 modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
-                typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true, handedBack: words => acpLeft = words),
+                typedFailures: context.Adapters.AgentNamed(adapter.Id.Value)?.Tables.ErrorWords?.TypedFailures == true, handedBack: words => acpLeft = words),
         });
 
         // What was asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first
@@ -323,7 +323,7 @@ internal sealed class SessionHold(IRunWiring wiring)
             said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
             limits,
             offers is null ? null
-                : new OfferRefusals(home, adapter.Name, offers.Version, offers.Account, why => log?.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", why)]))));
+                : new OfferRefusals(home, adapter.Id.Value, offers.Version, offers.Account, why => log?.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", why)]))));
 
         // The rules and servers a go-on runs under, the ones this start was handed.
         run.HandCarriers(new RunCarriers(rules.File, handed));
@@ -408,7 +408,7 @@ internal sealed class SessionHold(IRunWiring wiring)
     /// What a running driven session's permission prompts changed to, read from the driver's file now; null where they did not, or the
     /// file does not read: a write torn half-way is read again at the next turn's end, never taken for a change.
     /// </summary>
-    private static SetupSwap? SetupNow(IAgentAccess started, ISessionAdapter adapter, string configPath)
+    private static SetupSwap? SetupNow(IAgentAccess started, AgentDoor adapter, string configPath)
     {
         try
         {

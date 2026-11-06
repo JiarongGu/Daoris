@@ -5,4 +5,4 @@ namespace Daoris.Driver;
 /// and each entry it passed before with its code; or, where none can run, the wait's sentence the press is refused in (§4.5).
 /// </summary>
 internal sealed record ConversationWalk(
-    ISessionAdapter? Adapter, HarnessSelection? Selection, ActorEffective? Chosen, IReadOnlyList<BuildPass> Passes, string? Refusal);
+    AgentDoor? Adapter, HarnessSelection? Selection, ActorEffective? Chosen, IReadOnlyList<BuildPass> Passes, string? Refusal);

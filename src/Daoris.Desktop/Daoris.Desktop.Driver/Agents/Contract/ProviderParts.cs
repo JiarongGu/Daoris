@@ -38,10 +38,6 @@ public sealed record PoolFacts(
     bool WeekFixed)
 {
     public static PoolFacts None { get; } = new(null, null, null, null, null, null, false);
-
-    public static PoolFacts Of(HarnessToolchain toolchain) => new(
-        toolchain.KeyVariable, toolchain.LoginCheck, toolchain.LoginArguments, toolchain.DeviceLoginArguments, toolchain.LoginPorts,
-        toolchain.SettingsFile, toolchain.WeekFixed);
 }
 
 /// <summary>
@@ -58,9 +54,6 @@ public sealed record AccountsPart(AccountKey Key, DoorId? References, PoolFacts 
 public sealed record TablesPart(LimitWords? Limits, WindowWords? Windows, SignInWords? SignIn, string? Refused, ErrorWords? ErrorWords)
 {
     public static TablesPart None { get; } = new(null, null, null, null, null);
-
-    public static TablesPart Of(HarnessToolchain toolchain, bool withErrors) => new(
-        toolchain.Limits, toolchain.Windows, toolchain.SignIn, toolchain.Refused, withErrors ? toolchain.ErrorWords : null);
 }
 
 /// <summary>How an account's windows are read between turns (<see cref="IUsageRead"/>); null asks nothing.</summary>

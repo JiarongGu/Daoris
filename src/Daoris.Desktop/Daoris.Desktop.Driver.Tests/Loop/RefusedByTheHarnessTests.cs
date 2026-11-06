@@ -46,16 +46,13 @@ public sealed class RefusedByTheHarnessTests : IDisposable
     private string Transcript => DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.log");
 
     /// <summary>An agent declaring Claude Code's refused words, on the door a test names, present by a look.</summary>
-    private static ISessionAdapter Adapter(Transport wire, bool structured, HarnessToolchain toolchain) =>
+    private static Provider Adapter(Transport wire, bool structured, TestAgent toolchain) =>
         TestDoors.Door("fake", toolchain, wire, dialect: structured ? TestDoors.StreamJson : null);
 
     private HarnessRoster Roster(Transport wire = Transport.Native, bool structured = true) =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter(wire, structured, new HarnessToolchain(
+        new(TestDoors.Registry([Adapter(wire, structured, new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
-                Refused: "API Error: 401")),
-        }), Settings)
+                Refused: "API Error: 401"))]), Settings)
         {
             Clock = () => Seen,
             Zone = Zone,
@@ -96,7 +93,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
     /// <summary>The conclusion of a run that never touched its quest, read for a refused credential.</summary>
     private SessionConclusion Concluded(ServiceClient service, HarnessRoster roster, HarnessEnding ended) =>
         Driver(service, roster).AccountRefused(
-            Observation.Conclude(ended.Exit ?? 0, "Open"), roster.Adapters.Resolve("fake"), new HarnessSelection(null, "account-1"), ended);
+            Observation.Conclude(ended.Exit ?? 0, "Open"), roster.Adapters.Door("fake"), new HarnessSelection(null, "account-1"), ended);
 
     private async Task HoldsAsync(HarnessRoster roster, SessionConclusion conclusion)
     {

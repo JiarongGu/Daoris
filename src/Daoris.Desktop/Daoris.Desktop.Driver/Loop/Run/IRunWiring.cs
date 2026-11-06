@@ -74,11 +74,11 @@ internal interface IRunWiring
     (string Role, long Revision)? RoleTaken(Consideration start, string? named);
 
     /// <summary>The process a session starts as, with the notice its harness leaves.</summary>
-    (ProcessStartInfo Info, string? Notice) Prepare(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection);
+    (ProcessStartInfo Info, string? Notice) Prepare(AgentDoor adapter, SessionTarget target, HarnessSelection selection);
 
     /// <summary>The rules one session may run under, composed for its circle and repository and handed as the harness's own settings tier.</summary>
     (string? File, object? Meta, HandedSection Handed) HandRules(
-        ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository, string tree, string? kept,
+        AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository, string tree, string? kept,
         AcrossReach? across, IReadOnlyList<string>? plugins, IReadOnlyList<string>? continued, HeavyHanded? heavy);
 
     /// <summary>The maker a carry-on's earlier part ran on, which its brief credits the uncommitted work to; null where none ran.</summary>
@@ -100,10 +100,10 @@ internal interface IRunWiring
         Consideration start, string agent, HarnessSelection selection, ModelRefusal refusal, HashSet<string> refused, CancellationToken ct, string? role);
 
     /// <summary>What the harness's lines of a run say to the session's structure and its console.</summary>
-    Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId);
+    Action<JsonElement> Said(AgentDoor adapter, HarnessSelection selection, string sessionId);
 
     /// <summary>The account's part of a run's sink for the native door's limit (<see cref="NativeLimits"/>).</summary>
-    NativeLimits NativeLimit(ISessionAdapter adapter);
+    NativeLimits NativeLimit(AgentDoor adapter);
 
     /// <summary>Whether a driven run that ends holding its quest waits on its own helper.</summary>
     Task<bool> WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset openedAt, CancellationToken ct);
@@ -113,7 +113,7 @@ internal interface IRunWiring
         string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace, CancellationToken ct);
 
     /// <summary>The conclusion of a run its harness refused the account for, said with the harness's own words.</summary>
-    SessionConclusion AccountRefused(SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended);
+    SessionConclusion AccountRefused(SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, HarnessEnding ended);
 
     /// <summary>The conclusion of a run whose model its agent refused.</summary>
     SessionConclusion ModelRefused(
@@ -121,11 +121,11 @@ internal interface IRunWiring
 
     /// <summary>The conclusion of a run whose account was signed out.</summary>
     SessionConclusion AccountSignedOut(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended);
+        SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended);
 
     /// <summary>The conclusion of a run an account's limit cut off, and the limit it read.</summary>
     (SessionConclusion Conclusion, bool Limit) AccountLimited(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, string sessionId,
+        SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, string? turnFailed, string sessionId,
         AcpUsage? used, LimitSeen? byCode);
 
     /// <summary>The reservation that keeps a look from planning a quest again between a start's refused end and its move to another account.</summary>
@@ -153,7 +153,7 @@ internal interface IRunWiring
     System.Collections.Concurrent.ConcurrentDictionary<string, string> LimitResumed { get; }
 
     /// <summary>Whether the rules a session would be handed let it call the connector's tool unasked, which a harness that takes no rules cannot.</summary>
-    bool HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool);
+    bool HandedConnector(AgentDoor adapter, string? workspace, string? repository, string tool);
 
     /// <summary>The knowledge server a session is offered, located per run; null where this machine has no connector.</summary>
     ServerEntry? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc);

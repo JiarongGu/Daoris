@@ -28,9 +28,9 @@ internal sealed class RosterReport(HarnessRoster roster)
     public async Task<HarnessReport?> ReportAsync(
         string adapter, DriverConfig config, bool refresh = false, CancellationToken ct = default, string? account = null)
     {
-        var resolved = roster.Adapters.Resolve(adapter);
-        if (resolved.Toolchain is not { } toolchain) return null;
-        var name = resolved.Name;
+        var resolved = roster.Adapters.Door(adapter);
+        if (roster.Adapters.AgentNamed(resolved.Id.Value) is not { } toolchain) return null;
+        var name = resolved.Id.Value;
         var owner = roster.Adapters.OwnerOfAgent(name).Value;
 
         if (refresh && account is not null)
@@ -41,8 +41,8 @@ internal sealed class RosterReport(HarnessRoster roster)
                     + (HarnessSettings.Profiles(roster.Home, owner) is { Count: > 0 } accounts ? string.Join(", ", accounts) : "(none)"));
             roster._refused.TryRemove(HarnessRoster.AccountKey(owner, named), out _);
             // Asked the way its owner asks when this build carries the owner (AGT7): a door declares no login question.
-            var asker = AccountAgent(name, toolchain);
-            await AskOneAsync(asker.Name, asker.Toolchain, owner, named, config, ct).ConfigureAwait(false);
+            var asker = AnswersFor(name, toolchain);
+            await AskOneAsync(asker.Name, asker, owner, named, config, ct).ConfigureAwait(false);
             // And its windows, where its agent's server is asked them (CODEXUSE1).
             await roster.AskUsageAsync(name, owner, named, config, ct).ConfigureAwait(false);
         }
@@ -68,13 +68,13 @@ internal sealed class RosterReport(HarnessRoster roster)
     /// </summary>
     public async Task BinaryChangedAsync(string adapter, DriverConfig config, CancellationToken ct = default)
     {
-        var resolved = roster.Adapters.Resolve(adapter);
-        if (resolved.Toolchain is not { } toolchain) return;
-        await BinaryOfAsync(resolved.Name, toolchain, config, again: true, ct).ConfigureAwait(false);
+        var resolved = roster.Adapters.Door(adapter);
+        if (roster.Adapters.AgentNamed(resolved.Id.Value) is not { } toolchain) return;
+        await BinaryOfAsync(resolved.Id.Value, toolchain, config, again: true, ct).ConfigureAwait(false);
     }
 
     /// <summary>The person's press on one agent: every account of Daoris's asked one at a time, each answer kept; never the own sign-in.</summary>
-    private async Task PressAsync(string name, HarnessToolchain toolchain, string owner, DriverConfig config)
+    private async Task PressAsync(string name, AccountAgent toolchain, string owner, DriverConfig config)
     {
         var prior = Composed(name, toolchain, new HarnessRoster.Binary(true, null, null));
         // 🔴 A door onto an agent this build carries no door of (CODEXACCT1: `codex-acp`, `codex`) asks its binary as itself,
@@ -90,7 +90,7 @@ internal sealed class RosterReport(HarnessRoster roster)
         if (holder is { } agent)
         {
             await HarnessProbe.ProbeAsync(
-                agent.Name, agent.Toolchain, config.Commands.GetValueOrDefault(agent.Name), roster.Settings, roster.Home, CancellationToken.None,
+                agent.Name, agent, config.Commands.GetValueOrDefault(agent.Name), roster.Settings, roster.Home, CancellationToken.None,
                 busy: account => Busy(owner, account), prior: prior, clock: roster.Clock,
                 answered: (account, said, at) => roster.Keep(owner, account, said, at)).ConfigureAwait(false);
         }
@@ -99,7 +99,7 @@ internal sealed class RosterReport(HarnessRoster roster)
     }
 
     /// <summary>What the binary last answered, asked once a process, or again where <paramref name="again"/>; never an account.</summary>
-    private async Task<HarnessRoster.Binary> BinaryOfAsync(string name, HarnessToolchain toolchain, DriverConfig config, bool again, CancellationToken ct)
+    private async Task<HarnessRoster.Binary> BinaryOfAsync(string name, AccountAgent toolchain, DriverConfig config, bool again, CancellationToken ct)
     {
         if (!again && roster._binaries.TryGetValue(name, out var known)) return known;
 
@@ -117,7 +117,7 @@ internal sealed class RosterReport(HarnessRoster roster)
     /// One harness's report from what is known (ROSTER1): the accounts on disk now, each with what was last read of it and
     /// when, the tool's own sign-in likewise, and the binary's last answer. Nothing is asked.
     /// </summary>
-    private HarnessReport Composed(string name, HarnessToolchain toolchain, HarnessRoster.Binary binary)
+    private HarnessReport Composed(string name, AccountAgent toolchain, HarnessRoster.Binary binary)
     {
         var owner = roster.Adapters.OwnerOfAgent(name).Value;
         var reads =AccountReads.Of(roster.Home, owner);
@@ -147,7 +147,7 @@ internal sealed class RosterReport(HarnessRoster roster)
             binary.Present,
             binary.Present ? binary.Version : null,
             binary.Present ? null : binary.Problem,
-            toolchain.ProfileVariable,
+            toolchain.Home.Variable,
             // The order's first, where the machine's default was (POOL1a2, the account-pool design §2.2).
             roster.Settings.FirstOf(owner),
             profiles,
@@ -233,9 +233,9 @@ internal sealed class RosterReport(HarnessRoster roster)
     /// (<see cref="HarnessProbe.LoginAnswer.Locked"/>), so a walk leaves the account unknown for itself (PARALLEL1c).
     /// </summary>
     internal async Task<HarnessProbe.LoginAnswer> AskOneAsync(
-        string adapter, HarnessToolchain toolchain, string owner, string account, DriverConfig config, CancellationToken ct)
+        string adapter, AccountAgent toolchain, string owner, string account, DriverConfig config, CancellationToken ct)
     {
-        var key = toolchain.KeyVariable is { Length: > 0 } variable && HarnessKeys.Of(roster.Home, owner, account) is { } held
+        var key = toolchain.Accounts.KeyVariable is { Length: > 0 } variable && HarnessKeys.Of(roster.Home, owner, account) is { } held
             ? new Dictionary<string, string> { [variable] = held }
             : null;
         var before = AccountReads.Of(roster.Home, owner).Accounts.GetValueOrDefault(account);
@@ -281,29 +281,24 @@ internal sealed class RosterReport(HarnessRoster roster)
     public async Task<LoginRead> LoginOfAsync(
         string adapter, DriverConfig config, string profile, CancellationToken ct = default)
     {
-        var resolved = roster.Adapters.Resolve(adapter);
-        if (resolved.Toolchain is not { } toolchain) return new LoginRead(LoginState.Unknown, null);
+        var resolved = roster.Adapters.Door(adapter);
+        if (roster.Adapters.AgentNamed(resolved.Id.Value) is not { } toolchain) return new LoginRead(LoginState.Unknown, null);
 
         // A door's account is its owner's (AGT7), asked the way the owner asks when this build has it.
-        var owner = roster.Adapters.OwnerOfAgent(resolved.Name).Value;
-        var asker = AccountAgent(resolved.Name, toolchain);
+        var owner = roster.Adapters.OwnerOfAgent(resolved.Id.Value).Value;
+        var asker = AnswersFor(resolved.Id.Value, toolchain);
         var answer = await HarnessProbe.AskAccountAsync(
-            asker.Name, asker.Toolchain, config.Commands.GetValueOrDefault(asker.Name), roster.Settings, roster.Home,
+            asker.Name, asker, config.Commands.GetValueOrDefault(asker.Name), roster.Settings, roster.Home,
             HarnessSettings.ProfileHome(roster.Home, owner, profile), ct, ProbeLock.PathOf(roster.Home, owner, profile), key: null).ConfigureAwait(false);
         if (answer.Asked) roster.Keep(owner, profile, answer.Said, roster.Clock());
         return answer.Said;
     }
 
-    /// <summary>The toolchain that answers for this adapter's accounts (AGT7) — its owner's, when carried or declared.</summary>
-    public HarnessToolchain? AccountToolchain(string adapter) => AccountAgentOf(adapter)?.Toolchain;
-
     /// <summary>
-    /// The agent that answers for this adapter's accounts, by name and toolchain (AGT7, CODEXACCT1): what a sign-in on the
-    /// door runs, with that agent's configured command, and what its accounts are asked with. Null for an adapter that
-    /// declares no toolchain.
+    /// The agent that answers for this adapter's accounts (AGT7, CODEXACCT1): what a sign-in on the door runs, with that agent's
+    /// configured command, and what its accounts are asked with. Null for an adapter that declares no program.
     /// </summary>
-    public (string Name, HarnessToolchain Toolchain)? AccountAgentOf(string adapter) =>
-        roster.Toolchain(adapter) is { } toolchain ? AccountAgent(roster.Adapters.Resolve(adapter).Name, toolchain) : null;
+    public AccountAgent? AccountAgentOf(string adapter) => roster.Adapters.AccountAgentOf(new DoorId(adapter));
 
     /// <summary>
     /// What a sign-in on this door runs as (CODEXACCT1): its account agent's binary, resolved as that agent's status question
@@ -313,38 +308,28 @@ internal sealed class RosterReport(HarnessRoster roster)
     /// </summary>
     public HarnessCommand? SignInCommand(string adapter, DriverConfig config) =>
         AccountAgentOf(adapter) is { } agent
-            ? HarnessProbe.CommandOf(agent.Name, agent.Toolchain, config.Commands.GetValueOrDefault(agent.Name), roster.Settings, roster.Home)
+            ? HarnessProbe.CommandOf(agent.Name, agent, config.Commands.GetValueOrDefault(agent.Name), roster.Settings, roster.Home)
             : null;
 
     /// <summary>
     /// Which agent answers for a door's ACCOUNTS (AGT7): its owner when this build carries a door of it — the owner has the
     /// login question and the key variable — else the owner as the set declares it where it carries no door of it
-    /// (<see cref="ProviderRegistry.ToolchainOf"/>, CODEXACCT1: <c>codex</c> for <c>codex-acp</c>), else the door itself.
+    /// (<see cref="ProviderRegistry.AgentNamed"/>, CODEXACCT1: <c>codex</c> for <c>codex-acp</c>), else the door itself.
     /// </summary>
     /// <remarks>
     /// 🔴 A declared owner is no adapter: its name is never handed to <see cref="ReportAsync"/> or a press, which resolve
     /// adapters. <see cref="HolderOf"/> says which agent that is.
     /// </remarks>
-    internal (string Name, HarnessToolchain Toolchain) AccountAgent(string name, HarnessToolchain toolchain)
-    {
-        var owner = roster.Adapters.OwnerOfAgent(name).Value;
-        if (string.Equals(owner, name, StringComparison.OrdinalIgnoreCase)) return (name, toolchain);
-        if (roster.Adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase) && roster.Adapters.Resolve(owner).Toolchain is { } ownerToolchain)
-        {
-            return (roster.Adapters.Resolve(owner).Name, ownerToolchain);
-        }
-
-        return roster.Adapters.ToolchainOf(owner) is { } holder ? (owner, holder) : (name, toolchain);
-    }
+    internal AccountAgent AnswersFor(string name, AccountAgent own) => roster.Adapters.AccountAgentOf(new DoorId(name)) ?? own;
 
     /// <summary>
     /// The agent a door asks its accounts through where this build carries no door of it (CODEXACCT1), or null where the
     /// door answers for its accounts itself or its owner's own door does: what a press on the door asks with, since no
     /// press of the owner's would.
     /// </summary>
-    private (string Name, HarnessToolchain Toolchain)? HolderOf(string name, HarnessToolchain toolchain)
+    private AccountAgent? HolderOf(string name, AccountAgent toolchain)
     {
-        var agent = AccountAgent(name, toolchain);
+        var agent = AnswersFor(name, toolchain);
         return string.Equals(agent.Name, name, StringComparison.OrdinalIgnoreCase)
                || roster.Adapters.Names.Contains(agent.Name, StringComparer.OrdinalIgnoreCase)
             ? null
@@ -352,8 +337,8 @@ internal sealed class RosterReport(HarnessRoster roster)
     }
 
     /// <summary>The adapter whose report says a door's accounts (AGT7): its owner's door where this build carries one, else itself.</summary>
-    internal string ReportingDoor(string name, HarnessToolchain toolchain) =>
-        AccountAgent(name, toolchain).Name is var agent && roster.Adapters.Names.Contains(agent, StringComparer.OrdinalIgnoreCase) ? agent : name;
+    internal string ReportingDoor(string name, AccountAgent toolchain) =>
+        AnswersFor(name, toolchain).Name is var agent && roster.Adapters.Names.Contains(agent, StringComparer.OrdinalIgnoreCase) ? agent : name;
 
     /// <summary>Every harness this build knows, probed — what a roster surface renders.</summary>
     /// <remarks>

@@ -269,7 +269,7 @@ public sealed class PluginCatalogTests : IDisposable
 
         Assert.Contains("claude-code", entry.Problem);
         Assert.Contains("this build", entry.Problem);
-        Assert.Null(Assert.IsType<LegacyDoor>(Built().WithPlugins(catalog).Resolve("claude-code")).Door.Identity.DeclaredBy);
+        Assert.Null(Built().WithPlugins(catalog).Door("claude-code").Identity.DeclaredBy);
     }
 
     /// <summary>
@@ -316,7 +316,7 @@ public sealed class PluginCatalogTests : IDisposable
             Assert.Equal(refused, PluginCatalog.RefusedByThisBuild(entry.Manifest with { Harnesses = [new(name, ["agent"])] }, handed ?? []) is not null);
             // Nothing built in is shadowed: an agent a door runs as keeps the holder that answers for its accounts.
             var built = Built();
-            if (refused) Assert.Same(built.ToolchainOf(name), built.WithPlugins(catalog).ToolchainOf(name));
+            if (refused) Assert.Equal(built.AgentNamed(name), built.WithPlugins(catalog).AgentNamed(name));
         }
     }
 
@@ -334,7 +334,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Null(catalog.Plugins[0].Problem);
         Assert.Contains("a.one", catalog.Plugins[1].Problem);
         Assert.Contains("shared", catalog.Plugins[1].Problem);
-        Assert.Equal("one", Built().WithPlugins(catalog).Resolve("shared").Prepare(Target(_home), null).FileName);
+        Assert.Equal("one", Built().WithPlugins(catalog).Start("shared", Target(_home), null).FileName);
     }
 
     /// <summary>A fifth harness arrives as a file: a configuration of the ACP door, with the seam's own fields.</summary>
@@ -349,28 +349,28 @@ public sealed class PluginCatalogTests : IDisposable
             """);
 
         var adapters = Built().WithPlugins(PluginCatalog.Load(_home, Built().Names));
-        var adapter = adapters.Resolve("acme-agent");
+        var adapter = adapters.Door("acme-agent");
 
         Assert.Contains("acme-agent", adapters.Names);
         Assert.Equal(Transport.Protocol, adapter.Transport);
-        Assert.Equal("edits", adapter.AcpPosture);
-        Assert.True(adapter.Interactive);
+        Assert.Equal("edits", adapter.Postures.Ordinary);
+        Assert.True(adapter.Can.Interactive);
 
-        var info = adapter.Prepare(Target(_home), command: null);
+        var info = adapters.Start(adapter, Target(_home), command: null);
         Assert.Equal(Path.Combine(folder, "agent.mjs"), info.FileName);
         Assert.Contains("--acp", info.ArgumentList);
         // A protocol-door session is written to, frame by frame.
         Assert.True(info.RedirectStandardInput);
 
         // The machine's configured command still outranks the declared one, like every adapter.
-        Assert.Equal("elsewhere", adapter.Prepare(Target(_home), ["elsewhere", "--acp"]).FileName);
+        Assert.Equal("elsewhere", adapters.Start(adapter, Target(_home), ["elsewhere", "--acp"]).FileName);
 
-        var toolchain = adapter.Toolchain!;
-        Assert.Equal("ACME_HOME", toolchain.ProfileVariable);
-        Assert.Equal("@acme/agent", toolchain.Package);
-        Assert.Equal(["npm", "install", "-g", "@acme/agent"], toolchain.Install);
-        Assert.Equal(Path.Combine(folder, "agent.mjs"), toolchain.Binary[0]);
-        Assert.Equal(["--version"], toolchain.VersionArguments);
+        var toolchain = adapters.AgentNamed("acme-agent")!;
+        Assert.Equal("ACME_HOME", toolchain.Home.Variable);
+        Assert.Equal("@acme/agent", toolchain.Program.Package);
+        Assert.Equal(["npm", "install", "-g", "@acme/agent"], toolchain.Program.Install);
+        Assert.Equal(Path.Combine(folder, "agent.mjs"), toolchain.Program.Binary[0]);
+        Assert.Equal(["--version"], toolchain.Program.VersionArguments);
     }
 
     /// <summary>
@@ -382,21 +382,21 @@ public sealed class PluginCatalogTests : IDisposable
     {
         var folder = Plugin("plain", """{ "id": "plain", "harnesses": [ { "name": "plain-agent", "command": ["${plugin}/agent.mjs"] } ] }""");
         File.WriteAllText(Path.Combine(folder, "agent.mjs"), "// would wait on stdin forever if it were run\n");
-        var adapter = Built().WithPlugins(PluginCatalog.Load(_home)).Resolve("plain-agent");
-        Assert.True(adapter.Toolchain!.ProbeByPresence);
+        var plain = Built().WithPlugins(PluginCatalog.Load(_home)).AgentNamed("plain-agent")!;
+        Assert.True(plain.Program.ProbeByPresence);
 
         var clock = System.Diagnostics.Stopwatch.StartNew();
-        var report = await HarnessProbe.ProbeAsync("plain-agent", adapter.Toolchain!, null, new HarnessSettings(), _home);
+        var report = await HarnessProbe.ProbeAsync("plain-agent", plain, null, new HarnessSettings(), _home);
 
         Assert.True(report.Present, report.Problem);
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(15), $"took {clock.Elapsed}");
 
-        var missing = PluginDoors.Adapter(new PluginHarness("gone", [Path.Combine(folder, "gone.mjs")]), "plain");
-        Assert.False((await HarnessProbe.ProbeAsync("gone", missing.Toolchain!, null, new HarnessSettings(), _home)).Present);
+        var missing = Built().Joined([PluginDoors.Door(new PluginHarness("gone", [Path.Combine(folder, "gone.mjs")]), "plain")], []);
+        Assert.False((await HarnessProbe.ProbeAsync("gone", missing.AgentNamed("gone")!, null, new HarnessSettings(), _home)).Present);
 
         // One that DOES declare a version question is run, like every built-in harness.
-        var asked = PluginDoors.Adapter(new PluginHarness("asked", ["x"], VersionArguments: ["--version"]), "plain");
-        Assert.False(asked.Toolchain!.ProbeByPresence);
+        var asked = Built().Joined([PluginDoors.Door(new PluginHarness("asked", ["x"], VersionArguments: ["--version"]), "plain")], []);
+        Assert.False(asked.AgentNamed("asked")!.Program.ProbeByPresence);
     }
 
     /// <summary>A wire that carries no posture asks for nothing (ACP3): null, never a guessed mode.</summary>
@@ -405,10 +405,10 @@ public sealed class PluginCatalogTests : IDisposable
     {
         Plugin("plain", """{ "id": "plain", "harnesses": [ { "name": "plain-agent", "command": ["plain"] } ] }""");
 
-        var adapter = Built().WithPlugins(PluginCatalog.Load(_home)).Resolve("plain-agent");
+        var adapters = Built().WithPlugins(PluginCatalog.Load(_home));
 
-        Assert.Null(adapter.AcpPosture);
-        Assert.Null(adapter.Toolchain!.ProfileVariable);
+        Assert.Null(adapters.Door("plain-agent").Postures.Ordinary);
+        Assert.Null(adapters.AgentNamed("plain-agent")!.Home.Variable);
     }
 
     [Fact]
@@ -461,8 +461,8 @@ public sealed class PluginCatalogTests : IDisposable
             entry.Manifest.Harnesses.Select(harness => (harness.Name, harness.Product, harness.Maker)));
 
         var adapters = Built().WithPlugins(PluginCatalog.Load(_home, Built().Names));
-        Assert.Equal(("Acme Agent", "Acme"), (adapters.Resolve("acme-agent").Toolchain!.Product, adapters.Resolve("acme-agent").Toolchain!.Maker));
-        Assert.Equal(((string?)null, (string?)null), (adapters.Resolve("older-agent").Toolchain!.Product, adapters.Resolve("older-agent").Toolchain!.Maker));
+        Assert.Equal(("Acme Agent", "Acme"), (adapters.AgentNamed("acme-agent")!.Product, adapters.AgentNamed("acme-agent")!.Maker));
+        Assert.Equal(((string?)null, (string?)null), (adapters.AgentNamed("older-agent")!.Product, adapters.AgentNamed("older-agent")!.Maker));
     }
 
     /// <summary>
@@ -489,9 +489,9 @@ public sealed class PluginCatalogTests : IDisposable
         var adapters = Built().WithPlugins(PluginCatalog.Load(_home, Built().Names));
         Assert.Equal(
             [true, false, false],
-            new[] { "boxed-agent", "plain-agent", "odd-agent" }.Select(name => adapters.Resolve(name).Toolchain!.RunsInOwnHome));
-        Assert.False(adapters.Resolve("plain-agent").Toolchain!.StartsInOwnHome);
-        Assert.True(adapters.Resolve("boxed-agent").Toolchain!.StartsInOwnHome);
+            new[] { "boxed-agent", "plain-agent", "odd-agent" }.Select(name => adapters.AgentNamed(name)!.Home.OwnHome));
+        Assert.False(adapters.AgentNamed("plain-agent")!.Home.StartsInOwnHome);
+        Assert.True(adapters.AgentNamed("boxed-agent")!.Home.StartsInOwnHome);
     }
 
     /// <summary>What the loop watches between ticks: a plugin added, removed, enabled or disabled changes it; nothing else does.</summary>
@@ -783,11 +783,11 @@ public sealed class PluginCatalogTests : IDisposable
         // Claude Code takes it as `--mcp-config <file>` — verified against `claude --help`, like every
         // other claim about somebody else's tool. The default adapter takes nothing and says nothing.
         var info = new ProcessStartInfo();
-        Built().Resolve("claude-code").HandServers(info, path);
+        Built().Door("claude-code").Spawned().HandServers(info, path);
         Assert.Equal(["--mcp-config", path], info.ArgumentList);
 
         var stub = new ProcessStartInfo();
-        Built().Resolve("stub").HandServers(stub, path);
+        Built().Door("stub").Spawned().HandServers(stub, path);
         Assert.Empty(stub.ArgumentList);
 
         SpawnFiles.Remove(path);

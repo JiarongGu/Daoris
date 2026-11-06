@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// could not list it.
 /// </summary>
 /// <remarks>
-/// Nothing here starts a process. The agent is present by a file look (<see cref="HarnessToolchain.ProbeByPresence"/>), as
+/// Nothing here starts a process. The agent is present by a file look (<see cref="TestAgent.ProbeByPresence"/>), as
 /// <c>AccountNamesSaidTests</c>' walk is; its accounts read signed out within the hour, so a look asks none of them
 /// (ROSTER1); the quest's repository opens a tree per session, so its start asks git nothing before its selection holds it;
 /// and the service's doors stand in (<see cref="StandInLedger"/>), its asks among them.
@@ -39,11 +39,8 @@ public sealed class SignedOutWaitTests : IDisposable
         }
 
         new HarnessSettings().WithDefault("fake", "account-1").WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
-        _adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new HarnessToolchain(
-                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
-        });
+        _adapters = TestDoors.Registry([Adapter("fake", new TestAgent(
+                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true))]);
     }
 
     public void Dispose()
@@ -56,7 +53,7 @@ public sealed class SignedOutWaitTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
     private static DriverConfig Config => ActorChoices.With(
         ActorChoices.With(

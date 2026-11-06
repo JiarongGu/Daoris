@@ -147,11 +147,11 @@ public sealed class LayerUsageParityTests : IDisposable
 
     private string Home(Case each) => Path.Combine(_home, each.Claude ? "claude" : "codex", "account-1");
 
-    private (IReadOnlyList<string> Run, HarnessToolchain Toolchain, UsageQuestion Question) Spawn(Case each)
+    private (IReadOnlyList<string> Run, TestAgent Toolchain, UsageQuestion Question) Spawn(Case each)
     {
         var question = each.Claude ? ClaudeUsage.Question : CodexUsage.Question;
         var program = Path.Combine(_home, "bin", each.Claude ? "claude.exe" : "codex.exe");
-        var toolchain = new HarnessToolchain(
+        var toolchain = new TestAgent(
             Binary: [program], VersionArguments: ["--version"], ProfileVariable: each.Claude ? "CLAUDE_CONFIG_DIR" : "CODEX_HOME", ProbeByPresence: true);
         return ([program, .. question.Command.Skip(1)], toolchain, question);
     }

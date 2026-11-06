@@ -27,10 +27,10 @@ public sealed record StandingFacts
     /// <summary>Whether it may call the connector's knowledge and memory tools: false for a brainstorm's pass, which reads its room alone.</summary>
     public bool Knowledge { get; init; } = true;
 
-    /// <summary>The tree's skill folders, named only where its harness loads none of them itself (<see cref="ISessionAdapter.LoadsTreeSkills"/>).</summary>
+    /// <summary>The tree's skill folders, named only where its harness loads none of them itself (<see cref="AgentDoor.LoadsTreeSkills"/>).</summary>
     public IReadOnlyList<string> Skills { get; init; } = [];
 
-    /// <summary>The repository's rules, carried only where its harness cuts the native instruction file (<see cref="ISessionAdapter.InstructionFileLimit"/>).</summary>
+    /// <summary>The repository's rules, carried only where its harness cuts the native instruction file (<see cref="AgentDoor.InstructionFileLimit"/>).</summary>
     public RuleIndex? Rules { get; init; }
 
     /// <summary>Its repository's routing standing, for a work that may publish to that repository's lanes; null for every other.</summary>
@@ -42,7 +42,7 @@ public sealed record StandingFacts
     /// <summary>The person's choices on this machine for its repository (the standing answer, D135 §3, D230 point 4); null where none is kept.</summary>
     public StandingAnswer? Choices { get; init; }
 
-    /// <summary>Whether its harness takes no rules file (<see cref="ISessionAdapter.TakesSettings"/>), so none of the person's denies reaches it.</summary>
+    /// <summary>Whether its harness takes no rules file (<see cref="AgentDoor.TakesSettings"/>), so none of the person's denies reaches it.</summary>
     public bool NoDenies { get; init; }
 
     /// <summary>The memory its line read, newest first, as the service rechecked it when a move's brief was composed; none at a first start.</summary>

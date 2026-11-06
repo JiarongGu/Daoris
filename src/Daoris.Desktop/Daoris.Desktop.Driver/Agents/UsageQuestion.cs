@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// How an agent is asked an account's windows where its door carries none (CODEXUSE1, D125's CODEXUSE1 note): its own
 /// server, started under the account's configuration home, asked one question and stopped. Declared on the toolchain as
-/// <see cref="HarnessToolchain.Usage"/>, beside <see cref="HarnessToolchain.Windows"/>, which reads a door's frame instead. Each
+/// <see cref="AccountAgent.Usage"/>, beside <see cref="AccountAgent.Windows"/>, which reads a door's frame instead. Each
 /// agent's is its own type, in its provider's folder, that says how it is asked, how long a reading stands and what the history
 /// calls its source: <see cref="CodexUsageQuestion"/> and <see cref="ClaudeUsageQuestion"/>.
 /// </summary>
@@ -31,7 +31,7 @@ public abstract record UsageQuestion(string Harness, IReadOnlyList<string> Comma
 /// <param name="ProfileHome">The account's configuration home, where the server is started, never none (D197 point 3).</param>
 /// <param name="Managed">The managed binary the command's first word resolved to, or null for the command as named.</param>
 /// <param name="Now">The moment the question is asked, from which a window not yet opened takes its reset.</param>
-public sealed record UsageAsk(IReadOnlyList<string> Run, HarnessToolchain Toolchain, string ProfileHome, string? Managed, DateTimeOffset Now)
+public sealed record UsageAsk(IReadOnlyList<string> Run, AccountAgent Toolchain, string ProfileHome, string? Managed, DateTimeOffset Now)
 {
     /// <summary>The account's name, its home's profile; the layer's read hands the account by it.</summary>
     public string? Profile { get; init; }

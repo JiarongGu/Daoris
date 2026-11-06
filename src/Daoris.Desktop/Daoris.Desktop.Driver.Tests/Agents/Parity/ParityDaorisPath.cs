@@ -22,14 +22,15 @@ internal sealed class ParityDaorisPath(string home) : IDisposable
         Directory.CreateDirectory(Path.Combine(home, "engine"));
         var processes = new SessionProcesses(DaorisHome.Entry(home, HomeEntry.Sessions));
         var driver = new Daoris.Driver.Driver(_service, DriverConfig.Empty, ProviderRegistry.Built(), home, processes);
-        var adapter = TestDoors.Door(Door, resumes: true, spawn: new Spawn(command), dialect: new ScenarioDialect());
+        var registry = TestDoors.Registry(TestDoors.Door(Door, resumes: true, spawn: new Spawn(command), dialect: new ScenarioDialect()));
+        var adapter = registry.Door(Door);
         var target = new SessionTarget("q-1", "title", "body", "asker", "engine", Path.Combine(home, "engine"), "http://127.0.0.1:9") { Home = home };
         var transcript = Path.Combine(home, "daoris.log");
         var seen = new ParityObservation("daoris", start);
 
         await using (var run = new TransportRun(
-            new DriverTransportHost(driver), adapter,
-            new TransportStart(adapter.Prepare(target, null), StartClass.Background)
+            new DriverTransportHost(driver), registry, adapter,
+            new TransportStart(registry.Start(adapter, target, null), StartClass.Background)
             {
                 Target = target, Request = SpawnRequests.Of(target, null), Selection = new HarnessSelection(null), Prompt = prompt,
             }))
@@ -41,7 +42,7 @@ internal sealed class ParityDaorisPath(string home) : IDisposable
             ParityObserver.Ended(seen, end, stopped: false);
             if (end.Ending.Failure is { } words)
             {
-                var error = AgentErrors.Read(ProviderRegistry.Built(), adapter, DoorFailures.OfResult(words), start, TimeZoneInfo.Utc);
+                var error = AgentErrors.Read(registry, adapter, DoorFailures.OfResult(words), start, TimeZoneInfo.Utc);
                 ParityObserver.Failed(seen, error, ParityObserver.Heard(seen));
             }
         }

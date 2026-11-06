@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The host is <see cref="OpinionStandIn"/> and git <see cref="StandInGit"/>, both in process; each agent is present by a file
-/// look on a command this test writes (<see cref="HarnessToolchain.ProbeByPresence"/>), as <c>ReviewerChoiceTests</c> has it;
+/// look on a command this test writes (<see cref="TestAgent.ProbeByPresence"/>), as <c>ReviewerChoiceTests</c> has it;
 /// and the pass itself is handed in (<see cref="Daoris.Driver.Driver.Passes"/>), since a real one spawns an agent. The fast half.
 /// </remarks>
 public sealed class OpinionRecheckTests : IDisposable
@@ -31,23 +31,23 @@ public sealed class OpinionRecheckTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>The build's own agents by name, present by a file look, or absent where <paramref name="absent"/> names them.</summary>
     private (ProviderRegistry Adapters, HarnessRoster Roster) Machine(params string[] absent)
     {
-        var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
+        var adapters = new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
-            var real = ProviderRegistry.Built().Resolve(name).Toolchain!;
-            adapters[name] = Adapter(name, new HarnessToolchain(
+            var real = ProviderRegistry.Built().AgentNamed(name)!;
+            adapters[name] = Adapter(name, new TestAgent(
                 Binary: [absent.Contains(name) ? "daoris-xagent1e-no-such-command" : Command], VersionArguments: [],
-                ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true, Product: real.Product, Maker: real.Maker,
+                ProfileVariable: real.Home.Variable, AccountOf: real.AccountOf, ProbeByPresence: true, Product: real.Product, Maker: real.Maker,
                 // A test double whose own home is nobody's (OWNSPACE1a): the recheck is this file's subject, not the account.
                 RunsInOwnHome: true));
         }
 
-        var set = new ProviderRegistry(adapters);
+        var set = TestDoors.Registry(adapters);
         return (set, new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 

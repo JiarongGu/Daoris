@@ -14,7 +14,7 @@ internal static class TrustAsk
         var quest = run.Quest;
         var workTree = run.State.WorkTree;
         if (run.State.Preflight is not { } preflight
-            || preflight.Home() is not { TrustFile: { Length: > 0 } trustFile } home
+            || preflight.Home is not { TrustFile: { Length: > 0 } trustFile } home
             || wiring.HandedConnector(preflight, run.Start.Workspace, quest.To, "quest_respond"))
         {
             return null;

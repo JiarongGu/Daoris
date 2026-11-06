@@ -248,14 +248,14 @@ public static class AgentsCommand
     /// <summary>
     /// The agent named after the verb, refused rather than defaulted: its toolchain, the settings file its accounts keep, and the roster
     /// it is read from. An agent is a door this machine runs that names a real program, or an agent a door runs as with no door here
-    /// (<see cref="ProviderRegistry.ToolchainOf"/>, <c>codex</c>): the stubs name none (D46 §8), as the CLI's <c>TOOLCHAINS</c> named them.
+    /// (<see cref="ProviderRegistry.AgentNamed"/>, <c>codex</c>): the stubs name none (D46 §8), as the CLI's <c>TOOLCHAINS</c> named them.
     /// </summary>
-    internal static (string Name, HarnessToolchain Toolchain, string? SettingsFile, HarnessRoster Roster) Agent(
+    internal static (string Name, AccountAgent Toolchain, string? SettingsFile, HarnessRoster Roster) Agent(
         IReadOnlyList<string> args, string verb, string shape, AgentsWorld world, string path, int at = 1)
     {
         var set = world.Adapters(HarnessSettings.HomeOf(path));
         var roster = new HarnessRoster(set, path);
-        HarnessToolchain? Of(string each) => set.ToolchainOf(each);
+        AccountAgent? Of(string each) => set.AgentNamed(each);
         var named = Named(set);
         var name = Operand(args, at) ?? throw new AgentWords($"`agent {verb}` needs {shape} — e.g. `daoris agent {verb} claude-code`");
         if (!named.Contains(name, StringComparer.Ordinal) || Of(name) is not { } toolchain)
@@ -266,7 +266,7 @@ public static class AgentsCommand
         }
 
         // A door's accounts are its owner's (AGT7), and so is the file they keep their settings in.
-        return (name, toolchain, set.Names.Contains(name, StringComparer.OrdinalIgnoreCase) ? roster.AccountToolchain(name)?.SettingsFile : toolchain.SettingsFile, roster);
+        return (name, toolchain, set.Names.Contains(name, StringComparer.OrdinalIgnoreCase) ? roster.AccountAgentOf(name)?.Accounts.SettingsFile : toolchain.Accounts.SettingsFile, roster);
     }
 
     /// <summary>The agents a verb may name, in the roster's order: each door that names a real program, and each agent a door runs as.</summary>

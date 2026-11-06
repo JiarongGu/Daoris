@@ -16,7 +16,7 @@ internal static class PartnerStandIns
     public static PartnerMeasurement Row(
         Daoris.Driver.Driver driver, string agent, string version, string? workspace, string repository)
     {
-        var adapter = ProviderRegistry.Built().Resolve(agent);
+        var adapter = ProviderRegistry.Built().Door(agent);
         var (rules, hardDeny, guarded) = driver.PartnerHanded(workspace, repository);
         var configuration = PartnerConfigurations.Of(adapter, version, "<copy>", rules, hardDeny, guarded, DriverPartners.ThisSystem());
         return new PartnerMeasurement(

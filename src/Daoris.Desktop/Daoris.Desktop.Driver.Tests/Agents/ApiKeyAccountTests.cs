@@ -28,10 +28,10 @@ public sealed class ApiKeyAccountTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private static ISessionAdapter FakeAdapter(HarnessToolchain toolchain) => TestDoors.Door("fake", toolchain);
+    private static Provider FakeAdapter(TestAgent toolchain) => TestDoors.Door("fake", toolchain);
 
     /// <summary>A harness that is signed in exactly when its key variable is set — as Claude Code answers.</summary>
-    private HarnessToolchain Toolchain(string? keyVariable = "FAKE_KEY")
+    private TestAgent Toolchain(string? keyVariable = "FAKE_KEY")
     {
         Directory.CreateDirectory(_home);
         var script = Path.Combine(_home, "keyed.mjs");
@@ -39,7 +39,7 @@ public sealed class ApiKeyAccountTests : IDisposable
             if (process.argv[2] === '--version') { console.log('keyed 1.0'); process.exit(0); }
             console.log(process.env.FAKE_KEY ? 'logged-in' : 'logged-out');
             """);
-        return new HarnessToolchain(
+        return new TestAgent(
             Binary: ["node", script],
             VersionArguments: ["--version"],
             ProfileVariable: "FAKE_HOME",
@@ -47,11 +47,8 @@ public sealed class ApiKeyAccountTests : IDisposable
             KeyVariable: keyVariable);
     }
 
-    private HarnessRoster Roster(HarnessToolchain toolchain) => new(
-        new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = FakeAdapter(toolchain),
-        }),
+    private HarnessRoster Roster(TestAgent toolchain) => new(
+        TestDoors.Registry([FakeAdapter(toolchain)]),
         Settings);
 
     private static DriverConfig Config() => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
@@ -170,6 +167,6 @@ public sealed class ApiKeyAccountTests : IDisposable
     public void An_agent_with_no_key_variable_takes_no_key()
     {
         Assert.Null(Toolchain(keyVariable: null).KeyVariable);
-        Assert.Equal("ANTHROPIC_API_KEY", ProviderRegistry.Built().Resolve("claude-code").Toolchain!.KeyVariable);
+        Assert.Equal("ANTHROPIC_API_KEY", ProviderRegistry.Built().AgentNamed("claude-code")!.Accounts.KeyVariable);
     }
 }

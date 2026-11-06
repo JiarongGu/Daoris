@@ -34,18 +34,18 @@ internal static class PinInstall
     /// </summary>
     /// <param name="npm">The package manager a package pin runs.</param>
     /// <exception cref="DriverException">The version is not one the channel installs, the tools' way cannot run, or the program declares no package.</exception>
-    public static PinPlan Plan(HarnessToolchain toolchain, string home, string harness, string version, IReadOnlyList<string> npm)
+    public static PinPlan Plan(AccountAgent toolchain, string home, string harness, string version, IReadOnlyList<string> npm)
     {
         var where = HarnessSettings.ManagedHome(home, harness, version);
-        if (toolchain.Channel is { Length: > 0 } channel)
+        if (toolchain.Program.Channel is { Length: > 0 } channel)
         {
             ReleaseChannels.RefuseVersion(channel, version);
-            return HarnessSettings.ManagedBinary(home, harness, version, toolchain.Binary) is { } present
+            return HarnessSettings.ManagedBinary(home, harness, version, toolchain.Program.Binary) is { } present
                 ? new PinPlan(PinWay.Present, where, present, channel, null)
                 : new PinPlan(PinWay.Channel, where, null, channel, null);
         }
 
-        return toolchain.Package is { Length: > 0 } package
+        return toolchain.Program.Package is { Length: > 0 } package
             ? new PinPlan(PinWay.Package, where, null, null, PinMove.PackageCommand(home, harness, package, version, npm))
             : throw new DriverException(
                 "that agent declares no package, so Daoris has no sanctioned way to fetch a version "

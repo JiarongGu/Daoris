@@ -34,7 +34,7 @@ public sealed class TransportRunTests : IDisposable
     {
         var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(_service, DriverConfig.Empty, adapters, _home, _processes);
-        return new TransportRun(new DriverTransportHost(driver), adapters.Resolve(door), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
+        return new TransportRun(new DriverTransportHost(driver), adapters, adapters.Door(door), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
     }
 
     private static SessionTarget Target() => new(
@@ -47,8 +47,8 @@ public sealed class TransportRunTests : IDisposable
         ServiceUrl: "http://localhost:5177");
 
     /// <summary>A run that goes on as its executor handed it: the target and the selection its resume is prepared from, or neither.</summary>
-    private TransportRun GoingOn(ITransportHost host, ISessionAdapter adapter, bool handed = true) =>
-        new(host, adapter, new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person)
+    private TransportRun GoingOn(ITransportHost host, AgentDoor adapter, bool handed = true) =>
+        new(host, ProviderRegistry.Built(), adapter, new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person)
         {
             Target = handed ? Target() : null,
             Request = handed ? SpawnRequests.Of(Target(), null) : null,
@@ -148,7 +148,7 @@ public sealed class TransportRunTests : IDisposable
     public async Task The_runs_spawn_keeps_what_its_start_is_handed_then_brackets_and_starts_it_through_its_host()
     {
         var host = new RecordingTransportHost(_home, _processes);
-        var run = new TransportRun(host, ProviderRegistry.Built().Resolve("stub"), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
+        var run = new TransportRun(host, ProviderRegistry.Built(), ProviderRegistry.Built().Door("stub"), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
         using var refusing = ProcessStarts.Within(_ => throw new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified."));
 
         await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(() => run.SpawnAsync("s1", CancellationToken.None));
@@ -165,7 +165,7 @@ public sealed class TransportRunTests : IDisposable
     public async Task A_run_bracketed_first_keeps_and_brackets_once_and_its_spawn_starts_under_that_token()
     {
         var host = new RecordingTransportHost(_home, _processes);
-        var run = new TransportRun(host, ProviderRegistry.Built().Resolve("stub"), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
+        var run = new TransportRun(host, ProviderRegistry.Built(), ProviderRegistry.Built().Door("stub"), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
         using var refusing = ProcessStarts.Within(_ => throw new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified."));
 
         Assert.Equal("p1", await run.BracketAsync("s1", CancellationToken.None));
@@ -200,8 +200,8 @@ public sealed class TransportRunTests : IDisposable
 
         Assert.True(GoingOn(host, BuiltDoors.Claude).GoesOn);
         Assert.False(GoingOn(host, BuiltDoors.Claude, handed: false).GoesOn);
-        Assert.False(GoingOn(host, adapters.Resolve("stub")).GoesOn);
-        Assert.False(GoingOn(host, adapters.Resolve("acp-stub")).GoesOn);
+        Assert.False(GoingOn(host, adapters.Door("stub")).GoesOn);
+        Assert.False(GoingOn(host, adapters.Door("acp-stub")).GoesOn);
     }
 
     /// <summary>
@@ -325,9 +325,9 @@ internal sealed class RecordingTransportHost(string home, SessionProcesses proce
 
     public IReadOnlyList<string>? Command(string adapter) => Commands;
 
-    public ProcessStartInfo Prepared(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next)
+    public ProcessStartInfo Prepared(AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next)
     {
-        Asked.Add($"prepare {adapter.Name}");
+        Asked.Add($"prepare {adapter.Id.Value}");
         return next;
     }
 

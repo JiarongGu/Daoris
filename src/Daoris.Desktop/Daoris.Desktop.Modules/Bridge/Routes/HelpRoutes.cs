@@ -632,7 +632,7 @@ public sealed class HelpRoutes(DriverContext context)
     {
         try
         {
-            return _loop.Harnesses.Adapters.Resolve(adapter).Resumes;
+            return _loop.Harnesses.Adapters.Door(adapter).Can.Resumes;
         }
         catch (DriverException)
         {

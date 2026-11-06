@@ -28,7 +28,7 @@ public sealed class SpawnInheritedTests
     public void A_conversation_clears_an_inherited_target_and_sets_none(string door, string? command) =>
         With(["DAORIS_TARGET", "DAORIS_QUEST_ID"], () =>
         {
-            var info = ProviderRegistry.Built().Resolve(door).PrepareChat(Chat(), command?.Split(' '));
+            var info = ProviderRegistry.Built().Chat(door, Chat(), command?.Split(' '));
             Assert.False(info.Environment.ContainsKey("DAORIS_TARGET"));
             Assert.False(info.Environment.ContainsKey("DAORIS_QUEST_ID"));
         });
@@ -46,7 +46,7 @@ public sealed class SpawnInheritedTests
         var own = kept.Split(' ');
         With(Planted, () =>
         {
-            var info = ProviderRegistry.Built().Resolve(door).Prepare(Target(), command?.Split(' '));
+            var info = ProviderRegistry.Built().Start(door, Target(), command?.Split(' '));
             foreach (var name in Planted)
             {
                 if (own.Contains(name)) Assert.Equal(Sentinel(name), info.Environment[name]);

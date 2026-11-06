@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class HarnessRunTests
 {
-    private static readonly HarnessToolchain Node = new(Binary: ["node"], VersionArguments: ["--version"]);
+    private static readonly TestAgent Node = new(Binary: ["node"], VersionArguments: ["--version"]);
 
     private static Task Until(Func<bool> condition) => Poll.Until(condition, within: Poll.Patience);
 

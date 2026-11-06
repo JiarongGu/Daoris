@@ -21,7 +21,7 @@ public sealed class SignInOrgTests
         }
         """;
 
-    private static LoginQuestion ClaudeQuestion => BuiltDoors.Claude.Toolchain!.LoginCheck!;
+    private static LoginQuestion ClaudeQuestion => ProviderRegistry.Built().AgentNamed("claude-code")!.Accounts.Login!;
 
     [Fact]
     public void Claude_code_s_answer_reads_who_the_organisation_and_the_plan()
@@ -64,6 +64,6 @@ public sealed class SignInOrgTests
     {
         Assert.Equal(
             new LoginRead(LoginState.In, "person@example.invalid", org, plan),
-            BuiltDoors.Stub.Toolchain!.LoginCheck!.Read(answer));
+            ProviderRegistry.Built().AgentNamed("stub")!.Accounts.Login!.Read(answer));
     }
 }

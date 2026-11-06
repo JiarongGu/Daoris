@@ -601,23 +601,23 @@ public sealed class OpinionDeliveryTests : IDisposable
     }
 
     /// <summary>A test double's agent that is never run (OpinionRecheckTests' machine): present by a file look on a command this test writes.</summary>
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>The build's own agents by name, each present by a file look, so a recheck's reviewer walk asks no real binary.</summary>
     private (ProviderRegistry Adapters, HarnessRoster Roster) Machine()
     {
         var command = Path.Combine(_home, "agent-here");
         File.WriteAllText(command, "");
-        var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
+        var adapters = new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
-            var real = ProviderRegistry.Built().Resolve(name).Toolchain!;
-            adapters[name] = Adapter(name, new HarnessToolchain(
-                Binary: [command], VersionArguments: [], ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true,
+            var real = ProviderRegistry.Built().AgentNamed(name)!;
+            adapters[name] = Adapter(name, new TestAgent(
+                Binary: [command], VersionArguments: [], ProfileVariable: real.Home.Variable, AccountOf: real.AccountOf, ProbeByPresence: true,
                 Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }
 
-        var set = new ProviderRegistry(adapters);
+        var set = TestDoors.Registry(adapters);
         return (set, new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 

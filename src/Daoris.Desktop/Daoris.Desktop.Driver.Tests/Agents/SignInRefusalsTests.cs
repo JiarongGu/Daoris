@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class SignInRefusalsTests
 {
-    private static readonly SignInWords Claude = BuiltDoors.Claude.Toolchain!.SignIn!;
+    private static readonly SignInWords Claude = ProviderRegistry.Built().AgentNamed("claude-code")!.Tables.SignIn!;
 
     /// <summary>The install's refusal, as the protocol door says it, and the same words with the agent's own reason after them.</summary>
     [Theory]
@@ -101,7 +101,7 @@ public sealed class SignInRefusalsTests
     public void Only_an_agent_seen_refusing_a_sign_in_declares_an_entry()
     {
         Assert.Equal(new[] { "claude-code", "stub" }, Declared().Select(d => d.Agent).Order(StringComparer.Ordinal));
-        Assert.Same(Claude, BuiltDoors.Stub.Toolchain!.SignIn);
+        Assert.Same(Claude, ProviderRegistry.Built().AgentNamed("stub")!.Tables.SignIn);
     }
 
     /// <summary>A door reads its owner's words (AGT7): Claude Code's protocol door, and the protocol stub onto the stub.</summary>
@@ -122,7 +122,7 @@ public sealed class SignInRefusalsTests
         var adapters = ProviderRegistry.Built();
         foreach (var name in new[] { "stub", "acp-stub", "claude-code", "claude-code-acp", "dsh", "codex-acp" })
         {
-            if (adapters.Resolve(name).Toolchain?.SignIn is { } words) yield return (name, words);
+            if (adapters.AgentNamed(name)?.Tables.SignIn is { } words) yield return (name, words);
         }
     }
 

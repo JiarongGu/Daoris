@@ -178,9 +178,9 @@ public sealed class SessionChecksHandTests : IDisposable
         // The roster reads this test's own harness file, never the one DAORIS_HOME names (the live install's, where it is set).
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, Home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)));
-        var adapter = adapters.Resolve(name);
-        var handed = HeavyTold.Hand(_fixture.Checkout, Home, "engine", SessionChecks.Light, adapter.TakesSettings);
-        var info = adapter.Prepare(Target(_fixture.Checkout), ["claude"]);
+        var adapter = adapters.Door(name);
+        var handed = HeavyTold.Hand(_fixture.Checkout, Home, "engine", SessionChecks.Light, adapter.Can.TakesSettings);
+        var info = ProviderRegistry.Built().Start(adapter, Target(_fixture.Checkout), ["claude"]);
 
         var (file, _, _) = driver.HandRules(adapter, info, "s-light", null, "engine", _fixture.Checkout, kept: null, heavy: handed);
 
@@ -203,9 +203,9 @@ public sealed class SessionChecksHandTests : IDisposable
         // The roster reads this test's own harness file, never the one DAORIS_HOME names (the live install's, where it is set).
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, Home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)));
-        var adapter = adapters.Resolve("codex-acp");
-        var handed = HeavyTold.Hand(_fixture.Checkout, Home, "engine", SessionChecks.Light, adapter.TakesSettings);
-        var info = adapter.Prepare(Target(_fixture.Checkout), ["codex"]);
+        var adapter = adapters.Door("codex-acp");
+        var handed = HeavyTold.Hand(_fixture.Checkout, Home, "engine", SessionChecks.Light, adapter.Can.TakesSettings);
+        var info = ProviderRegistry.Built().Start(adapter, Target(_fixture.Checkout), ["codex"]);
 
         var (file, meta, _) = driver.HandRules(adapter, info, "s-codex", null, "engine", _fixture.Checkout, kept: null, heavy: handed);
 

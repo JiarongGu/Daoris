@@ -31,15 +31,15 @@ public sealed class ToolsAtTheStartTests
         var claude = new List<string>();
         foreach (var name in adapters.Names)
         {
-            var adapter = adapters.Resolve(name);
-            if (adapter.Toolchain?.Product == "Claude Code")
+            var adapter = adapters.Door(name);
+            if (ProviderRegistry.Built().AgentNamed(adapter.Id.Value)?.Product == "Claude Code")
             {
                 claude.Add(name);
-                Assert.Equal(new Dictionary<string, string> { [Variable] = "false" }, adapter.ToolsUpFront);
+                Assert.Equal(new Dictionary<string, string> { [Variable] = "false" }, adapter.Spawned().ToolsUpFront);
             }
             else
             {
-                Assert.Empty(adapter.ToolsUpFront);
+                Assert.Empty(adapter.Spawned().ToolsUpFront);
             }
         }
 
@@ -60,14 +60,14 @@ public sealed class ToolsAtTheStartTests
     [InlineData("acp-stub", false)]
     public void Every_driven_spawn_on_a_Claude_door_loads_its_tools_at_the_start(string name, bool loads)
     {
-        var adapter = ProviderRegistry.Built().Resolve(name);
+        var adapter = ProviderRegistry.Built().Door(name);
         using var service = new ServiceClient("http://ledger.test", null);
         var driver = Driver(service, name);
         var target = Target();
-        var own = Said(adapter.Prepare(target, Command));
+        var own = Said(ProviderRegistry.Built().Start(adapter, target, Command));
 
         var started = driver.Prepare(adapter, target, new HarnessSelection(null)).Info;
-        var kept = adapter.PrepareResume(target, Command, "kept-conversation") ?? adapter.Prepare(target, Command);
+        var kept = ProviderRegistry.Built().Resume(adapter, target, Command, "kept-conversation") ?? ProviderRegistry.Built().Start(adapter, target, Command);
         var resumed = driver.Prepare(adapter, target, new HarnessSelection(null), kept).Info;
 
         foreach (var info in new[] { started, resumed })
@@ -80,7 +80,7 @@ public sealed class ToolsAtTheStartTests
     [Fact]
     public void An_accounts_own_variables_do_not_defer_the_tools_again()
     {
-        var adapter = ProviderRegistry.Built().Resolve("claude-code-acp");
+        var adapter = ProviderRegistry.Built().Door("claude-code-acp");
         using var service = new ServiceClient("http://ledger.test", null);
         var account = new HarnessSelection(null, Environment: new Dictionary<string, string> { [Variable] = "true" });
 

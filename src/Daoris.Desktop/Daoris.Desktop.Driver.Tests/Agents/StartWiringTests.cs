@@ -27,7 +27,7 @@ public sealed class StartWiringTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain, Transport wire) => TestDoors.Door(name, toolchain, transport: wire);
+    private static Provider Adapter(string name, TestAgent toolchain, Transport wire) => TestDoors.Door(name, toolchain, transport: wire);
 
     /// <summary>An agent that is there, signed in when its home holds `credentials.json` or a key is set.</summary>
     private HarnessRoster Roster()
@@ -42,18 +42,18 @@ public sealed class StartWiringTests : IDisposable
             console.log(signed ? 'logged-in' : 'logged-out');
             """);
 
-        var toolchain = new HarnessToolchain(
+        var toolchain = new TestAgent(
             Binary: ["node", script], VersionArguments: ["--version"], ProfileVariable: "AGENT_HOME",
             LoginCheck: new LoginQuestion(["auth"], "logged-in", "logged-out"), KeyVariable: "AGENT_KEY",
             Package: "agent-cli");
-        var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["agent"] = Adapter("agent", toolchain, Transport.Native),
-            ["agent-acp"] = Adapter("agent-acp", new HarnessToolchain(
+            ["agent-acp"] = Adapter("agent-acp", new TestAgent(
                 Binary: ["node", script], VersionArguments: ["--version"],
                 ProfileVariable: "AGENT_HOME", AccountOf: "agent"), Transport.Protocol),
         };
-        return new HarnessRoster(new ProviderRegistry(adapters), Settings);
+        return new HarnessRoster(TestDoors.Registry(adapters), Settings);
     }
 
     private static DriverConfig Config(string adapter = "agent") => DriverConfig.Empty with { Actors = StaffedRoles.On(adapter) };

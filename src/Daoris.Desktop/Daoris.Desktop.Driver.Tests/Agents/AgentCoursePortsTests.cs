@@ -116,7 +116,7 @@ public sealed class AgentCoursePortsTests
             Assert.Null(processes.WordInboxOf("s1"));
             Assert.Contains("stand claim", TargetPrompt.Compose(Target() with { CutOff = "handed over", HandedOver = "prior", HandedNote = "claim" }));
             Assert.Equal("claim", stand.Note);
-            var binding = TransientRetries.For(ProviderRegistry.Built(), ProviderRegistry.Built().Resolve("claude-code-acp"),
+            var binding = TransientRetries.For(ProviderRegistry.Built(), ProviderRegistry.Built().Door("claude-code-acp"),
                 new HarnessRoster(ProviderRegistry.Built(), "stand"), service, new Events(), null, SessionWatch.Of(new Events()), null,
                 "s1", "q1", null, TimeProvider.System, _ => Task.FromResult(true));
             Assert.Same(stand.Keep, binding.KeepGoOn);

@@ -21,7 +21,8 @@
     ["Daoris.Desktop.Modules/Bridge/Routes/WorkflowEditRoutes.cs", ".Wire", "a graph problem's workflow wire id, no door"],
     ["Daoris.Desktop.Modules/Bridge/Routes/WorkflowRoutes.cs", ".Wire", "a refused save's problem's workflow wire id, no door"],
     ["Daoris.Desktop.Driver/Workplace/GitCredentialDoor.cs", "\"protocol\"", "a git credential request's `protocol` field, no door"],
-    ["Daoris.Desktop.Driver/Plugins/Relay/RelaySaid.cs", "\"pipe\"", "the stop code for the relay's own pipe to the lease's process, no provider's door"]
+    ["Daoris.Desktop.Driver/Plugins/Relay/RelaySaid.cs", "\"pipe\"", "the stop code for the relay's own pipe to the lease's process, no provider's door"],
+    ["Daoris.Desktop.Driver/Plugins/Relay/RelayRun.cs", "\"pipe\"", "the relay's stop code for its own pipe to the lease's process, no provider's door"]
   ],
   "exceptions": [
     ["Daoris.Desktop.Driver/Agents/AccountVerbContext.cs", "id in a sentence", "-", "words", "an id as the example in a usage line"],
@@ -44,7 +45,6 @@
     ["Daoris.Desktop.Driver/Agents/DoorFailures.cs", "\"pipe\"", "i", "behaviour", "the native door's failure kind, by the transport's word"],
     ["Daoris.Desktop.Driver/Agents/DoorFailures.cs", "\"protocol\"", "i", "behaviour", "the protocol door's refusal kind, by the transport's word"],
     ["Daoris.Desktop.Driver/Agents/Layer/LayerStart.cs", "\"pipe\"", "i", "behaviour", "a layer start's failure door, the native transport's word, as DoorFailures says it"],
-    ["Daoris.Desktop.Driver/Agents/Registry/ProviderRegistry.cs", "CodexAccounts", "e", "behaviour", "the holder's sign-in handed by type"],
     ["Daoris.Desktop.Driver/Agents/RosterWalk.cs", "\"claude\"", "d", "behaviour", "an agent's program name in the roster"],
     ["Daoris.Desktop.Driver/Agents/RosterWalk.cs", "\"claude-code\"", "d", "behaviour", "the roster's per-agent facts, copy by copy"],
     ["Daoris.Desktop.Driver/Agents/ScratchSignIns.cs", "id in a sentence", "-", "words", "the stand-in ids named in the scratch sign-in's refusal"],

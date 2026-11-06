@@ -37,20 +37,20 @@ public sealed class ChatAgentTests : IDisposable
     [InlineData("acp-stub")]
     public void It_reads_its_door_as_the_adapter_beneath_it_says_it(string door)
     {
-        var adapter = ProviderRegistry.Built().Resolve(door);
-        var agent = new ChatAgent(adapter);
+        var adapter = ProviderRegistry.Built().Door(door);
+        var agent = new ChatAgent(ProviderRegistry.Built(), adapter);
 
-        Assert.Equal(adapter.Name, agent.Name);
-        Assert.Equal(adapter.Abilities(), agent.Abilities);
-        Assert.Equal(adapter.TakesSettings, agent.TakesSettings);
-        Assert.Equal(adapter.AcpPosture, agent.Posture);
-        Assert.Equal(adapter.FullPosture, agent.FullPosture);
-        Assert.Equal(adapter.Toolchain?.ErrorWords?.TypedFailures == true, agent.TypedFailures);
+        Assert.Equal(adapter.Id.Value, agent.Name);
+        Assert.Equal(adapter.Can, agent.Abilities);
+        Assert.Equal(adapter.Can.TakesSettings, agent.TakesSettings);
+        Assert.Equal(adapter.Postures.Ordinary, agent.Posture);
+        Assert.Equal(adapter.Postures.Full, agent.FullPosture);
+        Assert.Equal(ProviderRegistry.Built().AgentNamed(adapter.Id.Value)?.Tables.ErrorWords?.TypedFailures == true, agent.TypedFailures);
         Assert.Equal(adapter.FrameMessage("the person's words"), agent.FrameMessage("the person's words"));
         // An interrupt names itself by a fresh request id each time it is framed; all else of it is the door's.
         Assert.Equal(Fresh(adapter.FrameInterrupt()), Fresh(agent.FrameInterrupt()));
         Assert.Equal(adapter.StructuredOutput() is null, agent.StructuredOutput() is null);
-        Assert.Equal(CommitTrailers.For(adapter), agent.Trailers());
+        Assert.Equal(CommitTrailers.For(ProviderRegistry.Built(), adapter), agent.Trailers());
         Assert.Equal(TurnBinding.Of(ProviderRegistry.Built(), adapter, "account-1"), agent.Binding(ProviderRegistry.Built(), "account-1"));
     }
 
@@ -58,18 +58,18 @@ public sealed class ChatAgentTests : IDisposable
     [Fact]
     public void Its_process_is_its_doors_own_equipped_as_every_sessions_is()
     {
-        var adapter = ProviderRegistry.Built().Resolve("claude-code");
+        var adapter = ProviderRegistry.Built().Door("claude-code");
         var request = SpawnRequests.Chat("engine", TestHomes.Root, "http://localhost:5177", "c1");
         var selection = new HarnessSelection(null);
 
-        var info = new ChatAgent(adapter).Prepare(request, selection);
-        var expected = adapter.PrepareChat(request);
-        SpawnEquipment.Equip(adapter, expected, selection);
+        var info = new ChatAgent(ProviderRegistry.Built(), adapter).Prepare(request, selection);
+        var expected = ProviderRegistry.Built().Chat(adapter, request);
+        SpawnEquipment.Equip(ProviderRegistry.Built(), adapter, expected, selection);
 
         Assert.Equal(expected.FileName, info.FileName);
         Assert.Equal(expected.ArgumentList, info.ArgumentList);
-        Assert.NotEmpty(adapter.ToolsUpFront);
-        foreach (var (name, value) in adapter.ToolsUpFront) Assert.Equal(value, info.Environment[name]);
+        Assert.NotEmpty(adapter.Spawned().ToolsUpFront);
+        foreach (var (name, value) in adapter.Spawned().ToolsUpFront) Assert.Equal(value, info.Environment[name]);
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ public sealed class ChatAgentTests : IDisposable
     public void Its_run_is_the_one_over_its_door_and_goes_on_through_a_start_of_its_own(string door)
     {
         var adapters = ProviderRegistry.Built();
-        var agent = new ChatAgent(adapters.Resolve(door));
+        var agent = new ChatAgent(adapters, adapters.Door(door));
         var start = new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person);
 
         var run = agent.Run(new RecordingTransportHost(_home, _processes), start);
@@ -93,6 +93,6 @@ public sealed class ChatAgentTests : IDisposable
         using var service = new ServiceClient("http://127.0.0.1:9", null);
         ITransportHost bare = new ChatTransportHost(_home, _processes, service, new HarnessConversations(_home), null);
         var target = new SessionTarget("q1", "Title", "Body", "person", "engine", _home, "http://localhost");
-        Assert.Throws<NotSupportedException>(() => bare.Prepared(adapters.Resolve(door), target, new HarnessSelection(null), start.Info));
+        Assert.Throws<NotSupportedException>(() => bare.Prepared(adapters.Door(door), target, new HarnessSelection(null), start.Info));
     }
 }

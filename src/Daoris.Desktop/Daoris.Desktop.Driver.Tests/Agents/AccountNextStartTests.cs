@@ -38,18 +38,14 @@ public sealed class AccountNextStartTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Native);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Native);
 
-    private HarnessToolchain Toolchain(string? accountOf = null) => new(
+    private TestAgent Toolchain(string? accountOf = null) => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
         AccountOf: accountOf, WeekFixed: true);
 
     private HarnessRoster Roster() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", Toolchain()),
-            ["fake-door"] = Adapter("fake-door", Toolchain(accountOf: "fake")),
-        }), Settings)
+        new(TestDoors.Registry([Adapter("fake", Toolchain()), Adapter("fake-door", Toolchain(accountOf: "fake"))]), Settings)
         {
             Clock = () => _now,
             Zone = TimeZoneInfo.Utc,

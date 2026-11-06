@@ -93,7 +93,7 @@ public sealed class DriverModuleOpinionTests : DriverModuleBridge
     public async Task A_plugins_agent_declaring_the_working_agents_maker_is_named_its_family()
     {
         // The working agent's maker as the build declares it, so the plugin claims exactly that.
-        var maker = ProviderRegistry.Built().Resolve("claude-code").Toolchain!.Maker!;
+        var maker = ProviderRegistry.Built().AgentNamed("claude-code")!.Maker!;
         Plugin("example.same", new { id = "example.same", harnesses = new[] { new { name = "example-same", command = new[] { "same" }, maker } } });
         Plugin("example.other", new { id = "example.other", harnesses = new[] { new { name = "example-other", command = new[] { "other" }, maker = "Other Maker" } } });
         // The machine drives with `claude-code` by default; the loop reads the plugins as it is made.

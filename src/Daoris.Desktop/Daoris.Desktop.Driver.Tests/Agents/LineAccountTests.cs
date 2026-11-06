@@ -230,7 +230,7 @@ public sealed class LineAccountTests : IDisposable
 
     private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Native);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Native);
 
     private static int _built;
 
@@ -252,12 +252,7 @@ public sealed class LineAccountTests : IDisposable
             AccountCooling.Cool(home, new CoolingEntry("fake", account, Seen.AddHours(hours), true, "session", Seen.AddMinutes(-5), "s1"), Seen);
 
         var roster = new HarnessRoster(
-            new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["fake"] = Adapter("fake", new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
-                ["elsewhere"] = Adapter("elsewhere", new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "ELSEWHERE_HOME", ProbeByPresence: true)),
-                ["plain"] = Adapter("plain", null),
-            }), settings)
+            TestDoors.Registry([Adapter("fake", new TestAgent(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)), Adapter("elsewhere", new TestAgent(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "ELSEWHERE_HOME", ProbeByPresence: true)), Adapter("plain", null)]), settings)
         {
             Clock = () => Seen,
             Zone = TimeZoneInfo.Utc,

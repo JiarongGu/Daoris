@@ -35,7 +35,7 @@ internal static class AgentLongCommand
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var path = AgentsCommand.WiringPath(world);
         var (name, toolchain, _, _) = AgentsCommand.Agent(args, "install", "<agent>", world, path);
-        if (toolchain.Install is not { Count: > 0 } install)
+        if (toolchain.Program.Install is not { Count: > 0 } install)
         {
             throw new AgentWords(
                 $"`{name}` declares no installer, so Daoris has no sanctioned way to install it. Install it with its own tooling; "
@@ -59,7 +59,7 @@ internal static class AgentLongCommand
 
     /// <summary>An agent's own command at this terminal, its exit mapped as the CLI's <c>relay</c> mapped it: 0 is 0, anything else 2.</summary>
     internal static async Task<int> TerminalAsync(
-        AgentsWorld world, IReadOnlyList<string> command, HarnessToolchain toolchain, string what, CancellationToken ct)
+        AgentsWorld world, IReadOnlyList<string> command, AccountAgent toolchain, string what, CancellationToken ct)
     {
         var error = world.Instance.Error;
         int code;

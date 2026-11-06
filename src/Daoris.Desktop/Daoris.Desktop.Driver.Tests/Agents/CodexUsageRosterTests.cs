@@ -43,16 +43,16 @@ public sealed class CodexUsageRosterTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
 
     private static readonly UsageQuestion Question = new CodexUsageQuestion("fake", ["fake-agent", "app-server"], CodexUsage.Question.Recorded);
 
-    private HarnessToolchain Toolchain(UsageQuestion? usage = null, string? accountOf = null) => new(
+    private TestAgent Toolchain(UsageQuestion? usage = null, string? accountOf = null) => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
         AccountOf: accountOf, Usage: usage);
 
     private HarnessRoster Roster(UsageQuestion? question = null) =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             // The agent declares no question of its own and has no door of its own here: its door asks for it (AGT7), as
             // `codex-acp` does for `codex`.
@@ -352,7 +352,7 @@ public sealed class CodexUsageRosterTests : IDisposable
 
         Assert.Equal(
             ["claude-code", "codex-acp"],
-            adapters.Names.Where(name => adapters.Resolve(name).Toolchain is { Usage: not null }).Order(StringComparer.Ordinal));
+            adapters.Names.Where(name => adapters.AgentNamed(name) is { Usage: not null }).Order(StringComparer.Ordinal));
         Assert.Same(UsageReads.Of(CodexUsage.Question), roster.UsageOf("codex-acp"));
         Assert.Same(UsageReads.Of(ClaudeUsage.Question), roster.UsageOf("claude-code"));
         // The protocol door reads its owner's (AGT7).

@@ -28,15 +28,13 @@ public sealed class LayerUsageHostTests : IDisposable
     });
 
     private HarnessRoster Roster() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = TestDoors.Door(
+        new(TestDoors.Registry(
+            TestDoors.Door(
                 "fake",
-                new HarnessToolchain(
+                new TestAgent(
                     Binary: [Path.Combine(_home, "agent-here")], VersionArguments: ["--version"], ProfileVariable: "CODEX_HOME",
                     ProbeByPresence: true, Usage: Read()),
-                transport: Transport.Protocol),
-        }), DaorisHome.Entry(_home, HomeEntry.Harnesses))
+                transport: Transport.Protocol)), DaorisHome.Entry(_home, HomeEntry.Harnesses))
         {
             Clock = () => CodexUsageTests.Now,
         };

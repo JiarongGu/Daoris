@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// home is nobody's, is exempt.
 /// </summary>
 /// <remarks>
-/// Nothing here starts a process: the agent is present by a file look (<see cref="HarnessToolchain.ProbeByPresence"/>), as
+/// Nothing here starts a process: the agent is present by a file look (<see cref="TestAgent.ProbeByPresence"/>), as
 /// <c>SignedOutWaitTests</c>' is, and declares no login question, so an account never read runs (SES3). Each start kind is asked
 /// through the roster's door its own site asks, and its answer is applied as the spawn applies it (<see cref="Shell.Equip"/>).
 /// </remarks>
@@ -36,17 +36,13 @@ public sealed class OwnSpaceTests : IDisposable
     private const string NoAccount =
         "No `fake` account of Daoris's own is signed in, and Daoris never starts its sessions in your own `fake` sign-in";
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
-    private HarnessToolchain Real => new(
+    private TestAgent Real => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
 
     private HarnessRoster Roster() => new(
-        new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", Real),
-            ["double"] = Adapter("double", Real with { RunsInOwnHome = true }),
-        }),
+        TestDoors.Registry([Adapter("fake", Real), Adapter("double", Real with { RunsInOwnHome = true })]),
         Settings);
 
     private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
@@ -222,7 +218,7 @@ public sealed class OwnSpaceTests : IDisposable
     {
         var built = ProviderRegistry.Built();
         var exempt = built.Names
-            .Where(name => built.Resolve(name).Toolchain is { RunsInOwnHome: true })
+            .Where(name => built.AgentNamed(name) is { Home.OwnHome: true })
             .Order(StringComparer.Ordinal);
 
         Assert.Equal(["acp-stub", "alt-acp-stub", "alt-stub", "stub"], exempt);

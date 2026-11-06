@@ -85,7 +85,7 @@ public sealed class HelpWiredTests : IDisposable
         };
         var placed = new HelpPlaced(id, $"Ask Daoris `{id}` opened.")
         {
-            Adapter = adapters.Resolve(adapter),
+            Adapter = adapters.Door(adapter),
             Selection = new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.299", Environment: environment),
         };
         var machine = new HelpMachine { Adapter = adapter, Helper = adapter, Cap = 1 };
@@ -306,7 +306,7 @@ public sealed class HelpWiredTests : IDisposable
         using (ProcessStarts.Within(_ => null))
         {
             await runner.RunAsync(
-                "ask-daoris", "help0004", "and now?", new ChatAgent(adapters.Resolve("claude-code")), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.300"),
+                "ask-daoris", "help0004", "and now?", new ChatAgent(adapters, adapters.Door("claude-code")), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.300"),
                 config, runner.HelpPlace(HelpRoom.PathOf(_home), []), null, CancellationToken.None, goOn).WaitAsync(Poll.Patience);
         }
         Assert.Equal([("help0004", 2)], seen);
@@ -352,7 +352,7 @@ public sealed class HelpWiredTests : IDisposable
                }))
         {
             await runner.RunAsync(
-                "ask-daoris", "help0008", "and now?", new ChatAgent(adapters.Resolve("claude-code")), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.299"),
+                "ask-daoris", "help0008", "and now?", new ChatAgent(adapters, adapters.Door("claude-code")), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.299"),
                 config, runner.HelpPlace(HelpRoom.PathOf(_home), []), null, CancellationToken.None, goOn).WaitAsync(Poll.Patience);
         }
 

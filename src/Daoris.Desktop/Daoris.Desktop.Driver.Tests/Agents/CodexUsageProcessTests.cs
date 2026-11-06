@@ -60,19 +60,16 @@ public sealed class CodexUsageProcessTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
+    private static Provider Adapter(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
 
     private static readonly UsageQuestion Question = new CodexUsageQuestion("server-stand-in", ["server-stand-in", "app-server"], CodexUsage.Question.Recorded);
 
-    private HarnessToolchain Toolchain => new(
+    private TestAgent Toolchain => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "CODEX_HOME", ProbeByPresence: true,
         Usage: Question);
 
     private HarnessRoster Roster() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["door"] = Adapter("door", Toolchain),
-        }), Settings);
+        new(TestDoors.Registry([Adapter("door", Toolchain)]), Settings);
 
     // The explicit command names the server's harness, as `driver.json`'s `commands` may name `codex`.
     private DriverConfig Config => DriverConfig.Empty with

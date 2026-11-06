@@ -20,7 +20,7 @@ public sealed class AgentErrorsTests
     {
         var adapters = set ?? Built;
         return AgentErrors.Read(
-            adapters, adapters.Resolve(adapter), new DoorFailure("protocol", code, kind, status, words, DoorWhere.Prompt), Seen, TimeZoneInfo.Utc);
+            adapters, adapters.Door(adapter), new DoorFailure("protocol", code, kind, status, words, DoorWhere.Prompt), Seen, TimeZoneInfo.Utc);
     }
 
     /// <summary>Shape 1's frame, source-derived (the design §0, §4.4): <c>-32603</c> with <c>data.errorKind: "overloaded"</c>.</summary>
@@ -119,10 +119,9 @@ public sealed class AgentErrorsTests
     [Fact]
     public void A_plugin_with_an_owner_reads_its_owner_s_entries_but_never_a_declaration_of_another_door()
     {
-        var joined = Built.Names.ToDictionary(name => name, Built.Resolve, StringComparer.OrdinalIgnoreCase);
-        joined["acp-owned"] = PluginDoors.Adapter(new PluginHarness("acp-owned", ["node"], AccountOf: "claude-code"), "owned-plugin");
-        joined["acp-alone"] = PluginDoors.Adapter(new PluginHarness("acp-alone", ["node"]), "alone-plugin");
-        var set = new ProviderRegistry(joined);
+        var set = Built.Joined(
+            [PluginDoors.Door(new PluginHarness("acp-owned", ["node"], AccountOf: "claude-code"), "owned-plugin"),
+                PluginDoors.Door(new PluginHarness("acp-alone", ["node"]), "alone-plugin")], []);
 
         Assert.Equal((AgentErrorKind.Transient, "owner:kind:overloaded"), Pair(Read("acp-owned", -32603, "overloaded", "Internal error", set: set)));
         Assert.Equal(AgentErrorKind.Transient, Read("acp-owned", -32603, null, Overloaded, set: set).Kind);
@@ -174,10 +173,10 @@ public sealed class AgentErrorsTests
     public void The_harness_s_lines_are_read_for_access_alone()
     {
         var lines = new DoorFailure("protocol", null, null, null, Overloaded, DoorWhere.Harness);
-        Assert.Equal(AgentErrorKind.Fatal, AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), lines, Seen, TimeZoneInfo.Utc).Kind);
+        Assert.Equal(AgentErrorKind.Fatal, AgentErrors.Read(Built, Built.Door("claude-code-acp"), lines, Seen, TimeZoneInfo.Utc).Kind);
 
         var refused = lines with { Words = "Failed to authenticate. API Error: 401 API key is invalid." };
-        Assert.Equal(AgentErrorKind.Access, AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), refused, Seen, TimeZoneInfo.Utc).Kind);
+        Assert.Equal(AgentErrorKind.Access, AgentErrors.Read(Built, Built.Door("claude-code-acp"), refused, Seen, TimeZoneInfo.Utc).Kind);
     }
 
     /// <summary>The protocol stub's refused credential reads as access at the open, as a tick's stand-in says it (Codex's finding 6).</summary>
@@ -185,7 +184,7 @@ public sealed class AgentErrorsTests
     public void The_stub_s_refused_credential_reads_as_access_at_the_open()
     {
         var open = new DoorFailure("protocol", -32603, null, null, "Internal error: API Error: 401 API key is invalid.", DoorWhere.Open);
-        Assert.Equal(AgentErrorKind.Access, AgentErrors.Read(Built, Built.Resolve("acp-stub"), open, Seen, TimeZoneInfo.Utc).Kind);
+        Assert.Equal(AgentErrorKind.Access, AgentErrors.Read(Built, Built.Door("acp-stub"), open, Seen, TimeZoneInfo.Utc).Kind);
     }
 
     /// <summary>
@@ -197,11 +196,11 @@ public sealed class AgentErrorsTests
     public void A_harness_line_never_reads_a_limit_by_its_sentence_or_its_code()
     {
         var weekly = new DoorFailure("protocol", null, null, null, "You've hit your weekly limit · resets Oct 26, 10pm (UTC)", DoorWhere.Harness);
-        var read = AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), weekly, Seen, TimeZoneInfo.Utc);
+        var read = AgentErrors.Read(Built, Built.Door("claude-code-acp"), weekly, Seen, TimeZoneInfo.Utc);
         Assert.Equal((AgentErrorKind.Fatal, (LimitSeen?)null), (read.Kind, read.Limit));
 
         var coded = new DoorFailure("protocol", -32603, "rate_limit", 429, "Internal error", DoorWhere.Harness);
-        Assert.Equal(AgentErrorKind.Fatal, AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), coded, Seen, TimeZoneInfo.Utc).Kind);
-        Assert.Equal(AgentErrorKind.Fatal, AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), coded with { Kind = "overloaded", Status = 529 }, Seen, TimeZoneInfo.Utc).Kind);
+        Assert.Equal(AgentErrorKind.Fatal, AgentErrors.Read(Built, Built.Door("claude-code-acp"), coded, Seen, TimeZoneInfo.Utc).Kind);
+        Assert.Equal(AgentErrorKind.Fatal, AgentErrors.Read(Built, Built.Door("claude-code-acp"), coded with { Kind = "overloaded", Status = 529 }, Seen, TimeZoneInfo.Utc).Kind);
     }
 }

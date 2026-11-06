@@ -15,10 +15,10 @@ internal static class RefusedAccounts
     /// </summary>
     /// <param name="failure">What the door said refusing the call (ACPEND1), never the transcript (AGT3c).</param>
     /// <param name="byCode">The door's own code read it as access (D210 point 5, LIMITPICK1): its sign-in, whatever the words.</param>
-    internal static Noted? SignInRefused(HarnessRoster harnesses, ISessionAdapter adapter, string? profile, string? failure, bool byCode = false)
+    internal static Noted? SignInRefused(HarnessRoster harnesses, AgentDoor adapter, string? profile, string? failure, bool byCode = false)
     {
-        if (adapter.Toolchain is null
-            || (!byCode && (failure is not { Length: > 0 } || !SignInRefusals.Read(harnesses.SignInOf(adapter.Name), failure))))
+        if (harnesses.Adapters.AgentNamed(adapter.Id.Value) is null
+            || (!byCode && (failure is not { Length: > 0 } || !SignInRefusals.Read(harnesses.SignInOf(adapter.Id.Value), failure))))
         {
             return null;
         }
@@ -30,14 +30,14 @@ internal static class RefusedAccounts
     /// <see cref="SignInRefused"/>'s writes, reading no words (the agent-lyntai design §5.2, round 4): the account reads signed out, the
     /// tool's own sign-in is held until a person looks again, and the line comes back. The trusted entry a bound kind's sign-in takes.
     /// </summary>
-    internal static Noted SignOut(HarnessRoster harnesses, ISessionAdapter adapter, string? profile)
+    internal static Noted SignOut(HarnessRoster harnesses, AgentDoor adapter, string? profile)
     {
-        var owner = harnesses.Adapters.OwnerOfAgent(adapter.Name).Value;
-        harnesses.SignedOut(adapter.Name, profile);
+        var owner = harnesses.Adapters.OwnerOfAgent(adapter.Id.Value).Value;
+        harnesses.SignedOut(adapter.Id.Value, profile);
         if (profile is null)
         {
             var hold = SignedOutHold(owner);
-            harnesses.Refuse(adapter.Name, null, hold.Note, hold);
+            harnesses.Refuse(adapter.Id.Value, null, hold.Note, hold);
         }
 
         return SignedOutNote(owner, profile);

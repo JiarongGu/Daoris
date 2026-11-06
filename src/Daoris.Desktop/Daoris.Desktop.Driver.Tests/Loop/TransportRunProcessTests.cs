@@ -112,7 +112,7 @@ public sealed class TransportRunProcessTests : IDisposable
     /// The scripted native harness: the Claude Code mapper over its stream, a resume that says its arguments and what its input carried, flags
     /// for its carriers.
     /// </summary>
-    private static ISessionAdapter Scripted(string home, bool structured) =>
+    private static Provider Scripted(string home, bool structured) =>
         TestDoors.Door("scripted", resumes: true, spawn: new ScriptedNative(home), dialect: structured ? TestDoors.StreamJson : null);
 
     private sealed class ScriptedNative(string home) : ISpawn
@@ -130,13 +130,25 @@ public sealed class TransportRunProcessTests : IDisposable
         private ProcessRecipe Recipe(params string[] arguments) => new("node", [Path.Combine(home, "agent.cjs"), .. arguments]);
     }
 
-    private TransportRun Over(ISessionAdapter adapter, ProcessStartInfo info, Func<TransportStart, TransportStart>? shape = null)
+    private TransportRun Over(AgentDoor adapter, ProcessStartInfo info, Func<TransportStart, TransportStart>? shape = null) =>
+        Over(ProviderRegistry.Built(), adapter, info, shape);
+
+    private TransportRun Over(Provider adapter, ProcessStartInfo info, Func<TransportStart, TransportStart>? shape = null)
+    {
+        var registry = TestDoors.Registry(adapter);
+        return Over(registry, registry.Door(adapter.Doors[0].Id.Value), info, shape);
+    }
+
+    private ProcessStartInfo Prepare(Provider adapter, IReadOnlyList<string>? command) =>
+        TestDoors.Registry(adapter).Start(adapter.Doors[0], Target(), command);
+
+    private TransportRun Over(ProviderRegistry registry, AgentDoor adapter, ProcessStartInfo info, Func<TransportStart, TransportStart>? shape)
     {
         var start = new TransportStart(info, StartClass.Person)
         {
             Target = Target(), Request = SpawnRequests.Of(Target(), null), Selection = new HarnessSelection(null),
         };
-        return new TransportRun(new DriverTransportHost(_driver), adapter, shape is null ? start : shape(start));
+        return new TransportRun(new DriverTransportHost(_driver), registry, adapter, shape is null ? start : shape(start));
     }
 
     private IReadOnlyList<SessionEvent> Heard()
@@ -152,7 +164,7 @@ public sealed class TransportRunProcessTests : IDisposable
     public async Task A_native_start_is_tracked_captured_waited_for_and_ended_as_a_start_is()
     {
         var adapter = Scripted(_home, structured: false);
-        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("plain"));
+        await using var run = Over(adapter, Prepare(adapter, null).WithArguments("plain"));
         Hand(run);
 
         await run.OpenAsync(Bound);
@@ -183,7 +195,7 @@ public sealed class TransportRunProcessTests : IDisposable
     public async Task A_structured_native_start_keeps_the_conversation_it_names_and_says_its_opening_once()
     {
         var adapter = Scripted(_home, structured: true);
-        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("claude"));
+        await using var run = Over(adapter, Prepare(adapter, null).WithArguments("claude"));
         Hand(run, keepAs: "scripted", own: new HarnessWords(), opening: [new SessionEvent { Kind = SessionEventKind.Note, Text = "started on `scripted`" }]);
 
         await run.OpenAsync(Bound);
@@ -212,7 +224,7 @@ public sealed class TransportRunProcessTests : IDisposable
     {
         var adapter = Scripted(_home, structured: true);
         var named = 0;
-        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("claude"), start => start with { Named = () => named++ });
+        await using var run = Over(adapter, Prepare(adapter, null).WithArguments("claude"), start => start with { Named = () => named++ });
         Hand(run, keepAs: "scripted", own: new HarnessWords());
         run.HandCarriers(new RunCarriers("settings.json", "servers.json"));
         await run.OpenAsync(Bound);
@@ -265,7 +277,7 @@ public sealed class TransportRunProcessTests : IDisposable
         };
         File.WriteAllText(Transcript, "the record's earlier lines\n");
         await using var run = Over(
-            adapter, adapter.Prepare(Target(), null).WithArguments("again", Path.Combine(_home, "marker")));
+            adapter, Prepare(adapter, null).WithArguments("again", Path.Combine(_home, "marker")));
         Hand(run, output, keepAs: "scripted", own: new HarnessWords(), opening: opening);
 
         // The first process exits 1 before its `init`; the run tries the same resume once more on its own, and its end is the retry's.
@@ -309,7 +321,7 @@ public sealed class TransportRunProcessTests : IDisposable
         var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
         using var within = LineageTokens.Within(tokens);
         var adapter = Scripted(_home, structured: false);
-        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"));
+        await using var run = Over(adapter, Prepare(adapter, null).WithArguments("token"));
         Hand(run, lineageHome: _home);
 
         await run.OpenAsync(Bound);
@@ -333,7 +345,7 @@ public sealed class TransportRunProcessTests : IDisposable
         using var within = LineageTokens.Within(tokens);
         var moved = ChildLineage.Opened(_home, "s1");
         var adapter = Scripted(_home, structured: false);
-        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"), start => start with { Moved = moved });
+        await using var run = Over(adapter, Prepare(adapter, null).WithArguments("token"), start => start with { Moved = moved });
         Hand(run, lineageHome: _home);
 
         await run.OpenAsync(Bound);
@@ -352,7 +364,7 @@ public sealed class TransportRunProcessTests : IDisposable
     public async Task A_native_runs_prompt_goes_on_its_input_and_its_write_is_told()
     {
         var adapter = Scripted(_home, structured: true);
-        var info = adapter.Prepare(Target(), null).WithArguments("stdin");
+        var info = Prepare(adapter, null).WithArguments("stdin");
         info.RedirectStandardInput = true;
         var written = 0;
         await using var run = Over(adapter, info, start => start with { Prompt = "Log the port.", Written = () => written++ });
@@ -375,10 +387,10 @@ public sealed class TransportRunProcessTests : IDisposable
     public async Task An_executor_spawns_first_then_hands_its_start_and_records_and_opens_over_the_same_process()
     {
         var adapter = Scripted(_home, structured: true);
-        var info = adapter.Prepare(Target(), null).WithArguments("stdin");
+        var info = Prepare(adapter, null).WithArguments("stdin");
         info.RedirectStandardInput = true;
         var start = new TransportStart(info, StartClass.Person);
-        await using var run = new TransportRun(new DriverTransportHost(_driver), adapter, start);
+        await using var run = new TransportRun(new DriverTransportHost(_driver), TestDoors.Registry(adapter), adapter.Doors[0], start);
 
         await run.SpawnAsync("s1", Bound);
 
@@ -406,7 +418,7 @@ public sealed class TransportRunProcessTests : IDisposable
         var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
         using var within = LineageTokens.Within(tokens);
         var adapter = Scripted(_home, structured: false);
-        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("hangs"));
+        await using var run = Over(adapter, Prepare(adapter, null).WithArguments("hangs"));
         Hand(run);
         await run.OpenAsync(Bound);
         var proc = run.Proc!;
@@ -423,8 +435,8 @@ public sealed class TransportRunProcessTests : IDisposable
     {
         var seen = Path.Combine(_home, $"seen-{scenario}.txt");
         var command = ProviderFiles.Of("stub").Command("acp-stub", "--scenario", scenario, "--seen", seen);
-        var adapter = ProviderRegistry.Built().Resolve("acp-stub");
-        var run = Over(adapter, adapter.Prepare(Target(), command), start => start with { Protocol = protocol });
+        var adapter = ProviderRegistry.Built().Door("acp-stub");
+        var run = Over(adapter, ProviderRegistry.Built().Start(adapter, Target(), command), start => start with { Protocol = protocol });
         Hand(run, keepAs: "acp-stub");
         return (run, seen);
     }
@@ -613,7 +625,7 @@ public sealed class TransportRunProcessTests : IDisposable
     public async Task A_native_conversation_is_told_each_event_keeps_what_its_stream_names_at_once_and_closes_on_its_input()
     {
         var adapter = Scripted(_home, structured: true);
-        var info = adapter.Prepare(Target(), null).WithArguments("talks");
+        var info = Prepare(adapter, null).WithArguments("talks");
         info.RedirectStandardInput = true;
         var turns = 0;
         var named = 0;
@@ -651,7 +663,7 @@ public sealed class TransportRunProcessTests : IDisposable
         var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
         using var within = LineageTokens.Within(tokens);
         var adapter = Scripted(_home, structured: false);
-        var never = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"));
+        var never = Over(adapter, Prepare(adapter, null).WithArguments("token"));
         var unspawned = await never.BracketAsync("s1", Bound);
 
         Assert.Equal(TokenReading.Unwatched, tokens.Reading(unspawned));
@@ -659,7 +671,7 @@ public sealed class TransportRunProcessTests : IDisposable
         Assert.False(never.Started);
         Assert.Equal(TokenReading.Gone, tokens.Reading(unspawned));
 
-        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"));
+        await using var run = Over(adapter, Prepare(adapter, null).WithArguments("token"));
         Hand(run, lineageHome: _home);
         var proc = await run.BracketAsync("s1", Bound);
         await run.SpawnAsync("s1", Bound);

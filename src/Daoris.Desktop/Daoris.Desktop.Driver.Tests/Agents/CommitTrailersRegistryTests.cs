@@ -25,10 +25,10 @@ public sealed class CommitTrailersRegistryTests
     [InlineData("alt-acp-stub", null)]
     public void A_built_in_door_s_maker_is_its_provider_s_and_the_same_one_its_toolchain_states(string door, string? maker)
     {
-        var adapter = ProviderRegistry.Built().Resolve(door);
+        var adapter = ProviderRegistry.Built().Door(door);
 
-        Assert.Equal(maker, CommitTrailers.MakerOf(adapter));
-        Assert.Equal(adapter.Toolchain?.Maker, CommitTrailers.MakerOf(adapter));
+        Assert.Equal(maker, ProviderRegistry.Built().MakerOf(adapter));
+        Assert.Equal(ProviderRegistry.Built().AgentNamed(adapter.Id.Value)?.Maker, ProviderRegistry.Built().MakerOf(adapter));
     }
 
     [Theory]
@@ -38,18 +38,18 @@ public sealed class CommitTrailersRegistryTests
     [InlineData("stub", "Co-Authored-By: AGENT (MAKER, MODEL) <your maker's attribution address>")]
     [InlineData("alt-stub", "Co-Authored-By: AGENT (MAKER, MODEL) <your maker's attribution address>")]
     public void Each_built_in_door_is_told_the_trailer_its_maker_gets(string door, string expected) =>
-        Assert.Contains(expected, CommitTrailers.For(ProviderRegistry.Built().Resolve(door)));
+        Assert.Contains(expected, CommitTrailers.For(ProviderRegistry.Built(), ProviderRegistry.Built().Door(door)));
 
     [Fact]
     public void A_plugin_door_declaring_a_maker_is_told_that_maker_s_trailer_and_one_declaring_none_the_placeholder()
     {
         var adapters = With(Door("acme-openai", "OpenAI"), Door("acme-anthropic", "Anthropic"), Door("acme-none", null));
 
-        Assert.Contains("Co-Authored-By: Codex (OpenAI, MODEL) <noreply@openai.com>", CommitTrailers.For(adapters.Resolve("acme-openai")));
-        Assert.Contains("made by Anthropic. Use the model actually running this session", CommitTrailers.For(adapters.Resolve("acme-anthropic")));
-        Assert.Contains("<your maker's attribution address>", CommitTrailers.For(adapters.Resolve("acme-none")));
-        Assert.Equal("OpenAI", CommitTrailers.MakerOf(adapters.Resolve("acme-openai")));
-        Assert.Null(CommitTrailers.MakerOf(adapters.Resolve("acme-none")));
+        Assert.Contains("Co-Authored-By: Codex (OpenAI, MODEL) <noreply@openai.com>", CommitTrailers.For(adapters, adapters.Door("acme-openai")));
+        Assert.Contains("made by Anthropic. Use the model actually running this session", CommitTrailers.For(adapters, adapters.Door("acme-anthropic")));
+        Assert.Contains("<your maker's attribution address>", CommitTrailers.For(adapters, adapters.Door("acme-none")));
+        Assert.Equal("OpenAI", adapters.MakerOf(adapters.Door("acme-openai")));
+        Assert.Null(adapters.MakerOf(adapters.Door("acme-none")));
     }
 
     private sealed class Declared(IEnumerable<DeclaredDoor> doors) : IAgentPlugins

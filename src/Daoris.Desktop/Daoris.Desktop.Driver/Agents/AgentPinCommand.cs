@@ -30,7 +30,7 @@ internal static class AgentPinCommand
         if (await AgentLongCommand.RefusedHereAsync(world).ConfigureAwait(false)) return 1;
         var path = AgentsCommand.WiringPath(world);
         var (name, toolchain, _, _) = AgentsCommand.Agent(args, "pin", "<agent>", world, path);
-        if (toolchain.Package is not { Length: > 0 } && toolchain.Channel is not { Length: > 0 })
+        if (toolchain.Program.Package is not { Length: > 0 } && toolchain.Program.Channel is not { Length: > 0 })
         {
             throw new AgentWords(
                 $"`{name}` declares no package, so Daoris has no sanctioned way to fetch a version of it. Install it with its own tooling "
@@ -40,7 +40,7 @@ internal static class AgentPinCommand
         var version = AgentsCommand.Operand(args, 2)
             ?? throw new AgentWords("`agent pin` needs <agent> <version> — e.g. `daoris agent pin claude-code`");
         var workspace = AgentsCommand.FlagValue(args, "--workspace");
-        if (toolchain.Channel is { Length: > 0 } channel)
+        if (toolchain.Program.Channel is { Length: > 0 } channel)
         {
             try
             {
@@ -58,7 +58,7 @@ internal static class AgentPinCommand
 
     /// <summary>One version installed, from the channel or through npm, then pinned; the pin is written only once the version is there.</summary>
     private static async Task<int> InstallAndPinAsync(
-        AgentsWorld world, string path, string name, HarnessToolchain toolchain, string version, string? workspace, CancellationToken ct)
+        AgentsWorld world, string path, string name, AccountAgent toolchain, string version, string? workspace, CancellationToken ct)
     {
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var error = world.Instance.Error;
@@ -72,7 +72,7 @@ internal static class AgentPinCommand
             // package's npm is the tools' (TOOLS5, D121 §2.7), its prefix named so what it installs runs on the tools' node.
             plan = PinInstall.Plan(toolchain, home, name, version, world.Npm);
         }
-        catch (DriverException refused) when (toolchain.Channel is { Length: > 0 })
+        catch (DriverException refused) when (toolchain.Program.Channel is { Length: > 0 })
         {
             await error.WriteLineAsync($"{Prefix}: {refused.Message}").ConfigureAwait(false);
             await error.WriteLineAsync(NothingPinned).ConfigureAwait(false);
@@ -113,7 +113,7 @@ internal static class AgentPinCommand
 
                 break;
             default:
-                Say($"{Prefix}: installing `{toolchain.Package}@{version}` into a directory Daoris owns.");
+                Say($"{Prefix}: installing `{toolchain.Program.Package}@{version}` into a directory Daoris owns.");
                 Say($"  {plan.Where}");
                 var installed = await AgentLongCommand.TerminalAsync(world, plan.Command!, toolchain, "npm", ct).ConfigureAwait(false);
                 if (installed != 0)
@@ -203,7 +203,7 @@ internal static class AgentPinCommand
         var pins = named is null ? settings.Versions : settings.WorkspaceVersions.GetValueOrDefault(named);
         var pin = pins?.GetValueOrDefault(name)?.Trim() is { Length: > 0 } held ? held : null;
 
-        if (pin is not null && (toolchain.Package is { Length: > 0 } || toolchain.Channel is { Length: > 0 }))
+        if (pin is not null && (toolchain.Program.Package is { Length: > 0 } || toolchain.Program.Channel is { Length: > 0 }))
         {
             return await MovePinAsync(world, path, name, toolchain, pin, named, ct).ConfigureAwait(false);
         }
@@ -215,14 +215,14 @@ internal static class AgentPinCommand
                 + $"--workspace {ShellWord.Of(named, "<workspace>")}` sets one.");
         }
 
-        if (toolchain.UpdateArguments is not { Count: > 0 } update)
+        if (toolchain.Program.UpdateArguments is not { Count: > 0 } update)
         {
             throw new AgentWords($"`{name}` declares no updater — it updates itself, or its package manager does.");
         }
 
         Say($"{Prefix}: updating `{name}`. Never mid-session and never unasked: a tool that changed");
         Say("  under a running loop is a moving target nobody diffed.");
-        return await AgentLongCommand.TerminalAsync(world, [.. toolchain.Binary, .. update], toolchain, $"`{name}`'s updater", ct)
+        return await AgentLongCommand.TerminalAsync(world, [.. toolchain.Program.Binary, .. update], toolchain, $"`{name}`'s updater", ct)
             .ConfigureAwait(false);
     }
 
@@ -231,15 +231,15 @@ internal static class AgentPinCommand
     /// never names a pointer, and never moves backwards.
     /// </summary>
     private static async Task<int> MovePinAsync(
-        AgentsWorld world, string path, string name, HarnessToolchain toolchain, string pin, string? named, CancellationToken ct)
+        AgentsWorld world, string path, string name, AccountAgent toolchain, string pin, string? named, CancellationToken ct)
     {
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var error = world.Instance.Error;
         var home = HarnessSettings.HomeOf(path);
         var scope = named is not null ? $" for the `{named}` workspace" : "";
-        Say(toolchain.Channel is { Length: > 0 }
+        Say(toolchain.Program.Channel is { Length: > 0 }
             ? $"{Prefix}: `{name}` is pinned at {pin}{scope}. Asking {toolchain.Maker ?? "its maker"}'s own release channel which release is newest."
-            : $"{Prefix}: `{name}` is pinned at {pin}{scope}. Asking npm which release of `{toolchain.Package}` is newest.");
+            : $"{Prefix}: `{name}` is pinned at {pin}{scope}. Asking npm which release of `{toolchain.Program.Package}` is newest.");
         string newest;
         try
         {
@@ -257,7 +257,7 @@ internal static class AgentPinCommand
             return 2;
         }
 
-        var move = PinMove.Decide(newest, pin, HarnessSettings.ManagedBinary(home, name, pin, toolchain.Binary) is not null);
+        var move = PinMove.Decide(newest, pin, HarnessSettings.ManagedBinary(home, name, pin, toolchain.Program.Binary) is not null);
         if (move == PinMoveKind.Stays)
         {
             Say($"{Prefix}: `{name}` {pin} is already the newest release — nothing was fetched, and the pin stays.");

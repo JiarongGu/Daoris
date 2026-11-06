@@ -22,7 +22,7 @@ public sealed class NativeResumeTests
     [Fact]
     public void A_resume_runs_the_answer_as_the_next_turn_of_the_kept_conversation()
     {
-        var info = BuiltDoors.Claude.PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
+        var info = ProviderRegistry.Built().Resume("claude-code", Target(), ["claude"], "0b5e7c1a")!;
 
         var arguments = info.ArgumentList.ToList();
         Assert.Equal("claude", info.FileName);
@@ -44,10 +44,10 @@ public sealed class NativeResumeTests
     public void A_resume_takes_the_settings_and_servers_flags_as_a_start_does()
     {
         var adapter = BuiltDoors.Claude;
-        var info = adapter.PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
+        var info = ProviderRegistry.Built().Resume(adapter, Target(), ["claude"], "0b5e7c1a")!;
 
-        adapter.HandSettings(info, "D:/daoris-data/sessions/s1.settings.json");
-        adapter.HandServers(info, "D:/daoris-data/sessions/s1.mcp.json");
+        adapter.Spawned().HandSettings(info, "D:/daoris-data/sessions/s1.settings.json");
+        adapter.Spawned().HandServers(info, "D:/daoris-data/sessions/s1.mcp.json");
 
         Assert.Contains("--settings", info.ArgumentList);
         Assert.Contains("--mcp-config", info.ArgumentList);
@@ -59,11 +59,11 @@ public sealed class NativeResumeTests
     {
         var adapters = ProviderRegistry.Built();
 
-        Assert.True(adapters.Resolve("claude-code").Resumes);
-        Assert.True(adapters.Resolve("claude-code-acp").Resumes);
-        Assert.True(adapters.Resolve("acp-stub").Resumes);
-        Assert.False(adapters.Resolve("stub").Resumes);
-        Assert.Null(adapters.Resolve("stub").PrepareResume(Target(), ["node", "stub.mjs"], "abc"));
+        Assert.True(adapters.Door("claude-code").Can.Resumes);
+        Assert.True(adapters.Door("claude-code-acp").Can.Resumes);
+        Assert.True(adapters.Door("acp-stub").Can.Resumes);
+        Assert.False(adapters.Door("stub").Can.Resumes);
+        Assert.Null(adapters.Resume("stub", Target(), ["node", "stub.mjs"], "abc"));
     }
 
     /// <summary>The conversation's id is the <c>init</c> line's <c>session_id</c>, read without a line rendered for it.</summary>
@@ -114,7 +114,7 @@ public sealed class NativeResumeTests
             ],
             Continuations.Opening("claude-code", null, null, answer: false, findings: true, persons: true));
 
-        var info = BuiltDoors.Claude.PrepareResume(Target(), ["claude"], resume.Conversation)!;
+        var info = ProviderRegistry.Built().Resume("claude-code", Target(), ["claude"], resume.Conversation)!;
 
         var arguments = info.ArgumentList.ToList();
         // The prompt is the resume's own, written on the input (AGENTLYNTAI1s-i), so it is read where it is composed.
@@ -265,7 +265,7 @@ public sealed class NativeResumeTests
     {
         var target = SpawnRequests.Chat("Game", "D:/trees/chat-1", "http://localhost:5177", null) with { Resume = "0b5e7c1a" };
 
-        var arguments = BuiltDoors.Claude.PrepareChat(target, ["claude"]).ArgumentList.ToList();
+        var arguments = ProviderRegistry.Built().Chat("claude-code", target, ["claude"]).ArgumentList.ToList();
 
         Assert.Equal("0b5e7c1a", arguments[arguments.IndexOf("--resume") + 1]);
         Assert.Equal("stream-json", arguments[arguments.IndexOf("--input-format") + 1]);
@@ -281,9 +281,9 @@ public sealed class NativeResumeTests
         var fresh = SpawnRequests.Chat("Game", "D:/trees/chat-1", "http://localhost:5177", null);
         var going = fresh with { Resume = "0b5e7c1a" };
 
-        Assert.DoesNotContain("--resume", BuiltDoors.Claude.PrepareChat(fresh, ["claude"]).ArgumentList);
-        Assert.DoesNotContain("--resume", ProviderRegistry.Built().Resolve("claude-code-acp").PrepareChat(going, ["claude-agent-acp"]).ArgumentList);
-        Assert.DoesNotContain("--resume", BuiltDoors.AcpStub.PrepareChat(going, ["node", "agent.mjs"]).ArgumentList);
+        Assert.DoesNotContain("--resume", ProviderRegistry.Built().Chat("claude-code", fresh, ["claude"]).ArgumentList);
+        Assert.DoesNotContain("--resume", ProviderRegistry.Built().Chat("claude-code-acp", going, ["claude-agent-acp"]).ArgumentList);
+        Assert.DoesNotContain("--resume", ProviderRegistry.Built().Chat("acp-stub", going, ["node", "agent.mjs"]).ArgumentList);
     }
 
     /// <summary>

@@ -252,15 +252,12 @@ public sealed class AccountWindowsTests : IDisposable
 
     // ——— Told by a limit, through the roster's reader (D125 §2): only a weekly reset the agent named.
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Native);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Native);
 
     private HarnessRoster Roster() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new HarnessToolchain(
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
                 Binary: ["fake"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", Limits: ClaudeLimits.Words,
-                WeekFixed: true)),
-        }), DaorisHome.Entry(_home, HomeEntry.Harnesses))
+                WeekFixed: true))]), DaorisHome.Entry(_home, HomeEntry.Harnesses))
         {
             Clock = () => Seen,
             Zone = Zone,

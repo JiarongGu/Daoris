@@ -27,15 +27,11 @@ public sealed class HandOverRunnerTests : IDisposable
     }
 
     /// <summary>A conversation's adapter on the protocol door with no toolchain to ask, so nothing is probed.</summary>
-    private static ISessionAdapter Talk(string name) => TestDoors.Door(name, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
+    private static Provider Talk(string name) => TestDoors.Door(name, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
 
     private ChatRunner Runner(ChatLedger ledger)
     {
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["talk"] = Talk("talk"),
-            ["other"] = Talk("other"),
-        });
+        var adapters = TestDoors.Registry([Talk("talk"), Talk("other")]);
         return new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

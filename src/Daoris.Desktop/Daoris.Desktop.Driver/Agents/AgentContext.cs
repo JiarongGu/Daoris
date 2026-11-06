@@ -12,7 +12,7 @@ internal interface IAgentContext
     StandingBlockTold Block(StandingFacts facts, int before);
 
     /// <summary><paramref name="facts"/> bound to the harness that runs them, in <paramref name="tree"/>.</summary>
-    StandingFacts OnHarness(StandingFacts facts, ISessionAdapter adapter, string tree);
+    StandingFacts OnHarness(StandingFacts facts, AgentDoor adapter, string tree);
 }
 
 internal static class AgentContext

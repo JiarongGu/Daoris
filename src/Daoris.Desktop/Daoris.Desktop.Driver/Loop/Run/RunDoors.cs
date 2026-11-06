@@ -67,11 +67,11 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
 
     (string Role, long Revision)? IRunWiring.RoleTaken(Consideration start, string? named) => driver.Walk.RoleTaken(start, named);
 
-    (ProcessStartInfo Info, string? Notice) IRunWiring.Prepare(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection) =>
+    (ProcessStartInfo Info, string? Notice) IRunWiring.Prepare(AgentDoor adapter, SessionTarget target, HarnessSelection selection) =>
         driver.Prepare(adapter, target, selection);
 
     (string? File, object? Meta, HandedSection Handed) IRunWiring.HandRules(
-        ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository, string tree, string? kept,
+        AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository, string tree, string? kept,
         AcrossReach? across, IReadOnlyList<string>? plugins, IReadOnlyList<string>? continued, HeavyHanded? heavy) =>
         driver.HandRules(adapter, info, sessionId, workspace, repository, tree, kept, across: across, plugins: plugins, continued: continued, heavy: heavy);
 
@@ -92,9 +92,9 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
         Consideration start, string agent, HarnessSelection selection, ModelRefusal refusal, HashSet<string> refused, CancellationToken ct, string? role) =>
         driver.Walk.ReaskHandedAsync(start, agent, selection, refusal, refused, ct, role);
 
-    Action<JsonElement> IRunWiring.Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId) => driver.Said(adapter, selection, sessionId);
+    Action<JsonElement> IRunWiring.Said(AgentDoor adapter, HarnessSelection selection, string sessionId) => driver.Said(adapter, selection, sessionId);
 
-    NativeLimits IRunWiring.NativeLimit(ISessionAdapter adapter) => driver.NativeLimit(adapter);
+    NativeLimits IRunWiring.NativeLimit(AgentDoor adapter) => driver.NativeLimit(adapter);
 
     Task<bool> IRunWiring.WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset openedAt, CancellationToken ct) =>
         driver.WaitsOnOwnHelperAsync(session, quest, openedAt, ct);
@@ -104,7 +104,7 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
         driver.ConcludedForOpinionAsync(sessionId, quest, status, state, workTree, workspace, ct);
 
     SessionConclusion IRunWiring.AccountRefused(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended) =>
+        SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, HarnessEnding ended) =>
         driver.AccountRefused(conclusion, adapter, selection, ended);
 
     SessionConclusion IRunWiring.ModelRefused(
@@ -112,11 +112,11 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
         driver.ModelRefused(conclusion, agent, selection, model, ended, sessionId);
 
     SessionConclusion IRunWiring.AccountSignedOut(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended) =>
+        SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended) =>
         driver.AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
 
     (SessionConclusion Conclusion, bool Limit) IRunWiring.AccountLimited(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, string sessionId,
+        SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, string? turnFailed, string sessionId,
         AcpUsage? used, LimitSeen? byCode) =>
         driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used, byCode);
 
@@ -137,7 +137,7 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
 
     ConcurrentDictionary<string, string> IRunWiring.LimitResumed => driver.LimitResumed;
 
-    bool IRunWiring.HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool) =>
+    bool IRunWiring.HandedConnector(AgentDoor adapter, string? workspace, string? repository, string tool) =>
         driver.HandedConnector(adapter, workspace, repository, tool);
 
     ServerEntry? IRunWiring.Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc) =>

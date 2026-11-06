@@ -53,7 +53,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
         HarnessSelection selection;
         try
         {
-            _context.Adapters.Resolve(agent);
+            _context.Adapters.Door(agent);
             selection = await VoiceAsync(new BrainstormTurn(id, "g1", agent, "", "", "", MeasureMinutes, entry), _context.Config, _context.Harnesses, ct)
                 .ConfigureAwait(false);
         }
@@ -128,11 +128,11 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
                 $"held  brainstorm turn {turn.Turn}: this machine has no connector, and a pass answers only through its tool");
         }
 
-        ISessionAdapter adapter;
+        AgentDoor adapter;
         HarnessSelection selection;
         try
         {
-            adapter = _context.Adapters.Resolve(turn.Agent);
+            adapter = _context.Adapters.Door(turn.Agent);
             selection = await VoiceAsync(turn, _context.Config, _context.Harnesses, ct).ConfigureAwait(false);
         }
         catch (DriverException error)
@@ -155,7 +155,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
             {
                 files.WritePass(turn.Id, pass with
                 {
-                    Actor = "brainstorm", Choice = turn.Entry?.From ?? "before", Asked = turn.Entry?.Asked ?? ActorAsked.Before(adapter.Name), Ran = ran,
+                    Actor = "brainstorm", Choice = turn.Entry?.From ?? "before", Asked = turn.Entry?.Asked ?? ActorAsked.Before(adapter.Id.Value), Ran = ran,
                 });
             }
 
@@ -164,7 +164,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
         var target = new SessionTarget(QuestId: "", "Brainstorm", "", "Daoris", "", turn.Room, "")
         {
             Brainstorm = turn.Id,
-            Asked = turn.Entry?.Asked ?? ActorAsked.Before(adapter.Name),
+            Asked = turn.Entry?.Asked ?? ActorAsked.Before(adapter.Id.Value),
             Choice = turn.Entry?.From,
             BrainstormTurn = turn.Turn,
             BrainstormAnswer = turn.Answer,
@@ -190,7 +190,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
                     if (used is not null)
                     {
                         // The usage is the brainstorm's own (D176 point 7): the reading names it, and its account counts it.
-                        _context.Usage?.Record(new UsageEntry(sessionId, "", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow)
+                        _context.Usage?.Record(new UsageEntry(sessionId, "", adapter.Id.Value, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow)
                         {
                             Brainstorm = turn.Id,
                         });
@@ -234,14 +234,14 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
     /// its code, so a limit it says by its code alone cools the account as a driven run's and a conversation's do (§3.1). The pass is handed
     /// no transient retry, which would open an episode the design has not decided for a voice (row 1d), so it reads the refusal itself, once.
     /// </remarks>
-    private bool Cooled(ISessionAdapter adapter, HarnessSelection selection, string failure, string sessionId, AcpRefusal? refusal)
+    private bool Cooled(AgentDoor adapter, HarnessSelection selection, string failure, string sessionId, AcpRefusal? refusal)
     {
         try
         {
             var read = refusal is null ? null
                 : AgentErrors.Read(_context.Adapters, adapter, DoorFailures.OfPrompt(refusal), _context.Harnesses.Clock(), _context.Harnesses.Zone);
             var byCode = read is { Kind: AgentErrorKind.Limit, Limit: { } coded } ? coded : null;
-            return _context.Harnesses.Limited(adapter.Name, selection.Profile, failure, sessionId, _context.Config.CoolOff, byCode) is not null;
+            return _context.Harnesses.Limited(adapter.Id.Value, selection.Profile, failure, sessionId, _context.Config.CoolOff, byCode) is not null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

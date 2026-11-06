@@ -18,14 +18,14 @@ public sealed record AgentFamily(string Agent, string Owner, string? Product, st
 {
     /// <summary>
     /// The family of <paramref name="name"/> as <paramref name="adapters"/> declares it: its toolchain where the set carries it,
-    /// else the agent a door runs as where the set declares one (<see cref="ProviderRegistry.ToolchainOf"/>), else an owner of its own
+    /// else the agent a door runs as where the set declares one (<see cref="ProviderRegistry.AgentNamed"/>), else an owner of its own
     /// name with no maker.
     /// </summary>
     public static AgentFamily Of(ProviderRegistry adapters, string name)
     {
         var given = name.Trim();
         var carried = adapters.Names.FirstOrDefault(each => string.Equals(each, given, StringComparison.OrdinalIgnoreCase));
-        var toolchain = adapters.ToolchainOf(carried ?? given);
+        var toolchain = adapters.AgentNamed(carried ?? given);
         var agent = carried ?? given;
         return new AgentFamily(
             agent, adapters.OwnerOfAgent(agent).Value, Declared(toolchain?.Product), Declared(toolchain?.Maker),

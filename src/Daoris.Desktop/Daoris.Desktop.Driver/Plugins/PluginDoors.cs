@@ -24,6 +24,6 @@ public static class PluginDoors
         harness.FullPosture,
         harness.AskingPosture);
 
-    /// <summary>The door <paramref name="harness"/> makes for <paramref name="plugin"/>, as the adapter set carries it.</summary>
-    public static ISessionAdapter Adapter(PluginHarness harness, string plugin) => DeclaredDoors.Adapter(Declare(harness, plugin));
+    /// <summary>The door <paramref name="harness"/> makes for <paramref name="plugin"/>, which the registry places by its account key when it joins.</summary>
+    public static AgentDoor Door(PluginHarness harness, string plugin) => DeclaredDoors.Door(Declare(harness, plugin));
 }

@@ -83,7 +83,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     internal static Func<SaidWordView, bool> Hands(bool resumed, bool switched) => WordsHandedOn.Hands(resumed, switched);
 
     internal Task<AgentRunEnd> GoOnAsync(
-        TransportRun run, DrivenInbox held, ISessionAdapter adapter, string sessionId, AgentRunEnd ended, ResumeAsk? resume,
+        TransportRun run, DrivenInbox held, AgentDoor adapter, string sessionId, AgentRunEnd ended, ResumeAsk? resume,
         List<ChatMessage> left, CancellationToken ct, HarnessWords? own = null, Func<bool>? setupChanged = null,
         Func<CancellationToken, Task<TurnCarry>>? carriesOn = null) =>
         _native.GoOnAsync(run, held, adapter, sessionId, ended, resume, left, ct, own, setupChanged, carriesOn);
@@ -134,10 +134,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var home = _context.Home;
         var output = _context.Output;
         var quest = start.Quest;
-        ISessionAdapter? adapter = null;
+        AgentDoor? adapter = null;
         // The agent this start runs on: its record's asked choice's (FOUNDATION1j part ii, D205 point 1), or the one a hand-over named for
         // the quest (MIXAGENT1a-ii), passed in since starts run side by side and a field would be every start's.
-        try { adapter = _context.Adapters.Resolve(agent); } catch (DriverException) { }
+        try { adapter = _context.Adapters.Door(agent); } catch (DriverException) { }
 
         // The person wrote to a record that had ended, so it stays in view whatever comes of it (D137 §2.3): its archive mark
         // goes, and a mark of words it could not take before is past, since these are taken up now.
@@ -152,7 +152,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var why = adapter is null
             ? null
             : Continuations.Judge(
-                tree => treeStands && ConversationTrees.Stands(tree), park, adapter.Name, adapter.Resumes, selection.Profile, kept, account);
+                tree => treeStands && ConversationTrees.Stands(tree), park, adapter.Id.Value, adapter.Can.Resumes, selection.Profile, kept, account);
         var course = DrivenCourse.GoOn(
             park, quest.Status, why?.Code ?? (adapter is not null && kept is null ? ContinueWhy.Unkept : null), agentGone: adapter is null);
         _driver.Decided?.Invoke(course);
@@ -188,7 +188,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
         var target = StartTargets.WithLanguage(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), config, start.Workspace) with
         {
-            Asked = park.Asked ?? ActorAsked.Before(adapter.Name),
+            Asked = park.Asked ?? ActorAsked.Before(adapter.Id.Value),
             ReadsAcross = across.Reads,
             WritesAcross = across.Writes,
             Session = sessionId,
@@ -346,7 +346,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 kept.Conversation, words,
                 // HELPERWAIT1: a helper's answer handed beside the person's at this look is among the words, though not among the look's.
                 Continuations.OpeningNoted(
-                    adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons,
+                    adapter.Id.Value, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons,
                     helper || words.Any(word => word.Helper is not null), daoris, words.Any(word => word.Supervisors)),
                 // Where its go-aheads changed since it started (AUTONOMY1c), told after the rest, since its instruction is not handed again.
                 Continuations.AfterWords(
@@ -358,9 +358,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
             // The protocol door resumes on its wire, from the same spawn a start has; the native door is run on the
             // conversation it kept.
-            var prepared = !adapter.Abilities().ResumesByRestart
+            var prepared = !adapter.Can.ResumesByRestart
                 ? null
-                : adapter.PrepareResume(SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Name)) with { Resume = kept.Conversation });
+                : _context.Adapters.Resume(adapter, SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Id.Value)) with { Resume = kept.Conversation });
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection, prepared);
             // A set-up step going on with the person's words shows it again in its own tab (REVIEWENV1d, design §3.4): opened
             // again where the person closed it, and brought forward. Said, never held, where it will not open: the words go on.
@@ -375,7 +375,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var connectors = ConnectorPlans.For(sessionId, start.Workspace, servers);
             var handed = adapter.ServerHanding()?.Hand(info, home, connectors);
             // HELPPLUG1b (D170 point 4): the skills plugins hand sessions, as its first run was handed them, gone with this run.
-            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
+            var (skills, skillPlugins) = SpawnSkills.Hand(_context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
             // FABRIC-PIPELINE1b (D192 point 5): it goes on under the checks its repository sets now, as it goes on under the prompts
             // standing now: their deny rules handed again where its agent takes Daoris's rules, and kept by its id for `run-heavy` while
@@ -392,7 +392,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var rules = _driver.HandRules(
                 adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across,
                 said: SaidFilesFolder(home, sessionId, resume), job: findings ? AnswersFindings : null, plugins: skillPlugins,
-                heavy: HeavyTold.Hand(workTree, home, quest.To, checks, adapter.TakesSettings));
+                heavy: HeavyTold.Hand(workTree, home, quest.To, checks, adapter.Can.TakesSettings));
 
             onOpened();
             var openedAt = DateTimeOffset.UtcNow;

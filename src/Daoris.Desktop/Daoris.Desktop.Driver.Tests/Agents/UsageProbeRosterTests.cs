@@ -35,19 +35,15 @@ public sealed class UsageProbeRosterTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
 
     private static readonly UsageQuestion Question = new CodexUsageQuestion("fake", ["fake-agent", "app-server"], CodexUsage.Question.Recorded);
 
     private HarnessRoster Roster(string? home = null) =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new HarnessToolchain(
-                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
-            ["fake-door"] = Adapter("fake-door", new HarnessToolchain(
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
+                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)), Adapter("fake-door", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
-                AccountOf: "fake", Usage: Question, Limits: ClaudeLimits.Words)),
-        }), DaorisHome.Entry(home ?? _home, HomeEntry.Harnesses))
+                AccountOf: "fake", Usage: Question, Limits: ClaudeLimits.Words))]), DaorisHome.Entry(home ?? _home, HomeEntry.Harnesses))
         {
             Clock = () => _now,
             AskingUsage = (owner, account, _) =>

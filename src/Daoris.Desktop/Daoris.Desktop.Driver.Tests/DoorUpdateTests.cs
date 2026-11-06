@@ -36,17 +36,17 @@ public sealed class DoorUpdateTests : IDisposable
         GitSeed.Remove(_home);
     }
 
-    private static HarnessToolchain Built(string name) => ProviderRegistry.Built().Resolve(name).Toolchain!;
+    private static AccountAgent Built(string name) => ProviderRegistry.Built().AgentNamed(name)!;
 
     // ——— Which Update a door has, which is what the roster tells the page.
 
     [Fact]
     public void A_door_s_update_is_its_pin_when_pinned_its_own_updater_when_not_and_otherwise_none()
     {
-        var npmDoor = new HarnessToolchain(["x"], ["--version"], Package: "x-package");
-        var channelDoor = new HarnessToolchain(["x"], ["--version"], Channel: ClaudeReleases.Channel);
-        var ownUpdater = new HarnessToolchain(["x"], ["--version"], UpdateArguments: ["update"]);
-        var neither = new HarnessToolchain(["x"], ["--version"]);
+        var npmDoor = new TestAgent(["x"], ["--version"], Package: "x-package");
+        var channelDoor = new TestAgent(["x"], ["--version"], Channel: ClaudeReleases.Channel);
+        var ownUpdater = new TestAgent(["x"], ["--version"], UpdateArguments: ["update"]);
+        var neither = new TestAgent(["x"], ["--version"]);
 
         Assert.Equal("pin", HarnessActions.UpdateOf(npmDoor, "1.0.0"));
         Assert.Equal("pin", HarnessActions.UpdateOf(channelDoor, "2.1.281"));
@@ -227,7 +227,7 @@ public sealed class DoorUpdateTests : IDisposable
         var marker = Path.Combine(_home, "updated.txt");
         File.WriteAllText(script,
             $"import {{ writeFileSync }} from 'node:fs';\nwriteFileSync({JsonSerializer.Serialize(marker)}, process.argv.slice(2).join(' '));\n");
-        var toolchain = new HarnessToolchain(["node", script], ["--version"], UpdateArguments: ["update"]);
+        var toolchain = new TestAgent(["node", script], ["--version"], UpdateArguments: ["update"]);
 
         var code = await UpdateAsync(toolchain, "own", pinned: null, ownCommand: true);
 
@@ -270,7 +270,7 @@ public sealed class DoorUpdateTests : IDisposable
     private static readonly string[] Harmless = ["node", "-e", "process.exit(7)"];
 
     private Task<int> UpdateAsync(
-        HarnessToolchain toolchain, string harness, string? pinned,
+        AccountAgent toolchain, string harness, string? pinned,
         IReadOnlyList<string>? npm = null, HttpMessageHandler? transport = null, bool ownCommand = false) =>
         HarnessActions.UpdateAsync(
             toolchain, ownCommand ? null : Harmless, _home, harness, pinned, _pinned.Add, _said.Add,
@@ -279,7 +279,7 @@ public sealed class DoorUpdateTests : IDisposable
     /// <summary>An install at a version, in npm's layout or the vendor's.</summary>
     private void Installed(string harness, string version, bool vendor = false)
     {
-        var binary = Built(harness).Binary[0];
+        var binary = Built(harness).Program.Binary[0];
         var where = HarnessSettings.ManagedHome(_home, harness, version);
         var bin = vendor ? Path.Combine(where, "bin") : Path.Combine(where, "node_modules", ".bin");
         Directory.CreateDirectory(bin);

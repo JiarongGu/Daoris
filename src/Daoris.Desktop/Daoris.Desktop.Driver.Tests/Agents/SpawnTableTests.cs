@@ -46,7 +46,7 @@ public sealed class SpawnTableTests
     public void A_driven_start_is_its_door_s_recipe_completed_by_the_shell(
         string door, string[]? command, string program, string[] arguments, bool input, string? own)
     {
-        var info = ProviderRegistry.Built().Resolve(door).Prepare(Target(), command);
+        var info = ProviderRegistry.Built().Start(door, Target(), command);
 
         Assert.Equal(program, info.FileName);
         Assert.Equal(arguments, info.ArgumentList);
@@ -64,7 +64,7 @@ public sealed class SpawnTableTests
     [MemberData(nameof(Chats))]
     public void A_conversation_is_its_door_s_recipe_with_stdin_open_and_no_target(string door, string[]? command, string program, string[] arguments)
     {
-        var info = ProviderRegistry.Built().Resolve(door).PrepareChat(Chat(), command);
+        var info = ProviderRegistry.Built().Chat(door, Chat(), command);
 
         Assert.Equal(program, info.FileName);
         Assert.Equal(arguments, info.ArgumentList);
@@ -77,19 +77,19 @@ public sealed class SpawnTableTests
     [Fact]
     public void The_native_door_resumes_its_kept_conversation_and_the_protocol_doors_know_none()
     {
-        var info = ProviderRegistry.Built().Resolve("claude-code").PrepareResume(Target(), null, "conversation-1")!;
+        var info = ProviderRegistry.Built().Resume("claude-code", Target(), null, "conversation-1")!;
 
         Assert.Equal("claude", info.FileName);
         Assert.Equal(["-p", "--resume", "conversation-1", "--permission-mode", "acceptEdits", .. Stream], info.ArgumentList);
         Assert.True(info.RedirectStandardInput);
         Shelled(info);
-        Assert.Null(ProviderRegistry.Built().Resolve("codex-acp").PrepareResume(Target(), null, "conversation-1"));
+        Assert.Null(ProviderRegistry.Built().Resume("codex-acp", Target(), null, "conversation-1"));
     }
 
     [Fact]
     public void Dsh_holds_no_conversation_as_before()
     {
-        var refused = Assert.Throws<DriverException>(() => ProviderRegistry.Built().Resolve("dsh").PrepareChat(Chat(), null));
+        var refused = Assert.Throws<DriverException>(() => ProviderRegistry.Built().Chat("dsh", Chat(), null));
         Assert.Contains("cannot hold a conversation", refused.Message);
     }
 
@@ -161,17 +161,17 @@ public sealed class SpawnTableTests
             Assert.DoesNotContain(recipe.Variables.Keys, Spawning.Daoris);
         }
 
-        var pipe = ProviderRegistry.Built().Resolve("claude-code");
-        var info = pipe.Prepare(Target(), null);
-        pipe.HandServers(info, "servers.json");
-        pipe.HandSettings(info, "settings.json");
-        pipe.HandPlugins(info, ["one", "two"]);
+        var pipe = ProviderRegistry.Built().Door("claude-code");
+        var info = ProviderRegistry.Built().Start(pipe, Target(), null);
+        pipe.Spawned().HandServers(info, "servers.json");
+        pipe.Spawned().HandSettings(info, "settings.json");
+        pipe.Spawned().HandPlugins(info, ["one", "two"]);
         Assert.Equal(
             ["--mcp-config", "servers.json", "--settings", "settings.json", "--plugin-dir", "one", "--plugin-dir", "two"],
             info.ArgumentList.Skip(3 + Stream.Length));
-        Assert.Equal("false", pipe.ToolsUpFront["ENABLE_TOOL_SEARCH"]);
-        Assert.Equal("false", ProviderRegistry.Built().Resolve("claude-code-acp").ToolsUpFront["ENABLE_TOOL_SEARCH"]);
-        Assert.Empty(ProviderRegistry.Built().Resolve("codex-acp").ToolsUpFront);
+        Assert.Equal("false", pipe.Spawned().ToolsUpFront["ENABLE_TOOL_SEARCH"]);
+        Assert.Equal("false", ProviderRegistry.Built().Door("claude-code-acp").Spawned().ToolsUpFront["ENABLE_TOOL_SEARCH"]);
+        Assert.Empty(ProviderRegistry.Built().Door("codex-acp").Spawned().ToolsUpFront);
     }
 
     /// <summary>
@@ -187,24 +187,24 @@ public sealed class SpawnTableTests
     [InlineData("acp-stub", true)]
     public void Claude_Code_s_seam_is_taken_where_the_door_runs_claude(string door, bool seam)
     {
-        Assert.Equal(seam, ProviderRegistry.Built().Resolve(door).TakesClaudeSeam());
-        Assert.False(UnmeasuredProtocolDoor().TakesClaudeSeam());
+        Assert.Equal(seam, ProviderRegistry.Built().Door(door).Spawned().ClaudeSeam);
+        Assert.False(TestDoors.Registry(UnmeasuredProtocolDoor()).Door("plugin-door").Spawned().ClaudeSeam);
     }
 
     /// <summary>The seam on the process: both variables where a managed <c>claude</c> is handed, neither where none is.</summary>
     [Fact]
     public void The_seam_sets_both_variables_or_neither()
     {
-        var acp = ProviderRegistry.Built().Resolve("claude-code-acp");
-        var pointed = acp.Prepare(Target(), null);
-        Shell.Equip(pointed, acp.Toolchain!, profileHome: null, seam: each => acp.PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
+        var acp = ProviderRegistry.Built().Door("claude-code-acp");
+        var pointed = ProviderRegistry.Built().Start(acp, Target(), null);
+        Shell.Equip(pointed, ProviderRegistry.Built().AgentNamed(acp.Id.Value)!, profileHome: null, seam: each => acp.Spawned().PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
         Assert.Equal("C:/toolchain/claude-code/2.1.300/claude.exe", pointed.Environment[ClaudeAcp.ExecutableVariable]);
         Assert.Equal("1", pointed.Environment["DISABLE_UPDATES"]);
 
-        var codex = ProviderRegistry.Built().Resolve("codex-acp");
-        var plain = codex.Prepare(Target(), null);
+        var codex = ProviderRegistry.Built().Door("codex-acp");
+        var plain = ProviderRegistry.Built().Start(codex, Target(), null);
         plain.Environment.Remove(ClaudeAcp.ExecutableVariable);
-        Shell.Equip(plain, codex.Toolchain!, profileHome: null, seam: each => codex.PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
+        Shell.Equip(plain, ProviderRegistry.Built().AgentNamed(codex.Id.Value)!, profileHome: null, seam: each => codex.Spawned().PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
         Assert.False(plain.Environment.ContainsKey(ClaudeAcp.ExecutableVariable));
     }
 
@@ -222,10 +222,10 @@ public sealed class SpawnTableTests
         {
             var shim = Path.Combine(folder, "claude.cmd");
             File.WriteAllText(shim, "@echo off\r\n");
-            var pipe = ProviderRegistry.Built().Resolve("claude-code");
-            var info = pipe.Prepare(Target(), [shim]);
-            Shell.Equip(info, pipe.Toolchain!, profileHome: null);
-            pipe.HandServers(info, @"C:\one&two\servers.json");
+            var pipe = ProviderRegistry.Built().Door("claude-code");
+            var info = ProviderRegistry.Built().Start(pipe, Target(), [shim]);
+            Shell.Equip(info, ProviderRegistry.Built().AgentNamed(pipe.Id.Value)!, profileHome: null);
+            pipe.Spawned().HandServers(info, @"C:\one&two\servers.json");
 
             Assert.Equal(shim, info.FileName);
             Assert.Equal(["--mcp-config", @"C:\one&two\servers.json"], info.ArgumentList.TakeLast(2));
@@ -249,5 +249,5 @@ public sealed class SpawnTableTests
         Assert.True(info.Environment.ContainsKey("GH_CONFIG_DIR"));
     }
 
-    private static ISessionAdapter UnmeasuredProtocolDoor() => TestDoors.Door("plugin-door", transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("a test spawns nothing"));
+    private static Provider UnmeasuredProtocolDoor() => TestDoors.Door("plugin-door", transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("a test spawns nothing"));
 }

@@ -14,9 +14,9 @@ internal static class HandOverAccounts
     {
         try
         {
-            var resolved = adapters.Resolve(agent);
-            if (!resolved.Interactive) return null;
-            return resolved.Toolchain is not null ? HarnessSettings.Profiles(harnessesHome, adapters.OwnerOfAgent(resolved.Name).Value) : [];
+            var resolved = adapters.Door(agent);
+            if (!resolved.Can.Interactive) return null;
+            return adapters.AgentNamed(resolved.Id.Value) is not null ? HarnessSettings.Profiles(harnessesHome, adapters.OwnerOfAgent(resolved.Id.Value).Value) : [];
         }
         catch (DriverException)
         {

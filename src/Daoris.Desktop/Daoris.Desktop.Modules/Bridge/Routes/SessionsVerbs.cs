@@ -65,7 +65,7 @@ internal static class SessionsVerbs
     {
         try
         {
-            return loop.Harnesses.Adapters.Resolve(adapter).Resumes;
+            return loop.Harnesses.Adapters.Door(adapter).Can.Resumes;
         }
         catch (DriverException)
         {
