@@ -73,6 +73,10 @@ internal static class DriveUsageRecords
               is a Dangerous push, which the place's Dangerous value decides at the door. --plan says what it would
               push; --yes pushes it, after your yes in Daoris's window where Daoris runs. Refused from a session's
               terminal, where Write denies, or where the identity serving origin is read only.
+          git stash drop <repository> <commit> [--plan | --yes]
+              drop one entry of the shared stash by its commit id, as the Changes tab's Drop does, only one that a Save
+              of Daoris's own made. --plan says what it would drop and the command that stores it again; --yes drops it,
+              after your yes in Daoris's window where Daoris runs. Refused from a session's terminal.
           git pick|revert <repository> <branch> <commit|A..B> [--plan | --yes]
           git rebase <repository> <branch> <onto> [--plan | --yes]
               edit a branch no tree has out without a working tree, as a branch page's Edit history does: pick or

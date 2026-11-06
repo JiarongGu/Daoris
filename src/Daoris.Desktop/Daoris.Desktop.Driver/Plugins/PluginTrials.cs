@@ -209,7 +209,11 @@ public static class PluginTrials
 
             var alive = await StepAsync("handshake", "initialize", "the driver would not start it", async () =>
             {
-                await peer.InitializeAsync(home, entry.Data, hooks.Points, ct, handshake).ConfigureAwait(false);
+                // A trial's run is the sample's (the event hook design §5.4): no live consumer takes it for the point's own.
+                var events = hooks.Points.Contains(HookPoints.Event, StringComparer.Ordinal)
+                    ? new WorkEventHandshake(WorkEventGrammar.Sample, WorkEventGrammar.Version, 0, new string('0', 64))
+                    : null;
+                await peer.InitializeAsync(home, entry.Data, hooks.Points, ct, handshake, events).ConfigureAwait(false);
                 return $"speaks hook wire {HookPeer.ProtocolVersion} and listens on {Listed(peer.Points)}.";
             }, handshake).ConfigureAwait(false);
             var shook = steps[^1].Ok;
@@ -344,6 +348,10 @@ public static class PluginTrials
             case HookPoints.StateChanged:
                 await peer.ChangedAsync(frame, ct).ConfigureAwait(false);
                 return "answered; an observation changes nothing.";
+
+            case HookPoints.Event:
+                await peer.EventAsync(frame, ct).ConfigureAwait(false);
+                return "answered; an observation changes nothing, and the sample's run is no live consumer's.";
 
             case HookPoints.State:
             {

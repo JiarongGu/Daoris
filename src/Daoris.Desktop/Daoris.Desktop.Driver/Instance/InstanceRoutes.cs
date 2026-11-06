@@ -195,6 +195,9 @@ public static class PersonPresses
     /// <summary><c>git fetch &lt;repository&gt; --yes</c> (GITAPP2f, D204): origin's branches fetched into <c>refs/remotes/origin/*</c> alone, the person's yes.</summary>
     public static InstanceRoute GitFetch { get; } = Person("GIT_FETCH");
 
+    /// <summary><c>git stash drop &lt;repository&gt; &lt;commit&gt; --yes</c> (GITAPP2, D204): one stash of Daoris's own Save dropped by its commit id, the person's yes.</summary>
+    public static InstanceRoute GitStashDrop { get; } = Person("GIT_STASH_DROP");
+
     /// <summary><c>git push &lt;repository&gt; branch|tag &lt;name&gt; --yes</c> (GITAPP2g, n; D241 point 2): one ref pushed to origin under its grant, the person's yes.</summary>
     public static InstanceRoute GitPush { get; } = Person("GIT_PUSH");
 
@@ -287,6 +290,7 @@ public static class PersonPresses
         ("git branch <repository> <name> [<commit>] --rename <new-name> --yes", GitRefRename),
         ("git tag <repository> <name> [<commit>] --rename <new-name> --yes", GitRefRename),
         ("git fetch <repository> --yes", GitFetch),
+        ("git stash drop <repository> <commit> --yes", GitStashDrop),
         ("git push <repository> branch <name> [<commit>] --yes", GitPush),
         ("git push <repository> tag <name> [<commit>] --yes", GitPush),
         ("git pick <repository> <branch> <commit|A..B> --yes", GitHistoryEdit),

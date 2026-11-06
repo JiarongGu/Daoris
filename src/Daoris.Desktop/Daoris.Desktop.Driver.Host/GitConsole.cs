@@ -123,6 +123,32 @@ internal static class GitConsole
             }
         }
 
+        // A stash of Daoris's own Save dropped (GITAPP2): planned alone, pressed through the running Daoris's window or, with none, run here as the journal's act.
+        if (GitStashDropCommand.Answers(args))
+        {
+            try
+            {
+                var configPath = DriverConfig.ResolvePath();
+                var home = DriverConfig.HomeOf(configPath);
+                using var service = ServiceClient.FromEnvironment();
+                using var closing = new CancellationTokenSource();
+                Console.CancelKeyPress += (_, press) => { press.Cancel = true; closing.Cancel(); };
+                var journal = new ActJournal(home);
+                var world = new GitStashWorld(
+                    async (repository, ct) => (await service.RegistryAsync(ct).ConfigureAwait(false))
+                        .Where(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(row.Root))
+                        .Select(row => row.Root).FirstOrDefault(root => Directory.Exists(root)),
+                    () => journal,
+                    (repository, checkout) => new StageContext(repository, checkout, () => DriverConfig.Load(configPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(service, token)));
+                return await GitStashDropCommand.RunAsync(args, world, InstanceHost.World(home, "git"), closing.Token).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+            {
+                Console.Error.WriteLine($"git: {error.Message}");
+                return 2;
+            }
+        }
+
         // A branch's history edited (GITAPP2m): planned alone, pressed through the running Daoris's window with the plan's ids or, with none, run here as the journal's act.
         if (GitHistoryCommand.Answers(args))
         {

@@ -153,6 +153,19 @@ const POINTS = {
       "inputs": [],
       "deadlineAt": "2026-10-21T09:10:00.0000000+00:00"
     }
+  },
+  "work/event": {
+    "kind": "observation",
+    "patience": 10000,
+    "frame": {
+      "run": "sample",
+      "seq": 1,
+      "missed": 0,
+      "kind": "session.parked",
+      "at": "2026-11-06T10:00:00Z",
+      "session": "4b62a9fe",
+      "quest": "0fda18"
+    }
   }
 };
 
@@ -192,6 +205,8 @@ const ANSWERS = {
     // A word for how it merged that the driver has no word for is read as none, never refused.
     return null;
   },
+  // An observation's answer is not read (EVENTHOOK1b): any result will do, and {} is the one to send.
+  'work/event': () => null,
   // An observation's answer is not read (STATEHUB1g): any result will do, and {} is the one to send.
   'state/changed': () => null,
   // The awaited set's answer is not read either (FABRIC-PERFORM1e).

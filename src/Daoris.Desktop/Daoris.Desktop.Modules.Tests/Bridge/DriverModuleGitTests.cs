@@ -322,6 +322,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     [InlineData("GIT_FETCH_PLAN")]
     [InlineData("GIT_PUSH")]
     [InlineData("GIT_PUSH_PLAN")]
+    [InlineData("GIT_STASH_DROP")]
     public async Task A_ref_act_before_the_driver_is_up_is_the_cold_start_sentence(string route) =>
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), route, new { repository = "engine", kind = "branch", name = "x", to = "y", act = "a" }));
 

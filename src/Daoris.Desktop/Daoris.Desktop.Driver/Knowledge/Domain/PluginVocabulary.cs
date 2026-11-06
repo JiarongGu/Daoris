@@ -40,7 +40,7 @@ public static class HookPoints
     /// with their kit entries (FABRIC-PERFORM1e), so the kit scaffolds, tests and tries them as it does the rest; who speaks them is still
     /// <see cref="Work"/>'s rule.
     /// </summary>
-    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, State, StateChanged, Watch, Step, Perform];
+    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, State, StateChanged, Watch, Step, Perform, Event];
 
     /// <summary>
     /// The points the driver loop's set speaks at — a plugin that speaks on none of them is not kept running beside it. The
@@ -76,12 +76,6 @@ public static class HookPoints
     /// that holds the home's lease (<see cref="WorkEventPoint"/>), each frame's answer awaited before the next and never read.
     /// </summary>
     public const string Event = "work/event";
-
-    /// <summary>
-    /// The points told by the lease's loop alone, and no loop point: a plugin on one is kept running only where its loop holds the home.
-    /// Not yet in <see cref="All"/>: the kit's entry and sample join it as the work wire's did (FABRIC-PERFORM1e).
-    /// </summary>
-    public static readonly IReadOnlyList<string> Told = [Event];
 }
 
 /// <summary>

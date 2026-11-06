@@ -320,13 +320,25 @@ public sealed class GitRoutes(DriverContext context)
     }
 
     // Stash *Drop* by the stash commit's id, only of a stash a Save of Daoris's made; the commit is kept in the answer for `git stash store`.
-    [DriverRoute("GIT_STASH_DROP", PipeClass.Window)]
+    // A terminal's verb asks the same press for its words (`said`).
+    [DriverRoute("GIT_STASH_DROP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("GIT_STASH_DROP", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_STASH_DROP", "repository", "workspace")]
+    [Says("GIT_STASH_DROP", "repository:repository")]
     [Publishes("GIT_STASH_DROP", StateScopes.Checkouts | StateScopes.Driver)]
     private async Task<object?> GitStashDropAsync(GitStashDropAct act, CancellationToken cancellationToken)
     {
         var (context, refused) = await WorkContextAsync("an act", act.Repository, act.Workspace, cancellationToken).ConfigureAwait(false);
         if (context is null) return refused;
+        if (act.Said)
+        {
+            var writer = new StringWriter { NewLine = "\n" };
+            var world = new GitStashWorld((_, _) => Task.FromResult<string?>(context.Checkout), () => new ActJournal(_loop.Home), (_, _) => context);
+            var code = await GitStashDropCommand.ExecuteAsync(new GitStashDropVerb(act.Repository!, act.Id ?? "", Yes: true), world, writer, writer, cancellationToken).ConfigureAwait(false);
+            var lines = writer.ToString().Split('\n');
+            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
+        }
+
         return Acted(await new StashDrops(new ActJournal(_loop.Home)).RunAsync(context, new StashDropPress(act.Id ?? ""), cancellationToken).ConfigureAwait(false), context);
     }
 

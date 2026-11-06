@@ -110,8 +110,7 @@ public sealed class HookPeer(
                 }
 
                 // The work points (FABRIC-PERFORM1a) are this build's too, spoken only by the lease's loop.
-                if (!HookPoints.All.Contains(name, StringComparer.Ordinal) && !HookPoints.Work.Contains(name, StringComparer.Ordinal)
-                    && !HookPoints.Told.Contains(name, StringComparer.Ordinal))
+                if (!HookPoints.All.Contains(name, StringComparer.Ordinal) && !HookPoints.Work.Contains(name, StringComparer.Ordinal))
                 {
                     // PLUGHOOK1a (D148 point 8): a point is additive, so a plugin that grew one keeps the points this build has.
                     // Refusing it whole made an older build lose the plugin's landing. Said once, and never asked there.

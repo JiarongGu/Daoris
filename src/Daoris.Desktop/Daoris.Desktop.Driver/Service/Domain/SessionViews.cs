@@ -317,6 +317,9 @@ public sealed record SessionView(
     /// </summary>
     public string? Quest { get; init; }
 
+    /// <summary>The adapter its record opened on, or null where unsaid: an ending told at <c>work/event</c> names it where it is one of this build's.</summary>
+    public string? Adapter { get; init; }
+
     /// <summary>
     /// The commit its tree stood at when it opened (SURF6), or null where unsaid: what a lost session's done is read as changed
     /// from when the sweep ends it (EVID1b, D144 §3). Answered on loopback alone, beside the tree.
