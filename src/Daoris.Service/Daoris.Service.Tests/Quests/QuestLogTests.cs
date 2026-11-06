@@ -55,12 +55,11 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A quest published before the id widened keeps its six characters — it is quoted in commit
-    /// messages — and it is still the answer to its own ask: an agent retrying an ask it made before
-    /// the upgrade must not open a second copy of it.
+    /// A quest published before the id widened keeps its six characters until it closes, but no lookup
+    /// reads that width: the same words published again make a new quest of the wide id (ONEWAY1x).
     /// </summary>
     [Fact]
-    public async Task A_quest_from_before_the_wider_id_still_answers_its_own_ask()
+    public async Task A_quest_from_before_the_wider_id_stays_open_and_the_same_words_make_a_new_one()
     {
         var legacyId = QuestStore.MakeId("A", "B", "Old ask")[..6];
         await using var old = await LegacyStoreAsync(
@@ -69,8 +68,8 @@ public sealed class QuestLogTests : IAsyncLifetime
 
         var republished = await store.PublishAsync("A", "B", "Old ask", "why, again", Now);
 
-        Assert.Equal(legacyId, republished.Id);
-        Assert.Single(await store.ListAsync());
+        Assert.Equal(QuestStore.MakeId("A", "B", "Old ask"), republished.Id);
+        Assert.Equal([QuestStore.MakeId("A", "B", "Old ask"), legacyId], (await store.ListAsync()).Select(quest => quest.Id).Order(StringComparer.Ordinal).Reverse());
     }
 
     // ——— The history.

@@ -41,6 +41,7 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/asks/{id}/channel", Open),
         ("GET", "/api/channel/elsewhere", Open),
         ("GET", "/api/channel/addressed", Open),
+        ("GET", "/api/channel/line", Open),
         ("GET", "/api/sessions", Open),
         ("GET", "/api/sessions/{id}", Open),
         ("GET", "/api/sessions/changes", Open),

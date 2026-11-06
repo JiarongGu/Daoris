@@ -101,7 +101,8 @@ public static class GitSessionAccess
     {
         var held = Read(home, session) ?? throw new DriverException($"no running session {session} holds git access here.");
         if (set.Count == 0) throw new DriverException("name a class to tighten: read, write or dangerous.");
-        var tightened = Parse(PathOf(home, session))?[Tightened] as JsonObject ?? new JsonObject();
+        // A copy: the held node belongs to the record it was read from, and the record written is a new one.
+        var tightened = Parse(PathOf(home, session))?[Tightened]?.DeepClone() as JsonObject ?? new JsonObject();
         foreach (var (spelled, value) in set)
         {
             var name = GitAccessKeys.ClassNamed(spelled) ?? throw new DriverException($"`{spelled}` is not a git access class: read, write or dangerous.");
