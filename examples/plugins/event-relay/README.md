@@ -1,7 +1,7 @@
 # Event relay
 
 Passes Daoris's work events (ids and codes, never words or names) for this whole Daoris to programs on this machine that ask for
-them, such as `daoris-driver events relay`. The design is `docs/2026-10-24-event-hook-design.md` §5.
+them, such as `daoris events relay`. The design is `docs/2026-10-24-event-hook-design.md` §5.
 
 ## Install it
 
