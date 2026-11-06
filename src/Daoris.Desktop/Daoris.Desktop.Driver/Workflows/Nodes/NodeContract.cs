@@ -93,13 +93,25 @@ public static class NodeKinds
     /// </summary>
     public const string ContentHolds = "content.holds";
 
+    /// <summary>
+    /// The watch on the pull request the run's graph opened (D245 point 2): reached once the answer its plugin gave through <c>work/state</c>
+    /// says the request was merged or closed, a squash merge read as merged. Nothing fails it.
+    /// </summary>
+    public const string Monitor = "monitor";
+
+    /// <summary>
+    /// The chain's parts ended on the line once its pull request merged (D245 point 1): each part's branch removed through the journal's delete,
+    /// its commits kept on a recovery ref, and what it ended written on the landing record, which the keeper and the press read.
+    /// </summary>
+    public const string Tidy = "tidy";
+
     /// <summary>Whether a kind is the graph's one landing: the performed <c>land</c>.</summary>
     public static bool IsLanding(string kind) => kind is Land;
 
     /// <summary>Whether a kind is a hold Daoris judges before the landing (LANDNODE1k).</summary>
     public static bool IsHold(string kind) => kind is QuestHolds or ContentHolds;
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Push, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land, Review, QuestHolds, ContentHolds];
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Push, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land, Review, QuestHolds, ContentHolds, Monitor, Tidy];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -345,6 +357,9 @@ public static class NodeAuthorities
         // is kept, since each can let go later and a failure would be a verdict routed on. The person's pass with words is the way past it.
         [NodeKinds.QuestHolds] = new(NodeKinds.QuestHolds, NodeReach.Observed, NodeSource.Holds, null, false, PersonSkips: true, MayEnd: false, Evidenced: true),
         [NodeKinds.ContentHolds] = new(NodeKinds.ContentHolds, NodeReach.Observed, NodeSource.Holds, null, false, PersonSkips: true, MayEnd: false, Evidenced: true),
+        // D245: read from the landing record. Neither is skipped, since a skip would read as merged or as tidied; the person's door is the stop.
+        [NodeKinds.Monitor] = new(NodeKinds.Monitor, NodeReach.Observed, NodeSource.Landing, null, false, PersonSkips: false, true, true),
+        [NodeKinds.Tidy] = new(NodeKinds.Tidy, NodeReach.Performed, NodeSource.Landing, NodeSource.Landing, false, PersonSkips: false, true, true),
     };
 
     /// <summary>

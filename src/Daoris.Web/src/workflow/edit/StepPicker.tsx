@@ -16,7 +16,8 @@ const GROUPS: readonly { key: string; kinds: readonly string[] }[] = [
   { key: 'work', kinds: ['claimed'] },
   { key: 'you', kinds: ['review', 'look', 'go-ahead', 'human'] },
   { key: 'checks', kinds: ['check', 'opinion', 'work.requests', 'quest.holds', 'content.holds'] },
-  { key: 'landing', kinds: ['land', 'line'] },
+  // D245: the prebuilt set past the landing stands with it.
+  { key: 'landing', kinds: ['land', 'push', 'monitor', 'tidy', 'line'] },
   { key: 'others', kinds: ['request', 'wait.unit'] },
 ];
 

@@ -44,6 +44,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Holds | `Workflows/Nodes/HoldNodes.cs`, `WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
 | Land node | `Workflows/Nodes/LandNodes.cs`, `Workflows/Nodes/Landing.cs` | `land`'s options, their resolution at the bind, and `Landing`, the intent a run lands by (`LandNodes.LandingOf`); a process with no bound version declares `Landing.Merge` |
 | Pull-request step | `Workflows/Nodes/PullRequestSteps.cs`, `Workplace/PullRequestRecords.cs`, `NodeRunKeeping.KeepPullRequests` | A `<plugin>/pull-request` step's plugin, the bind's refusal where no plugin performs it, and the address its evidence gives written on the landing |
+| Monitor and tidy | `Workflows/Nodes/CompletionNodes.cs`, `CompletionGraphs.cs`, `Workplace/TidyDoor.cs`, `Workplace/ChainTidied.cs`, `NodeRunKeeping.StartTidies` | The prebuilt set past the landing; the watch on the pull request; the tidy of the chain's parts and its record, which the keeper and the press read |
 | Landing door | `Workplace/LandingDoor.cs`, `Workplace/LandPerformer.cs`, `Workplace/LandTries.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key; the performer of a run's `land`, its entry `LandEntry` and its tries' rules and notes (`LandTries`, `LandTryNotes`) |
 | Branch naming and notes | `Workplace/BranchPatterns.cs`, `Workplace/LandingNotes.cs`, `Plugins/LandingPlugins.cs` | A `land`'s pattern, ticket key, slug and chain subject; the conversation's notes of a press and a part left out; whether a named plugin performs pull-request steps (`LandingPlugins.ProblemOf`) |
 | Line policy | `Settings/LinePolicyKey.cs` | `linePolicies` and `workspaceLinePolicies` read, written and judged |
@@ -158,6 +159,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     landed by `push` or `pull-request` converted once (`PushedGraphs`, the home's `push-steps` step), and a delivery a pre-G8 build began
     for a plugin (`plugin-dispatched`, `plugin-answered`, the `push` and `pull-request` methods) is read, said and never sent again
     (`DeliveryReconciler`); both end when no home saved before G8's release can start, and G8-CONVERT1 deletes them. (from D241)
+    Past the pull request a place composes a `monitor` and a `tidy` (`CompletionNodes`, from the prebuilt set `land`, `push`,
+    `pull-request`, `monitor`, `tidy`, which the shipped pull-request delivery holds whole). The monitor is reached once the answer the
+    opening plugin gave through `work/state` (asked at D148's moments) says merged or closed, a squash read as merged; it never fails. The
+    tidy (`TidyDoor`, off the pass, under the lease) ends each part of the chain, the session branch of every unit its landing carries:
+    each part's commits kept on a recovery ref, its branch deleted through the journal (`JournaledDeletes`, with its Undo), one a tree has
+    checked out left standing and ended all the same, and what it ended written on the landing as `tidied` (`ChainTidied`). A request
+    closed without merging fails the tidy (`pull-request-closed`) and ends nothing. The save refuses a `monitor` no pull-request step
+    reaches and a `tidy` no `monitor` reaches (`CompletionGraphs`). The keeper (`EndKeeping`, `EndBy.Tidied`) and the press (`TreeSweeps`,
+    resting on the part's recovery ref) read that record for a part at the tip the tidy ended it at, and judge it no further. (from D245)
 32. A merge runs through the integration transport under the legacy policy: the owner's press, no gates, one at a time, a merge
     commit. (from D215)
 33. Each delivery's phases are written ahead of their effects: prepared, ref written, recorded, plugin dispatched, plugin answered.
@@ -287,7 +297,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's
   installed proof. A `request` under `start: you` waits for the person's *Send*, the `send` act of the run's node door (`WORKFLOW_NODE`, `daoris
   workflow send`), which keeps a mark on the record (`RunNodeWords.SendKey`) that the next pass reads as the start's say-so.
-- **FABRIC-SQUASHCHAIN1:** a chain's completion past its pull request as fabric steps (D245): a `monitor` step until the request is merged or closed, a `tidy` step that ends the chain's parts with a recovery ref, the keeper and the press reading the tidy's record, and the prebuilt set of actions *Set up…* offers.
+- **FABRIC-SQUASHCHAIN1:** the monitor and the tidy are built and read (rule 31); left: the keeper's own proof that a tidied part is ended by the record with equal git starts across passes (`EndKeeping`), and a run's pass reaching both nodes end to end.
 - **FABRIC-PERFORM1l:** the pull-request event keeps its fields; WORKFLOW1j and 1k on observed nodes.
 - **LANDNODE1j:** the installed window's proof.
 - **REVIEWFLOW1c and LINESTOGETHER1:** a session's steps as one flow, proven in the installed window.

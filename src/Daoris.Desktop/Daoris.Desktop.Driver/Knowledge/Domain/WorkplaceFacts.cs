@@ -164,6 +164,9 @@ public sealed record LandedBranch(
     /// </summary>
     public IReadOnlyList<LandedWork> Brought { get; init; } = [];
 
+    /// <summary>What a run's <c>tidy</c> ended of its chain once its pull request merged (D245); null where no tidy ran.</summary>
+    public ChainTidied? Tidied { get; init; }
+
     /// <summary>
     /// The work of each session it carries, oldest first (FABRIC-UNITLINK1, FABRIC-CLOSE1h11): its own session's, then each advance's,
     /// each with the commit the branch stood at once that work was on it, and the quest, the unit and the submission the record keeps for

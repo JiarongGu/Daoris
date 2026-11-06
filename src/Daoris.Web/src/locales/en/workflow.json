@@ -43,6 +43,8 @@
   "workflow.step.goAhead": "Your go-ahead",
   "workflow.step.task": "Your task",
   "workflow.step.push": "The push",
+  "workflow.step.monitor": "The pull request's watch",
+  "workflow.step.tidy": "The chain's clean-up",
   "workflow.step.line": "On the line",
   "workflow.step.questClose": "The quest's close",
   "workflow.step.join": "The join",

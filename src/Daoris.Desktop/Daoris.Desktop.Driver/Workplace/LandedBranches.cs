@@ -110,6 +110,10 @@ public sealed class LandedBranches(string home)
     public void Pushed(string repository, string branch, string tip) => Edit(all =>
         [.. all.Select(each => Standing(each, repository, branch) ? each with { Pushed = true, PushedTip = tip } : each)]);
 
+    /// <summary>What a run's <c>tidy</c> ended of the branch's chain (D245), kept on its entry for the node, the keeper and the press to read.</summary>
+    public void Tidied(string repository, string branch, ChainTidied tidied) => Edit(all =>
+        [.. all.Select(each => Standing(each, repository, branch) ? each with { Tidied = tidied } : each)]);
+
     /// <summary>
     /// A later done moved the standing branch on as a fast-forward (LAND2c, D149 point 2), or by one more squashed commit
     /// (PROCESS1b-ii): its tip is the advance's, the session tip squashed moves with it where the advance squashed one, and the

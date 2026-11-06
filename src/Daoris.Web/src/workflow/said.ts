@@ -22,6 +22,9 @@ const NODE_TITLES: Record<string, string> = {
   'go-ahead': 'workflow.step.goAhead',
   human: 'workflow.step.task',
   push: 'workflow.step.push',
+  // D245: the watch on the pull request and the tidy of the chain past it.
+  monitor: 'workflow.step.monitor',
+  tidy: 'workflow.step.tidy',
   handed: 'workflow.step.handed',
   line: 'workflow.step.line',
   'quest.close': 'workflow.step.questClose',

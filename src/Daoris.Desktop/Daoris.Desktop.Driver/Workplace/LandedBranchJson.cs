@@ -112,6 +112,7 @@ internal static class LandedBranchJson
 
             // FABRIC-END2: each only where it is known, so an entry from before reads as it did.
             if (entry.Held is { } held) HeldFact.Write(writer, held);
+            if (entry.Tidied is { } tidied) ChainTidies.Write(writer, tidied);
             if (entry.Units.Count > 0)
             {
                 writer.WriteStartArray("units");
@@ -397,6 +398,7 @@ internal static class LandedBranchJson
             Carried = CarriedOf(element),
             Squashed = Text(element, "squashed"),
             Held = HeldFact.Read(element),
+            Tidied = ChainTidies.Read(element),
             Units = UnitsOf(element),
             Served = Text(element, "served"),
             Submission = SubmissionOf(element),

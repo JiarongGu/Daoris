@@ -40,6 +40,7 @@ internal static class InventoryWords
         // branch. Neither is said as the pull request, so both read as they are.
         EndBy.Carried => "a completed pull request carried it and its merge commit is on the line",
         EndBy.Inside => $"it is inside `{on}`, whose work is on the line",
+        EndBy.Tidied => $"its workflow's tidy ended it once `{on}`'s pull request merged",
         _ => $"{by} on `{on}`",
     };
 
