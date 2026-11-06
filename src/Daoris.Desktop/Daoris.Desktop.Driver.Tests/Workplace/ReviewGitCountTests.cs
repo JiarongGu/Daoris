@@ -49,8 +49,9 @@ public sealed class ReviewGitCountTests(ITestOutputHelper output) : BranchTidyin
     }
 
     // Before: 36 starts on the first fixture (42 and 34 on the benchmark's small and large trees), each question asked by every stage
-    // that needed it. What is left is the offer's own judgement of the tree's commits, one question of each.
-    private const int SmallCeiling = 25;
+    // that needed it. What is left is the offer's own judgement of the tree's commits, one question of each. Measured 23 and 24
+    // (OPTIMIZE1a, 2026-11-06), of which the two counts asked again without origin's line where it is missing.
+    private const int SmallCeiling = 23;
     private const int HeldCeiling = 24;
 
     private string Report(List<string> starts)
