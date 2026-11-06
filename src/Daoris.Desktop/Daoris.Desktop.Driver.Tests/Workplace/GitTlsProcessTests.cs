@@ -232,7 +232,6 @@ public sealed class GitTlsProcessTests : IClassFixture<GitTlsHost>, IDisposable
     public async Task Over_TLS_a_mirror_and_a_prune_are_refused_by_deny_and_passed_by_allow()
     {
         await ServeAsync();
-        await Ok(Git(Bare, "branch", "stale", "main"));
         await Ok(Git(_root, "clone", Address, Work));
         File.AppendAllText(Path.Combine(Work, "a.txt"), "held\n");
         await Ok(Git(Work, "commit", "-am", "held"));
@@ -241,6 +240,8 @@ public sealed class GitTlsProcessTests : IClassFixture<GitTlsHost>, IDisposable
         Access("allow", "deny");
 
         var mirrored = await ErrorOfAsync("push", "--mirror", "origin");
+        // Made after the mirror, which would otherwise delete it too: a batch is refused at its first dangerous update, in git's order.
+        await Ok(Git(Bare, "branch", "stale", "main"));
         var pruned = await ErrorOfAsync("push", "--prune", "origin", "refs/heads/*:refs/heads/*");
 
         Assert.Contains(GitPushUpdates.DeniedLine(GitPushKind.Mirror), mirrored, StringComparison.Ordinal);
