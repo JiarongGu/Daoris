@@ -39,22 +39,14 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
             .Order(StringComparer.Ordinal),
     ];
 
-    /// <summary>
-    /// A message's id: today's reader keeps the message's id on its words, a delta's and a whole message's alike, and the layer's words
-    /// carry none (Lyntai's <c>TextDelta</c> names no message), so this waits on a request to Lyntai. The words themselves are alike
-    /// (<see cref="An_answer_s_words_are_said_alike_on_both_paths"/>).
-    /// </summary>
-    private static readonly ParityGap MessageId = new(
-        "a message's id on its words, which the layer's words do not carry",
-        Messages,
-        Messages);
-
     private static IEnumerable<Observed> Messages(IReadOnlyList<Observed> seen) =>
         seen.Where(each => each.Channel == ParityChannel.Events && each["kind"] == SessionEventKind.Message);
 
-    /// <summary>The differences the oracle finds on each recorded stream, every one a named gap.</summary>
-    private static IReadOnlyList<ParityGap> Gaps(string fixture) =>
-        fixture == "native/claude-background-cut.stream.jsonl" ? [MessageId] : [];
+    /// <summary>
+    /// The differences the oracle finds on each recorded stream, every one a named gap: none, since Lyntai's <c>TextDelta</c> carries the
+    /// message's id the layer reads onto its words, as today's reader keeps it.
+    /// </summary>
+    private static IReadOnlyList<ParityGap> Gaps(string fixture) => [];
 
     /// <summary>
     /// Each stream is read alike but for its named gaps: what the init says the harness loaded (Lyntai's <c>AgentLoaded</c>), an answer's

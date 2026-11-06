@@ -19,11 +19,11 @@ const TABLE: Record<string, Record<number, number>> = {
   'flow/Lifecycle': { 1200: 29 },
   'flow/LifecycleChinese': { 1200: 29 },
   // The dense graph at the bounds: folded after its entries, nothing having started (FLOWCHART1d), and drawn whole, once *Show
-  // whole* is pressed, at the width it needs.
+  // whole* is pressed: in its 1440 px frame it fits, and in the 1200 px one, past the canvas's floor, the same drawing pans (D224).
   'flow/Dense': { 1200: 5, 1440: 5 },
   'flow/DenseChinese': { 1200: 5, 1440: 5 },
-  'flow/Dense:whole': { 1440: 155 },
-  'flow/DenseChinese:whole': { 1440: 155 },
+  'flow/Dense:whole': { 1200: 155, 1440: 155 },
+  'flow/DenseChinese:whole': { 1200: 155, 1440: 155 },
   // A run too large (FLOWCHART1d): 96 nodes folded around one current node, three, and none, three lines of work a rank wide.
   'flow/TooLarge': { 544: 0, 1200: 0 },
   'flow/TooLargeChinese': { 544: 0, 1200: 0 },

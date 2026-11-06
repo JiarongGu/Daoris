@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - Two browser specs kept the note and the rail as they were before ONEWAY1 moved them (CI run 9)
+
+- **Symptom:** CI run 9 on main: the e2e "a driven session's record reaches the quest's page (D46)" found no "the process is alive" in
+  the quest page's Session region, and the eleven tests after it did not run; the measured `flow/Dense:whole` and
+  `flow/DenseChinese:whole` drew their 1200 px frame where the table wanted the rail.
+- **Root cause:** ONEWAY1ac (d36b023415) draws a note from its coded parts only, so a record with no parts draws nothing; the e2e
+  seeded the working state with the note's English alone. ONEWAY1aa (81918f4f5b) put the life-flows in the canvas's viewport, where
+  from the 36rem floor a drawing the pane cannot hold is drawn top to bottom and pans (D224), so the rail stands only below that
+  floor; the measured table still named the dense graph's 1200 px frame as the rail. Neither builder ran the browser gate that pins it.
+- **Fix:** the e2e seeds the agent's words as a part beside the English (b29478f620); the table measures the 1200 px frame, whose
+  drawing is the 1440 px one's with its 155 crossings and no box crossed (8a80b4876b).
+- **Verify:** the e2e spec red first with the old seed, then 24 of 24; the four `flow/Dense` cases 4 of 4. The six head cases "kept by
+  no head with every block yet" that the log marks ✘ are `test.fail` cases failing as expected, counted among the passed. The timed
+  `large/Hundred` failed alone beside another run's processes (p95 24.5 to 31 ms against 25.05); the D224-era tree (58c8861cc8)
+  timed beside it gave 24.0 and 24.2 where this tree then gave 24.5 and 25.2, within a frame's noise, so it is unchanged.
+
 ## 2026-11-07 - `daoris chat` was refused before the host read it (FIX12)
 
 - **Symptom:** `HeldChatProcessTests` (Process, 2) failed: `daoris-driver chat --repository …` was handed to the CLI and refused,

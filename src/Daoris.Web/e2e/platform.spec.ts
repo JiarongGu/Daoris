@@ -551,9 +551,8 @@ test('the console scopes by workspace once the family holds two (WSP5)', async (
 });
 
 test("a driven session's record reaches the quest's page (D46)", async ({ page, request }) => {
-  // The driver is not running here — the RECORD is service state, so seeding it through the same
-  // doors the driver uses is exactly what the platform will see in real use: the session surface is
-  // read-only in a browser, and the controls live where a driver is attached.
+  // The driver is not running here: the RECORD is service state, seeded through the driver's own doors, as the platform
+  // sees it; a note draws from its parts only (D142), so the agent's words are one.
   const published = await request.post('/api/quests', {
     data: {
       from: 'game', to: 'engine',
@@ -566,7 +565,7 @@ test("a driven session's record reaches the quest's page (D46)", async ({ page, 
   const session = (await opened.json() as { session: { id: string } }).session;
   await request.post(`/api/sessions/${session.id}/state`, { data: { state: 'starting' } });
   await request.post(`/api/sessions/${session.id}/state`, {
-    data: { state: 'working', note: 'the process is alive' },
+    data: { state: 'working', note: 'the process is alive', noteParts: [{ words: 'the process is alive', by: 'agent' }] },
   });
 
   await page.goto('/');
