@@ -79,13 +79,13 @@ public sealed class LookWaitTests : IDisposable
             if (info.FileName == "holder") held.Wait(Poll.Patience);
             return null;
         });
-        var holder = places.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false, CreateNoWindow = true }, CancellationToken.None);
+        var holder = places.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false, CreateNoWindow = true }, ProcessPurpose.Agent, CancellationToken.None);
         using (var log = new MachineLog(_home, "driver"))
         {
             var runs = new StandInRuns(_ledger.Client(), _ledger);
             var watch = Watch(log, runs, async (start, opened, token) =>
             {
-                var git = places.StartAsync(new ProcessStartInfo("git") { UseShellExecute = false, CreateNoWindow = true }, StartClass.Background, token);
+                var git = places.StartAsync(new ProcessStartInfo("git") { UseShellExecute = false, CreateNoWindow = true }, ProcessPurpose.Git, StartClass.Background, token);
                 await Task.Delay(150, token);
                 held.Set();
                 await git;

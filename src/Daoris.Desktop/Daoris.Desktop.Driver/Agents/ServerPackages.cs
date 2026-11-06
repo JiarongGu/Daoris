@@ -157,7 +157,7 @@ public static class ServerPackages
         Process process;
         try
         {
-            process = await ProcessStarts.Shared.StartAsync(info, StartClass.Background, ct).ConfigureAwait(false)
+            process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Tool, StartClass.Background, ct).ConfigureAwait(false)
                 ?? throw new DriverException("npm did not start");
         }
         catch (System.ComponentModel.Win32Exception)

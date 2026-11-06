@@ -31,11 +31,18 @@ public static class AgentStarts
         ProcessStartInfo info, ContainedKind kind, StartClass whose, string? home, MachineLog? log, CancellationToken ct, string? piece = null)
     {
         using var start = AgentJobs.Current.Contain(info, kind, PieceStarts.LauncherPath(home), piece);
-        var process = await ProcessStarts.Shared.StartAsync(info, whose, ct).ConfigureAwait(false);
+        var process = await ProcessStarts.Shared.StartAsync(info, PurposeOf(start), whose, ct).ConfigureAwait(false);
         start.Lives(process);
         if (process is not null) Said(start, home, log);
         return process;
     }
+
+    /// <summary>
+    /// Whose job holds the start (D249): the agents' job where the launcher took it, else its kind's job of the one management, joined as it
+    /// starts, so an agent or a plugin's program the launcher could not take (a test's home lays out none) still ends with this process.
+    /// </summary>
+    internal static ProcessPurpose PurposeOf(AgentStart start) =>
+        start.Contained ? ProcessPurpose.Launched : start.Kind == ContainedKind.Plugin ? ProcessPurpose.Plugin : ProcessPurpose.Agent;
 
     /// <summary>The start's line (<c>agent.contained</c>, the machine log design §4): codes only, never a path, an id or a word.</summary>
     internal static void Said(AgentStart start, string? home, MachineLog? log)

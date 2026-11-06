@@ -169,9 +169,10 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 
         try
         {
-            // Through the start gate (PROCSTART2), as every start of the desktop's is.
+            // Through the start gate (PROCSTART2), as every start of the desktop's is; held by no job (D249): it stops itself when its
+            // input ends with this process (LOG2a), and a job's kill would cut that stop short.
             _owned = await ProcessStarts.Shared.StartAsync(
-                StartInfo(location, asksKey: PersonKey is not null), CancellationToken.None).ConfigureAwait(false);
+                StartInfo(location, asksKey: PersonKey is not null), ProcessPurpose.EndsItself, CancellationToken.None).ConfigureAwait(false);
             // HOSTSTART1: read from the start, so a host that prints more than a pipe holds never waits on it.
             if (_owned is not null) _said = LastLines.Drain(_owned.StandardError);
             if (_owned is not null && PersonKey is not null) HandKey(_owned, PersonKey);
