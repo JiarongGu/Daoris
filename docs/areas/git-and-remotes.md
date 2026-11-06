@@ -255,7 +255,7 @@ read as its object), *by id* those naming an id alone.
 | Changes (`GIT_CHANGES`), a file's hunks (`GIT_HUNKS`) | 5 each | 0 | 1 (0) each | `ViewGitCountTests` |
 | Graph, a file's history, blame (first open; kept by id after) | 1 each | 0 | 0 | `ViewGitCountTests` |
 | A commit, a compare (first open) | 2 each | 0 | 0 | `ViewGitCountTests` |
-| The commit, switch and stash plans | 10, 7, 11 | 0, 0, 1 (`refs/stash`) | 2 (1), 2 (0), 3 (0) | `ViewGitCountTests` |
+| The commit, switch and stash plans | 8, 5, 7 | 0, 0, 0 | 1 (0), 1 (0), 1 (0) | `ViewGitCountTests` |
 | The deletes (`GIT_DELETES`, the journal holding none) | 0 | 0 | 0 | `ViewGitCountTests` |
 | Review, a tree ahead of its line, its second open | 17 | 0 | 0 | `ReviewGitCountTests` |
 | Review, a tree the line holds by content | 18 | 0 | 1 (0) | `ReviewGitCountTests` |
@@ -279,9 +279,13 @@ same in every folder of the repository); a read-only flow lists a repository's r
 (`GitReadOnce`, `RefFiles.CommonDirOf` telling two folders of one repository by their `.git` files); the offer reads a tree's paths,
 head and branch in one `status --porcelain=v2 --branch` (`TreeStatus`); Review asks no count of origin's copy of the line where the
 repository's files hold none (`RefFiles.Absent`: a loose or packed ref, or a reftable repository, is never called absent); a landed
-review asks the checkout's top once. Left asked again: a landing's line commit (3) and head, which another process can move and a
-landing reads afresh before each act; the plans' top, head, branch and `refs/stash`, the state their press compares by; the tree's
-files and the status Review reads for its own diff. A held reader would still cost its lifetime, the repack hazard and the version
+review asks the checkout's top once. The switch and stash plans (and the press that judges them) read head, branch, changed tracked paths and files in
+conflict in one `status --porcelain=v2 --branch -z` (`PlanStatus`), the stash plan hands the tip it read to the list instead of asking
+`refs/stash` again, and the commit plan reads the head's tree, parents and message in one `log` (`ActCommits.FactsAsync`). Left asked
+again: a landing's line commit (3), which the promotion reads before the gates (they can run long), under the checkout's lock before
+the move, and after it as the proof the move held, and its head, because another process can move either and a landing reads afresh
+before each act; the plans' top, the stash tip and the layout (each a read their press compares by); the tree's files and the status
+Review reads for its own diff. A held reader would still cost its lifetime, the repack hazard and the version
 floor (the git-app design §4.3), for at most 9 starts of a merge press's 39.
 
 ## Where a change goes
