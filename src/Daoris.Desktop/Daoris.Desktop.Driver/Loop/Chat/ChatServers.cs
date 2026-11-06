@@ -14,7 +14,7 @@ internal sealed class ChatServers(ChatContext context)
     {
         var offered = new List<ServerEntry>();
         if (KnowledgeConnector.Offer(
-                Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable), DaorisHome.Resolve(),
+                Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable), context.Home,
                 AppContext.BaseDirectory, scope: ConnectorScope(context.Home, sessionId, circle, proc, KnowledgeConnector.KeptRole(context.Conversations.RoleOf, sessionId))) is { } connector)
         {
             offered.Add(connector);
