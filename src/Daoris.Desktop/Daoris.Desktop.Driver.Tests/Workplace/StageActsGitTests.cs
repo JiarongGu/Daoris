@@ -212,7 +212,8 @@ public sealed class StageActsGitTests : TreeSyncFixture
         await WriteAsync(root, "lines.txt", Edited((2, "two")));
         var press = await PressAsync(root, StageVerbs.Stage, "lines.txt");
 
-        using var holding = TreeLock.TryWriting(Home, root, "engine", by);
+        // The pull's or the promotion's hold, taken on a flow of its own: a flow that holds the checkout alone runs its own acts under its hold.
+        using var holding = await Task.Run(() => TreeLock.TryWriting(Home, root, "engine", by));
         var run = await Acts().RunAsync(Context(root), press, CancellationToken.None);
 
         Assert.NotNull(holding);

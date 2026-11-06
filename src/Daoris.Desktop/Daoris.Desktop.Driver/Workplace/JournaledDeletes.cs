@@ -64,8 +64,11 @@ internal static class JournaledDeletes
         if (run.Refused) return new(null, Clause(run.Said), null);
         if (stopped is not null) return new(run.Act, stopped, null);
         if (run.Outcome is ActOutcomes.Done) return new(run.Act, null, null);
-        var said = runs.Journal.Steps(run.Act!).FirstOrDefault(each => each.Kind == ActStepKinds.Ref)?.Said ?? run.Said;
-        return run.Outcome == ActOutcomes.NotDone
+        var refStep = runs.Journal.Steps(run.Act!).FirstOrDefault(each => each.Kind == ActStepKinds.Ref);
+        var said = refStep?.Said ?? run.Said;
+        // A transaction git ended refusing, its branch standing neither where it was judged nor gone: the caller reads on git's own word what
+        // stands, the branch moved since or unread.
+        return run.Outcome == ActOutcomes.NotDone || refStep is { ExitCode: not (null or 0), Outcome: ActOutcomes.Unknown }
             ? new(run.Act, null, said)
             : new(run.Act, $"Daoris could not tell whether git deleted it, and act {run.Act} keeps what it knows", null);
     }
