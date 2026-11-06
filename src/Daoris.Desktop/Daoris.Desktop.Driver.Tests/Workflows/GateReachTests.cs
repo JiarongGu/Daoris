@@ -45,6 +45,32 @@ public sealed class GateReachTests : IDisposable
         Assert.Equal(["driver"], plan.Kept.Select(gate => gate.Name));
     }
 
+    /// <summary>
+    /// This repository's own declaration places its gates by paths, as its merge tool's reach table does: a batch that changes the page alone keeps
+    /// the suites no page source reaches, one that changes the devkit alone runs the devkit's and keeps the page's, and the gates that read the
+    /// whole tree (the CLI's verify, the universal checks, the maps) carry no paths, so every batch runs them.
+    /// </summary>
+    [Fact]
+    public void This_repository_s_gates_declare_the_paths_that_reach_them()
+    {
+        var declared = DeclaredGates.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "daoris.gates.json")));
+        string[] Run(params string[] changed) =>
+            [.. GateReach.Of(declared, changed, [.. declared.Select(gate => gate.Name)]).Run.Select(gate => gate.Name)];
+
+        Assert.Equal(["universal", "cli", "code-map", "test-map"], declared.Where(gate => gate.Paths is null).Select(gate => gate.Name));
+        var page = Run("src/Daoris.Web/src/workflow/said.ts");
+        Assert.Contains("web-types", page);
+        Assert.Contains("web-unit", page);
+        Assert.DoesNotContain("devkit", page);
+        Assert.DoesNotContain("driver-process", page);
+        Assert.DoesNotContain("deployment", page);
+        var devkit = Run("src/Daoris.Devkit/Daoris.Devkit.Core/GateDeclaration.cs");
+        Assert.Contains("devkit", devkit);
+        Assert.DoesNotContain("web-types", devkit);
+        Assert.DoesNotContain("driver", devkit);
+        Assert.Equal(declared.Select(gate => gate.Name), Run("daoris.gates.json"));
+    }
+
     [Fact]
     public void A_gate_that_has_not_passed_is_owed_and_runs_whatever_the_batch_changed()
     {
