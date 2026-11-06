@@ -149,8 +149,10 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
             }
             else
             {
-                var answer = await SessionMoves.StopAsync(_context.Processes, service, id, ct, note).ConfigureAwait(false);
+                // COAGENT1g: what the part left running is ended and waited for before the move's old end is written below.
+                var (answer, left) = await QuestPartStop.StopAsync(_context.Processes, service, id, note, ct).ConfigureAwait(false);
                 stopped = answer.Stopped;
+                if (left?.Note(PartLeftovers.Bound) is { } said) Say(id, said);
             }
 
             if (!stopped)
@@ -298,7 +300,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         {
             // The state first, so a look meanwhile reads it taken and never keeps a second box.
             files.WriteState(session, new HandOverAskState(ask.Id, HandOverAskStates.Taken, null, agent, DateTimeOffset.UtcNow));
-            var handed = await take(session, agent, ct).ConfigureAwait(false);
+            var handed = await take(session, agent, approved, ct).ConfigureAwait(false);
             (kept, message, code) = (handed.Kept || handed.SessionId is not null, handed.Message, handed.Why);
         }
         else

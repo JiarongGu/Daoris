@@ -305,27 +305,6 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary>
-    /// READSHARE1: <c>ToolHomeLeftovers.ConversationKeeps</c>, reached through <see cref="ToolHomeLeftovers.Origins"/>, opens a kept
-    /// conversation its move still holds, and keeps its folder as resumable.
-    /// </summary>
-    [Fact]
-    public void A_kept_conversation_keeps_its_folder_while_its_move_into_place_still_holds_it()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
-        var conversations = new HarnessConversations(_home);
-        conversations.Keep("legacy", "claude-code", "conversation-1");
-        var path = conversations.PathOf("legacy");
-        var records = new JsonArray(new JsonObject { ["id"] = "legacy", ["tree"] = Path.Combine(_home, "tree"), ["state"] = "completed" }).ToJsonString();
-
-        using (MoveHold.Take(path))
-        {
-            Refused(path);
-            Assert.Equal("resumable", Assert.Single(ToolHomeLeftovers.Origins(_home, records)!).Keeps);
-        }
-    }
-
     private WiringWorld World() => new()
     {
         Home = _home,

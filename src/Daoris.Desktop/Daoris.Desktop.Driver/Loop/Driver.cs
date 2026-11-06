@@ -61,7 +61,7 @@ public sealed class Driver(
     /// <summary>A test's stand-in for stopping a running session; null stops it through <see cref="SessionProcesses"/>.</summary>
     internal Func<string, Noted, bool>? Stops { get => Context.Stops; init => Context.Stops = value; }
 
-    public Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver { get => Context.HandsOver; init => Context.HandsOver = value; }
+    public Func<string, string, HandOverStep?, CancellationToken, Task<HandedOver>>? HandsOver { get => Context.HandsOver; init => Context.HandsOver = value; }
 
     public IChatSendBacks? SendsBack { get => Context.SendsBack; init => Context.SendsBack = value; }
 

@@ -105,6 +105,15 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>A client over this host, as a driver is handed one.</summary>
     public ServiceClient Client() => new(Url, null, new HttpClient(this, disposeHandler: false));
 
+    private readonly List<JsonObject> _registry = [];
+
+    /// <summary>A repository the registry holds, with its checkout's folder, in the default workspace.</summary>
+    public OpinionStandIn Registered(string repository, string root)
+    {
+        lock (_gate) _registry.Add(new JsonObject { ["repository"] = repository, ["adopted"] = true, ["root"] = root, ["workspace"] = "default" });
+        return this;
+    }
+
     /// <summary>A record of this machine's: its state, adapter, tree and kind; nothing waits on it.</summary>
     public OpinionStandIn Session(string id, string state, string? tree = null, string adapter = "claude-code-acp", string kind = "drive")
     {
@@ -266,6 +275,9 @@ internal sealed class OpinionStandIn : HttpMessageHandler
 
                 case ("GET", "/api/quests"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _quests.Select(quest => quest.DeepClone())]));
+
+                case ("GET", "/api/registry"):
+                    return Answer(HttpStatusCode.OK, new JsonArray([.. _registry.Select(repository => repository.DeepClone())]));
 
                 // COMMS1b: the marks of a host with the one door for solicited answers; a host before it answers none, its route not found.
                 case ("GET", "/api/protocol") when Answers:

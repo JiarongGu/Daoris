@@ -47,7 +47,7 @@ public sealed class HelpCheckoutsTests : IDisposable
     private void Handed(string session, params string[] checkouts) =>
         new HelpWired(_home).Keep(session, new HelpReceipt
         {
-            At = DateTimeOffset.UtcNow, Harness = "codex-acp", Folder = HelpRoom.PathOf(_home, "aurora"),
+            At = DateTimeOffset.UtcNow, Door = "codex-acp", Folder = HelpRoom.PathOf(_home, "aurora"),
             Checkouts = [.. checkouts.Select(name => new HelpRead(name, "aurora", Root(name)))],
         });
 

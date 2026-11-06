@@ -77,7 +77,6 @@ public sealed class BindingPicksTests : IDisposable
     {
         var conversations = Newer();
         conversations.Keep("s1", "claude-code-acp", "c-1");
-        conversations.ImportFiles();
         conversations.Pick("s1", "account-2");
 
         // The wire names the conversation again, as a resume's own or a fallback's does: the binding is replaced by name, the pick is not.
@@ -92,11 +91,9 @@ public sealed class BindingPicksTests : IDisposable
     [Fact]
     public void A_binding_of_a_record_from_before_holds_no_pick()
     {
-        // A conversation kept as a file, imported as the look does: no start named an account for it, and the import writes no pick.
+        // A conversation kept with no start naming an account for it, as an imported file's is: the keep writes no pick.
         var conversations = Newer();
         conversations.Keep("s1", "claude-code-acp", "c-1");
-        Assert.Equal(1, conversations.ImportFiles().Imported);
-        Assert.True(conversations.InStore());
 
         Assert.NotNull(conversations.Read("s1"));
         Assert.False(conversations.PickedOn("s1", "account-1"));
@@ -154,15 +151,14 @@ public sealed class BindingPicksTests : IDisposable
     {
         var conversations = Newer();
         conversations.Keep("s1", "claude-code-acp", "c-1");
-        conversations.ImportFiles();
         conversations.Pick("s1", "account-1");
         conversations.Pick("s2", "account-2");
         conversations.Pick("s3", "account-3");
 
         var removed = new SessionHomeFiles(_home).Remove(["s1", "s2"], events: null);
 
-        Assert.Contains("harness", removed.Went["s1"]);
-        Assert.Contains("harness", removed.Went["s2"]);
+        Assert.Contains(SessionHomeFiles.Binding, removed.Went["s1"]);
+        Assert.Contains(SessionHomeFiles.Binding, removed.Went["s2"]);
         Assert.Equal([("s3", "account-3")], Picks());
         Assert.False(conversations.PickedOn("s1", "account-1"));
         Assert.Null(conversations.Read("s1"));
@@ -175,7 +171,6 @@ public sealed class BindingPicksTests : IDisposable
     {
         var conversations = Newer();
         conversations.Keep("s1", "claude-code-acp", "c-1");
-        conversations.ImportFiles();
         conversations.Pick("s1", "account-2");
 
         using (var older = OlderOpen())

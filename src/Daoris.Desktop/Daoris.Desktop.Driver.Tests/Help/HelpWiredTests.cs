@@ -128,10 +128,10 @@ public sealed class HelpWiredTests : IDisposable
         var spawned = await StartAsync(service, "help0001", adapter, mode);
 
         var receipt = Assert.Single(new HelpWired(_home).Read("help0001"));
-        Assert.Equal((mode, HelpWired.New, adapter, "2.1.299", "work"), (receipt.Mode, receipt.Start, receipt.Harness, receipt.Version, receipt.Account));
+        Assert.Equal((mode, HelpWired.New, adapter, "2.1.299", "work"), (receipt.Mode, receipt.Start, receipt.Door, receipt.Version, receipt.Account));
         Assert.Equal(Path.GetFullPath(spawned.Info.WorkingDirectory), Path.GetFullPath(receipt.Folder));
         var pipe = adapter == "claude-code";
-        Assert.Equal(pipe ? HelpWired.Pipe : HelpWired.Acp, receipt.Door);
+        Assert.Equal(pipe ? HelpWired.Native : HelpWired.Protocol, receipt.Transport);
 
         // The rules: the settings file's, list for list.
         using var settings = JsonDocument.Parse(spawned.Settings ?? throw new Xunit.Sdk.XunitException("no settings file was handed"));
@@ -400,8 +400,8 @@ public sealed class HelpWiredTests : IDisposable
         Assert.Empty(wired.Read("help0008"));
 
         File.WriteAllText(wired.PathOf("help0009"), $$"""
-            { "receipts": [ { "at": "2026-10-19T09:00:00Z", "start": "new", "mode": "restricted", "harness": "claude-code",
-              "door": "pipe", "folder": "room", "token": "{{Secret}}-file", "servers": [ { "name": "x", "state": "handed", "env": { "K": "{{Secret}}-env" } } ] } ] }
+            { "receipts": [ { "at": "2026-10-19T09:00:00Z", "start": "new", "mode": "restricted", "door": "claude-code",
+              "transport": "native", "folder": "room", "token": "{{Secret}}-file", "servers": [ { "name": "x", "state": "handed", "env": { "K": "{{Secret}}-env" } } ] } ] }
             """);
         var hostile = HelpWired.Answer("help0009", wired.Read("help0009"));
         Assert.True(hostile.GetProperty("recorded").GetBoolean());
@@ -411,6 +411,6 @@ public sealed class HelpWiredTests : IDisposable
 
     private static HelpReceipt Receipt(DateTimeOffset at) => new()
     {
-        At = at, Start = HelpWired.New, Mode = HelpModes.Restricted, Harness = "claude-code", Door = HelpWired.Pipe, Folder = "room",
+        At = at, Start = HelpWired.New, Mode = HelpModes.Restricted, Door = "claude-code", Transport = HelpWired.Native, Folder = "room",
     };
 }
