@@ -25,6 +25,7 @@ public sealed class TestHomesCensusTests
         ["Workplace/WorkingTreeProvenanceTests.cs"] = "needs a folder no repository contains, which nothing under the checkout's _fixtures is: git walks up into the checkout's",
         ["Loop/BackgroundWaitJudgementTests.cs"] = "needs a folder no repository contains, which nothing under the checkout's _fixtures is: git walks up into the checkout's",
         ["Service/ServiceHostLocatorTests.cs"] = "needs a folder no workspace lies above, which nothing under the checkout's _fixtures is: the locator walks up to the checkout's manifest",
+        ["Knowledge/KnowledgeConnectorTests.cs"] = "needs a folder no workspace lies above, which nothing under the checkout's _fixtures is: the locator walks up to the checkout's manifest",
         ["TestGit.cs"] = "stops a repository search at the temp folder, as the product's search does, and creates nothing there",
     };
 

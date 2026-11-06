@@ -109,7 +109,7 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
         }
         finally
         {
-            Directory.Delete(plain, recursive: true);
+            GitSeed.Remove(plain);
         }
     }
 
@@ -128,7 +128,7 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
         }
         finally
         {
-            Directory.Delete(plain, recursive: true);
+            GitSeed.Remove(plain);
         }
     }
 

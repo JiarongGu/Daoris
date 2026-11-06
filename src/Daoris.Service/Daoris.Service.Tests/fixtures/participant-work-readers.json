@@ -122,6 +122,10 @@
       "reads": "other",
       "note": "a line naming the instruction's piece type beside a null test of another field"
     },
+    "Agents/Providers/ClaudeCode/Layer/ClaudeDrivenLayer.cs": {
+      "reads": "tells",
+      "note": "tells a partner's piece by the start's mark to keep it on today's transport rather than the layer's driven run; no row of this design moves it"
+    },
     "Agents/SessionTarget.cs": {
       "reads": "tells",
       "row": "1j",
@@ -314,6 +318,11 @@
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
+    },
+    "Help/Proposals/HelpSessionHelperDoors.cs": {
+      "reads": "tells",
+      "row": "1q",
+      "note": "refuses the helper and pass doors to Ask Daoris's own conversation by its repository; the other reads are the proposal's own ask field; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Knowledge/Domain/Trace.Words.cs": {
       "reads": "tells",
@@ -538,6 +547,10 @@
     "Core/Asks/ChannelDesk.cs": {
       "reads": "tells",
       "note": "refuses a channel post to a record that serves or reads an opinion, its store's own guard; the call layer's table (row 1r, §2.3) refuses the same cells first"
+    },
+    "Core/Asks/ChannelMemberRoll.cs": {
+      "reads": "tells",
+      "note": "tells an active helper by the session it serves, so the channel of the part that asked it stays unspent while it runs; no row of this design moves it"
     },
     "Core/Asks/HistoryDesk.cs": {
       "reads": "other",

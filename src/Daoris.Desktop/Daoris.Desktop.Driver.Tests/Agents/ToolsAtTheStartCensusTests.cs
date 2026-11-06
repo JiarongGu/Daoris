@@ -9,7 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// <b>Equipped</b> is a call to <c>Equip(</c>, or the process handed on to the driver's <c>Prepare(adapter</c> or a host's
-/// <c>Prepared(adapter</c>, which call it, within the statements after the process is made.
+/// <c>Prepared(adapter</c>, which call it, within the statements after the process is made; either may be handed the registry the run
+/// was started from first (<c>Prepared(adapters, adapter</c>).
 /// </remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed class ToolsAtTheStartCensusTests
@@ -41,7 +42,7 @@ public sealed class ToolsAtTheStartCensusTests
             {
                 made++;
                 var after = source.Substring(call.Index, Math.Min(Window, source.Length - call.Index));
-                if (!Regex.IsMatch(after, @"\bEquip\(|\.Prepared?\(adapter\b"))
+                if (!Regex.IsMatch(after, @"\bEquip\(|\.Prepared?\((adapters,\s*)?adapter\b"))
                 {
                     missing.Add($"{Path.GetFileName(file)} at offset {call.Index}: {call.Value}");
                 }
