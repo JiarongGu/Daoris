@@ -6,27 +6,15 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>driver.json</c>'s four staffing paths as that file shows them (FOUNDATION1w-s, the design §19.15): each path's own JSON text, compact
-/// (<see cref="RoleStaffing.Compact"/>), or null where the file does not hold the path.
-/// </summary>
-/// <param name="Actors">The <c>actors</c> object, every entry of it as found, an unreadable one and an id this build does not know included.</param>
-/// <param name="Adapter">The <c>adapter</c> value.</param>
-/// <param name="IntakeAdapter">The <c>intakeAdapter</c> value.</param>
-/// <param name="HelperAdapter">The <c>helperAdapter</c> value.</param>
-public sealed record StaffingPaths(string? Actors, string? Adapter, string? IntakeAdapter, string? HelperAdapter);
-
-/// <summary>
 /// The staffing the store holds (§19.15): the actors of today's loaded record, each as <c>driver.json</c> holds them.
 /// </summary>
 /// <param name="Actors">Each readable entry, its choices (<c>[]</c>, off, for Intake and Ask Daoris alone).</param>
 /// <param name="Errors">Each entry that does not read, with why: it holds the starts that read it (<see cref="ActorUnreadableException"/>).</param>
 /// <param name="AsFound">Each entry that does not read as the file showed it, compact JSON, which the store keeps whole.</param>
-/// <param name="Written">The four paths as the projection last wrote them, or found them at the import.</param>
 public sealed record StaffingRead(
     IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> Actors,
     IReadOnlyDictionary<string, string> Errors,
-    IReadOnlyDictionary<string, string> AsFound,
-    StaffingPaths Written);
+    IReadOnlyDictionary<string, string> AsFound);
 
 /// <summary>One role's row of <c>role_staffing</c> as the store keeps it: <c>set</c>, <c>before</c> or <c>unreadable</c>, its choices and first-agent key.</summary>
 internal sealed record StaffingRow(string Role, string State, string? Choices, string? Why, string? First);
@@ -83,9 +71,8 @@ public sealed record StaffingChecked(StaffingChecks How, string? Said = null);
 /// <remarks>
 /// <para><b>Imported once, once the start's confirmation is settled</b> (§13.5, §19.7), under the staffing's record lock
 /// (<c>locks/records/role-staffing.lock</c>), where nothing was imported yet: one store transaction reads the file's staffing through
-/// today's reader (<see cref="ActorChoices.Read"/>) into <c>role_staffing</c>, an entry that does not read kept as found with why, and
-/// records the file's four staffing paths as <c>written</c>. <b>The file is never written</b>: it already is the projection of what was
-/// imported (<see cref="ImportClass.Projected"/>). A kill before the commit leaves the store as it was, and the next start imports again.</para>
+/// today's reader (<see cref="ActorChoices.Read"/>) into <c>role_staffing</c>, an entry that does not read kept as found with why.
+/// <b>The file is never written</b>: it already is the projection of what was imported (<see cref="ImportClass.Projected"/>). A kill before the commit leaves the store as it was, and the next start imports again.</para>
 /// <para><b>The home's own <c>driver.json</c></b>, the only one a home has (ONEWAY1c-i). One that does not read imports nothing and is
 /// asked again at the next start. A fresh home, with no file or one holding none of the four keys, is seeded instead (ONEWAY1b): each of
 /// the five roles with an order of its own written at its seed (<see cref="ActorChoices.Seed"/>), recorded <see cref="ImportClass.Seeded"/>.</para>
@@ -179,11 +166,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
             }
         }
 
-        var written = store.Query(
-            "SELECT actors, adapter, intake_adapter, helper_adapter FROM role_staffing_projection",
-            row => new StaffingPaths(Text(row, 0), Text(row, 1), Text(row, 2), Text(row, 3))).FirstOrDefault()
-            ?? new StaffingPaths(null, null, null, null);
-        return new StaffingRead(actors, errors, found, written);
+        return new StaffingRead(actors, errors, found);
     }
 
     /// <summary>The seeded roles' rows as the store keeps them, by role; none before the import. The staffing part's before and after.</summary>
@@ -269,7 +252,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
             bytes ??= [];
 
             // ONEWAY1b: a fresh home, whose file holds none of the four keys, starts on its seeds, written; nothing of it is copied.
-            var fresh = staffing.Paths == new StaffingPaths(null, null, null, null);
+            var fresh = !staffing.Holds;
             if (fresh) staffing = Seeds();
             var receipt = Path.GetRelativePath(home, path).Replace('\\', '/');
             var sha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant();
@@ -286,13 +269,6 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
                             ("$role", row.Role), ("$state", row.State), ("$choices", row.Choices), ("$why", row.Why), ("$first", row.First), ("$at", at));
                     }
 
-                    write.Execute(
-                        """
-                        INSERT INTO role_staffing_projection (one, actors, adapter, intake_adapter, helper_adapter, at)
-                        VALUES (1, $actors, $adapter, $intake, $helper, $at)
-                        """,
-                        ("$actors", staffing.Paths.Actors), ("$adapter", staffing.Paths.Adapter), ("$intake", staffing.Paths.IntakeAdapter),
-                        ("$helper", staffing.Paths.HelperAdapter), ("$at", at));
                     BeforeCommit?.Invoke();
                 });
             return outcome.Done ? new StaffingImport(StaffingImported.Done) : Held(outcome.Said ?? "the store would not take it");
@@ -534,7 +510,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 
     /// <summary>
     /// A JSON element as <c>driver.json</c>'s staffing paths are kept here, compact and with the relaxed escaping, so two spellings of one
-    /// value (whitespace, an escaped letter) are one text. The projection's and a found row's paths are this text.
+    /// value (whitespace, an escaped letter) are one text. An unreadable entry is kept as this text.
     /// </summary>
     public static string Compact(JsonElement element)
     {
@@ -543,12 +519,19 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
     }
 
-    private sealed record Staffing(IReadOnlyList<StaffingRow> Rows, StaffingPaths Paths);
+    /// <summary>The file's staffing rows, and whether the file holds any of its four staffing keys.</summary>
+    private sealed record Staffing(IReadOnlyList<StaffingRow> Rows, bool Holds);
+
+    /// <summary>
+    /// <c>driver.json</c>'s staffing keys: <c>actors</c>, and the three first-agent keys only nocompat1's <see cref="StaffingStep"/> meets,
+    /// since it takes them out once it has imported them.
+    /// </summary>
+    private static readonly string[] Keys = ["actors", "adapter", "intakeAdapter", "helperAdapter"];
 
     /// <summary>A fresh home's staffing (ONEWAY1b): each of the five roles with an order of its own at its seed, nothing in the file.</summary>
     private static Staffing Seeds() => new(
         [.. ActorChoices.Ordered.Select(role => new StaffingRow(role, "set", Write(ActorChoices.Seed(role)!), null, null))],
-        new StaffingPaths(null, null, null, null));
+        false);
 
     /// <summary>
     /// The file's staffing as today's build reads it (<see cref="JsonKeeping.Once"/>, <see cref="ActorChoices.Read"/> and the three keys as
@@ -556,7 +539,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// </summary>
     private static string? Parse(byte[] bytes, out Staffing staffing)
     {
-        staffing = new Staffing([], new StaffingPaths(null, null, null, null));
+        staffing = new Staffing([], false);
         try
         {
             using var reader = new StreamReader(new MemoryStream(bytes), new UTF8Encoding(false));
@@ -581,8 +564,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
                 else if (first is not null) rows.Add(new StaffingRow(id, "before", null, null, first));
             }
 
-            string? Path(string name) => root.TryGetProperty(name, out var value) ? Compact(value) : null;
-            staffing = new Staffing(rows, new StaffingPaths(Path("actors"), Path("adapter"), Path("intakeAdapter"), Path("helperAdapter")));
+            staffing = new Staffing(rows, Keys.Any(key => root.TryGetProperty(key, out _)));
             return null;
         }
         catch (Exception error) when (error is JsonException or InvalidOperationException or DecoderFallbackException)
