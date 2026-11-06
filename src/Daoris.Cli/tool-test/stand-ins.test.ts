@@ -8,7 +8,7 @@ import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { listenFetchable } from '../../../tools/listen-port.mjs';
 import {
-  doorCommand, EVERY_DOOR, KINDS, programOf, providersFolder, readProviders, readStandIns, SCENARIO_CONTRACT, scenarioPlan,
+  doorCommand, EVERY_DOOR, heldBy, KINDS, programOf, providersFolder, readProviders, readStandIns, RUNS, SCENARIO_CONTRACT, scenarioPlan,
   type PlanRow, type ProviderRead, type StandInDoor,
 } from '../../../tools/stand-ins.mjs';
 import { makeFixture, PATIENCE, unroled } from '../test/_fixture.ts';
@@ -75,6 +75,34 @@ test('the files are read by one layout: every provider in its folders\' order, a
   assert.deepEqual(doorCommand(standIns[0]!, standIns[0]!.doors[1]!, output, ['--scenario', 'missing']), [
     'node', join(output, 'Agents', 'Providers', 'First', 'Program', 'agent.mjs'), '--door', 'protocol', '--scenario', 'missing',
   ]);
+});
+
+// A line's run kind, row for row the driver's `PendingRowsTests` (its twin, `ConformancePending`): a line names `Driven` or
+// `Conversation` and holds its case on that kind alone, absent on both; any other word breaks the layout.
+test('a pending line may name its run kind, holding its case on that kind alone, and absent on both', (t) => {
+  const fx = makeFixture('stand-ins-runs');
+  t.after(() => fx.cleanup());
+  provider(fx, 'Runs', {
+    id: 'runs-stand-in', standIn: true, program: { entry: 'agent.mjs' },
+    doors: [{ id: 'runs-native', kind: 'native', arguments: ['native'] }],
+  }, [
+    { case: 'frames.unknown-unread', door: 'runs-native', run: 'Driven', row: 'AGENTLYNTAI1d', why: 'Driven.' },
+    { case: 'frames.unknown-unread', door: 'runs-native', run: 'Conversation', row: 'AGENTLYNTAI1f-i', why: 'A conversation.' },
+    { case: 'dialect.recorded-frames', door: EVERY_DOOR, row: 'j', why: 'Every kind.' },
+    { case: 'live.start', door: EVERY_DOOR, run: 'Sideways', row: 'c', why: 'No such kind.' },
+  ]);
+
+  const { standIns, problems } = readStandIns(join(fx.root, 'Providers'));
+  const lines = standIns[0]!.pending;
+
+  assert.deepEqual(RUNS, ['Driven', 'Conversation']);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0]!, /'run' is Driven or Conversation, or absent for both/);
+  assert.deepEqual(lines.map((line) => line.run), ['Driven', 'Conversation', null]);
+  assert.equal(heldBy(lines, 'frames.unknown-unread', 'runs-native', 'Driven')?.row, 'AGENTLYNTAI1d');
+  assert.equal(heldBy(lines, 'frames.unknown-unread', 'runs-native', 'Conversation')?.row, 'AGENTLYNTAI1f-i');
+  assert.equal(heldBy(lines, 'dialect.recorded-frames', 'runs-native', 'Conversation')?.row, 'j');
+  assert.notEqual(heldBy(lines, 'frames.unknown-unread', 'runs-native'), null, 'asked for no run, a line of either holds it');
 });
 
 test('the phase plans the scenario contract over every stand-in\'s doors: held by its own file, read elsewhere, or driven', (t) => {

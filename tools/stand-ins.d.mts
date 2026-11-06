@@ -6,8 +6,11 @@ export type DoorKind = 'native' | 'protocol';
 /** One door of a `provider.json`: its id, its kind and, for a stand-in, the arguments that choose it in its program. */
 export interface StandInDoor { id: string; kind: DoorKind; arguments: string[] }
 
-/** A line of a provider's `pending.json`: a case it cannot pass yet, on a door or every door, with its row and why. */
-export interface PendingLine { case: string; door: string; row: string; why: string }
+/**
+ * A line of a provider's `pending.json`: a case it cannot pass yet, on a door or every door, with its row and why; on the run kind it
+ * names, or on both where `run` is null.
+ */
+export interface PendingLine { case: string; door: string; row: string; why: string; run: 'Driven' | 'Conversation' | null }
 
 /** A provider as its files declare it, its folder's name the path under the providers' folder in a source and a build alike. */
 export interface ProviderRead {
@@ -47,5 +50,8 @@ export function readProviders(folder: string): { providers: ProviderRead[]; prob
 export function readStandIns(folder: string): { standIns: ProviderRead[]; problems: string[] };
 export function programOf(standIn: ProviderRead, root: string): string;
 export function doorCommand(standIn: ProviderRead, door: StandInDoor, root: string, more?: string[]): string[];
-export function heldBy(lines: PendingLine[], name: string, door: string): PendingLine | null;
+export function heldBy(lines: PendingLine[], name: string, door: string, run?: 'Driven' | 'Conversation' | null): PendingLine | null;
+
+/** The run kinds a pending line may name. */
+export const RUNS: readonly ['Driven', 'Conversation'];
 export function scenarioPlan(standIns: ProviderRead[]): PlanRow[];

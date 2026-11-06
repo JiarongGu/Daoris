@@ -139,7 +139,7 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
         var unmatched = Conformance.Runs()
             .GroupBy(row => row.Provider.Id.Value, StringComparer.OrdinalIgnoreCase)
             .SelectMany(rows => ConformancePending.Unmatched(
-                ConformancePending.Of(rows.Key), [.. rows.Select(row => (row.Case.Name, row.Door))]))
+                ConformancePending.Of(rows.Key), [.. rows.Select(row => (row.Case.Name, row.Door, row.Subject.Run))]))
             .ToList();
 
         Assert.True(unmatched.Count == 0, string.Join('\n', unmatched));
@@ -182,8 +182,8 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
             ]
             """,
             "planted.json");
-        IReadOnlyCollection<(string, string)> runs =
-            [("identity.rules", Conformance.EveryDoor), ("parts.stated", Conformance.EveryDoor), ("posture.unmapped-refused", "stub")];
+        IReadOnlyCollection<(string, string, StartKind?)> runs =
+            [("identity.rules", Conformance.EveryDoor, null), ("parts.stated", Conformance.EveryDoor, null), ("posture.unmapped-refused", "stub", null)];
         Assert.Empty(planted.Problems);
 
         var unmatched = ConformancePending.Unmatched(planted.Lines, runs);
