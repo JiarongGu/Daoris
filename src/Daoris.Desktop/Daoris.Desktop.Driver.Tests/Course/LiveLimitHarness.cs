@@ -131,6 +131,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         var runner = new Opening(Client, context, atTheWrite);
         var stand = new ExecutorStand(runner, context);
         stand.Add<IChatHelping>(new NoHelp());
+        stand.Add(new LimitWaits(stand));
         stand.Add(new ChatHandOver(stand) { WireWait = Wire });
         var limit = stand.Add(new LimitMove(stand)
         {
@@ -259,6 +260,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         var runner = new Opening(Client, context, atTheWrite);
         var stand = new ExecutorStand(runner, context);
         stand.Add<IChatHelping>(new NoHelp());
+        stand.Add(new LimitWaits(stand));
         stand.Add(new ChatHandOver(stand) { WireWait = Wire });
         var limit = stand.Add(new LimitMove(stand)
         {
