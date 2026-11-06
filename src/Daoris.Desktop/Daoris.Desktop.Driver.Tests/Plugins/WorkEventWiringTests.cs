@@ -45,8 +45,9 @@ public sealed class WorkEventWiringTests : IDisposable
         set.Tell(new WorkEvent(WorkEventKinds.WorkLanded, _now) { Session = "7e95d2c1", Code = "landed" });
         set.Tell(new WorkEvent(WorkEventKinds.Missed, _now));
 
-        Assert.Equal(new WorkEventHandshake(WorkEventGrammar.Version, 2, RelayBuild.None), handshake);
         var frames = await channel.HeardAsync(3);
+        // The plugin's first line to a relay names the run, so the handshake says it (§4.1, §5.2).
+        Assert.Equal(new WorkEventHandshake((string)frames[0]["run"]!, WorkEventGrammar.Version, 2, RelayBuild.None), handshake);
         Assert.Equal([3L, 4L, 5L], frames.Select(frame => (long)frame["seq"]!));
         Assert.Equal([WorkEventKinds.SessionParked, WorkEventKinds.WorkLanded, WorkEventKinds.Missed], frames.Select(frame => (string)frame["kind"]!));
         Assert.All(frames, frame => Assert.Equal(set.Events.Run, frame["run"]));

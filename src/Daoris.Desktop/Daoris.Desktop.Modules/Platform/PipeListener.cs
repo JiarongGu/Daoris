@@ -1,7 +1,6 @@
 using System.IO.Pipes;
 using System.Runtime.Versioning;
-using System.Security.AccessControl;
-using System.Security.Principal;
+using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
@@ -15,31 +14,12 @@ internal sealed class PipeListener(InstancePipe pipe, string name)
     private readonly PipeState _state = pipe.State;
     private readonly SemaphoreSlim _slots = new(pipe.Limits.Connections - 1, pipe.Limits.Connections);
 
-    /// <summary>
-    /// The pipe's security (§4.1): this user's alone, and nobody's from another machine. Owned by the user's SID (PIPEOWNER1), not
-    /// left to the token's default owner, which for an elevated Daoris is the Administrators group: a terminal of the same user
-    /// that is not elevated refused a pipe owned so, so the pipe is this user's at either elevation.
-    /// </summary>
-    [SupportedOSPlatform("windows")]
-    public static PipeSecurity Security()
-    {
-        var security = new PipeSecurity();
-        using (var identity = WindowsIdentity.GetCurrent())
-        {
-            security.SetOwner(identity.User!);
-            security.AddAccessRule(new PipeAccessRule(identity.User!, PipeAccessRights.FullControl, AccessControlType.Allow));
-        }
-
-        security.AddAccessRule(new PipeAccessRule(
-            new SecurityIdentifier(WellKnownSidType.NetworkSid, null), PipeAccessRights.FullControl, AccessControlType.Deny));
-        return security;
-    }
-
+    /// <summary>One listening instance, made by the driver's rule for this user's pipes (§4.1, PIPEOWNER1; <see cref="UserPipe.Security"/>).</summary>
     [SupportedOSPlatform("windows")]
     public static NamedPipeServerStream Create(string name, int connections, bool first) =>
         NamedPipeServerStreamAcl.Create(
             name, PipeDirection.InOut, connections, PipeTransmissionMode.Byte,
-            PipeOptions.Asynchronous | (first ? PipeOptions.FirstPipeInstance : PipeOptions.None), 0, 0, Security());
+            PipeOptions.Asynchronous | (first ? PipeOptions.FirstPipeInstance : PipeOptions.None), 0, 0, UserPipe.Security());
 
     public async Task AcceptAsync(NamedPipeServerStream first)
     {
