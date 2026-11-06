@@ -51,6 +51,7 @@ internal static class ActWorkSteps
     {
         _ = held;
         var plan = JsonNode.Parse(step.Arguments)!;
+        if (plan["mode"]?.GetValue<string>() == "drop") return await StashDropSteps.EndAsync(held, launch, step).ConfigureAwait(false);
         if (Applies(plan))
         {
             var applied = await launch.HeldGitAsync(launch.Root, step.Ordinal, ["stash", "apply", plan["id"]!.GetValue<string>()], null, null).ConfigureAwait(false);
@@ -70,7 +71,9 @@ internal static class ActWorkSteps
 
         var run = await launch.HeldGitAsync(launch.Root, step.Ordinal, arguments, null, null).ConfigureAwait(false);
         var words = string.Join(' ', new[] { run.Stderr, run.Stdout }.Select(each => each.Trim()).Where(each => each.Length > 0));
-        return run.End(run.Exit == 0 ? "git saved the stash" : $"git refused the stash ({ContentHolds.Said(words)})");
+        // The commit saved stays in the step's words: it is what says, later, that Daoris made this stash (a Drop is offered for those alone).
+        var saved = run.Exit == 0 ? (await StashTipAsync(launch.Root, CancellationToken.None).ConfigureAwait(false)).Id : null;
+        return run.End(run.Exit == 0 ? $"git saved the stash{(saved is null ? "" : " " + saved)}" : $"git refused the stash ({ContentHolds.Said(words)})");
     }
 
     /// <summary>Done where HEAD names the branch asked, not done where it stands as it did, else unknown; null where git could not say.</summary>
@@ -93,6 +96,7 @@ internal static class ActWorkSteps
     /// <summary>Done where <c>refs/stash</c> moved to a commit on HEAD's tip, not done where it did not move, else unknown; null where git could not say.</summary>
     public static async Task<string?> ReadStashAsync(string root, JsonNode plan, CancellationToken ct)
     {
+        if (plan["mode"]?.GetValue<string>() == "drop") return await StashDropSteps.ReadAsync(root, plan, ct).ConfigureAwait(false);
         if (Applies(plan)) return await ReadApplyAsync(root, plan["id"]!.GetValue<string>(), ct).ConfigureAwait(false);
         var (head, before) = (plan["head"]!.GetValue<string>(), plan["stash"]?.GetValue<string>());
         var now = await StashTipAsync(root, ct).ConfigureAwait(false);

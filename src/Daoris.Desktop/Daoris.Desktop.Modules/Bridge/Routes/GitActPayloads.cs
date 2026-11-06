@@ -36,6 +36,9 @@ public sealed record GitStashAct(string? Repository, string? Workspace, bool Unt
 /// <summary>A stash applied by its commit's id.</summary>
 public sealed record GitStashApplyAct(string? Repository, string? Workspace, string? Id, string? Head);
 
+/// <summary>A stash dropped by its commit's id.</summary>
+public sealed record GitStashDropAct(string? Repository, string? Workspace, string? Id);
+
 /// <summary>A branch or a tag made, deleted or pushed to origin at <c>At</c>; <c>Said</c> asks for a terminal's words.</summary>
 public sealed record GitRefAct(string? Repository, string? Workspace, string? Kind, string? Name, string? At, bool Said = false);
 

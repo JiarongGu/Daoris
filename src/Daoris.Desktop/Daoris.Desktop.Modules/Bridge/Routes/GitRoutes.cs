@@ -286,7 +286,7 @@ public sealed class GitRoutes(DriverContext context)
     [ByEvent("GIT_STASH_PLAN", Untold = "the checkout's index, tree, untracked files and the shared stash, which no scope tells")]
     private async Task<object?> GitStashPlanAsync(GitCheckoutRead read, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
-            new StashActs(new ActJournal(_loop.Home)).PlanAsync(root, token));
+            new StashActs(new ActJournal(_loop.Home)).PlanAsync(root, token, read.Repository));
 
     // The repository's deletes as the journal holds them, each with whether its Undo (`GIT_REF_UNDO`) is open (ONEWAY1r). Told by event.
     [DriverRoute("GIT_DELETES", PipeClass.Open)]
@@ -317,6 +317,17 @@ public sealed class GitRoutes(DriverContext context)
         if (context is null) return refused;
         var press = new StashApplyPress(act.Id ?? "", act.Head ?? "");
         return Acted(await new StashActs(new ActJournal(_loop.Home)).ApplyAsync(context, press, cancellationToken).ConfigureAwait(false), context);
+    }
+
+    // Stash *Drop* by the stash commit's id, only of a stash a Save of Daoris's made; the commit is kept in the answer for `git stash store`.
+    [DriverRoute("GIT_STASH_DROP", PipeClass.Window)]
+    [Owner("GIT_STASH_DROP", Repository = "repository", Workspace = "workspace")]
+    [Publishes("GIT_STASH_DROP", StateScopes.Checkouts | StateScopes.Driver)]
+    private async Task<object?> GitStashDropAsync(GitStashDropAct act, CancellationToken cancellationToken)
+    {
+        var (context, refused) = await WorkContextAsync("an act", act.Repository, act.Workspace, cancellationToken).ConfigureAwait(false);
+        if (context is null) return refused;
+        return Acted(await new StashDrops(new ActJournal(_loop.Home)).RunAsync(context, new StashDropPress(act.Id ?? ""), cancellationToken).ConfigureAwait(false), context);
     }
 
     /// <summary>The context of a working-tree act on the repository's registered checkout, or the answer that there is none.</summary>
