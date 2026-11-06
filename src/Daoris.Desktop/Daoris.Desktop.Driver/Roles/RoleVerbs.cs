@@ -124,7 +124,7 @@ public sealed class RoleVerb : ChoiceVerb
     }
 
     private const string RulesGrammar =
-        "`role rules --place machine|workspace:<id>|repository:<id>|line:<key> [--roles <id,…>] [--set <count>=<at>:<do>[:<minutes>][,<at>:<do>…]]… "
+        "`role rules --place machine|workspace:<id>|repository:<id>|line:<key> [--roles <id,…>] [--set <count>=<at>:<do>[:<minutes>]]… "
         + "[--off <count>]… [--clear <count>|all]` (counts: answers-alone, failures, failures-on-choice, tries, quiet, limits, moves; "
         + "`role supervisor [--place <place>]` says them)";
 
@@ -164,20 +164,19 @@ public sealed class RoleVerb : ChoiceVerb
             rules.RemoveAll(rule => Same(rule, count));
             if (flag == "--off") rules.Add(new SupervisorRule("", count, SupervisorRules.Windows.GetValueOrDefault(count, ""), 1, SupervisorRules.Off, null, place, roles));
             if (flag != "--set") continue;
-            var ladder = value.Split('=', 2) is [_, var spec] ? spec : throw new ChoiceWords($"`--set {value}` names no `<at>:<do>`: {RulesGrammar}.");
-            foreach (var step in ladder.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            // One rule per count for the press's roles: every executor acts on one, so a ladder is never written.
+            var step = value.Split('=', 2) is [_, var spec] ? spec.Trim() : throw new ChoiceWords($"`--set {value}` names no `<at>:<do>`: {RulesGrammar}.");
+            var parts = step.Split(':');
+            if (step.Contains(',', StringComparison.Ordinal) || parts.Length is < 2 or > 3
+                || !int.TryParse(parts[0], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var threshold))
             {
-                var parts = step.Split(':');
-                if (parts.Length is < 2 or > 3 || !int.TryParse(parts[0], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var threshold))
-                {
-                    throw new ChoiceWords($"`{step}` is not `<at>:<do>[:<minutes>]`: {RulesGrammar}.");
-                }
-
-                int? upTo = parts.Length == 3 && int.TryParse(parts[2], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var minutes)
-                    ? minutes
-                    : parts.Length == 3 ? throw new ChoiceWords($"`{parts[2]}` is not whole minutes: {RulesGrammar}.") : null;
-                rules.Add(new SupervisorRule("", count, SupervisorRules.Windows.GetValueOrDefault(count, ""), threshold, parts[1], upTo, place, roles));
+                throw new ChoiceWords($"`{step}` is not one `<at>:<do>[:<minutes>]`: {RulesGrammar}.");
             }
+
+            int? upTo = parts.Length == 3 && int.TryParse(parts[2], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var minutes)
+                ? minutes
+                : parts.Length == 3 ? throw new ChoiceWords($"`{parts[2]}` is not whole minutes: {RulesGrammar}.") : null;
+            rules.Add(new SupervisorRule("", count, SupervisorRules.Windows.GetValueOrDefault(count, ""), threshold, parts[1], upTo, place, roles));
         }
 
         var named = Named(rules);

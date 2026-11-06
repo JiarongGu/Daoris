@@ -287,8 +287,20 @@ public sealed class RoleVerbTests : IDisposable
         Assert.Equal(2, await Run("rules", "--place", "repository:daoris", "--set", "quiet=1:next"));
         Assert.Contains("(moves-unbounded)", _error.ToString());
         Assert.Equal(2, await Run("rules", "--place", "repository:daoris", "--set", "answers-alone=three"));
-        Assert.Contains("is not `<at>:<do>[:<minutes>]`", _error.ToString());
+        Assert.Contains("is not one `<at>:<do>[:<minutes>]`", _error.ToString());
         Assert.Equal(0, Rules.Of("repository:daoris").Revision);
+    }
+
+    /// <summary>CONTEXTDRIVE1q: every executor acts on one rule per count, so a ladder is refused at the verb and at the judge.</summary>
+    [Fact]
+    public async Task CONTEXTDRIVE1q_a_ladder_is_refused_at_the_terminal_and_by_the_judge()
+    {
+        Reach();
+        Assert.Equal(2, await Run("rules", "--place", "machine", "--roles", "build", "--set", "limits=1:weighted,1:wait:30", "--set", "moves=3:ask"));
+        Assert.Contains("is not one `<at>:<do>[:<minutes>]`", _error.ToString());
+        Assert.Equal(0, await Run("rules", "--place", "machine", "--roles", "build", "--set", "limits=1:weighted", "--set", "moves=3:ask"));
+        Assert.Equal(2, await Run("rules", "--place", "machine", "--roles", "build,chat", "--set", "limits=1:wait:30"));
+        Assert.Contains("(ladder)", _error.ToString());
     }
 
     /// <summary>CONTEXTDRIVE1d (D205 point 9): a rule is a staffing-class press, so a session's terminal under full access is refused it.</summary>
