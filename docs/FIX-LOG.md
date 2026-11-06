@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-06 - A journaled branch delete read a broken ref as removed, and a moved branch as unknown (FIX8)
+
+- **Symptom:** `JudgedDeleteGitTests` and `ContentProofLossTests` (git gate) failed: a branch git refused to delete because its ref
+  was broken was recorded deleted, and a branch that moved after it was judged was said *Daoris could not tell whether git deleted it*.
+- **Root cause:** ONEWAY1r (99f298bc9) made every judged branch delete a journaled act. The act's check after a ref step lists refs
+  with `for-each-ref`, which skips a broken ref silently, so a refused delete of a broken ref read as done; and `JournaledDeletes`
+  dropped git's refusal, so the door could not say the branch had moved since it was judged.
+- **Fix:** where git refused, `ActSteps.ReadAsync` reads a ref gone only when `show-ref --exists` says it is missing;
+  `JournaledDeletes` hands the refusal to the door, which reads what stands.
+- **Verify:** `JudgedDeleteGitTests` 15 of 15, `ContentProofLossTests` 24 of 24, with `git.process.runsettings`.
+
 ## 2026-11-06 - A door id nobody knows in Build's order crashed every tick (FIX5)
 
 - **Symptom:** `IntakeTests` and `DrivenSessionInputTests` (Process) failed with `UnknownDoorException` out of the look: a driver
