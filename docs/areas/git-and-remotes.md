@@ -199,7 +199,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     Every branch delete is the journal's `ref.delete` act with its *Undo*: the person's `GIT_REF_DELETE`, and every door of Daoris's
     (`DISCARD_SESSION_BRANCH`, `WITHDRAW_LANDING_BRANCH`, `SWEEP`, the look's clean-up, `housekeeping_discard_branch`, a removal, a run's
     `tidy`) through `ContentHolds.DeleteJudgedAsync` and `JournaledDeletes`, pressed by `daoris`. The Branches tab lists them from the
-    journal alone (`GIT_DELETES`), each with its Undo. Each door keeps its judgement and its own recovery ref, which the record names; only an opening undoing the branch it just made deletes one itself. A `tidy` (`TidyDoor`) judges nothing itself: the
+    journal alone (`GIT_DELETES`), each with its Undo. Each door keeps its judgement and its own recovery ref, which the record names; only an opening undoing the branch it just made deletes one itself. Where git ended the transaction refusing, a ref
+    its list leaves out is gone only on `show-ref --exists`'s word (a broken one is unknown, never gone), and a branch standing at neither
+    the judged commit nor gone is said as the door says it: moved since it was judged, or unread. A `tidy` (`TidyDoor`) judges nothing itself: the
     `monitor` before it read the chain's pull request merged, and each part's delete rests on the recovery ref it kept the part's commits
     on. (from D204, D228, D245)
 39. Always refused: a hard reset, `clean`, any force, a remote delete, `push -u`, an act while a session runs there or a
