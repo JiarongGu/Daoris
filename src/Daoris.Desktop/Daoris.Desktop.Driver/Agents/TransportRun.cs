@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 /// <para><b>Admitted by the run's own evidence</b> (design §2.4): its door's wire and its resume. An operation the door's evidence does not
 /// admit is answered <see cref="AgentRun.Unsupported"/> before anything is written, which <c>run.unsupported-refused</c> holds on every door.
 /// A native door's words go through <see cref="Input"/>, one queue with each word's id, so a retry replays what the ended process never
-/// acknowledged and never what it did; a protocol door's words stay on its session (<see cref="WordsAbility"/>).</para>
+/// acknowledged and never what it did; a protocol door's are <see cref="Words"/>' and its input refuses a line (<see cref="LinesAbility"/>, D246).</para>
 /// <para><b>An executor's own steps between the spawn and the open.</b> A start keeps its actor, opens its watch and its inbox once its process
 /// is up and before anything reads it (D205 row b, SESSWATCH1a), so such an executor spawns first (<see cref="SpawnAsync"/>), takes its steps,
 /// hands the rest of its start (<see cref="HandStart"/>) and its sink, then opens; the open spawns the process itself otherwise. One that
@@ -31,11 +31,8 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter, TransportStart start) : AgentRun, IAsyncDisposable
 {
-    /// <summary>The ability a word operation is refused as on a protocol door, whose words stay on its session (design §4.1).</summary>
-    public const string WordsAbility = "words through the run on a protocol door";
-
-    /// <summary>The ability a steer is refused as: a word said into a turn that runs is a protocol door's, and no door's input carries one yet.</summary>
-    public const string SteerAbility = "a steer through the run";
+    /// <summary>The ability a line on a protocol door's input is refused as: its words are requests on its session, <see cref="Words"/>' (D246).</summary>
+    public const string LinesAbility = "a line written to a protocol door's process";
 
     /// <summary>The ability a later choice on the same session is refused as until <c>IChoiceReask</c> (row n).</summary>
     public const string ChoiceAbility = "a later choice on the same session before IChoiceReask (row n)";
@@ -95,8 +92,8 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     private ProtocolWords? _words;
 
-    /// <summary>A protocol door's words and steer, once its session opened: the conversation's turns say them here and write nothing through the session (D243 point 1).</summary>
-    public ProtocolWords? Words => _words;
+    /// <summary>A protocol door's words and steer, once its session opened: the conversation's turns say them here and write nothing through the session (D246).</summary>
+    internal override ProtocolWords? Words => _words;
 
     /// <summary>The process the run started last, for the code that stops or reads it beside the run; null before the spawn.</summary>
     public Process? Process { get; private set; }
@@ -154,12 +151,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     public override Task ApplyChoiceAsync(ActorAsked choice, CancellationToken ct) => Refused(ChoiceAbility);
 
-    internal override DoorInput Input { get; } = new();
-
-    internal override Task<Delivery> SendAsync(DoorWord word, CancellationToken ct) =>
-        IsProtocol ? Task.FromException<Delivery>(Unsupported(WordsAbility)) : Input.SayAsync(word, ct);
-
-    public override Task SteerAsync(string text, CancellationToken ct) => Refused(SteerAbility);
+    internal override DoorInput Input { get; } = new(adapter.Wire == SessionWire.Acp ? LinesAbility : null);
 
     public override async Task StopTurnAsync(CancellationToken ct)
     {

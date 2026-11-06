@@ -62,20 +62,28 @@ public sealed class TransportRunTests : IDisposable
     }
 
     /// <summary>
-    /// The words stay off the contract until m-ii (design §4.1): <c>SendAsync</c> carries no id, while today's retry marks a word attempted
-    /// before the wire and takes it off by its id once written, which is <c>DoorInput</c>'s. Both doors refuse them, and no executor calls them.
+    /// A run's words are two named ports, one per transport (D246): a native door's lines go through its <c>Input</c> and it has no
+    /// <c>Words</c>; a protocol door's input refuses a line before anything is written, its words being requests on its session.
     /// </summary>
     [Theory]
     [InlineData("stub")]
     [InlineData("acp-stub")]
-    public async Task Words_are_refused_on_both_doors_until_the_door_input_moves_them(string door)
+    public async Task Each_door_carries_its_words_on_its_own_port(string door)
     {
-        var run = Over(door);
+        AgentRun run = Over(door);
 
-        if (door == "acp-stub") await Refused(run.SendAsync(new DoorWord("w1", "go on"), CancellationToken.None), TransportRun.WordsAbility);
-        await Refused(run.SteerAsync("go on", CancellationToken.None), TransportRun.SteerAbility);
+        Assert.Null(run.Words);
+        if (door == "acp-stub")
+        {
+            await Refused(run.Input.SayAsync(new DoorWord("w1", "go on"), CancellationToken.None), TransportRun.LinesAbility);
+            await Refused(run.Input.ControlAsync("interrupt", CancellationToken.None), TransportRun.LinesAbility);
+        }
+        else
+        {
+            Assert.Null(run.Input.Refuses);
+        }
 
-        Assert.False(run.Started);
+        Assert.False(((TransportRun)run).Started);
     }
 
     /// <summary>A native run is one process to its end: no turn to stop with the session kept, no task to stop, no choice to carry on a session.</summary>
@@ -245,10 +253,16 @@ public sealed class TransportRunTests : IDisposable
 
         Assert.Equal(
             [
-                "ApplyChoiceAsync", "CloseAsync", "EndAsync", "GoOnAsync", "HandCarriers", "HandSink", "OpenAsync",
-                "ResumeAsync", "SendAsync", "SteerAsync", "StopTaskAsync", "StopTurnAsync",
+                "ApplyChoiceAsync", "CloseAsync", "EndAsync", "HandCarriers", "HandSink", "OpenAsync",
+                "ResumeAsync", "StopTaskAsync", "StopTurnAsync",
             ],
             methods);
+        // The words are two named ports, one per transport, and no operation of their own (D246).
+        var ports = typeof(AgentRun).GetProperties(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly)
+            .OrderBy(property => property.Name, StringComparer.Ordinal)
+            .Select(property => (property.Name, property.PropertyType))
+            .ToArray();
+        Assert.Equal([("Input", typeof(DoorInput)), ("Words", typeof(ProtocolWords))], ports);
         Assert.True(typeof(TransportRun).IsSubclassOf(typeof(AgentRun)));
     }
 }

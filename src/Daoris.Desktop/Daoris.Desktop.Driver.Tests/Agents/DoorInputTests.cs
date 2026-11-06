@@ -140,6 +140,33 @@ public sealed class DoorInputTests
         Assert.Empty(second.Lines);
     }
 
+    /// <summary>
+    /// A protocol door's input (D246): its words are requests its session answers, so a line, a held word and a control line are each refused
+    /// naming the ability before anything is written or kept.
+    /// </summary>
+    [Fact]
+    public async Task A_protocol_doors_input_refuses_every_line_before_anything_is_written()
+    {
+        var input = new DoorInput(refuses: "a line written to a protocol door's process");
+        var process = new Process();
+
+        foreach (var operation in new Func<Task>[]
+                 {
+                     () => input.AttachAsync(process.WriteAsync, Never),
+                     () => input.SayAsync(new DoorWord("w1", "go on"), Never),
+                     () => input.ControlAsync("interrupt", Never),
+                     () => { input.Hold(new DoorWord("w2", "and this")); return Task.CompletedTask; },
+                 })
+        {
+            var error = await Assert.ThrowsAsync<DriverException>(operation);
+            Assert.Equal("this door does not support a line written to a protocol door's process — nothing was written.", error.Message);
+        }
+
+        Assert.Empty(process.Lines);
+        Assert.Empty(input.Unacknowledged);
+        Assert.Empty(input.Openings());
+    }
+
     [Fact]
     public async Task Held_words_open_the_next_process_with_their_own_opening()
     {

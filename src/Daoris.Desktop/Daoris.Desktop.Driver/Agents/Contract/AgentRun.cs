@@ -1,16 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an executor holds of a live run (the design §2.5, §4.1): open or resume, apply a refused choice's later one, take words, steer,
-/// stop a turn or a task, and close, and beside those the four members every executor uses today (AGENTPROVIDER1m-i): the sink its readings
-/// go to, the carriers, the run's end and the go-on; a native resume's one retry is the run's own (m-ii, <see cref="IResumeState"/>). Each
-/// operation is admitted by the run's own evidence (§2.4) and one it lacks is answered <see cref="Unsupported"/> naming the ability, before
-/// anything is written. Row b declares it; row m-i makes the executors hold it over <see cref="TransportRun"/>, and m-ii hands it the
-/// words through <see cref="DoorInput"/>.
+/// What an executor holds of a live run (the design §2.5, §4.1): open or resume, apply a refused choice's later one, its words on the port
+/// its transport has, stop a turn or a task, and close, and beside those the four members every executor uses today (AGENTPROVIDER1m-i): the
+/// sink its readings go to, the carriers, the run's end and the go-on; a native resume's one retry is the run's own (m-ii,
+/// <see cref="IResumeState"/>). Each operation is admitted by the run's own evidence (§2.4) and one it lacks is answered
+/// <see cref="Unsupported"/> naming the ability, before anything is written.
 /// </summary>
 /// <remarks>
-/// A protocol door's words stay on its session (<see cref="SendAsync"/> and <see cref="SteerAsync"/> refuse them there) until its
-/// own words move behind the input.
+/// <b>Two named ports for the words, one per transport</b> (D246): a native door's lines are <see cref="Input"/>'s, each acknowledged once
+/// the harness names its conversation and replayed to the next process where it never was; a protocol door's prompt, word into a running
+/// turn and steer are <see cref="Words"/>', each a request its session answers, acknowledged by that answer and retried on the same session.
+/// Each door's other port refuses or is absent.
 /// </remarks>
 public abstract class AgentRun
 {
@@ -32,16 +33,17 @@ public abstract class AgentRun
     public abstract Task ApplyChoiceAsync(ActorAsked choice, CancellationToken ct);
 
     /// <summary>
-    /// A word through the run's <see cref="DoorInput"/> (D243): the one way a process is handed words, its id kept until the harness names
-    /// its conversation, so the run's retry replays what that process never acknowledged. A go-on's words are held on the input and the
-    /// next process opened with <see cref="ResumeAsync"/>.
+    /// A native door's words (D243): the one way its process is handed a line, each word's id kept until the harness names its
+    /// conversation, so the run's retry replays what that process never acknowledged; a go-on's words are held here and the next process
+    /// opened with <see cref="ResumeAsync"/>. Nothing above the run writes to a process's stdin. On a protocol door it refuses every line.
     /// </summary>
-    internal abstract Task<Delivery> SendAsync(DoorWord word, CancellationToken ct);
-
-    /// <summary>The run's one queue of words (D243): nothing above the run writes to a process's stdin.</summary>
     internal abstract DoorInput Input { get; }
 
-    public abstract Task SteerAsync(string text, CancellationToken ct);
+    /// <summary>
+    /// A protocol door's words once its session opened (D246): its prompt, a word into the running turn and the steer, each a request the
+    /// session answers. Null before the open and on a native door.
+    /// </summary>
+    internal abstract ProtocolWords? Words { get; }
 
     public abstract Task StopTurnAsync(CancellationToken ct);
 

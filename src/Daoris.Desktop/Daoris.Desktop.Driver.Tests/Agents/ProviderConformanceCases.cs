@@ -417,10 +417,10 @@ internal static class ConformanceCases
         var choice = new ActorAsked(door.Id.Value, new ActorValue("entry", "m-2", true), new ActorValue("entry", null, false));
         var never = CancellationToken.None;
 
-        // What this door's evidence does not admit: the words on every door, then by its wire and its resume.
+        // What this door's evidence does not admit: a later choice on every door, then by its wire and its resume, a line on a protocol door's
+        // input among them (D246).
         var refused = new List<(Task Operation, string Ability)>
         {
-            (transport.SteerAsync("go on", never), TransportRun.SteerAbility),
             (transport.ApplyChoiceAsync(choice, never), TransportRun.ChoiceAbility),
         };
         if (!Protocol(door))
@@ -431,7 +431,7 @@ internal static class ConformanceCases
         else
         {
             refused.Add((transport.NextProcessAsync("c-1", never), "a go-on"));
-            refused.Add((transport.SendAsync(new DoorWord("w", "go"), never), TransportRun.WordsAbility));
+            refused.Add((transport.Input.SayAsync(new DoorWord("w", "go"), never), TransportRun.LinesAbility));
         }
 
         if (!adapter.Resumes) refused.Add((transport.ResumeAsync("c-1", never), "a resume"));
