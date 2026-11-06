@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Lyntai;
 using Lyntai.Agents;
 
@@ -7,9 +8,9 @@ namespace Daoris.Driver;
 /// Claude Code's windows read through the layer (AGENTLYNTAI1c, the agent-lyntai design §4.2): its CLI provider registered under
 /// <c>claude-code</c> for its usage source alone, never opened, its server in the account home's own folder as today's (Lyntai's AG22),
 /// and the reading named as <see cref="ClaudeUsage"/> names it, a window not yet opened turning over a window's length after the read.
-/// Not bound in place of today's question: the installed server names a scoped row's model by its display name with a null <c>id</c>,
-/// which the layer's reader reads as unknown, so it answers nothing on a real account (D248's note of 2026-11-07, the agent-lyntai design's
-/// §9.2); the oracle reads that answer, and the binding returns when Lyntai's reader keeps it.
+/// Bound in place of today's question when the driver loads, where the driver carries the layer (D248): Lyntai's reader keeps a scoped row
+/// whose model the installed server names with a null <c>id</c> and skips a row it cannot read (its D250, Lyntai <c>9b2eecf6</c>), so the
+/// oracle finds the two reads alike but for the spawn's <c>-p</c>, which changes no answer (D248's notes of 2026-11-07).
 /// </summary>
 internal static class ClaudeUsageLayer
 {
@@ -23,6 +24,9 @@ internal static class ClaudeUsageLayer
         (builder, command) => builder.AddClaudeCliAgentSession(command: command, id: Door, agent: Door),
         options => options.WorkingDirectory = account => Path.Combine(account.Home!, "usage-read"),
         Answer);
+
+    [ModuleInitializer]
+    internal static void Install() => UsageReads.Bind(ClaudeUsage.Question, new LayerUsageRead(ClaudeUsage.Question, Vendor));
 
     /// <summary>The reading under today's names: <c>five_hour</c>, <c>seven_day</c> and <c>seven_day_&lt;scope&gt;</c>, and the server's rows as <c>limits:&lt;kind&gt;</c>.</summary>
     private static LayerUsageAnswer Answer(AgentAllowanceReading reading, DateTimeOffset now)

@@ -62,9 +62,9 @@ public sealed class LayerUsageParityTests : IDisposable
         Claude("windows not yet opened", ClaudeUsageTests.Body(W(0, null), W(0, null)));
         Claude("a used window with no reset", ClaudeUsageTests.Body(W(10, null), W(50, At(9))));
         Claude("a reset made up", ClaudeUsageTests.Body(W(0, null), W(4, At(9))));
-        Claude("scoped weeks and the server's rows", ClaudeUsageTests.ScopedWeeks, Unrecognised);
+        Claude("scoped weeks and the server's rows", ClaudeUsageTests.ScopedWeeks);
         Claude("a row scoped by a model named with its id", ClaudeUsageTests.ObjectScope("\"claude-model-example\""));
-        Claude("a row scoped by a model with no id, as the installed server answers", ClaudeUsageTests.ObjectScope("null"), Unrecognised);
+        Claude("a row scoped by a model with no id, as the installed server answers", ClaudeUsageTests.ObjectScope("null"));
         Claude("not signed in", """{"subscription_type":null,"rate_limits_available":false,"rate_limits":{"five_hour":null,"seven_day":null}}""");
         foreach (var row in ClaudeUsageTests.Unread)
         {

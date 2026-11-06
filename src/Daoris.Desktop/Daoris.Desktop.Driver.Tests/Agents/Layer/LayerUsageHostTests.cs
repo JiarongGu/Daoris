@@ -45,15 +45,14 @@ public sealed class LayerUsageHostTests : IDisposable
     }
 
     /// <summary>
-    /// Where the driver carries the layer, Codex's question is the layer's read from the moment the driver loads, and Claude Code's stays
-    /// today's while the layer's reader reads the installed server's answer as unknown (D248's note of 2026-11-07; the oracle's model scope
-    /// with no id).
+    /// Where the driver carries the layer, both agents' questions are the layer's read from the moment the driver loads: Claude Code's
+    /// again since Lyntai's reader keeps the installed server's model scope with no id (D248's note of 2026-11-07, Lyntai's D250).
     /// </summary>
     [Fact]
-    public void Codex_s_question_is_bound_to_the_layer_s_read_and_Claude_Code_s_is_today_s()
+    public void Both_agents_questions_are_bound_to_the_layer_s_read()
     {
         Assert.IsType<LayerUsageRead>(UsageReads.Of(CodexUsage.Question));
-        Assert.Same(ClaudeUsage.Question, UsageReads.Of(ClaudeUsage.Question));
+        Assert.IsType<LayerUsageRead>(UsageReads.Of(ClaudeUsage.Question));
     }
 
     [Fact]
