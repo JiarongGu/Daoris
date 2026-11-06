@@ -189,7 +189,7 @@ public sealed class ChatRunnerTests : IDisposable
               "servers": [ { "name": "tickets", "command": ["node", "tickets.mjs"] } ] }
             """);
         var talk = new PipeTalk(Path.Combine(_home, "no-such-harness.exe"));
-        var own = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = talk });
+        var own = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = talk.Door });
         // The live set, as the driver's tick hands the roster it: this set and the plugin's agent.
         var live = own.WithPlugins(PluginCatalog.Load(_home, own.Names));
         Assert.Equal("acme.agent", live.Registry.DeclaredBy("acme-agent"));
@@ -207,25 +207,24 @@ public sealed class ChatRunnerTests : IDisposable
     }
 
     /// <summary>A conversation's adapter on the pipe door whose program does not exist, keeping the servers it is handed.</summary>
-    private sealed class PipeTalk(string program) : ISessionAdapter
+    private sealed class PipeTalk(string program) : ISpawn, IServerHanding
     {
         public List<string> Handed { get; } = [];
 
-        public string Name => "talk";
+        public ISessionAdapter Door => TestDoors.Door("talk", interactive: true, spawn: this);
 
-        public bool Interactive => true;
+        public ProcessRecipe Start(SpawnRequest request) => throw new InvalidOperationException("this test drives no session");
 
-        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) =>
-            throw new InvalidOperationException("this test drives no session");
-
-        public System.Diagnostics.ProcessStartInfo PrepareChat(SpawnRequest request) =>
-            new(program) { UseShellExecute = false };
+        public ProcessRecipe Chat(SpawnRequest request) => new(program, []);
 
         // Read as it is handed: a start that fails removes the file after.
-        public void HandServers(System.Diagnostics.ProcessStartInfo info, string configFile)
+        public string? Hand(System.Diagnostics.ProcessStartInfo info, string home, ConnectorPlan plan)
         {
+            var configFile = ClaudeServers.Write(home, plan);
+            if (configFile is null) return null;
             using var file = System.Text.Json.JsonDocument.Parse(File.ReadAllText(configFile));
             Handed.AddRange(file.RootElement.GetProperty("mcpServers").EnumerateObject().Select(server => server.Name));
+            return configFile;
         }
     }
 }

@@ -52,7 +52,7 @@ public sealed class PermissionSpawnTests : IDisposable
         Rules();
         await using var service = DrivenSessionInputTests.StandInService.Start(_repository);
         var adapter = new RecordingPipeAdapter();
-        var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
+        var driver = Driver(adapter.Door, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
         await driver.RunOnceAsync();
 
@@ -94,7 +94,7 @@ public sealed class PermissionSpawnTests : IDisposable
     {
         await using var service = DrivenSessionInputTests.StandInService.Start(_repository);
         var adapter = new RecordingPipeAdapter();
-        var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
+        var driver = Driver(adapter.Door, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
         await driver.RunOnceAsync();
 
@@ -118,7 +118,7 @@ public sealed class PermissionSpawnTests : IDisposable
         await using var service = DrivenSessionInputTests.StandInService.Start(
             _repository, kept: "C:/somewhere/data/quests/q1/attachments/ab12-before.png");
         var adapter = new RecordingPipeAdapter();
-        var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
+        var driver = Driver(adapter.Door, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
         await driver.RunOnceAsync();
 
@@ -134,7 +134,7 @@ public sealed class PermissionSpawnTests : IDisposable
     {
         await using var service = DrivenSessionInputTests.StandInService.Start(_repository);
         var adapter = new RecordingPipeAdapter();
-        var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
+        var driver = Driver(adapter.Door, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
         await driver.RunOnceAsync();
 
@@ -157,7 +157,7 @@ public sealed class PermissionSpawnTests : IDisposable
         await using var service = DrivenSessionInputTests.StandInService.Start(
             _repository, others: [("game", game, "default"), ("personal", personal, "home")]);
         var adapter = new RecordingPipeAdapter();
-        var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
+        var driver = Driver(adapter.Door, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
         await driver.RunOnceAsync();
 
@@ -189,7 +189,7 @@ public sealed class PermissionSpawnTests : IDisposable
             _repository, others: [("game", game, "default"), ("secret", secret, "default")]);
         var adapter = new RecordingPipeAdapter();
         var driver = Driver(
-            adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service,
+            adapter.Door, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service,
             config => config.WithWriteAcross("engine", "game", allow: true).WithReadAcross("secret", false));
 
         await driver.RunOnceAsync();
@@ -226,7 +226,7 @@ public sealed class PermissionSpawnTests : IDisposable
             """);
         await using var service = DrivenSessionInputTests.StandInService.Start(_repository);
         var adapter = new RecordingPipeAdapter();
-        var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
+        var driver = Driver(adapter.Door, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
         var report = await driver.RunOnceAsync();
 
@@ -278,7 +278,7 @@ public sealed class PermissionSpawnTests : IDisposable
         await using var service = DrivenSessionInputTests.StandInService.Start(_repository);
         var heard = Path.Combine(_home, "meta.json");
         var adapter = new RecordingAcpAdapter();
-        var driver = Driver(adapter, ["node", ProtocolAgent(), heard], service);
+        var driver = Driver(adapter.Door, ["node", ProtocolAgent(), heard], service);
 
         await driver.RunOnceAsync();
 
@@ -323,21 +323,24 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     /// <summary>A pipe-door harness that takes a settings file, and remembers what it was handed.</summary>
-    private sealed class RecordingPipeAdapter : ISessionAdapter
+    private sealed class RecordingPipeAdapter : ISpawn
     {
-        public string Name => "recording";
-        public bool TakesSettings => true;
+        private readonly ISpawn _stub = TestDoors.SpawnOf(BuiltDoors.Stub);
+
+        public ISessionAdapter Door => TestDoors.Door("recording", takesSettings: true, spawn: this);
         public string? Handed { get; private set; }
         public string? HandedText { get; private set; }
 
         /// <summary>The instruction the session was given, as every door composes it.</summary>
         public string Prompt { get; private set; } = "";
 
-        public ProcessStartInfo Prepare(SpawnRequest request)
+        public ProcessRecipe Start(SpawnRequest request)
         {
             Prompt = request.Identity["DAORIS_TARGET"] ?? "";
-            return BuiltDoors.Stub.Prepare(request);
+            return _stub.Start(request);
         }
+
+        public ProcessRecipe Chat(SpawnRequest request) => _stub.Chat(request);
 
         public void HandSettings(ProcessStartInfo info, string settingsFile)
         {
@@ -347,22 +350,20 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     /// <summary>A protocol-door harness that takes the settings on `session/new`, as Claude Code's adapter does.</summary>
-    private sealed class RecordingAcpAdapter : ISessionAdapter
+    private sealed class RecordingAcpAdapter : ISpawn, IProtocolDialect
     {
-        public string Name => "recording-acp";
-        public Transport Transport => Transport.Protocol;
-        public bool TakesSettings => true;
+        private readonly ISpawn _stub = TestDoors.SpawnOf(BuiltDoors.Stub);
+
+        public ISessionAdapter Door => TestDoors.Door(
+            "recording-acp", transport: Transport.Protocol, takesSettings: true, spawn: this, dialect: this);
         public string? Handed { get; private set; }
         public string? HandedText { get; private set; }
 
-        public ProcessStartInfo Prepare(SpawnRequest request)
-        {
-            var info = BuiltDoors.Stub.Prepare(request);
-            info.RedirectStandardInput = true;
-            return info;
-        }
+        public ProcessRecipe Start(SpawnRequest request) => _stub.Start(request) with { Input = true };
 
-        public object? AcpSessionMeta(string settingsFile)
+        public ProcessRecipe Chat(SpawnRequest request) => _stub.Chat(request) with { Input = true };
+
+        public object? SessionMeta(string settingsFile, IReadOnlyList<string> plugins)
         {
             Handed = settingsFile;
             HandedText = File.ReadAllText(settingsFile);

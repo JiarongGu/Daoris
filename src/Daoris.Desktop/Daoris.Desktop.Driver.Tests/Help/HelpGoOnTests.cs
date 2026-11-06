@@ -26,33 +26,28 @@ public sealed class HelpGoOnTests : IDisposable
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     /// <summary>The native door's shape: a pipe that resumes, which reads the conversation it goes on in from its target.</summary>
-    private sealed class Native : ISessionAdapter
+    private sealed class Native
     {
+        public Native() => Door = TestDoors.Door(
+            "native-talk", interactive: true, resumes: true,
+            spawn: new TestDoors.ScriptedSpawn(
+                start: _ => throw new InvalidOperationException("a go-on test spawns nothing"),
+                chat: request =>
+                {
+                    lock (Asked) Asked.Add(request);
+                    throw new InvalidOperationException("a go-on test spawns nothing");
+                }));
+
         public List<SpawnRequest> Asked { get; } = [];
 
-        public string Name => "native-talk";
-
-        public Transport Transport => Transport.Native;
-
-        public bool Interactive => true;
-
-        public bool Resumes => true;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) =>
-            throw new InvalidOperationException("a go-on test spawns nothing");
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request)
-        {
-            lock (Asked) Asked.Add(request);
-            throw new InvalidOperationException("a go-on test spawns nothing");
-        }
+        public ISessionAdapter Door { get; }
     }
 
     private ChatRunner Runner(ChatLedger ledger, Native native, SessionEvents events)
     {
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            [native.Name] = native,
+            [native.Door.Name] = native.Door,
         });
         return new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,

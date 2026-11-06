@@ -58,7 +58,7 @@ public sealed class ContinuedChoiceTickTests : IDisposable
     {
         ["stub"] = BuiltDoors.Stub,
         ["acp-stub"] = BuiltDoors.AcpStub,
-        ["acp-other"] = new WalkAgentTickTests.AcpOtherAdapter(),
+        ["acp-other"] = WalkAgentTickTests.AcpOtherAdapter(),
     });
 
     /// <summary>Build's order: the stub · sonnet · low, then the other agent · codex-mini · high; a failed turn leaves a strike to carry on past.</summary>

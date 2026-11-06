@@ -46,23 +46,13 @@ public sealed class RefusedByTheHarnessTests : IDisposable
     private string Transcript => DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.log");
 
     /// <summary>An agent declaring Claude Code's refused words, on the door a test names, present by a look.</summary>
-    private sealed class Adapter(Transport wire, bool structured, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => "fake";
-
-        public Transport Transport => wire;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public IStreamMapper? StructuredOutput() => structured ? new ClaudeStreamJson() : null;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(Transport wire, bool structured, HarnessToolchain toolchain) =>
+        TestDoors.Door("fake", toolchain, wire, dialect: structured ? TestDoors.StreamJson : null);
 
     private HarnessRoster Roster(Transport wire = Transport.Native, bool structured = true) =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new Adapter(wire, structured, new HarnessToolchain(
+            ["fake"] = Adapter(wire, structured, new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
                 Refused: "API Error: 401")),
         }), Settings)

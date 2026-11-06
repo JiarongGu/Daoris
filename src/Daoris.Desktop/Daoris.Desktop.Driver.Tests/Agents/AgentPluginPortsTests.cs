@@ -76,7 +76,7 @@ public sealed class AgentPluginPortsTests : IDisposable
             Plugin("acme.first", "first-agent", "first-owner");
             catalog.Sources = [Source("acme.second"), Source("acme.first")];
             var info = new ProcessStartInfo();
-            var (folder, plugins) = SpawnSkills.Hand(new Adapter("stand-agent"), info, _home, "s2", catalog, "help");
+            var (folder, plugins) = SpawnSkills.Hand(Adapter("stand-agent"), info, _home, "s2", catalog, "help");
             Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Spawn, "s2.plugins"), folder);
             Assert.Equal(["acme.second", "acme.first"], plugins.Select(Path.GetFileName));
             Assert.Equal(plugins, info.ArgumentList);
@@ -101,7 +101,7 @@ public sealed class AgentPluginPortsTests : IDisposable
             catalog.Failure = cancelled;
             var info = new ProcessStartInfo();
             Assert.Same(cancelled, Assert.Throws<OperationCanceledException>(() => SpawnSkills.Hand(
-                new Adapter("stand-agent"), info, _home, "s3", catalog, "sessions")));
+                Adapter("stand-agent"), info, _home, "s3", catalog, "sessions")));
             Assert.Empty(info.ArgumentList);
             catalog.Failure = refused;
             Assert.Same(refused, Assert.Throws<IOException>(() => ClaudeSkills.Layout.Write(_home, "s4", catalog.Skills("help"))));
@@ -122,10 +122,14 @@ public sealed class AgentPluginPortsTests : IDisposable
 
     private SessionTarget Target() => new("q1", "Title", "Body", "person", "engine", _home, "http://localhost");
 
-    private sealed class Adapter(string name) : ISessionAdapter
+    private static ISessionAdapter Adapter(string name) => TestDoors.Door(name, spawn: new PluginSpawn());
+
+    private sealed class PluginSpawn : ISpawn
     {
-        public string Name => name;
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("stand-command");
+        public ProcessRecipe Start(SpawnRequest request) => new("stand-command", []);
+
+        public ProcessRecipe Chat(SpawnRequest request) => new("stand-command", []);
+
         public void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins)
         {
             foreach (var plugin in plugins) info.ArgumentList.Add(plugin);

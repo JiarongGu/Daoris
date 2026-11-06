@@ -76,7 +76,7 @@ public sealed class StaffPolicyLimitTickTests : IDisposable
         {
             ["stub"] = BuiltDoors.Stub,
             ["acp-stub"] = BuiltDoors.AcpStub,
-            ["acp-other"] = new WalkAgentTickTests.AcpOtherAdapter(),
+            ["acp-other"] = WalkAgentTickTests.AcpOtherAdapter(),
         });
         var config = ActorChoices.With(
             DriverConfig.Empty with

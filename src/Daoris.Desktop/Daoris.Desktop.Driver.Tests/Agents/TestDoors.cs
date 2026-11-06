@@ -27,6 +27,19 @@ internal static class TestDoors
         return new LegacyDoor(ProviderOf(door, toolchain), door);
     }
 
+    /// <summary>Claude Code's <c>stream-json</c> as a native door's dialect: a door that reads a structured wire.</summary>
+    public static IDialect StreamJson => new ClaudeNativeDialect();
+
+    /// <summary>The spawn of a shipped door, for a test door that runs the same program and states something else beside it.</summary>
+    public static ISpawn SpawnOf(ISessionAdapter shipped) => ((LegacyDoor)shipped).Door.Spawn.Required;
+
+    /// <summary>A shipped door stating the postures a test gives it, the rest as it ships.</summary>
+    public static ISessionAdapter Postured(ISessionAdapter shipped, PosturesPart postures)
+    {
+        var door = (LegacyDoor)shipped;
+        return new LegacyDoor(door.Provider, door.Door with { Postures = postures });
+    }
+
     /// <summary>The door's record, for a test that reads the registry rather than the old seam.</summary>
     public static AgentDoor Registered(
         string id,
@@ -71,7 +84,8 @@ internal static class TestDoors
         toolchain is null ? Known<TablesPart>.Absent : Known<TablesPart>.Declared(TablesPart.Of(toolchain, true), Evidence),
         toolchain is null ? Known<UsagePart>.Absent : Known<UsagePart>.Declared(new UsagePart(toolchain.Usage), Evidence),
         Known<LentPart>.Absent, Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent,
-        Known<IRuleLanguage>.Declared(ClaudeRules.Language, Evidence), Known<ISkillLayout>.Declared(ClaudeSkills.Layout, Evidence),
+        door.Abilities.TakesSettings.Value ? Known<IRuleLanguage>.Declared(ClaudeRules.Language, Evidence) : Known<IRuleLanguage>.Absent,
+        Known<ISkillLayout>.Declared(ClaudeSkills.Layout, Evidence),
         Known<IConversationHome>.Absent, Reach.Everywhere, Known<VocabularyPart>.Absent);
 
     /// <summary>A spawn whose process is never run: the program a test names, and no arguments.</summary>

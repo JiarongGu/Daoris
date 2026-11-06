@@ -925,7 +925,7 @@ public sealed class IntakeTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
         }).StaffIntake(recording.Name);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording });
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording.Door });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -954,7 +954,7 @@ public sealed class IntakeTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
         }).StaffIntake(recording.Name);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording });
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording.Door });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -969,14 +969,18 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>A pipe-door harness that takes a settings file, remembering what the intake was handed.</summary>
-    private sealed class RecordingIntakeAdapter : ISessionAdapter
+    private sealed class RecordingIntakeAdapter : ISpawn
     {
+        private readonly ISpawn _stub = TestDoors.SpawnOf(BuiltDoors.Stub);
+
         public string Name => "recording-intake";
-        public bool TakesSettings => true;
         public string? HandedText { get; private set; }
 
-        public ProcessStartInfo Prepare(SpawnRequest request) =>
-            BuiltDoors.Stub.Prepare(request);
+        public ISessionAdapter Door => TestDoors.Door(Name, takesSettings: true, spawn: this);
+
+        public ProcessRecipe Start(SpawnRequest request) => _stub.Start(request);
+
+        public ProcessRecipe Chat(SpawnRequest request) => _stub.Chat(request);
 
         public void HandSettings(ProcessStartInfo info, string settingsFile) =>
             HandedText = File.ReadAllText(settingsFile);
