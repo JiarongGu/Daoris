@@ -662,6 +662,10 @@ public sealed class StatePublisherTests : DriverModuleBridge
     // CACHECLEAR1: the Downloads row's list reads; its press removes versions the agents' and tools' pages and the sizes say.
     [InlineData("SYSTEM_DOWNLOADS", "", null)]
     [InlineData("SYSTEM_DOWNLOADS_CLEAR", "harnesses,tools,wiring", null)]
+    // WIRING1e: the account's PATH and service address, which This Daoris's read shows; opening a folder changes nothing.
+    [InlineData("SYSTEM_PATH", "wiring", null)]
+    [InlineData("SYSTEM_SERVICE_ADDRESS", "wiring", null)]
+    [InlineData("SYSTEM_OPEN_FOLDER", "", null)]
     // KEEP1c: the Disk space card's read; asking it to count starts walks, each kind's end telling `wiring` by itself.
     [InlineData("SYSTEM_SPACE", "", null)]
     // KEEP1e: Free up space's press removes what the sizes, the agents' and the tools' pages say; each kind's end tells `wiring` by itself.

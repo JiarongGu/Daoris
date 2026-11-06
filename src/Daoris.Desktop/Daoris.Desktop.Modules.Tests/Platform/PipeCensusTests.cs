@@ -361,6 +361,9 @@ public sealed class PipeCensusTests
     // What only a window does: the pickers, the file manager, Daoris's browser, its frame, its shells.
     [InlineData("DAORIS.DRIVER", "TOOLS_PICK", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "SESSION_OPEN_FOLDER", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "SYSTEM_OPEN_FOLDER", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "SYSTEM_PATH", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "SYSTEM_SERVICE_ADDRESS", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "WORK_RECORDS_FOLDER", PipeClass.Window)]
     // RPC1c, PERSONDOOR1f: a terminal never reads or answers what waits for the window, and never reads the person key (D156 point 2).
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRMATIONS", PipeClass.Window)]

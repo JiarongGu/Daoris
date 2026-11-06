@@ -21,8 +21,15 @@ namespace Daoris.Desktop;
 /// The system's file picker, for a tool's *Browse…* (TOOLS7): the window's dialog. Null where the host carries none, and the
 /// answer says so.
 /// </param>
-public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder? openFolder, PickFile? pickFile)
+public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder? openFolder, PickFile? pickFile, IAccountEnvironment? account = null)
 {
+    /// <summary>
+    /// The person's account's variables, which This Daoris's set-up presses change (WIRING1e); null where the host keeps none, and every
+    /// such press then answers that as a refusal. The application hands in the Windows account's; a test hands a stand-in, so no test
+    /// reads or writes the machine's.
+    /// </summary>
+    public IAccountEnvironment? Account { get; } = account;
+
     public IEventBus Events { get; } = events;
 
     public DriverLoop Loop { get; } = loop;
