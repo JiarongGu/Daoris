@@ -206,7 +206,7 @@ internal static class NamedStepReading
 
             var step = new NamedStep(node.Id, kind, fields);
             // D145's note of 2026-11-01: a `land` merges with no press where its graph holds no review, the workflow's
-            // choice, and its own options are LandNodes.Problem's; a `handed` keeps the steps' refusal.
+            // choice, and its own options are LandNode.Problem's; a `handed` keeps the steps' refusal.
             if (node.Kind != NodeKinds.Land && MergeProblem(step) is { } merge) return (null, p + merge);
             steps.Add(step);
         }

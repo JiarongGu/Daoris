@@ -42,5 +42,7 @@ public abstract class BuiltInNode : INodeKind
 
     public virtual bool ReadsTheLanding => false;
 
+    public virtual LandingGuard Guard => LandingGuard.None;
+
     public virtual bool EndsByTheLine => false;
 }

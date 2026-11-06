@@ -24,4 +24,10 @@ public sealed class LookNode : BuiltInNode, IObserves
     public override string? Title => "Your look";
 
     public override NodeLook Look => NodeLook.You;
+
+    /// <summary>
+    /// A gate before every landing, and no landing starts before a look has passed, whichever member of an <c>anyOf</c> a run takes
+    /// (FABRIC-GRAPH1's review, finding 4).
+    /// </summary>
+    public override LandingGuard Guard => LandingGuard.Passed;
 }
