@@ -313,12 +313,12 @@ function BranchesRead({ repository, workspace, ...presses }: { repository: strin
   const plan = useGitFetchPlan(repository, workspace).data?.value;
   const pushPlan = useGitPushPlan(repository, workspace).data?.value;
   const push = useGitPush(repository, workspace);
-  const deletes = useGitDeletes(repository, workspace).data?.value?.rows;
+  const deletes = useGitDeletes(repository, workspace).data?.value;
   // GITAPP2f, g: Fetch and Push are drawn only once the driver's plan is read; before it, or where it did not answer, the tab offers neither.
   const acts: RefActs = {
     ...refActs, fetch: plan ? { ...plan, press: fetchOrigin } : undefined, push: pushPlan ? { ...pushPlan, press: push } : undefined,
   };
-  return <BranchesTab repository={repository} read={read} titles={titles} acts={acts} deleted={deletes} {...presses} />;
+  return <BranchesTab repository={repository} read={read} titles={titles} acts={acts} deleted={deletes?.rows} unrecorded={deletes?.unrecorded} {...presses} />;
 }
 
 /**

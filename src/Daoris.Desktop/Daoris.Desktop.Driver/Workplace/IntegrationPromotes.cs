@@ -480,7 +480,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             async (_, token) =>
             {
                 if (Seam is { } inSettle) await inSettle("in-settle").ConfigureAwait(false);
-                return await IntegrationSettles.EndAsync(ask.Root, settled, Seam is { } afterKeep ? () => afterKeep("after-keep") : null, token).ConfigureAwait(false);
+                return await IntegrationSettles.EndAsync(ask.Home, ask.Repository, ask.Root, settled, Seam is { } afterKeep ? () => afterKeep("after-keep") : null, token).ConfigureAwait(false);
             },
             ct: ct).ConfigureAwait(false);
         return ended.Outcome == IntegrationStepOutcomes.Done ? null : await AnswerAsync(IntegrationPromoteRuns.Unsettled, ended.Said ?? "", claim).ConfigureAwait(false);

@@ -212,7 +212,8 @@ internal sealed class AutoTidies(
             if (RetentionDue(repository))
             {
                 recovered = await RecoveryRetention.TidyAsync(
-                    root, repository, RecoveryRetention.Made(context.Recorded.Entries(), repository), context.Clock(), ct).ConfigureAwait(false);
+                    root, repository, RecoveryRetention.Made(context.Recorded.Entries(), repository), context.Clock(), ct,
+                    RecoveryKeeps.Recorded(context.Home, repository)).ConfigureAwait(false);
             }
         }
 

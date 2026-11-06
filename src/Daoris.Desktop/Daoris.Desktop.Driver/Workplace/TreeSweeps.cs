@@ -188,29 +188,29 @@ internal sealed class TreeSweeps(
             // From here each step removes, or finishes a removal: none is cancelled halfway.
             var done = CancellationToken.None;
 
-            // Held by content (SQUASHTIDY1c): its commits are kept on a ref of their own before anything goes. KEEPSIZE1b (the keep-size
-            // design §3.1): and wherever the line's own branch does not hold the tip by ancestry, a squash's, a carried branch's, a landing
-            // branch's and origin's form of the line included, on both paths: the exact tip is held by a ref that stays.
+            // Held by content (SQUASHTIDY1c): its commits are kept on a ref of their own, named here and made in the delete's own act. KEEPSIZE1b
+            // (the keep-size design §3.1): and wherever the line's own branch does not hold the tip by ancestry, a squash's, a carried branch's,
+            // a landing branch's and origin's form of the line included, on both paths: the exact tip is held by a ref that stays.
             string? kept = null;
+            RecoveryName? keep = null;
             var lineAt = now.HeldBy is null ? await LineOwnHoldsAsync(root, line, judged, done).ConfigureAwait(false) : null;
             if (lineAt is null)
             {
-                var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, now.Branch, judged, done).ConfigureAwait(false);
-                if (reference is null)
+                var (name, why) = await RecoveryKeeps.NameAsync(root, now.Branch, judged, done).ConfigureAwait(false);
+                if (name is null)
                 {
                     results.Add(new(now, false, $"Daoris could not keep its commits on a ref of their own ({why}), so it is kept"));
                     continue;
                 }
 
-                kept = reference;
+                (keep, kept) = (name, name.Ref);
             }
 
             // 🔴 Codex's reads (the design's finding 1, the branch's finding 2): the exact tip's holder rests in the delete's own transaction,
-            // at the commit read, beside what the judgement rested on: the ref just written at the tip, or the line's own branch at the commit
-            // that held it. That holder moved or gone between here and the delete refuses the delete.
+            // at the commit read, beside what the judgement rested on: the recovery ref made or verified there at the tip, or the line's own
+            // branch at the commit that held it. That holder moved or gone between here and the delete refuses the delete.
             // One verify for each ref: git refuses two for one ref in a transaction, and one the judgement already rests on is verified already.
-            var holder = kept is not null ? (kept, judged) : ($"refs/heads/{line}", lineAt!);
-            if (!rests.Any(rest => rest.Ref == holder.Item1)) rests.Add(holder);
+            if (lineAt is not null && !rests.Any(rest => rest.Ref == $"refs/heads/{line}")) rests.Add(($"refs/heads/{line}", lineAt));
             if (SetAsideFaults.Current?.AfterTipHeld is { } afterHeld) await afterHeld(root).ConfigureAwait(false);
 
             string? left = null;
@@ -232,10 +232,8 @@ internal sealed class TreeSweeps(
                 var moved = await setAside.MoveAsideAsync(root, now, done, slim, finished).ConfigureAwait(false);
                 if (!moved.Gone)
                 {
-                    // AUTOTIDY2a: a content-held branch the look kept lets go of the ref it kept its commits on, as the press's
-                    // refused removal does, or each later look would keep another. Not where its folder could not be put back: its manifest
-                    // stays to be resumed, and names that ref (Codex's read of the design, finding 4).
-                    if (moved.To is null) await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
+                    // A branch kept makes no recovery ref, which only the delete's act makes. Where its folder could not be put back, its
+                    // manifest stays to be resumed, and names the ref that act would make (Codex's read of the design, finding 4).
                     results.Add(new(now, false, moved.Sentence) { Kept = moved.Code });
                     continue;
                 }
@@ -247,7 +245,6 @@ internal sealed class TreeSweeps(
                 // TREELINK1: each link in the tree goes as a link first, since git's removal follows a junction out of it.
                 if (TreeLinks.Unlinked(pressed) is { } linked)
                 {
-                    await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
                     results.Add(new(now, false, linked));
                     continue;
                 }
@@ -260,7 +257,6 @@ internal sealed class TreeSweeps(
                     var (letGo, why) = await LetGoAsync(root, pressed, done).ConfigureAwait(false);
                     if (!letGo)
                     {
-                        await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
                         results.Add(new(now, false, $"git would not remove its tree: {FirstLine(removeErr)}"));
                         continue;
                     }
@@ -271,7 +267,7 @@ internal sealed class TreeSweeps(
 
             // Only while it is still the commit judged (SQUASHTIDY1c), and in one transaction with what its proof rested on (FABRIC-END4a,
             // second and third reviews): exactly what the judgement returned.
-            var stays = await content.DeleteJudgedAsync(root, now.Repository, now.Branch, judged, rests, done).ConfigureAwait(false);
+            var stays = await content.DeleteJudgedAsync(root, now.Repository, now.Branch, judged, rests, done, keep).ConfigureAwait(false);
             // KEEPSIZE1b (§3.5 step 5): the manifest says the delete's outcome; a refused one is never armed.
             if (movedTo is not null) TreeSetAside.Mark(SlimManifest.PathFor(movedTo), stays is null ? SlimStates.Deleted : SlimStates.Refused, DateTimeOffset.UtcNow);
             // §3.5's resume: the delete of a branch with no tree marks the manifest of its folder moved aside before, at that branch and tip.
@@ -279,7 +275,6 @@ internal sealed class TreeSweeps(
             if (stays is null && movedTo is null) setAside.MarkDeletedOf(now.Workspace, now.Repository, now.Branch, judged, DateTimeOffset.UtcNow);
             if (stays is not null)
             {
-                await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
                 var treeSaid = movedTo is not null ? $"; its tree's folder was moved aside to {movedTo}"
                     : now.Tree is null ? "" : "; its tree was removed";
                 results.Add(new(now, false, stays == ContentHolds.MovedSince

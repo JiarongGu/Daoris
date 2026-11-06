@@ -45,6 +45,18 @@ describe('DeletedRefs', () => {
     expect(screen.getByText('Undo is closed: its commit is no longer in the repository.')).toBeInTheDocument();
   });
 
+  it('says how many commits kept for recovery no journal record names, and nothing where none, in either language', async () => {
+    const { rerender } = render(<DeletedRefs rows={[row()]} unrecorded={2} acts={{ undo: vi.fn() }} />);
+    expect(screen.getByText(/^2 more kept for recovery are in no journal record/)).toBeInTheDocument();
+
+    rerender(<DeletedRefs rows={[row()]} unrecorded={0} acts={{ undo: vi.fn() }} />);
+    expect(screen.queryByText(/no journal record/)).toBeNull();
+
+    await i18n.changeLanguage('zh');
+    rerender(<DeletedRefs rows={[row()]} unrecorded={3} acts={{ undo: vi.fn() }} />);
+    expect(screen.getByText(/另有 3 处为找回而保留的提交没有记入日志/)).toBeInTheDocument();
+  });
+
   it('says the driver’s sentence where an Undo is refused, and speaks 中文', async () => {
     await i18n.changeLanguage('zh');
     const undo = vi.fn(async () => ({ refused: true, said: 'a branch named `x` already exists' }));

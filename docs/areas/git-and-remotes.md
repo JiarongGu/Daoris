@@ -43,7 +43,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | The act engine | `ActRuns.cs`, `ActJournal.cs`, `ActReconciler.cs`, `ActSteps.cs`, `RefTransaction.cs` | Checkout lock, journal, steps in a named job, postconditions, recovery refs |
 | The person's acts | `GitFetchActs.cs`, `GitPushActs.cs`, `GitRefActs.cs`, `GitHistoryEdits.cs`, `StageActs.cs`, `ActCommits.cs`, `GitConflicts.cs`, `StashDrops.cs`, each `Git*Command.cs` | Fetch, push, refs, pick/revert/rebase, stage, commit, resolve, switch, stash (save, apply, drop); each with its terminal twin where one exists |
 | The push | `GitPushActs.cs`, `ActPushSteps.cs`, `GitPushCommand.cs`, `src/Daoris.Web/src/projects/git/PushRef.tsx` | One ref to origin under a grant the step writes and drops; `GIT_PUSH`, `GIT_PUSH_PLAN`, `git push`; *Push* and *Push tag* |
-| Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO`; its record names the recovery ref the door kept at the commit |
+| Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO`; where the door's rule keeps the commits, the recovery ref is made in the delete's own transaction, its record names it, and the Undo takes it back |
+| Every keep | `RecoveryKeeps.cs`, `RecoveryCensus.cs` | A recovery ref's one naming; a keep that deletes nothing as one `ref.keep` act; each ref a journal record names, dated from its act; the census of the refs no record names |
 | The deletes' list | `DeletedBranches.cs`, `GIT_DELETES`, `projects/git/DeletedRefs.tsx` | Every done `ref.delete` act of a repository from the journal alone, each with its Undo open or shut (undone, name stands again, commit gone), under the Branches tab in en and zh |
 | Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs` | The page's git reads through Tools' git, cached by commit id |
 | Line fetch, bring up to date | `TreeRefs.cs`, `TreeSync.cs` | `fetch origin <line>` past the doors and holds; ff-only, replay, delete what merged |
@@ -199,7 +200,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     Every branch delete is the journal's `ref.delete` act with its *Undo*: the person's `GIT_REF_DELETE`, and every door of Daoris's
     (`DISCARD_SESSION_BRANCH`, `WITHDRAW_LANDING_BRANCH`, `SWEEP`, the look's clean-up, `housekeeping_discard_branch`, a removal, a run's
     `tidy`) through `ContentHolds.DeleteJudgedAsync` and `JournaledDeletes`, pressed by `daoris`. The Branches tab lists them from the
-    journal alone (`GIT_DELETES`), each with its Undo. Each door keeps its judgement and its own recovery ref, which the record names; only an opening undoing the branch it just made deletes one itself. Where git ended the transaction refusing, a ref
+    journal alone (`GIT_DELETES`), each with its Undo. Each door keeps its judgement; the recovery ref its rule keeps is made in the
+    delete's own transaction, so a refused delete makes none, and a late checkout's put-back takes it back with the branch; a door that keeps
+    without deleting (a settled member, a tidied part, a detached tree, a missing landing) makes it in one `ref.keep` act. The record names it
+    and the retention dates it from that act. Only an opening undoing the branch it just made deletes one itself. Where git ended the transaction refusing, a ref
     its list leaves out is gone only on `show-ref --exists`'s word (a broken one is unknown, never gone), and a branch standing at neither
     the judged commit nor gone is said as the door says it: moved since it was judged, or unread. A `tidy` (`TidyDoor`) judges nothing itself: the
     `monitor` before it read the chain's pull request merged, and each part's delete rests on the recovery ref it kept the part's commits
@@ -352,10 +356,11 @@ catalogues (`i18n:check`).
   unused objects. The push's interruption (origin took the pack and the connection dropped before it said so:
   unknown, never retried) and the person's `pre-push` hook refusing (not done, nothing sent) are proved against the stand-in SSH
   host (`GitPushActProcessTests`).
-- **ONEWAY1r:** a delete's record, its Undo and the page's list (`DeletedBranches`, `GIT_DELETES`) are the journal's alone. Left: the doors
-  still keep a recovery ref before they judge (`ContentHolds.KeepDiscardedAsync`), which `RecoveryRetention` dates from its reflog and
-  `RecoveryDropping` presses; both end, with their callers' own refs, when no ref under `refs/daoris/discarded/` stands without a journal
-  record naming it, and ONEWAY1af deletes them.
+- **ONEWAY1r:** a delete's record, its Undo and the page's list (`DeletedBranches`, `GIT_DELETES`) are the journal's alone, and every door's
+  recovery ref is kept through the journal's act and dated from it (`RecoveryKeeps`). Left: `RecoveryRetention`'s dating from a ref's reflog
+  and `RecoveryDropping`'s press stay for the refs under `refs/daoris/discarded/` no journal record names, which
+  `daoris work recovery drop --unheld --plan` counts (`RecoveryCensus`) and the Branches tab says under the deletes; once it reads zero on the
+  install, ONEWAY1af deletes both and the census (BL84).
 - **G9:** the pull-request plugins open and read through their services' REST APIs with `DAORIS_HOST_TOKEN` and run no git; the loop
   starts each one per place with that place's origin identity's token (D242). `gh` and `az` are no declared tool (`Tools.Declared`,
   `resources.json`); left in the web: the tools page's fixtures, stories and tests, its two `why` words and the glossary line, and the

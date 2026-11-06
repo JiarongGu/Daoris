@@ -158,6 +158,7 @@
   "projects.git.deleted.by.window": "you in the window",
   "projects.git.deleted.by.terminal": "you in the terminal",
   "projects.git.deleted.kept": "Its commits are kept for recovery.",
+  "projects.git.deleted.unrecorded": "{{count}} more kept for recovery are in no journal record: they were kept before every keep was journaled, and the old recovery list looks after them until each goes.",
   "projects.git.deleted.undoLabel": "Undo the delete of {{name}}",
   "projects.git.deleted.closed.undone": "Undone: it is back.",
   "projects.git.deleted.closed.nameTaken": "Undo is closed: a branch or tag named {{name}} stands again.",
