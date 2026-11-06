@@ -195,12 +195,12 @@ public sealed class WorkspaceTrustTests : IDisposable
         var adapters = ProviderRegistry.Built();
 
         var trusting = adapters.Names
-            .Where(name => adapters.Resolve(name).Toolchain is { TrustFile: { Length: > 0 } })
+            .Where(name => adapters.AgentNamed(name) is { TrustFile: { Length: > 0 } })
             .Order(StringComparer.Ordinal)
             .ToArray();
 
         Assert.Equal(["claude-code", "claude-code-acp"], trusting);
-        Assert.Equal(".claude.json", adapters.Resolve("claude-code").Toolchain!.TrustFile);
+        Assert.Equal(".claude.json", adapters.AgentNamed("claude-code")!.Home.TrustFile);
     }
 
     // ——— The grant (D73): asked, then written — never silently.

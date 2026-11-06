@@ -19,7 +19,7 @@ public sealed class ScratchSignInsTests : IDisposable
 
     private string Home => Path.Combine(_root, "home");
 
-    private static HarnessToolchain Claude => ProviderRegistry.Built().Resolve("claude-code").Toolchain!;
+    private static TestAgent Claude => ProviderRegistry.Built().AgentNamed("claude-code")!;
 
     [Fact]
     public void A_scratch_home_is_one_under_fixtures_or_the_temporary_folder()
@@ -45,7 +45,7 @@ public sealed class ScratchSignInsTests : IDisposable
         Assert.False(ScratchSignIns.IsReal(Claude, [stub]));
         Assert.False(ScratchSignIns.IsReal(Claude, ["node", "claude.mjs"]));
         Assert.False(ScratchSignIns.IsReal(Claude, []));
-        Assert.False(ScratchSignIns.IsReal(BuiltDoors.Stub.Toolchain!, ["claude"]));
+        Assert.False(ScratchSignIns.IsReal(ProviderRegistry.Built().AgentNamed("stub")!, ["claude"]));
     }
 
     /// <summary>

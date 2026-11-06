@@ -177,7 +177,7 @@ public sealed class ParticipantsBoundaryTests : IDisposable
         Assert.Contains("`no-modes`", help.Refusal, StringComparison.Ordinal);
     }
 
-    private static ISessionAdapter NoModes() => TestDoors.Door("no-modes", transport: Transport.Protocol);
+    private static Provider NoModes() => TestDoors.Door("no-modes", transport: Transport.Protocol);
 
     [Fact]
     public void The_required_posture_is_the_one_value_the_protocol_door_reads()

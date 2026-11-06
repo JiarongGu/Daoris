@@ -49,6 +49,9 @@ internal sealed record TestAgent(
     /// <summary>Its accounts' words, with its error words where the reader is its provider.</summary>
     public TablesPart Tables(bool withErrors) => new(Limits, Windows, SignIn, Refused, withErrors ? ErrorWords : null);
 
+    /// <summary>The agent where a probe or an account verb reads only its facts, not its name.</summary>
+    public static implicit operator AccountAgent(TestAgent agent) => agent.Agent("a-test-agent");
+
     /// <summary>The agent as a roster, a probe and the account verbs read it, under <paramref name="name"/>.</summary>
     public AccountAgent Agent(string name) =>
         new(name, Program, Pool, Home, Product, Maker, Mark, Tables(withErrors: true), TurnReport, Usage, AccountOf);

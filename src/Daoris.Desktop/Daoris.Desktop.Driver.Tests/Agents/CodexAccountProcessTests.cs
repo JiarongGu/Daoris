@@ -154,7 +154,7 @@ public sealed class CodexAccountProcessTests : IDisposable
     public async Task A_browser_sign_in_says_its_page_while_it_waits_and_finishes_once_the_browser_answers()
     {
         var roster = Roster();
-        var agent = roster.AccountAgentOf("codex-acp")!.Value;
+        var agent = roster.AccountAgentOf("codex-acp")!;
 
         async Task<(int Code, List<string> Said, string Home)> SignIn(string? refused)
         {
@@ -166,7 +166,7 @@ public sealed class CodexAccountProcessTests : IDisposable
                 lock (said) said.Add(line);
             }
 
-            var signing = HarnessActions.LoginAsync(agent.Toolchain, roster.SignInCommand("codex-acp", Config)!, home, Say, fresh: true);
+            var signing = HarnessActions.LoginAsync(agent, roster.SignInCommand("codex-acp", Config)!, home, Say, fresh: true);
             string? page = null;
             await Poll.Until(() => { lock (said) return (page = said.FirstOrDefault(l => l.StartsWith("https://auth.openai.com/", StringComparison.Ordinal))) is not null; }, within: Poll.Patience);
             lock (said) Assert.Contains("If your browser did not open, navigate to this URL to authenticate:", said);
@@ -203,7 +203,7 @@ public sealed class CodexAccountProcessTests : IDisposable
     public async Task A_sign_in_to_a_new_codex_account_runs_codex_login_into_its_own_folder()
     {
         var roster = Roster();
-        var agent = roster.AccountAgentOf("codex-acp")!.Value;
+        var agent = roster.AccountAgentOf("codex-acp")!;
         var fresh = AccountNames.NewId(_home, "codex");
         var home = HarnessSettings.ProfileHome(_home, "codex", fresh);
         var said = new List<string>();
@@ -213,7 +213,7 @@ public sealed class CodexAccountProcessTests : IDisposable
         }
 
         var signing = HarnessActions.LoginAsync(
-            agent.Toolchain, roster.SignInCommand("codex-acp", Config)!, home, Say, fresh: true, way: SignInWay.DeviceCode);
+            agent, roster.SignInCommand("codex-acp", Config)!, home, Say, fresh: true, way: SignInWay.DeviceCode);
         await Poll.Until(() => { lock (said) return said.Contains("   ABCD-12345"); }, within: Poll.Patience);
         lock (said) Assert.Contains("   https://auth.openai.com/codex/device", said);
         Assert.False(signing.IsCompleted);

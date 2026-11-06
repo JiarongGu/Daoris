@@ -154,7 +154,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         {
             var service = new DriverModuleStartFromTests.StandIn(root);
             var loop = Loop();
-            var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+            var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
             {
                 ["talk"] = Refusing("talk"), ["other"] = Refusing("other"),
             });
@@ -178,5 +178,5 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     }
 
     /// <summary>An adapter on the protocol door that refuses to spawn, saying its own name, so a start's answer tells which it took.</summary>
-    private static ISessionAdapter Refusing(string name) => TestDoors.Door(name, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn($"{name} spawns nothing"));
+    private static Provider Refusing(string name) => TestDoors.Door(name, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn($"{name} spawns nothing"));
 }

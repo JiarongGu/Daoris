@@ -65,7 +65,7 @@ internal sealed record ConformanceRun(ConformanceSubject Subject, Provider Provi
     public AgentDoor TheDoor => Door ?? throw new InvalidOperationException("a provider's case has no door");
 
     /// <summary>The door as today's readers hold it.</summary>
-    public ISessionAdapter Adapter => Subject.Adapters.Resolve(TheDoor.Id.Value);
+    public AgentDoor Adapter => Subject.Adapters.Door(TheDoor.Id.Value);
 
     /// <summary>A home of the case's own, never the machine's.</summary>
     public string Home() => Folder("home");
@@ -108,9 +108,7 @@ internal static class ConformanceSubjects
         var built = ProviderRegistry.Built();
         var registry = built;
         // The agent a door runs as with no door of its own (`codex`) is reserved by its being a registered provider's id.
-        var listed = new ProviderRegistry(
-            new Dictionary<string, ISessionAdapter>(LegacyDoor.Over(Providers.Built()), StringComparer.OrdinalIgnoreCase),
-            new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain });
+        var listed = new ProviderRegistry(Providers.Built(), [CodexAccounts.Agent]);
         var plugins = WithPlugins(built);
         var made = plugins;
 

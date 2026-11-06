@@ -26,7 +26,7 @@ public sealed class ClaudeAcpTests : IDisposable
         "abc123", "Expose a streaming budget", "World streaming needs a per-frame cap.",
         "game", "engine", root, "http://localhost:5177");
 
-    private static ISessionAdapter Adapter() => ProviderRegistry.Built().Resolve("claude-code-acp");
+    private static AgentDoor Adapter() => ProviderRegistry.Built().Door("claude-code-acp");
 
     [Fact]
     public void It_is_a_protocol_door_session_and_takes_stdin()
@@ -34,7 +34,7 @@ public sealed class ClaudeAcpTests : IDisposable
         var adapter = Adapter();
         Assert.Equal(Transport.Protocol, adapter.Transport);
 
-        var info = adapter.Prepare(Target(_home), command: null);
+        var info = ProviderRegistry.Built().Start(adapter, Target(_home), command: null);
         // The driver writes JSON-RPC frames into it, unlike a pipe-door session which is given its
         // whole target at once and has nobody to take turns with.
         Assert.True(info.RedirectStandardInput);
@@ -48,7 +48,7 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void The_target_and_the_posture_are_not_arguments_on_this_door()
     {
-        var info = Adapter().Prepare(Target(_home), command: null);
+        var info = ProviderRegistry.Built().Start(Adapter(), Target(_home), command: null);
         var arguments = string.Join(' ', info.ArgumentList);
 
         Assert.DoesNotContain("-p", info.ArgumentList);
@@ -63,7 +63,7 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void The_managed_claude_is_handed_to_the_agent_sdk_through_its_own_seam()
     {
-        var info = Adapter().Prepare(Target(_home), command: null);
+        var info = ProviderRegistry.Built().Start(Adapter(), Target(_home), command: null);
         ClaudeAcp.PointAtClaude(info, "C:/somewhere/.daoris/toolchain/claude-code/2.1.278/claude.cmd");
 
         Assert.Equal(
@@ -79,7 +79,7 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void With_nothing_managed_the_seam_is_left_untouched()
     {
-        var info = Adapter().Prepare(Target(_home), command: null);
+        var info = ProviderRegistry.Built().Start(Adapter(), Target(_home), command: null);
         ClaudeAcp.PointAtClaude(info, null);
 
         Assert.False(info.Environment.ContainsKey("CLAUDE_CODE_EXECUTABLE"));
@@ -123,15 +123,15 @@ public sealed class ClaudeAcpTests : IDisposable
     public void The_protocol_door_and_the_pipe_door_are_pinned_separately()
     {
         var acp = Adapter().Toolchain;
-        var pipe = ProviderRegistry.Built().Resolve("claude-code").Toolchain;
+        var pipe = ProviderRegistry.Built().AgentNamed("claude-code");
 
         // Since AGT2b they do not even share a SOURCE: `claude` pins from Anthropic's release bucket,
         // verified, and the adapter — which ships only on npm — from its package.
-        Assert.Equal(ClaudeReleases.Channel, pipe?.Channel);
-        Assert.Null(pipe?.Package);
+        Assert.Equal(ClaudeReleases.Channel, pipe?.Program.Channel);
+        Assert.Null(pipe?.Program.Package);
         Assert.Null(acp?.Channel);
         Assert.NotNull(acp?.Package);
-        Assert.NotEqual(acp?.Binary[0], pipe?.Binary[0]);
+        Assert.NotEqual(acp?.Binary[0], pipe?.Program.Binary[0]);
         // The binary is the PACKAGE's name, not the adapter's — verified against the installed one.
         Assert.Equal("claude-agent-acp", acp?.Binary[0]);
     }
@@ -144,15 +144,15 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void Both_seams_reach_the_spawn_through_the_driver_s_one_line()
     {
-        var adapter = ProviderRegistry.Built().Resolve("claude-code-acp");
-        var info = adapter.Prepare(Target(_home), null);
+        var adapter = ProviderRegistry.Built().Door("claude-code-acp");
+        var info = ProviderRegistry.Built().Start(adapter, Target(_home), null);
 
         // Exactly what the driver does at spawn, with what the roster resolved.
         Shell.Equip(
             info, adapter.Toolchain!,
             profileHome: Path.Combine(_home, "profile"),
             binary: null,
-            seam: each => adapter.PointAtClaude(each, "C:/somewhere/.daoris/toolchain/claude-code/2.1.278/claude.cmd"));
+            seam: each => adapter.Spawned().PointAtClaude(each, "C:/somewhere/.daoris/toolchain/claude-code/2.1.278/claude.cmd"));
 
         Assert.Equal(
             "C:/somewhere/.daoris/toolchain/claude-code/2.1.278/claude.cmd",
@@ -170,8 +170,8 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void The_pipe_door_gains_no_executable_seam()
     {
-        var pipe = ProviderRegistry.Built().Resolve("claude-code");
-        var info = pipe.Prepare(Target(_home), null);
+        var pipe = ProviderRegistry.Built().Door("claude-code");
+        var info = ProviderRegistry.Built().Start(pipe, Target(_home), null);
         Shell.Equip(info, pipe.Toolchain!, profileHome: null, binary: null, seam: null);
 
         Assert.False(info.Environment.ContainsKey(ClaudeAcp.ExecutableVariable));
@@ -184,9 +184,9 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void The_pipe_door_is_still_there()
     {
-        var pipe = ProviderRegistry.Built().Resolve("claude-code");
+        var pipe = ProviderRegistry.Built().Door("claude-code");
 
         Assert.Equal(Transport.Native, pipe.Transport);
-        Assert.True(pipe.Interactive);
+        Assert.True(pipe.Can.Interactive);
     }
 }

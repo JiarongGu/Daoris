@@ -262,7 +262,7 @@ public sealed class IntakeTests : IDisposable
     {
         var target = IntakeTarget();
 
-        var info = BuiltDoors.Stub.Prepare(target, ["node", "agent.mjs"]);
+        var info = ProviderRegistry.Built().Start("stub", target, ["node", "agent.mjs"]);
 
         Assert.Equal("a1b2c3", info.Environment[IntakeRoom.AskVariable]);
         Assert.Equal("s1", info.Environment[IntakeRoom.SessionVariable]);
@@ -285,7 +285,7 @@ public sealed class IntakeTests : IDisposable
             Session = "s1",
         };
 
-        var info = BuiltDoors.Stub.Prepare(target, ["node", "agent.mjs"]);
+        var info = ProviderRegistry.Built().Start("stub", target, ["node", "agent.mjs"]);
 
         Assert.Equal("q1a2b3", info.Environment["DAORIS_QUEST_ID"]);
         Assert.Equal("s1", info.Environment[IntakeRoom.SessionVariable]);
@@ -297,7 +297,7 @@ public sealed class IntakeTests : IDisposable
     {
         var target = IntakeTarget();
 
-        var info = BuiltDoors.Claude.Prepare(target, ["claude"]);
+        var info = ProviderRegistry.Built().Start("claude-code", target, ["claude"]);
 
         // The intake's instruction is the composed prompt, written on the input and never an argument (AGENTLYNTAI1s-i).
         Assert.Equal(target.Prompt, TargetPrompt.Compose(target));
@@ -925,7 +925,7 @@ public sealed class IntakeTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
         }).StaffIntake(recording.Name);
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording.Door });
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider> { [recording.Name] = recording.Door });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -954,7 +954,7 @@ public sealed class IntakeTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
         }).StaffIntake(recording.Name);
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording.Door });
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider> { [recording.Name] = recording.Door });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

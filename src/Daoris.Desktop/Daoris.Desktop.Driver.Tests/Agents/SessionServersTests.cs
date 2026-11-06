@@ -197,9 +197,9 @@ public sealed class SessionServersTests : IDisposable
     public void A_pinned_adapter_starts_as_its_node_and_script_never_its_shim()
     {
         if (!OperatingSystem.IsWindows()) return;
-        var adapter = ProviderRegistry.Built().Resolve("claude-code-acp");
+        var adapter = ProviderRegistry.Built().Door("claude-code-acp");
         var toolchain = adapter.Toolchain!;
-        var prefix = HarnessSettings.ManagedHome(_home, adapter.Name, "0.91.0");
+        var prefix = HarnessSettings.ManagedHome(_home, adapter.Id.Value, "0.91.0");
         var package = Path.Combine([prefix, "node_modules", .. toolchain.Package!.Split('/')]);
         Directory.CreateDirectory(Path.Combine(package, "dist"));
         File.WriteAllText(Path.Combine(package, "package.json"), """{ "bin": { "claude-agent-acp": "dist/index.js" } }""");
@@ -207,7 +207,7 @@ public sealed class SessionServersTests : IDisposable
         var shims = Path.Combine(prefix, "node_modules", ".bin");
         Directory.CreateDirectory(shims);
         File.WriteAllText(Path.Combine(shims, "claude-agent-acp.cmd"), "@echo off\r\n");
-        var shim = HarnessSettings.ManagedBinary(_home, adapter.Name, "0.91.0", toolchain.Binary)!;
+        var shim = HarnessSettings.ManagedBinary(_home, adapter.Id.Value, "0.91.0", toolchain.Binary)!;
         Assert.EndsWith(".cmd", shim, StringComparison.OrdinalIgnoreCase);
 
         var info = new ProcessStartInfo("claude-agent-acp") { UseShellExecute = false, CreateNoWindow = true };

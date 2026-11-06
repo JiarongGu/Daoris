@@ -75,7 +75,7 @@ public sealed class CodexUsageTests
     [Fact]
     public void Codex_s_door_declares_Codex_s_own_app_server_asked_by_its_owner_s_pin()
     {
-        var question = ProviderRegistry.Built().ToolchainOf("codex-acp")!.Usage;
+        var question = ProviderRegistry.Built().AgentNamed("codex-acp")!.Usage;
 
         Assert.Same(CodexUsage.Question, question);
         Assert.Equal("codex", question!.Harness);

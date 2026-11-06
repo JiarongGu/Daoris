@@ -67,7 +67,7 @@ public sealed class PressModelTickTests : IDisposable
     private static readonly ActorChoice Sonnet = new("acp-stub", "sonnet", "low");
 
     /// <summary>The stand-ins' adapters: the built stub's protocol door, and a second door onto another tool's accounts.</summary>
-    private static ProviderRegistry Adapters() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+    private static ProviderRegistry Adapters() => new(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
     {
         ["stub"] = BuiltDoors.Stub,
         ["acp-stub"] = BuiltDoors.AcpStub,

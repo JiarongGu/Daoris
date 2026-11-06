@@ -16,6 +16,18 @@ internal static class TargetStarts
         public ProcessStartInfo Start(string door, SessionTarget target, IReadOnlyList<string>? command) =>
             adapters.Start(adapters.Door(door), SpawnRequests.Of(target, command));
 
+        /// <summary>A driven start's process on the registered <paramref name="door"/>.</summary>
+        public ProcessStartInfo Start(AgentDoor door, SessionTarget target, IReadOnlyList<string>? command) =>
+            adapters.Start(door, SpawnRequests.Of(target, command));
+
+        /// <summary>A native resume's process on the registered <paramref name="door"/>, or null where it resumes none.</summary>
+        public ProcessStartInfo? Resume(AgentDoor door, SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
+            adapters.Resume(door, SpawnRequests.Of(target, command) with { Resume = conversation });
+
+        /// <summary>A conversation's process on the registered <paramref name="door"/>.</summary>
+        public ProcessStartInfo Chat(AgentDoor door, SpawnRequest chat, IReadOnlyList<string>? command = null) =>
+            adapters.Chat(door, chat with { Command = command });
+
         /// <summary>A native resume's process on <paramref name="conversation"/>, or null where the door resumes none.</summary>
         public ProcessStartInfo? Resume(string door, SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
             adapters.Resume(adapters.Door(door), SpawnRequests.Of(target, command) with { Resume = conversation });

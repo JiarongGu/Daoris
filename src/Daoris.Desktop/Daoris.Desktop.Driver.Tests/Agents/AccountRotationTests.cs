@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// which on a fresh machine with nothing running starts where D125 did: <c>AccountRotationGoalTests</c> holds the rest.
 /// </summary>
 /// <remarks>
-/// Nothing here starts a process. The harness is present by a file look (<see cref="HarnessToolchain.ProbeByPresence"/>)
+/// Nothing here starts a process. The harness is present by a file look (<see cref="TestAgent.ProbeByPresence"/>)
 /// on a command this test writes, and asks nobody whether an account is signed in, so each account is ready unless it
 /// is cooling or refused. Where a hold must come before any probe, the command is one no machine has, so a probe that
 /// was reached would say the harness is not installed. Signed out, which only a probe says, is walked past in
@@ -49,12 +49,12 @@ public sealed class AccountRotationTests : IDisposable
     /// <summary>A file that is there, so the harness is present by a look and nothing runs.</summary>
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain, Transport wire = Transport.Native) => TestDoors.Door(name, toolchain, transport: wire);
+    private static Provider Adapter(string name, TestAgent? toolchain, Transport wire = Transport.Native) => TestDoors.Door(name, toolchain, transport: wire);
 
     private HarnessRoster Roster(string binary) =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = Adapter("fake", new HarnessToolchain(
+            ["fake"] = Adapter("fake", new TestAgent(
                 Binary: [binary], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
         }), Settings)
         {
@@ -214,7 +214,7 @@ public sealed class AccountRotationTests : IDisposable
 
         // The spawn is handed that account through the stub's own variable, as a pipe-door start on it would be.
         var spawn = new ProcessStartInfo(Command);
-        Shell.Equip(spawn, adapters.Resolve("acp-stub").Toolchain!, selection.ProfileHome);
+        Shell.Equip(spawn, adapters.AgentNamed("acp-stub")!, selection.ProfileHome);
         Assert.Equal(HarnessSettings.ProfileHome(_home, "stub", "account-2"), spawn.Environment["DAORIS_STUB_CONFIG_DIR"]);
     }
 

@@ -70,7 +70,7 @@ public sealed class WalkAgentTickTests : IDisposable
     private static readonly ActorChoice Other = new("acp-other", "codex-mini", "high");
 
     /// <summary>The stand-ins' adapters: the built stub's protocol door, and a second door onto another tool's accounts.</summary>
-    private static ProviderRegistry Adapters() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+    private static ProviderRegistry Adapters() => new(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
     {
         ["stub"] = BuiltDoors.Stub,
         ["acp-stub"] = BuiltDoors.AcpStub,
@@ -280,9 +280,9 @@ public sealed class WalkAgentTickTests : IDisposable
     /// A door onto another tool's accounts (the way Codex's protocol door is onto Codex's): the protocol stand-in's own, as the
     /// agent <c>other</c>, so its accounts and its cool-offs are kept apart from the stub's.
     /// </summary>
-    internal static ISessionAdapter AcpOtherAdapter() => TestDoors.Door(
+    internal static Provider AcpOtherAdapter() => TestDoors.Door(
         "acp-other",
-        new HarnessToolchain(
+        new TestAgent(
             Binary: [],
             VersionArguments: [],
             ProfileVariable: StubProvider.ConfigVariable,

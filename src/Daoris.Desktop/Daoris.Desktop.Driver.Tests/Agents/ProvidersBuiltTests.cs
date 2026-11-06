@@ -185,22 +185,21 @@ public sealed class ProvidersBuiltTests
     [InlineData("acp-stub")]
     public void A_stand_in_door_answers_the_readers_with_no_model_behind_it(string name)
     {
-        var door = ProviderRegistry.Built().Resolve(name);
+        var door = ProviderRegistry.Built().Door(name);
         var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
         var chat = SpawnRequests.Chat("repo", Path.GetTempPath(), "http://svc", null);
         IReadOnlyList<string> command = ["node", "agent.mjs", "--flag"];
 
-        Assert.IsType<LegacyDoor>(door);
-        Assert.Equal(name, door.Name);
+        Assert.Equal(name, door.Id.Value);
         Assert.Equal(name == "stub" ? Transport.Native : Transport.Protocol, door.Transport);
-        Assert.True(door.Interactive);
-        Assert.Equal(["node", "agent.mjs", "--flag"], [door.Prepare(target, command).FileName, .. door.Prepare(target, command).ArgumentList]);
-        Assert.Equal("node", door.PrepareChat(chat, command).FileName);
-        Assert.Null(door.PrepareResume(target, command, "conversation"));
+        Assert.True(door.Can.Interactive);
+        Assert.Equal(["node", "agent.mjs", "--flag"], [ProviderRegistry.Built().Start(door, target, command).FileName, .. ProviderRegistry.Built().Start(door, target, command).ArgumentList]);
+        Assert.Equal("node", ProviderRegistry.Built().Chat(door, chat, command).FileName);
+        Assert.Null(ProviderRegistry.Built().Resume(door, target, command, "conversation"));
         Assert.Null(door.StructuredOutput());
         Assert.Null(door.FrameInterrupt());
         Assert.Equal("a message", door.FrameMessage("a message"));
-        Assert.Empty(door.ToolsUpFront);
+        Assert.Empty(door.Spawned().ToolsUpFront);
     }
 
     [Fact]
@@ -221,10 +220,10 @@ public sealed class ProvidersBuiltTests
     {
         var set = ProviderRegistry.Built();
 
-        Assert.Equal(("Claude Code", "Anthropic", "CC"), Identity(set.Resolve("claude-code-acp").Toolchain!));
-        Assert.Equal(("Codex", "OpenAI", "Cx"), Identity(set.Resolve("codex-acp").Toolchain!));
-        Assert.Equal(("DeepSeek Harness", "DeepSeek", "DH"), Identity(set.Resolve("dsh").Toolchain!));
-        static (string?, string?, string?) Identity(HarnessToolchain toolchain) => (toolchain.Product, toolchain.Maker, toolchain.Mark);
+        Assert.Equal(("Claude Code", "Anthropic", "CC"), Identity(set.AgentNamed("claude-code-acp")!));
+        Assert.Equal(("Codex", "OpenAI", "Cx"), Identity(set.AgentNamed("codex-acp")!));
+        Assert.Equal(("DeepSeek Harness", "DeepSeek", "DH"), Identity(set.AgentNamed("dsh")!));
+        static (string?, string?, string?) Identity(TestAgent toolchain) => (toolchain.Product, toolchain.Maker, toolchain.Mark);
     }
 
     [Fact]
@@ -233,8 +232,8 @@ public sealed class ProvidersBuiltTests
         var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
         IReadOnlyList<string> command = ["node", "agent.mjs"];
 
-        Assert.False(ProviderRegistry.Built().Resolve("stub").Prepare(target, command).RedirectStandardInput);
-        Assert.True(ProviderRegistry.Built().Resolve("acp-stub").Prepare(target, command).RedirectStandardInput);
+        Assert.False(ProviderRegistry.Built().Start("stub", target, command).RedirectStandardInput);
+        Assert.True(ProviderRegistry.Built().Start("acp-stub", target, command).RedirectStandardInput);
     }
 
     [Fact]
@@ -275,12 +274,12 @@ public sealed class ProvidersBuiltTests
 
         foreach (var name in new[] { "stub", "acp-stub" })
         {
-            var door = shimmed.Resolve(name);
-            var expected = Assert.Throws<DriverException>(() => door.Prepare(target, null)).Message;
+            var door = shimmed.Door(name);
+            var expected = Assert.Throws<DriverException>(() => ProviderRegistry.Built().Start(door, target, null)).Message;
 
             Assert.Contains($"the {name} adapter needs a command", expected);
-            Assert.Equal(expected, Assert.Throws<DriverException>(() => door.PrepareChat(chat, null)).Message);
-            Assert.Equal(expected, Assert.Throws<DriverException>(() => door.Prepare(target, [])).Message);
+            Assert.Equal(expected, Assert.Throws<DriverException>(() => ProviderRegistry.Built().Chat(door, chat, null)).Message);
+            Assert.Equal(expected, Assert.Throws<DriverException>(() => ProviderRegistry.Built().Start(door, target, [])).Message);
         }
     }
 

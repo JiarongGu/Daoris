@@ -54,7 +54,7 @@ public sealed class ContinuedChoiceTickTests : IDisposable
 
     private string Log => Path.Combine(_home, "continued-choice.log");
 
-    private static ProviderRegistry Adapters() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+    private static ProviderRegistry Adapters() => new(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
     {
         ["stub"] = BuiltDoors.Stub,
         ["acp-stub"] = BuiltDoors.AcpStub,

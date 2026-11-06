@@ -27,9 +27,9 @@ public sealed class BrainstormVoicePlanTests : IDisposable
         Directory.CreateDirectory(_home);
         File.WriteAllText(Command, "");
         // `voice` runs by a bare name only its pinned install answers; `other` is present wherever it is asked.
-        var voice = new HarnessToolchain(Binary: ["voice-pinned"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        var other = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var voice = new TestAgent(Binary: ["voice-pinned"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
+        var other = new TestAgent(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["voice"] = Adapter("voice", voice),
             ["other"] = Adapter("other", other),
@@ -44,7 +44,7 @@ public sealed class BrainstormVoicePlanTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
+    private static Provider Adapter(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private static readonly ActorEffective Entry = new("voice", "opus", null, "1");
 

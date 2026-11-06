@@ -112,7 +112,7 @@ public sealed class TransportRunProcessTests : IDisposable
     /// The scripted native harness: the Claude Code mapper over its stream, a resume that says its arguments and what its input carried, flags
     /// for its carriers.
     /// </summary>
-    private static ISessionAdapter Scripted(string home, bool structured) =>
+    private static Provider Scripted(string home, bool structured) =>
         TestDoors.Door("scripted", resumes: true, spawn: new ScriptedNative(home), dialect: structured ? TestDoors.StreamJson : null);
 
     private sealed class ScriptedNative(string home) : ISpawn
@@ -130,7 +130,7 @@ public sealed class TransportRunProcessTests : IDisposable
         private ProcessRecipe Recipe(params string[] arguments) => new("node", [Path.Combine(home, "agent.cjs"), .. arguments]);
     }
 
-    private TransportRun Over(ISessionAdapter adapter, ProcessStartInfo info, Func<TransportStart, TransportStart>? shape = null)
+    private TransportRun Over(Provider adapter, ProcessStartInfo info, Func<TransportStart, TransportStart>? shape = null)
     {
         var start = new TransportStart(info, StartClass.Person)
         {
@@ -423,7 +423,7 @@ public sealed class TransportRunProcessTests : IDisposable
     {
         var seen = Path.Combine(_home, $"seen-{scenario}.txt");
         var command = ProviderFiles.Of("stub").Command("acp-stub", "--scenario", scenario, "--seen", seen);
-        var adapter = ProviderRegistry.Built().Resolve("acp-stub");
+        var adapter = ProviderRegistry.Built().Door("acp-stub");
         var run = Over(adapter, adapter.Prepare(Target(), command), start => start with { Protocol = protocol });
         Hand(run, keepAs: "acp-stub");
         return (run, seen);

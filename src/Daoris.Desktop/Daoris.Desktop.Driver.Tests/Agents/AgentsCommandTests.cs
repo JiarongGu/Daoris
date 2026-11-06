@@ -371,7 +371,7 @@ public sealed class AgentsCommandTests : IDisposable
         }
 
         string[] Run(System.Text.Json.JsonElement answer) => [.. answer.GetProperty("run").EnumerateArray().Select(each => each.GetString()!)];
-        var binary = ProviderRegistry.Built().Resolve("claude-code-acp").Toolchain!.Binary;
+        var binary = ProviderRegistry.Built().AgentNamed("claude-code-acp")!.Program.Binary;
 
         var path = await Which("claude-code-acp");
         Assert.Equal("claude-code-acp", path.GetProperty("agent").GetString());
@@ -571,8 +571,8 @@ public sealed class AgentsCommandTests : IDisposable
                 ? [Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/d", "/c", $"exit {exits}"]
                 : ["/bin/sh", "-c", $"exit {exits}"];
             var set = new ProviderRegistry(
-                new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase),
-                new Dictionary<string, HarnessToolchain> { ["stand-in"] = new(["stand-in"], ["--version"], Install: install) });
+                new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase),
+                new Dictionary<string, TestAgent> { ["stand-in"] = new(["stand-in"], ["--version"], Install: install) });
 
             var exit = await AgentsCommand.RunAsync(["install", "stand-in"], _held.World(adapters: set, path: ""), CancellationToken.None);
 
@@ -677,13 +677,13 @@ public sealed class AgentsCommandTests : IDisposable
         private static ProviderRegistry StandIn(int exits)
         {
             string[] shell = OperatingSystem.IsWindows() ? [Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/d", "/c"] : ["/bin/sh", "-c"];
-            var toolchain = new HarnessToolchain(
+            var toolchain = new TestAgent(
                 [shell[0]], ["--version"], ProfileVariable: "STAND_IN_HOME",
                 LoginArguments: [.. shell.Skip(1), $"exit {exits}"],
                 LoginCheck: new LoginQuestion([.. shell.Skip(1), "echo Logged in as seat@work.example"], "Logged in", "Not logged in", Account: @"as (\S+)"));
             return new ProviderRegistry(
-                new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase),
-                new Dictionary<string, HarnessToolchain> { ["stand-in"] = toolchain });
+                new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase),
+                new Dictionary<string, TestAgent> { ["stand-in"] = toolchain });
         }
 
         /// <summary>

@@ -374,7 +374,7 @@ public sealed class HarnessProbeTests : IDisposable
         return script;
     }
 
-    private HarnessToolchain Toolchain(string script) => new(
+    private TestAgent Toolchain(string script) => new(
         Binary: ["node", script],
         VersionArguments: ["--version"],
         ProfileVariable: "FAKE_HARNESS_HOME",
@@ -398,7 +398,7 @@ public sealed class HarnessProbeTests : IDisposable
     [Fact]
     public async Task An_absent_harness_is_reported_rather_than_thrown()
     {
-        var toolchain = new HarnessToolchain(
+        var toolchain = new TestAgent(
             Binary: ["daoris-no-such-binary-anywhere"], VersionArguments: ["--version"]);
 
         var report = await HarnessProbe.ProbeAsync(
@@ -450,7 +450,7 @@ public sealed class HarnessProbeTests : IDisposable
     [Fact]
     public async Task An_absent_harness_has_no_own_login_to_report()
     {
-        var toolchain = new HarnessToolchain(
+        var toolchain = new TestAgent(
             Binary: ["daoris-no-such-binary-anywhere"], VersionArguments: ["--version"]);
 
         var report = await HarnessProbe.ProbeAsync(
@@ -470,7 +470,7 @@ public sealed class HarnessProbeTests : IDisposable
     public async Task A_door_with_nothing_to_run_on_this_machine_is_not_on_the_roster()
     {
         var roster = new HarnessRoster(
-            new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+            TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
             {
                 ["stub"] = BuiltDoors.Stub,
             }),
@@ -547,7 +547,7 @@ public sealed class HarnessProbeTests : IDisposable
     /// flips only the boolean; the rest is printed either way. The organisation is the home's <c>org.txt</c> where it has
     /// one, else <c>Org A</c>; and with <paramref name="org"/> true the question asks it and the plan as Claude Code's does.
     /// </summary>
-    private HarnessToolchain Chatty(bool signedIn, string? account, bool org = false)
+    private TestAgent Chatty(bool signedIn, string? account, bool org = false)
     {
         Directory.CreateDirectory(_home);
         var script = Path.Combine(_home, $"chatty-{signedIn}.mjs");
@@ -558,8 +558,8 @@ public sealed class HarnessProbeTests : IDisposable
             const org = home && existsSync(home + '/org.txt') ? readFileSync(home + '/org.txt', 'utf8').trim() : 'Org A';
             console.log(JSON.stringify({ loggedIn: {{(signedIn ? "true" : "false")}}, authMethod: 'claude.ai', email: 'person@example.invalid', orgName: org, subscriptionType: 'max' }));
             """);
-        var claude = BuiltDoors.Claude.Toolchain!.LoginCheck!;
-        return new HarnessToolchain(
+        var claude = ProviderRegistry.Built().AgentNamed("claude-code")!.Accounts.Login!;
+        return new TestAgent(
             Binary: ["node", script], VersionArguments: ["--version"],
             ProfileVariable: "CHATTY_HOME",
             LoginCheck: new LoginQuestion(
@@ -622,7 +622,7 @@ public sealed class HarnessProbeTests : IDisposable
     [Fact]
     public void Claude_code_names_who_signed_in_by_the_email_it_reports()
     {
-        var question = BuiltDoors.Claude.Toolchain!.LoginCheck!;
+        var question = ProviderRegistry.Built().AgentNamed("claude-code")!.Accounts.Login!;
         const string answer = """
             {
               "loggedIn": true,
@@ -680,7 +680,7 @@ public sealed class HarnessProbeTests : IDisposable
     public async Task The_configured_command_is_what_gets_probed()
     {
         var script = FakeBinary();
-        var toolchain = new HarnessToolchain(
+        var toolchain = new TestAgent(
             Binary: ["daoris-no-such-binary-anywhere"], VersionArguments: ["--version"]);
 
         var report = await HarnessProbe.ProbeAsync(
@@ -714,7 +714,7 @@ public sealed class HarnessProbeTests : IDisposable
             : $"#!/bin/sh\nexec node \"{script}\" \"$@\"\n");
         if (!windows) File.SetUnixFileMode(shim, UnixFileMode.UserRead | UnixFileMode.UserExecute);
 
-        var toolchain = new HarnessToolchain(
+        var toolchain = new TestAgent(
             Binary: ["pinned"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HARNESS_HOME");
         var settings = new HarnessSettings(Versions: new Dictionary<string, string> { ["fake"] = "1.2.3" });
 
@@ -732,7 +732,7 @@ public sealed class HarnessProbeTests : IDisposable
     public async Task A_pin_with_nothing_installed_at_it_is_absent_rather_than_PATH()
     {
         var script = FakeBinary();
-        var toolchain = new HarnessToolchain(Binary: ["node", script], VersionArguments: ["--version"]);
+        var toolchain = new TestAgent(Binary: ["node", script], VersionArguments: ["--version"]);
         var settings = new HarnessSettings(Versions: new Dictionary<string, string> { ["fake"] = "9.9.9" });
 
         var report = await HarnessProbe.ProbeAsync("fake", toolchain, command: null, settings, _home);
@@ -762,10 +762,10 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <summary>A harness that is there, with a profile question it answers from its own home.</summary>
-    private static ISessionAdapter FakeAdapter(HarnessToolchain? toolchain, Transport wire = Transport.Native) => TestDoors.Door("fake", toolchain, transport: wire);
+    private static Provider FakeAdapter(TestAgent? toolchain, Transport wire = Transport.Native) => TestDoors.Door("fake", toolchain, transport: wire);
 
-    private static ProviderRegistry Set(HarnessToolchain? toolchain, Transport wire = Transport.Native) =>
-        new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+    private static ProviderRegistry Set(TestAgent? toolchain, Transport wire = Transport.Native) =>
+        new(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = FakeAdapter(toolchain, wire),
         });
@@ -784,10 +784,10 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <param name="ownHome">
-    /// A test double whose own home is nobody's (<see cref="HarnessToolchain.RunsInOwnHome"/>, OWNSPACE1a): the version, the pin
+    /// A test double whose own home is nobody's (<see cref="TestAgent.RunsInOwnHome"/>, OWNSPACE1a): the version, the pin
     /// and the default are this class's subjects, so a start that names no account runs there; false is a real agent's.
     /// </param>
-    private HarnessToolchain Toolchain(string script, bool ownHome = true) => new(
+    private TestAgent Toolchain(string script, bool ownHome = true) => new(
         Binary: ["node", script],
         VersionArguments: ["--version"],
         ProfileVariable: "FAKE_HOME",
@@ -1019,7 +1019,7 @@ public sealed class HarnessSelectionTests : IDisposable
     [Fact]
     public async Task A_missing_harness_refuses_naming_the_install_action()
     {
-        var toolchain = new HarnessToolchain(
+        var toolchain = new TestAgent(
             Binary: ["daoris-no-such-binary-anywhere"], VersionArguments: ["--version"],
             Install: ["npm", "install", "-g", "fake"]);
         var roster = new HarnessRoster(Set(toolchain), Settings);
@@ -1143,7 +1143,7 @@ public sealed class HarnessSelectionTests : IDisposable
     [Fact]
     public void A_harness_with_no_seam_refuses_a_profile_rather_than_ignoring_it()
     {
-        var toolchain = new HarnessToolchain(Binary: ["x"], VersionArguments: ["--version"]);
+        var toolchain = new TestAgent(Binary: ["x"], VersionArguments: ["--version"]);
 
         var error = Assert.Throws<DriverException>(
             () => Shell.Equip(new System.Diagnostics.ProcessStartInfo(), toolchain, "somewhere"));

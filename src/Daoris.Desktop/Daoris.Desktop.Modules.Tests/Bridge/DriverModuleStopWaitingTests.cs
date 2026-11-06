@@ -30,7 +30,7 @@ public sealed class DriverModuleStopWaitingTests : DriverModuleBridge
         var service = new DriverModuleStartFromTests.StandIn(root);
         service.Chat("c1", root, words: false);
         var loop = Loop();
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         var chat = new ChatRunner(
             client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);
@@ -44,5 +44,5 @@ public sealed class DriverModuleStopWaitingTests : DriverModuleBridge
     }
 
     /// <summary>A conversation's adapter on the protocol door with no toolchain to ask, so nothing is probed or spawned.</summary>
-    private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("this test spawns nothing"));
+    private static Provider Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("this test spawns nothing"));
 }

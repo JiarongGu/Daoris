@@ -66,7 +66,7 @@ public sealed class ClaudeUsageProcessTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
+    private static Provider Adapter(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
 
     private static readonly UsageQuestion Question = new ClaudeUsageQuestion(
         "claude-stand-in",
@@ -75,12 +75,12 @@ public sealed class ClaudeUsageProcessTests : IDisposable
 
     private const string Arguments = "--input-format stream-json --output-format stream-json --verbose --strict-mcp-config";
 
-    private HarnessToolchain Toolchain => new(
+    private TestAgent Toolchain => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "CLAUDE_CONFIG_DIR", ProbeByPresence: true,
         Usage: Question);
 
     private HarnessRoster Roster() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["door"] = Adapter("door", Toolchain),
         }), Settings);

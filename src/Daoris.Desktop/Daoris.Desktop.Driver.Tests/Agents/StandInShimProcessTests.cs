@@ -76,18 +76,18 @@ public sealed class StandInShimProcessTests : IDisposable
     [Fact]
     public async Task The_pipe_stand_in_starts_hears_and_stops()
     {
-        var door = ProviderRegistry.Built().Resolve("stub");
+        var door = ProviderRegistry.Built().Door("stub");
         var command = Command(Text());
 
-        var started = await Ran(door.Prepare(Target(), command));
-        var spoken = await Ran(door.PrepareChat(Chat(), command), "hello");
+        var started = await Ran(ProviderRegistry.Built().Start(door, Target(), command));
+        var spoken = await Ran(ProviderRegistry.Built().Chat(door, Chat(), command), "hello");
 
         Assert.Equal(0, started.Exit);
         Assert.Contains("heard: hello", spoken.Out);
         Assert.Equal(0, spoken.Exit);
 
         // A stop: the process is ended while it waits on its stdin.
-        using var waiting = Process.Start(door.PrepareChat(Chat(), command))!;
+        using var waiting = Process.Start(ProviderRegistry.Built().Chat(door, Chat(), command))!;
         await Task.Delay(200);
         waiting.Kill(entireProcessTree: true);
         Assert.True(waiting.WaitForExit(10_000));
@@ -99,17 +99,17 @@ public sealed class StandInShimProcessTests : IDisposable
     [InlineData(true)]
     public async Task The_protocol_stand_in_opens_sends_and_resumes(bool resume)
     {
-        var door = ProviderRegistry.Built().Resolve("acp-stub");
+        var door = ProviderRegistry.Built().Door("acp-stub");
 
         var methodsNew = await Wire(door, "new.txt", resume);
 
         Assert.Equal(resume ? ["initialize", "session/resume", "session/prompt", "session/close"] : ["initialize", "session/new", "session/prompt", "session/close"], methodsNew);
     }
 
-    private async Task<IReadOnlyList<string>> Wire(ISessionAdapter adapter, string seen, bool resume)
+    private async Task<IReadOnlyList<string>> Wire(Provider adapter, string seen, bool resume)
     {
         var path = Path.Combine(_home, seen);
-        using var process = Process.Start(adapter.Prepare(Target(), Command(Acp(), path)))!;
+        using var process = Process.Start(ProviderRegistry.Built().Start(adapter, Target(), Command(Acp(), path)))!;
         var lines = new List<string>();
         var outcome = await new AcpSession(process.StandardOutput, process.StandardInput, lines.Add)
             .RunAsync(_home, "Go on.", CancellationToken.None, resume: resume ? "s-0" : null);
@@ -124,8 +124,8 @@ public sealed class StandInShimProcessTests : IDisposable
     [Fact]
     public async Task The_protocol_stand_in_is_stopped_by_ending_its_process()
     {
-        var door = ProviderRegistry.Built().Resolve("acp-stub");
-        using var process = Process.Start(door.Prepare(Target(), Command(Acp(), Path.Combine(_home, "stopped.txt"))))!;
+        var door = ProviderRegistry.Built().Door("acp-stub");
+        using var process = Process.Start(ProviderRegistry.Built().Start(door, Target(), Command(Acp(), Path.Combine(_home, "stopped.txt"))))!;
         await Task.Delay(200);
         process.Kill(entireProcessTree: true);
         Assert.True(process.WaitForExit(10_000));
@@ -141,7 +141,7 @@ public sealed class StandInShimProcessTests : IDisposable
         var count = Path.Combine(_home, "ran.txt");
         var script = Script("fail.mjs", $"import {{ appendFileSync }} from 'node:fs'; appendFileSync({System.Text.Json.JsonSerializer.Serialize(count)}, 'ran\\n'); process.exit(3);");
         var door = new LegacyDoor(Provider(), ResumingDoor());
-        var info = door.PrepareResume(Target(), Command(script), "c-1")!;
+        var info = ProviderRegistry.Built().Resume(door, Target(), Command(script), "c-1")!;
 
         Assert.True(door.Resumes);
         Assert.Null(door.StructuredOutput());

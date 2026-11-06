@@ -366,18 +366,18 @@ public sealed class OpinionLookTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>The build's own agents by name, each present by a file look, as <c>OpinionRecheckTests</c> has them.</summary>
     /// <param name="pass">What each pass does, opened by the stand-in; null opens <c>op1</c> and raises nothing.</param>
     private Daoris.Driver.Driver Driver(OpinionStandIn host, Func<OpinionPassAsk, OpinionPassRun>? pass = null, bool drained = false)
     {
-        var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
+        var adapters = new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
-            var real = ProviderRegistry.Built().Resolve(name).Toolchain!;
-            adapters[name] = Adapter(name, new HarnessToolchain(
-                Binary: [Command], VersionArguments: [], ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true,
+            var real = ProviderRegistry.Built().AgentNamed(name)!;
+            adapters[name] = Adapter(name, new TestAgent(
+                Binary: [Command], VersionArguments: [], ProfileVariable: real.Home.Variable, AccountOf: real.AccountOf, ProbeByPresence: true,
                 // A test double whose own home is nobody's (OWNSPACE1a): the look's pass is this file's subject, not the account.
                 Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }

@@ -36,9 +36,9 @@ public sealed class PluginPosturesTests : IDisposable
             entry.Manifest.Harnesses.Select(harness => (harness.AskingPosture, harness.FullPosture)));
 
         var adapters = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home, ProviderRegistry.Built().Names));
-        var wide = adapters.Resolve("wide-agent");
-        Assert.Equal(("ask", "everything"), (wide.AskingPosture, wide.FullPosture));
-        var plain = adapters.Resolve("plain-agent");
-        Assert.Equal(((string?)null, (string?)null), (plain.AskingPosture, plain.FullPosture));
+        var wide = adapters.Door("wide-agent");
+        Assert.Equal(("ask", "everything"), (wide.Postures.Asking, wide.Postures.Full));
+        var plain = adapters.Door("plain-agent");
+        Assert.Equal(((string?)null, (string?)null), (plain.Postures.Asking, plain.Postures.Full));
     }
 }

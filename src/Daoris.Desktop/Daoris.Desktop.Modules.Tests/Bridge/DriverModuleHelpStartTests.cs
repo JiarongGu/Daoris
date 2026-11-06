@@ -346,7 +346,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         File.WriteAllText(DriverConfigPath, """{ "actors": { "chat": [{ "agent": "talk" }], "ask-daoris": [{ "agent": "talk" }] } }""");
         var service = new StandIn();
         var loop = new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0", log: log);
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         var chat = new ChatRunner(
             client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);
@@ -355,7 +355,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     }
 
     /// <summary>A conversation's adapter on the protocol door with no toolchain to ask, so nothing is probed or spawned.</summary>
-    private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("this test spawns nothing"));
+    private static Provider Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("this test spawns nothing"));
 
     /// <summary>The service's doors a help start crosses, standing in: the records, an empty registry, no quests, the room's open and its moves.</summary>
     private sealed class StandIn : HttpMessageHandler

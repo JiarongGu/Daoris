@@ -31,7 +31,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
         service.Chat("c1", root, ("w1", "go on"));
         new HarnessConversations(Home).Keep("c1", "talk", "conv-c1");
         var loop = Loop();
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         using var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         using var chat = new ChatRunner(client, adapters, Home, loop.Processes,
             harnesses: new HarnessRoster(adapters, HarnessSettingsPath), events: loop.Events);
@@ -43,7 +43,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
         await coming.WaitAsync(Poll.Patience);
     }
     /// <summary>A conversation's adapter on the protocol door with no toolchain to ask, so nothing is probed or spawned.</summary>
-    private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("this test spawns nothing"));
+    private static Provider Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("this test spawns nothing"));
 
     /// <summary>
     /// 🔴 Words kept on ended chats while no shell ran wait until another word is said, unless the loop takes them up as it
@@ -62,7 +62,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
         service.Chat("d1", root, ("w3", "One more."), kind: "driven");
         new HarnessConversations(Home).Keep("c1", "talk", "conv-c1");
         var loop = Loop();
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         using var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         using var chat = new ChatRunner(
             client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);
@@ -94,7 +94,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
         service.Chat("c1", root, ("w1", "Also log the port."));
         new HarnessConversations(Home).Keep("c1", "talk", "conv-c1");
         var loop = Loop();
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         using var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         using var chat = new ChatRunner(
             client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);

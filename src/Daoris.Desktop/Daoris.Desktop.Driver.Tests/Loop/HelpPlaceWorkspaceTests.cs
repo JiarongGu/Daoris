@@ -30,16 +30,16 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     /// A conversation's door with accounts, present by a look: nothing is probed or spawned. <paramref name="full"/> is its mode that
     /// asks nothing (HELPMODE1a1), none by default.
     /// </summary>
-    private static ISessionAdapter Door(HarnessToolchain toolchain, string? full = null, string name = "door", bool interactive = true) =>
+    private static Provider Door(TestAgent toolchain, string? full = null, string name = "door", bool interactive = true) =>
         TestDoors.Door(
             name, toolchain, transport: Transport.Protocol, interactive: interactive,
             postures: new PosturesPart(null, null, full, null), spawn: new TestDoors.RefusingSpawn("a placing test spawns nothing"));
 
     private ChatRunner Runner(ChatLedger ledger, string? full = null)
     {
-        HarnessToolchain Toolchain(string variable) =>
+        TestAgent Toolchain(string variable) =>
             new(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: variable, ProbeByPresence: true);
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["door"] = Door(Toolchain("DOOR_HOME"), full),
             // MODELROLE1d: a second agent with a mode that asks nothing, and one that holds no conversation, for the actors' walks.
@@ -241,7 +241,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         var placed = await runner.PlaceHelpAsync("door", config, "alpha", order: ActorChoices.Effective("ask-daoris", config));
 
         Assert.NotNull(placed.SessionId);
-        Assert.Equal("full-door", placed.Adapter!.Name);
+        Assert.Equal("full-door", placed.Adapter!.Id.Value);
         Assert.Equal(new ActorEffective("full-door", "opus", null, "2"), placed.Chosen);
         Assert.Equal("full-door", ledger.Record(placed.SessionId!)["adapter"]!.GetValue<string>());
     }
@@ -260,7 +260,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         var full = await runner.PlaceHelpAsync("door", Config.WithHelpMode(HelpModes.Full), "beta", order: ActorChoices.Effective("ask-daoris", Config));
 
         Assert.Equal(new ActorEffective("door", null, null, "1"), restricted.Chosen);
-        Assert.Equal("door", restricted.Adapter!.Name);
+        Assert.Equal("door", restricted.Adapter!.Id.Value);
         Assert.Null(full.SessionId);
         Assert.Contains("ask-daoris mode restricted", full.Message);
         Assert.Equal(["alpha"], ledger.HelpAsked);
@@ -298,7 +298,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         var walk = await runner.WalkAsync("chat", ActorChoices.Effective("chat", config), config, null, null, CancellationToken.None);
 
         Assert.Equal(new ActorEffective("door", "sonnet", "high", "2"), walk.Chosen);
-        Assert.Equal("door", walk.Adapter!.Name);
+        Assert.Equal("door", walk.Adapter!.Id.Value);
         Assert.Equal("unavailable", Assert.Single(walk.Passes).Code);
         Assert.Equal([new ActorEffective("door", "sonnet", "high", "pick")], ActorChoices.Effective("chat", config, pick: "door"));
         Assert.Equal(["--model", "sonnet"], new ActorEffective("door", "sonnet", null, "pick").Asked.NativeArguments([]));

@@ -46,7 +46,7 @@ public sealed class HostPolicyTrustedEntryTests : IDisposable
     public void Host_policy_s_trusted_sign_out_writes_today_s_sign_in_line_reading_no_words()
     {
         var roster = Roster();
-        var adapter = roster.Adapters.Resolve("acp-stub");
+        var adapter = roster.Adapters.Door("acp-stub");
 
         Assert.Null(RefusedAccounts.SignInRefused(roster, adapter, null, "words no sign-in table reads"));
         var line = RefusedAccounts.SignOut(roster, adapter, null);

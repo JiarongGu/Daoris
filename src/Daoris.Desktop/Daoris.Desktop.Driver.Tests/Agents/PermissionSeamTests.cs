@@ -27,11 +27,11 @@ public sealed class PermissionSeamTests
     [Fact]
     public void The_pipe_door_takes_the_rules_as_its_settings_flag()
     {
-        var adapter = ProviderRegistry.Built().Resolve("claude-code");
-        var info = adapter.Prepare(Target(Path.GetTempPath()), command: null);
+        var adapter = ProviderRegistry.Built().Door("claude-code");
+        var info = ProviderRegistry.Built().Start(adapter, Target(Path.GetTempPath()), command: null);
 
-        Assert.True(adapter.TakesSettings);
-        adapter.HandSettings(info, File);
+        Assert.True(adapter.Can.TakesSettings);
+        adapter.Spawned().HandSettings(info, File);
 
         var arguments = info.ArgumentList.ToList();
         var at = arguments.IndexOf("--settings");
@@ -45,10 +45,10 @@ public sealed class PermissionSeamTests
     [Fact]
     public void A_pipe_door_conversation_takes_them_too()
     {
-        var adapter = ProviderRegistry.Built().Resolve("claude-code");
-        var info = adapter.PrepareChat(SpawnRequests.Chat("engine", Path.GetTempPath(), "http://localhost:5177", null));
+        var adapter = ProviderRegistry.Built().Door("claude-code");
+        var info = ProviderRegistry.Built().Chat(adapter, SpawnRequests.Chat("engine", Path.GetTempPath(), "http://localhost:5177", null));
 
-        adapter.HandSettings(info, File);
+        adapter.Spawned().HandSettings(info, File);
 
         Assert.Contains("--settings", info.ArgumentList);
     }
@@ -62,11 +62,11 @@ public sealed class PermissionSeamTests
     [Fact]
     public void The_protocol_door_takes_them_on_session_new()
     {
-        var adapter = ProviderRegistry.Built().Resolve("claude-code-acp");
-        var info = adapter.Prepare(Target(Path.GetTempPath()), command: null);
+        var adapter = ProviderRegistry.Built().Door("claude-code-acp");
+        var info = ProviderRegistry.Built().Start(adapter, Target(Path.GetTempPath()), command: null);
 
-        Assert.True(adapter.TakesSettings);
-        adapter.HandSettings(info, File);
+        Assert.True(adapter.Can.TakesSettings);
+        adapter.Spawned().HandSettings(info, File);
         Assert.DoesNotContain("--settings", info.ArgumentList);
 
         var meta = JsonSerializer.SerializeToElement(adapter.AcpSessionMeta(File));
@@ -85,12 +85,12 @@ public sealed class PermissionSeamTests
     [InlineData("dsh")]
     public void Every_other_harness_is_handed_nothing(string name)
     {
-        var adapter = ProviderRegistry.Built().Resolve(name);
-        var info = adapter.Prepare(Target(Path.GetTempPath()), command: ["node", "agent.mjs"]);
+        var adapter = ProviderRegistry.Built().Door(name);
+        var info = ProviderRegistry.Built().Start(adapter, Target(Path.GetTempPath()), command: ["node", "agent.mjs"]);
         var before = info.ArgumentList.ToList();
 
-        Assert.False(adapter.TakesSettings);
-        adapter.HandSettings(info, File);
+        Assert.False(adapter.Can.TakesSettings);
+        adapter.Spawned().HandSettings(info, File);
 
         Assert.Equal(before, info.ArgumentList);
         Assert.Null(adapter.AcpSessionMeta(File));

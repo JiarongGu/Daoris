@@ -33,7 +33,7 @@ public sealed class ChatGoOnTests : IDisposable
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     /// <summary>A conversation's adapter on the protocol door with no toolchain, so nothing is probed.</summary>
-    private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
+    private static Provider Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
 
     /// <summary>What the course answered each go-on, by session (FOUNDATION1h branch 7), heard from the runner's go-on.</summary>
     private static List<(string Session, LineCourse Answer)> Deciding(ChatRunner runner)
@@ -56,7 +56,7 @@ public sealed class ChatGoOnTests : IDisposable
 
     private ChatRunner Runner(ChatLedger ledger, SessionEvents events, List<AccountLine>? lines = null)
     {
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["talk"] = Talk(),
             ["acp-stub"] = BuiltDoors.AcpStub,

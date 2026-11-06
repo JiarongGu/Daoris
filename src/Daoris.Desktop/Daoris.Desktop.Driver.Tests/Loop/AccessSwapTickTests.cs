@@ -85,7 +85,7 @@ public sealed class AccessSwapTickTests : IDisposable
         await using var service = SaidStandIn.Start(_repository);
         var built = ProviderRegistry.Built();
         var adapters = new ProviderRegistry(built.Names.ToDictionary(
-            name => name, name => name == "acp-stub" ? PosturedStub() : built.Resolve(name), StringComparer.OrdinalIgnoreCase));
+            name => name, name => name == "acp-stub" ? PosturedStub() : built.Door(name), StringComparer.OrdinalIgnoreCase));
         var processes = new SessionProcesses();
 
         var tick = Look(service, adapters, processes).RunOnceAsync();
@@ -175,7 +175,7 @@ public sealed class AccessSwapTickTests : IDisposable
     }
 
     /// <summary>The protocol stub with postures: Claude's words for its auto, asking and unrestricted modes.</summary>
-    private static ISessionAdapter PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions", null));
+    private static Provider PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions", null));
 
     /// <summary>
     /// The protocol door's stand-in: it resumes, and offers Claude's modes on each session, a mode set going to the log. Its first

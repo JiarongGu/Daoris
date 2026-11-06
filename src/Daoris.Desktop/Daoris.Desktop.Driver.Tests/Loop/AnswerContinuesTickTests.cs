@@ -347,14 +347,14 @@ public sealed class AnswerContinuesTickTests : IDisposable
         // Every built adapter, the stub whose accounts the protocol stub runs as among them, with the protocol stub postured.
         var built = ProviderRegistry.Built();
         var adapters = new ProviderRegistry(built.Names.ToDictionary(
-            name => name, name => name == "acp-stub" ? PosturedStub() : built.Resolve(name), StringComparer.OrdinalIgnoreCase));
+            name => name, name => name == "acp-stub" ? PosturedStub() : built.Door(name), StringComparer.OrdinalIgnoreCase));
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), Config(Agent(), "modes", permissions), adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>The protocol stub with Claude's words for its auto, asking and unrestricted modes.</summary>
-    private static ISessionAdapter PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions", null));
+    private static Provider PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions", null));
 
     /// <summary>
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, takes the quest and asks which

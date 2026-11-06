@@ -54,7 +54,7 @@ public sealed class HelpStartReadTests : IDisposable
         };
         var placed = new HelpPlaced(id, $"Ask Daoris `{id}` opened.")
         {
-            Adapter = adapters.Resolve("acp-stub"),
+            Adapter = adapters.Door("acp-stub"),
             Selection = new HarnessSelection(Refusal: null),
         };
         return (runner, events, client, config, placed);

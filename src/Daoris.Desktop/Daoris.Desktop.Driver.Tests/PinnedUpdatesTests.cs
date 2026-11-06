@@ -26,7 +26,7 @@ public sealed class PinnedUpdatesTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private static HarnessToolchain ClaudeCode => ProviderRegistry.Built().Resolve("claude-code").Toolchain!;
+    private static TestAgent ClaudeCode => ProviderRegistry.Built().AgentNamed("claude-code")!;
 
     [Fact]
     public void Claude_code_declares_the_switch_it_was_measured_with()
@@ -65,14 +65,14 @@ public sealed class PinnedUpdatesTests : IDisposable
     [Fact]
     public void The_protocol_door_s_managed_claude_runs_with_updates_off()
     {
-        var door = ProviderRegistry.Built().Resolve("claude-code-acp");
+        var door = ProviderRegistry.Built().Door("claude-code-acp");
         var acp = door.Toolchain!;
         var pointed = new ProcessStartInfo("claude-agent-acp");
         var unpointed = new ProcessStartInfo("claude-agent-acp");
         unpointed.Environment.Remove("DISABLE_UPDATES");
 
         Shell.Equip(pointed, acp, profileHome: null, binary: null,
-            seam: each => door.PointAtClaude(each, "C:/somewhere/toolchain/claude-code/2.1.270/claude.cmd"));
+            seam: each => door.Spawned().PointAtClaude(each, "C:/somewhere/toolchain/claude-code/2.1.270/claude.cmd"));
         Shell.Equip(unpointed, acp, profileHome: null, binary: null, seam: null);
 
         Assert.Equal("1", pointed.Environment["DISABLE_UPDATES"]);
@@ -100,7 +100,7 @@ public sealed class PinnedUpdatesTests : IDisposable
             : $"#!/bin/sh\nexec node \"{script}\" \"$@\"\n");
         if (!windows) File.SetUnixFileMode(shim, UnixFileMode.UserRead | UnixFileMode.UserExecute);
 
-        var toolchain = new HarnessToolchain(
+        var toolchain = new TestAgent(
             Binary: ["pinned"], VersionArguments: ["--version"],
             PinnedEnvironment: new Dictionary<string, string> { ["DISABLE_UPDATES"] = "1" });
         var pinned = new HarnessSettings(Versions: new Dictionary<string, string> { ["fake"] = "1.2.3" });

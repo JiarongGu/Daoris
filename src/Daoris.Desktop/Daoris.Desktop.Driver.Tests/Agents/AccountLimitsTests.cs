@@ -17,7 +17,7 @@ public sealed class AccountLimitsTests
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
     private static readonly TimeZoneInfo Machine = TimeZoneInfo.FindSystemTimeZoneById("America/St_Johns");
 
-    private static readonly LimitWords Claude = BuiltDoors.Claude.Toolchain!.Limits!;
+    private static readonly LimitWords Claude = ProviderRegistry.Built().AgentNamed("claude-code")!.Tables.Limits!;
 
     /// <summary>A wall-clock moment in a zone, written as the design's rows write it.</summary>
     private static DateTimeOffset At(string wall, TimeZoneInfo zone)
@@ -279,7 +279,7 @@ public sealed class AccountLimitsTests
     // ——— Codex's words (TOOL4k, limit-signals evidence §4): one sentence of sentences, its time the machine's, no zone.
 
     /// <summary>Codex's entry, read where its door reads it: `codex-acp`'s own (it has no `codex` adapter to own it).</summary>
-    private static LimitWords Codex => ProviderRegistry.Built().ToolchainOf("codex-acp")!.Limits!;
+    private static LimitWords Codex => ProviderRegistry.Built().AgentNamed("codex-acp")!.Tables.Limits!;
 
     /// <summary>The refusal as the protocol door says it once it keeps the error's data (ACPDATA1).</summary>
     private const string CodexDoor = "the ACP agent refused the call: Internal error: ";
@@ -478,7 +478,7 @@ public sealed class AccountLimitsTests
     public void Only_an_agent_seen_hitting_a_limit_declares_an_entry()
     {
         Assert.Equal(new[] { "claude-code", "codex-acp", "stub" }, Declared().Select(d => d.Agent).Order(StringComparer.Ordinal));
-        Assert.Same(Claude, BuiltDoors.Stub.Toolchain!.Limits);
+        Assert.Same(Claude, ProviderRegistry.Built().AgentNamed("stub")!.Tables.Limits);
     }
 
     private static IEnumerable<(string Agent, LimitWords Words)> Declared()
@@ -486,7 +486,7 @@ public sealed class AccountLimitsTests
         var adapters = ProviderRegistry.Built();
         foreach (var name in new[] { "stub", "acp-stub", "claude-code", "claude-code-acp", "dsh", "codex-acp" })
         {
-            if (adapters.Resolve(name).Toolchain?.Limits is { } words) yield return (name, words);
+            if (adapters.AgentNamed(name)?.Tables.Limits is { } words) yield return (name, words);
         }
     }
 

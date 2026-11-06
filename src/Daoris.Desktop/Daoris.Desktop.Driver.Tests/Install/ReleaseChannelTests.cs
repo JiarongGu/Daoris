@@ -242,14 +242,14 @@ public sealed class ReleaseChannelTests : IDisposable
     public void Claude_Code_pins_from_its_maker_s_channel_and_the_doors_from_npm()
     {
         var set = ProviderRegistry.Built();
-        var pipe = set.Resolve("claude-code").Toolchain!;
+        var pipe = set.AgentNamed("claude-code")!;
 
-        Assert.Equal(ClaudeReleases.Channel, pipe.Channel);
-        Assert.Null(pipe.Package);
+        Assert.Equal(ClaudeReleases.Channel, pipe.Program.Channel);
+        Assert.Null(pipe.Program.Package);
         foreach (var door in new[] { "claude-code-acp", "codex-acp", "dsh" })
         {
-            Assert.NotNull(set.Resolve(door).Toolchain!.Package);
-            Assert.Null(set.Resolve(door).Toolchain!.Channel);
+            Assert.NotNull(set.AgentNamed(door)!.Program.Package);
+            Assert.Null(set.AgentNamed(door)!.Program.Channel);
         }
     }
 
@@ -257,7 +257,7 @@ public sealed class ReleaseChannelTests : IDisposable
     public async Task A_pin_of_an_unsigned_version_is_refused_before_anything_is_fetched()
     {
         var transport = new Served([]);
-        var toolchain = ProviderRegistry.Built().Resolve("claude-code").Toolchain!;
+        var toolchain = ProviderRegistry.Built().AgentNamed("claude-code")!;
 
         await Assert.ThrowsAsync<DriverException>(() => HarnessActions.PinAsync(
             toolchain, _home, "claude-code", "2.1.87", _ => { }, CancellationToken.None, transport: transport));
@@ -276,7 +276,7 @@ public sealed class ReleaseChannelTests : IDisposable
         var said = new List<string>();
 
         var code = await HarnessActions.PinAsync(
-            ProviderRegistry.Built().Resolve("claude-code").Toolchain!, _home, "claude-code", "2.1.281", said.Add,
+            ProviderRegistry.Built().AgentNamed("claude-code")!, _home, "claude-code", "2.1.281", said.Add,
             CancellationToken.None, transport: transport);
 
         Assert.Equal(0, code);

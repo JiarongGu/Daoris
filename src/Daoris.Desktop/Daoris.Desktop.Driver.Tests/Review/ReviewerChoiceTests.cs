@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// sign-ins, the kept account and pins. Where no other maker's agent can read the work it says why, with a code (§3.3).
 /// </summary>
 /// <remarks>
-/// Nothing here starts a process. Each agent is present by a file look (<see cref="HarnessToolchain.ProbeByPresence"/>) on a
+/// Nothing here starts a process. Each agent is present by a file look (<see cref="TestAgent.ProbeByPresence"/>) on a
 /// command this test writes, and is asked nobody's sign-in; its owner, product and maker are copied from the declaration this
 /// build carries (<see cref="ProviderRegistry.Built"/>), so the families are the real ones.
 /// </remarks>
@@ -50,19 +50,19 @@ public sealed class ReviewerChoiceTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>
     /// The agent this build carries by <paramref name="name"/>, its family as declared (whose accounts, its product, its maker)
     /// and nothing else: present by a file look, or absent where <paramref name="binary"/> names nothing.
     /// </summary>
-    private static HarnessToolchain Like(string name, string binary)
+    private static TestAgent Like(string name, string binary)
     {
-        var real = ProviderRegistry.Built().Resolve(name).Toolchain!;
+        var real = ProviderRegistry.Built().AgentNamed(name)!;
         // A test double whose own home is nobody's (OWNSPACE1a): the reviewer walk is this file's subject, and its holds are read
         // off the own home's cool-off; a real agent's start in a Daoris account is OwnSpaceTests'.
-        return new HarnessToolchain(
-            Binary: [binary], VersionArguments: [], ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf,
+        return new TestAgent(
+            Binary: [binary], VersionArguments: [], ProfileVariable: real.Home.Variable, AccountOf: real.AccountOf,
             ProbeByPresence: true, Product: real.Product, Maker: real.Maker, RunsInOwnHome: true);
     }
 
@@ -74,7 +74,7 @@ public sealed class ReviewerChoiceTests : IDisposable
     /// </summary>
     private HarnessRoster Roster(string[]? absent = null, string[]? bare = null)
     {
-        var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
+        var adapters = new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in Agents)
         {
             var binary = absent?.Contains(name) == true ? Nowhere : bare?.Contains(name) == true ? name + "-pinned" : Command;

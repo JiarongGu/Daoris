@@ -74,7 +74,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
         Assert.Equal((null, null), (plain.Model, plain.Effort));
     }
 
-    private static ISessionAdapter Talk(HarnessToolchain toolchain) => TestDoors.Door("talk", toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
+    private static Provider Talk(TestAgent toolchain) => TestDoors.Door("talk", toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     private sealed class Turned : ITurnedChat
     {
@@ -181,9 +181,9 @@ public sealed class HandOverMoveStoreTests : IDisposable
         // Its turns are this shell's own (a record in a live state that no turn here holds is another process's, which a press refuses).
         ledger.Chat("c1", "stopped", "talk", _root, profile: "account-1");
         ledger.Chat("q1s", "stopped", "talk", _root, kind: "driven", quest: "q1", profile: "account-1");
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
-            ["talk"] = Talk(new HarnessToolchain(
+            ["talk"] = Talk(new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
                 Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
         });

@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process or asks git: the walk is asked directly, and each agent is present by a file look that asks nobody
-/// whether an account is signed in (<see cref="HarnessToolchain.ProbeByPresence"/>), as <c>RefusedByTheHarnessTests</c>' are.
+/// whether an account is signed in (<see cref="TestAgent.ProbeByPresence"/>), as <c>RefusedByTheHarnessTests</c>' are.
 /// </remarks>
 public sealed class BuildWalkTests : IDisposable
 {
@@ -46,12 +46,12 @@ public sealed class BuildWalkTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain, Transport wire = Transport.Protocol) => TestDoors.Door(name, toolchain, transport: wire, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
+    private static Provider Adapter(string name, TestAgent toolchain, Transport wire = Transport.Protocol) => TestDoors.Door(name, toolchain, transport: wire, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private Daoris.Driver.Driver Driver(params ActorChoice[] build)
     {
-        var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var present = new TestAgent(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["cool"] = Adapter("cool", present),
             ["fine"] = Adapter("fine", present),
@@ -282,7 +282,7 @@ public sealed class BuildWalkTests : IDisposable
 
         Assert.Equal(("build", "3"), (settled.Role, settled.Chosen!.From));
         Assert.Equal(counted + 1, settled.Reservation);
-        Assert.Equal("fine", settled.Adapter!.Name);
+        Assert.Equal("fine", settled.Adapter!.Id.Value);
 
         var moved = await driver.ReaskAsync(Start, registry, settled.Chosen, settled.Selection, CancellationToken.None);
 

@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process. The walk runs on an agent present by a file look that asks nobody whether an account is
-/// signed in (<see cref="HarnessToolchain.ProbeByPresence"/>), so every account is ready unless a reading, a cool-off or a
+/// signed in (<see cref="TestAgent.ProbeByPresence"/>), so every account is ready unless a reading, a cool-off or a
 /// refusal says otherwise; the conclusion runs on the protocol stub, which reads the stub's words as its owner's (AGT7).
 /// A refused start through real ticks, its next start on another account, is <c>SignInRefusalTickTests</c>, in the
 /// <c>Process</c> half.
@@ -50,13 +50,13 @@ public sealed class SignInRefusedStartTests : IDisposable
     /// <summary>A file that is there, so the agent is present by a look and nothing runs.</summary>
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>An agent with accounts, present by a look, with no login question: only a reading says an account is signed out.</summary>
     private HarnessRoster Fake() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = Adapter("fake", new HarnessToolchain(
+            ["fake"] = Adapter("fake", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
         }), Settings)
         {
@@ -345,7 +345,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         AccountReads.Keep(_home, "fake", "account-2", LoginState.In, Seen.AddMinutes(-30));
         List<string> asked = [];
         var roster = FakeAsked(asked, _ => LoginState.Out, signIn: true);
-        var adapter = roster.Adapters.Resolve("fake");
+        var adapter = roster.Adapters.Door("fake");
         using var service = _ledger.Client();
         using var runner = Runner(service, roster);
 
@@ -399,7 +399,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var failed = Observation.Conclude(0, "Open", turnFailed: Refusal);
 
         var conclusion = Driver(service, roster).AccountSignedOut(
-            failed, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-2"), Refusal);
+            failed, ProviderRegistry.Built().Door("acp-stub"), new HarnessSelection(null, "account-2"), Refusal);
 
         Assert.Equal("failed", conclusion.State);
         Assert.Equal(
@@ -429,7 +429,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         };
 
         var conclusion = Driver(service, roster).AccountSignedOut(
-            failed, ProviderRegistry.Built().Resolve("claude-code-acp"), new HarnessSelection(null, "account-2"), expired, ended);
+            failed, ProviderRegistry.Built().Door("claude-code-acp"), new HarnessSelection(null, "account-2"), expired, ended);
 
         Assert.Equal(("account.signed-out", "claude-code"), (conclusion.Parts![^1].Code, (string?)conclusion.Parts[^1].Value("owner")));
         Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("claude-code", "account-2"));
@@ -447,7 +447,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var ended = new SessionConclusion(state, "it ended.");
 
         var conclusion = Driver(service, Built()).AccountSignedOut(
-            ended, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-2"), Refusal);
+            ended, ProviderRegistry.Built().Door("acp-stub"), new HarnessSelection(null, "account-2"), Refusal);
 
         Assert.Equal(ended, conclusion);
         Assert.False(File.Exists(AccountReads.PathOf(_home)));
@@ -460,7 +460,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var failed = new SessionConclusion("failed", "the agent's turn failed before it took its quest: Internal error: Overloaded");
 
         var conclusion = Driver(service, Built()).AccountSignedOut(
-            failed, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-2"),
+            failed, ProviderRegistry.Built().Door("acp-stub"), new HarnessSelection(null, "account-2"),
             "the ACP agent refused the call: Internal error: Overloaded");
 
         Assert.Equal(failed, conclusion);
@@ -479,7 +479,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var failed = Observation.Conclude(0, "Open", turnFailed: Refusal);
 
         var conclusion = Driver(service, roster).AccountSignedOut(
-            failed, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null), Refusal);
+            failed, ProviderRegistry.Built().Door("acp-stub"), new HarnessSelection(null), Refusal);
 
         Assert.Equal("account.signed-out-own", conclusion.Parts![^1].Code);
         Assert.EndsWith(
@@ -511,7 +511,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         File.WriteAllText(transcript, "working on it\nFailed to authenticate. API Error: 401 API key is invalid.\n");
 
         var conclusion = Driver(service, roster).AccountRefused(
-            new SessionConclusion("failed", "exit 1 before taking its quest."), ProviderRegistry.Built().Resolve("stub"),
+            new SessionConclusion("failed", "exit 1 before taking its quest."), ProviderRegistry.Built().Door("stub"),
             new HarnessSelection(null, "account-1"), HarnessEnding.Transcript(1, transcript));
 
         Assert.Equal("account.refused", conclusion.Parts![^1].Code);
@@ -525,9 +525,9 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     /// <summary>The fake agent with Claude Code's sign-in words declared, so a conversation's refused turn can be read on it.</summary>
     private HarnessRoster FakeSigningIn() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = Adapter("fake", new HarnessToolchain(
+            ["fake"] = Adapter("fake", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
                 SignIn: ClaudeSignIn.Words)),
         }), Settings)
@@ -547,7 +547,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var roster = FakeSigningIn();
         using var runner = Runner(service, roster);
 
-        var said = runner.SignedOut(new ChatAgent(roster.Adapters.Resolve("fake")), "account-1", Refusal);
+        var said = runner.SignedOut(new ChatAgent(roster.Adapters, roster.Adapters.Door("fake")), "account-1", Refusal);
 
         Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("fake", "account-1"));
         Assert.Equal(
@@ -568,7 +568,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var roster = FakeSigningIn();
         using var runner = Runner(service, roster);
 
-        runner.SignedOut(new ChatAgent(roster.Adapters.Resolve("fake")), "account-1", Refusal);
+        runner.SignedOut(new ChatAgent(roster.Adapters, roster.Adapters.Door("fake")), "account-1", Refusal);
         var selection = await roster.SelectAsync("fake", FakeConfig, null, null);
 
         Assert.True(selection.Allowed);
@@ -590,8 +590,8 @@ public sealed class SignInRefusedStartTests : IDisposable
         var silent = Fake();
         using var unsigned = Runner(service, silent);
 
-        Assert.Null(runner.SignedOut(new ChatAgent(signing.Adapters.Resolve("fake")), "account-1", "the ACP agent refused the call: Internal error: Overloaded"));
-        Assert.Null(unsigned.SignedOut(new ChatAgent(silent.Adapters.Resolve("fake")), "account-1", Refusal));
+        Assert.Null(runner.SignedOut(new ChatAgent(signing.Adapters, signing.Adapters.Door("fake")), "account-1", "the ACP agent refused the call: Internal error: Overloaded"));
+        Assert.Null(unsigned.SignedOut(new ChatAgent(silent.Adapters, silent.Adapters.Door("fake")), "account-1", Refusal));
         Assert.False(File.Exists(AccountReads.PathOf(_home)));
     }
 
@@ -603,7 +603,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var roster = Built();
         using var runner = Runner(service, roster);
 
-        var said = runner.SignedOut(new ChatAgent(ProviderRegistry.Built().Resolve("acp-stub")), profile: null, Refusal);
+        var said = runner.SignedOut(new ChatAgent(ProviderRegistry.Built(), ProviderRegistry.Built().Door("acp-stub")), profile: null, Refusal);
 
         Assert.Equal("account.signed-out-own", said!.Parts![^1].Code);
         Assert.Equal(LoginState.Out, AccountReads.Of(_home, "stub").Own!.Login);
@@ -621,7 +621,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         await service.AdvanceAsync(id!, "working");
         var failed = Observation.Conclude(0, "Open", turnFailed: Refusal);
         var concluded = accountLine
-            ? Driver(service, roster).AccountSignedOut(failed, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-1"), Refusal)
+            ? Driver(service, roster).AccountSignedOut(failed, ProviderRegistry.Built().Door("acp-stub"), new HarnessSelection(null, "account-1"), Refusal)
             : failed;
         await service.AdvanceAsync(id!, concluded.State, note: concluded.Note, parts: concluded.Parts);
         return id!;

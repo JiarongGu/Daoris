@@ -269,7 +269,7 @@ public sealed class PluginCatalogTests : IDisposable
 
         Assert.Contains("claude-code", entry.Problem);
         Assert.Contains("this build", entry.Problem);
-        Assert.Null(Assert.IsType<LegacyDoor>(Built().WithPlugins(catalog).Resolve("claude-code")).Door.Identity.DeclaredBy);
+        Assert.Null(Built().WithPlugins(catalog).Door("claude-code").Identity.DeclaredBy);
     }
 
     /// <summary>
@@ -316,7 +316,7 @@ public sealed class PluginCatalogTests : IDisposable
             Assert.Equal(refused, PluginCatalog.RefusedByThisBuild(entry.Manifest with { Harnesses = [new(name, ["agent"])] }, handed ?? []) is not null);
             // Nothing built in is shadowed: an agent a door runs as keeps the holder that answers for its accounts.
             var built = Built();
-            if (refused) Assert.Same(built.ToolchainOf(name), built.WithPlugins(catalog).ToolchainOf(name));
+            if (refused) Assert.Same(built.AgentNamed(name), built.WithPlugins(catalog).AgentNamed(name));
         }
     }
 
@@ -334,7 +334,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Null(catalog.Plugins[0].Problem);
         Assert.Contains("a.one", catalog.Plugins[1].Problem);
         Assert.Contains("shared", catalog.Plugins[1].Problem);
-        Assert.Equal("one", Built().WithPlugins(catalog).Resolve("shared").Prepare(Target(_home), null).FileName);
+        Assert.Equal("one", Built().WithPlugins(catalog).Start("shared", Target(_home), null).FileName);
     }
 
     /// <summary>A fifth harness arrives as a file: a configuration of the ACP door, with the seam's own fields.</summary>
@@ -349,12 +349,12 @@ public sealed class PluginCatalogTests : IDisposable
             """);
 
         var adapters = Built().WithPlugins(PluginCatalog.Load(_home, Built().Names));
-        var adapter = adapters.Resolve("acme-agent");
+        var adapter = adapters.Door("acme-agent");
 
         Assert.Contains("acme-agent", adapters.Names);
         Assert.Equal(Transport.Protocol, adapter.Transport);
-        Assert.Equal("edits", adapter.AcpPosture);
-        Assert.True(adapter.Interactive);
+        Assert.Equal("edits", adapter.Postures.Ordinary);
+        Assert.True(adapter.Can.Interactive);
 
         var info = adapter.Prepare(Target(_home), command: null);
         Assert.Equal(Path.Combine(folder, "agent.mjs"), info.FileName);
@@ -382,7 +382,7 @@ public sealed class PluginCatalogTests : IDisposable
     {
         var folder = Plugin("plain", """{ "id": "plain", "harnesses": [ { "name": "plain-agent", "command": ["${plugin}/agent.mjs"] } ] }""");
         File.WriteAllText(Path.Combine(folder, "agent.mjs"), "// would wait on stdin forever if it were run\n");
-        var adapter = Built().WithPlugins(PluginCatalog.Load(_home)).Resolve("plain-agent");
+        var adapter = Built().WithPlugins(PluginCatalog.Load(_home)).Door("plain-agent");
         Assert.True(adapter.Toolchain!.ProbeByPresence);
 
         var clock = System.Diagnostics.Stopwatch.StartNew();
@@ -405,9 +405,9 @@ public sealed class PluginCatalogTests : IDisposable
     {
         Plugin("plain", """{ "id": "plain", "harnesses": [ { "name": "plain-agent", "command": ["plain"] } ] }""");
 
-        var adapter = Built().WithPlugins(PluginCatalog.Load(_home)).Resolve("plain-agent");
+        var adapter = Built().WithPlugins(PluginCatalog.Load(_home)).Door("plain-agent");
 
-        Assert.Null(adapter.AcpPosture);
+        Assert.Null(adapter.Postures.Ordinary);
         Assert.Null(adapter.Toolchain!.ProfileVariable);
     }
 
@@ -461,8 +461,8 @@ public sealed class PluginCatalogTests : IDisposable
             entry.Manifest.Harnesses.Select(harness => (harness.Name, harness.Product, harness.Maker)));
 
         var adapters = Built().WithPlugins(PluginCatalog.Load(_home, Built().Names));
-        Assert.Equal(("Acme Agent", "Acme"), (adapters.Resolve("acme-agent").Toolchain!.Product, adapters.Resolve("acme-agent").Toolchain!.Maker));
-        Assert.Equal(((string?)null, (string?)null), (adapters.Resolve("older-agent").Toolchain!.Product, adapters.Resolve("older-agent").Toolchain!.Maker));
+        Assert.Equal(("Acme Agent", "Acme"), (adapters.AgentNamed("acme-agent")!.Product, adapters.AgentNamed("acme-agent")!.Maker));
+        Assert.Equal(((string?)null, (string?)null), (adapters.AgentNamed("older-agent")!.Product, adapters.AgentNamed("older-agent")!.Maker));
     }
 
     /// <summary>
@@ -489,9 +489,9 @@ public sealed class PluginCatalogTests : IDisposable
         var adapters = Built().WithPlugins(PluginCatalog.Load(_home, Built().Names));
         Assert.Equal(
             [true, false, false],
-            new[] { "boxed-agent", "plain-agent", "odd-agent" }.Select(name => adapters.Resolve(name).Toolchain!.RunsInOwnHome));
-        Assert.False(adapters.Resolve("plain-agent").Toolchain!.StartsInOwnHome);
-        Assert.True(adapters.Resolve("boxed-agent").Toolchain!.StartsInOwnHome);
+            new[] { "boxed-agent", "plain-agent", "odd-agent" }.Select(name => adapters.AgentNamed(name)!.Home.OwnHome));
+        Assert.False(adapters.AgentNamed("plain-agent")!.Home.StartsInOwnHome);
+        Assert.True(adapters.AgentNamed("boxed-agent")!.Home.StartsInOwnHome);
     }
 
     /// <summary>What the loop watches between ticks: a plugin added, removed, enabled or disabled changes it; nothing else does.</summary>
@@ -783,11 +783,11 @@ public sealed class PluginCatalogTests : IDisposable
         // Claude Code takes it as `--mcp-config <file>` — verified against `claude --help`, like every
         // other claim about somebody else's tool. The default adapter takes nothing and says nothing.
         var info = new ProcessStartInfo();
-        Built().Resolve("claude-code").HandServers(info, path);
+        Built().Door("claude-code").Spawned().HandServers(info, path);
         Assert.Equal(["--mcp-config", path], info.ArgumentList);
 
         var stub = new ProcessStartInfo();
-        Built().Resolve("stub").HandServers(stub, path);
+        Built().Door("stub").Spawned().HandServers(stub, path);
         Assert.Empty(stub.ArgumentList);
 
         SpawnFiles.Remove(path);

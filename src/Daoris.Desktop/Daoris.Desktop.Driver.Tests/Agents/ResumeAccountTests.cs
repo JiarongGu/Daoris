@@ -373,12 +373,12 @@ public sealed class ResumeAccountTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
     private HarnessRoster Roster() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = Adapter("fake", new HarnessToolchain(
+            ["fake"] = Adapter("fake", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
         }), Settings)
         {

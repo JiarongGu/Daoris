@@ -105,7 +105,7 @@ public sealed class ProviderRegistryTests : IDisposable
         // Row g: a caller's door test reads the door's ability; each one answers what the wire test answered.
         foreach (var name in ProviderRegistry.Built().Names)
         {
-            var adapter = ProviderRegistry.Built().Resolve(name);
+            var adapter = ProviderRegistry.Built().Door(name);
             var abilities = adapter.Abilities();
             var protocol = adapter.Transport == Transport.Protocol;
             Assert.Equal(protocol, abilities.ServersOnWire);
@@ -114,9 +114,9 @@ public sealed class ProviderRegistryTests : IDisposable
             Assert.Equal(protocol, abilities.WordsAtNextStep);
             Assert.Equal(protocol, abilities.HeldOnWire);
             Assert.Equal(!protocol, abilities.ResumesByRestart);
-            Assert.Equal(adapter.Interactive, abilities.Interactive);
-            Assert.Equal(adapter.Resumes, abilities.Resumes);
-            Assert.Equal(adapter.TakesSettings, abilities.TakesSettings);
+            Assert.Equal(adapter.Can.Interactive, abilities.Interactive);
+            Assert.Equal(adapter.Can.Resumes, abilities.Resumes);
+            Assert.Equal(adapter.Can.TakesSettings, abilities.TakesSettings);
             Assert.Equal(protocol || adapter.StructuredOutput() is not null, abilities.Structured);
         }
     }
@@ -152,10 +152,10 @@ public sealed class ProviderRegistryTests : IDisposable
     public void A_dsh_door_holds_no_conversation_by_its_declared_ability()
     {
         // The chat's two tests of `Interactive` read the door's declaration, never the transport's (C2-1.1).
-        var dsh = ProviderRegistry.Built().Resolve("dsh").Abilities();
+        var dsh = ProviderRegistry.Built().Door("dsh").Can;
         Assert.Equal(Transport.Protocol, dsh.Transport);
         Assert.False(dsh.Interactive);
-        Assert.True(ProviderRegistry.Built().Resolve("codex-acp").Abilities().Interactive);
+        Assert.True(ProviderRegistry.Built().Door("codex-acp").Can.Interactive);
     }
 
     /// <summary>§5: a key resolves to its pool, the key and the providers holding it, and a pool that holds none is no pool.</summary>
@@ -232,16 +232,16 @@ public sealed class ProviderRegistryTests : IDisposable
     /// <summary>Today's answers: <c>Toolchain.Owner</c>, <c>AgentFamily</c> and the roster's readers, each read where the code reads it.</summary>
     private static Answer Today(ProviderRegistry set, HarnessRoster roster, string door)
     {
-        var toolchain = set.Resolve(door).Toolchain!;
+        var toolchain = set.AgentNamed(door)!;
         var agent = roster.AccountAgentOf(door);
         // HarnessRoster.ReportingDoor (private): the account agent where it is a door of this set, else the door itself.
         var reporting = agent is { } found && set.Names.Contains(found.Name, StringComparer.OrdinalIgnoreCase) ? found.Name : door;
         return new Answer(
-            AccountKeyOf(toolchain, door), AgentFamily.Of(set, door).Owner, agent!.Value.Name, reporting,
+            AccountKeyOf(toolchain, door), AgentFamily.Of(set, door).Owner, agent!.Name, reporting,
             roster.LimitsOf(door) is not null, roster.SignInOf(door) is not null, roster.WindowsOf(door) is not null,
-            roster.UsageOf(door) is not null, agent.Value.Toolchain.LoginCheck is not null, agent.Value.Toolchain.KeyVariable,
-            roster.AccountToolchain(door)?.SettingsFile, toolchain.ProfileVariable, toolchain.RunsInOwnHome, toolchain.StartsInOwnHome,
-            toolchain.TrustFile);
+            roster.UsageOf(door) is not null, agent.Accounts.Login is not null, agent.Accounts.KeyVariable,
+            roster.AccountAgentOf(door)?.Accounts.SettingsFile, toolchain.Home.Variable, toolchain.Home.OwnHome, toolchain.Home.StartsInOwnHome,
+            toolchain.Home.TrustFile);
     }
 
     private static Answer Registered(ProviderRegistry registry, string door)
@@ -275,26 +275,26 @@ public sealed class ProviderRegistryTests : IDisposable
     /// </summary>
     private static List<string> Disagreeing(ProviderRegistry set)
     {
-        HarnessToolchain? Owners(string owner)
+        TestAgent? Owners(string owner)
         {
-            HarnessToolchain? door = null;
+            TestAgent? door = null;
             foreach (var name in set.Names)
             {
-                var toolchain = set.Resolve(name).Toolchain;
+                var toolchain = set.AgentNamed(name);
                 if (toolchain is null || !string.Equals(AccountKeyOf(toolchain, name), owner, StringComparison.OrdinalIgnoreCase)) continue;
                 if (string.Equals(name, owner, StringComparison.OrdinalIgnoreCase)) return toolchain;
                 door ??= toolchain;
             }
 
-            return door ?? set.ToolchainOf(owner);
+            return door ?? set.AgentNamed(owner);
         }
 
         return [.. set.Names.Where(name =>
-            set.Resolve(name).Toolchain is { } own && own.StartsInOwnHome != Owners(AccountKeyOf(own, name))!.StartsInOwnHome)];
+            set.AgentNamed(name) is { } own && own.Home.StartsInOwnHome != Owners(AccountKeyOf(own, name))!.StartsInOwnHome)];
     }
 
-    /// <summary>The account key as the retired <c>HarnessToolchain.Owner</c> spelled it: the declared <c>accountOf</c>, else the name.</summary>
-    private static string AccountKeyOf(HarnessToolchain toolchain, string name) => toolchain.AccountOf is { Length: > 0 } owner ? owner : name;
+    /// <summary>The account key as the retired <c>TestAgent.Owner</c> spelled it: the declared <c>accountOf</c>, else the name.</summary>
+    private static string AccountKeyOf(TestAgent toolchain, string name) => toolchain.AccountOf is { Length: > 0 } owner ? owner : name;
 
     /// <summary>
     /// Row a's proof (the design §11): over the built set and each plugin case, the registry answers for every door the account key
@@ -348,8 +348,8 @@ public sealed class ProviderRegistryTests : IDisposable
 
         // `AgentsCommand` reads a door's settings file through its account agent and any other agent's own toolchain.
         string? Settings(string agent) => set.Names.Contains(agent, StringComparer.OrdinalIgnoreCase)
-            ? roster.AccountToolchain(agent)?.SettingsFile
-            : set.ToolchainOf(agent)?.SettingsFile;
+            ? roster.AccountAgentOf(agent)?.Accounts.SettingsFile
+            : set.AgentNamed(agent)?.Accounts.SettingsFile;
         if (table.TryGetProperty("agents", out var agents))
         {
             foreach (var listed in agents.EnumerateObject())
@@ -441,7 +441,7 @@ public sealed class ProviderRegistryTests : IDisposable
 
         foreach (var asked in new[] { "nope", "codex" })
         {
-            var today = Assert.Throws<DriverException>(() => set.Resolve(asked));
+            var today = Assert.Throws<DriverException>(() => set.Door(asked));
             Assert.Equal(today.Message, Assert.Throws<DriverException>(() => registry.Door(asked)).Message);
             Assert.Equal(today.Message, Assert.Throws<DriverException>(() => registry.Resolve(asked, IdKind.Door)).Message);
         }
@@ -496,9 +496,9 @@ public sealed class ProviderRegistryTests : IDisposable
         Assert.Equal(["claude"], claude.Program.Required.Binary);
         Assert.Equal(new AccountKey("claude-code"), claude.Accounts.Required.Key);
         Assert.Equal("ANTHROPIC_API_KEY", claude.Accounts.Required.Facts.KeyVariable);
-        Assert.Same(set.Resolve("claude-code").Toolchain!.Limits, claude.Tables.Required.Limits);
+        Assert.Same(set.AgentNamed("claude-code")!.Tables.Limits, claude.Tables.Required.Limits);
         Assert.NotNull(claude.Tables.Required.ErrorWords);
-        Assert.Same(set.Resolve("claude-code").Toolchain!.Usage, claude.Usage.Required.Question);
+        Assert.Same(set.AgentNamed("claude-code")!.Usage, claude.Usage.Required.Question);
         Assert.Equal(Transport.Native, claude.Doors[0].Transport);
         Assert.Equal(Transport.Protocol, claude.Doors[1].Transport);
         Assert.All(claude.Doors, door => Assert.Equal(new DoorIdentity(null, null, null), door.Identity));
@@ -517,8 +517,8 @@ public sealed class ProviderRegistryTests : IDisposable
         Assert.False(registry.Door("dsh").Abilities.Interactive.Required);
         Assert.Equal(Transport.Protocol, registry.Door("dsh").Transport);
         Assert.True(registry.Door("claude-code").Abilities.Interactive.Required);
-        var door = set.Resolve("claude-code-acp");
-        Assert.Equal((door.AcpPosture, door.AskingPosture, door.FullPosture), (
+        var door = set.Door("claude-code-acp");
+        Assert.Equal((door.Postures.Ordinary, door.Postures.Asking, door.Postures.Full), (
             registry.Door("claude-code-acp").Postures.Ordinary, registry.Door("claude-code-acp").Postures.Asking,
             registry.Door("claude-code-acp").Postures.Full));
         Assert.NotNull(registry.Door("claude-code-acp").Postures.Ordinary);
@@ -530,18 +530,18 @@ public sealed class ProviderRegistryTests : IDisposable
     {
         var set = ProviderRegistry.Built();
         var registry = set;
-        var claude = set.Resolve("claude-code").Toolchain!;
-        var stub = set.Resolve("stub").Toolchain!;
-        var codexAcp = set.Resolve("codex-acp").Toolchain!;
+        var claude = set.AgentNamed("claude-code")!;
+        var stub = set.AgentNamed("stub")!;
+        var codexAcp = set.AgentNamed("codex-acp")!;
 
         // claude-code, stub and dsh lend all of their pool, tables and usage question.
         var lent = registry.Provider("claude-code").Lent.Required;
-        Assert.Same(claude.Limits, lent.Tables.Limits);
-        Assert.Same(claude.Windows, lent.Tables.Windows);
-        Assert.Same(claude.SignIn, lent.Tables.SignIn);
+        Assert.Same(claude.Tables.Limits, lent.Tables.Limits);
+        Assert.Same(claude.Tables.Windows, lent.Tables.Windows);
+        Assert.Same(claude.Tables.SignIn, lent.Tables.SignIn);
         Assert.Same(claude.Usage, lent.Usage.Question);
-        Assert.Equal(claude.LoginCheck!.LoggedIn, lent.Accounts.Login!.LoggedIn);
-        Assert.Same(stub.Limits, registry.Provider("stub").Lent.Required.Tables.Limits);
+        Assert.Equal(claude.Accounts.Login!.LoggedIn, lent.Accounts.Login!.LoggedIn);
+        Assert.Same(stub.Tables.Limits, registry.Provider("stub").Lent.Required.Tables.Limits);
         Assert.NotNull(registry.Provider("dsh").Lent.Required);
 
         // codex lends its holder's sign-in alone: no words and no usage question.
@@ -553,7 +553,7 @@ public sealed class ProviderRegistryTests : IDisposable
         Assert.Null(holder.Usage.Question);
 
         // codex-acp lends Codex's limit words and usage question; claude-code-acp and acp-stub lend none.
-        Assert.Same(codexAcp.Limits, registry.Door("codex-acp").Lent.Tables.Limits);
+        Assert.Same(codexAcp.Tables.Limits, registry.Door("codex-acp").Lent.Tables.Limits);
         Assert.Same(codexAcp.Usage, registry.Door("codex-acp").Lent.Usage.Question);
         foreach (var none in new[] { "claude-code-acp", "acp-stub" })
         {
@@ -608,8 +608,8 @@ public sealed class ProviderRegistryTests : IDisposable
 
         Assert.Equal(new AccountKey("codex-acp"), made.Accounts.Required.Key);
         Assert.Equal(new DoorId("codex-acp"), made.Accounts.Required.References);
-        Assert.Same(ProviderRegistry.Built().Resolve("codex-acp").Toolchain!.Limits, made.Tables.Required.Limits);
-        Assert.Same(ProviderRegistry.Built().Resolve("codex-acp").Toolchain!.Usage, made.Usage.Required.Question);
+        Assert.Same(ProviderRegistry.Built().AgentNamed("codex-acp")!.Tables.Limits, made.Tables.Required.Limits);
+        Assert.Same(ProviderRegistry.Built().AgentNamed("codex-acp")!.Usage, made.Usage.Required.Question);
         Assert.False(made.Lent.Required.Tables.Limits is not null);
         Assert.Equal(["p-cx"], named.Resolve("codex-acp", IdKind.AccountKey).Pool!.Providers.Select(id => id.Value));
         Assert.Equal(["codex-acp"], named.Provider("codex").Doors.Select(door => door.Id.Value));

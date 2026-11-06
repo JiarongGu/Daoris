@@ -60,13 +60,13 @@ public sealed class AgentSettingsTests : IDisposable
         Assert.Equal("settings.json", AgentSettings.FileName);
         var adapters = ProviderRegistry.Built();
         var declaring = adapters.Names
-            .Where(name => adapters.Resolve(name).Toolchain is { SettingsFile: { Length: > 0 } })
+            .Where(name => adapters.AgentNamed(name) is { SettingsFile: { Length: > 0 } })
             .Order(StringComparer.Ordinal)
             .ToArray();
 
         // The ACP door runs as Claude Code's accounts (AGT7), so its settings are its owner's file.
         Assert.Equal(["claude-code"], declaring);
-        Assert.Equal(AgentSettings.FileName, adapters.Resolve("claude-code").Toolchain!.SettingsFile);
+        Assert.Equal(AgentSettings.FileName, adapters.AgentNamed("claude-code")!.Accounts.SettingsFile);
     }
 
     [Fact]

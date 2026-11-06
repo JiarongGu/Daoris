@@ -56,11 +56,11 @@ public sealed class PipeModelRefusalTests : IDisposable
         return TransportRun.Ending(protocol: false, structured: true, exit, turnFailed: null, own, Transcript);
     }
 
-    private static ISessionAdapter Adapter() => TestDoors.Door("fake", dialect: TestDoors.StreamJson);
+    private static Provider Adapter() => TestDoors.Door("fake", dialect: TestDoors.StreamJson);
 
     private Daoris.Driver.Driver Driver(ServiceClient service)
     {
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["fake"] = Adapter() });
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase) { ["fake"] = Adapter() });
         return new(service, DriverConfig.Empty with { Actors = StaffedRoles.On("fake") }, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }

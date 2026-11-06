@@ -93,16 +93,16 @@ public sealed class UsageHistoryRosterTests : IDisposable
 
     // ——— An asked read.
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
 
     private static UsageQuestion Claude => new ClaudeUsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded);
 
     private static UsageQuestion Codex => new CodexUsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded);
 
     private HarnessRoster Asked(UsageQuestion question) =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = Adapter("fake", new HarnessToolchain(
+            ["fake"] = Adapter("fake", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
                 Usage: question)),
         }), DaorisHome.Entry(_home, HomeEntry.Harnesses))

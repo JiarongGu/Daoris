@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// cache ask nothing; a start runs on an account never read, as on any unknown (SES3), and walks past one last read signed out.
 /// </summary>
 /// <remarks>
-/// The agent is a script that logs every question it is asked, found by presence (<see cref="HarnessToolchain.ProbeByPresence"/>),
+/// The agent is a script that logs every question it is asked, found by presence (<see cref="TestAgent.ProbeByPresence"/>),
 /// so the roster learns it is installed without starting it. A passing run starts no process: an account asked would start the
 /// script and write a line, which is what each case counts.
 /// </remarks>
@@ -49,21 +49,21 @@ public sealed class RosterReadTests : IDisposable
 
     private string[] Asked => File.Exists(Path.Combine(_home, "asked.log")) ? File.ReadAllLines(Path.Combine(_home, "asked.log")) : [];
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain);
 
     private string Gone => Path.Combine(_home, "gone-agent");
 
     private HarnessRoster Roster(Func<string, string, CancellationToken, Task<LoginState>>? asking = null) =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
-            ["agent"] = Adapter("agent", new HarnessToolchain(
+            ["agent"] = Adapter("agent", new TestAgent(
                 Binary: ["node", Script],
                 VersionArguments: ["--version"],
                 ProfileVariable: "READ_HOME",
                 LoginCheck: new LoginQuestion(["--login-state"], "logged-in", "logged-out", @"logged-in as (\S+)"),
                 ProbeByPresence: true)),
             // An agent whose binary is a file that is not there until a test puts it there.
-            ["gone"] = Adapter("gone", new HarnessToolchain(
+            ["gone"] = Adapter("gone", new TestAgent(
                 Binary: [Gone], VersionArguments: ["--version"], ProfileVariable: "READ_HOME", ProbeByPresence: true)),
         }), Settings) { Clock = () => Ten, Asking = asking };
 

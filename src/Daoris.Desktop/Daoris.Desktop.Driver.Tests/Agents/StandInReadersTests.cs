@@ -23,12 +23,12 @@ public sealed class StandInReadersTests
 
     /// <summary>The roster's listing as the code spelled it: skip a door that names no binary and that the home configures no command for.</summary>
     private static List<string> OldListing(ProviderRegistry set, IReadOnlyDictionary<string, IReadOnlyList<string>> commands) => [.. set.Names.Where(name =>
-        !(set.Resolve(name).Toolchain is { Binary.Count: 0 } && commands.GetValueOrDefault(name) is not { Count: > 0 }))];
+        !(set.AgentNamed(name) is { Binary.Count: 0 } && commands.GetValueOrDefault(name) is not { Count: > 0 }))];
 
     /// <summary>The verbs' operands as the code spelled them: each door that names a real program and each agent a door runs as.</summary>
     private static List<string> OldOperands(ProviderRegistry set)
     {
-        HarnessToolchain? Of(string each) => set.ToolchainOf(each);
+        TestAgent? Of(string each) => set.AgentNamed(each);
         // A plugin's door that names a program is an operand as a built one is, so the set's names are read, in the roster's ordinal order.
         return [.. set.Reserved.Concat(set.Names).Distinct(StringComparer.Ordinal).Where(each => Of(each) is { Binary.Count: > 0 }).Order(StringComparer.Ordinal)];
     }

@@ -42,14 +42,14 @@ public sealed class AccountRotationGoalTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
-    private HarnessToolchain Toolchain(bool weekFixed = true, string? accountOf = null) => new(
+    private TestAgent Toolchain(bool weekFixed = true, string? accountOf = null) => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
         AccountOf: accountOf, WeekFixed: weekFixed);
 
     private HarnessRoster Roster() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", Toolchain()),
             // A door onto the fake agent's accounts (AGT7): its sessions are the fake agent's.

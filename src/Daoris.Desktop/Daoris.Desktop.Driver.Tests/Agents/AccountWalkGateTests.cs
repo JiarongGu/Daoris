@@ -53,7 +53,7 @@ public sealed class AccountWalkGateTests : IDisposable
     /// <summary>A file that is there, so the agent is present by a look and nothing runs.</summary>
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
     private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
@@ -66,9 +66,9 @@ public sealed class AccountWalkGateTests : IDisposable
     private HarnessRoster Roster(
         Func<string, Task<LoginState>>? status = null, bool usage = false,
         Func<string, Task<IReadOnlyList<WindowReading>?>>? windows = null, TimeSpan? patience = null, bool asks = false) =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = Adapter("fake", new HarnessToolchain(
+            ["fake"] = Adapter("fake", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
                 LoginCheck: asks ? new LoginQuestion(["auth", "status"], @"""loggedIn""\s*:\s*true", @"""loggedIn""\s*:\s*false") : null,
                 Usage: usage ? Question : null)),

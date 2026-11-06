@@ -72,7 +72,7 @@ public sealed class StaffPolicyLimitTickTests : IDisposable
 
     private Daoris.Driver.Driver Driver(SessionMessagesTickTests.SaidStandIn service, string policy)
     {
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["stub"] = BuiltDoors.Stub,
             ["acp-stub"] = BuiltDoors.AcpStub,

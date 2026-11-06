@@ -41,12 +41,12 @@ public sealed class ContinuedChoiceTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
+    private static Provider Adapter(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private ProviderRegistry Adapters()
     {
-        var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        return new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var present = new TestAgent(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
+        return TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["first"] = Adapter("first", present),
             ["second"] = Adapter("second", present),

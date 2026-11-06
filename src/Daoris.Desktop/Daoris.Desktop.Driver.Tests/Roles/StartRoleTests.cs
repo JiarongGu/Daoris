@@ -113,7 +113,7 @@ public sealed class StartRoleTests : IDisposable
             },
         };
         var ask = new HelperAsk("h1", "s1", "Read this.", "claude", HelperAsk.ByPerson, DateTimeOffset.UnixEpoch);
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>());
+        var adapters = TestDoors.Registry(new Dictionary<string, Provider>());
         IReadOnlyList<ActorEffective> Order(RoleCatalog? catalogue) => HelperChoice.Order(ask, HelperRule.Default, adapters, null, config, catalogue);
 
         var today = Order(null);
@@ -161,7 +161,7 @@ public sealed class StartRoleTests : IDisposable
         Assert.Equal("claude", StartPlan.ContinuedOn(record, Config, "design", bound: "designer", catalogue: RoleCatalog.Of([]), place: Machine));
     }
 
-    private static ISessionAdapter Present(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
+    private static Provider Present(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     /// <summary>
     /// A home whose catalogue holds the repository's own Build role and a role the workflow's work step names, each staffed by its own
@@ -173,8 +173,8 @@ public sealed class StartRoleTests : IDisposable
         var command = Path.Combine(_home, "agent-here");
         File.WriteAllText(command, "");
         var settings = new HarnessSettings();
-        var present = new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
+        var present = new TestAgent(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
+        var adapters = new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase);
         foreach (var agent in new[] { "own", "staffed" })
         {
             Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, "account-1"));
