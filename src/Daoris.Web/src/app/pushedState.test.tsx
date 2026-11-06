@@ -225,7 +225,7 @@ const used = (session: string, when: string) =>
 const USAGE_SNAPSHOT = {
   slice: 'usage', epoch: 'u1', status: 'ready',
   partitions: [
-    { partition: 'accounts', seq: 1, status: 'ready', data: { 'claude-code/work': { harness: 'claude-code', profile: 'work', sessions: 1, used: 12_000 } } },
+    { partition: 'accounts', seq: 1, status: 'ready', data: { 'claude-code/work': { agent: 'claude-code', profile: 'work', sessions: 1, used: 12_000 } } },
     { partition: 'sessions', seq: 1, status: 'ready', data: { 's-1': used('s-1', '2026-10-20T08:00:00+00:00') } },
   ],
 };
@@ -1224,7 +1224,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
       { slice: 'usage', epoch: 'u1', partition: 'sessions', seq: 2, baseSeq: 1, status: 'ready', data: { 's-2': used('s-2', '2026-10-20T09:00:00+00:00') }, removed: [] },
       {
         slice: 'usage', epoch: 'u1', partition: 'accounts', seq: 2, baseSeq: 1, status: 'ready',
-        data: { 'claude-code/work': { harness: 'claude-code', profile: 'work', sessions: 2, used: 24_000 } }, removed: [],
+        data: { 'claude-code/work': { agent: 'claude-code', profile: 'work', sessions: 2, used: 24_000 } }, removed: [],
       },
     ];
     await act(async () => {
@@ -1239,7 +1239,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     await later(1_000);
 
     expect(first?.sessions.map((each) => each.session)).toEqual(['s-2', 's-1']);
-    expect(other?.accounts).toEqual([{ harness: 'claude-code', profile: 'work', sessions: 2, used: 24_000 }]);
+    expect(other?.accounts).toEqual([{ agent: 'claude-code', profile: 'work', sessions: 2, used: 24_000 }]);
     const read = since(before, asked());
     expect(read['DAORIS.DRIVER.USAGE']).toBeUndefined();
     // The second window's own snapshots alone; the first window's ask of the held permissions is not this window's (AUTONOMY1b3c).

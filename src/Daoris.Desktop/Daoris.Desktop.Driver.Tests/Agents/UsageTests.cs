@@ -32,7 +32,7 @@ public sealed class UsageTests : IDisposable
         var store = Store();
 
         Assert.Empty(store.Sessions);
-        Assert.Empty(store.ByAccount());
+        Assert.Empty(store.ByAccount(Agents));
         Assert.Null(store.Of("never-ran"));
     }
 
@@ -99,7 +99,7 @@ public sealed class UsageTests : IDisposable
         store.Record(new UsageEntry("s2", "tools", "claude-code", "work", 12_000, 200_000, When: Now()));
         store.Record(new UsageEntry("s3", "engine", "claude-code", "personal", 5_000, 200_000, When: Now()));
 
-        var accounts = Store().ByAccount();
+        var accounts = Store().ByAccount(Agents);
 
         var work = accounts.Single(a => a.Profile == "work");
         Assert.Equal(2, work.Sessions);
@@ -116,9 +116,33 @@ public sealed class UsageTests : IDisposable
     {
         Store().Record(new UsageEntry("s1", "engine", "claude-code", Profile: null, 9_000, 200_000, Now()));
 
-        var account = Assert.Single(Store().ByAccount());
+        var account = Assert.Single(Store().ByAccount(Agents));
         Assert.Null(account.Profile);
         Assert.Equal(9_000, account.Used);
+    }
+
+    /// <summary>The machine's agents as the built set registers them.</summary>
+    private static AgentOfDoor Agents => new(AdapterSet.Built().Registry);
+
+    /// <summary>
+    /// AGENTPROVIDER1 s-vii: usage is counted by agent. Before, one account used through <c>claude-code</c> and <c>claude-code-acp</c> was
+    /// two shares, one per door; now it is one share of <c>claude-code</c>. Another agent's account of the same name stays its own, and a door
+    /// no agent holds now (a removed plugin's) is counted as itself.
+    /// </summary>
+    [Fact]
+    public void One_account_used_through_an_agent_s_two_doors_is_one_share_of_the_agent()
+    {
+        var store = Store();
+        store.Record(new UsageEntry("s1", "engine", "claude-code", "work", 48_000, 200_000, When: Now()));
+        store.Record(new UsageEntry("s2", "engine", "claude-code-acp", "work", 12_000, 200_000, When: Now()));
+        store.Record(new UsageEntry("s3", "engine", "codex-acp", "work", 5_000, 200_000, When: Now()));
+        store.Record(new UsageEntry("s4", "engine", "p-gone", "work", 1_000, 200_000, When: Now()));
+
+        var accounts = Store().ByAccount(Agents);
+
+        Assert.Equal(
+            [("claude-code", "work", 2, 60_000L), ("codex", "work", 1, 5_000L), ("p-gone", "work", 1, 1_000L)],
+            accounts.Select(each => (each.Agent, each.Profile, each.Sessions, each.Used)));
     }
 
     /// <summary>

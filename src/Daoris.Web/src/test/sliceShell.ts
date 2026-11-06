@@ -133,7 +133,7 @@ const SLICES: Record<string, (ask: Ask, remotes: Ask) => Promise<Partitions>> = 
     const usage = await ask('USAGE');
     return {
       sessions: byKey(object(usage) ? list(usage.sessions) : [], (used) => used.session),
-      accounts: byKey(object(usage) ? list(usage.accounts) : [], (used) => `${String(used.harness)}/${String(used.profile ?? '')}`),
+      accounts: byKey(object(usage) ? list(usage.accounts) : [], (used) => `${String(used.agent)}/${String(used.profile ?? '')}`),
     };
   },
   rules: async (ask) => {

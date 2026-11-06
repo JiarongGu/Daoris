@@ -102,6 +102,12 @@ public sealed record HarnessSelection(
     public IReadOnlyList<string>? NotOffered { get; init; }
 
     /// <summary>
+    /// Its provider may not work at the start's place (AGENTPROVIDER1 row u, <see cref="ProviderReach"/>): held before any account is asked,
+    /// so nothing is counted and no context or credential is sent. A fact beside the sentence, so a reader judges no words.
+    /// </summary>
+    public bool NotOpened { get; init; }
+
+    /// <summary>
     /// The start's count, as the walk numbered it when it chose the account (D205 §4.1, round 4): what <c>Release</c> takes back; 0 where
     /// the start counted nothing.
     /// </summary>

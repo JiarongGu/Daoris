@@ -1611,7 +1611,7 @@ describe('the Agents place', () => {
   it('opens at the part a door names, once that part is drawn', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESSES') return ROSTER;
-      if (type === 'USAGE') return { sessions: [], accounts: [{ harness: 'claude-code', profile: null, sessions: 1, used: 9000 }] };
+      if (type === 'USAGE') return { sessions: [], accounts: [{ agent: 'claude-code', profile: null, sessions: 1, used: 9000 }] };
       return WIRING;
     });
     const scrolled = vi.fn();
@@ -1658,8 +1658,8 @@ describe('the Agents place', () => {
         return {
           sessions: [],
           accounts: [
-            { harness: 'claude-code', profile: 'work', sessions: 2, used: 60000 },
-            { harness: 'claude-code', profile: null, sessions: 1, used: 9000 },
+            { agent: 'claude-code', profile: 'work', sessions: 2, used: 60000 },
+            { agent: 'claude-code', profile: null, sessions: 1, used: 9000 },
           ],
         };
       }

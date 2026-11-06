@@ -134,7 +134,7 @@ public sealed class StartPlanTests : IDisposable
     [Fact]
     public void One_vocabulary_names_every_pass_and_reads_a_held_account_walk_by_its_facts()
     {
-        Assert.Equal(["unavailable", "no-posture", "no-connector", "not-offered", "cooling", "signed-out", "held"], StartPasses.Codes);
+        Assert.Equal(["unavailable", "no-posture", "no-connector", "not-opened", "not-offered", "cooling", "signed-out", "held"], StartPasses.Codes);
         Assert.Equal(AgentOffers.NotOffered, StartPasses.NotOffered);
 
         var cooling = new CoolingEntry("cool", "account-1", Now.AddHours(2), true, "weekly", Now, "s0");

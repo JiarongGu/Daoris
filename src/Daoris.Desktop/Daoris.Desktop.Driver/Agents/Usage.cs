@@ -22,8 +22,11 @@ public sealed record UsageEntry(
     public string? Brainstorm { get; init; }
 }
 
-/// <summary>One account's share of the load — a derivation over the sessions, never a second tally.</summary>
-public sealed record AccountUsage(string Harness, string? Profile, int Sessions, long Used);
+/// <summary>
+/// One account's share of the load — a derivation over the sessions, never a second tally — counted by agent (AGENTPROVIDER1 s-vii): the
+/// agent its doors are (<see cref="AgentOfDoor"/>), so one account used through both of an agent's doors is one share.
+/// </summary>
+public sealed record AccountUsage(string Agent, string? Profile, int Sessions, long Used);
 
 /// <summary>
 /// What sessions on this machine consumed (TOOL3/D57 §4) — <b>measured before it is managed</b>.
@@ -69,20 +72,21 @@ public sealed class SessionUsage(string home)
 
     /// <summary>
     /// Which account carried what — the question "multiple accounts with usage management" actually
-    /// asks. Derived from the sessions so the two can never disagree.
+    /// asks. Derived from the sessions so the two can never disagree; each session counted for the agent its door is.
     /// </summary>
-    public IReadOnlyList<AccountUsage> ByAccount() => ByAccount(Load());
+    public IReadOnlyList<AccountUsage> ByAccount(AgentOfDoor agents) => ByAccount(Load(), agents);
 
     /// <summary>
     /// Which account carried what, over sessions already read (PUSH1e): the route and the pushed slice group the one read they made,
-    /// so its sessions and its accounts can never disagree.
+    /// so its sessions and its accounts can never disagree. A session is counted for its door's agent (s-vii), so a conversation moved
+    /// between one agent's two doors on one account is one share; a session keeps the door it ran through.
     /// </summary>
-    public static IReadOnlyList<AccountUsage> ByAccount(IEnumerable<UsageEntry> sessions) =>
+    public static IReadOnlyList<AccountUsage> ByAccount(IEnumerable<UsageEntry> sessions, AgentOfDoor agents) =>
     [
         .. sessions
-            .GroupBy(e => (e.Harness, e.Profile))
-            .Select(g => new AccountUsage(g.Key.Harness, g.Key.Profile, g.Count(), g.Sum(e => e.Used)))
-            .OrderBy(a => a.Harness, StringComparer.Ordinal)
+            .GroupBy(e => (Agent: agents.Of(e.Harness), e.Profile))
+            .Select(g => new AccountUsage(g.Key.Agent, g.Key.Profile, g.Count(), g.Sum(e => e.Used)))
+            .OrderBy(a => a.Agent, StringComparer.Ordinal)
             .ThenBy(a => a.Profile ?? "", StringComparer.Ordinal),
     ];
 

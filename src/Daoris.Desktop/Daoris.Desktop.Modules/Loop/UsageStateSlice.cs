@@ -16,10 +16,10 @@ namespace Daoris.Desktop;
 /// written by <see cref="Session"/> and <see cref="Account"/> over one read of the file, so the pull and the push cannot drift.</para>
 ///
 /// <para><b>Keyed, two partitions</b> (<see cref="StateSlice.Keyed"/>): <see cref="Sessions"/>, each measured session under its id,
-/// and <see cref="Accounts"/>, each account's share under its door and account (<see cref="AccountKey"/>). A session's end pushes that
-/// session and its account's share alone; the oldest let go past the file's bound is named among the keys gone. A place in the list
-/// is no field: the page orders the sessions newest first by <c>when</c>, a tie by id, and the accounts by door then account, as the
-/// route orders them.</para>
+/// and <see cref="Accounts"/>, each account's share under its agent and account (<see cref="AccountKey"/>), counted by agent (AGENTPROVIDER1
+/// s-vii) so one account used through both of an agent's doors is one share. A session's end pushes that session and its account's share
+/// alone; the oldest let go past the file's bound is named among the keys gone. A place in the list is no field: the page orders the
+/// sessions newest first by <c>when</c>, a tie by id, and the accounts by agent then account, as the route orders them.</para>
 ///
 /// <para><b>Its wakes.</b> A session's end, which is when a driven session, an intake or a conversation records what it used, as the
 /// journal tells it (FOUNDATION1 l-i), or as a conversation's route tells it where the host keeps no journal; and the service coming up.
@@ -42,7 +42,7 @@ public static class UsageStateSlice
     public static readonly IReadOnlyList<string> SessionFields = ["session", "repository", "harness", "profile", "used", "size", "when"];
 
     /// <summary>What an account's share carries, as the route writes it and the page's <c>UsedAccount</c> reads it.</summary>
-    public static readonly IReadOnlyList<string> AccountFields = ["harness", "profile", "sessions", "used"];
+    public static readonly IReadOnlyList<string> AccountFields = ["agent", "profile", "sessions", "used"];
 
     /// <summary>
     /// What wakes it on the kit's bus: a part's end as the journal tells it, a driven one included, and the service coming up; and while
@@ -54,32 +54,35 @@ public static class UsageStateSlice
 
     /// <summary>The slice the shell's loop owns, reading <paramref name="loop"/>'s usage file; judged at once, with no service.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
-        new(Name, bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(Judge(loop.Usage.Sessions)))
+        new(Name, bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(Judge(loop.Usage.Sessions, AgentsOf(loop))))
         {
             Keyed = true,
             WakesOn = WakesOn(() => loop.HearsJournal),
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
 
-    /// <summary>One judgement over the sessions read: each under its id, each account's share under its key.</summary>
-    public static IReadOnlyList<SliceJudged> Judge(IReadOnlyList<UsageEntry> sessions)
+    /// <summary>The agent each of the loop's doors is, its plugins' doors among them, read at each judgement.</summary>
+    public static AgentOfDoor AgentsOf(DriverLoop loop) => new(loop.Harnesses.Adapters.Registry);
+
+    /// <summary>One judgement over the sessions read: each under its id, each account's share under its key, counted by agent.</summary>
+    public static IReadOnlyList<SliceJudged> Judge(IReadOnlyList<UsageEntry> sessions, AgentOfDoor agents)
     {
         var measured = new JsonObject();
         foreach (var entry in sessions) measured[entry.Session] = Session(entry);
         var shares = new JsonObject();
-        foreach (var account in SessionUsage.ByAccount(sessions)) shares[AccountKey(account)] = Account(account);
+        foreach (var account in SessionUsage.ByAccount(sessions, agents)) shares[AccountKey(account)] = Account(account);
         return [new SliceJudged(Accounts, shares), new SliceJudged(Sessions, measured)];
     }
 
-    /// <summary><c>USAGE</c>'s answer over one read of the file: the sessions newest first, and each account's share.</summary>
-    public static object Answer(SessionUsage usage)
+    /// <summary><c>USAGE</c>'s answer over one read of the file: the sessions newest first, and each account's share, counted by agent.</summary>
+    public static object Answer(SessionUsage usage, AgentOfDoor agents)
     {
         var sessions = usage.Sessions;
         return new
         {
             // Newest first: a person looking at this is asking about recent work.
             Sessions = sessions.OrderByDescending(entry => entry.When).Select(Session).ToArray(),
-            Accounts = SessionUsage.ByAccount(sessions).Select(Account).ToArray(),
+            Accounts = SessionUsage.ByAccount(sessions, agents).Select(Account).ToArray(),
         };
     }
 
@@ -88,13 +91,13 @@ public static class UsageStateSlice
         Written(new { entry.Session, entry.Repository, entry.Harness, entry.Profile, entry.Used, entry.Size, entry.When });
 
     /// <summary>One account's share, as the route and the slice write it.</summary>
-    public static JsonNode Account(AccountUsage account) => Written(new { account.Harness, account.Profile, account.Sessions, account.Used });
+    public static JsonNode Account(AccountUsage account) => Written(new { account.Agent, account.Profile, account.Sessions, account.Used });
 
     /// <summary>
-    /// An account's key in its partition: the door and the account, <c>claude-code/work</c>, or the door alone for its own home, so a
+    /// An account's key in its partition: the agent and the account, <c>claude-code/work</c>, or the agent alone for its own home, so a
     /// share of the own home and one of an account never meet.
     /// </summary>
-    public static string AccountKey(AccountUsage account) => account.Profile is null ? account.Harness : $"{account.Harness}/{account.Profile}";
+    public static string AccountKey(AccountUsage account) => account.Profile is null ? account.Agent : $"{account.Agent}/{account.Profile}";
 
     /// <summary>The wire's options with every null written: the page reads the own home's account as <c>profile: null</c>.</summary>
     private static readonly JsonSerializerOptions KeepNulls = new(IpcJson.Options)

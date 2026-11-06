@@ -135,7 +135,9 @@ of everything it handed, section by section.
 19. A conversation's limit, at its turn's end: another account of the same agent with room gets a new part, briefed, the
     held words after the brief, why `limit`. Else the role's next choice on another agent. Else it waits for the earliest
     reset. (from D206, D205, D197)
-20. An account the person picked is never moved off. It waits for that account's reset. (from D206, D205)
+20. An account the person picked is never moved off. It waits for that account's reset. A new part a move opens on the picked
+    account of the same agent keeps the pick, one agent's two doors one agent and two providers sharing a pool two. (from D206,
+    D205, D212)
 21. A limited end is `failed` with the limit flag on the wire. It is worded *limited*, never red, with no strike and no
     *Ended* notice. (from D206)
 22. The wake is the look's `limits` stage, with no timer. Own account ready and conversation resumable: a full resume,

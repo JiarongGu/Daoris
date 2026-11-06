@@ -252,6 +252,9 @@ public sealed class TerminalModule : ModuleBase, IDisposable
     /// <summary>Where the holder's harness is found and checked: Daoris's managed, verified pin (<see cref="HolderHarness.Find"/>), unless a test hands its own.</summary>
     public Func<string, (string? Binary, string? Why)> Harness { get; set; } = HolderHarness.Find;
 
+    /// <summary>Whether the holder's harness's provider may work at the machine's room (<see cref="HolderReach"/>): the built agents', unless a test hands its own.</summary>
+    public ProviderReach HolderReaching { get; set; } = new(AdapterSet.Built().Registry);
+
     /// <summary>
     /// A role holder's tab (SUPERVISOR1a-ii, D208 §2.2; STEWARDROLE1a-i, D209 §2.2 and §6.1): a tab of this panel, never a console window
     /// of the system's, <b>whose process is Daoris's own pinned harness</b>, by its absolute path, its hash checked immediately before
@@ -263,6 +266,7 @@ public sealed class TerminalModule : ModuleBase, IDisposable
     /// </summary>
     public async Task<HolderOpened> OpenHolderAsync(string home, HolderOpen holder, CancellationToken ct = default)
     {
+        if (HolderReach.Closes(HolderReaching) is { } closed) return new HolderOpened(null, null, HolderHarness.Refused, closed);
         var (binary, why) = Harness(home);
         if (binary is null) return new HolderOpened(null, null, HolderHarness.Refused, why);
 

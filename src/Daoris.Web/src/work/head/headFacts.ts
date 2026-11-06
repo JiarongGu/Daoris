@@ -4,6 +4,7 @@ import { ago, clockOf, elapsed, list, moment } from '../../locales/format';
 import type { Consideration } from '../../data/signals';
 import type { SweepBranch } from '../../settings/Sweep';
 import type { AccountNamer } from '../../agents/tools';
+import { type AgentDoors, agentOfDoor } from '../../agents/agentOfDoor';
 import { SESSION_ACTIVE } from '../../design/ui';
 import type { SessionEntry } from '../entries';
 import { callHead, type SessionGrouping } from '../groups';
@@ -107,17 +108,20 @@ export function nextPress(waits: readonly Wait[]): 'answer' | 'accept' | 'rebase
 
 /**
  * The agent a line of work's leading part runs on (SESSCTX1d; the session-context design §7), by the roster's name for it, where
- * the parts the page holds ran on more than one agent: what the head says, so a moved session reads as one. Null for a record
- * alone, a line on one agent, or a leading part the page does not hold.
+ * the parts the page holds ran on more than one agent: what the head says, so a moved session reads as one. Counted by agent, never
+ * by door (AGENTPROVIDER1 s-vii): a line moved between one agent's two doors is on one agent, as the roster's sheet (`sheets`) says
+ * which agent each door is. Null for a record alone, a line on one agent, or a leading part the page does not hold.
  */
 export function leadingAgentOf(
   entry: Pick<SessionEntry, 'leading' | 'parts'> | null | undefined,
   sessions: readonly Pick<Session, 'id' | 'adapter'>[],
   roster: readonly { harness: string; product?: string | null }[],
+  sheets?: AgentDoors,
 ): string | null {
   if (!entry || entry.parts.length < 2) return null;
   const held = new Map(sessions.map((session) => [session.id, session.adapter]));
-  const agents = new Set(entry.parts.map((part) => held.get(part.session)).filter(Boolean));
+  const doors = entry.parts.map((part) => held.get(part.session)).filter((door): door is string => Boolean(door));
+  const agents = new Set(doors.map((door) => agentOfDoor(door, sheets)));
   const leading = held.get(entry.leading);
   if (!leading || agents.size < 2) return null;
   return roster.find((row) => row.harness === leading)?.product || leading;
