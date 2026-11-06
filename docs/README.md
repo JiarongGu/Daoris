@@ -38,6 +38,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `../examples/plugins/github-pull-request/README.md` | GitHub landing plugin example
 | `../examples/plugins/azure-devops-pull-request/README.md` | Azure DevOps landing plugin example
 | `../examples/plugins/local-preview/README.md` | Performed step plugin example
+| `../examples/plugins/event-relay/README.md` | Work event relay plugin example
 | `../tools/dsh-probes/README.md` | Dated protocol probe instructions
 
 ## Doctrine, knowledge and development contracts
