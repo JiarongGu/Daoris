@@ -151,7 +151,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 38. A rule acts between turns only. It never acts on an unknown count, never ends a running or quiet session, and never
     answers a question. Each hold is released by its own door. Its act is said on the line (`supervisor.rule`: the
     count, its value, the rule's number, place and act), kept as a final decision file of holder kind `rule` with no
-    question, which the questions' reader and the sweep pass by, and logged; the answers-alone hold records it. (from D229)
+    question, which the questions' reader and the sweep pass by, and logged; the answers-alone hold records it. The value
+    is the count its executor read: the admission's, the failed sessions past *Try again*'s mark, the episode's tries
+    (`ended.transient`'s count, also the line's `tries` count), the line's moves, the failures in a row on a choice; one
+    hold is one act, and a new answer while a line waits joins its mark. Every watched count names its rule's place;
+    a line whose rules did not read says so. (from D229)
 39. The failed sessions that park a quest are the failures rule's alone: no door sets `strikes` and no configuration reads it.
     The planner's park carries its rule's number (`Consideration.ParksAt`), which *Try again*, Ask Daoris's `retry` and the
     terminal say; a set-up parks at its line's rule; `STATE`'s `strikes` answers the retried quest's rule, else the machine's;
@@ -288,10 +292,8 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **CONTEXTDRIVE1k (rest):** the room's goldens, regenerated at SCOPEVERIFY2; Ask Daoris's `role_propose` rules card is
   the driver's one English sentence (`HelpRoleProposals.RulesPlan`), not yet a catalogue's words in both languages.
 - **CONTEXTDRIVE1j:** `refer`, the agent supervisor's *course* act.
-- **CONTEXTDRIVE1s:** an act records the rule's number for the answers-alone hold, the transient hold and the moves bound, and the
-  park's count before *Try again*'s mark; a new answer while a line waits records another act; nothing counts `tries`.
-- **CONTEXTDRIVE1t (rest):** `CountWatch.Place` may be null and the print and the web keep *Daoris's own number* (`ownAt`);
-  line places have no retention; `Strikes` and `FailedRuns` part on quiet and cut-off ends.
+- **CONTEXTDRIVE1t (rest):** line places have no retention and are judged well formed, never as driven (to be refused, with the
+  chain's `line:` step and the terminal's `line:<key>` gone); `Strikes` and `FailedRuns` part on quiet and cut-off ends.
 - **CONTEXTDRIVE1l, m:** the installed proof. No class named `HelpCoverageTests` exists in the tree, so the hooks' coverage
   rows owed at CONTEXTDRIVE1g have nowhere to go until the coverage test that names them is written.
 - **STAFFPOLICY1h/i:** selection by measurement; the installed proof. A conversation's hand-over by the agent's ask

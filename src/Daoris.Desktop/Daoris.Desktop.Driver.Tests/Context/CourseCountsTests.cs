@@ -24,8 +24,8 @@ public sealed class CourseCountsTests : IDisposable
 
     private static readonly CountFact[] Counted =
     [
-        new("answers-alone", 2, "exact", null, "admission") { Watch = new CountWatch(2, "hold") },
-        new("failures", 1, "exact", null, "records") { Watch = new CountWatch(3, "hold") },
+        new("answers-alone", 2, "exact", null, "admission") { Watch = new CountWatch(2, "hold", "machine") },
+        new("failures", 1, "exact", null, "records") { Watch = new CountWatch(3, "hold", "machine") },
         new("failures-on-choice", 0, "exact", null, "records"),
         new("quiet", 0, "at-least", "walk-cut", "ended.quiet"),
         new("limits", 0, "exact", null, "records"),
@@ -35,8 +35,8 @@ public sealed class CourseCountsTests : IDisposable
 
     private const string Item =
         "\n\nThe line's course, as Daoris counts it:"
-        + "\n- Answers alone in a row: 2. Daoris waits for the person after 2."
-        + "\n- Failed sessions on this quest: 1. Daoris waits for the person after 3."
+        + "\n- Answers alone in a row: 2. The person's rule for this machine: Daoris waits for the person after 2."
+        + "\n- Failed sessions on this quest: 1. The person's rule for this machine: Daoris waits for the person after 3."
         + "\n- Moves to another choice in 24 hours: cannot count, the store did not read."
         + "\n- Hand-overs on this line: 1.";
 
@@ -115,7 +115,7 @@ public sealed class CourseCountsTests : IDisposable
         Assert.Equal((Item.Length, 4), (section.Chars, section.Shown));
 
         // A count acted on that stands at zero is no reason to tell a start anything.
-        Assert.Null(ContextBrief.Counted([new("answers-alone", 0, "exact", null, "events") { Watch = new CountWatch(2, "hold") }]));
+        Assert.Null(ContextBrief.Counted([new("answers-alone", 0, "exact", null, "events") { Watch = new CountWatch(2, "hold", "machine") }]));
         Assert.Equal(TargetPrompt.Compose(TargetPromptGoldenTests.Bare), TargetPrompt.Compose(TargetPromptGoldenTests.Bare with { Course = null }));
     }
 
