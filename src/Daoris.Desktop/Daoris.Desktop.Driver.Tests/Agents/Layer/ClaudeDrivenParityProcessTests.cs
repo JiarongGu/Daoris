@@ -5,8 +5,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The oracle over Claude Code's recorded driven streams (AGENTLYNTAI1d, the agent-lyntai design §6.3): each recorded stream under the
 /// suite's <c>fixtures/</c> said by one program, read on the Daoris path (Claude Code's shipped door, its dialect and tables, on
-/// <see cref="TransportRun"/>) and on the layer path (<see cref="LayerRun"/> over the driven binding's registration, Lyntai's Claude door),
-/// and compared completely: every difference is a named gap below or none. Real node processes.
+/// <see cref="TransportRun"/>) and on the layer path (<see cref="LayerRun"/> over the driven binding's registration, Lyntai's Claude door,
+/// held as a driven start holds it), each handed the same session, and compared completely: every difference is a named gap below or none.
+/// Real node processes.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class ClaudeDrivenParityProcessTests : IDisposable
@@ -102,28 +103,12 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
         var lines = File.ReadAllLines(Path.Combine(Fixtures, fixture)).Where(each => each.Length > 0).ToArray();
         var name = Path.GetFileNameWithoutExtension(fixture);
         var command = LayerTestProvider.Scenario(_scratch, new { @out = lines }, name);
-        using var path = new ParityDaorisPath(Path.Combine(_scratch, "daoris-" + name), ParityDaorisPath.Shipped(ClaudeDrivenLayer.Door));
-        return (await path.RunAsync(command, Prompt, Start, _bound.Token), await LayerAsync(LayerTestProvider.Shim(_scratch, command, name)));
-    }
-
-    private async Task<ParityObservation> LayerAsync(string program)
-    {
-        var transcript = Path.Combine(_scratch, Path.GetFileNameWithoutExtension(program) + ".log");
-        var seen = new ParityObservation("layer", Start);
-        await using (var run = new LayerRun(
-            ClaudeDrivenLayer.Registration(program),
-            new LayerStart(ClaudeDrivenLayer.Door, Prompt, transcript, TimeSpan.FromHours(1)),
-            new LauncherSeat(ContainedKind.Agent, StartClass.Background, Home: null, Log: null),
-            exists: _ => true))
-        {
-            run.HandSink(ParityObserver.Sink(seen));
-            await run.OpenAsync(_bound.Token);
-            var end = await run.EndAsync(_bound.Token);
-            ParityObserver.Ended(seen, end, run.Stopped);
-            if (run.Failure is { } failure) ParityObserver.Failed(seen, AgentErrors.OfNormalized(failure), failure.Delivery);
-        }
-
-        ParityObserver.Transcript(seen, transcript);
-        return seen;
+        using var daoris = new ParityDaorisPath(Path.Combine(_scratch, "daoris-" + name), ParityDaorisPath.Shipped(ClaudeDrivenLayer.Door));
+        using var layer = new ParityLayerPath(Path.Combine(_scratch, "layer-" + name));
+        var program = LayerTestProvider.Shim(_scratch, command, name);
+        var start = new LayerStart(ClaudeDrivenLayer.Door, Prompt, Path.Combine(_scratch, Path.GetFileNameWithoutExtension(program) + ".log"), TimeSpan.FromHours(1));
+        return (
+            await daoris.RunAsync(command, Prompt, Start, _bound.Token),
+            await layer.RunAsync(ClaudeDrivenLayer.Registration(program), start, Start, _bound.Token));
     }
 }

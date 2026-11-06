@@ -463,8 +463,9 @@ Agents page, and `orient-index` and `code-map` once files move.
   move's parity is the oracle's
   (`Tests/Agents/Parity/`): what each path observed, by a fixed list of channels, compared exactly and in order but for the
   projection's fields (a provenance by the door's relation of permitted pairs and the pair its scenario expects, a generated id by
-  first appearance, a time by its interval from the run's start, a named library clock within its interval), a held case holding
-  alike only on the same missing reader. On the tests' provider today's Claude reader on `TransportRun` and `LayerRun` read a
+  first appearance, a reading's lineage token among them, a time by its interval from the run's start, a named library clock within its
+  interval), a held case holding alike only on the same missing reader. The layer path runs held as a driven start holds it and handed
+  the Daoris path's session (`ParityLayerPath`), so each reading's stamp is compared with it. On the tests' provider today's Claude reader on `TransportRun` and `LayerRun` read a
   scenario alike (a refused model, a denial, the context and tokens by model, the unannounced start and a meter-only failure among them)
   but for a tool step's kind, which the Claude reader derives from the tool's name, and the context a count written to the cache
   adds, which the layer's tick does not carry (`LayerParityProcessTests`). A difference the oracle knows is a named gap, set apart

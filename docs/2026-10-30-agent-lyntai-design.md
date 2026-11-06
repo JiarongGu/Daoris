@@ -1073,6 +1073,19 @@ never a door's parity, which is each move's. 1c uses it over the usage port's tw
 and the usage history fixtures (`Tests/Agents/ClaudeUsageTests.cs:149-179`, `CodexUsageTests.cs:140-155`) *(C1-2)*; every move after uses it
 over its door.
 
+**Note, 2026-11-07: the layer path held, and a reading's lineage token in the projection (a correction before 1d's acceptance).** The run's
+stamp on each reading (`WireReading`'s session, generation, place in the run's order and process) is an observation the oracle reads with
+the reading. Both oracles ran the layer path unheld, a construction production never makes for a driven start (`ClaudeDrivenLayer.Run`
+always holds it), so its readings named no session and no process where today's named both, and the lineage readings BL71 added
+(`ChildSeen`, `ChildEnded`) met that difference on the two recorded family streams. The layer path is now held as a driven start holds it,
+over a driver's own host and handed the Daoris path's session (`ParityLayerPath`), so the session, the generation and the place are
+compared exactly. The process is the lineage token each process is issued fresh, a generated id whichever path ran, so it joins the
+projection's generated ids, compared by first appearance: a token on one path and none on the other fails, as one path's token mapped onto
+two of the other's does. The observer reads a reading whole with its process apart, and `Loaded`'s stamp, which it had set aside because
+each path then stamped its own run, is compared too. *Rejected* (D248's note of this date): carrying the session as a provenance checked
+against each path's own start, which would admit a layer run its executor does not hold as alike, and setting the stamp aside, which drops
+the field that names a child's process.
+
 ### 6.4 The 60 cases and the rows that close them (round 2)
 
 The pending lines as they stand at `f638a07c1` (`Tests/fixtures/providers/*/pending.json`, `Agents/Providers/Stub/pending.json`), and the
