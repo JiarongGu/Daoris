@@ -1394,6 +1394,17 @@ account's home reaches the vendor's server.
   the library, R-c closing on it, and the runner parses nothing of either protocol. Its case: a fake server that withholds
   `initialize`'s answer and fails on any later line arriving first, and one that answers it with an error, each read on both paths as
   today's reads them. Whether the installed servers tolerate the eager order is unmeasured and changes none of it.
+- **Measured, 2026-11-07: the `-p` difference is closed, and a second gap found.** One account of Claude Code's (account A) was asked
+  through each reader against the installed server (no model turn spent): the server started with `-p` answers the same
+  `get_usage` as today's without it (the same shape, the same week's use and reset), so `-p` changes no field of the answer. The
+  layer's read of that very answer was unknown (`unrecognised-answer`): a `limits[]` row's `scope` is an object
+  (`{"model":{…},"surface":null}`) where Lyntai's reader takes a string or null, and one value it cannot read makes the whole answer
+  unknown (its D237). Replayed offline, today's reader keeps the week and three history rows from the same answer, the layer's none, so
+  on a real account with a scoped row the layer reads nothing where today's reads the week: Lyntai's to correct (the request: its
+  reader reads a scope that is an object, and a row it cannot read skips that row, never the answer). One of five layer reads on
+  `-p` ended at the ten-second patience, the others answered in two to eleven seconds. Codex (account B, its one): both
+  readers answered the same two windows with the same use and the same week's reset, the session window's reset three seconds apart
+  between two reads, as a server that rolls an unopened window gives; no plan said by either.
 - **What a person sees.** The Accounts screen's windows on both agents as before; the screenshot is that screen with a signed-in account of
   each, in English and Chinese.
 - **Proof.** §12's 1c line. **Waits for** R-a and R-c (LQ2's restated answer, LQ14, LQ15); neither of AG20's answers.
