@@ -49,6 +49,15 @@ public static class RunNodeWords
     /// <summary>A <c>send</c> of a request that is not ready to be sent, or that sends itself (<c>start: automatic</c>).</summary>
     public const string NotSendable = "not-sendable";
 
+    /// <summary>The word is <c>done</c>, <c>approve</c> or <c>reject</c>, which only a person's task (<c>human</c>) takes.</summary>
+    public const string NotTask = "not-task";
+
+    /// <summary>A <c>done</c>, <c>approve</c> or <c>reject</c> of a task that does not wait for that press where it stands now.</summary>
+    public const string NotWaiting = "not-waiting";
+
+    /// <summary>The presses a node takes only while it waits for them: a person's task's.</summary>
+    private static readonly string[] Waited = [NodeWordActs.Done, NodeWordActs.Approve, NodeWordActs.Reject];
+
     /// <summary>The record's mark of the person's send of <paramref name="node"/>'s attempt, which the next pass reads as the start's say-so (INTEGRATE1p).</summary>
     public static string SendKey(string node, int attempt) => $"send:{node}:{attempt}";
 
@@ -110,7 +119,8 @@ public static class RunNodeWords
             }
             else
             {
-                var judged = NodeLifecycle.Apply(declared, status, Move(new NodeWord(node, act, words, now), new NodeScope(digest, bound.Run), status));
+                if (Waited.Contains(act) && !Offers(declared, status, act)) return (null, Refuse(NotWaiting) with { State = status.State });
+                var judged = NodeLifecycle.Apply(declared, status, Move(declared, new NodeWord(node, act, words, now), new NodeScope(digest, bound.Run), status));
                 if (!judged.Moved) return (null, Refuse(judged.Refused!) with { State = status.State });
             }
 
@@ -188,7 +198,13 @@ public static class RunNodeWords
                 continue;
             }
 
-            var moved = NodeLifecycle.Apply(node, standing, Move(word, scope, standing));
+            if (Waited.Contains(word.Act) && !Offers(node, standing, word.Act))
+            {
+                applied.Add((word, NotWaiting));
+                continue;
+            }
+
+            var moved = NodeLifecycle.Apply(node, standing, Move(node, word, scope, standing));
             if (!moved.Moved)
             {
                 applied.Add((word, moved.Refused));
@@ -203,21 +219,13 @@ public static class RunNodeWords
     }
 
     /// <summary>
-    /// A word as the one table's move: the person's skip with their words and the run's scope, or their stop; their Accept a review's reach by
-    /// its authority, the person, on the binding <paramref name="status"/> stands on, so one given before the review began is refused; their
-    /// changes the review's rejection on that attempt, with their words, which the table needs.
+    /// A word as the one table's move: a kind's own act the move its kind asks (D247), the door having refused it on any other kind; else the
+    /// person's skip with their words and the run's scope, or their stop.
     /// </summary>
-    private static NodeMove Move(NodeWord word, NodeScope scope, NodeStatus status) => word.Act switch
-    {
-        NodeWordActs.Skip or NodeWordActs.GoOn => new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = word.Words, Scope = scope },
-        NodeWordActs.AskAgain => new NodeMove(NodeStates.Ready, NodeCause.Person),
-        NodeWordActs.Accept => new NodeMove(NodeStates.Reached, NodeCause.Authority)
-        {
-            Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = status.Binding,
-        },
-        NodeWordActs.Changes => new NodeMove(NodeStates.Rejected, NodeCause.Person) { Attempt = status.Attempt, Words = word.Words },
-        _ => new NodeMove(NodeStates.Stopped, NodeCause.Person) { Words = word.Words },
-    };
+    private static NodeMove Move(NodeDeclaration node, NodeWord word, NodeScope scope, NodeStatus status) =>
+        TakenBy(word.Act) is { } owner && owner.Move(node, word, status, scope) is { } own ? own
+        : word.Act == NodeWordActs.Skip ? new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = word.Words, Scope = scope }
+        : new NodeMove(NodeStates.Stopped, NodeCause.Person) { Words = word.Words };
 
 
     /// <summary>
@@ -244,6 +252,7 @@ public static class RunNodeWords
         + "       daoris workflow send <run> <node>  (a ready request under `start: you`)\n"
         + "       daoris workflow ask-again <run> <node>  ·  daoris workflow go-on <run> <node> \"…\"  (a declined request)\n"
         + "       daoris workflow changes <run> <node> \"…\"  (a review: what the work should change before it lands)\n"
+        + "       daoris workflow done <run> <node> [\"…\"]  ·  daoris workflow approve|reject <run> <node> [\"…\"]  (your task, with a note if you like)\n"
         + "       pass a node of a run bound to a graph version over with your words, or stop it, your words if you have any; the run's\n"
         + "       id and its nodes are what `workflow run` prints. Kept on the run's record, and Daoris's next look applies it.";
 
@@ -259,7 +268,10 @@ public static class RunNodeWords
         (UnreadVersion, _) =>
             $"workflow: the graph version run {done.Run} is bound to does not read here ({done.Detail}), so the run is held whole and nothing on it is changed.",
         (NotNode, _) => $"workflow: run {done.Run}'s graph has no node `{done.Node}`; `workflow run` names its nodes.",
-        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, send, ask-again, go-on or changes.",
+        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, send, ask-again, go-on, changes, done, approve or reject.",
+        (NotTask, _) => $"workflow: `{done.Node}` is no task of yours, and only your task is done, and only an approval approved or rejected.",
+        (NotWaiting, _) =>
+            $"workflow: `{done.Node}` on run {done.Run} is {done.State} now and waits for no {done.Act} of yours: a waiting task takes done, a waiting approval approve or reject.",
         (NotRequest, _) => $"workflow: `{done.Node}` is no request, and only a request is sent, and only a declined one asked again or gone on without.",
         (NotSendable, _) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, or sends itself, so it has no send to wait for.",
         (NotReview, _) => $"workflow: `{done.Node}` is no review, and only a review is accepted or asked for changes.",

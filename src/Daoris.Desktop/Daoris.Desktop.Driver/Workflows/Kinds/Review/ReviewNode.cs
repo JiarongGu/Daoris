@@ -34,4 +34,12 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
 
     /// <summary>DECIDE1c: a review waiting on the person's Accept takes their changes, with their words, beside it.</summary>
     public IReadOnlyList<string> Acts(NodeDeclaration node, NodeStatus status) => status.State == NodeStates.Active ? [NodeWordActs.Changes] : [];
+
+    /// <summary>
+    /// Their Accept is its reach by its authority, the person, on the binding it stands on, so one given before the review began is refused; their
+    /// changes its rejection on that attempt, with their words, which the table needs.
+    /// </summary>
+    public NodeMove? Move(NodeDeclaration node, NodeWord word, NodeStatus status, NodeScope scope) => word.Act == NodeWordActs.Accept
+        ? new NodeMove(NodeStates.Reached, NodeCause.Authority) { Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = status.Binding }
+        : new NodeMove(NodeStates.Rejected, NodeCause.Person) { Attempt = status.Attempt, Words = word.Words };
 }

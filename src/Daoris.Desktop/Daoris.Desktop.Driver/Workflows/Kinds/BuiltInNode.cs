@@ -17,6 +17,9 @@ public abstract class BuiltInNode : INodeKind
 
     public virtual string? Problem(NodeDeclaration node) => null;
 
+    /// <summary>Whether a node of it may declare outcomes, which its own <see cref="Problem"/> judges; a kind that does not refuses any.</summary>
+    public virtual bool OwnsOutcomes => false;
+
     public virtual NodePart Part(NodeDeclaration node) => NodePart.Automatic(node.Kind);
 
     public virtual string Offered => PaletteKind.Alone;

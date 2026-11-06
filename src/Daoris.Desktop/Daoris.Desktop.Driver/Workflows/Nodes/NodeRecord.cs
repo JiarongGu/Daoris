@@ -228,7 +228,19 @@ public static class NodeWordActs
     /// </summary>
     public const string Send = "send";
 
-    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send];
+    /// <summary>
+    /// The person's <i>Done</i> of a waiting task (NODEKIT1 HUMAN): a <c>human</c> node reached on their word, with its outcome <c>done</c> where it
+    /// declares one and their note where they gave one. An older build reads it as no act it knows and applies nothing.
+    /// </summary>
+    public const string Done = "done";
+
+    /// <summary>The person's <i>Approve</i> of a waiting approval: a <c>human</c> node declaring <c>approved</c> and <c>rejected</c>, reached with <c>approved</c>.</summary>
+    public const string Approve = "approve";
+
+    /// <summary>The person's <i>Reject</i> of a waiting approval: reached with the outcome <c>rejected</c>, which its <c>when</c> wire routes; a note is theirs to give.</summary>
+    public const string Reject = "reject";
+
+    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject];
 }
 
 /// <summary>

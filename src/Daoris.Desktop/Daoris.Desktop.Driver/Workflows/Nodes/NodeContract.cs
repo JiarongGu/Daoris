@@ -345,8 +345,8 @@ public static class NodeDeclarations
         if (node.Outputs.ContainsKey(WireEnd.Evidence)) return "outputs";
         if (builtIn && node.Rejectable) return "rejectable";
         if (builtIn && !node.Skippable) return "skippable";
-        // DECIDE1b: no built-in kind is a decision, and a plugin's outcomes keep the names a route is followed by.
-        if (node.Outcomes.Count > 0 && (builtIn || NodeOutcomes.Problem(node.Outcomes) is not null)) return "outcomes";
+        // DECIDE1b: a built-in declares outcomes only where its kind owns them, and a plugin's outcomes keep the names a route is followed by.
+        if (node.Outcomes.Count > 0 && (unit is BuiltInNode declared ? !declared.OwnsOutcomes : NodeOutcomes.Problem(node.Outcomes) is not null)) return "outcomes";
         if (unit.Problem(node) is { } own) return own;
 
         // FABRIC-UNIT1d (§D6): how a plugin performs its node is that node's alone, and a retry or a transient code is refused where
