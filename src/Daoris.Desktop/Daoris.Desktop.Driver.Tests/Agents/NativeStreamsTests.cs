@@ -118,7 +118,7 @@ public sealed class NativeStreamsTests : IDisposable
         string[] Heard(params string[] lines)
         {
             var own = new HarnessWords();
-            foreach (var line in lines) own.Heard(NativeFrame.Of(line));
+            Hear(own, lines);
             return [.. own.Ended(0).BackgroundCut];
         }
 
@@ -130,9 +130,57 @@ public sealed class NativeStreamsTests : IDisposable
             System("task_updated", new { task_id = "a1", patch = new { status = "killed" } })));
 
         var again = new HarnessWords();
-        foreach (var line in BackgroundCut) again.Heard(NativeFrame.Of(line));
+        Hear(again, BackgroundCut);
         again.Begin();
         Assert.Empty(again.Ended(0).BackgroundCut);
+    }
+
+    /// <summary>Lines read as the capture reads them: each frame's task said once as its reading, which the run's own ending reads.</summary>
+    private static void Hear(HarnessWords own, IEnumerable<string> lines)
+    {
+        var tasks = new NativeTasks();
+        foreach (var line in lines)
+        {
+            if (tasks.Read(NativeFrame.Of(line)) is { } task) own.Read(task);
+        }
+    }
+
+    /// <summary>
+    /// AGENTPROVIDER1l: a child's and a background task's start and end reach the streams beside and the run's own ending as readings alone, no
+    /// frame saying them, and a child's lines still go to the stream its start's call opened.
+    /// </summary>
+    [Fact]
+    public void A_child_s_and_a_task_s_start_and_end_seen_only_as_readings_reach_the_streams_and_the_words()
+    {
+        var output = new SessionOutput();
+        var said = new List<string>();
+        IStreamsReader beside = new ClaudeStreams(new SessionStreams(output, "s4"), said.Add);
+        var own = new HarnessWords();
+        void Read(WireReading reading)
+        {
+            beside.Read(reading);
+            own.Read(reading);
+        }
+
+        Read(new WireReading.ChildSeen("a1", ChildSignal.Stream) { Call = "toolu_ag", Task = "Read README first line" });
+        Read(new WireReading.TaskStarted("b1") { Kind = "local_bash", Name = "dev server" });
+        Assert.True(beside.Take(NativeFrame.Of(Json(new
+        {
+            type = "assistant",
+            parent_tool_use_id = "toolu_ag",
+            message = new { id = "msg_child", role = "assistant", content = new object[] { new { type = "text", text = "# console3 room" } } },
+        }))));
+        Read(new WireReading.ChildEnded("a1", ChildSignal.Stream, "completed"));
+        Read(new WireReading.TaskEnded("b1", "killed") { AfterTurn = true });
+
+        Assert.Equal(
+            [("s4/subagent/a1", SessionStreamKind.Subagent, "Read README first line", "completed"), ("s4/task/b1", SessionStreamKind.Task, "dev server", "killed")],
+            output.Streams("s4").Select(stream => (stream.Key, stream.Kind, stream.Name, stream.State)));
+        Assert.Contains("# console3 room", output.Tail("s4/subagent/a1").Lines.Select(line => line.Text));
+        Assert.Equal(
+            ["→ subagent: Read README first line", "→ background: dev server", "  ✓ subagent: Read README first line", "  ■ background: dev server stopped"],
+            said);
+        Assert.Equal(["dev server"], own.Ended(0).BackgroundCut);
     }
 
     /// <summary>A stream still open when the session's output ends is ended with it, and says so.</summary>

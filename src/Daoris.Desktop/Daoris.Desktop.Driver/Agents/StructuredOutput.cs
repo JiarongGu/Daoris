@@ -65,11 +65,19 @@ public interface IStreamMapper
 }
 
 /// <summary>
-/// A wire's streams beside the session (CONSOLE3c): offered each stdout line before the session's own
-/// reader, and ended when the output ends.
+/// A wire's streams beside the session (CONSOLE3c): told each child's and background task's start and end as its reading, offered each
+/// stdout line before the session's own reader, and ended when the output ends.
 /// </summary>
 public interface IStreamsReader
 {
+    /// <summary>
+    /// A reading the capture said of a child or a background task (AGENTPROVIDER1l): its start opens its stream and its end ends it, never read
+    /// off the line again. A wire whose streams keep none passes over it.
+    /// </summary>
+    void Read(WireReading reading)
+    {
+    }
+
     /// <summary>True when the line was a stream's, so the session's reader never sees it.</summary>
     bool Take(NativeFrame frame);
 
@@ -133,7 +141,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
     /// </summary>
     public string? Conversation { get; private set; }
 
-    /// <summary>A subagent's lines by <c>parent_tool_use_id</c>, and tasks on <c>system</c> lines (CONSOLE3c).</summary>
+    /// <summary>A subagent's lines by <c>parent_tool_use_id</c>, each child and task opened and ended by its reading (CONSOLE3c).</summary>
     public IStreamsReader? Beside(ISessionStreams streams, Action<string> say) => new ClaudeStreams(streams, say);
 
     /// <summary>One line, read once into its frame and then read.</summary>

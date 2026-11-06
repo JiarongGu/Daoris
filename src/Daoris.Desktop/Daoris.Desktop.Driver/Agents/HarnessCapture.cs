@@ -135,15 +135,24 @@ internal static class HarnessCapture
         // a line that is a stream's never reaches the session's reader.
         var beside = ReadingStreams.Of(sink) is { } streams ? mapper.Beside(streams, Line) : null;
         var children = new NativeChildren();
+        var tasks = new NativeTasks();
+
+        // A child's or a background task's start or end, said once as its reading: the part's lineage keeps a child's (FABRIC-C1a), the
+        // run's ending the work its harness ended with its turn however its streams are kept (BGWAIT1c), and the streams beside open and
+        // end theirs by it (AGENTPROVIDER1l).
+        void Work(WireReading reading)
+        {
+            sink.Read(reading);
+            own?.Read(reading);
+            beside?.Read(reading);
+        }
+
         while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
             // Each line is read once into its frame, which every reader of it takes (AGENTPROVIDER1l).
             var frame = NativeFrame.Of(line);
-            // Before the streams beside take it: a subagent's start is theirs too, and said once as its reading, which the part's lineage
-            // keeps (FABRIC-C1a). And the background work the harness ends with its turn, the run's ending's however its streams are kept
-            // (BGWAIT1c).
-            if (children.Read(frame) is { } child) sink.Read(child);
-            own?.Heard(frame);
+            if (children.Read(frame) is { } child) Work(child);
+            if (tasks.Read(frame) is { } task) Work(task);
             // What the harness says it loaded, said once as its init frame goes by (HELPWIRED1b).
             if (NativeInit.Read(frame) is { } loaded)
             {
