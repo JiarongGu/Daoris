@@ -27,7 +27,7 @@ public sealed class ChildLineageReceiptTests
     {
         var agents = new HashSet<string>(StringComparer.Ordinal);
         var stream = File.Exists(Path.Combine(Fixtures, $"{name}.stream.jsonl"))
-            ? Lines($"{name}.stream.jsonl").Select(line => ChildBindings.StreamLine(line, DateTimeOffset.UnixEpoch, agents)).OfType<string>()
+            ? Lines($"{name}.stream.jsonl").Select(line => ChildBindings.StreamLine(NativeFrame.Of(line), DateTimeOffset.UnixEpoch, agents)).OfType<string>()
             : [];
         var end = clean is { } ended ? [ChildBindings.EndLine(ended, DateTimeOffset.UnixEpoch)] : Array.Empty<string>();
         return ChildBindings.Fold([.. Lines($"{name}.lineage.jsonl"), .. stream, .. end], kind);

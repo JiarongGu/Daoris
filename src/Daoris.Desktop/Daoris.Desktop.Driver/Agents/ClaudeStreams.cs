@@ -55,32 +55,22 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
     private readonly Dictionary<string, Work> _work = new(StringComparer.Ordinal);      // by task id
     private readonly Dictionary<string, string> _subagentOfTask = new(StringComparer.Ordinal);
 
-    public bool Take(string line)
+    public bool Take(NativeFrame frame)
     {
-        JsonElement root;
-        try
-        {
-            using var document = JsonDocument.Parse(line);
-            root = document.RootElement.Clone();
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
+        if (!frame.IsObject) return false;
+        var root = frame.Root;
 
-        if (root.ValueKind != JsonValueKind.Object) return false;
-
-        if (Text(root, "parent_tool_use_id") is { Length: > 0 } parent)
+        if (frame.Text("parent_tool_use_id") is { Length: > 0 } parent)
         {
             Child? child;
             lock (_gate) child = _children.GetValueOrDefault(parent);
             // A child nobody announced (a synchronous one, which has no task) is still not the session's.
             child ??= Open(parent, $"subagent/{parent}", "subagent");
-            foreach (var text in child.Words.Read(line).Lines) streams.Line(child.StreamId, text);
+            foreach (var text in child.Words.Read(frame).Lines) streams.Line(child.StreamId, text);
             return true;
         }
 
-        switch (Text(root, "type"))
+        switch (frame.Type)
         {
             case "system":
                 return System(root);

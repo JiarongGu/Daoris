@@ -43,8 +43,8 @@ public sealed record StreamMapped(IReadOnlyList<string> Lines, IReadOnlyList<Ses
 /// </remarks>
 public interface IStreamMapper
 {
-    /// <summary>One stdout line, as what the console shows and what the record keeps.</summary>
-    StreamMapped Read(string line);
+    /// <summary>One stdout line, read once into its frame (<see cref="NativeFrame"/>), as what the console shows and what the record keeps.</summary>
+    StreamMapped Read(NativeFrame frame);
 
     /// <summary>Context at its high-water mark, as the harness reported it (TOOL3) — null when it reported none.</summary>
     AcpUsage? Usage { get; }
@@ -71,7 +71,7 @@ public interface IStreamMapper
 public interface IStreamsReader
 {
     /// <summary>True when the line was a stream's, so the session's reader never sees it.</summary>
-    bool Take(string line);
+    bool Take(NativeFrame frame);
 
     /// <summary>End every stream still open, because the session's output has: each says so.</summary>
     Task EndAllAsync();
@@ -136,24 +136,19 @@ public sealed class ClaudeStreamJson : IStreamMapper
     /// <summary>A subagent's lines by <c>parent_tool_use_id</c>, and tasks on <c>system</c> lines (CONSOLE3c).</summary>
     public IStreamsReader? Beside(ISessionStreams streams, Action<string> say) => new ClaudeStreams(streams, say);
 
-    public StreamMapped Read(string line)
+    /// <summary>One line, read once into its frame and then read.</summary>
+    public StreamMapped Read(string line) => Read(NativeFrame.Of(line));
+
+    public StreamMapped Read(NativeFrame read)
     {
+        var line = read.Line;
         if (string.IsNullOrWhiteSpace(line)) return StreamMapped.Nothing;
 
-        JsonElement frame;
-        try
-        {
-            frame = JsonDocument.Parse(line).RootElement.Clone();
-        }
-        catch (JsonException)
-        {
-            // Not a frame: the harness said something outside its protocol. Shown, never dropped, and its own words (AGT3c).
-            return new([line], []) { Outside = true };
-        }
+        // Not a frame: the harness said something outside its protocol. Shown, never dropped, and its own words (AGT3c).
+        if (!read.IsObject) return new([line], []) { Outside = true };
+        var frame = read.Root;
 
-        if (frame.ValueKind != JsonValueKind.Object) return new([line], []) { Outside = true };
-
-        return Text(frame, "type") switch
+        return read.Type switch
         {
             "stream_event" => Stream(frame),
             "assistant" => Assistant(frame),

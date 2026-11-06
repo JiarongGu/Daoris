@@ -540,26 +540,27 @@ public sealed record ChildBindings
     /// was seen, which <paramref name="agents"/> keeps. Every other line, a background command's included, says none.
     /// </summary>
     /// <param name="proc">The token of the process whose stream it is, written where it is shaped as an id.</param>
-    public static string? StreamLine(string line, DateTimeOffset at, ISet<string> agents, string? proc = null)
+    public static string? StreamLine(NativeFrame frame, DateTimeOffset at, ISet<string> agents, string? proc = null)
     {
-        if (!line.Contains("\"task_", StringComparison.Ordinal) || Parse(line) is not { } root || Text(root, "type") != "system") return null;
-        switch (Text(root, "subtype"))
+        if (frame.Type != "system") return null;
+        string? Id(string name) => frame.Text(name) is { } text && IdShape.IsMatch(text) ? text : null;
+        switch (frame.Subtype)
         {
-            case "task_started" when Text(root, "task_type") == "local_agent" && Id(root, "task_id") is { } agent:
+            case "task_started" when frame.Text("task_type") == "local_agent" && Id("task_id") is { } agent:
             {
                 agents.Add(agent);
                 var said = Stamped(at, "stream", "started", agent);
-                if (Id(root, "parent_task_id") is { } parent) said["parent"] = parent;
-                if (Number(root, "spawn_depth") is { } depth) said["depth"] = depth;
-                if (Id(root, "subagent_type") is { } type) said["type"] = type;
-                if (LineageLabels.Task(Text(root, "description")) is { } description) said["description"] = description;
+                if (Id("parent_task_id") is { } parent) said["parent"] = parent;
+                if (Json.Int(frame.Root, "spawn_depth") is int depth and > 0) said["depth"] = depth;
+                if (Id("subagent_type") is { } type) said["type"] = type;
+                if (LineageLabels.Task(frame.Text("description")) is { } description) said["description"] = description;
                 return Named(said, proc);
             }
 
-            case "task_notification" when Id(root, "task_id") is { } agent && agents.Contains(agent):
+            case "task_notification" when Id("task_id") is { } agent && agents.Contains(agent):
             {
                 var said = Stamped(at, "stream", "ended", agent);
-                if (Id(root, "status") is { } status) said["status"] = status;
+                if (Id("status") is { } status) said["status"] = status;
                 return Named(said, proc);
             }
 

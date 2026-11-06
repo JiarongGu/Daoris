@@ -149,7 +149,7 @@ public sealed class AgentContextPortsTests
         Assert.Equal(0, events.Subscriptions);
         var streamCalls = output.Streams.Calls;
         var reader = new ClaudeStreams(output.Streams, _ => { });
-        Assert.True(reader.Take("{\"type\":\"system\",\"subtype\":\"task_started\",\"task_id\":\"b1\",\"description\":\"task\",\"task_type\":\"local_bash\"}"));
+        Assert.True(reader.Take(NativeFrame.Of("{\"type\":\"system\",\"subtype\":\"task_started\",\"task_id\":\"b1\",\"description\":\"task\",\"task_type\":\"local_bash\"}")));
         Assert.Contains("open:task/b1:task", streamCalls);
         await reader.EndAllAsync();
         Assert.Contains("end:task/b1:session-ended", streamCalls);
@@ -216,9 +216,9 @@ public sealed class AgentContextPortsTests
     {
         public readonly SessionEvent Event = new() { Kind = SessionEventKind.Note, Text = "kept" };
         public AcpUsage? Usage => null;
-        public StreamMapped Read(string line) { calls.Add($"read:{line}"); return new(["rendered"], [Event]); }
+        public StreamMapped Read(NativeFrame frame) { calls.Add($"read:{frame.Line}"); return new(["rendered"], [Event]); }
         public IStreamsReader Beside(ISessionStreams supplied, Action<string> say) { Assert.IsType<ReadingStreams>(supplied); calls.Add("beside"); return this; }
-        public bool Take(string line) { calls.Add($"take:{line}"); return false; }
+        public bool Take(NativeFrame frame) { calls.Add($"take:{frame.Line}"); return false; }
         public Task EndAllAsync() { calls.Add("end"); return Task.CompletedTask; }
     }
 }

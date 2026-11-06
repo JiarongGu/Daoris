@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A protocol door's words as its run carries them (AGENTPROVIDER1m-ii, D243 point 1): the one place a conversation's prompt, its word said
-/// into a running turn and its steer reach the session's wire, held by <see cref="TransportRun.Words"/>. The conversation's turns
-/// (<c>ProtocolChat</c>) say words here and never write through the session, as the native door's turns say theirs on the run's
-/// <see cref="DoorInput"/>. A prompt is answered on the wire by its own request, which the session keeps, so a word's acknowledgement is its
-/// answer and no process is restarted to replay it: the door's retry is the transient episode's, on the same process.
+/// A protocol door's words as its run carries them, the port beside the native door's <see cref="DoorInput"/> (D246): the one place a
+/// conversation's prompt, its word said into a running turn and its steer reach the session's wire, held by <see cref="AgentRun.Words"/>.
+/// The conversation's turns (<c>ProtocolChat</c>) say words here and never write through the session. Each is a request the session answers,
+/// so a word's acknowledgement is its answer and no process is restarted to replay it: the door's retry is the transient episode's, on the
+/// same session.
 /// </summary>
 internal sealed class ProtocolWords(AcpSession session)
 {

@@ -140,12 +140,14 @@ internal static class HarnessCapture
         var beside = ReadingStreams.Of(sink) is { } streams ? mapper.Beside(streams, Line) : null;
         while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
+            // Each line is read once into its frame, which every reader of it takes (AGENTPROVIDER1l).
+            var frame = NativeFrame.Of(line);
             // Before the streams beside take it: a subagent's start is theirs too, and its lineage is the part's (FABRIC-C1a). And the
             // background work the harness ends with its turn, the run's ending's however its streams are kept (BGWAIT1c).
-            lineage?.Stream(line);
-            own?.Heard(line);
-            if (beside?.Take(line) == true) continue;
-            var mapped = mapper.Read(line);
+            lineage?.Stream(frame);
+            own?.Heard(frame);
+            if (beside?.Take(frame) == true) continue;
+            var mapped = mapper.Read(frame);
             if (own is not null)
             {
                 if (mapped.Outside) own.Said(line);
