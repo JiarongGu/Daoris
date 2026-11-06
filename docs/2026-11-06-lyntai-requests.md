@@ -1,8 +1,8 @@
 # What Daoris's agent providers still need of Lyntai's agent layer (one quest's text, 2026-11-06)
 
 **Standing:** the text of one quest from Daoris to Lyntai, written at AGENTLYNTAI1a (D248) from the agent-lyntai design's §8
-(`docs/2026-10-30-agent-lyntai-design.md`). **Not published:** the steward publishes it after reading, and records its receipt on the
-rows that wait. Nothing here is written into Lyntai, and nothing here proposes a change: each item states a need and its evidence.
+(`docs/2026-10-30-agent-lyntai-design.md`). **Published** to Lyntai on the owner's yes, 2026-11-06, as quest `67b2b07e7e34`; its receipt is on
+the AGENTLYNTAI1 row. Nothing here is written into Lyntai, and nothing here proposes a change: each item states a need and its evidence.
 
 ---
 
