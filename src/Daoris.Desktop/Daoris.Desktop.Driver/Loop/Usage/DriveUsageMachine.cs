@@ -95,6 +95,10 @@ internal static class DriveUsageMachine
           workflow changes <run> <node> "…"
               ask for changes on a run's review in place of its Accept, with your words: the work's session is told
               them as its next turn, and what it commits is reviewed again. Daoris's window confirms it.
+          workflow done <run> <node> ["…"]
+          workflow approve|reject <run> <node> ["…"]
+              press your task on a run, or answer its approval, with a note if you like: the run takes the route
+              for what you pressed. Daoris's window confirms it.
 
         Only `drive` starts a loop. DAORIS_HOME names the home; DAORIS_SERVICE_URL the service, which
         `drive` and every command that reads a record need.
