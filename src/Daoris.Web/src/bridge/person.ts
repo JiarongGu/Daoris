@@ -72,8 +72,7 @@ const fromPipe = (waiting: PipeConfirmation): Confirmation => ({
 
 /**
  * What a terminal asked this window to confirm over the pipe (RPC1c): read as the page mounts, for a window opened or reloaded
- * while one waits, then kept by the shell's `CONFIRMATIONS` at each change. None in a browser, which has no pipe, and none from a
- * shell older than the route.
+ * while one waits, then kept by the shell's `CONFIRMATIONS` at each change. None in a browser, which has no pipe.
  */
 export function useTerminalConfirmations(): Confirmation[] {
   const { isAvailable } = useShenora();
@@ -215,7 +214,7 @@ const strings = (value: unknown): string[] =>
 
 /**
  * `STATE`'s `standingConfirmation`, read field by field: the bridge leaves a null out, so each field is read defensively. Null where
- * the shell says none, an older shell's or one that serves no pipe, which draws no row.
+ * the shell says none, or serves no pipe, which draws no row.
  */
 export function standingOf(raw: unknown): StandingConfirmationNow | null {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
@@ -235,7 +234,7 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
     holds: holdsOf(shaped.holds),
     holders: holdersOf(shaped.holders),
     stewardActs: stewardActsOf(shaped.stewardActs),
-    // STEWARDROLE1c (D209 §6.2): an older shell's missing desk reads as empty.
+    // STEWARDROLE1c (D209 §6.2): a missing desk reads as empty.
     stewardDesk: stewardDeskOf(shaped.stewardDesk),
   };
 }
@@ -366,7 +365,7 @@ export function useStandingUsed() {
 /**
  * The person key the shell holds for its host (D156 point 2, design §2.2), asked as the page loads and held in `data/api.ts`'s
  * memory, never in the query cache, the page's storage or a URL; a reload asks again. Answers whether one is held, and whether the
- * ask has settled. None in a browser, from a shell older than the route, or where the shell holds none.
+ * ask has settled. None in a browser, or where the shell holds none.
  */
 export function usePersonKey(): { held: boolean; settled: boolean } {
   const { isAvailable } = useShenora();

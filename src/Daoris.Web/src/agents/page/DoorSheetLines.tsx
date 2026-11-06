@@ -8,7 +8,7 @@ const valueWord = (t: TFunction<'translation', undefined>, row: SheetRow) =>
 /**
  * One door's sheet on the agent's page (COAGENT1 §3): each capability the driver answered, with the value and how it is known,
  * or *not known* with the fallback that applies. The door's own row is the wire word the header already says, so it is not
- * repeated; a door with no rows (an older shell's roster) draws nothing.
+ * repeated; a door with no rows draws nothing.
  */
 export function DoorSheetLines({ t, sheet }: { t: TFunction<'translation', undefined>; sheet: DoorSheet | undefined }) {
   const rows = (sheet?.rows ?? []).filter((row) => row.capability !== 'door');

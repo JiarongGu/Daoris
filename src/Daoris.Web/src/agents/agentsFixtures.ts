@@ -166,7 +166,7 @@ export const CLAUDE_USE: AgentAccounts = {
  * What the fold into one set changed, unsaid (POOL1a, D197 point 7; the account-pool design §4.2): `work` had its own two accounts
  * and `forge` ran on account-1 alone; the machine's scope named account-1 and no list, so the set is used *One by one, in order*
  * and its starts still begin there; `work`'s first moved; account-3 no order held is placed; `work`'s kept account is not kept;
- * a name the file held is no account here. Two receipts, the second an older build's file folded again.
+ * a name the file held is no account here. Two receipts, the second a file folded again.
  */
 export const POOLED: PoolReceipt[] = [
   {

@@ -78,7 +78,7 @@ describe('the notices slice on the page', () => {
     const composed = composeNotices(new Map<string, unknown>([['news', NEWS], ['messages', MESSAGES]]), true)!;
     expect(composed.messages!.map((entry) => entry.ask)).toEqual(['a2', 'a1', '7e6f51']);
     expect(composed.messages![1]).toEqual(MESSAGES.a1);
-    // An older shell pushes news alone: the page then pulls each ask's channel, as before.
+    // A shell that pushes news alone: the page then pulls each ask's channel.
     expect(composeNotices(new Map([['news', NEWS]]), true)!.messages).toBeUndefined();
   });
 

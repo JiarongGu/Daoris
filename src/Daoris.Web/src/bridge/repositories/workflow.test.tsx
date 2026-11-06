@@ -75,7 +75,7 @@ describe("the person's Accept the gates", () => {
     const tip = { line: 'main', commit: 'aa11bb2', gates: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' };
     expect(acceptGatesPress('engine', { workflow: 'web-verify', tip }))
       .toEqual({ repository: 'engine', workflow: 'web-verify', gates: tip.gates });
-    // A tip not read sends no blob, as an older page did.
+    // A tip not read sends no blob.
     expect(acceptGatesPress('engine', { workflow: 'web-verify', tip: null })).toEqual({ repository: 'engine', workflow: 'web-verify' });
 
     invoke.mockResolvedValueOnce({ start: null, lowered: [] });

@@ -72,7 +72,7 @@ describe("The shared doctrine, on an adopted repository's page", () => {
     expect(screen.getByRole('button', { name: '请它的会话处理' })).toBeTruthy();
   });
 
-  it("reads the answer field by field, an older shell's none read as no plan", () => {
+  it("reads the answer field by field, a none read as no plan", () => {
     expect(readReconcilePlan({ pending: true })).toBeNull();
     expect(readReconcilePlan({
       repository: 'engine', offered: true, pressable: true, refusals: [{ code: 'open', sentence: 's' }, { code: 1 }],

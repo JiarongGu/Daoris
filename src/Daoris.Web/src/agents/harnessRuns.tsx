@@ -19,7 +19,7 @@ export type HarnessRunAction = 'install' | 'update' | 'login' | 'login-new' | 'p
  */
 export type AccountAdded = {
   harness: string; profile: string; account: string | null;
-  /** The name the sign-in's end offered it (ACCOUNTID1b, `HARNESS_ENDED.offered`); undefined from an older shell. */
+  /** The name the sign-in's end offered it (ACCOUNTID1b, `HARNESS_ENDED.offered`); undefined where the end offered none. */
   offered?: string | null;
 };
 

@@ -334,7 +334,7 @@ describe('Ask Daoris’s mode and what it was handed', () => {
 
 /**
  * ASKQUESTS1 (the Ask Daoris design §9 item 12): what a conversation's Applies published, read over `HELP_PUBLISHED` as the driver
- * keeps it (`HelpPublished.cs`), newest first, an id its answer leaves out read as none, and an older shell's no answer read as none.
+ * keeps it (`HelpPublished.cs`), newest first, an id its answer leaves out read as none, and no answer read as none.
  */
 describe('what a conversation published', () => {
   const wrapped = () => {

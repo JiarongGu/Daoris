@@ -512,7 +512,7 @@ describe('what an account’s agent last said, a cell a window', () => {
       expect(projectedOf({ projected: 0.2, projectedBy: 'unweighed' })).toBe('not projected: Daoris cannot weigh its turns since');
     });
 
-    it('says nothing where the projection is the reading, rounds to it, or an older shell sent none', () => {
+    it('says nothing where the projection is the reading, rounds to it, or the answer carries none', () => {
       expect(projectedOf({ projected: 0.2, projectedBy: 'reading' })).toBeUndefined();
       expect(projectedOf({ projected: 0.2004, projectedBy: 'measured' })).toBeUndefined();
       expect(projectedOf({})).toBeUndefined();
@@ -573,7 +573,7 @@ describe('what an account’s agent last said, a cell a window', () => {
     // The person's own curve under `curve`, as judged: the session flat at 80, so 88% is over it.
     const own = { ...measured, windows: [{ ...measured.windows[0]!, curve: 80, over: true }] };
     expect(usageCells({ said: own }, signedIn, { now: NOW })!.cells[0]).toMatchObject({ curve: 'over its curve\'s 80% now', over: true });
-    // Nothing judged against a curve, as your own sign-in's row, which no list holds, or a shell older than PUSH1e: no curve.
+    // Nothing judged against a curve, as your own sign-in's row, which no list holds: no curve.
     expect(usageCells({ said }, signedIn, { now: NOW })!.cells[0]).not.toHaveProperty('curve');
     // A window this build has no curve for is not measured: its verdicts are null.
     const odd = { seen: SEEN, windows: [{ window: '90-minute', used: 0.4, reset: RESET, credits: false, seen: SEEN, curve: null, over: null }] };
