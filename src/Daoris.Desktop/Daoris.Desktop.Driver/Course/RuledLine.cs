@@ -8,18 +8,17 @@ namespace Daoris.Driver;
 /// <param name="Role">The role the line's start was bound to while the catalogue holds it, else the role taking its work at its place now.</param>
 /// <param name="Repository">The line's repository; null for a line at none.</param>
 /// <param name="Workspace">The repository's workspace, as the record names it, else as the registry places the quest's repository.</param>
-/// <param name="Line">The line's key; null for no line.</param>
-internal sealed record RuledLine(string Role, string? Repository, string? Workspace, string? Line)
+internal sealed record RuledLine(string Role, string? Repository, string? Workspace)
 {
     /// <summary>The line's effective rules per count in <paramref name="book"/>.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> In(SupervisorRuleBook book) => book.For(Role, Repository, Workspace);
 
     /// <summary>The line's place, as the staffing course reads it.</summary>
-    public StaffPlace Place => new(Repository, Workspace, Line);
+    public StaffPlace Place => new(Repository, Workspace);
 
     /// <summary>A driven quest's line: its last record where one ran, at the quest's repository and its registered <paramref name="workspace"/>.</summary>
     public static RuledLine OfQuest(string? home, QuestView quest, PriorSession? record, string? workspace) =>
-        Of(home, record, quest.Id, quest.To, workspace, string.Equals(quest.Weight, ParticipantWork.Design, StringComparison.Ordinal) ? RoleWork.Design : RoleWork.Build);
+        Of(home, record, quest.To, workspace, string.Equals(quest.Weight, ParticipantWork.Design, StringComparison.Ordinal) ? RoleWork.Design : RoleWork.Build);
 
     /// <summary>
     /// The line <paramref name="record"/> goes on from. A first start, with no record, is at <paramref name="repository"/> and
@@ -27,11 +26,11 @@ internal sealed record RuledLine(string Role, string? Repository, string? Worksp
     /// </summary>
     /// <param name="home">The home whose bindings and catalogue are read; null reads neither, and the role is the work's seeded one.</param>
     public static RuledLine Of(
-        string? home, PriorSession? record, string? line, string? repository = null, string? workspace = null, string? work = null)
+        string? home, PriorSession? record, string? repository = null, string? workspace = null, string? work = null)
     {
         var at = record?.Repository ?? repository;
         var circle = record?.Workspace ?? workspace;
-        return new(RoleOf(home, record, work ?? WorkOf(record), at, circle), at, circle, line);
+        return new(RoleOf(home, record, work ?? WorkOf(record), at, circle), at, circle);
     }
 
     /// <summary>The work a record's line does: Ask Daoris's, a conversation's, else a driven line's, design where its seeded role is Design's.</summary>

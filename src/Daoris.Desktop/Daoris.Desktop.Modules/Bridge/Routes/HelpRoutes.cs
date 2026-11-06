@@ -243,6 +243,10 @@ public sealed class HelpRoutes(DriverContext context)
             Grant = plan.Grant is { } grant
                 ? new { grant.Plugin, grant.Name, grant.Server, grant.Reads, grant.Writes, grant.Accepted, grant.Withdraw }
                 : null,
+            // A place's supervisor rules before and after, as the rules' own fields for the page to word.
+            Rules = plan.Rules is { } rules
+                ? new { rules.Place, Before = RuleShown(rules.Before), After = RuleShown(rules.After) }
+                : null,
             Sync = SyncShown(plan.Sync),
             // A workflow's version, as the card shows it, never the steps or the choice Apply carries.
             Workflow = WorkflowShown(plan.Workflow),
@@ -260,6 +264,8 @@ public sealed class HelpRoutes(DriverContext context)
                 : null,
         };
 
+    private static object[] RuleShown(IReadOnlyList<SupervisorRule> rules) =>
+        [.. rules.Select(rule => new { rule.Count, rule.At, rule.Do, rule.UpTo, rule.Roles })];
 
     /// <summary>
     /// What a bring-up-to-date card shows, the page's <c>HelpSyncShown</c>: whether the person has looked, every

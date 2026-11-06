@@ -20,7 +20,7 @@ export function ruleSaid(t: TFunction, rule: Pick<SupervisorRuleWire, 'at' | 'do
 }
 
 /** A wider place in the person's words: this machine, or a workspace or repository by its name. */
-function placeSaid(t: TFunction, place: string): string {
+export function placeSaid(t: TFunction, place: string): string {
   if (place === MACHINE) return t('settings.supervisor.machine');
   const [kind, name] = [place.slice(0, place.indexOf(':')), place.slice(place.indexOf(':') + 1)];
   return kind === 'workspace' ? t('settings.supervisor.workspace', { name }) : t('settings.supervisor.repository', { name });

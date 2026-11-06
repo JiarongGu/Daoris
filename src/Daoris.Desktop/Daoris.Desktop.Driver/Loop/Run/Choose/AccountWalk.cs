@@ -51,7 +51,7 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
                     if (limitWalks && policyMove is null && cut.Limit
                         && StaffCourse.LimitWait(
                             context.Harnesses.StaffFor(context.Home), policyRole, cut, context.Harnesses.Clock(),
-                            new StaffPlace(quest.To, start.Workspace, quest.Id)) is LineCourse.Wait)
+                            new StaffPlace(quest.To, start.Workspace)) is LineCourse.Wait)
                     {
                         limitWalks = false;
                     }

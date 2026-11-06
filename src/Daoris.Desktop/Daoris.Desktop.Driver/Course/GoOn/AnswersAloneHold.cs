@@ -33,7 +33,7 @@ public sealed class AnswersAloneHold(
     public int? At(string session, IReadOnlyDictionary<string, PriorSession> records)
     {
         var book = rules ?? SupervisorRuleBook.Seed;
-        return SupervisorRuleBook.AnswersAloneAt(RuledLine.Of(home, records.GetValueOrDefault(session), LineKeys.Of(session, records).Key).In(book));
+        return SupervisorRuleBook.AnswersAloneAt(RuledLine.Of(home, records.GetValueOrDefault(session)).In(book));
     }
 
     /// <summary>The number a held line was held at: its rule's; null where no rule holds it now, which nothing then names.</summary>
@@ -75,7 +75,7 @@ public sealed class AnswersAloneHold(
         if (acts is null) return;
         var book = rules ?? SupervisorRuleBook.Seed;
         var line = LineKeys.Of(record.Session, records).Key;
-        var effective = RuledLine.Of(home, records.GetValueOrDefault(record.Session) ?? record, line).In(book);
+        var effective = RuledLine.Of(home, records.GetValueOrDefault(record.Session) ?? record).In(book);
         if (SupervisorRuleBook.Acting(effective, SupervisorRules.AnswersAlone, SupervisorRules.Hold) is not { } rule) return;
         acts.Record(new RuleActed(line, record.Session, rule, book.RevisionOf(rule.Place), count.N, count.Known == LineCounts.Exact, "go-on", at));
     }
