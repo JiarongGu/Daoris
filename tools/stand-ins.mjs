@@ -10,7 +10,8 @@
  * The scenario contract (`SCENARIO_CONTRACT`) is the cases a stand-in's program answers in its own vocabulary, which the family
  * rehearsal's stand-in phase drives through the driver over every stand-in the files declare (`scenarioPlan`). Each case is named as
  * the conformance suite's live case of the same clause, so one line of a provider's `pending.json` holds it in both. A later stand-in is
- * its folder alone: nothing here, in the rehearsal or in the suite names one.
+ * its folder alone: nothing here, in the rehearsal or in the suite names one. A conversation's turn (`live.turn`) is the suite's alone:
+ * a terminal's conversation is the running Daoris's (D238), and the rehearsal runs no instance to hold one.
  *
  *   node tools/stand-ins.mjs     list every stand-in the files declare, its doors and each case of the contract on each (exit 0, 1 a
  *                                file out of the layout, 2 tool error)
@@ -181,7 +182,6 @@ export const heldBy = (lines, name, door) =>
  */
 export const SCENARIO_CONTRACT = Object.freeze([
   { case: 'live.start', kinds: KINDS, says: 'a start: a quest run on the door to done, taken and closed by the program' },
-  { case: 'live.turn', kinds: KINDS, says: 'a turn: a conversation from a terminal, each line the person says said back' },
   {
     case: 'live.resume-own', kinds: KINDS,
     says: 'a resume of its own conversation: words said to its ended session go on in it, or, where its door resumes nothing, the unsupported resume\'s fallback',
