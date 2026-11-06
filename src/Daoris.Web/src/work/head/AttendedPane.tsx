@@ -55,7 +55,7 @@ export function AttendedPane({
   const { attended, entries, quest, openings, attendedEntry, channelAsk, sessions, quests, here, live } = session;
   const {
     related, relatedOwn, together, bringTogether, togetherAct, memoryRows, decideMemory, sessionRecord, channel, channelOpened,
-    postChannel, forwardChannel, branch, discardBranch, told, tracing, setTracing, trace, milestone,
+    postChannel, forwardChannel, branch, discardBranch, told, tracing, setTracing, trace, milestone, supervision,
   } = record;
   const { ownBranch, landEntry, entryOffered, entryAccept, workAskAt } = work;
   const { waits, pieceSection, toEvent, ruleAskAt, seekAt } = waitsState;
@@ -142,6 +142,7 @@ export function AttendedPane({
       helps={helps}
       heavy={heavy}
       process={told.data?.process ?? null}
+      supervision={supervision}
       onSession={(row) => attend(row.id)}
       onQuest={onOpenQuest ? (row) => onOpenQuest(row.id) : undefined}
       branch={branch}

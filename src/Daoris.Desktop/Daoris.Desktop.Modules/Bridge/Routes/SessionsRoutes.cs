@@ -212,9 +212,10 @@ public sealed class SessionsRoutes(DriverContext context)
 
     // The supervisor's decisions on a session: those live in this shell's
     // memory as they stand, and every other read from the session's files as history (`earlier`), granting nothing. A read: `{ decisions }`,
-    // oldest first, each its question's snapshot, choice, reasons, holder, state, when it goes on and when it last moved.
+    // oldest first, each its question's snapshot, choice, reasons, holder, state, when it goes on and when it last moved; with the
+    // line's `counts` (each with the rule it acts by) and the `acts` the person's rules made on it, for *Details* and the head's chip.
     [DriverRoute("SESSION_SUPERVISOR", PipeClass.Open)]
-    private Task<object?> SessionSupervisorAsync(SessionSupervisor press, CancellationToken cancellationToken) => _wait.SupervisorAsync(press);
+    private Task<object?> SessionSupervisorAsync(SessionSupervisor press, CancellationToken cancellationToken) => _wait.SupervisorAsync(press, cancellationToken);
 
     // The owner's *Overrule*: `{ id, decision }`, a press only the person may make,
     // taken under the session's decision lock. While held the decision is overruled with nothing to take back; while released its word

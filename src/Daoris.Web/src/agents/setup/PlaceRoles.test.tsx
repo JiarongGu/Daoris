@@ -393,7 +393,7 @@ describe('A place page, Roles', () => {
   describe('its staffing policy', () => {
     const policy = (role: string, over: Record<string, unknown> = {}) => ({
       role, policyState: 'set', revision: 2, next: null,
-      staffPolicy: { rule: 'weight', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high', weight: 3 }], moves: { limit: 'weighted' }, most: 3 },
+      staffPolicy: { rule: 'weight', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high', weight: 3 }] },
       ...over,
     });
 

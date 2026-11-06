@@ -190,6 +190,8 @@ export const keys = {
   sessionsWhere: (ids: string[]) => ['sessions', 'where', ...ids] as const,
   /** The record of the finished tree a session ran in (KEEPSIZE1), read once its tree is let go. */
   sessionRecord: (id: string) => ['sessions', 'record', id] as const,
+  /** A line's counts and the acts the person's rules made on it (CONTEXTDRIVE1h), read again with the sessions at each tick. */
+  sessionSupervision: (id: string) => ['sessions', 'supervision', id] as const,
   /**
    * What a word said now to one session would do (MSG1d, D137 §5.3) — shell-only, the driver's answer. By its state and
    * whether its inbox listens, so it is asked again as the session moves; under the sessions' key, so a word kept or a

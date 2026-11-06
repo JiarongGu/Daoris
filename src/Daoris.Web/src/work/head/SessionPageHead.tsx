@@ -6,6 +6,8 @@ import { useWidth } from '../../design/useWidth';
 import { AccessChip, startedFull } from './AccessFact';
 import { choiceChip } from '../actors';
 import { ChoiceChip } from './ChoiceChip';
+import type { SupervisionChip } from './lineSupervision';
+import { cn } from '../../lib/cn';
 import { ACT_LOOK, actMenu, headerActs, type SessionActId } from '../acts';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { PageHead } from '../frame/ViewMain';
@@ -36,7 +38,9 @@ import { PageHead } from '../frame/ViewMain';
  * **It says how tall it is** to the main area it is pinned in (`--session-head`), so the long run's toolbar (SESS1 S9)
  * pins beneath it rather than under it.
  */
-export function SessionPageHead({ session, title, shown, facts = [], factsTip, acts, primary = null, busy = false, onAct, asking, next }: {
+export function SessionPageHead({ session, title, shown, facts = [], factsTip, acts, primary = null, busy = false, onAct, asking, next, chip = null }: {
+  /** The count a rule holds the line at, or one short of it (`supervisionChip`), said last on the facts line before the choice's chip. */
+  chip?: SupervisionChip | null;
   /** *Next* on the facts line (REVIEWFLOW1b): the press the first wait leads to, and the door to its step (*To the wait*). */
   next?: { press: 'answer' | 'accept' | 'rebase' | 'opinion' | 'review'; onPress: () => void } | null;
   /** The session it heads, as the frame holds it; its acts and its facts are worked out from it by the frame. */
@@ -109,7 +113,7 @@ export function SessionPageHead({ session, title, shown, facts = [], factsTip, a
         // Started under full access, by its record's pauses (SESSACCESS1, D184 point 1): the warning chip, last on the line, so the
         // line is cut before it rather than cutting it. Any other start wears nothing.
         // The choice its actor ran where it was not the first (D205 §4.6 item 2), before the access chip.
-        fact={next || choiceChip(t, session) !== null || startedFull(session)
+        fact={next || chip || choiceChip(t, session) !== null || startedFull(session)
           ? (
             <span className="inline-flex items-center gap-1.5">
               {next && (
@@ -117,6 +121,13 @@ export function SessionPageHead({ session, title, shown, facts = [], factsTip, a
                   <button type="button" onClick={next.onPress} className="cursor-pointer rounded-control border-0 bg-transparent p-0 text-small text-ink-open underline-offset-2 hover:underline">
                     {t('work.facts.nextIs', { press: t(`work.facts.press.${next.press}`) })}
                   </button>
+                </Tip>
+              )}
+              {chip && (
+                <Tip content={t('work.supervision.chipTip', { at: chip.at, n: chip.n })}>
+                  <span data-supervision-chip={chip.held ? 'held' : 'near'} className={cn('text-small', chip.held ? 'font-medium text-ink' : 'text-ink-faint')}>
+                    {chip.text}
+                  </span>
                 </Tip>
               )}
               <ChoiceChip session={session} narrow={narrow} />

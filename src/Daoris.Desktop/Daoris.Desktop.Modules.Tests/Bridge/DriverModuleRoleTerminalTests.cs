@@ -364,7 +364,11 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
             Assert.True(left.GetProperty("kept").GetBoolean(), left.GetRawText());
             var decision = Assert.Single(loop.Supervisor.LiveOf("s1"));
             Assert.Equal((SupervisorState.Left, "sign-in"), (decision.State, decision.Bound));
-            var row = Assert.Single((await AnswerAsync(module, "SESSION_SUPERVISOR", new { id = "s1" })).GetProperty("decisions").EnumerateArray());
+            var supervised = await AnswerAsync(module, "SESSION_SUPERVISOR", new { id = "s1" });
+            // The line's counts and the rules' acts ride beside the decisions, for *Details* and the head's chip.
+            Assert.Equal(JsonValueKind.Array, supervised.GetProperty("counts").ValueKind);
+            Assert.Equal(JsonValueKind.Array, supervised.GetProperty("acts").ValueKind);
+            var row = Assert.Single(supervised.GetProperty("decisions").EnumerateArray());
             Assert.Equal(("left", "sign-in"), (row.GetProperty("state").GetString(), row.GetProperty("bound").GetString()));
 
             // The card reads it beside the question it was left on, with the agent's mark (§4.2).

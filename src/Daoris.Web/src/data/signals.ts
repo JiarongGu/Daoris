@@ -21,6 +21,8 @@ export interface Consideration {
    * park it, which the sentence names. Absent for every other verdict, a park the shell has not read yet, and an older shell.
    */
   strikes?: number;
+  /** The number of failed sessions its line's failures rule parks it at (CONTEXTDRIVE1g), which the sentence names with the count. */
+  parksAt?: number | null;
   /**
    * And when its last session ended (SESSUX1i): what *What needs you* counts its wait from. Absent as `strikes` is.
    */
@@ -185,6 +187,10 @@ export function sittingSentence(sitting: Consideration): string {
   if (coded) return coded;
   if (sitting.verdict === 'Stopped' && !sitting.heldBy) return sitting.reason;
   if (sitting.verdict === 'Exhausted' && sitting.strikes == null) return sitting.reason;
+  // CONTEXTDRIVE1g: the park is the person's failures rule's, said with its number beside the count that reached it.
+  if (sitting.verdict === 'Exhausted' && sitting.parksAt != null) {
+    return i18n.t('work.sitting.ExhaustedRule', { quest: sitting.quest, failed: sitting.strikes, at: sitting.parksAt });
+  }
   // A take that is not this machine's (CARRY2c) is said from whose it is: a teammate's machine and session where a record
   // named both, another machine where none did, or a take made here; with no facts, the driver's words.
   if (sitting.verdict === 'TakenElsewhere') {

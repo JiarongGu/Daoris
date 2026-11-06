@@ -10,6 +10,7 @@ import { AskHelper } from '../start/AskHelper';
 import { HandOverAsk, type HandOverRoster } from '../start/HandOverAsk';
 import { HandOverOfferLine } from '../start/HandOverOfferLine';
 import { type SessionFactsOf, sessionFacts, sessionFactsTip } from './headFacts';
+import { supervisionChip } from './lineSupervision';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { PauseAsk } from '../pausing/WorkAsks';
 
@@ -692,3 +693,25 @@ export const NowIntegratingDark: Story = integrating.dark;
 export const NowLanded: Story = landed.wide;
 export const NowLandedNarrowChinese: Story = landed.narrowChinese;
 export const NowLandedDark: Story = landed.dark;
+
+/** The head of a line a supervisor rule holds, its chip as the frame reads it from the counts: *answers alone in a row 2 of 2*. */
+function RuleHeldHead(args: ComponentProps<typeof SessionPageHead>) {
+  const { t } = useTranslation();
+  const chip = supervisionChip(t, {
+    counts: [{ count: 'answers-alone', n: 2, known: 'exact', from: 'admission', watch: { at: 2, do: 'hold', place: 'repository:engine' } }],
+    acts: [],
+  });
+  return <Page><SessionPageHead {...args} chip={chip} /></Page>;
+}
+
+/** CONTEXTDRIVE1h: a rule holds the line, so the head says the count against its number, with the rule in its tip. */
+export const AnswersAloneHeldByARule: Story = {
+  args: { session: { ...SESSION, state: 'awaiting-person' }, shown: 'awaiting-person' },
+  render: (args) => <RuleHeldHead {...args} />,
+};
+
+/** The same in 中文, narrow. */
+export const AnswersAloneHeldByARuleInChinese: Story = {
+  ...AnswersAloneHeldByARule,
+  decorators: [sessionWidths.narrow, chinese],
+};

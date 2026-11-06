@@ -15,6 +15,7 @@ import { listToggled } from '../work/frame/layout';
 import { viewsIn } from '../work/frame/placements';
 import { type LayoutRegion, LayoutToggles } from '../work/strip/LayoutToggles';
 import { planOpening, workspaceItem } from './opener';
+import { ruleDoor } from './rulePlace';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { Drawer, failure, Prose, Toasts, useToasts } from '../design/ui';
 import { ShellSignals } from './ShellSignals';
@@ -427,6 +428,10 @@ export function App() {
               placements={placements}
               layout={view === 'sessions' ? undefined : renderView()}
               onOpenSessions={() => open('sessions')}
+              onChangeRule={(place, repository) => {
+                const door = ruleDoor(place, repository);
+                if (door) open(door.view, door.item, door.part);
+              }}
               group={listGroup}
               onGroupBrought={() => setListGroup(null)}
             />

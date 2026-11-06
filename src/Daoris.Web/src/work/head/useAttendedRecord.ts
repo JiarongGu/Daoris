@@ -5,6 +5,7 @@ import {
   useSessionMemory, useSessionProcess, useSessionRecord, useSessionRelatedRead, useSessionSpent, useSessionWhere, useSweepPlan,
   useTogether, useTogetherAct, useTrace, useWorkState,
 } from '../../bridge/shell';
+import { useSessionSupervision } from '../../bridge/sessions/supervision';
 import type { Session } from '../../data/api';
 import type { entryOfSession } from '../entries';
 
@@ -50,6 +51,8 @@ export function useAttendedRecord({ attended, attendedEntry, channelAsk, where, 
   // The process its own tree runs under, for its *Details* (PROCESS1e): this machine's own record, never an intake's, which is told
   // none; the driver answers none for a session with no tree of its own here.
   const told = useSessionProcess(attended && here && !intake ? attended.id : null);
+  // Its counts and the acts the person's rules made on it (CONTEXTDRIVE1h), for the head's chip and *Details*: this machine's own record.
+  const supervision = useSessionSupervision(attended?.id, Boolean(attended && here && !intake));
   // How the attended session came to be (TRACE1b): read only while its section is open, for the session it was opened
   // on, since the read takes every session record and quest. Attending another opens it folded.
   const [tracing, setTracing] = useState<string | null>(null);
@@ -65,5 +68,6 @@ export function useAttendedRecord({ attended, attendedEntry, channelAsk, where, 
   return {
     spent, related, relatedOwn, together, bringTogether, togetherAct, memoryRows, decideMemory, sessionRecord, channel, channelOpened,
     setChannelOpened, postChannel, forwardChannel, branch, discardBranch, told, tracing, setTracing, trace, milestone, integration,
+    supervision,
   };
 }
