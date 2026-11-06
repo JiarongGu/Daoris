@@ -71,13 +71,10 @@ public sealed record NodeObservation(string Unit, string Node, string Kind, stri
 /// inventory's (§D3); a run's <c>tidy</c> (D245) is Daoris's performed step, read here from what its door wrote on the landing.</para>
 /// <para><b>Not yet is no outcome</b>: git's proofs never fail. A record that cannot establish the outcome without a git read
 /// (<see cref="NodeGitReads"/>) leaves it unknown, and an unknown owner's unit is unknown, never ended (canary 27).</para>
+/// <para><b>Each kind's reading is its unit's</b> (D247): a kind that observes says so (<see cref="IObserves"/>) and calls its reading here.</para>
 /// </remarks>
 public static class BuiltInNodes
 {
-    /// <summary>The kinds observed from records.</summary>
-    public static readonly IReadOnlyList<string> Observed =
-        [NodeKinds.Claimed, NodeKinds.Land, NodeKinds.Review, NodeKinds.Push, NodeKinds.Line, NodeKinds.QuestHolds, NodeKinds.ContentHolds, NodeKinds.Monitor, NodeKinds.Tidy];
-
     /// <summary>The schema of an observed built-in's evidence, its record's: what a <c>data</c> wire from its evidence port carries (WIRE1a).</summary>
     public static string EvidenceSchema(string kind) => $"daoris/{kind}@1";
 
@@ -89,108 +86,125 @@ public static class BuiltInNodes
         Observe(unit, node, new NodeAcceptance(unit.Id, unit.Subject.Revision, graphDigest, node.Id, node.Version, attempt), git);
 
     /// <summary>
-    /// What <paramref name="unit"/>'s records say of <paramref name="node"/> on the binding Daoris evaluated for its attempt (FABRIC-NODE1c):
-    /// a reach's acceptance carries that binding's graph, attempt, inputs and prerequisite receipts, so invalidating anything it rests on
-    /// reaches it. Its revision is the commit its evidence names; where that is not the binding's, the one table refuses the reach as
-    /// another binding's. A binding of another unit, node or version is no observation (<see cref="NodeRefusal.NotBound"/>): the unit it
-    /// observes, its subject on a run's record (FABRIC-CUTOVER1a), never the record's own.
+    /// What <paramref name="unit"/>'s records say of <paramref name="node"/> on the binding Daoris evaluated for its attempt (FABRIC-NODE1c), with
+    /// <paramref name="git"/> the only read handed: its kind's reading (<see cref="IObserves"/>), or <see cref="NodeRefusal.NotObserved"/> for a
+    /// kind that observes nothing.
     /// </summary>
     public static NodeObservation Observe(WorkUnit unit, NodeDeclaration node, NodeAcceptance binding, NodeGitReads? git = null)
     {
-        NodeObservation Seen(string? outcome, string said) => new(unit.Id, node.Id, node.Kind, outcome, said) { Attempt = binding.Attempt };
+        var reading = new NodeReading(unit, node, binding) { Git = git };
+        return NodeKit.Of(node.Kind) is IObserves observes
+            ? observes.Observe(reading)
+            : Seen(reading, null, "this kind is not observed from records") with { Refused = NodeRefusal.NotObserved };
+    }
 
-        NodeObservation Reached(string source, string? revision, string record, string artifact, string said) =>
-            ReachedAt(source, revision, revision, record, artifact, said);
-
-        // The acceptance's revision and the commit its evidence names, apart only where a run's `handed` keeps its bound tip (FABRIC-CUTOVER1a).
-        NodeObservation ReachedAt(string source, string? revision, string? evidenced, string record, string artifact, string said)
+    /// <summary>
+    /// A <c>claimed</c>: the quest's done, by the ledger. On a run's subject (a binding naming its subject, which only a run's record does) it
+    /// waits for the chain's last step here (FABRIC-CUTOVER1a; the cutover design §2.2): a done whose steps name a work step still to come in its
+    /// repository is pending, as the close and the opinion's gate read a chain, since a reach there would lapse at the next quest and run again
+    /// all that rests on it. A look's set-up step is the review's, never a step of the work.
+    /// </summary>
+    internal static NodeObservation Claimed(NodeReading reading)
+    {
+        if (Unbound(reading, WorkUnitKind.Quest) is { } refused) return refused;
+        var unit = reading.Unit;
+        var onRun = reading.Binding.Subject is not null;
+        return unit.Records.Quest?.Status switch
         {
-            var accepted = binding with { SubjectRevision = revision, Evidence = null, Outputs = NodeAcceptance.NoPorts };
-            return Seen(NodeStates.Reached, said) with
-            {
-                // A `land`'s reach is the landing record's by its authority (LANDNODE1c); a `review`'s is the person's.
-                Source = node.Kind switch { NodeKinds.Land => NodeSource.Landing, NodeKinds.Review => NodeSource.Person, _ => source },                Acceptance = accepted with { Evidence = new NodePort(EvidenceSchema(node.Kind), $"{record}#{artifact}", evidenced, accepted.Id) },
-            };
-        }
+            "Done" when onRun && unit.Records.Quest.Then.Any(step => step.SetUpIn is null
+                && string.Equals(step.To, unit.Records.Quest.To, StringComparison.OrdinalIgnoreCase)) =>
+                Seen(reading, null, $"its done is in, and its chain has a step in `{unit.Records.Quest.To}` still to come: the run's work is claimed at its last"),
+            "Done" => Reached(reading, NodeSource.Ledger, unit.Subject.Revision, WorkRecord.Quests, unit.Records.Quest.Id,
+                unit.Records.Quest.Held ? "its done is in, and held for the person's yes or its evidence" : "its done is in"),
+            "Open" or "Taken" or "Declined" => Seen(reading, null, unit.End.Said),
+            _ => Seen(reading, NodeStates.Unknown, unit.End.Said),
+        };
+    }
 
-        if (!Observed.Contains(node.Kind)) return Seen(null, "this kind is not observed from records") with { Refused = NodeRefusal.NotObserved };
-        // LANDNODE1k: a hold reads the quest or the branch its run binds it to.
-        if (HoldNodes.Options.ContainsKey(node.Kind)) return HoldNodes.Observe(unit, node, binding, git);
-        if (binding.Observes != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
-        {
-            return Seen(null, "its binding names another subject, node or version") with { Refused = NodeRefusal.NotBound };
-        }
-
-        var wants = node.Kind == NodeKinds.Claimed ? WorkUnitKind.Quest : WorkUnitKind.Branch;
-        if (unit.Kind != wants) return Seen(null, $"it observes a {wants} unit, and this is a {unit.Kind}") with { Refused = NodeRefusal.NotThisUnit };
-
-        if (node.Kind == NodeKinds.Claimed) return Claimed(unit, binding.Subject is not null, Seen, Reached);
-        if (!unit.OwnerKnown) return Seen(NodeStates.Unknown, "no record names its unit, so nothing of it is said");
-
-        var landing = LandingOf(unit);
+    /// <summary>
+    /// A <c>land</c>'s or a <c>review</c>'s: the work handed on, reached by <paramref name="source"/> (LANDNODE1c: a land's reach is the landing
+    /// record's, a review's the person's). LANDNODE1c2: a review is read as a land is, since the doors that accept the work land it in one press.
+    /// </summary>
+    internal static NodeObservation Handed(NodeReading reading, string source)
+    {
+        if (OfBranch(reading) is { } refused) return refused;
+        var (unit, binding) = (reading.Unit, reading.Binding);
         var branch = unit.Records.Branch;
-        switch (node.Kind)
+        if (binding.Subject is not null)
         {
-            // LANDNODE1c2: a `review` is read as a `land` is, since the doors that accept the work land it in one press.
-            case NodeKinds.Land or NodeKinds.Review when binding.Subject is not null:
-                // FABRIC-CUTOVER1a (the cutover design §2.4.4, §11.2): a run's `land` is its session's work handed on, reached where the
-                // session branch's landing holds the tip it is bound to, made at it or squashing it (LandedBranch.Squashed), so a squash, whose
-                // commit is another, still reaches it. Its acceptance keeps the bound tip, which its binding lapses on and the one table checks;
-                // its evidence names the landing's tip, which what follows binds. Merged into the line with no branch landed, as below.
-                if (binding.SubjectRevision is { } bound
-                    && unit.Records.Landings.LastOrDefault(each => each.Tip == bound || each.Squashed == bound) is { } holding)
-                {
-                    return ReachedAt(NodeSource.Git, bound, holding.Tip, LandedBranches.FileName, holding.Branch,
-                        $"`{holding.Branch}` was made at {TextBounds.ShortCommit(holding.Tip, 8)} {WorkInventory.Minute(holding.LandedAt)} UTC"
-                        + (holding.Tip == bound ? "" : $", squashing {TextBounds.ShortCommit(bound, 8)}"));
-                }
+            // FABRIC-CUTOVER1a (the cutover design §2.4.4, §11.2): a run's `land` is its session's work handed on, reached where the session
+            // branch's landing holds the tip it is bound to, made at it or squashing it (LandedBranch.Squashed), so a squash, whose commit is
+            // another, still reaches it. Its acceptance keeps the bound tip, which its binding lapses on and the one table checks; its evidence
+            // names the landing's tip, which what follows binds. Merged into the line with no branch landed, as below.
+            if (binding.SubjectRevision is { } bound
+                && unit.Records.Landings.LastOrDefault(each => each.Tip == bound || each.Squashed == bound) is { } holding)
+            {
+                return ReachedAt(reading, source, bound, holding.Tip, LandedBranches.FileName, holding.Branch,
+                    $"`{holding.Branch}` was made at {TextBounds.ShortCommit(holding.Tip, 8)} {WorkInventory.Minute(holding.LandedAt)} UTC"
+                    + (holding.Tip == bound ? "" : $", squashing {TextBounds.ShortCommit(bound, 8)}"));
+            }
 
-                return branch?.Held is { } joined
-                    ? Reached(NodeSource.Git, joined.Tip, SessionBranches.FileName, branch.Branch, $"merged: {WorkInventory.ProofSaid(joined.By, joined.On)}")
-                    : Seen(null, "nothing was handed on at the bound commit yet");
-
-            case NodeKinds.Land or NodeKinds.Review:
-                if (landing is not null)
-                {
-                    return Reached(NodeSource.Git, landing.Tip, LandedBranches.FileName, landing.Branch,
-                        $"`{landing.Branch}` was made at {TextBounds.ShortCommit(landing.Tip, 8)} {WorkInventory.Minute(landing.LandedAt)} UTC");
-                }
-
-                return branch?.Held is { } merged
-                    ? Reached(NodeSource.Git, merged.Tip, SessionBranches.FileName, branch.Branch, $"merged: {WorkInventory.ProofSaid(merged.By, merged.On)}")
-                    : Seen(null, "nothing was handed on yet");
-
-            case NodeKinds.Line:
-                if (unit.End.State == WorkEndState.Unknown) return Seen(NodeStates.Unknown, unit.End.Said);
-                if (unit.End.State != WorkEndState.Ended) return Seen(null, unit.End.Said);
-                var holder = unit.Records.Landings.FirstOrDefault(each => each.Held is not null)
-                    ?? (branch?.Held is null ? unit.Records.Landings.FirstOrDefault(each => each.RemovedAs is not null) : null);
-                return holder is not null
-                    ? Reached(NodeSource.Git, unit.End.Revision, LandedBranches.FileName, holder.Branch, unit.End.Said)
-                    : Reached(NodeSource.Git, unit.End.Revision, SessionBranches.FileName, branch?.Branch ?? unit.Subject.Artifact ?? unit.Id, unit.End.Said);
-
-            // D245: the watch on the pull request and the tidy of its chain, each read from the landing record at the landing's tip.
-            case NodeKinds.Monitor or NodeKinds.Tidy:
-                var seen = node.Kind == NodeKinds.Monitor ? CompletionNodes.Monitor(landing) : CompletionNodes.Tidy(landing);
-                return seen is { Reached: true, Landing: { } on }
-                    ? Reached(NodeSource.Landing, on.Tip, LandedBranches.FileName, on.Branch, seen.Said)
-                    : Seen(null, seen.Said);
-            default:
-                // G8: Daoris's push (the push act) wrote the commit it pushed on the landing; the node is reached when git's remote-tracking ref holds it.
-                if (landing is not { Pushed: true, PushedTip: { } pushed }) return Seen(null, "the branch was not pushed yet");
-                if (git?.RemoteTip is not { } remoteTip)
-                {
-                    return Seen(NodeStates.Unknown, $"{TextBounds.ShortCommit(pushed, 8)} was pushed, and git's remote-tracking ref was not read");
-                }
-
-                return remoteTip(landing) switch
-                {
-                    null => Seen(NodeStates.Unknown, "git could not read the remote-tracking ref"),
-                    var remote when string.Equals(remote, pushed, StringComparison.Ordinal) => Reached(NodeSource.Git, pushed, LandedBranches.FileName,
-                        landing.Branch, $"pushed at {TextBounds.ShortCommit(pushed, 8)}, and the remote-tracking ref holds it"),
-                    _ => Seen(null, "the remote-tracking ref does not hold the pushed commit"),
-                };
+            return branch?.Held is { } joined
+                ? Reached(reading, source, joined.Tip, SessionBranches.FileName, branch.Branch, $"merged: {WorkInventory.ProofSaid(joined.By, joined.On)}")
+                : Seen(reading, null, "nothing was handed on at the bound commit yet");
         }
+
+        if (LandingOf(unit) is { } landing)
+        {
+            return Reached(reading, source, landing.Tip, LandedBranches.FileName, landing.Branch,
+                $"`{landing.Branch}` was made at {TextBounds.ShortCommit(landing.Tip, 8)} {WorkInventory.Minute(landing.LandedAt)} UTC");
+        }
+
+        return branch?.Held is { } merged
+            ? Reached(reading, source, merged.Tip, SessionBranches.FileName, branch.Branch, $"merged: {WorkInventory.ProofSaid(merged.By, merged.On)}")
+            : Seen(reading, null, "nothing was handed on yet");
+    }
+
+    /// <summary>A <c>line</c>'s: the unit's end, as the end judgement's keeper holds it.</summary>
+    internal static NodeObservation Line(NodeReading reading)
+    {
+        if (OfBranch(reading) is { } refused) return refused;
+        var unit = reading.Unit;
+        var branch = unit.Records.Branch;
+        if (unit.End.State == WorkEndState.Unknown) return Seen(reading, NodeStates.Unknown, unit.End.Said);
+        if (unit.End.State != WorkEndState.Ended) return Seen(reading, null, unit.End.Said);
+        var holder = unit.Records.Landings.FirstOrDefault(each => each.Held is not null)
+            ?? (branch?.Held is null ? unit.Records.Landings.FirstOrDefault(each => each.RemovedAs is not null) : null);
+        return holder is not null
+            ? Reached(reading, NodeSource.Git, unit.End.Revision, LandedBranches.FileName, holder.Branch, unit.End.Said)
+            : Reached(reading, NodeSource.Git, unit.End.Revision, SessionBranches.FileName, branch?.Branch ?? unit.Subject.Artifact ?? unit.Id, unit.End.Said);
+    }
+
+    /// <summary>
+    /// A <c>push</c>'s (G8): Daoris's push (the push act) wrote the commit it pushed on the landing; reached when git's remote-tracking ref holds it.
+    /// </summary>
+    internal static NodeObservation Pushed(NodeReading reading)
+    {
+        if (OfBranch(reading) is { } refused) return refused;
+        var landing = LandingOf(reading.Unit);
+        if (landing is not { Pushed: true, PushedTip: { } pushed }) return Seen(reading, null, "the branch was not pushed yet");
+        if (reading.Git?.RemoteTip is not { } remoteTip)
+        {
+            return Seen(reading, NodeStates.Unknown, $"{TextBounds.ShortCommit(pushed, 8)} was pushed, and git's remote-tracking ref was not read");
+        }
+
+        return remoteTip(landing) switch
+        {
+            null => Seen(reading, NodeStates.Unknown, "git could not read the remote-tracking ref"),
+            var remote when string.Equals(remote, pushed, StringComparison.Ordinal) => Reached(reading, NodeSource.Git, pushed, LandedBranches.FileName,
+                landing.Branch, $"pushed at {TextBounds.ShortCommit(pushed, 8)}, and the remote-tracking ref holds it"),
+            _ => Seen(reading, null, "the remote-tracking ref does not hold the pushed commit"),
+        };
+    }
+
+    /// <summary>D245: a step past the pull request, read from the landing record at the landing's tip by <paramref name="seen"/>.</summary>
+    internal static NodeObservation Completion(NodeReading reading, Func<LandedBranch?, CompletionSeen> seen)
+    {
+        if (OfBranch(reading) is { } refused) return refused;
+        var read = seen(LandingOf(reading.Unit));
+        return read is { Reached: true, Landing: { } on }
+            ? Reached(reading, NodeSource.Landing, on.Tip, LandedBranches.FileName, on.Branch, read.Said)
+            : Seen(reading, null, read.Said);
     }
 
     /// <summary>The landing a branch unit's <c>handed</c>, <c>pushed</c> and <c>pull-request</c> read: its newest standing, else its newest; null where none.</summary>
@@ -204,21 +218,46 @@ public static class BuiltInNodes
     public static bool AsksRemote(LandedBranch landing) => landing is { Pushed: true, PushedTip: not null };
 
     /// <summary>
-    /// The quest's done, by the ledger. On a run's subject (<paramref name="onRun"/>: a binding naming its subject, which only a run's record
-    /// does) it waits for the chain's last step here (FABRIC-CUTOVER1a; the cutover design §2.2): a done whose steps name a work step still to
-    /// come in its repository is pending, as the close and the opinion's gate read a chain, since a reach there would lapse at the next quest and
-    /// run again all that rests on it. A look's set-up step is the review's, never a step of the work.
+    /// A branch unit's reading refused where it is not bound to its node, or is not a branch; unknown where no record names its unit, so nothing
+    /// of it is said. Null where it reads.
     /// </summary>
-    private static NodeObservation Claimed(
-        WorkUnit unit, bool onRun, Func<string?, string, NodeObservation> seen, Func<string, string?, string, string, string, NodeObservation> reached) =>
-        unit.Records.Quest?.Status switch
+    private static NodeObservation? OfBranch(NodeReading reading) =>
+        Unbound(reading, WorkUnitKind.Branch)
+        ?? (reading.Unit.OwnerKnown ? null : Seen(reading, NodeStates.Unknown, "no record names its unit, so nothing of it is said"));
+
+    /// <summary>
+    /// A binding of another unit, node or version is no observation (<see cref="NodeRefusal.NotBound"/>): the unit it observes, its subject on a
+    /// run's record (FABRIC-CUTOVER1a), never the record's own; nor is a unit of another kind than the one the node observes.
+    /// </summary>
+    private static NodeObservation? Unbound(NodeReading reading, string wants)
+    {
+        var (unit, node, binding) = (reading.Unit, reading.Node, reading.Binding);
+        if (binding.Observes != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
         {
-            "Done" when onRun && unit.Records.Quest.Then.Any(step => step.SetUpIn is null
-                && string.Equals(step.To, unit.Records.Quest.To, StringComparison.OrdinalIgnoreCase)) =>
-                seen(null, $"its done is in, and its chain has a step in `{unit.Records.Quest.To}` still to come: the run's work is claimed at its last"),
-            "Done" => reached(NodeSource.Ledger, unit.Subject.Revision, WorkRecord.Quests, unit.Records.Quest.Id,
-                unit.Records.Quest.Held ? "its done is in, and held for the person's yes or its evidence" : "its done is in"),
-            "Open" or "Taken" or "Declined" => seen(null, unit.End.Said),
-            _ => seen(NodeStates.Unknown, unit.End.Said),
+            return Seen(reading, null, "its binding names another subject, node or version") with { Refused = NodeRefusal.NotBound };
+        }
+
+        return unit.Kind == wants ? null : Seen(reading, null, $"it observes a {wants} unit, and this is a {unit.Kind}") with { Refused = NodeRefusal.NotThisUnit };
+    }
+
+    private static NodeObservation Seen(NodeReading reading, string? outcome, string said) =>
+        new(reading.Unit.Id, reading.Node.Id, reading.Node.Kind, outcome, said) { Attempt = reading.Binding.Attempt };
+
+    private static NodeObservation Reached(NodeReading reading, string source, string? revision, string record, string artifact, string said) =>
+        ReachedAt(reading, source, revision, revision, record, artifact, said);
+
+    /// <summary>
+    /// A reach, its acceptance on the binding at <paramref name="revision"/> and its evidence naming <paramref name="evidenced"/>: apart only where
+    /// a run's <c>handed</c> keeps its bound tip (FABRIC-CUTOVER1a). A reach's acceptance carries that binding's graph, attempt, inputs and
+    /// prerequisite receipts, so invalidating anything it rests on reaches it; where its revision is not the binding's, the one table refuses it.
+    /// </summary>
+    private static NodeObservation ReachedAt(NodeReading reading, string source, string? revision, string? evidenced, string record, string artifact, string said)
+    {
+        var accepted = reading.Binding with { SubjectRevision = revision, Evidence = null, Outputs = NodeAcceptance.NoPorts };
+        return Seen(reading, NodeStates.Reached, said) with
+        {
+            Source = source,
+            Acceptance = accepted with { Evidence = new NodePort(EvidenceSchema(reading.Node.Kind), $"{record}#{artifact}", evidenced, accepted.Id) },
         };
+    }
 }

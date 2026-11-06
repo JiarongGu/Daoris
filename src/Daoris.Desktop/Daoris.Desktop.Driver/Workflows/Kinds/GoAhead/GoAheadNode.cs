@@ -15,8 +15,13 @@ namespace Daoris.Driver;
 /// waits, never reached or rejected on a guess. Who raises the go-ahead to the person is the session's ask (D135) or HUMAN1's door.</para>
 /// </remarks>
 [NodeKind(NodeKinds.GoAhead, NodeGroup.You, NodeKinds.Look)]
-public sealed class GoAheadNode : BuiltInNode
+public sealed class GoAheadNode : BuiltInNode, IObserves
 {
+    public NodeObservation Observe(NodeReading reading) => Observe(reading.Unit, reading.Node, reading.Binding, reading.GoAheads);
+
+    /// <summary>On a run alone, though it is pressed, since its answer is D135's record; on a unit it waits ready for the person's press.</summary>
+    public bool Begins(GovernedUnit governed) => governed.Scope is not null;
+
     public override NodeAuthority Row { get; } = new(NodeKinds.GoAhead, NodeReach.Pressed, NodeSource.Person, null, true, true, true, false);
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Run;

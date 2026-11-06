@@ -179,7 +179,7 @@ public sealed class IntegrateWatchTests : IDisposable
         try
         {
             await Poll.Until(() => watch.Nodes is not null, () => "the watch built no runtime", Poll.Patience);
-            Assert.IsType<HomeIntegrationDoor>(watch.Nodes!.Integration);
+            Assert.IsType<HomeIntegrationDoor>(watch.Nodes!.Doors.Door<IIntegrationDoor>());
         }
         finally
         {

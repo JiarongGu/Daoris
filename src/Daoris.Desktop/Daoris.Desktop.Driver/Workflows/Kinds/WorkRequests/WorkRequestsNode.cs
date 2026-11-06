@@ -12,8 +12,12 @@ namespace Daoris.Driver;
 /// (<see cref="WorkRequests.Declined"/>). Quests not read wait, never reached on a guess.</para>
 /// </remarks>
 [NodeKind(NodeKinds.WorkRequests, NodeGroup.Checks, NodeKinds.Opinion)]
-public sealed class WorkRequestsNode : BuiltInNode
+public sealed class WorkRequestsNode : BuiltInNode, IObserves
 {
+    public NodeObservation Observe(NodeReading reading) => Observe(reading.Unit, reading.Node, reading.Binding, reading.Requests);
+
+    public override bool EndsByTheLine => true;
+
     /// <summary>
     /// INTEGRATE1o (§17.3, C28): reached by the quests' records, each the run's sessions published here done. A decline holds it active and waiting
     /// on the person, so nothing fails it; the person's pass with words is the run's skip, and no record passes it over.

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// read as accepted, and never a graph's end.
 /// </summary>
 [NodeKind(NodeKinds.Review, NodeGroup.You)]
-internal sealed class ReviewNode : BuiltInNode
+internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
 {
     /// <summary>
     /// The person's Accept reaches it and nothing fails it. DECIDE1b: their changes, with words, are its rejection, so an <c>after</c> from it still
@@ -23,4 +23,15 @@ internal sealed class ReviewNode : BuiltInNode
     public override string? Title => "Your Accept";
 
     public override NodeLook Look => NodeLook.You;
+
+    /// <summary>Reached by the person's Accept, read from the landing it made as a <c>land</c>'s reach is (LANDNODE1c2).</summary>
+    public NodeObservation Observe(NodeReading reading) => BuiltInNodes.Handed(reading, NodeSource.Person);
+
+    /// <summary>The person's Accept, and their changes with their words (LANDNODE1c2, DECIDE1c).</summary>
+    public IReadOnlyList<string> Takes { get; } = [NodeWordActs.Accept, NodeWordActs.Changes];
+
+    public string Refusal => RunNodeWords.NotReview;
+
+    /// <summary>DECIDE1c: a review waiting on the person's Accept takes their changes, with their words, beside it.</summary>
+    public IReadOnlyList<string> Acts(NodeDeclaration node, NodeStatus status) => status.State == NodeStates.Active ? [NodeWordActs.Changes] : [];
 }

@@ -65,7 +65,7 @@ public sealed class CompletionNodesTests : IDisposable
         Assert.Null(NodeKit.Row(NodeKinds.Monitor)!.FailureBy);
         Assert.Equal(NodeSource.Landing, NodeKit.Row(NodeKinds.Tidy)!.FailureBy);
         Assert.Equal([NodeKinds.Land, NodeKinds.Push, PullRequestSteps.Id, NodeKinds.Monitor, NodeKinds.Tidy], CompletionNodes.Set);
-        Assert.All(new[] { NodeKinds.Land, NodeKinds.Push, NodeKinds.Monitor, NodeKinds.Tidy }, kind => Assert.True(CompletionNodes.RunBegins(kind)));
+        Assert.All(new[] { NodeKinds.Land, NodeKinds.Push, NodeKinds.Monitor, NodeKinds.Tidy }, kind => Assert.IsAssignableFrom<IObserves>(NodeKit.Of(kind)));
     }
 
     private static string Graph(string tail, string wires) => $$$"""

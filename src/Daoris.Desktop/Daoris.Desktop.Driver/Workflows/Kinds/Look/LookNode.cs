@@ -15,8 +15,10 @@ namespace Daoris.Driver;
 /// repository says nothing, and every other state of the gate is the person's still to answer: the look waits, never reached on a guess.</para>
 /// </remarks>
 [NodeKind(NodeKinds.Look, NodeGroup.You, NodeKinds.Review)]
-public sealed class LookNode : BuiltInNode
+public sealed class LookNode : BuiltInNode, IObserves
 {
+    public NodeObservation Observe(NodeReading reading) => Observe(reading.Unit, reading.Node, reading.Binding, reading.Review);
+
     /// <summary>
     /// §E4: the look is its gate, observed, and the person's <i>reviewed</i> is what reaches it. FABRIC-WIRE1h: the review gate's record passes it
     /// over where the chain's or the ask's choice turns it off for this work.

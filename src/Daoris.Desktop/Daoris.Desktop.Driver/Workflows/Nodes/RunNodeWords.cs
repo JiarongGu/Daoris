@@ -52,9 +52,13 @@ public static class RunNodeWords
     /// <summary>The record's mark of the person's send of <paramref name="node"/>'s attempt, which the next pass reads as the start's say-so (INTEGRATE1p).</summary>
     public static string SendKey(string node, int attempt) => $"send:{node}:{attempt}";
 
-    /// <summary>Whether <paramref name="node"/> is a request the person may send now: ready, and not one that sends itself.</summary>
-    private static bool Sendable(NodeDeclaration node, NodeStatus status) =>
-        node.Kind == NodeKinds.Request && status.State == NodeStates.Ready && NodeOptions.Text(node, "start") != RequestOptions.Automatic;
+    /// <summary>Whether <paramref name="node"/>'s kind offers its own <paramref name="act"/> where the node stands at <paramref name="status"/>.</summary>
+    private static bool Offers(NodeDeclaration node, NodeStatus status, string act) =>
+        NodeKit.Of(node.Kind) is IPressed pressed && pressed.Acts(node, status).Contains(act, StringComparer.Ordinal);
+
+    /// <summary>The kind whose own act <paramref name="act"/> is, which no other kind takes; null for the lifecycle's acts every kind takes.</summary>
+    private static IPressed? TakenBy(string act) =>
+        NodeKit.Built.Units.OfType<IPressed>().FirstOrDefault(pressed => pressed.Takes.Contains(act, StringComparer.Ordinal));
 
     /// <summary>The word is <c>accept</c> or <c>changes</c>, which only a <c>review</c> takes (LANDNODE1c2, DECIDE1c).</summary>
     public const string NotReview = "not-review";
@@ -91,8 +95,7 @@ public static class RunNodeWords
         if (new GraphRuns(records).Find(run) is not { } bound) return Refuse(NotRun);
         if (bound.Version is not { Graph: { } graph, GraphDigest: { } digest }) return Refuse(UnreadVersion) with { Detail = bound.Version.Unreadable };
         if (graph.Nodes.FirstOrDefault(each => each.Id == node) is not { } declared) return Refuse(NotNode);
-        if (OfRequests(act) && declared.Kind != NodeKinds.Request) return Refuse(NotRequest);
-        if (act is NodeWordActs.Accept or NodeWordActs.Changes && declared.Kind != NodeKinds.Review) return Refuse(NotReview);
+        if (TakenBy(act) is { } owner && !ReferenceEquals(NodeKit.Of(declared.Kind), owner)) return Refuse(owner.Refusal);
 
         var now = (clock ?? (() => DateTimeOffset.UtcNow))();
         var (refused, result) = records.Edit(bound.Unit, record =>
@@ -103,7 +106,7 @@ public static class RunNodeWords
             var status = WorkPerformer.StatusOf(record, node);
             if (act == NodeWordActs.Send)
             {
-                if (!Sendable(declared, status)) return (null, Refuse(NotSendable) with { State = status.State });
+                if (!Offers(declared, status, NodeWordActs.Send)) return (null, Refuse(NotSendable) with { State = status.State });
             }
             else
             {
@@ -174,7 +177,7 @@ public static class RunNodeWords
             var standing = WorkPerformer.StatusOf(next, node.Id);
             if (word.Act == NodeWordActs.Send)
             {
-                if (!Sendable(node, standing))
+                if (!Offers(node, standing, NodeWordActs.Send))
                 {
                     applied.Add((word, NotSendable));
                     continue;
@@ -216,8 +219,6 @@ public static class RunNodeWords
         _ => new NodeMove(NodeStates.Stopped, NodeCause.Person) { Words = word.Words },
     };
 
-    /// <summary>The acts of a request alone: sending it, and asking again or going on without it when declined, are no word of any other kind.</summary>
-    private static bool OfRequests(string act) => act is NodeWordActs.AskAgain or NodeWordActs.GoOn or NodeWordActs.Send;
 
     /// <summary>
     /// What the run's view offers the person on a node standing at <paramref name="status"/>: its skip where it is ready or under way and its kind
@@ -230,21 +231,10 @@ public static class RunNodeWords
     /// </param>
     public static IReadOnlyList<string> Acts(NodeDeclaration node, NodeStatus status, bool promoted = false)
     {
-        var acts = new List<string>();
-        // DECIDE1c: a review waiting on the person's Accept takes their changes, with their words, beside it.
-        if (node.Kind == NodeKinds.Review && status.State == NodeStates.Active) acts.Add(NodeWordActs.Changes);
+        // A kind's own acts lead (D247): a review's changes, a request's send, or its asking again and going on.
+        var acts = NodeKit.Of(node.Kind) is IPressed pressed ? new List<string>(pressed.Acts(node, status)) : [];
         if (status.State is NodeStates.Ready or NodeStates.Active && NodeAuthorities.Of(node)?.PersonSkips == true) acts.Add(NodeWordActs.Skip);
         if (status.State is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated && !promoted) acts.Add(NodeWordActs.Stop);
-        // INTEGRATE1p: a ready request under `start: you` waits for the person's send.
-        if (Sendable(node, status)) acts.Add(NodeWordActs.Send);
-        // INTEGRATE1p (C33): a request's decline waits on the person, unless its workflow said `declined: stop`.
-        if (node.Kind == NodeKinds.Request && status.State == NodeStates.Failed && status.Code == RequestOptions.DeclinedCode
-            && NodeOptions.Text(node, "declined") != RequestOptions.Stop)
-        {
-            acts.Add(NodeWordActs.AskAgain);
-            acts.Add(NodeWordActs.GoOn);
-        }
-
         return acts;
     }
 

@@ -20,9 +20,6 @@ public static class CompletionNodes
     /// </summary>
     public static readonly IReadOnlyList<string> Set = [NodeKinds.Land, NodeKinds.Push, PullRequestSteps.Id, NodeKinds.Monitor, NodeKinds.Tidy];
 
-    /// <summary>The landing kinds a run begins whatever their reach, read from the landing record each pass.</summary>
-    public static bool RunBegins(string kind) => kind is NodeKinds.Land or NodeKinds.Review or NodeKinds.Push or NodeKinds.Monitor or NodeKinds.Tidy;
-
     /// <summary>Whether the landing's pull request was merged, a squash merge included: the plugin answered it completed.</summary>
     public static bool Merged(LandedBranch landing) => landing.PullRequestState is { State: PullRequestStates.Completed };
 

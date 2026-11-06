@@ -21,7 +21,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Delivery presets | `Workflows/Domain/SetupPresets.cs` | *Set up…*'s deliveries, the suggestion, the remote platform's plugin, *Keep how it lands* |
 | Graph presets | `Workflows/Domain/WorkflowPresets.cs` | The shipped graphs for `workflow new --from`, with the opinion and look variants |
 | Saved workflows | `Workflows/WorkflowStore.cs`, `Workflows/Domain/WorkflowNamed.cs` | One file per workflow; versions appended whole; the one save judge |
-| Node kit | `Workflows/Kinds/` (`NodeKit`, `NodeKindAttribute`, `INodeKind`, `BuiltInNode`, `PluginStep`; one folder per kind, its declaration `<Kind>/<Kind>Node.cs`; `PullRequest/PullRequestStep.cs`) | Each kind's one declaration, marked `[NodeKind(id, group, after…)]`: its contract row, the subject a run binds it to, its options, its own declaration checks, its part on the run view and the step a version's person part reads it as, its offer and role, its evidence schema, its terminal title and its look. `NodeKit` is built once from the marks, in the picker's groups and their order (`docs/index/registered.md`); `NodeKit.Of` reads a built-in's unit, or a plugin's step as `PluginStep` with Daoris's half where its step name has one (`*/pull-request`); `Without(kind)` is an older build's kit. `NodeKitTests` holds the ids and the units equal both ways |
+| Node kit | `Workflows/Kinds/` (`NodeKit`, `NodeKindAttribute`, `INodeKind`, `BuiltInNode`, `PluginStep`; one folder per kind, its declaration `<Kind>/<Kind>Node.cs`; `PullRequest/PullRequestStep.cs`) | Each kind's one declaration, marked `[NodeKind(id, group, after…)]`: its contract row, the subject a run binds it to, its options, its own declaration checks, its part on the run view and the step a version's person part reads it as, its offer and role, its evidence schema, its terminal title and its look. `NodeKit` is built once from the marks, in the picker's groups and their order (`docs/index/registered.md`); `NodeKit.Of` reads a built-in's unit, or a plugin's step as `PluginStep` with Daoris's half where its step name has one (`*/pull-request`); `Without(kind)` is an older build's kit. `NodeKitTests` holds the ids and the units equal both ways. A unit says its state logic beside its declaration: `IObserves` (read from the pass's reads, `NodeReading`, and begun when its wires fire), `IStarts` (started on its door in the pass, `NodeStarting`, and an active run's node kept on it after the rounds, `NodeKept`), `IPressed` (the person's acts of its own); the runtime asks the unit and names no kind (`NodeDispatchCensusTests`). `NodeDoors` holds each starting kind's door, built from the loop's `NodeDoorWiring` by its unit; a test swaps one with `NodeDoors.With(kind, door)` |
 | Kinds and graph rules | `Workflows/Nodes/NodeContract.cs`, `Workflows/Nodes/NodeGraphs.cs` | The kinds' ids (`NodeKinds`), the states, the authority row's shape and the checks every declaration is held to; `Problems()` refuses a graph that breaks a rule |
 | Palette | `Workflows/WorkflowPalette.cs` | What the editor offers, read from the kit's units in its order: alone, as a landing's tail, or retired |
 | Choosing | `Workflows/Domain/WorkflowSelection.cs` | Which workflow a chain's work follows, and the landed route |
@@ -32,7 +32,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `NodeEvaluations` | `Workflows/Nodes/NodeEvaluations.cs`, `PassReads.cs` | A governed unit's graph judged on its record: a unit's, a run's over its subjects, and the pass's gate, content and git reads it waits on |
 | `NodeTelling` | `Workflows/Nodes/NodeTelling.cs` | The awaited set the plugins are told: each unit's frame, the tips last told, the next timer the records persist |
 | `NodeClosing` | `Workflows/Nodes/NodeClosing.cs` | A graph closing a quest: the `quest.close` start and its fence, what a closure graph's unit owes, the pruning of closure graphs nothing needs |
-| `NodeRunKeeping` | `Workflows/Nodes/NodeRunKeeping.cs` | What a run bound to a graph version has kept around its rounds: the person's skips and stops, what a review sent back told to the work, a landing started, the run's end and reopening |
+| `NodeRunKeeping` | `Workflows/Nodes/NodeRunKeeping.cs` | What a run bound to a graph version has kept around its rounds: the person's skips and stops, what a review sent back told to the work, each active node of a starting kind handed to its door, the run's end and reopening |
 | `NodeIntegrating` | `Workflows/Nodes/NodeIntegrating.cs` | A unit's `integrate` and a run's `request` started through their doors, and the card waits |
 | `NodeOwing` | `Workflows/Nodes/NodeOwing.cs` | Which units a pass judges: those owing a start or a rebinding, and the turn they are taken in past a pass's bound |
 | Performing | `Workflows/Nodes/WorkPerformer.cs`, `WorkKeeping.cs`, `WorkHearing.cs`, `WorkReceipting.cs`, `WorkOutcomes.cs`, `WorkPersonWord.cs`, `NodeRecordEdits.cs` | The performer sends, reconciles and retries; keeping an evaluation's moves and a no-dispatch start, hearing a completion, taking its receipts, applying an outcome, and the person's word on a held attempt are each their own type |
@@ -45,7 +45,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Holds | `Workflows/Nodes/HoldNodes.cs`, `Workflows/Kinds/WorkRequests/WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
 | Land node | `Workflows/Nodes/LandNodes.cs`, `Workflows/Nodes/Landing.cs` | `land`'s options, their resolution at the bind, and `Landing`, the intent a run lands by (`LandNodes.LandingOf`); a process with no bound version declares `Landing.Merge` |
 | Pull-request step | `Workflows/Nodes/PullRequestSteps.cs`, `Workplace/PullRequestRecords.cs`, `NodeRunKeeping.KeepPullRequests` | A `<plugin>/pull-request` step's plugin, the bind's refusal where no plugin performs it, and the address its evidence gives written on the landing |
-| Monitor and tidy | `Workflows/Nodes/CompletionNodes.cs`, `CompletionGraphs.cs`, `Workplace/TidyDoor.cs`, `Workplace/ChainTidied.cs`, `NodeRunKeeping.StartTidies` | The prebuilt set past the landing; the watch on the pull request; the tidy of the chain's parts and its record, which the keeper and the press read |
+| Monitor and tidy | `Workflows/Nodes/CompletionNodes.cs`, `CompletionGraphs.cs`, `Workplace/TidyDoor.cs`, `Workplace/ChainTidied.cs`, `Workflows/Kinds/Tidy/TidyNode.cs` (its door's start) | The prebuilt set past the landing; the watch on the pull request; the tidy of the chain's parts and its record, which the keeper and the press read |
 | Landing door | `Workplace/LandingDoor.cs`, `Workplace/LandPerformer.cs`, `Workplace/LandTries.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key; the performer of a run's `land`, its entry `LandEntry` and its tries' rules and notes (`LandTries`, `LandTryNotes`) |
 | Branch naming and notes | `Workplace/BranchPatterns.cs`, `Workplace/LandingNotes.cs`, `Plugins/LandingPlugins.cs` | A `land`'s pattern, ticket key, slug and chain subject; the conversation's notes of a press and a part left out; whether a named plugin performs pull-request steps (`LandingPlugins.ProblemOf`) |
 | Line policy | `Settings/LinePolicyKey.cs` | `linePolicies` and `workspaceLinePolicies` read, written and judged |
@@ -239,9 +239,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 - **A new step kind:** its id in `NodeKinds` (`Workflows/Nodes/NodeContract.cs`) and its folder `Workflows/Kinds/<Kind>/`, whose
   `<Kind>Node.cs` is a `BuiltInNode` marked `[NodeKind(id, group, after…)]` declaring its row, subject, options, own checks, part,
-  offer, title and look; nothing else lists it. Its state logic is still a file under `Workflows/Nodes/` (as `LandNodes.cs`,
-  `HoldNodes.cs`) the runtime dispatches by kind: a performed kind starts through `WorkPerformer`, an observed one is reached
-  through `WorkObserver`. A graph rule across kinds goes in `NodeGraphs.Problems()`.
+  offer, title and look; nothing else lists it. Its state logic is the unit's interfaces: `IObserves`, `IStarts` with its door from
+  `NodeDoorWiring`, `IPressed`; their bodies still call a file under `Workflows/Nodes/` (as `BuiltInNodes.cs`, `HoldNodes.cs`) until
+  its chunk moves them. A graph rule across kinds goes in `NodeGraphs.Problems()`, reading what a kind says of itself
+  (`ReadsTheLanding`, `EndsByTheLine`).
 - **Which workflow work follows:** `Workflows/Domain/WorkflowSelection.cs`, held cell for cell by `fixtures/workflow-selection.json`.
 - **A shipped workflow or delivery:** a JSON file under `Defaults/workflows/`; `WorkflowDefaults` reads it, and the presets derive.
 - **How a landing behaves:** the method's options in `LandNodes.cs`; the act in `Workplace/` (`LandingDoor`, `SessionTrees`,
@@ -280,7 +281,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - D221's rejection of a place's choice changing through `PLACE_APPLY` vs `PlacePlan.cs:336` (Apply chooses the copy): D227 reads right.
 - D157 and D223 (no zoom, no minimap) vs D224 and `workflow/chart/FlowChart.tsx:62`: D224 reads right; `WorkflowChart.tsx:353` still says "no zoom".
 - D186 point 3 (a flow placed left to right where it fits) vs D221/D223 (a workflow always top to bottom, `flowLayout.ts:291`): both right, each for its flows.
-- `NodeContract.cs` (`NodeKinds.Check`: started by nothing) vs `Loop/Watch/WatchNodes.cs` (the check's executor wired): the code reads right.
+- `NodeContract.cs` (`NodeKinds.Check`: started by nothing) vs `Workflows/Kinds/Check/CheckNode.cs` (its door on the heavy executor): the code reads right.
 
 ## Open
 

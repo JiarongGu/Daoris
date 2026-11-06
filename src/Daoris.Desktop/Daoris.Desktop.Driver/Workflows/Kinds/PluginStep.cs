@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// believed answer reaches and fails it, a person rejects or skips it as declared), bound by its place after the landing, carried out by its
 /// plugin and titled by its step and its plugin. A step name Daoris has a half of reads as that half (<see cref="PullRequestStep"/>).
 /// </summary>
-public record PluginStep : INodeKind
+public record PluginStep : INodeKind, IStarts
 {
     /// <summary>The step's kind, <c>&lt;plugin&gt;/&lt;step&gt;</c>; empty on a registered half, which <see cref="NodeKit.Find"/> names as it hands it out.</summary>
     public string Kind { get; init; } = "";
@@ -36,4 +36,44 @@ public record PluginStep : INodeKind
     public string? Title => Kind.IndexOf('/') is var slash and > 0 ? $"{Kind[(slash + 1)..]} by `{Kind[..slash]}`" : null;
 
     public NodeLook Look => NodeLook.Plugin;
+
+    public bool ReadsTheLanding => false;
+
+    public bool EndsByTheLine => false;
+
+    /// <summary>None: its door is its plugin's port, the runtime's own.</summary>
+    INodeDoor? IStarts.Door(NodeDoorWiring wiring) => null;
+
+    /// <summary>
+    /// Observed, it is begun as a built-in is, ready to active with its firings written, and published to its plugin only after; performed, it is
+    /// sent to its plugin within the pass's sends, once its process is up (a process not up yet is awaited, and the start made at a later pass:
+    /// never sent blind). Either waits where its branch's tip was not read this pass: nothing is bound or sent on a guess.
+    /// </summary>
+    async Task<WorkPerformed?> IStarts.StartAsync(NodeStarting starting, CancellationToken ct)
+    {
+        var (governed, node) = (starting.Governed, starting.Node);
+        var unread = starting.Tipped && starting.Tip is null;
+        if (node.Reach == NodeReach.Observed && governed.Observable.Contains(node.Id)) return unread ? null : starting.Begin();
+        if (!governed.Dispatchable.Contains(node.Id) || unread || starting.Sends.Left <= 0
+            || starting.Port.GenerationOf(NodeGoverning.PluginOf(node.Kind)) is null || !starting.Sends.Take())
+        {
+            return null;
+        }
+
+        // A bound quest's revision is its chain's and branches', from the last full read, which a wake reuses: a start on a wake reads them
+        // again first, and a start whose revision moved is not made, so no attempt is bound to an old tip.
+        if (governed.Closes && !starting.ReadThisPass && governed.Unit.Records.Quest is { } bound)
+        {
+            var again = await starting.Units(ct).ConfigureAwait(false);
+            if (NodeClosing.Moved(governed, bound, again, NodeGoverning.Quests(again)) is { } moved)
+            {
+                starting.Drop();
+                var line = $"work  {governed.Unit.Id}: its `{node.Id}` was not started: {moved}, so it is judged again on what is there now.";
+                if (!starting.Said.Contains(line, StringComparer.Ordinal)) starting.Said.Add(line);
+                return null;
+            }
+        }
+
+        return await starting.Performer.StartAsync(node, starting.Start, ct).ConfigureAwait(false);
+    }
 }

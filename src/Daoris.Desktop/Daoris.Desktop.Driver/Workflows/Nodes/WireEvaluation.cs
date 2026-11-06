@@ -128,20 +128,13 @@ public static class WireEvaluation
         {
             var status = now[node.Id];
             if (status.State is not (NodeStates.Active or NodeStates.Unknown) || status.Binding is not { } binding
-                || !(BuiltInNodes.Observed.Contains(node.Kind) || node.Kind is NodeKinds.Opinion or NodeKinds.Look or NodeKinds.GoAhead or NodeKinds.WorkRequests)
+                || NodeKit.Of(node.Kind) is not IObserves observes
                 || subjects[node.Id] is not { Withheld: null, Subject: { } subject } || !run.Units.TryGetValue(subject, out var unit))
             {
                 continue;
             }
 
-            var observation = node.Kind switch
-            {
-                NodeKinds.Opinion => OpinionNode.Observe(unit, node, binding, run.Opinions.GetValueOrDefault(subject)),
-                NodeKinds.Look => LookNode.Observe(unit, node, binding, run.Reviews.GetValueOrDefault(subject)),
-                NodeKinds.GoAhead => GoAheadNode.Observe(unit, node, binding, run.GoAheads.GetValueOrDefault(subject)),
-                NodeKinds.WorkRequests => WorkRequestsNode.Observe(unit, node, binding, run.Requests.GetValueOrDefault(subject)),
-                _ => BuiltInNodes.Observe(unit, node, binding, run.Git),
-            };
+            var observation = observes.Observe(NodeReading.Of(run, subject, unit, node, binding));
             if (observation.Move is not { } move || (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown)) continue;
 
             // A record's skip holds for the attempt's graph and run, as the person's does for theirs. FABRIC-RUN1f: an attempt with no scope kept

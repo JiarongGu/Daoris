@@ -68,7 +68,7 @@ public static class IntegrateNodes
 /// ask for a new one; and, of the member the line's run formed from it, whether it promoted. A port, so a node is judged over a stand-in;
 /// <see cref="HomeIntegrationDoor"/> is the home's.
 /// </summary>
-public interface IIntegrationDoor
+public interface IIntegrationDoor : INodeDoor
 {
     /// <summary>The request kept for <paramref name="unit"/> at <paramref name="tip"/>, open or closed; null where none was made.</summary>
     Task<IntegrationRequest?> FindAsync(string unit, string tip, CancellationToken ct);

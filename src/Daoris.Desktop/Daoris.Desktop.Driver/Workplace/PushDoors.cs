@@ -17,7 +17,7 @@ public sealed record PushStart(string Unit, NodeDeclaration Node, string Reposit
 /// The door a run's <c>push</c> is performed through (G8): the person's press of the push act and a workflow's step are one act, so this
 /// pushes through <see cref="GitPushActs"/> and nothing else.
 /// </summary>
-public interface IPushDoor
+public interface IPushDoor : INodeDoor
 {
     /// <summary>
     /// Starts the push of <paramref name="start"/> off the pass; returns at once. True where this call started one, false where one for the same

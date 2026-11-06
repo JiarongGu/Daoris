@@ -76,23 +76,29 @@ public sealed class NodeRuntime(
 
     private NodeOwing? _owing;
 
-    private NodeOwing Owing => LazyInitializer.EnsureInitialized(ref _owing, () => new NodeOwing(records, () => Integration))!;
+    private NodeOwing Owing => LazyInitializer.EnsureInitialized(ref _owing, () => new NodeOwing(records, () => Doors.Door<IIntegrationDoor>()))!;
 
     private NodeTelling Telling => LazyInitializer.EnsureInitialized(ref _telling, () => new NodeTelling(records, port, _holdsLease, _cleaner, Ended))!;
 
     private NodeClosing Closing => LazyInitializer.EnsureInitialized(ref _closing, () => new NodeClosing(records, clock, _closer, () => _quests, () => _governed, () => _governed = null))!;
 
     private NodeRunKeeping Keeping => LazyInitializer.EnsureInitialized(ref _keeping, () => new NodeRunKeeping(
-        records, clock, _holdsLease, _graphRuns, _performer, () => Integration, () => Say, () => Landing, () => Pushing, () => PullRequests, () => Tidying))!;
+        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
-        records, clock, () => Integration, () => Lines, () => Requests, () => _config, () => _quests, () => Integrated))!;
+        records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => Doors.Door<IRequestPort>(), () => _config, () => _quests, () => Integrated))!;
+
+    private NodeDoors _doors = NodeDoors.None;
 
     /// <summary>
-    /// The one door a unit's <c>integrate</c> asks for its landed branch (the integration design §17.4): none by default, so a runtime nobody
-    /// wired starts none and reconciles none, and its node waits ready. The watch sets it (<see cref="HomeDoor"/>).
+    /// The doors its nodes are started on, by kind (D247 §3.5): none by default, so a runtime nobody wired starts nothing on a door and each such
+    /// node waits. The watch wires them (<see cref="NodeDoors"/>); a check's is its performer's port.
     /// </summary>
-    public IIntegrationDoor? Integration { get; set; }
+    public NodeDoors Doors
+    {
+        get => _doors;
+        set => (_doors, _performer.Checks) = (value, value.Door<ICheckPort>());
+    }
 
     /// <summary>The transport an open request's line is sent to: none by default, and an admitted request then waits queued. The watch sets it.</summary>
     public IIntegrationLines? Lines { get; set; }
@@ -100,26 +106,8 @@ public sealed class NodeRuntime(
     /// <summary>A unit whose <c>line</c> was reached after its <c>integrate</c> (<c>work.integrated</c>, §5.1): told once, with its repository.</summary>
     public Action<string, string>? Integrated { get; set; }
 
-    /// <summary>The heavy executor's port: none by default, so a runtime nobody wired starts no check and its node waits ready. The watch sets it.</summary>
-    public ICheckPort? Checks { get => _performer.Checks; set => _performer.Checks = value; }
-
-    /// <summary>
-    /// The door a run's <c>land</c> is performed through (the land node design §3): none by default, so a runtime nobody wired lands nothing
-    /// and its node waits active. The watch sets it, so the landing goes on off the pass.
-    /// </summary>
-    public ILandingDoor? Landing { get; set; }
-
-    /// <summary>The doors a run's <c>push</c> and <c>tidy</c> are performed through (G8, D245): none by default, so each node waits active.</summary>
-    public IPushDoor? Pushing { get; set; }
-
-    /// <inheritdoc cref="Pushing"/>
-    public ITidyDoor? Tidying { get; set; }
-
     /// <summary>Where the pull request a plugin's step opened is written on its landing (G8): none by default, so a runtime nobody wired writes none.</summary>
     public IPullRequestRecords? PullRequests { get; set; }
-
-    /// <summary>The door a run's <c>request</c> publishes its quest through: none by default, so a runtime nobody wired starts none and its node waits ready.</summary>
-    public IRequestPort? Requests { get; set; }
 
     /// <summary>
     /// The say door a run's work is told what was sent back to it through: Daoris's words on the work's session as its next turn, under their
@@ -398,7 +386,7 @@ public sealed class NodeRuntime(
             }
 
             // A unit's request is asked after, by its key, before any new start (§17.4).
-            if (Integration is not null)
+            if (Doors.Door<IIntegrationDoor>() is not null)
             {
                 var (reconciled, line) = await Integrating.ReconcileIntegrationsAsync(ct).ConfigureAwait(false);
                 done.AddRange(reconciled);
@@ -406,7 +394,7 @@ public sealed class NodeRuntime(
             }
 
             // A run's request is read on this look's projection of its quest before any new start, its key found first (§17.5).
-            if (Requests is not null)
+            if (Doors.Door<IRequestPort>() is not null)
             {
                 var (reconciled, line) = await Integrating.ReconcileRequestsAsync(governed.Values, ct).ConfigureAwait(false);
                 done.AddRange(reconciled);
@@ -495,87 +483,24 @@ public sealed class NodeRuntime(
                 await Keeping.BackToWorkAsync(governed, before, evaluated, said, ct).ConfigureAwait(false);
             }
 
+            // Each node whose wires fired starts as its kind says (D247). A start that dropped what this pass governs (a fence that found the
+            // unit moved) ends its judgement here: the next pass reads it again, and no further round reads git only to find the same revision.
             var started = false;
             foreach (var start in evaluated.Starts)
             {
-                var node = governed.Declared[start.Node];
-                if (node.Kind == NodeKinds.QuestClose)
+                var starting = new NodeStarting
                 {
-                    var closed = await Closing.CloseAsync(governed, node, start, evaluated.Statuses[start.Node], sends, said, units, ct).ConfigureAwait(false);
-                    if (closed is not null) done.Add(closed);
-                    started |= closed is { What: not PerformedWhat.Refused };
-
-                    // A fence that found the unit moved (CloseAsync dropped what this pass governs) ends its judgement here: the next pass
-                    // reads it again, and no further round reads git again only to find the same stale revision.
-                    if (_governed is null) return;
-                }
-                // A waited node, begun through its adapter: the unit's request asked of the one door, by its key.
-                else if (node.Kind == NodeKinds.Integrate)
+                    Governed = governed, Node = governed.Declared[start.Node], Start = start, Statuses = evaluated.Statuses, Tipped = tipped, Tip = tip,
+                    ReadThisPass = _readThisPass, Sends = sends, Said = said, Units = units, Performer = _performer, Port = port, Closing = Closing,
+                    Integrating = Integrating, Drop = () => _governed = null,
+                };
+                if (await starting.StartAsync(ct).ConfigureAwait(false) is { } performed)
                 {
-                    var integrating = await Integrating.IntegrateAsync(governed, node, start, evaluated.Statuses, said, ct).ConfigureAwait(false);
-                    if (integrating is not null) done.Add(integrating);
-                    started |= integrating is { What: not PerformedWhat.Refused };
-                }
-                // A run's request, published under its key once its start is standing say-so.
-                else if (node.Kind == NodeKinds.Request && governed.Scope is not null)
-                {
-                    var asked = await Integrating.RequestAsync(governed, node, start, evaluated.Statuses[start.Node], said, ct).ConfigureAwait(false);
-                    if (asked is not null) done.Add(asked);
-                    started |= asked is { What: not PerformedWhat.Refused };
-                }
-                // The doors read a run's record, so its opinion and look are begun as a unit's are, their gates read on its branch at the tip this
-                // pass read. A `land` is begun, and read from the landing record as `handed` is; its `review` too, which the door's Accept
-                // reaches in the press that lands it.
-                else if ((node.Reach == NodeReach.Observed && (NodeGoverning.Begins(node.Kind) || governed.Observable.Contains(node.Id))) || CompletionNodes.RunBegins(node.Kind)
-                         // A run's go-ahead is begun though it is pressed, since its answer is D135's record.
-                         || (governed.Scope is not null && node.Kind == NodeKinds.GoAhead))
-                {
-                    // An observed plugin node whose branch's tip this pass did not read is left as it stands: nothing is bound on a guess, and
-                    // the pass that reads the tip begins it there.
-                    if (tipped && tip is null && governed.Observable.Contains(node.Id)) continue;
-
-                    // A plugin's observed node starts as a built-in does, ready to active with its firings written, and is published to its
-                    // plugin only after (Tell, below).
-                    var begun = _performer.Begin(node, start, evaluated.Statuses[start.Node]);
-                    done.Add(begun);
-                    started |= begun.What == PerformedWhat.Begun;
-                }
-                // A check is handed to the heavy executor, which takes it at once and runs it on its own task: the pass never awaits its gates.
-                // With no executor here it stays ready.
-                else if (node.Kind == NodeKinds.Check)
-                {
-                    if (!governed.Dispatchable.Contains(node.Id) || _performer.Checks is null) continue;
-                    var handed = await _performer.StartAsync(node, start, ct).ConfigureAwait(false);
-                    done.Add(handed);
-                    started |= handed.What != PerformedWhat.Refused;
-                }
-                // A performed node whose branch's tip this pass did not read is left ready, as an observed one is: it is sent on no guess, and
-                // the pass that reads the tip sends it there. A run's performed node is started as a unit's is, now its doors read the run; one
-                // on a subject whose revision was not read is offered no start.
-                else if (governed.Dispatchable.Contains(node.Id) && !(tipped && tip is null) && sends.Left > 0
-                         && port.GenerationOf(NodeGoverning.PluginOf(node.Kind)) is not null && sends.Take())
-                {
-                    // A bound quest's revision is its chain's and branches', from the last full read, which a wake reuses: a start on a wake
-                    // reads them again first, and a start whose revision moved is not made, so no attempt is bound to an old tip.
-                    if (governed.Closes && !_readThisPass && governed.Unit.Records.Quest is { } bound)
-                    {
-                        var again = await units(ct).ConfigureAwait(false);
-                        if (NodeClosing.Moved(governed, bound, again, NodeGoverning.Quests(again)) is { } moved)
-                        {
-                            _governed = null;
-                            var line = $"work  {unit}: its `{node.Id}` was not started: {moved}, so it is judged again on what is there now.";
-                            if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);
-                            return;
-                        }
-                    }
-
-                    // A process not up yet is awaited (Tell below), and the start is made at a later pass once it is: never sent blind.
-                    var sent = await _performer.StartAsync(node, start, ct).ConfigureAwait(false);
-                    done.Add(sent);
-                    started |= sent.What != PerformedWhat.Refused;
+                    done.Add(performed);
+                    started |= performed.What != PerformedWhat.Refused;
                 }
 
-                // A pressed node's task and any other waited node's wait are not the runtime's to start: left ready.
+                if (_governed is null) return;
             }
 
             if (evaluated.Settled && !started) break;
@@ -584,8 +509,7 @@ public sealed class NodeRuntime(
         if (governed.Scope is { } run)
         {
             await Keeping.AcceptRepairsAsync(governed, run, ct).ConfigureAwait(false);
-            Keeping.StartLandings(governed, run);
-            Keeping.StartPerformed(governed, run);
+            Keeping.StartDoors(governed, run);
             Keeping.KeepPullRequests(governed);
             Keeping.End(governed, run, said);
         }

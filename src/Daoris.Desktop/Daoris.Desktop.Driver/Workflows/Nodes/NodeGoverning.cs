@@ -361,12 +361,6 @@ internal static class NodeGoverning
 
     public static string PluginOf(string kind) => kind[..kind.IndexOf('/')];
 
-    /// <summary>
-    /// Whether the runtime begins a built-in kind as an observed built-in: every built-in observed from records or settled by the evaluation,
-    /// the <c>opinion</c> and <c>look</c> on their gates, a <c>stop</c> on its path and an <c>all</c> join on its members included. A pressed
-    /// node's task and a waited node's wait are not the runtime's to start.
-    /// </summary>
-    public static bool Begins(string kind) => NodeKit.Row(kind)?.Reach == NodeReach.Observed;
 
     private static bool Performs(NodeDeclaration node) => node.Reach == NodeReach.Performed && NodeKit.IsPlugin(node.Kind);
 

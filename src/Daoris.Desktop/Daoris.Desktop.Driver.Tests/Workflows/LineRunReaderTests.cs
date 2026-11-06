@@ -64,7 +64,7 @@ public sealed class LineRunReaderTests : NodeRuntimeFixture
         });
         var checks = new Checks();
         var runtime = Runtime();
-        runtime.Checks = checks;
+        runtime.Doors = runtime.Doors.With(NodeKinds.Check, checks);
 
         await runtime.PassAsync(Look("{}"), CancellationToken.None);
         var invocation = Assert.Single(checks.Sent).Call.Invocation;

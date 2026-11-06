@@ -28,4 +28,8 @@ public abstract class BuiltInNode : INodeKind
     public abstract string? Title { get; }
 
     public abstract NodeLook Look { get; }
+
+    public virtual bool ReadsTheLanding => false;
+
+    public virtual bool EndsByTheLine => false;
 }

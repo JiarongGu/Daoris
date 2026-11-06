@@ -52,7 +52,7 @@ public sealed class RequestNodeRunTests : NodeRunFixture
     private NodeRuntime Started()
     {
         var runtime = Runtime();
-        runtime.Requests = _door;
+        runtime.Doors = runtime.Doors.With(NodeKinds.Request, _door);
         return runtime;
     }
 
@@ -218,7 +218,9 @@ public sealed class RequestNodeRunTests : NodeRunFixture
         await RunPassAsync(Runtime());
         Assert.Equal(NodeStates.Ready, Ask.State);
 
-        Assert.DoesNotContain(NodeWordActs.Send, RunNodeWords.Acts(AskNode(), Ask));
+        // The node as the run's graph declares it, `start: automatic` and all, as the run's view reads it.
+        var declared = new GraphRuns(Files).Find(RunId)!.Version!.Graph!.Nodes.Single(node => node.Id == "ask");
+        Assert.DoesNotContain(NodeWordActs.Send, RunNodeWords.Acts(declared, Ask));
         Assert.Equal(RunNodeWords.NotSendable, RunNodeWords.Word(Files, RunId, "ask", NodeWordActs.Send, null, () => _now).Refused);
     }
 

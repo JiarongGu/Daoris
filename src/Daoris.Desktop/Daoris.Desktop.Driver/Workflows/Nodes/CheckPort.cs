@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// The port a <c>check</c>'s attempt is sent through by its kind, never by a plugin's name (FABRIC-PIPELINE1d; the pipeline design §4.2): the
 /// heavy executor takes it, runs it on its own task, and answers the performer's reconcile from the attempt's folder.
 /// </summary>
-public interface ICheckPort
+public interface ICheckPort : INodeDoor
 {
     /// <summary>Hands the attempt over and returns once it is taken.</summary>
     /// <exception cref="DriverException">It cannot be taken: its outcome is unknown until reconciled.</exception>

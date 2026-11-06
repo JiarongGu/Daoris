@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// request was merged or closed, a squash merge read as merged.
 /// </summary>
 [NodeKind(NodeKinds.Monitor, NodeGroup.Landing, "*/pull-request")]
-internal sealed class MonitorNode : BuiltInNode
+internal sealed class MonitorNode : BuiltInNode, IObserves
 {
     /// <summary>Read from the landing record, and nothing fails it. Never skipped, since a skip would read as merged; the person's door is the stop.</summary>
     public override NodeAuthority Row { get; } = new(NodeKinds.Monitor, NodeReach.Observed, NodeSource.Landing, null, false, PersonSkips: false, true, true);
@@ -17,4 +17,8 @@ internal sealed class MonitorNode : BuiltInNode
     public override string? Title => "The pull request's watch";
 
     public override NodeLook Look => NodeLook.Line;
+
+    public override bool ReadsTheLanding => true;
+
+    public NodeObservation Observe(NodeReading reading) => BuiltInNodes.Completion(reading, CompletionNodes.Monitor);
 }
