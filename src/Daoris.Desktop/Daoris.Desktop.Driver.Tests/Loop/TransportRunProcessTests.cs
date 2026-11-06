@@ -97,18 +97,19 @@ public sealed class TransportRunProcessTests : IDisposable
     private SessionTarget Target() => new("q-1", "title", "body", "asker", "engine", Path.Combine(_home, "engine"), "http://127.0.0.1:9") { Home = _home };
 
     /// <summary>
-    /// The run handed its start's own facts and the sink a driven executor composes (row l): the record and its console, and the conversation
-    /// its harness names kept under <paramref name="keepAs"/>.
+    /// The run handed its start's own facts and the sink a driven executor composes (row l): the record and its console, the conversation
+    /// its harness names kept under <paramref name="keepAs"/>, and the part's lineage under <paramref name="lineageHome"/>.
     /// </summary>
     private void Hand(
         TransportRun run, ISessionOutput? output = null, string? keepAs = null, HarnessWords? own = null, IReadOnlyList<SessionEvent>? opening = null,
         string? lineageHome = null)
     {
-        run.HandStart(run.Start with { Session = "s1", Transcript = Transcript, Own = own, Opening = opening, LineageHome = lineageHome });
+        run.HandStart(run.Start with { Session = "s1", Transcript = Transcript, Own = own, Opening = opening });
         run.HandSink(ReadingSinks.Of(
             new RecordReadings("s1", output, _events),
             keepAs is null ? null
-                : ReadingSinks.On<WireReading.ConversationNamed>(named => _driver.Context.Conversations.Keep("s1", keepAs, named.Conversation))));
+                : ReadingSinks.On<WireReading.ConversationNamed>(named => _driver.Context.Conversations.Keep("s1", keepAs, named.Conversation)),
+            lineageHome is null ? null : new LineageReadings(lineageHome, "s1")));
     }
 
     /// <summary>

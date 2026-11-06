@@ -79,13 +79,15 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             // The conversation's messages are recorded as the person sends them, so the capture opens with no composed prompt of its own, its
             // first line how the run was set up; one going on appends to the transcript of the run before it, its own conversation resumed,
             // its id kept for its record the moment its door names it.
-            run.HandStart(run.Start with { Session = sessionId, Transcript = transcript, LineageHome = Context.Home, Preamble = watched.Preamble });
+            run.HandStart(run.Start with { Session = sessionId, Transcript = transcript, Preamble = watched.Preamble });
             // The account's part first: a native limit's cooling line is recorded before the turn's end it is told at.
             run.HandSink(ReadingSinks.Of(
                 account,
                 new RecordReadings(sessionId, Context.Output, Context.Events),
                 !watched.Keeps ? null
                     : ReadingSinks.On<WireReading.ConversationNamed>(named => Context.Conversations.Keep(sessionId, watched.Adapter, named.Conversation)),
+                // Each child its door says, in the part's lineage (COWORKVIEW1a).
+                new LineageReadings(Context.Home, sessionId),
                 said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
                 // What the door says it loaded, kept beside what Ask Daoris's start handed (HELPWIRED1b).
                 HelpLoaded.Part(Context.Home, sessionId)));

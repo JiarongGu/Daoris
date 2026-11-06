@@ -535,62 +535,39 @@ public sealed record ChildBindings
     }
 
     /// <summary>
-    /// The lineage line a line of Claude Code's <c>stream-json</c> says, or null: a subagent's start (<c>task_started</c>,
-    /// <c>local_agent</c>) with its parent, depth and task's description, and the end (<c>task_notification</c>) of one whose start
-    /// was seen, which <paramref name="agents"/> keeps. Every other line, a background command's included, says none.
+    /// The lineage line a child's reading says (COWORKVIEW1a), by the signal that said it, <c>stream</c> or <c>acp</c>: a start with its
+    /// parent and depth where its wire said them, its type, and its label bounded (<see cref="LineageLabels"/>), the stream's task
+    /// <c>description</c> or the protocol door's <c>name</c> and <c>task</c>; an end with its wire's word, the stream's <c>status</c> or the
+    /// protocol door's <c>state</c>. Each names the process its run stamped where that is a token. Null for any other reading, a replayed
+    /// one, and a child that is no id.
     /// </summary>
-    /// <param name="proc">The token of the process whose stream it is, written where it is shaped as an id.</param>
-    public static string? StreamLine(NativeFrame frame, DateTimeOffset at, ISet<string> agents, string? proc = null)
+    public static string? ChildLine(WireReading reading, DateTimeOffset at)
     {
-        if (frame.Type != "system") return null;
-        string? Id(string name) => frame.Text(name) is { } text && IdShape.IsMatch(text) ? text : null;
-        switch (frame.Subtype)
+        switch (reading)
         {
-            case "task_started" when frame.Text("task_type") == "local_agent" && Id("task_id") is { } agent:
+            case WireReading.ChildSeen { Replayed: false } seen when IdShape.IsMatch(seen.Child):
             {
-                agents.Add(agent);
-                var said = Stamped(at, "stream", "started", agent);
-                if (Id("parent_task_id") is { } parent) said["parent"] = parent;
-                if (Json.Int(frame.Root, "spawn_depth") is int depth and > 0) said["depth"] = depth;
-                if (Id("subagent_type") is { } type) said["type"] = type;
-                if (LineageLabels.Task(frame.Text("description")) is { } description) said["description"] = description;
-                return Named(said, proc);
+                var stream = seen.Signal == ChildSignal.Stream;
+                var line = Stamped(at, stream ? "stream" : "acp", "started", seen.Child);
+                if (seen.Parent is { } parent && IdShape.IsMatch(parent)) line["parent"] = parent;
+                if (seen.Depth is int depth and > 0) line["depth"] = depth;
+                if (seen.Type is { } type && IdShape.IsMatch(type)) line["type"] = type;
+                if (LineageLabels.Name(seen.Name) is { } name) line["name"] = name;
+                if (LineageLabels.Task(seen.Task) is { } task) line[stream ? "description" : "task"] = task;
+                return Named(line, seen.Process);
             }
 
-            case "task_notification" when Id("task_id") is { } agent && agents.Contains(agent):
+            case WireReading.ChildEnded { Replayed: false } ended when IdShape.IsMatch(ended.Child):
             {
-                var said = Stamped(at, "stream", "ended", agent);
-                if (Id("status") is { } status) said["status"] = status;
-                return Named(said, proc);
+                var stream = ended.Signal == ChildSignal.Stream;
+                var line = Stamped(at, stream ? "stream" : "acp", "ended", ended.Child);
+                if (ended.Word is { } word && IdShape.IsMatch(word)) line[stream ? "status" : "state"] = word;
+                return Named(line, ended.Process);
             }
 
             default:
                 return null;
         }
-    }
-
-    /// <summary>
-    /// A child the protocol door announced (COWORKVIEW1a), or null where its id is not one: its place, <c>parent</c> or
-    /// <c>depth: 1</c>, and its label as bounded.
-    /// </summary>
-    public static string? AcpStarted(LineageAnnouncement said, DateTimeOffset at, string? proc = null)
-    {
-        if (!IdShape.IsMatch(said.Agent)) return null;
-        var line = Stamped(at, "acp", "started", said.Agent);
-        if (said.Parent is { } parent && IdShape.IsMatch(parent)) line["parent"] = parent;
-        else if (said.ByRoot) line["depth"] = 1;
-        if (said.Name is { } name) line["name"] = name;
-        if (said.Task is { } task) line["task"] = task;
-        return Named(line, proc);
-    }
-
-    /// <summary>A child's end the protocol door's wire said, with its word where that is one; null where its id is not one.</summary>
-    public static string? AcpEnded(string agent, string? state, DateTimeOffset at, string? proc = null)
-    {
-        if (!IdShape.IsMatch(agent)) return null;
-        var line = Stamped(at, "acp", "ended", agent);
-        if (state is not null && IdShape.IsMatch(state)) line["state"] = state;
-        return Named(line, proc);
     }
 
     /// <summary>

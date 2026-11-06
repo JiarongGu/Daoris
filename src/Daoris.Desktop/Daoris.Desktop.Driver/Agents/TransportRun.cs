@@ -178,7 +178,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
 
     // ---- The five members every executor uses today ----
 
-    public override void HandSink(IReadingSink sink) => _sink = new StampedSink(sink, () => _start.Session, () => _generation);
+    public override void HandSink(IReadingSink sink) => _sink = new StampedSink(sink, () => _start.Session, () => _generation, () => Proc);
 
     /// <summary>A reading the run's executor says beside its door's own: what a conversation's turn met that its session did not throw to the run.</summary>
     public void Read(WireReading reading) => Sink().Read(reading);
@@ -435,8 +435,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
             // words went (MSG1b).
             var structured = HarnessCapture.CaptureStructuredAsync(
                 host.Hearing(process.StandardOutput, id), host.Hearing(process.StandardError, id), TranscriptOf(), Sink(), mapper, prompt: null, ct,
-                preamble, observed: _start.Observed, opened: opening, append: append, named: named,
-                own: _own, lineage: _start.LineageHome is { } home ? LineageStreams.Current.Writer(home, id, proc) : null);
+                preamble, observed: _start.Observed, opened: opening, append: append, named: named, own: _own);
             _captures.Add(structured);
             return new Leg(process, proc, structured) { Mapper = mapper, Structured = structured };
         }
@@ -490,7 +489,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
             streams: ReadingStreams.Of(sink), onOptions: protocol.Options,
             onConversation: named => sink.Read(new WireReading.ConversationNamed(named)))
         {
-            Lineage = _start.LineageHome is { } home ? LineageStreams.Current.Writer(home, id, proc) : null,
+            Children = sink,
             TypedFailures = protocol.TypedFailures,
         };
         // What it says of its account's windows is a reading, as the native door's is: the sink's account part keeps it as it says it.

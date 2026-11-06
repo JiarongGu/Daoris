@@ -5,8 +5,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// One line of a native door's structured stdout, parsed once (AGENTPROVIDER1l; the design §3.2): the capture reads each line into one
 /// frame, and every reader of the line takes the frame, never the text again: the dialect's mapper (<see cref="IStreamMapper"/>), the
-/// streams beside (<see cref="IStreamsReader"/>), the run's own ending (<see cref="HarnessWords"/>) and the part's lineage
-/// (<see cref="ILineageWriter"/>).
+/// streams beside (<see cref="IStreamsReader"/>), the run's own ending (<see cref="HarnessWords"/>) and the children it says
+/// (<see cref="NativeChildren"/>), whose readings the part's lineage keeps.
 /// </summary>
 public sealed class NativeFrame
 {

@@ -142,14 +142,16 @@ public sealed class WireReadingsTests : IDisposable
     public void Each_reading_a_run_says_carries_its_run_its_process_and_its_place_in_the_run_s_order()
     {
         var heard = new List<WireReading>();
-        var generation = 1;
-        IReadingSink sink = new StampedSink(ReadingSinks.On<WireReading>(heard.Add), () => "s1", () => generation);
+        var (generation, process) = (1, (string?)"0123456789abcdef");
+        IReadingSink sink = new StampedSink(ReadingSinks.On<WireReading>(heard.Add), () => "s1", () => generation, () => process);
 
         sink.Read(new WireReading.Shown("one"));
-        generation = 2;
+        (generation, process) = (2, "fedcba9876543210");
         sink.Read(new WireReading.Shown("two"));
 
-        Assert.Equal([("s1", 1, 1L), ("s1", 2, 2L)], heard.Select(reading => (reading.Run, reading.Generation, reading.Sequence)));
+        Assert.Equal(
+            [("s1", 1, "0123456789abcdef", 1L), ("s1", 2, "fedcba9876543210", 2L)],
+            heard.Select(reading => (reading.Run, reading.Generation, reading.Process, reading.Sequence)));
         Assert.Equal(["one", "two"], heard.Cast<WireReading.Shown>().Select(shown => shown.Text));
     }
 

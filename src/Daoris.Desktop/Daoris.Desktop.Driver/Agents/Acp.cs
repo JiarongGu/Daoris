@@ -67,8 +67,8 @@ public sealed class AcpSession(
     /// </summary>
     public Func<string, string, string>? Unoffered { get; set; }
 
-    /// <summary>The part's lineage, told each child the streams beside it announce and end; null tells none.</summary>
-    public ILineageWriter? Lineage { get; init; }
+    /// <summary>Where each child the streams beside it announce and end is said, as its reading; null says none.</summary>
+    public IReadingSink? Children { get; init; }
 
     /// <summary>
     /// Where this session's permission requests are held for the person (<see cref="HeldPermissions"/>): only where its posture is
@@ -373,7 +373,7 @@ public sealed class AcpSession(
     private async Task<JsonElement> HandshakeAsync(CancellationToken ct)
     {
         if (_pump is not null) throw new DriverException("this ACP session is already open.");
-        if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet, lineage: Lineage);
+        if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet, children: Children);
         _pump = Reader.PumpAsync(incoming, _pumpStop.Token);
 
         var initialized = await RequestAsync(
