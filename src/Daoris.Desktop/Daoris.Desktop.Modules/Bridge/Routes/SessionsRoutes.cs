@@ -42,11 +42,8 @@ public sealed class SessionsRoutes(DriverContext context)
     [Publishes("RESOLVE_SESSION", StateScopes.Sessions | StateScopes.Quests | StateScopes.Driver, Session = "id")]
     private Task<object?> ResolveAsync(ResolveSession press, CancellationToken cancellationToken) => _moves.ResolveAsync(press, cancellationToken);
 
-    // *Ask another agent…*: the person's own ask of a helper for a session,
-    // the file `daoris session helper` writes (`HelperFiles.WriteAsk`, asked by the person, so the `helpers` rule's `ask`
-    // and `off` do not hold it), judged as that verb judges: a question within the bound, an agent of one word, and a session of
-    // this machine's that may ask. Everything else is the driver's, at its next look, which the nudge brings sooner. What cannot is
-    // `asked: null` with its code for the page to word, and the verb's sentence beside it; the page never reads a path.
+    // *Ask another agent…* and *Ask again…*: the person's own ask of a helper, written by the library's `HelperPersonAsk` as
+    // `daoris session helper` writes it and judged as that verb judges; what cannot is `asked: null` with its code and sentence.
     [DriverRoute("SESSION_HELPER_ASK", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_HELPER_ASK", Session = "id")]
     [GroundSession("SESSION_HELPER_ASK", "id")]
@@ -54,9 +51,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [Publishes("SESSION_HELPER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private Task<object?> SessionHelperAskAsync(SessionHelperAsk press, CancellationToken cancellationToken) => _asks.HelperAskAsync(press, cancellationToken);
 
-    // *Pass to the lead* (COWORKUX1d, the co-worker design §7): an answer the person asked for themselves sent to the session that asked,
-    // the helper's word with its mark unchanged and `answers.passed` beside it, which the count reads as their word. The state marked for
-    // the look to hand; an answer that goes to the session already, one with no answer yet, or one this session does not hold is
+    // *Pass to the lead* (COWORKUX1d): an answer kept for the person, handed by the look with `answers.passed` beside it; else
     // `passed: false` with its code.
     [DriverRoute("SESSION_HELPER_PASS", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_HELPER_PASS", Session = "session")]

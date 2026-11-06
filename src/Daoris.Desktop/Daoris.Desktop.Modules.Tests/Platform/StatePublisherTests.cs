@@ -419,7 +419,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_HELPER_APPROVE", "sessions,driver", "session")]
     // HELPERNO1: the person's no, the ask refused and the asker's note written at once.
     [InlineData("SESSION_HELPER_DECLINE", "sessions,driver", "session")]
-    // COWORKUX1d: the person's pass of an answer kept for them, the state marked for the loop's next look.
+    // COWORKUX1d: the person's pass of an answer kept for them.
     [InlineData("SESSION_HELPER_PASS", "sessions,driver", "session")]
     [InlineData("SESSION_HELPERS", "", null)]
     // COAGENT1b: the person's ask of a piece, a file the loop's next look takes; the pieces' read.
