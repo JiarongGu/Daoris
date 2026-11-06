@@ -25,6 +25,14 @@
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
   </ItemGroup>
 
+  <!-- Lyntai's agent layer (AGENTLYNTAI1, D248): taken by the driver alone and named in it by `Agents/Layer/` and the providers' folders
+       alone (`LayerCensusTests`). Only Lyntai's local build carries it, so it is referenced only where that build is in use; without
+       `local/lyntai-local.props` the driver builds as before, with no Lyntai assembly. -->
+  <ItemGroup Condition="'$(DaorisLyntaiLayer)' == 'true'">
+    <PackageReference Include="Lyntai.Core" />
+    <PackageReference Include="Lyntai.Providers.Basic" />
+  </ItemGroup>
+
   <!-- The tree guard's hook (PERM3), carried inside the assembly and written under the Daoris home on
        first use: it is found the same way in a scratch run, a test and an install, whatever the
        publish layout. -->
