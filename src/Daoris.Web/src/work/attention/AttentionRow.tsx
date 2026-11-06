@@ -335,6 +335,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'open-records') acts.openRecords?.(item);
     else if (act === 'again-step' || act === 'again-check') acts.held?.(item, 'again');
     else if (act === 'stop-check') acts.held?.(item, 'stop');
+    else if (act === 'ask-fix-check') acts.held?.(item, 'ask-fix');
     else if (act === 'git-try-again') acts.gitTryAgain?.(item);
     else if (act === 'git-set-up' || act === 'git-keep-own' || act === 'git-copy-key' || act === 'git-sign-in' || act === 'git-open'
       || act === 'git-compare') acts.gitSetUp?.(item);
@@ -397,6 +398,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       // A held verification: *Run again* and *Not now*, as its run's view words them.
       case 'again-check': return t('workflow.run.check.again');
       case 'stop-check': return t('workflow.run.check.stop');
+      case 'ask-fix-check': return t('work.verify.askFix');
       // FABRIC-CLOSE1j: a close found closed only in part, its node waiting again: its stop alone.
       case 'stop-partial': return t('work.milestone.closed.act.stop');
       // GITAUTH1a: a held git remote's one act, *Try again*, the word a quest's retry is.

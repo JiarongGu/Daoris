@@ -130,6 +130,15 @@ public static class HeldResolutions
     public static readonly IReadOnlyList<string> Failure = [Again];
 
     /// <summary>
+    /// A failed verification's press: ask for a fix (the pipeline design §4.5). Never written on an attempt: it publishes an ask, which the look
+    /// finds again by its words, so the record holds nothing of it and an older build reads it as it reads any failure.
+    /// </summary>
+    public const string AskFix = "ask-fix";
+
+    /// <summary>The words on a failed check (FABRIC-PIPELINE1f): <i>Ask for a fix…</i>, <i>Run again</i>, and <i>Not now</i> (the person's stop, settling it as theirs).</summary>
+    public static readonly IReadOnlyList<string> CheckFailure = [AskFix, Again, Stop];
+
+    /// <summary>
     /// The words on a held check (FABRIC-PIPELINE1d; the pipeline design §4.1): <i>Run again</i> and <i>Not now</i>. <i>It happened</i> and
     /// <i>it did not</i> stay a plugin's: a check's verdict is its gates', never a person's word.
     /// </summary>

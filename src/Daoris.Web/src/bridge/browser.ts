@@ -29,7 +29,7 @@ export type BrowserSettingsState = {
   edgeProfile: string;
   /**
    * Where a link on the page opens (BRW7): the system's browser, or Daoris's — whichever `browser` is.
-   * Absent on a shell older than it, which is the system's.
+   * Absent, it is the system's.
    */
   links?: 'system' | 'daoris';
   settingsProblem: string | null;

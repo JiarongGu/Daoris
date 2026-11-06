@@ -8,8 +8,32 @@ namespace Daoris.Driver;
 internal sealed class NodeRunKeeping(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<bool> holdsLease, GraphRuns graphRuns, WorkPerformer performer,
     Func<IIntegrationDoor?> integration, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<ILandingDoor?> landing,
-    Func<IPushDoor?> pushing, Func<IPullRequestRecords?> pullRequests)
+    Func<IPushDoor?> pushing, Func<IPullRequestRecords?> pullRequests, Func<ITidyDoor?> tidying)
 {
+    /// <summary>The steps past a run's landing that Daoris performs, each started once on its door: the <c>push</c>, then the <c>tidy</c> (D245).</summary>
+    public void StartPerformed(GovernedUnit governed, RunScope scope)
+    {
+        StartPushes(governed, scope);
+        StartTidies(governed);
+    }
+
+    /// <summary>
+    /// A run's <c>tidy</c>, active at the tip the landing recorded, started once on the door (D245): its <c>monitor</c> before it read the pull
+    /// request merged or closed, and the door ends the chain's parts or fails the node. Idempotent by node and tip, and a landing the tidy
+    /// already ended at that tip is not started again.
+    /// </summary>
+    public void StartTidies(GovernedUnit governed)
+    {
+        if (tidying() is not { } door || !holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;
+        if (NodeEvaluations.Landed(governed, record.Statuses) is not { Unit: var unit } || BuiltInNodes.LandingOf(unit) is not { } landed) return;
+        foreach (var node in governed.Declared.Values.Where(each => each.Kind == NodeKinds.Tidy))
+        {
+            var status = WorkPerformer.StatusOf(record, node.Id);
+            if (status.State != NodeStates.Active || landed.Tidied?.Tip == landed.Tip) continue;
+            door.Start(new TidyStart(governed.Unit.Id, node, governed.Watched.Repository, governed.Watched.Workspace, governed.Watched.Root, landed.Branch, landed.Tip));
+        }
+    }
+
     /// <summary>
     /// A run's <c>&lt;plugin&gt;/pull-request</c> step that reached: the pull request its evidence names is written on the landing record with its
     /// plugin, once, so the <c>work/state</c> asks have an address and the page shows the pull request.

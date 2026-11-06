@@ -79,7 +79,7 @@ public static class HeldAttempts
                     record.Statuses[attempt.Node].Transient ? WorkPerformer.TriesSpent : WorkPerformer.FailureKept)
                 {
                     Outcome = attempt.Outcome, Revision = attempt.Call.SubjectRevision, RecordedAt = attempt.RecordedAt, Resolution = attempt.Resolution,
-                    ResolvedAt = attempt.ResolvedAt, Words = HeldResolutions.Failure, Code = record.Statuses[attempt.Node].Code ?? attempt.Code,
+                    ResolvedAt = attempt.ResolvedAt, Words = attempt.Plugin == NodeKinds.Check ? HeldResolutions.CheckFailure : HeldResolutions.Failure, Code = record.Statuses[attempt.Node].Code ?? attempt.Code,
                 })
             .Concat(record.Attempts.Where(attempt => attempt.State == AttemptStates.Held || QuestClosing.Unanswered(record, attempt)).Select(attempt =>
             {

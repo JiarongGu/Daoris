@@ -146,7 +146,7 @@ export type WindowCell = {
   /**
    * Its share against its scope's curve now (SWITCH1d; the switch design §5), as .NET judged it (PUSH1e): *its curve allows 45%
    * now*, or *over its curve's 45% now*. Absent where it was not measured (your own sign-in, which no list holds, a window its agent
-   * gave no share of, one this build has no curve for, a shell older than PUSH1e).
+   * gave no share of, one this build has no curve for).
    */
   curve?: string;
   /**
@@ -373,7 +373,7 @@ export type NextStartSaid = { takes: string; held: string | null; doors: string[
 /**
  * Which account the set's next start takes and why, in any workspace, above the account list (ACCTUX4b; the second opinion's
  * lines 128-133, D152 §4.2; POOL1c: one set, so no workspace is named): the fold's words (`nextLine`, `heldLine`, TOOL6e), so
- * the two never say it differently. Nothing where the answer names no next start, a shell older than TOOL6e, rather than a
+ * the two never say it differently. Nothing where the answer names no next start, rather than a
  * guess from the order's first.
  *
  * Of the holds, only the one on the account the list begins on: it is the account a person expects the start to take, and
@@ -493,7 +493,7 @@ export type AgentRow = {
   mark: string;
   /**
    * Whether Daoris has an installer for it (INSTALLDOOR1): false offers *How to install*, never Install. Read from the door the
-   * install runs on, and true where an older shell sends none.
+   * install runs on, and true where the snapshot names none.
    */
   installs: boolean;
 };
@@ -503,7 +503,7 @@ const MARK_LETTERS = 2;
 
 /**
  * The mark an agent's declaration gives (ACCTUX2, the UX7 design §4.6's *CC*, *Cx*), as written and cut to a mark's letters;
- * null where none does (a shell older than AGENTMARK1 sends none, and the first letters stand).
+ * null where none does (the first letters then stand).
  */
 function declaredMark(tool: Tool): string | null {
   for (const door of tool.doors) {

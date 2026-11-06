@@ -72,7 +72,7 @@ describe('the standing confirmation over the bridge', () => {
     // A reason this page does not know is no reason it says, and on with no press is off.
     expect(standingOf({ unread: 'sideways', on: true, presses: [] })).toMatchObject({ unread: null, on: false });
     expect(standingOf({ presses: ['stop', 7, null], used: 'many' })).toMatchObject({ presses: ['stop'], used: 0 });
-    // An older shell, or one serving no pipe, says none.
+    // A shell serving no pipe says none.
     expect(standingOf(undefined)).toBeNull();
     expect(standingOf(null)).toBeNull();
     expect(standingOf([])).toBeNull();
@@ -96,7 +96,7 @@ describe('the standing confirmation over the bridge', () => {
   });
 
   // STEWARDROLE1c (D209 §6.2): the steward's desk, each request read field by field, its words as the caller wrote them; one with a
-  // field missing or a state this page does not know left out, and an older shell's missing desk read as empty.
+  // field missing or a state this page does not know left out, and a missing desk read as empty.
   it("reads the steward's desk field by field", () => {
     expect(standingOf({
       stewardOffered: true,

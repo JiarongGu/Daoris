@@ -326,7 +326,7 @@ export const useHelpWired = (session: string | null, enabled = true) => {
 /**
  * One `HELP_PUBLISHED` answer read as the conversation's list (ASKQUESTS1), each entry field for field as the driver keeps it
  * (`HelpPublished.cs`), newest first: an id the answer leaves out reads as none, an entry with no proposal or neither id as no
- * entry, and an answer that does not read, an older shell's, as nothing published.
+ * entry, and an answer that does not read as nothing published.
  */
 export function publishedAnswer(answer: unknown): HelpPublishedEntry[] {
   const held = (answer ?? {}) as { published?: unknown };

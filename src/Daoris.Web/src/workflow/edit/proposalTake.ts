@@ -1,5 +1,6 @@
 import type { WorkflowGraphChange } from '../../help/ProposalCard';
 import { draftOf, type DraftNode, type DraftWire, type GraphDraft, graphOf } from './graphDraft';
+import { TAIL_KINDS } from './landMethods';
 
 // Ask Daoris's proposal taken into the open draft (FLOWCHART2f; D223 §4, §8.6). The driver says what a proposed graph changes against the
 // draft it was told (`WorkflowGraphDiff`); the page takes a change and every change it needs, as one transaction. Each change's precondition
@@ -57,8 +58,6 @@ function heldOf(graph: Json): Held {
   };
 }
 
-/** The kinds a `land`'s method brings after it (`NodeGraphs`' land-tail): a push's, a pull request's, an integration's. */
-const TAIL_KINDS: readonly string[] = ['push','pull-request', 'integrate'];
 
 /** The groups a way's change touches: the base's where it was, the proposal's where it is. */
 function groupsOf(change: WorkflowGraphChange, base: Held, proposed: Held): string[] {

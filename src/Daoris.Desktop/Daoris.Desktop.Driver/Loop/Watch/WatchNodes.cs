@@ -70,6 +70,8 @@ internal sealed class WatchNodes
         // G8: the door a run's `push` is performed through, the push act of the act journal, under the same lease and drain rules.
         nodes.PullRequests = new PullRequestRecords(home);
         nodes.Pushing = new PushDoor(home, said => Log?.Info("push.run", ("said", said)), () => HomeLease.HeldHere(home) && !watch.DrainsNow());
+        // D245: the door a run's `tidy` ends its chain's parts through, under the same lease and drain rules.
+        nodes.Tidying = new TidyDoor(home, said => Log?.Info("tidy.run", ("said", said)), () => HomeLease.HeldHere(home) && !watch.DrainsNow());
 
         // FABRIC-PIPELINE1d (the pipeline design §4.2): the heavy executor a check is handed to; its answer asks a pass, which reconciles it.
         _executor = new HeavyExecutor(home, new VerifyWorld

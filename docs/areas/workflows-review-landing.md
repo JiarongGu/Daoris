@@ -44,6 +44,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Holds | `Workflows/Nodes/HoldNodes.cs`, `WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
 | Land node | `Workflows/Nodes/LandNodes.cs`, `Workflows/Nodes/Landing.cs` | `land`'s options, their resolution at the bind, and `Landing`, the intent a run lands by (`LandNodes.LandingOf`); a process with no bound version declares `Landing.Merge` |
 | Pull-request step | `Workflows/Nodes/PullRequestSteps.cs`, `Workplace/PullRequestRecords.cs`, `NodeRunKeeping.KeepPullRequests` | A `<plugin>/pull-request` step's plugin, the bind's refusal where no plugin performs it, and the address its evidence gives written on the landing |
+| Monitor and tidy | `Workflows/Nodes/CompletionNodes.cs`, `CompletionGraphs.cs`, `Workplace/TidyDoor.cs`, `Workplace/ChainTidied.cs`, `NodeRunKeeping.StartTidies` | The prebuilt set past the landing; the watch on the pull request; the tidy of the chain's parts and its record, which the keeper and the press read |
 | Landing door | `Workplace/LandingDoor.cs`, `Workplace/LandPerformer.cs`, `Workplace/LandTries.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key; the performer of a run's `land`, its entry `LandEntry` and its tries' rules and notes (`LandTries`, `LandTryNotes`) |
 | Branch naming and notes | `Workplace/BranchPatterns.cs`, `Workplace/LandingNotes.cs`, `Plugins/LandingPlugins.cs` | A `land`'s pattern, ticket key, slug and chain subject; the conversation's notes of a press and a part left out; whether a named plugin performs pull-request steps (`LandingPlugins.ProblemOf`) |
 | Line policy | `Settings/LinePolicyKey.cs` | `linePolicies` and `workspaceLinePolicies` read, written and judged |
@@ -54,7 +55,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Landing gate | `Review/SessionTreeGates.cs`, `Workflows/Domain/GraphGate.cs`, `GraphGates.cs`, `WorkflowGate.cs` | Whether work may land now, read once per decision and handed to every door |
 | Look and opinion | `Review/Domain/ReviewGate.cs`, `ReviewRules.cs`, `OpinionGate.cs` (with `OpinionGateFacts.cs`, `OpinionGateState.cs`, `OpinionGateWords.cs`, `OpinionAskKept.cs`, `OpinionPersonWord.cs`, `LandingGate.cs`), `OpinionRules.cs`, `Review/OpinionPresses.cs` | The review environment's levels; the second opinion and the person's words at it |
 | Entry Accept | `Review/EntryAccepts.cs`, `Workplace/EntryLands.cs`, `Workplace/TogetherPress.cs` | One Accept for an entry or an ask, part by part: the word kept for each part a `land` performs, the rest held; the plan |
-| Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Workflows/VerifyCommand.cs`, `Workflows/LineBatching.cs`, `Workflows/VerifyHelds.cs`, `Review/Heavy/HeavyExecutor.cs` (with `VerifySend.cs`, `VerifyWorld.cs`, `VerifyAnswer.cs`, `VerifySlot.cs`, `VerifyExecution.cs`); `Workflows/LineRunReader.cs`, `CheckResults.cs`, `Domain/WorkflowRunLine.cs`, `Domain/LineRunWords.cs`; web `workflow/verify/` (`VerifyRuns.tsx`, `lineSaid.ts`), `work/attention/heldWorded.ts` | The `check` node performed by Daoris, off the pass, under the heavy slots; a landed run bound per batch of a line at a whole look (`LineBatching`, called from `WatchNodes` before the pass); a person's verification of a branch or a commit bound as a run of its own; a held check named by what it verifies (`HeldAttempt.Verification`) and worded on *What needs you*; a line's runs read with their verdicts and batches (`workflow run --line`, `WORKFLOW_RUN {line}`) and drawn under *Verifications* on the repository's Workflow tab |
+| Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Workflows/VerifyCommand.cs`, `Workflows/LineBatching.cs`, `Workflows/VerifyHelds.cs`, `Workflows/VerifyFixAsks.cs`, `Workflows/GateReach.cs`, `Workflows/LandedRunsLeft.cs`, `Review/Heavy/HeavyExecutor.cs` (with `VerifySend.cs`, `VerifyWorld.cs`, `VerifyAnswer.cs`, `VerifySlot.cs`, `VerifyExecution.cs`); `Workflows/LineRunReader.cs`, `CheckResults.cs`, `Domain/WorkflowRunLine.cs`, `Domain/LineRunWords.cs`; web `workflow/verify/` (`VerifyRuns.tsx`, `lineSaid.ts`), `work/attention/heldWorded.ts` | The `check` node performed by Daoris, off the pass, under the heavy slots; a landed run bound per batch of a line at a whole look (`LineBatching`, called from `WatchNodes` before the pass); a person's verification of a branch or a commit bound as a run of its own; a check with `reach: paths` runs the gates its batch's changed paths reach, by each gate's `paths` in the accepted declaration (`GateReach`), and names the rest as *kept*; a failed check's *Ask for a fix…* publishes one ask per gate (`VerifyFixAsks`); the history clear takes a landed run's files once a newer run on its line has a verdict (`LandedRunsLeft`); a held check named by what it verifies (`HeldAttempt.Verification`) and worded on *What needs you*; a line's runs read with their verdicts and batches (`workflow run --line`, `WORKFLOW_RUN {line}`) and drawn under *Verifications* on the repository's Workflow tab |
 | Chat runs | `Workflows/ChatRuns.cs`, `Workflows/ChatCandidates.cs`, `Review/ChatPresses.cs` | A conversation's run bound to its graph; its subject the submitted candidate |
 | Place set-up | `Setup/PlacePlan.cs`, `Setup/PlaceApply.cs`, `Workflows/PlaceProjection.cs` | *Set up…*'s plan and receipt-kept Apply; the `PLACES` read |
 | Workflow migration | `Workflows/Migration/WorkflowMigration.cs`, `MigratedPlaces.cs`, `MigratedGraphs.cs`; `Transitional/Migration/WorkflowsStep.cs` | The release migration's workflow step: old versions and the places on the rules converted to saved graphs once |
@@ -158,6 +159,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     landed by `push` or `pull-request` converted once (`PushedGraphs`, the home's `push-steps` step), and a delivery a pre-G8 build began
     for a plugin (`plugin-dispatched`, `plugin-answered`, the `push` and `pull-request` methods) is read, said and never sent again
     (`DeliveryReconciler`); both end when no home saved before G8's release can start, and G8-CONVERT1 deletes them. (from D241)
+    Past the pull request a place composes a `monitor` and a `tidy` (`CompletionNodes`, from the prebuilt set `land`, `push`,
+    `pull-request`, `monitor`, `tidy`, which the shipped pull-request delivery holds whole). The monitor is reached once the answer the
+    opening plugin gave through `work/state` (asked at D148's moments) says merged or closed, a squash read as merged; it never fails. The
+    tidy (`TidyDoor`, off the pass, under the lease) ends each part of the chain, the session branch of every unit its landing carries:
+    each part's commits kept on a recovery ref, its branch deleted through the journal (`JournaledDeletes`, with its Undo), one a tree has
+    checked out left standing and ended all the same, and what it ended written on the landing as `tidied` (`ChainTidied`). A request
+    closed without merging fails the tidy (`pull-request-closed`) and ends nothing. The save refuses a `monitor` no pull-request step
+    reaches and a `tidy` no `monitor` reaches (`CompletionGraphs`). The keeper (`EndKeeping`, `EndBy.Tidied`) and the press (`TreeSweeps`,
+    resting on the part's recovery ref) read that record for a part at the tip the tidy ended it at, and judge it no further. (from D245)
 32. A merge runs through the integration transport under the legacy policy: the owner's press, no gates, one at a time, a merge
     commit. (from D215)
 33. Each delivery's phases are written ahead of their effects: prepared, ref written, recorded, plugin dispatched, plugin answered.
@@ -183,8 +193,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (its `line`, and its `base`: the tip of the line's newest run with a verdict, none for the first) once the tip is past the line's
     newest run and no run of the line is in flight. A run is settled when every check reached, failed or was stopped; until then it
     holds the line, an unknown held for the person included, and is never superseded. *Run again* is a new attempt at the run's tip;
-    *Not now* settles it with no verdict, so the next batch, bound at the next landing, takes it in. A failure becomes a fix ask, by
-    the person's press or a standing `ask`. A person's verification of a branch or a commit (`daoris gate verify`, *Verify…*) is a run
+    *Not now* settles an unknown with no verdict, so the next batch, bound at the next landing, takes it in; on a failure it settles
+    the held row as the person's and leaves the verdict failed. *Ask for a fix…* on a failure publishes one ask per failed gate to the
+    repository (Daoris's fixed words naming the line, gate and run; the gate's last 256 KiB as the ask's file; the kind the check's
+    `ask` option names), found again by its words so a restart makes none twice, and a later failure of the same gate goes to the open
+    ask's channel; a standing `failed: ask` is not built. A check with `reach: paths` runs only the gates the batch's changed paths
+    reach (a gate's optional `paths` in the accepted declaration; none reaches every change) and every gate whose newest evidence on
+    the line is not a pass, and names the rest as *kept* in its result; a batch with no base runs them all. A person's verification of a branch or a commit (`daoris gate verify`, *Verify…*) is a run
     of its own under the accepted gates that the batching never counts. A check's outcome is recorded on `run:<run>` under the `gates`
     source; a held or failed check carries what it verifies (repository, commit, line, base, branch, failed gate, why), which *What
     needs you* words with *Run again* and *Not now*, and the line's read says each run's verdict (verified, failed naming its gate, not
@@ -282,7 +297,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's
   installed proof. A `request` under `start: you` waits for the person's *Send*, the `send` act of the run's node door (`WORKFLOW_NODE`, `daoris
   workflow send`), which keeps a mark on the record (`RunNodeWords.SendKey`) that the next pass reads as the start's say-so.
-- **FABRIC-SQUASHCHAIN1:** a chain's completion past its pull request as fabric steps (D245): a `monitor` step until the request is merged or closed, a `tidy` step that ends the chain's parts with a recovery ref, the keeper and the press reading the tidy's record, and the prebuilt set of actions *Set up…* offers.
+- **FABRIC-SQUASHCHAIN1:** the monitor and the tidy are built and read (rule 31); left: the keeper's own proof that a tidied part is ended by the record with equal git starts across passes (`EndKeeping`), and a run's pass reaching both nodes end to end.
 - **FABRIC-PERFORM1l:** the pull-request event keeps its fields; WORKFLOW1j and 1k on observed nodes.
 - **LANDNODE1j:** the installed window's proof.
 - **REVIEWFLOW1c and LINESTOGETHER1:** a session's steps as one flow, proven in the installed window.

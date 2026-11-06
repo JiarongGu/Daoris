@@ -23280,3 +23280,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **NOCOMPAT1b2 — the landing rules' last traces** (driver, service, web; D232): the landing rules, the auto lander and its names, `handed`, the plain bind, the landings rows and the workspace Setup tab are gone. Left: the service's take bind, which no production writer makes now (`QuestGraphBinds`, `Quests` and `QuestBindOperation`'s bind and take-bind, `QuestTakeBind`, the `took_bind` column and its tables, `ServiceClient.TookBindAsync`; about 50 service test sites rebound onto a seeded `Bound` operation); `BindRunsLook`'s second pass over sessions opened with no binding; the `workspace-setup` help part and its alias. → `docs/areas/workflows-review-landing.md`
 
   **Outcome** 2026-11-06: the auto lander's names, the workspace Setup tab, the plain bind and the service's take bind are gone (its operations, the `took_bind` column and its two tables dropped on open); the look's second bind pass and the `workspace-setup` help part are gone; a start binds its own run and the look only says it (BL6, BL11, BL11b, BL32, BL32b).
+
+## PERSONDOOR1j (2026-11-06)
+
+- [x] **PERSONDOOR1j — confirmation slots protected** (D156; ONEWAY1n, one confirmation queue): checked (BL26): the slots are protected (`PersonConfirmations.cs` ~142-148, ~451-462; `ConfirmationTests` ~361). Left: every ask without a session is one asker, so an agent that leaves its session off can hold both of the terminal's places; bound a nameless ask by its process or refuse it. The rest of PERSONDOOR1 (c to i) is parked with STEWARDROLE1. → `docs/2026-10-09-person-door-design.md` §10
+
+  **Outcome** 2026-11-06: BL36: a nameless confirmation ask is bound by its process (`AskerProcess`, the loopback port's owner), one of the terminal's two places each; where the process cannot be read the asks stay one asker, as before.

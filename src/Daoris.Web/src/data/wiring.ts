@@ -191,7 +191,7 @@ export type SystemSpace = {
   volume: SpaceVolume | null;
   volumeWhy: Why;
   kinds: SpaceKind[];
-  /** KEEPSIZE1; absent from a shell older than the allowance. */
+  /** KEEPSIZE1; absent where the shell names no allowance. */
   allowance?: SpaceAllowance;
   run: SpaceRun | null;
   held: { pid: number; since: string; door: string; gone: boolean } | null;

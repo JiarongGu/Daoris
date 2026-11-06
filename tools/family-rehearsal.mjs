@@ -6064,25 +6064,6 @@ const standInDrives = {
     );
     place.ended = records.length === 1 && records[0].state === 'completed' ? records[0] : null;
   },
-  // A turn: a conversation from a terminal, each line the person says said back, on one record that ends completed.
-  'live.turn': async (place) => {
-    const lines = [`the first words for ${place.door.id}`, `the second words for ${place.door.id}`];
-    const input = join(place.folder, 'turn-input.txt');
-    writeFileSync(input, `${lines.join('\n')}\n`);
-    const before = new Set((await standInRecords()).map((s) => s.id));
-    const chat = runOn(
-      place.config(),
-      `dotnet "${driverDll}" chat --repository newcomer --agent ${place.door.id} < "${input}"`,
-      { DAORIS_SERVICE_URL: BASE, ...NO_REMOTE, ...NO_HARNESS },
-      DRIVE_TIMEOUT,
-    );
-    const record = (await standInRecords()).find((s) => !before.has(s.id) && s.kind === 'chat' && s.adapter === place.door.id);
-    check(
-      `${place.door.id}: a turn, each line a person says from a terminal said back, on one conversation that ends completed`,
-      chat.code === 0 && lines.every((line) => chat.out.includes(`heard: ${line}`)) && record?.state === 'completed',
-      `${chat.out}\n${JSON.stringify(record)}`,
-    );
-  },
   // A resume of its own conversation: words said to the start's ended record go on in its own conversation. The protocol transport
   // offers every protocol door its resume (§2.6); a native door resumes by its own flag, or resumes nothing, and then its words take
   // the unsupported resume's fallback, which proves the conversation lost; its quest closed, they wait for the person, who takes them back.

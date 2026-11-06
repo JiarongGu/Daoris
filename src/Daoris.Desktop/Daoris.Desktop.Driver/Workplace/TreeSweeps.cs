@@ -384,6 +384,14 @@ internal sealed class TreeSweeps(
         var unlanded = log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (unlanded.Length > 0)
         {
+            // D245: a part its chain's tidy ended is on the line by that record alone, resting on the recovery ref the tidy kept its commits
+            // on, and judged here no more: the tidy is the one judgement of a part a squashing chain carried.
+            if (ChainTidies.Of(context.Recorded.All(), repository, branch, tip) is { Part.KeptOn: { } keptOn } tidied)
+            {
+                rests?.Add((keptOn, tip));
+                return (Item(SweepKind.Landed, unlanded.Length, tidied.Landing.Branch, string.Join('\n', unlanded.Take(3))) with { OnLine = true, Hold = "tidy" }, tip);
+            }
+
             // PROCESS1b-ii (point 3): a squashing landing's record holds them, as the branch it made would by ancestry, so the row
             // is landed where that branch is, with no ref to keep.
             if (await squashes.SquashedHoldAsync(root, repository, tip, ct, refs).ConfigureAwait(false) is { } squash)

@@ -198,22 +198,22 @@ export type HarnessEnded = {
   problem: string | null;
   /** Who signed in, for a sign-in — the tool's own answer (D66 §3); null when it did not say. */
   account?: string | null;
-  /** The organisation and the plan the tool named beside who (ACCOUNTID1); null where it named none, absent from an older shell. */
+  /** The organisation and the plan the tool named beside who (ACCOUNTID1); null where it named none. */
   org?: string | null;
   plan?: string | null;
   /**
    * The name the driver offers the account (ACCOUNTID1, `AccountNames.Offered`): who signed in, or with the organisation
    * (else the plan) beside it where another account already has the email; null where none tells them apart and the person
-   * names it. The page offers it as it is, and holds no copy of the rule. Absent from an older shell.
+   * names it. The page offers it as it is, and holds no copy of the rule.
    */
   offered?: string | null;
   /** For a sign-in to another account: whether it left one behind — only when it finished. */
   kept?: boolean | null;
-  /** Whether the person's *Cancel* stopped it (SIGNIN1), so its end is no failure to say; absent from an older shell. */
+  /** Whether the person's *Cancel* stopped it (SIGNIN1), so its end is no failure to say. */
   cancelled?: boolean | null;
   /**
    * Whether it was stopped for the same sign-in by another way (CODEXLOGIN1), which runs on in the same panel: its end says
-   * nothing. Absent from an older shell.
+   * nothing.
    */
   switched?: boolean | null;
 };

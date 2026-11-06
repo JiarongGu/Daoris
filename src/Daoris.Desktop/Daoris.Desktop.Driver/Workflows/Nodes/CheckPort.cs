@@ -30,6 +30,21 @@ public static class CheckNodes
     public static NodeDeclaration Performed(NodeDeclaration node) =>
         node with { Perform = Perform, TimeoutSeconds = node.TimeoutSeconds ?? (int)HeavyExecutor.DefaultBound.TotalSeconds };
 
+    /// <summary>Whether the check runs the gates its batch's changed paths reach (its <c>reach</c> option is <c>paths</c>); else every gate it names runs.</summary>
+    public static bool ReachesByPaths(NodeDeclaration node)
+    {
+        if (!node.Options.TryGetValue("reach", out var text)) return false;
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(text);
+            return document.RootElement is { ValueKind: System.Text.Json.JsonValueKind.String } word && word.GetString() == "paths";
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>The gates a check names (its <c>gates</c> option): null for <c>heavy</c>, else the names it lists.</summary>
     public static IReadOnlyList<string>? GatesOf(NodeDeclaration node)
     {

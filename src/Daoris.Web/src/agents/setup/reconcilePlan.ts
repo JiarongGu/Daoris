@@ -35,7 +35,7 @@ const count = (value: unknown): number => (typeof value === 'number' && Number.i
 
 const text = (value: unknown): string | undefined => (typeof value === 'string' && value !== '' ? value : undefined);
 
-/** The answer read field by field; one that is no plan (an older shell's, or the shell's pending) is none. */
+/** The answer read field by field; one that is no plan (or the shell's pending) is none. */
 export function readReconcilePlan(answer: unknown): ReconcilePlanned | null {
   if (typeof answer !== 'object' || answer === null || typeof (answer as { repository?: unknown }).repository !== 'string') return null;
   const plan = answer as Record<string, unknown>;

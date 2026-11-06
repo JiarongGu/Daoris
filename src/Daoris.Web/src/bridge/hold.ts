@@ -34,7 +34,7 @@ function keep(client: QueryClient, told: unknown) {
   client.setQueryData(keys.sessionHolds, now);
 }
 
-/** The terminal holding `session`, or null: none in a browser, which has no pipe, and none from a shell older than the route. */
+/** The terminal holding `session`, or null: none in a browser, which has no pipe. */
 export function useSessionHold(session: string): SessionHold | null {
   const { isAvailable } = useShenora();
   const client = useQueryClient();

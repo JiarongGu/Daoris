@@ -108,12 +108,12 @@ describe('a take (§8.6)', () => {
     expect([...closureOf(proposal, 'step:+find')]).toEqual(['step:+find']);
   });
 
-  it("brings a landing's tail with its method, and a removed step's ways and the end it replaces", () => {
-    const proposal = proposalOf(shipped('merge-after-accept'), shipped('pull-request'));
-    expect(ids(proposal)).toEqual(['step:-line', 'step:~landing', 'step:+push', 'step:+pull-request', 'way:~c', 'way:+d', 'graph:~end']);
-    expect([...closureOf(proposal, 'step:~landing')].sort()).toEqual(['step:+pull-request', 'step:+push', 'step:~landing', 'way:+d', 'way:~c']);
-    expect([...closureOf(proposal, 'step:+push')].sort()).toEqual(['step:+pull-request', 'step:+push', 'step:~landing', 'way:+d', 'way:~c']);
-    expect(closureOf(proposal, 'step:-line')).toEqual(expect.arrayContaining(['step:-line', 'way:~c', 'graph:~end']));
+  it("brings a landing's tail with its method", () => {
+    const proposal = proposalOf(shipped('merge-after-accept'), shipped('integrated'));
+    expect(ids(proposal)).toEqual(['step:~landing', 'step:+integrate', 'way:~c', 'way:+d']);
+    const tied = ['step:+integrate', 'step:~landing', 'way:+d', 'way:~c'];
+    expect([...closureOf(proposal, 'step:~landing')].sort()).toEqual(tied);
+    expect([...closureOf(proposal, 'step:+integrate')].sort()).toEqual(tied);
   });
 
   it("brings a group's other ways with one of them", () => {

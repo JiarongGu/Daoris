@@ -100,7 +100,7 @@ public static class LineBatching
     }
 
     /// <summary>The check nodes of the version a run is bound to; none where it no longer reads.</summary>
-    private static IReadOnlyList<string> ChecksOf(WorkflowFiles files, VerifyRun run) =>
+    internal static IReadOnlyList<string> ChecksOf(WorkflowFiles files, VerifyRun run) =>
         files.Load(run.Workflow)?.Read.Versions.FirstOrDefault(each => each.Version == run.Version) is { Graph: { } graph }
             ? [.. graph.Nodes.Where(node => node.Kind == NodeKinds.Check).Select(node => node.Id)]
             : [];

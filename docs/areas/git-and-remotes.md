@@ -196,9 +196,11 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     reached inside a flow that holds that lock alone already (a tidy, a removal) runs under it. A reconciler settles an open act;
     nothing is re-run. (from D204)
     Every branch delete is the journal's `ref.delete` act with its *Undo*: the person's `GIT_REF_DELETE`, and every door of Daoris's
-    (`DISCARD_SESSION_BRANCH`, `WITHDRAW_LANDING_BRANCH`, `SWEEP`, the look's clean-up, `housekeeping_discard_branch`, a removal) through
-    `ContentHolds.DeleteJudgedAsync` and `JournaledDeletes`, pressed by `daoris`. Each door keeps its judgement and its own recovery ref;
-    only an opening undoing the branch it just made deletes one itself. (from D204, D228)
+    (`DISCARD_SESSION_BRANCH`, `WITHDRAW_LANDING_BRANCH`, `SWEEP`, the look's clean-up, `housekeeping_discard_branch`, a removal, a run's
+    `tidy`) through `ContentHolds.DeleteJudgedAsync` and `JournaledDeletes`, pressed by `daoris`. Each door keeps its judgement and its
+    own recovery ref; only an opening undoing the branch it just made deletes one itself. A `tidy` (`TidyDoor`) judges nothing itself: the
+    `monitor` before it read the chain's pull request merged, and each part's delete rests on the recovery ref it kept the part's commits
+    on. (from D204, D228, D245)
 39. Always refused: a hard reset, `clean`, any force, a remote delete, `push -u`, an act while a session runs there or a
     landing holds it, a delete or rename of Daoris's own branches, and any write into a session's tree. (from D204)
 40. Every write says how it recovers: deletes under `refs/daoris/discarded/`, index snapshots and Resolve's stages under
@@ -248,13 +250,14 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 - **Quest conflicts:** `QuestLog` and `QuestExchange` (service), `Planner` (driver), the quest page.
 
 **Tests that pin the area:** `GitDoorsTests`, `GitDoorStartTests`, `GitDoorsProcessTests`, `GitPromptsProcessTests`,
-`GitSshProcessTests`, `GitSshHoldsProcessTests`, `GitTlsProcessTests`, `GitPushUpdatesTests`, `GitPushActProcessTests` (the press's push
+`GitSshProcessTests` (also two grants at once on one address each pushing only their own ref, one grant taken by one of two pushes, a ref moved after the grant refused and never pushed over), `GitSshHoldsProcessTests`, `GitTlsProcessTests`, `GitPushUpdatesTests`, `GitPushActProcessTests` (the press's push
 under its grant on the SSH host, the same push refused without one, a tag refused by `deny` and passed by `allow`), `GitPushCommandTests`,
 `JournaledDeletesTests` (a judged and a forced delete journaled with their Undo, the one-way census), `PullRequestApiHostTests`, `GitHttpsTests`, `GitHttpsProcessTests` (an HTTPS identity's token on the TLS host with nothing beside git, the credential door's refusals), `GitIdentitiesTests`, `GitIdentityCommandTests`,
 `GitSessionAccessTests`, `GitSessionHoldsTests`, `DriverModuleSessionGitAccessTests`, `GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitPushStepTests`, `GitRemotesTests` (the address reader's
 census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefActTests`, `GitHistoryEditTests`,
 `GitFetchTests`, `CheckoutWritersCensusTests`, `PullRequestStateTests`, `PullRequestProofTests`,
-`PullRequestPresetPluginTests`, `RemoteSyncTests`, `RemoteTargetTests`, `QuestSyncTests`, `QuestReopenSyncTests`,
+`PullRequestPresetPluginTests`, `WorkflowSquashChainProcessTests` (land, push, pull-request, monitor and tidy against the stand-ins, a squash
+merge ending a two-part chain once with an Undo), `RemoteSyncTests`, `RemoteTargetTests`, `QuestSyncTests`, `QuestReopenSyncTests`,
 `SessionSyncTests`, `BroughtForwardLookTests`, `RemotesModuleTests`, `DriverModuleGitAccessTests`; on the page
 `Git.test.tsx`, `GitRemotes.test.tsx`, `GitAccess.test.tsx`, `GitAccessFact.test.tsx`, `GitAsk.test.tsx`, `ProjectsView.git.test.tsx`, `PushRef.test.tsx`.
 

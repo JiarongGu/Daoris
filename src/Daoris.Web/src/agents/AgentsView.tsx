@@ -223,7 +223,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
     }
   }, [active, part, harnesses, chosenTool, tools, adapter, onChoose]);
 
-  // A first answer still on its way; an answer that is no roster (a shell older than this place) lists nothing.
+  // A first answer still on its way; an answer that is no roster lists nothing.
   const loading = active && roster.data === undefined && roster.isPending;
   if (modes && inSetup) {
     const placed = findPlace(places.read, modes.place);

@@ -282,12 +282,15 @@ of everything it handed, section by section.
 - **COAGENT1c / COAGENT1g:** a conversation as the lead; a hand-over waits for the outgoing part's background work and
   children.
 - **RPC1g:** a terminal's conversation is the running Daoris's. The design (`docs/2026-11-06-terminal-conversation-design.md`)
-  is proposed: one runner, a terminal holding one conversation over the pipe under one Confirm, nothing alone with no instance.
+  is accepted (D238): one runner, a terminal holding one conversation over the pipe under one Confirm, nothing alone with no instance.
   The pipe holds a conversation for one connection (`src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeHolding.cs`),
   and a held conversation's head says *Held by a terminal*. `daoris chat --repository` starts one through `START_CHAT` with
   `hold: true` and `--session` holds one open; `session start-from` and `session hand-over <id> --agent` hold what they open
   (`HeldVerbs`, `HeldChat` and `HeldDoor` in `Daoris.Desktop.Driver/Instance/`, wired by `Driver.Host/HeldChatConsole.cs`). A line, `:attach`,
   a turn stop and the end of input are held requests; Ctrl+C at rest lets go; with no Daoris running they refuse and run nothing.
-  `ask-daoris resume` is gone (`session say`). `ChatConsole`'s own runner path, `TerminalOwner` and `TurnMarks` remain,
-  unreachable from any verb, until RPC1g4 deletes them.
+  `ask-daoris resume` is gone (`session say`). No terminal path runs a conversation: `ChatConsole` only hands to
+  `HeldChatConsole`, the instance's loop makes the one `ChatRunner`, and the terminal's turn marks, their owner and the request
+  folder's watch for them are gone, so a window reads every conversation's queue from the instance alone. A `*.turn` mark an
+  older build left is removed once at the start by the home migration's `turn-marks` step
+  (`Daoris.Desktop.Driver/Transitional/Migration/TurnMarksStep.cs`). `TerminalConversationCensusTests` holds all of it.
 - **MSG1h, MSG1i, STEER3:** next-step words on Codex's and the native doors; other steering measured.

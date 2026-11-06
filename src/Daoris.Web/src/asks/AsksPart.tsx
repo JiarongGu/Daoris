@@ -109,8 +109,8 @@ export function useAsksPart({
   const asks = useAsks(closed);
   // Every ask, closed and done ones too, for the page of one the list leaves out.
   const every = useAsks(true);
-  // Whether this machine sets an intake agent (UX5 U34): "" is off, and a door with no driver, or a
-  // shell older than the intake, cannot say, so the composer promises neither.
+  // Whether this machine sets an intake agent (UX5 U34): "" is off, and a door with no driver
+  // cannot say, so the composer promises neither.
   const driverState = useDriver().data;
   const intakeAdapter = driverState?.intakeAdapter;
   const intakeSet = intakeAdapter === undefined ? null : intakeAdapter !== '';
@@ -378,7 +378,7 @@ export function useAsksPart({
           history={historyDoor(shown)}
           considered={considered}
           nameOf={nameOf}
-          // A shell older than the route answers something else, which is no run.
+          // An answer that is no run is none.
           workflow={Array.isArray(runs.data?.runs) && onOpenRun
             ? { runs: runs.data.runs, onOpen: (run) => { if (run.session) onOpenRun(run.session); } }
             : undefined}

@@ -8,5 +8,6 @@
   "work.verify.commit": "{{commit}}",
   "work.verify.failedDetail": "它验证的是 {{judged}}。在你再运行一次之前，不会再验证它。",
   "work.verify.holdsLine": "它验证的是 {{judged}}，并占住了它的主线：在你再运行一次或选择暂不处理之前，这条主线不会开始其他验证；选择暂不处理后，下一次验证会把它一并纳入。",
-  "work.verify.unknownDetail": "它验证的是 {{judged}}，正等你再运行一次或选择暂不处理。"
+  "work.verify.unknownDetail": "它验证的是 {{judged}}，正等你再运行一次或选择暂不处理。",
+  "work.verify.askFix": "请求修复…"
 }

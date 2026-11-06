@@ -470,4 +470,99 @@ public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixtur
         Assert.Null(await RefAsync("refs/tags/v1"));
         Assert.Empty(GitAsks.List(Home, DateTimeOffset.UtcNow));
     }
+
+    /// <summary>A second clone with one commit of its own, so a second push has something else to carry.</summary>
+    private async Task<string> SecondCloneAsync()
+    {
+        var second = Path.Combine(_root, "second");
+        await Ok(Git(_root, "clone", Address, second));
+        File.AppendAllText(Path.Combine(second, "a.txt"), "second\n");
+        await Ok(Git(second, "commit", "-am", "second"));
+        return second;
+    }
+
+    [Fact]
+    public async Task Two_grants_at_once_on_one_address_each_push_only_their_own_ref()
+    {
+        await ReadyAsync();
+        await CommittedAsync();
+        var second = await SecondCloneAsync();
+        var firstHead = await Ok(Git(Work, "rev-parse", "HEAD"));
+        var secondHead = await Ok(Git(second, "rev-parse", "HEAD"));
+
+        var grants = await Task.WhenAll(
+            Task.Run(() => GitGrants.Write(Home, Address, [new GitGrantRef("refs/heads/race/a", firstHead)], DateTimeOffset.UtcNow)),
+            Task.Run(() => GitGrants.Write(Home, Address, [new GitGrantRef("refs/heads/race/b", secondHead)], DateTimeOffset.UtcNow)));
+        var a = Git(Work, "push", "origin", "main:refs/heads/race/a");
+        a.Environment[GitRouting.GrantVariable] = grants[0];
+        var b = Git(second, "push", "origin", "main:refs/heads/race/b");
+        b.Environment[GitRouting.GrantVariable] = grants[1];
+
+        var (ranA, ranB) = (RunAsync(a), RunAsync(b));
+        var (doneA, doneB) = (await ranA, await ranB);
+
+        Assert.True(doneA.Exit == 0, doneA.Err);
+        Assert.True(doneB.Exit == 0, doneB.Err);
+        Assert.Equal(firstHead, await RefAsync("refs/heads/race/a"));
+        Assert.Equal(secondHead, await RefAsync("refs/heads/race/b"));
+        Assert.NotEqual(firstHead, secondHead);
+    }
+
+    [Fact]
+    public async Task One_grant_carrying_two_refs_is_taken_by_one_of_two_pushes_at_once_and_the_other_moves_nothing()
+    {
+        await ReadyAsync();
+        await CommittedAsync();
+        var second = await SecondCloneAsync();
+        var firstHead = await Ok(Git(Work, "rev-parse", "HEAD"));
+        var secondHead = await Ok(Git(second, "rev-parse", "HEAD"));
+        var grant = GitGrants.Write(
+            Home, Address, [new GitGrantRef("refs/heads/race/a", firstHead), new GitGrantRef("refs/heads/race/b", secondHead)], DateTimeOffset.UtcNow);
+        var a = Git(Work, "push", "origin", "main:refs/heads/race/a");
+        a.Environment[GitRouting.GrantVariable] = grant;
+        var b = Git(second, "push", "origin", "main:refs/heads/race/b");
+        b.Environment[GitRouting.GrantVariable] = grant;
+
+        var (ranA, ranB) = (RunAsync(a), RunAsync(b));
+        var (doneA, doneB) = (await ranA, await ranB);
+
+        Assert.Equal(1, new[] { doneA.Exit, doneB.Exit }.Count(exit => exit == 0));
+        var moved = new[] { await RefAsync("refs/heads/race/a"), await RefAsync("refs/heads/race/b") }.Count(each => each is not null);
+        Assert.Equal(1, moved);
+        var refused = doneA.Exit == 0 ? doneB.Err : doneA.Err;
+        // Taken between its read and its take, or gone before its read: refused either way, in the door's words, before any ref moves.
+        Assert.Contains("daoris: ", refused, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_ref_moved_after_the_grant_was_made_is_refused_and_never_pushed_over()
+    {
+        await ReadyAsync();
+        await CommittedAsync();
+        var head = await Ok(Git(Work, "rev-parse", "HEAD"));
+        var seen = await TipAsync();
+        var grant = GitGrants.Write(Home, Address, [new GitGrantRef("refs/heads/main", head, seen)], DateTimeOffset.UtcNow);
+
+        // Someone else moves main on the host after the grant named where it stood.
+        var mover = Path.Combine(_root, "mover");
+        await Ok(Git(_root, "clone", Bare, mover));
+        File.AppendAllText(Path.Combine(mover, "a.txt"), "moved\n");
+        await Ok(Git(mover, "commit", "-am", "moved"));
+        await Ok(Git(mover, "push", Bare, "main"));
+        var moved = await TipAsync();
+        Assert.NotEqual(seen, moved);
+
+        var plain = Git(Work, "push", "origin", "main");
+        plain.Environment[GitRouting.GrantVariable] = grant;
+        var forced = Git(Work, "push", "--force", "origin", "main");
+        forced.Environment[GitRouting.GrantVariable] = grant;
+        var (plainExit, _, plainError) = await RunAsync(plain);
+        var (forcedExit, _, forcedError) = await RunAsync(forced);
+
+        Assert.NotEqual(0, plainExit);
+        Assert.NotEqual(0, forcedExit);
+        Assert.Contains(GitPushJudge.NotCarriedLine("refs/heads/main"), forcedError, StringComparison.Ordinal);
+        Assert.NotEmpty(plainError);
+        Assert.Equal(moved, await TipAsync());
+    }
 }

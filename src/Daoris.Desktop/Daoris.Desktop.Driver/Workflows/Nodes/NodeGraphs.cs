@@ -42,7 +42,7 @@ public static class NodeGraphs
         new([NodeKinds.Claimed, NodeKinds.WorkRequests, NodeKinds.Land, NodeKinds.Push, NodeKinds.Integrate, NodeKinds.Line], StringComparer.Ordinal);
 
     /// <summary>The kinds that observe the landing record (INTEGRATE1n, F47): none can be reached before a <c>handed</c> has made one.</summary>
-    private static readonly string[] OfTheLanding = [NodeKinds.Push, NodeKinds.Line, NodeKinds.Integrate];
+    private static readonly string[] OfTheLanding = [NodeKinds.Push, NodeKinds.Line, NodeKinds.Integrate, NodeKinds.Monitor, NodeKinds.Tidy];
 
     /// <summary>
     /// Everything a save refuses in <paramref name="graph"/>, in a stable order; empty when it holds. The schema and the bounds; each
@@ -248,6 +248,12 @@ public static class NodeGraphs
                 foreach (var late in byId.Values.Where(node => node.Kind == NodeKinds.Push && !after.Contains(node.Id)))
                 {
                     Say(GraphRefusal.LandTail, null, late.Id, $"node `{late.Id}`: a `{NodeKinds.Push}` pushes the branch `{land.Id}` made, and no way from `{land.Id}` reaches it.");
+                }
+
+                // D245: a monitor watches the pull request a plugin's step opened, and a tidy ends what a monitor saw merged.
+                foreach (var (late, why) in CompletionGraphs.Unreached(byId.Values, ids => Reach(ids, ordered, forward: true)))
+                {
+                    Say(GraphRefusal.LandTail, null, late, why);
                 }
 
                 if (method != LandNodes.Branch)

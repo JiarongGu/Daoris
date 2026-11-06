@@ -35,7 +35,7 @@ export type PluginEntry = {
   running: boolean;
   folder: string;
   data: string;
-  /** Where it came from (PLUG9 c): what an Update re-reads. An older shell sends none. */
+  /** Where it came from (PLUG9 c): what an Update re-reads. */
   source?: PluginSourceShown;
   /** Whether an update waits (PLUGUI1e): `waits`, `current`, or null with no record that reads. */
   update?: 'waits' | 'current' | null;
@@ -43,27 +43,27 @@ export type PluginEntry = {
   shipped?: PluginShippedShown | null;
   /**
    * Its declared icon as its own bytes, a `data:image/svg+xml` or `data:image/png` URI (PLUGUI2, D140 §3.2), never a
-   * path. Null, or absent from a host older than PLUGUI2b, and the page draws the monogram.
+   * path. Null or absent, and the page draws the monogram.
    */
   icon?: string | null;
   /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
   iconProblem?: string | null;
-  /** The servers it hands Ask Daoris, with what Ask Daoris may call on each (HELPPLUG1a, D170 point 3); an older shell sends none. */
+  /** The servers it hands Ask Daoris, with what Ask Daoris may call on each (HELPPLUG1a, D170 point 3). */
   helpServers?: HelpServerShown[];
-  /** The skills it hands sessions or Ask Daoris, who each goes to, and why one is not handed (HELPPLUG1b); an older shell sends none. */
+  /** The skills it hands sessions or Ask Daoris, who each goes to, and why one is not handed (HELPPLUG1b). */
   skills?: SkillShown[];
-  /** The steps it declares and what they create (FABRIC-UNIT1e, §D9); an older shell sends none. */
+  /** The steps it declares and what they create (FABRIC-UNIT1e, §D9). */
   steps?: StepShown[];
   resources?: ResourceShown[];
-  /** The tools it declares as its manifest says them (ADOSIGNIN1); nothing is found by reading. An older shell sends none. */
+  /** The tools it declares as its manifest says them (ADOSIGNIN1); nothing is found by reading. */
   tools?: ToolShown[];
 };
 export type PluginCatalog = {
   folder: string;
   plugins: PluginEntry[];
-  /** Where a new plugin may speak (PLUG8): the kit's points, which are the driver's. An older shell sends none. */
+  /** Where a new plugin may speak (PLUG8): the kit's points, which are the driver's. */
   kit?: { points: KitPoint[] };
-  /** Daoris's own plugins the install carries (PLUG9 d), each marked installed or not. An older shell sends none. */
+  /** Daoris's own plugins the install carries (PLUG9 d), each marked installed or not. */
   offers?: PluginOfferShown[];
   offersFolder?: string;
 };
@@ -90,7 +90,7 @@ export const usePlugins = ({ enabled = true }: { enabled?: boolean } = {}) => {
  * HELPPLUG1a's tightening (D170's note): `help-approve`, `help-reads` and `help-withdraw`, with the `server`, are the person's
  * approval of the exact tools a plugin's server offers Ask Daoris, its reads only, or its withdrawal, the page's half of
  * `daoris plugin approve|withdraw`. Since HELPPLUG1c `help-approve` carries the `writes` the person ticked, each on its
- * own (`--writes`); without them it approves every write, as an older page's did.
+ * own (`--writes`); without them it approves every write.
  */
 export const usePluginAction = () => useMutation({
   mutationFn: (action: {

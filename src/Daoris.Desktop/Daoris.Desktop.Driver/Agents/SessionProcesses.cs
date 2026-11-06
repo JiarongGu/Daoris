@@ -575,7 +575,7 @@ public sealed class SessionProcesses(string? markers = null)
         return IsRunning(pid, started);
     }
 
-    /// <summary>Whether the process with this id is alive as the one that started at <paramref name="started"/> (UTC ticks): what a marker and a turn mark (CLITURN1) both name.</summary>
+    /// <summary>Whether the process with this id is alive as the one that started at <paramref name="started"/> (UTC ticks): what a marker names.</summary>
     internal static bool IsRunning(int pid, long started)
     {
         try

@@ -58,7 +58,7 @@ export type MilestoneEnd = {
  * close (FABRIC-CLOSE1q), whose outcome is its door's answer and never the person's word: record that answer again, ask for it again
  * with the same close, or stop the rest of the work. On a failure kept for the person (FABRIC-PERFORM1k): their new attempt.
  */
-export type HeldResolution = 'happened' | 'did-not' | 'stop' | 'record' | 'resend' | 'again';
+export type HeldResolution = 'happened' | 'did-not' | 'stop' | 'record' | 'resend' | 'again' | 'ask-fix';
 
 /** The sender Daoris's own close is held under (FABRIC-CLOSE1q): never a plugin's. */
 export const CLOSE_SENDER = 'quest.close';

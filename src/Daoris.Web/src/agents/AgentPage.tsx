@@ -111,11 +111,11 @@ export function AgentPage({
 }: {
   tool: Tool;
   /**
-   * The roles that lean on this agent on this machine, each at its place in the order (COMPANYVIEW1d, *Used by*); null on a browser or a
-   * shell older than the structure's read, and the section is absent. A read that failed is said, never an empty list.
+   * The roles that lean on this agent on this machine, each at its place in the order (COMPANYVIEW1d, *Used by*); null on a browser, and the
+   * section is then absent. A read that failed is said, never an empty list.
    */
   usedBy?: { read: 'ok' | 'loading' | 'failed'; rows: UsedBy[] } | null;
-  /** How its accounts are used (TOOL4g): null from a shell older than that, and the sections it feeds are absent. */
+  /** How its accounts are used (TOOL4g): null where the snapshot holds none, and the sections it feeds are absent. */
   use: AgentAccounts | null;
   /** The rules file's answer (PERM1): null where it is not read, and *What it may do* is absent. */
   rules: AgentRulesState | null;
@@ -505,7 +505,7 @@ export function AgentPage({
 
   // The add flow's step 3 offers the name the person gave at the sign-in, else the name the sign-in's end offered (ACCOUNTID1b:
   // who signed in, or with the organisation beside it where another account has the email, by the driver's one rule), else
-  // none; an older shell offered none, so who signed in. It says what it is called left empty, which is the row's own namer's
+  // none, so who signed in. It says what it is called left empty, which is the row's own namer's
   // answer with no name given (ACCTUX1), and who signed in told apart from another sign-in of the email.
   const addedAccount = added ? accountOf(added.account) : undefined;
   const offeredName = addedAccount?.displayName?.trim()

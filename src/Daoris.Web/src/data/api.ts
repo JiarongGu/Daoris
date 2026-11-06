@@ -33,7 +33,7 @@ export type QuestAttachment = QuestAttachmentResponse & { kept?: boolean };
 export const fileKept = (file: QuestAttachment): boolean => Boolean(file.path) || file.kept === true;
 /**
  * A quest as every door answers it: the service's declaration (`generated/service.ts`), whose status and note parts it types as the
- * page reads them. A host older than a field leaves it out, which reads as carrying nothing. `kept` is what the shell pushes in
+ * page reads them. A field left out reads as carrying nothing. `kept` is what the shell pushes in
  * place of a path (PUSH1d3).
  */
 export type Quest = Omit<QuestResponse, 'attachments'> & { attachments: QuestAttachment[] };
@@ -144,7 +144,7 @@ export type MachineRetired = MachineRetiredResponse;
 /**
  * An ask: a sentence entered at a WORKSPACE rather than at a repository, held as a record of what became of it, as the service
  * declares it (`generated/service.ts`). `tier` names what answered it, on every record; a tier this page has no word for is shown
- * as the service wrote it. A part a host older than its field leaves out reads as none. Its files' `kept` is what the shell pushes in
+ * as the service wrote it. A part whose field is left out reads as none. Its files' `kept` is what the shell pushes in
  * place of a path (PUSH1d3).
  */
 export type Ask = Omit<AskResponse, 'attachments'> & { attachments: QuestAttachment[] };
@@ -166,12 +166,12 @@ export type GoAhead = GoAheadResponse;
 export type AskAction = Omit<AskActionResponse, 'ask' | 'quest'> & { ask: Ask; quest?: Quest | null };
 /**
  * A registered repository as the service declares it (`generated/service.ts`); `root` is the checkout on this machine, answered to it
- * alone. The fields a host older than them leaves out read as none.
+ * alone. The fields left out read as none.
  */
 export type Registration = Omit<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses'>
   & Partial<Pick<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses'>>;
 
-/** Whether a repository can be asked — the host's answer, or adoption where an older host gives none. */
+/** Whether a repository can be asked — the host's answer, or adoption where it gives none. */
 export const canBeAsked = (registration: Registration): boolean =>
   registration.addressable ?? registration.adopted;
 export type SessionState =
@@ -348,7 +348,7 @@ export const notFound = (error: unknown): boolean => (error as { status?: unknow
 let personKey: string | null = null;
 let askKey: (() => Promise<string | null>) | null = null;
 
-/** The key `ask` answers, or none where it answers none or cannot be asked (an older shell). */
+/** The key `ask` answers, or none where it answers none or cannot be asked. */
 async function askedKey(): Promise<string | null> {
   if (!askKey) return null;
   try {

@@ -39,6 +39,7 @@ public static class HomeMigration
         new SessionRecordsStep(),
         new NoteRecordsStep(),
         new ClosedQuestsStep(),
+        new TurnMarksStep(),
     ];
 
     /// <summary>

@@ -28,7 +28,7 @@ export type PhaseMark = { phase: string; at: number };
 /**
  * A relayed line read as a phase: the driver writes a sign-in's phases into the same relay as its tool's output, each a line
  * that begins with the record separator, then `{phase, at}`; a tool's own line never begins so, since the driver strips its
- * control bytes. Null for any other line, so an older host's lines all read as the tool's.
+ * control bytes. Null for any other line, so such lines all read as the tool's.
  */
 export function phaseOf(text: string): PhaseMark | null {
   if (!text.startsWith('\u001e')) return null;
@@ -65,7 +65,7 @@ export function useSessionConsole(sessionId: string | null) {
   const attended = useRef(sessionId);
   attended.current = sessionId;
 
-  // Defensive about the shape, deliberately: a shell older than this surface answers something else
+  // Defensive about the shape, deliberately: an answer may be something else
   // entirely, and the console is the part of the drawer that may be missing. The RECORD above it is
   // what the drawer exists to show, and a console cannot be allowed to take it down.
   //
@@ -119,7 +119,7 @@ export function useSessionConsole(sessionId: string | null) {
     }
 
     // Live unless the batch says otherwise: a session's last words are written after it closed, and a
-    // shell older than the flag says nothing (CONSOLE3c).
+    // snapshot without the flag says nothing (CONSOLE3c).
     take({ ...batch, live: batch.live !== false });
   });
 
@@ -167,7 +167,7 @@ export type SessionStreamRow = {
  * @remarks
  * Desktop-only for the console's reason (D47 §4). Asked for on open, and again whenever the driver
  * says one of this session's streams opened or ended (`SESSION_STREAMS`). Defensive about the shape,
- * as the console is: a shell older than this answers something else, and then the session simply has
+ * as the console is: an answer that is something else leaves the session with
  * no streams.
  */
 export function useSessionStreams(sessionId: string | null): SessionStreamRow[] {
