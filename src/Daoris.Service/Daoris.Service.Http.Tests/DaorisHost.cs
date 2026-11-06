@@ -183,7 +183,7 @@ public class DaorisHost : IDisposable
 
     /// <summary>One request, from <paramref name="from"/>, with a bearer key, the person key (PERSONDOOR1a) and a JSON body when given.</summary>
     public async Task<Answer> SendAsync(
-        string method, string pathAndQuery, IPAddress from, string? key = null, string? json = null, string? person = null)
+        string method, string pathAndQuery, IPAddress from, string? key = null, string? json = null, string? person = null, int? port = null)
     {
         var query = pathAndQuery.IndexOf('?');
         var context = await Server.SendAsync(http =>
@@ -192,6 +192,7 @@ public class DaorisHost : IDisposable
             http.Request.Path = query < 0 ? pathAndQuery : pathAndQuery[..query];
             http.Request.QueryString = query < 0 ? QueryString.Empty : new QueryString(pathAndQuery[query..]);
             http.Connection.RemoteIpAddress = from;
+            if (port is { } remote) http.Connection.RemotePort = remote;
             if (key is not null) http.Request.Headers.Authorization = "Bearer " + key;
             if (person is not null) http.Request.Headers[Daoris.Knowledge.Http.PersonKey.Header] = person;
             if (json is not null)
