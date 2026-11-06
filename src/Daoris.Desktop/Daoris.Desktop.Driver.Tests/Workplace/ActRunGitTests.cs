@@ -162,7 +162,8 @@ public sealed class ActRunGitTests : TreeSyncFixture
     {
         if (!OperatingSystem.IsWindows()) return;
         var (root, tip, _, _) = await CheckoutAsync();
-        using (TreeLock.TryWriting(Home, root, "engine", TreeLock.Updating))
+        // Another writer's hold, taken on a flow of its own: a flow that holds the checkout alone runs its own acts under its hold.
+        using (await Task.Run(() => TreeLock.TryWriting(Home, root, "engine", TreeLock.Updating)))
         {
             var held = await Runs().RunAsync(Plan(root, RefStep(tip)), CancellationToken.None);
             Assert.True(held.Refused);
