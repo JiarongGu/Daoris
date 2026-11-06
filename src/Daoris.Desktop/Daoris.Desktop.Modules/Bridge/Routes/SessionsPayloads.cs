@@ -15,6 +15,9 @@ public sealed record SessionPartnerAsk(string Id, string? Piece, string? Agent, 
 
 public sealed record SessionPartners(string Id);
 
+/// <summary>A piece's later act (<c>discard</c> or <c>hand-over</c>) on the session that asked it, for the driver's next look.</summary>
+public sealed record SessionPartnerAct(string Id, string Piece, string Act);
+
 public sealed record SessionHandOverAsk(string Id);
 
 public sealed record SessionQuestion(string Id);

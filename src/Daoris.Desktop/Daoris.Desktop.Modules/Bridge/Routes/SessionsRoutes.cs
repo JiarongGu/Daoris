@@ -72,6 +72,16 @@ public sealed class SessionsRoutes(DriverContext context)
     [Publishes("SESSION_PARTNER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private Task<object?> SessionPartnerAskAsync(SessionPartnerAsk press, CancellationToken cancellationToken) => _asks.PartnerAskAsync(press, cancellationToken);
 
+    // *Discard…* and *Hand over what it left*: the person's act on one of this session's pieces, the file the driver's next look takes
+    // (`PartnerPersonAct` judges which state takes which act); the look removes the ref and the copy, or keeps and hands an uncertain
+    // piece's work. What cannot is `acted: false` with its code for the page to word.
+    [DriverRoute("SESSION_PARTNER_ACT", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_PARTNER_ACT", Session = "id")]
+    [GroundSession("SESSION_PARTNER_ACT", "id")]
+    [Says("SESSION_PARTNER_ACT", "id:session")]
+    [Publishes("SESSION_PARTNER_ACT", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
+    private Task<object?> SessionPartnerActAsync(SessionPartnerAct press, CancellationToken cancellationToken) => _asks.PartnerActAsync(press, cancellationToken);
+
     // The pieces a session asked, oldest first, each as the driver's look left
     // it: the piece and its paths, the agent, where it stands and why, its partner's record once started, its frozen commit and ref
     // once imported, and the files Daoris read in it with those beyond its paths. Read off the home's `partners` folder, the driver's

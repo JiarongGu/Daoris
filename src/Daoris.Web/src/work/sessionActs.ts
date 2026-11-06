@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Session } from '../data/api';
 import {
   retryNotice, stopNotice, useApproveHelper, useArchiveSessions, useAskHelper, useAskPartner, useCancelTurn, useDeclineHelper, useDeleteSession,
-  useHandOver, useOpenSessionFolder, useOpenWindow, useResolveSession, useRetryQuest, useStopSession,
+  useHandOver, useOpenSessionFolder, useOpenWindow, usePartnerAct, useResolveSession, useRetryQuest, useStopSession,
 } from '../bridge/shell';
 import { list, sentence } from '../locales/format';
 import { failure, type Notify, SESSION_ACTIVE } from '../design/ui';
@@ -57,7 +57,7 @@ const HELPER_REFUSALS = new Set([
 ]);
 
 /** The codes a piece's ask answers by (COAGENT1b; the bridge's `PartnerAskWhy`), each said in the catalogue's words. */
-const PIECE_REFUSALS = new Set(['blank', 'too-long', 'agent', 'path', 'not-held', 'unfit', 'no-commit']);
+const PIECE_REFUSALS = new Set(['blank', 'too-long', 'agent', 'path', 'not-held', 'unfit', 'no-commit', 'no-piece', 'state', 'no-copy', 'unknown-act']);
 
 /** A piece's refusal in the catalogue's words, by its code; one a later driver adds is said in the driver's own sentence. */
 export const pieceSaid = (t: Translate, why: string | null, message: string) =>
@@ -129,6 +129,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   const handOver = useHandOver();
   const askHelper = useAskHelper();
   const askPartner = useAskPartner();
+  const partnerAct = usePartnerAct();
   const approveHelper = useApproveHelper();
   const declineHelper = useDeclineHelper();
   const cancelTurn = useCancelTurn();
@@ -329,6 +330,23 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   });
 
   /**
+   * A piece's later act (COAGENT1b2): *Discard…* or *Hand over what it left*, its one press, told back to its ask. `done` once the driver's
+   * file holds the act, which its next look does; a refusal by its code, said inside the ask.
+   */
+  const actPieceNow = (session: Session, piece: string, act: 'discard' | 'hand-over', answered: Answered) =>
+    partnerAct.mutate({ session: session.id, piece, act }, {
+      onSuccess: (answer) => {
+        if (!answer.acted) {
+          answered.refused(pieceSaid(t, answer.why, answer.message));
+          return;
+        }
+        notify(t(act === 'discard' ? 'work.pieces.discarding' : 'work.pieces.handingOver'));
+        answered.done();
+      },
+      onError: refusedIn(answered),
+    });
+
+  /**
    * The person's yes to an agent's ask that waits on it (MIXAGENT2b, D163 point 3), told back to its press: `done` once the
    * driver's file holds it; a refusal by its code, said beside the press.
    */
@@ -404,6 +422,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     askHelperNow,
     askPartnerNow,
     stopPartnerNow,
+    actPieceNow,
     approveHelperNow,
     declineHelperNow,
     deleteNow,
@@ -412,6 +431,8 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     askingHelper: askHelper.isPending,
     /** A piece's ask on its way: its ask's presses wait for it (COAGENT1b). */
     askingPartner: askPartner.isPending,
+    /** A piece's discard or hand-over on its way. */
+    actingOnPiece: partnerAct.isPending,
     /** A yes or a no to an agent's ask on its way: the rows' presses wait for it. */
     approvingHelper: approveHelper.isPending || declineHelper.isPending,
     /** A stop on its way. */

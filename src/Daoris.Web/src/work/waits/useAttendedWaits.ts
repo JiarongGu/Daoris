@@ -115,6 +115,8 @@ export function useAttendedWaits({
     },
     onStop: (partner: string, answered: Answered) => actions.stopPartnerNow(partner, answered),
     stopping: actions.stopping,
+    onAct: (piece: string, act: 'discard' | 'hand-over', answered: Answered) => actions.actPieceNow(attended, piece, act, answered),
+    acting: actions.actingOnPiece,
   } : null;
   // Its agent's own ask to hand it over (MIXAGENT1c, D163 point 3), with the person's yes and no: a wait at the foot while the look
   // holds it on their word. A refusal is said beside the presses, in the page's words for its code.

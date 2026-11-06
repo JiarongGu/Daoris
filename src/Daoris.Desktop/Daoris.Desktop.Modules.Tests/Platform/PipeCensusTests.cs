@@ -503,6 +503,7 @@ public sealed class PipeCensusTests
     [InlineData("START_CHAT", PipeDrain.Waits)]
     [InlineData("SESSION_HELPER_ASK", PipeDrain.Waits)]
     [InlineData("SESSION_PARTNER_ASK", PipeDrain.Waits)]
+    [InlineData("SESSION_PARTNER_ACT", PipeDrain.Waits)]
     [InlineData("ASK_OPINION", PipeDrain.Waits)]
     [InlineData("PLUGIN_TRY", PipeDrain.Waits)]
     [InlineData("PLUGIN_TOOLS", PipeDrain.Waits)]
