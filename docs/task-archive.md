@@ -23335,3 +23335,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
   **Outcome** 2026-11-07: part one built (D202). Part two was measured as OPTIMIZE1a (BL54, `3453472de`): a review asks two or three
   object questions of its 23 git starts, so a held reader is not worth adding and none is built.
+
+## GITAPP2 (2026-11-07)
+
+- [x] **GITAPP2 — the person's git acts and writes** (driver, modules, web; D204): a to n are built (g and n: one push act on the journal with a grant bound to its ref, *Push…* and *Push tag…* on the page; G7). Ask Daoris's sync card offers *Add a git identity for host…* where a fetch did not reach, and a push cut off mid-way and a refusing `pre-push` hook are proved. Stash Drop is built too (by commit id, offered only for a Save Daoris journaled, git naming another commit storing it back and reporting not done; no Undo, the commit and its `git stash store` kept on the answer and the journal). Its terminal twin is built (`daoris git stash drop <repository> <commit> [--plan|--yes]`, its card a person's press) and a race in which git names another commit stores it back and reports not done. → `docs/2026-10-23-git-writes-design.md` §12
+
+  **Outcome** 2026-11-07: every act of the design's §12 is built, Stash Drop last (by commit id, with its terminal twin and its race proof); the installed window's look goes with the installed batch.
