@@ -423,7 +423,7 @@ Agents page, and `orient-index` and `code-map` once files move.
   provider's. Left: every record still reads.
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30, D248): Daoris's providers consumed from the sibling
   agent-provider library, built against its local build. The reference and its census are in (rule 47). The host's policy for a
-  layer door stands on Daoris's own types, used by no door yet: the access evidence each account reader reads (`AccessEvidence`), the
+  layer door stands on Daoris's own types, read by Claude Code's driven door where the driver carries the layer: the access evidence each account reader reads (`AccessEvidence`), the
   trusted limit and sign-out entries that read no sentence (`HarnessRoster.LimitedTrusted`, `RefusedAccounts.SignOut`), which
   readers each door's site calls (`AccountReaders`), a refused model by its whole outcome and then by door and phase
   (`ModelRefusals`), the retry table by door, phase and run (`RetryTable`) and what was hit (`LimitHit`). `Agents/Layer/` holds the
