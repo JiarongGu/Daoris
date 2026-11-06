@@ -347,7 +347,7 @@ export function WorkFrame({
   const { entryAt, workAskAt, entryOffered, landsNow } = work;
   const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
-    boxWords, openView, work, talking, centre,
+    boxWords, openView, work, talking, centre, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
     onChangeRule: onChangeRule && attended ? (place) => onChangeRule(place, attended.repository ?? null) : undefined,
   });
   const {

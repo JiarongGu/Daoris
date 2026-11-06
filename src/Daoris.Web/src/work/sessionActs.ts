@@ -38,6 +38,8 @@ export type SessionDoors = {
   attend?: (id: string) => void;
   /** Attend it, then open its helper's ask under its page header (*Ask another agent…*, MIXAGENT2b, D163). */
   askHelper?: (id: string) => void;
+  /** Attend it, then open its Pieces section's ask (*Ask another agent to work on a piece…*, COAGENT1c). */
+  askPiece?: (id: string) => void;
 };
 
 /** What a hand-over's ask tells back: how it ended, and that it was kept for the conversation's turn to end (MIXAGENT1b-i). */
@@ -45,7 +47,7 @@ export type HandOverTold = Answered & { kept: (sentence: string) => void };
 
 /** The acts the frame carries out: a door that has no frame to hand them (the monitor) offers none of them. */
 const FRAME_ACTS = new Set<SessionActId>([
-  'answer', 'stop', 'handOver', 'askHelper', 'review', 'terminal', 'delete', 'pauseQuest', 'pauseAsk',
+  'answer', 'stop', 'handOver', 'askHelper', 'askPiece', 'review', 'terminal', 'delete', 'pauseQuest', 'pauseAsk',
 ]);
 
 /**
@@ -162,6 +164,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
       case 'stop':
       case 'handOver':
       case 'askHelper':
+      case 'askPiece':
       case 'review':
       case 'delete':
         doors[act]?.(session.id);

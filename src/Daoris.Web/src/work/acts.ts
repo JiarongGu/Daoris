@@ -1,7 +1,7 @@
 import type { Quest, Session } from '../data/api';
 import { answeredPark, type IconName, type MenuAct, SESSION_ACTIVE } from '../design/ui';
 import type { SessionGrouping } from './groups';
-import { isHelp, isHelper, isIntake, isOpinion, sessionOrigin } from './identity';
+import { isHelp, isHelper, isIntake, isOpinion, leadsPieces, sessionOrigin } from './identity';
 import { askOf, type WorkTarget } from './pausing/pausing';
 import { limitedLine } from './waits/limitWait';
 import type { SessionWhere } from './rail/SessionRow';
@@ -12,16 +12,16 @@ import type { SessionWhere } from './rail/SessionRow';
 
 /** Every act a session's doors offer, by the name `sessionActs.ts` runs it by. Finish and Decline… stay its card's. */
 export type SessionActId =
-  | 'answer' | 'stop' | 'handOver' | 'askHelper' | 'pauseQuest' | 'pauseAsk' | 'resumeQuest' | 'resumeAsk' | 'retry' | 'review'
-  | 'openFolder' | 'terminal' | 'detach' | 'archive' | 'unarchive' | 'delete' | 'copy';
+  | 'answer' | 'stop' | 'handOver' | 'askHelper' | 'askPiece' | 'pauseQuest' | 'pauseAsk' | 'resumeQuest' | 'resumeAsk' | 'retry'
+  | 'review' | 'openFolder' | 'terminal' | 'detach' | 'archive' | 'unarchive' | 'delete' | 'copy';
 
 /**
  * §3.1's order, the order a menu lists them in; a pause beside the stop, and a resume where *Try again* stands (D132 §7.1). Another
- * agent's two doors stand together: the hand-over, then a helper (MIXAGENT2b).
+ * agent's doors stand together: the hand-over, then a helper (MIXAGENT2b), then a piece (COAGENT1c).
  */
 export const ACT_ORDER: readonly SessionActId[] = [
-  'answer', 'stop', 'handOver', 'askHelper', 'pauseQuest', 'pauseAsk', 'resumeQuest', 'resumeAsk', 'retry', 'review', 'openFolder',
-  'terminal', 'detach', 'archive', 'unarchive', 'delete', 'copy',
+  'answer', 'stop', 'handOver', 'askHelper', 'askPiece', 'pauseQuest', 'pauseAsk', 'resumeQuest', 'resumeAsk', 'retry', 'review',
+  'openFolder', 'terminal', 'detach', 'archive', 'unarchive', 'delete', 'copy',
 ];
 
 /**
@@ -35,6 +35,8 @@ export const ACT_LOOK: Record<SessionActId, { label: string; icon: IconName; dan
   handOver: { label: 'work.act.handOver', icon: 'redo' },
   // MIXAGENT2b: the agent at work, as a workflow's step draws another agent's part; Ask Daoris keeps its own question mark.
   askHelper: { label: 'work.act.askHelper', icon: 'stepWork' },
+  // COAGENT1c: the Pieces section's own ask, by its one name, drawn as a branch since a piece is written in a clone of its own.
+  askPiece: { label: 'work.pieces.ask', icon: 'stepBranch' },
   // PAUSE1e: the player's pause and play, since a pause keeps everything and Resume carries it on where it stood.
   pauseQuest: { label: 'work.act.pauseQuest', icon: 'pause' },
   pauseAsk: { label: 'work.act.pauseAsk', icon: 'pause' },
@@ -117,6 +119,8 @@ export function folderOf({ session, root, where }: ActFacts): string | null {
  * - **Ask another agent…** in the header of a session of this machine's own that may ask, driven or a conversation, live or
  *   ended: not a helper (a helper cannot ask for a helper), a reviewer, an intake nor Ask Daoris's (MIXAGENT2b, D163 point 2).
  *   On the session's page only, where its ask opens, so no row's ⋯ grows by it.
+ * - **Ask another agent to work on a piece…** in the header of a session of this machine's own that leads pieces, driven or a
+ *   conversation (`leadsPieces`; COAGENT1c): it opens the Pieces section's own ask, so the page only.
  * - **Open folder** and **Open a terminal here** where its folder is on this machine (`folderOf`).
  * - **Archive** where the reader placed it in Ended, **Unarchive** wherever its mark stands, **Copy session ID** always.
  * - **Delete…** where the reader says the delete would be taken (SESSUX1f, D126 §5.4): a conversation that served no
@@ -144,6 +148,7 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
     // A conversation of this machine's own: not an intake, Ask Daoris's, nor a quest's session, each of which has its own door.
     if (session.kind === 'chat' && !session.quest && !intake && !isHelp(session) && !wordless) offered.add('handOver');
     if (door === 'header' && !intake && !isHelp(session) && !wordless) offered.add('askHelper');
+    if (door === 'header' && leadsPieces(session)) offered.add('askPiece');
     const driven = live && Boolean(session.quest) && session.kind !== 'chat' && !intake && !isHelp(session) && !wordless;
     // SESSWATCH1a (the session-watch design §2.3): a live quest's own session is handed over from its page too, through the judge
     // `sessions hand-over` answers it by; the look takes it, stops it and carries its quest on with the agent chosen.

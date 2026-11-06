@@ -49,6 +49,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | AttentionStateSlice, NeedsAPerson | `Modules/Loop/AttentionStateSlice.cs`, `NeedsAPerson.cs` | *What needs you*'s rows, judged once and pushed to every window |
 | StewardDesk | `Modules/Platform/StewardDesk.cs`; holder's verb `Driver/Roles/StewardCommand.cs` | Requests for the steward, as claims, bounded, history in `data/steward-desk.json` |
 | Page: conversation | `Web/work/conversation/Composer.tsx`, `ExchangeCard.tsx`, `exchanges.ts`, `answerHeads.ts`, `AskView.tsx`, `SenderChip.tsx`, `channelHome.ts` | The level menu; a helper ask's card and the exchanges drawn; each word's sender chip; a helper's answer no card holds as its agent's block; a channel message's poster and the door to its channel |
+| Page: the pieces | `Web/work/pieces/Pieces.tsx`, `AskPartner.tsx`, `pieceRows.ts`; `Web/work/identity.ts`'s `leadsPieces`; `Web/work/acts.ts`'s `askPiece` | The Pieces section under a lead's head, driven or a conversation: each piece's state and acts, and *Ask another agent to work on a piece…*, the one ask the section's press and the head's ⋯ open (the frame holds it open, `useHeadAsks`' `pieceAsking`) |
 | Page: the team | `Web/work/team/CoWorkers.tsx`, `MemberThread.tsx`, `BringInAgent.tsx`, `teamRows.ts`, `useTeam.ts` | The head's *Co-workers*: the lead, each member by state and where its answer went, its thread's door, *Pass to the lead*, the pending asks' presses, *Bring in another agent…* in its ⋯ (the helper's and the hand-over's doors today); a member's thread head with *Back to lead*, *Ask again…* and the pass |
 | Page: At work, channel, attention | `Web/work/atWork/AtWorkView.tsx`, `exchangeSeek.ts`, `AtWorkAskView.tsx`, `Web/asks/ChannelSection.tsx`, `TeammateAskPage.tsx`, `Web/bridge/sessions/asks.ts`'s `useLineChannel`, `Web/work/attention/attention.ts`, `Web/work/waits/waitObligations.ts`, `Web/notifications/StewardLine.tsx` | *At work* and *Waiting on*, opened at a request, with the line's channel; the ask's channel and a teammate's; *What needs you* and the foot's count by one key; the steward's line |
 
@@ -137,7 +138,9 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 30. A driven lead that ends its turn on its own helper ask, with no question or go-ahead on the person, ends `completed`
     (`ended.awaits-helper`), held and unparked; the answer reopens it once. A helper ending with no answer brings it to the person. (from D203)
 31. A partner writes one piece in a clone with no remote, at the asked commit. Daoris reads its files and writes one frozen commit; the
-    piece lands only when the lead merges it. At most two pieces are open per lead. Only the person asks one today. A handed piece is
+    piece lands only when the lead merges it. At most two pieces are open per lead. A lead is a session working in a tree of its own,
+    driven or a conversation (`StartAdmission.LeadsPiece`, the page's `leadsPieces`); a conversation hears a piece's answer as a turn
+    of its own between its turns, queued behind a turn in flight, as a helper's answer is. Only the person asks one today. A handed piece is
     taken in when the look first reads its commit as an ancestor of the lead's tree's branch (recorded with the lead's commit, never
     unset; a cherry-pick is not that), and not taken in when the lead's record completed without it. The person's *Discard…* (a piece
     holding work or a copy, never one taken in) and *Hand over what it left* (an uncertain one) are an act file, `<id>.act.json`,
@@ -212,12 +215,12 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 
 **Tests that pin it.** Driver: `ExchangesTests`, `ChannelReachTests`, `ChannelNextStepTickTests`, `ChannelCommandTests`,
 `DrivenInboxTests`, `DaorisWordsTests`, `AnswersAloneTests`, `AnswersAloneHoldTests`, `HelperJudgeTests`, `HelperLookTests`,
-`HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `PartnerActsTests`, `PartnerLandingTests` (git half), `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
+`HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `PartnerActsTests`, `PartnerLandingTests` (git half), `PartnerChatProcessTests`, `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
 `Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`. Service: `ChannelTests`, `ChannelPartsTests`, `TeammateAskChannelTests`, `ChannelSyncTests`,
 `SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, `BrainstormDeskTests`, `MeetingDeskTests`, `McpChannelToolTests`,
 `McpRoleFilterTests`, `ToolClassesTests`. Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`,
 `DriverModuleSessionAnswersAloneTests`. Web: `sender.test.ts`, `ExchangeCard.test.tsx`, `SenderChip.test.tsx`, `Composer.test.tsx`, `AtWork*.test.tsx`,
-`ChannelSection.test.tsx`, `TeammateAskPage.test.tsx`, `attention.test.ts`, `waitObligations.test.tsx`, `StewardLine.test.tsx`.
+`ChannelSection.test.tsx`, `Pieces.test.tsx`, `TeammateAskPage.test.tsx`, `attention.test.ts`, `waitObligations.test.tsx`, `StewardLine.test.tsx`.
 
 **Gates that bite.** `driver`, `modules`, `service` and `censuses` (the tool-class and transitional censuses), `web-unit`, the web
 gate's `i18n:check` and `names:check -- --strict` for any visible word (glossary: *urgency*, *channel*, *co-worker*, *At work*),
@@ -245,7 +248,7 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 
 - **STEER3**: measure Codex's `turn/steer` and Claude Code's stream-json input before a level uses them. **MSG1h**, **MSG1i**: next-step words on Codex and on the native door.
 - **COWORKUX1** (rows d, f, i): the terminal's `sessions helper --after --to-me` and `sessions pass`; Ask Daoris's `session` cards for the person's helper doors; the dialog's *Write a piece*, *Second opinion* and *Work alongside* doors; the glossary's *co-worker* and *lead*; row i, the lead's wait on its own partner.
-- **COAGENT1b2** (built: *Discard…*, *Hand over what it left*, the taken-in read; left: the not-taken-in verdict at the landing's own moment where the lead's tree is gone, the retention proof through tidy, clear and sync, and the partner's real-process case) **, 1c, 1g**: a conversation as the lead; a hand-over that waits for children. The lead's own `partner_ask` has no row.
+- **COAGENT1b2** (built: *Discard…*, *Hand over what it left*, the taken-in read; left: the not-taken-in verdict at the landing's own moment where the lead's tree is gone, the retention proof through tidy, clear and sync, and the partner's real-process case). The lead's own `partner_ask` has no row.
 - **CHANNELJOIN1**: an agent the owner runs outside Daoris joins a channel.
 - No row: *Send to its session* from a line's own channel.
 - **AGENTROOM1b**: `meeting_say`, so a real agent takes a meeting turn (today refused `no-message-tool`). **AGENTROOM1c**: `daoris meeting`. **AGENTROOM1d**: one account's turns one at a time across meetings. D177's floor request has no row.
