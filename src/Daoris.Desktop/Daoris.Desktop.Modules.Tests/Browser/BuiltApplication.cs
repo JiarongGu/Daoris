@@ -14,7 +14,9 @@ internal static class BuiltApplication
     public static string Executable()
     {
         var configuration = typeof(BuiltApplication).Assembly.GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration ?? "Debug";
-        var output = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App", "bin", configuration);
+        // The project's folder is tracked; its build output is no file of this repository, so it is joined from the folder.
+        var project = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App");
+        var output = Path.Combine(project, "bin", configuration);
         var built = Directory.Exists(output)
             ? Directory.EnumerateFiles(output, "Daoris.Desktop.exe", SearchOption.AllDirectories).OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault()
             : null;

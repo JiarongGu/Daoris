@@ -1148,7 +1148,7 @@ export const REACH = Object.freeze([
     why: "release tooling, and the hosts' one build recipe (CONNECTOR1), which desktop-publish imports: the deployment rehearsal drives it, the family rehearsal runs usage-report, which imports it, and the publish's tool-tests call it (GATESLIM1)",
   },
   { paths: ['tools/stage-package.mjs'], gates: ['rehearse', 'deployment'], why: "every pack runs it: the release rehearsal's, and the install's doctrine tool" },
-  { paths: ['tools/family-rehearsal.mjs', 'tools/usage-report.mjs', 'tools/usage-report/**'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
+  { paths: ['tools/family-rehearsal.mjs', 'tools/stub-two.mjs', 'tools/usage-report.mjs', 'tools/usage-report/**'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
   // AGENTPROVIDER1b part 3 (placed by INTEGRATE1d part 4): the stand-ins' reader, which its own tool test and the family rehearsal import.
   { paths: ['tools/stand-ins.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the stand-ins' reader: its tool test (stand-ins.test.ts) and the family rehearsal, which finds the providers' stand-ins by it (AGENTPROVIDER1b)" },
   // The same row's files in each provider's folder: the driver's (its lane's readers, ProviderFilesTests among them), and the tool
