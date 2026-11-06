@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - A driven start and a conversation spawned with the process's home, and tests wrote into a real one (FIX11)
+
+- **Symptom:** CI runs 7 and 8 failed about 514 driver Process tests with `Value cannot be null (Parameter 'path1')` and a chat ledger
+  that found no row, while each class passed alone in a developer's shell. The gate clears `DAORIS_HOME`; the developer's shells
+  inherited it from the account's environment, where it names the owner's installed home.
+- **Root cause:** a driven start's and a conversation's spawn read the home from the process's environment instead of carrying their
+  own, so with no `DAORIS_HOME` they threw, and with one they used that home, so tests run in such a shell wrote into the installed
+  home. Product reads of the process's home remain in `GitRuns`, `TreeRefs`, `TreeSquashes` and `Tools.Hand` (FIX12).
+- **Fix:** each spawn carries its own home (650609f5b); the test host clears the inherited `DAORIS_*` and git variables and names a
+  scratch home, and `ProcessEnvironmentCensusTests` names every source that sets the process's environment with its why.
+- **Verify:** the Process half as one run, 514 to 4 failing (22 min, from 1 h 24); the installed home's data audit looks for the tests'
+  residue before it is cleaned.
+
 ## 2026-11-06 - A journaled branch delete read a broken ref as removed, and a moved branch as unknown (FIX8)
 
 - **Symptom:** `JudgedDeleteGitTests` and `ContentProofLossTests` (git gate) failed: a branch git refused to delete because its ref
