@@ -114,7 +114,7 @@ public sealed class StoredOldNamesCensusTests : IDisposable
             "Daoris.Desktop/Daoris.Desktop.Driver/Agents/Layer/LayerStart.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/AgentCapabilities.cs",
         ],
-        ["a held press"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Instance/HeldVerbs.cs"],
+        ["the chat start's press"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Instance/HeldVerbs.cs"],
         ["the account presses"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs",

@@ -434,7 +434,7 @@ Agents page, and `orient-index` and `code-map` once files move.
   point 2); **t-ii**, the `adapter` word: the session record's door (the service's `sessions.adapter` and `harness_version`, the sync's,
   the contract's and the page's `adapter` and `harnessVersion`, the desktop's reads of the record) and every record that copies it (an
   opinion's, a memory operation's author's `adapter` and `harness`, the machine log's fields, a note's part, a plugin's `session.ended`,
-  a brainstorm's and a meeting's files, a held press), kept because the record's one field runs across the service's store, the sync
+  a brainstorm's and a meeting's files, `START_CHAT`'s press), kept because the record's one field runs across the service's store, the sync
   between hosts and some hundred and twenty reads on the page, so it is renamed `door` in a chunk of its own, the service's schema step,
   the contract and the page together; **t-iii**, the `harness`, `pipe` and `acp` words: the usage entries', the lineage's and a door
   failure's `harness`, Ask Daoris's wired file's, the account presses' and their `HARNESSES` and `ACCOUNTS` reads, the bridge's
