@@ -58,7 +58,7 @@ public sealed class PluginToolsTests : IDisposable
     [InlineData("a field it does not know is passed over", """[{ "id": "pwsh", "url": "https://example.test/pwsh.zip", "sha256": "00" }]""", 1, "pwsh", "own", "PowerShell", null, null, 0, null)]
     [InlineData("a broken tool leaves the next one read", """[{ "id": 7 }, { "id": "git" }]""", 2, "git", "own", "Git", null, null, 0, null)]
     [InlineData("not an object", """["pwsh"]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` is not an object with an `id`")]
-    [InlineData("no id", """[{ "versions": ">=1" }]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` needs an `id`: a tool's name in lowercase, like `az`")]
+    [InlineData("no id", """[{ "versions": ">=1" }]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` needs an `id`: a tool's name in lowercase, like `node`")]
     [InlineData("an id that is not text", """[{ "id": 7 }]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` needs an `id`")]
     [InlineData("a blank id", """[{ "id": " " }]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` needs an `id`")]
     [InlineData("an id in capitals", """[{ "id": "Az" }]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` has the `id` `Az`, which is not one: lowercase letters, digits, dots and dashes")]

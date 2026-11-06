@@ -338,16 +338,18 @@ catalogues (`i18n:check`).
 
 - **GITDESIGN1:** git's place, proposed in `docs/2026-11-05-git-design.md`: every remote act through the doors, one push, a pull
   request as a place's workflow steps, the path proven in CI against stand-in remotes. GITAUTH1b and WORKSETUP1 follow it.
-- **GITAUTH1b:** the doors' classes (`GitDoorsProcessTests`, `GitSshProcessTests`) run twice, with the runner's git and with the
-  MinGit the built-in list pins (`PinnedMinGit`, fetched by the toolchain's own download into `_fixtures/` and held to the list's
-  size and SHA-256); `GitHttpsProcessTests` still runs the runner's git alone, since which TLS backend the pinned MinGit trusts a
-  test certificate through is not measured, and MinGit ships no `git-http-backend`, so the HTTP host serves with the runner's.
+- **GITAUTH1b:** built. The doors' classes (`GitDoorsProcessTests`, `GitSshProcessTests`, `GitHttpsProcessTests`) run twice, with the
+  runner's git and with the MinGit the built-in list pins (`PinnedMinGit`, fetched by the toolchain's own download into `_fixtures/`
+  and held to the list's size and SHA-256; the `GitHttpsPinnedProcessTests` subclass). MinGit 2.56 carries both a Schannel and an
+  OpenSSL libcurl and its system file names none; the test certificate is trusted through OpenSSL (`http.sslBackend=openssl` with
+  `http.sslCAInfo`, `GitTlsHost.TrustedBy`), measured with all seven HTTPS facts passing. MinGit ships no `git-http-backend`, so the
+  HTTP host behind the TLS front serves with the runner's git.
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
 - **GITAUTH1e:** built: Ask Daoris's sync card, for each host a fetch over SSH or HTTPS did not reach, offers *Add a git identity for
   host…*, which opens Settings → Git on its Add form with the host filled (`HelpSyncUnfetched.Host`, `StarterDoor.gitHost`). The
   browser sign-in, its `PhaseList` and its Cancel left with Git Credential Manager (D241). The card's and the screen's advice on
-  reaching an origin (`settings.sync.notFetched.ssh` and `.https`) still names a key its own ssh reads and a credential helper, from
-  before the identities.
+  reaching an origin (`settings.sync.notFetched.ssh` and `.https`) names a git identity for the host in Settings → Git, with an SSH
+  key or a token.
 - **GITAUTH1h:** the install, seen (the owner).
 - **GITAPP2:** Stash Drop is built (`StashDrops.cs`, `StashDropSteps.cs`, `GIT_STASH_DROP`): it is offered only for a stash a done Save of
   Daoris's own made, read from the Save step's journaled words (the commit saved; a message proves no ownership), by commit id, never
@@ -365,8 +367,7 @@ catalogues (`i18n:check`).
   install, ONEWAY1af deletes both and the census (BL84).
 - **G9:** the pull-request plugins open and read through their services' REST APIs with `DAORIS_HOST_TOKEN` and run no git; the loop
   starts each one per place with that place's origin identity's token (D242). `gh` and `az` are no declared tool (`Tools.Declared`,
-  `resources.json`); left in the web: the tools page's fixtures, stories and tests, its two `why` words and the glossary line, and the
-  driver and modules tests that still name them as sample tools (the plugin tool checks and `fixtures/tools-text.json`).
+  `resources.json`), and no web fixture, story, test or sample plugin-tool message names either as a sample tool.
 - **D178 point 6:** *Hand mine to the winner*, no row until a way to publish a branch is asked for.
 - **D47:** OIDC sign-in for people on a shared deployment, and the platform served from it; only machine keys are built.
 - **FABRIC-PERFORM1l:** the pull request's fields kept on the wire evidence (`WorkWire.cs:354`).

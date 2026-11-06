@@ -364,16 +364,16 @@ describe('the Plugins view', () => {
   // ADOSIGNIN1: the page draws a plugin's declared tools and asks nothing; Check reads them, a press opens the person's console
   // for the one check, and the tool is read again from the answer.
   describe("a plugin's tools", () => {
-    const AZ_CHECKS = [
-      { says: 'Its devops extension is added', fix: 'az extension add --name azure-devops', signIn: false, press: true },
-      { says: 'Signed in', fix: 'az login', signIn: true, press: true },
+    const SHIP_CHECKS = [
+      { says: 'Its deploy plugin is added', fix: 'ship plugin add deploy', signIn: false, press: true },
+      { says: 'Signed in', fix: 'ship login', signIn: true, press: true },
     ];
-    const DECLARED_AZ = { id: 'az', name: 'Azure CLI', for: 'Opens the pull request.', versions: '>=2.0.79', install: 'winget install -e --id Microsoft.AzureCLI', checks: AZ_CHECKS };
+    const DECLARED_SHIP = { id: 'ship', name: 'Ship CLI', for: 'Opens the release.', versions: '>=2.0.79', install: 'winget install -e --id Ship.Cli', checks: SHIP_CHECKS };
     const standing = (signedIn: boolean) => ({
-      ...DECLARED_AZ, found: true, ok: true, version: '2.70.0', sentence: 'Azure CLI 2.70.0, the system\'s.',
+      ...DECLARED_SHIP, found: true, ok: true, version: '2.70.0', sentence: 'Ship CLI 2.70.0, the system\'s.',
       checks: [
-        { ...AZ_CHECKS[0], ready: true, sentence: 'ready: Its devops extension is added.' },
-        { ...AZ_CHECKS[1], ready: signedIn, sentence: signedIn ? 'ready: Signed in.' : 'not ready: Signed in.' },
+        { ...SHIP_CHECKS[0], ready: true, sentence: 'ready: Its deploy plugin is added.' },
+        { ...SHIP_CHECKS[1], ready: signedIn, sentence: signedIn ? 'ready: Signed in.' : 'not ready: Signed in.' },
       ],
     });
 
@@ -384,7 +384,7 @@ describe('the Plugins view', () => {
     };
 
     beforeEach(() => {
-      answer([{ ...GATE, tools: [DECLARED_AZ] }, FUTURE]);
+      answer([{ ...GATE, tools: [DECLARED_SHIP] }, FUTURE]);
       window.localStorage.setItem('daoris.list.plugins.chosen', 'acme.gate');
     });
 
@@ -393,7 +393,7 @@ describe('the Plugins view', () => {
       show();
 
       const tools = await toolsRegion();
-      expect(within(tools).getByText('Azure CLI')).toBeInTheDocument();
+      expect(within(tools).getByText('Ship CLI')).toBeInTheDocument();
       expect(within(tools).queryByRole('button', { name: /^Sign in/ })).toBeNull();
       expect(calls('PLUGIN_TOOLS')).toEqual([]);
 
@@ -413,7 +413,7 @@ describe('the Plugins view', () => {
 
       await userEvent.click(await within(tools).findByRole('button', { name: 'Sign in: Signed in' }));
 
-      await waitFor(() => expect(calls('PLUGIN_TOOL_FIX')).toEqual([{ id: 'acme.gate', tool: 'az', check: 2 }]));
+      await waitFor(() => expect(calls('PLUGIN_TOOL_FIX')).toEqual([{ id: 'acme.gate', tool: 'ship', check: 2 }]));
       await waitFor(() => expect(within(tools).queryByRole('button', { name: 'Sign in: Signed in' })).toBeNull());
       expect(within(tools).getAllByText('ready')).toHaveLength(2);
     });
@@ -421,7 +421,7 @@ describe('the Plugins view', () => {
     it('says a press the driver turned down beside its check, and keeps the tool as it stood', async () => {
       routes.PLUGIN_TOOLS = ({ id }) => ({ id, tools: [standing(false)] });
       routes.PLUGIN_TOOL_FIX = ({ id, tool, check }) => ({
-        id, tool, check, ran: false, why: 'not_found', message: '`az` is not on this machine\'s PATH.', install: 'winget install -e --id Microsoft.AzureCLI',
+        id, tool, check, ran: false, why: 'not_found', message: '`ship` is not on this machine\'s PATH.', install: 'winget install -e --id Ship.Cli',
       });
       show();
       const tools = await toolsRegion();

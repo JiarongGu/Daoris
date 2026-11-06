@@ -10,7 +10,7 @@ const OFFER: OfferShown = {
   id: 'land-github', name: 'Land on GitHub', version: '0.2.0',
   description: 'Pushes a landed branch to its repository\'s origin and opens its pull request.',
   problem: null, harnesses: [], points: ['work/land'], servers: [],
-  needs: ['`gh` on the PATH, signed in to the account that pushes', 'A repository whose origin is on GitHub'],
+  needs: ['A git identity for the host, with the token that opens the pull request (Settings → Git)', 'A repository whose origin is on GitHub'],
   installed: false,
 };
 

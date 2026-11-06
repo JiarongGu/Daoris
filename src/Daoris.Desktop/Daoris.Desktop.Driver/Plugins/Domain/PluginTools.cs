@@ -128,14 +128,14 @@ public static class PluginTools
 
         if (Filled(row, "id") is not { } id)
         {
-            return PluginTool.NotRead(null, $"tool {at} in `tools` needs an `id`: a tool's name in lowercase, like `az`.");
+            return PluginTool.NotRead(null, $"tool {at} in `tools` needs an `id`: a tool's name in lowercase, like `node`.");
         }
 
         // A tool's id has a plugin id's shape, asked of its one owner (REFAC1), as the CLI's `toolDeclared` asks `isPluginId`.
         if (!PluginCatalog.IsId(id))
         {
             return PluginTool.NotRead(null,
-                $"tool {at} in `tools` has the `id` `{id}`, which is not one: lowercase letters, digits, dots and dashes, like `az`.");
+                $"tool {at} in `tools` has the `id` `{id}`, which is not one: lowercase letters, digits, dots and dashes, like `node`.");
         }
 
         if (!seen.Add(id)) return PluginTool.NotRead(id, $"tool `{id}` is declared twice in `tools`; the first is read.");
