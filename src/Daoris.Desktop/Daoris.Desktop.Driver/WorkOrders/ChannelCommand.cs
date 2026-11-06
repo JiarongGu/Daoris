@@ -213,14 +213,16 @@ public static class ChannelCommand
 
     /// <summary>
     /// One item as a line: when, who, to whom, its level where it is urgent (an ordinary or older one is never marked, as on the page),
-    /// what it answers, then the words or Daoris's coded line.
+    /// what it answers, then the words or Daoris's coded line. <paramref name="person"/> names the person's own posts as the reader sees
+    /// them; an agent outside Daoris is said so (CHANNELJOIN1).
     /// </summary>
-    public static string Line(ChannelItemView item)
+    public static string Line(ChannelItemView item, string person = "You")
     {
         var at = item.At.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
         if (item.Kind == ChannelItemView.Line) return $"{at}  Daoris: {Coded(item)}";
 
-        var who = item.Person ? "You" : string.Join(" · ", new[] { item.Repository, item.Agent }.Where(part => !string.IsNullOrEmpty(part)));
+        var who = item.Person ? person : string.Join(" · ", new[] { item.Repository, item.Agent }.Where(part => !string.IsNullOrEmpty(part)));
+        if (item.Outside) who = $"{(who.Length == 0 ? "An agent" : who)} (outside Daoris)";
         var marks = new List<string>();
         if (item.Urgent == true) marks.Add("urgent");
         if (item.Question && item.Open) marks.Add("open question");

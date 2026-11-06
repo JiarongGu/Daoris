@@ -96,12 +96,17 @@ internal sealed class PipeAdmission(InstancePipe pipe)
 
         // RPC1c: a person's press is shown to the window with every value it carries, so one the card could not show whole is not asked.
         IReadOnlyList<PipeConfirmationField>? fields = null;
+        string? placeSaid = null;
         if (@class == PipeClass.Person && !covered)
         {
             if (PipeCensus.SecretRefusal(request.Type, request.Payload) is { } secret) return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Shape, $"{Capitalized(secret)} Nothing was asked.")), null);
             var (shown, unshown) = PipeConfirmations.FieldsOf(request.Payload);
             if (unshown is not null) return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Shape, $"{Capitalized(unshown)} Nothing was asked.")), null);
             fields = shown;
+            // CHANNELJOIN1b (D244 point 10): a join from a process in an agents' job is refused before any card.
+            var (inside, said) = PipeOutsideOnly.Judge(request.Module, request.Type, pipe.StandingConfirmation.Caller, connection.Client);
+            if (inside is not null) return (IpcJson.Serialize(pipe.Refuse(request, inside, PipeOutsideOnly.InsideSentence)), null);
+            placeSaid = said;
         }
 
         var binding = new PipeBinding(
@@ -159,7 +164,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             return (null, answer);
         }
 
-        var why = judged is { Said: true } ? judged.Why : null;
+        var why = judged is { Said: true } ? judged.Why : placeSaid;
 
         // CONFIRMWAIT1a-i (the confirm-wait design §5.2): after the standing judgement, so a press it admits is never refused here, a
         // person's press whose route names no grounds is refused at once, no read made; then a place among the ten is held, told to no

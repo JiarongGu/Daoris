@@ -127,6 +127,7 @@
   "person.route.CHANNEL_POST": "post words to an ask's channel as yours",
   "person.route.CHANNEL_LINE_POST": "post words to a line of work's own channel as yours",
   "person.route.CHANNEL_FORWARD": "pass an ask's message on to a repository's session",
+  "person.route.CHANNEL_JOIN": "let an outside agent join a channel: it reads it and posts as itself, never as you, and cannot start, stop or steer any session",
   "person.route.START_CHAT": "start a conversation with your words",
   "person.route.START_HELP": "start a conversation with Ask Daoris",
   "person.route.HELP_START_FROM": "start a conversation with Ask Daoris from an earlier one",

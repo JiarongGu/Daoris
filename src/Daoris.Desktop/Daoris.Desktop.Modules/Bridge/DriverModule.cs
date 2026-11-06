@@ -428,6 +428,7 @@ public sealed class DriverModule : ModuleBase
         Domain.Of(context => new AgentsRoutes(context)),
         Domain.Of(context => new AsksRoutes(context.Loop)),
         Domain.Of(context => new AtWorkRoutes(context)),
+        Domain.Of(context => new ChannelJoinRoutes(context.Loop)),
         Domain.Of(context => new ConsoleRoutes(context.Loop, context.Actions)),
         Domain.Of(context => new ConversationRoutes(context)),
         Domain.Of(context => new DriverRoutes(context)),

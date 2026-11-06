@@ -26,7 +26,10 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | ChannelParts | `Service/Asks/ChannelParts.cs` | A line's own channel and messages to one part, kept in `channel_addressed`, never synced |
 | LineChannel | `Service/Asks/LineChannel.cs`, `GET` and `POST /api/channel/line`, the window's `CHANNEL_LINE` and `CHANNEL_LINE_POST` | The person's read of, and post on, the channel of a line on no ask held here, each message to one part with its receipt; a teammate's ask's line posts on that ask's channel |
 | TeammateAskChannel | `Service/Asks/TeammateAskChannel.cs` | A teammate's ask's channel, posted to by the person and by a session here on it, read by that session, and acknowledged by its entry as an ask's is |
-| ChannelBounds, ChannelRefusal, ChannelAcks | `Service/Asks/ChannelTerms.cs` | The bounds (4,000 chars, 10 posts, 3 urgent, 20 handed), refusal codes, acknowledgment states |
+| ChannelMembers, ChannelMemberStore | `Service/Asks/ChannelMembers.cs`, doors in `src/Daoris.Service/Daoris.Service.Http/Routes/ChannelMemberRoutes.cs` | An agent outside Daoris on one channel, a member of its own in `channel_members`, never synced: its admission, post, read and leave |
+| ChannelJoinRoutes, PipeOutsideOnly | `Modules/Bridge/Routes/ChannelJoinRoutes.cs`, `Modules/Platform/PipeOutsideOnly.cs` | The join's `CHANNEL_JOIN` press under the person's Confirm, refused `inside` before any card from an agents' job |
+| ChannelMemberVerb, ChannelMemberDoors | `Driver/WorkOrders/ChannelMemberVerb.cs`, `Driver/Service/Wire/ChannelMemberDoors.cs` | The member's forms of the terminal's channel verb (`join`, `--member`, `leave`) and their service doors |
+| ChannelBounds, ChannelRefusal, ChannelAcks | `Service/Asks/ChannelTerms.cs` | The bounds (4,000 chars, 10 posts, 3 urgent, 20 handed, 3 members a channel and 8 a machine), refusal codes, acknowledgment states |
 | ChannelTools | `Mcp/ChannelTools.cs` | `channel_post` (urgent or ordinary, `to`, `re`) and `channel_read` |
 | CallTable, ToolClasses | `Mcp/CallTable.cs`, `Mcp/ToolClasses.cs` | Which work may call which connector tool; a census holds every tool to a class |
 | SolicitedAnswers | `Service/Sessions/SolicitedAnswers.cs` | The one door for a helper's answer, a partner's and an opinion's findings, to the line's head |
@@ -87,11 +90,18 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
     to everyone on it or one repository, taken by a part at its look as theirs; a teammate's ask's line posts on that ask's channel).
     A part here on a teammate's ask is handed the mirrored messages at its look, claimed and acknowledged by its entry as on an ask held
     here, never left to its own `channel_read`. A helper and a reviewer have no channel: they neither post nor read. (from D225, D163, D155)
-11. A part posts at most 10 messages of at most 4,000 characters, and at most 3 urgent. A further urgent post is kept ordinary, and its
-    poster is told. The person has no cap. (from D188, D167)
+11. A part, and a member outside Daoris, posts at most 10 messages of at most 4,000 characters, and at most 3 urgent. A further urgent
+    post is kept ordinary, and its poster is told. The person has no cap. (from D188, D167, D244)
 12. A post may name one other part of the poster's own entry on this machine by its session. It is kept apart, never travels, and is
     for the head of that part's line: a successor inherits it, a sibling does not. Another line's part is refused `bad-part`; one on
     another machine `part-elsewhere`. (from D225)
+    An agent the person runs outside Daoris joins one channel, an ask's or a line's, as a member of its own: its own press (`ask channel
+    join <ask>` or `--line <session>`, the pipe's `CHANNEL_JOIN`) waits for the person's Confirm and is refused `inside` before any card
+    from a process in an agents' job; the Confirm presses the person's `POST /api/channel/members`. At most 3 members hold a channel and 8
+    the machine (`too-many`). A member reads and posts under its own id (`o` and seven hex) at the agent-class doors
+    `GET`/`POST /api/channel/members/{id}/messages` and leaves at `…/leave` (with the person's key, their *Remove*); its mark is its
+    record's last read. It names no part (`bad-part`); one never admitted or gone is `not-member`, its record and its messages' poster
+    kept. Each join and leave journals a `member` row of the channel's family. (from D244)
 13. Delivery is by identity. A part is handed what its entry has not acknowledged, by message id, and one part of the entry claims each
     message. The entry's mark is for display. (from D188)
 14. A running part takes the person's channel message as their words, at their level. Another session's message reaches it as Daoris's
@@ -105,7 +115,9 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 **Who a word is from**
 
 17. Who said a word is read by one rule from its marks and the door it came through: person, Daoris, supervisor, channel, helper,
-    partner, opinion or unattributed. A supplied author, a role's name or quoted text grants nothing. (from D225, D177)
+    partner, opinion or unattributed. A supplied author, a role's name or quoted text grants nothing. A member's message is an agent's
+    claim, marked outside by its poster's id wherever it is read; no session door, the connector's among them, takes a member's id.
+    (from D225, D177, D244)
 18. A claim the person passed on stays the agent's claim. Daoris's words are marked `from: daoris` and the supervisor's as the
     supervisor's; neither is ever the person's. (from D225, D188, D208)
 19. Which ask a line is on is its entry's origin: `ask:<id>`, else the publisher's origin, else `quest:<id>`; a conversation is
@@ -216,9 +228,9 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 **Tests that pin it.** Driver: `ExchangesTests`, `ChannelReachTests`, `ChannelNextStepTickTests`, `ChannelCommandTests`,
 `DrivenInboxTests`, `DaorisWordsTests`, `AnswersAloneTests`, `AnswersAloneHoldTests`, `HelperJudgeTests`, `HelperLookTests`,
 `HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `PartnerActsTests`, `PartnerLandingTests` (git half), `PartnerChatProcessTests`, `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
-`Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`. Service: `ChannelTests`, `ChannelPartsTests`, `TeammateAskChannelTests`, `ChannelSyncTests`,
+`Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`, `ChannelMemberVerbTests`. Service: `ChannelTests`, `ChannelPartsTests`, `TeammateAskChannelTests`, `ChannelSyncTests`, `ChannelMembersTests`, `ChannelMemberDoorsTests`,
 `SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, `BrainstormDeskTests`, `MeetingDeskTests`, `McpChannelToolTests`,
-`McpRoleFilterTests`, `ToolClassesTests`. Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`,
+`McpRoleFilterTests`, `ToolClassesTests`. Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`, `ChannelJoinPipeTests`,
 `DriverModuleSessionAnswersAloneTests`. Web: `sender.test.ts`, `ExchangeCard.test.tsx`, `SenderChip.test.tsx`, `Composer.test.tsx`, `AtWork*.test.tsx`,
 `ChannelSection.test.tsx`, `Pieces.test.tsx`, `TeammateAskPage.test.tsx`, `attention.test.ts`, `waitObligations.test.tsx`, `StewardLine.test.tsx`.
 
@@ -249,7 +261,10 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 - **STEER3**: measure Codex's `turn/steer` and Claude Code's stream-json input before a level uses them. **MSG1h**, **MSG1i**: next-step words on Codex and on the native door.
 - **COWORKUX1** (rows d, f, i): the terminal's `sessions helper --after --to-me` and `sessions pass`; Ask Daoris's `session` cards for the person's helper doors; the dialog's *Write a piece*, *Second opinion* and *Work alongside* doors; the glossary's *co-worker* and *lead*; row i, the lead's wait on its own partner.
 - **COAGENT1b2** (built: *Discard…*, *Hand over what it left*, the taken-in read; left: the not-taken-in verdict at the landing's own moment where the lead's tree is gone, the retention proof through tidy, clear and sync, and the partner's real-process case). The lead's own `partner_ask` has no row.
-- **CHANNELJOIN1**: an agent the owner runs outside Daoris joins a channel as a member of its own, under the person's Confirm (`docs/2026-11-06-event-channel-design.md` §5, proposed; chunks CJ-A to CJ-D).
+- **CHANNELJOIN1** (`docs/2026-11-06-event-channel-design.md` §5; built: the member in the service and its doors, the join under the
+  person's Confirm and the terminal's verb): CJ-C, *At work*'s outside agents with *Remove*, the sender chip's *outside Daoris*, the
+  card's words for the asker's standing, the glossary's *outside agent* and the look's end of a membership; CJ-D, `channel.posted`, the
+  relay's `--not-by` and the co-working skill's section. The admission keeps no confirmation id yet: the route is not handed it.
 - No row: *Send to its session* from a line's own channel.
 - **AGENTROOM1b**: `meeting_say`, so a real agent takes a meeting turn (today refused `no-message-tool`). **AGENTROOM1c**: `daoris meeting`. **AGENTROOM1d**: one account's turns one at a time across meetings. D177's floor request has no row.
 - **MEETUX1a-d**: a meeting from the window, its rounds and a brainstorm's document on their pages, a waiting meeting in *What needs you*.

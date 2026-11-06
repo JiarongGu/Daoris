@@ -111,6 +111,9 @@ public sealed record ChannelItemView(string Kind, DateTimeOffset At)
     /// <summary>For the person's read (COMMS1k): what a message to one part reached in that part's line, as the service spells it.</summary>
     public string? Receipt { get; init; }
 
+    /// <summary>Whether an agent outside Daoris posted it, a channel's member (CHANNELJOIN1): an agent's claim, never the person's.</summary>
+    public bool Outside { get; init; }
+
     /// <summary>A message with words: what reaches a session. A line, or a message the wire answered without words, is not.</summary>
     public bool IsMessage => Kind == Message && Id is { Length: > 0 } && Text is { Length: > 0 };
 }
@@ -193,6 +196,7 @@ public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<Channel
                 Part = item.Part,
                 Channel = item.Channel,
                 Receipt = item.Receipt,
+                Outside = item.Outside == true,
             };
 }
 
