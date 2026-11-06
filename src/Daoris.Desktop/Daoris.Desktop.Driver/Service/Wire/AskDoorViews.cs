@@ -236,7 +236,7 @@ public static class AskDoorViews
             : new AskAnswer(false, $"the service at {service.BaseUrl} has no ask door ({sent.Reply.Status}) — is it older than this driver?", null, null);
     }
 
-    private static string? CodeOf(string payload)
+    internal static string? CodeOf(string payload)
     {
         try
         {

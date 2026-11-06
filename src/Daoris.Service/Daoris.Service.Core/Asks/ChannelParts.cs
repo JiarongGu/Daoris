@@ -266,6 +266,22 @@ public sealed class ChannelParts(ChannelDesk desk, ChannelStore store, SessionLe
     }
 
     /// <summary>
+    /// The person's post on a line's own channel, to everyone on it or one of its repositories: their words, with no cap, kept apart from
+    /// any ask's channel and never travelling.
+    /// </summary>
+    public async Task<ChannelOutcome> PostAsPersonOnLineAsync(
+        string origin, string workspace, string? text, string? to, bool urgent, DateTimeOffset now, CancellationToken ct)
+    {
+        var judged = await JudgeAsync(origin, null, text, to, null, ct).ConfigureAwait(false);
+        if (judged.Refusal != ChannelRefusal.None) return new(judged.Refusal, null);
+        var row = new ChannelMessage(
+            NewId(), "", workspace, now, Session: null, Repository: null, Agent: null, Entry: null, judged.To, Re: null, Question: false,
+            judged.Text!) { Urgent = urgent, Channel = origin };
+        await Addressed.KeepAsync(row, int.MaxValue, ct).ConfigureAwait(false);
+        return new(ChannelRefusal.None, row);
+    }
+
+    /// <summary>
     /// What a session's own read returns: the messages for it its line has not settled, or with <paramref name="since"/> every one for it
     /// after that moment, each acknowledged read by this part before the answer reaches the agent.
     /// </summary>

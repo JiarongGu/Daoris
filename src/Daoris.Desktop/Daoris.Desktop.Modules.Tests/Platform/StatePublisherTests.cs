@@ -604,6 +604,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("STARTS", "", null)]
     [InlineData("USAGE", "", null)]
     [InlineData("CHANNEL_POST", "asks", null)]
+    [InlineData("CHANNEL_LINE_POST", "asks", null)]
     [InlineData("CHANNEL_MARK", "asks", null)]
     [InlineData("NOTICES_READ", "notices", null)]
     [InlineData("NOTICE_DISMISS", "notices", null)]

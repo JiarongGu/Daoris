@@ -176,7 +176,7 @@ items, as `addressed`, and the section draws them beneath the channel, read-only
 (`asks/TeammateAskPage.tsx`), posted to as an ask's (SESSONE2i): this machine holds no record of it, so it has no title and none
 of an ask's sections, and a teammate's person's message names them by their machine, never *You*. **A line's own channel**
 (COMMS1k), for a line on no ask held here, is read through `CHANNEL_LINE` (`useLineChannel`) and drawn as *At work*'s last words,
-a message to one part naming it. **What a
+a message to one part naming it, with the person's own composer under it (`CHANNEL_LINE_POST`, `usePostLineChannel`, `LineChannelComposer`). **What a
 message reached** (COWORK1d, D188): an urgent message names its level in a word, each message lists its receipt per repository it
 addresses, and where it waits there or never reached it, *Send to its session* (`useForwardChannel`, the driver's `CHANNEL_FORWARD`)
 sends it on, the person's own press, on the ask's page and a session's panel alike; a teammate's channel offers none.

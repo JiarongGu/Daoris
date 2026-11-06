@@ -42,6 +42,26 @@ public sealed class AddressedDoors
             : throw new DriverException($"the service answered something other than the channel of session `{session}`'s line: {sent.Reply.Payload}");
     }
 
+    /// <summary>
+    /// The person's post on the channel of the line <paramref name="session"/> is a part of, to everyone on it or one of its repositories;
+    /// the message kept, or the service's code where it refused (<c>empty</c>, <c>too-long</c>, <c>bad-to</c>, <c>no-session</c>).
+    /// </summary>
+    /// <exception cref="DriverException">The host answered neither the message nor a code.</exception>
+    public async Task<ChannelPosted> PostLineAsync(string session, string text, string? to, bool? urgent = null, CancellationToken ct = default)
+    {
+        var sent = await _service.SendAsync(new PostLineChannelMessage(session, text, to, urgent), ct).ConfigureAwait(false);
+        if (sent.Answer is { } posted)
+        {
+            return ChannelView.ItemOf(posted.Message) is { } item
+                ? new ChannelPosted(true, item, null)
+                : throw new DriverException($"the service answered something other than a posted message on session `{session}`'s line: {sent.Reply.Payload}");
+        }
+
+        return AskDoorViews.CodeOf(sent.Reply.Payload) is { Length: > 0 } code
+            ? new ChannelPosted(false, null, code)
+            : throw new DriverException($"the service would not take the post on session `{session}`'s line's channel: {sent.Reply.Payload}");
+    }
+
     /// <summary>One part's acknowledgment of the messages to it by their ids; the ids it changed, none from a host without the door.</summary>
     /// <exception cref="DriverException">The host refused the acknowledgment.</exception>
     public async Task<IReadOnlyList<string>> AcknowledgeAsync(string session, string state, IReadOnlyList<string> messages, CancellationToken ct = default)

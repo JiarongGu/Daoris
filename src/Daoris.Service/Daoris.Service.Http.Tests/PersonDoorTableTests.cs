@@ -128,6 +128,7 @@ public sealed class PersonDoorTableTests
         // WORKFLOW1e2: a quest's own kind and workflow, where no ask published it; a local host's alone.
         ("POST", "/api/quests/{id}/workflow", Person),
         ("POST", "/api/asks/{id}/channel", Person),
+        ("POST", "/api/channel/line", Person),
         ("POST", "/api/asks/{id}/channel/read", Person),
         ("POST", "/api/quests/{id}/accept", Person),
         ("POST", "/api/quests/{id}/done", Person),

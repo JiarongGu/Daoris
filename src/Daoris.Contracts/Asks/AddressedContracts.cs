@@ -30,6 +30,19 @@ public sealed record ReadLineChannel(string? Session = null) : IRoute<LineChanne
 }
 
 /// <summary>
+/// The person's post on the own channel of the line <c>Session</c> is a part of, where that line is on no ask held here: to everyone on
+/// it or to one of its repositories (<c>To</c>). Their words, so a part that takes it holds them as the person's. <c>Urgent</c> false keeps
+/// it ordinary; absent, it is their default, urgent. Answers the message kept; refused with the channel's code (<c>empty</c>,
+/// <c>too-long</c>, <c>bad-to</c>), and not found for a session with no such channel.
+/// </summary>
+public sealed record PostLineChannelMessage(string? Session = null, string? Text = null, string? To = null, bool? Urgent = null)
+    : IRoute<ChannelPostResponse>
+{
+    public static string Method => "POST";
+    public static string Path => "/api/channel/line";
+}
+
+/// <summary>
 /// One part's acknowledgment of the messages to it by their ids, as an entry's of an ask's: <c>taking</c>, <c>released</c>, <c>sent</c>,
 /// <c>taken</c>, <c>read</c> or <c>partly</c>. Answers the ids it changed.
 /// </summary>

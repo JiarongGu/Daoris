@@ -124,6 +124,7 @@
   "person.route.RETRY_QUEST": "重试一个已挂起的委托",
   "person.route.HELP_APPLY": "应用问道衍的一项提议",
   "person.route.CHANNEL_POST": "以你的名义在一个需求的频道里发言",
+  "person.route.CHANNEL_LINE_POST": "以你的名义在一条工作线自己的频道里发言",
   "person.route.CHANNEL_FORWARD": "将一个需求的消息转给某个仓库的会话",
   "person.route.START_CHAT": "用你的话开始一段对话",
   "person.route.START_HELP": "与问道衍开始一段对话",
