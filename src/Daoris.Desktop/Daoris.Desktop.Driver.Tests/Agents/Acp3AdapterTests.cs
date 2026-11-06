@@ -18,7 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class Acp3AdapterTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-acp3-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-acp3-tests", Guid.NewGuid().ToString("N")[..8]);
 
     public Acp3AdapterTests() => Directory.CreateDirectory(_home);
 

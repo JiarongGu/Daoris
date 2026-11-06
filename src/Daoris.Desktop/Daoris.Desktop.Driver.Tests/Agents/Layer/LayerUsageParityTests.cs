@@ -12,7 +12,7 @@ public sealed class LayerUsageParityTests : IDisposable
 {
     private static readonly DateTimeOffset Start = new(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-usageparity-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-usageparity-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

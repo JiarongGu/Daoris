@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.RegularExpressions;
 using Daoris.Driver;
 
@@ -18,7 +19,7 @@ public sealed class WireReadingsTests : IDisposable
     private const string Ended = """{"type":"result","subtype":"success","is_error":false,"result":"Capped at 4 per frame.","num_turns":1,"usage":{"input_tokens":2,"output_tokens":4}}""";
     private const string FailedResult = """{"type":"result","subtype":"error_during_execution","is_error":true,"result":"API Error: 500 overloaded","num_turns":1}""";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-wire-readings-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-wire-readings-" + Guid.NewGuid().ToString("N")[..8]);
 
     public WireReadingsTests() => Directory.CreateDirectory(_root);
 

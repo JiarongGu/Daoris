@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Over the real client and planner with the service's doors and each start's run standing in, in-process.</remarks>
 public sealed class LookWaitTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-lookwait-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-lookwait-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

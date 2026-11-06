@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HeldWordsRestartTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-held-restart-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-held-restart-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly CancellationTokenSource _closing = new(Poll.Patience);
 

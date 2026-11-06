@@ -29,7 +29,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         + $"Oct 3, 4pm ({Zone.Id})";
 
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-limit-hold-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-limit-hold-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

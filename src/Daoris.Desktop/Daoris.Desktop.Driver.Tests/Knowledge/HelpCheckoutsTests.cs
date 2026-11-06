@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HelpCheckoutsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-checkouts-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-checkouts-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpCheckoutsTests()
     {

@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class SessionRequestChangeTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-request-change-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-request-change-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly FakeChangeSource _source = new();
 

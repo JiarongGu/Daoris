@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Files only: the suite's fast half. The hook as node runs it is <see cref="LineageHookProcessTests"/>.</remarks>
 public sealed class ChildLineageTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-lineage-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-lineage-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ChildLineageTests() => Directory.CreateDirectory(_home);
 

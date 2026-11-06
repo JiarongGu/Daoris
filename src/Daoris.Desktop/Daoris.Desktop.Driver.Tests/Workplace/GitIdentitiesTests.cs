@@ -19,7 +19,7 @@ public sealed class GitIdentitiesTests : IDisposable
     private const string Rsa2048 = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrLoBUZ4zqlxuiTSS7RGAcd7HirmyoCTJ+vOIuZs9oHlhANUeDot0zHgl1L/KZhepn3xz2nkyr6CYnwwC7UV2+xgxJ+hRXulU5giikQLiwIjamyDscjEXgGHl4SWGHgpjlVM3eK7+u4ye1DAjTlrtO/2Mr7Nlg58F61dyW0SchS+Cq4XUQnVTvG/vr2VEzR8gtUXc0EnIkKQd7Wawn2sZtd7T9Htrg2kxjgkY0qakM+WuDNSVaPVJRw2g1Xl6nKy04uw6Z4+09HcuQSOHbqYwpu7t+HuFOiKoPp9nPXNfNnnrQxl9ujqvkBJFXc5GryC249zgsIWjkPYAIH5G4pOup r";
     private const string RsaPrint = "SHA256:+R35vyuPICO43oC7ZYpmrzNtuMj95cf1SWYlXyA8iZQ";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-git-identities-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-git-identities-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly Func<string, IReadOnlyList<string>, string, Task<GitToolRun>> _runner = GitIdentityActs.Runner;
 

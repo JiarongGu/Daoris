@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class ToolInstallTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-toolinstall-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-toolinstall-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ToolInstallTests() => Directory.CreateDirectory(_root);
 

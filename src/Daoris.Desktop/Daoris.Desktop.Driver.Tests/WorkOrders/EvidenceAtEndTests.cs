@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>A service and git standing in, in process: the fast half (MOD8).</remarks>
 public sealed class EvidenceAtEndTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-evidence-end-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-evidence-end-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Tree => Path.Combine(_root, "tree");
 

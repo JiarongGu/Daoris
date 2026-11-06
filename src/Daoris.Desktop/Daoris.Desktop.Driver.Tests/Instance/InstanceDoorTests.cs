@@ -14,7 +14,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     /// <summary>A press the census opens, as a verb's would be: the trees verbs' are all the person's (D171's RPC1a note).</summary>
     private static readonly InstanceRoute Open = new("TEST.PRESS", "MOVE", RouteClass.Open);
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-instance-door-tests", Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-instance-door-tests", Guid.NewGuid().ToString("N")[..8]);
     private readonly StringWriter _out = new();
     private readonly StringWriter _error = new();
     private string _home = "";

@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -10,7 +11,7 @@ namespace Daoris.Driver.Tests;
 /// </summary>
 public abstract class HelpProposalsFixture : IDisposable
 {
-    protected readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-plans-" + Guid.NewGuid().ToString("N")[..8]);
+    protected readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-plans-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly HashSet<string> _scratch = [];
 

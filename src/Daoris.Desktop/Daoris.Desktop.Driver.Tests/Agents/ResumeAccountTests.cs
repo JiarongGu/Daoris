@@ -356,7 +356,7 @@ public sealed class ResumeAccountTests : IDisposable
 
     private static readonly DateTimeOffset Seen = new(2026, 10, 3, 15, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-resume-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-resume-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ResumeAccountTests()
     {

@@ -33,7 +33,7 @@ public sealed class AccountCoolingTests : IDisposable
     private const string Nowhere = "daoris-tool4d-no-such-command";
 
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-cooling-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-cooling-" + Guid.NewGuid().ToString("N")[..8]);
 
     private DateTimeOffset _now = Seen;
 

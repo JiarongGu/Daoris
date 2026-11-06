@@ -63,7 +63,7 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
             """), DateTimeOffset.UtcNow);
     }
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-runtimeloop-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-runtimeloop-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

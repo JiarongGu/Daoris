@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class AgentStartsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-agent-starts-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-agent-starts-" + Guid.NewGuid().ToString("N")[..8]);
 
     public AgentStartsTests() => Directory.CreateDirectory(_home);
 
@@ -34,7 +34,7 @@ public sealed class AgentStartsTests : IDisposable
     {
         var info = new ProcessStartInfo(file ?? Program)
         {
-            WorkingDirectory = Path.GetTempPath(),
+            WorkingDirectory = TestHomes.Root,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             CreateNoWindow = true,
@@ -64,7 +64,7 @@ public sealed class AgentStartsTests : IDisposable
         Assert.Null(start.Why);
         Assert.Equal(Launcher, info.FileName);
         Assert.Equal(PieceLauncher.Arguments([jobs.Name], Program, ["/d"]), info.ArgumentList);
-        Assert.Equal((Path.GetTempPath(), true, true, true), (info.WorkingDirectory, info.RedirectStandardInput, info.RedirectStandardOutput, info.CreateNoWindow));
+        Assert.Equal((TestHomes.Root, true, true, true), (info.WorkingDirectory, info.RedirectStandardInput, info.RedirectStandardOutput, info.CreateNoWindow));
         Assert.Equal("kept", info.Environment["AGENT_WORD"]);
         // Made empty at the first start that needed it, and held: the launcher opens it by name.
         Assert.True(ProcessJob.Exists(jobs.Name));

@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class ProviderRefusalTickTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-api-refusal-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-api-refusal-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

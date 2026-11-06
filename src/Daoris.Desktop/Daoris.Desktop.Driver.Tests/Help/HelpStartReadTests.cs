@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>No process: the start gate's stand-in answers the agent's start (PROCSTART2), and the service is a stand-in.</remarks>
 public sealed class HelpStartReadTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-read-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-read-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpStartReadTests() => Directory.CreateDirectory(_home);
 

@@ -23,7 +23,7 @@ public sealed class HelperProcessTests : IDisposable
     private const string AskId = "a1b2c3d4";
 
     private readonly GitTree _repository = new("helper-pass");
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-helper-pass-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-helper-pass-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly string _tip;
 
     public HelperProcessTests()

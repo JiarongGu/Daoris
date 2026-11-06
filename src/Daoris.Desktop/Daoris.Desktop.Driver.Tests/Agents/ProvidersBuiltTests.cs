@@ -186,8 +186,8 @@ public sealed class ProvidersBuiltTests
     public void A_stand_in_door_answers_the_readers_with_no_model_behind_it(string name)
     {
         var door = ProviderRegistry.Built().Door(name);
-        var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
-        var chat = SpawnRequests.Chat("repo", Path.GetTempPath(), "http://svc", null);
+        var target = new SessionTarget("q-1", "title", "body", "asker", "repo", TestHomes.Root, "http://svc");
+        var chat = SpawnRequests.Chat("repo", TestHomes.Root, "http://svc", null);
         IReadOnlyList<string> command = ["node", "agent.mjs", "--flag"];
 
         Assert.Equal(name, door.Id.Value);
@@ -229,7 +229,7 @@ public sealed class ProvidersBuiltTests
     [Fact]
     public void The_pipe_stand_in_is_read_by_the_plain_capture_and_the_protocol_one_keeps_its_stdin_open()
     {
-        var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
+        var target = new SessionTarget("q-1", "title", "body", "asker", "repo", TestHomes.Root, "http://svc");
         IReadOnlyList<string> command = ["node", "agent.mjs"];
 
         Assert.False(ProviderRegistry.Built().Start("stub", target, command).RedirectStandardInput);

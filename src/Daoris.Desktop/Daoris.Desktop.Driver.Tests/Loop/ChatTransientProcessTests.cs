@@ -23,7 +23,7 @@ public sealed class ChatTransientProcessTests : IDisposable
 {
     private const string Limit = "Internal error: You've hit your weekly limit";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-chat-transient-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-chat-transient-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _root;
 

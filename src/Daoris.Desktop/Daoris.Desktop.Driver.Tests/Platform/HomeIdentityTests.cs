@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HomeIdentityTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-home-id-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-home-id-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

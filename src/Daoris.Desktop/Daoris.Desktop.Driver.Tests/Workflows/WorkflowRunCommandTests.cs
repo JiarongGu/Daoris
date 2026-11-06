@@ -20,7 +20,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
 
     private const string Commit = "0123456789abcdef0123456789abcdef01234567";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-workflow-run-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-workflow-run-" + Guid.NewGuid().ToString("N")[..8]);
 
     public WorkflowRunCommandTests() => Directory.CreateDirectory(_home);
 

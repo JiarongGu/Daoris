@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class SessionsHelperTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-sessions-helper-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-sessions-helper-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SessionsHelperTests() => Directory.CreateDirectory(_home);
 

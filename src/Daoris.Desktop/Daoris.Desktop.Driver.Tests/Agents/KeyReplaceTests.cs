@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class KeyReplaceTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-key-replace-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-key-replace-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

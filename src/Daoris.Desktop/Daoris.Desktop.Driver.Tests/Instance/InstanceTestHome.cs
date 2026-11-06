@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 internal sealed class InstanceTestHome : IAsyncDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-open-verbs-tests", Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-open-verbs-tests", Guid.NewGuid().ToString("N")[..8]);
     private readonly string _app;
     private RunningAddress? _running;
 

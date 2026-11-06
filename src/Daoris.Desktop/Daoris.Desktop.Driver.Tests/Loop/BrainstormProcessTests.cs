@@ -23,7 +23,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class BrainstormProcessTests : IDisposable
 {
     private readonly GitTree _repository = new("brainstorm-pass");
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-brainstorm-pass-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-brainstorm-pass-" + Guid.NewGuid().ToString("N")[..8]);
 
     /// <summary>The environment the driver is handed (ENVSEAM1): this run's scratch, and nothing of this process's.</summary>
     private readonly Dictionary<string, string> _variables = new(StringComparer.Ordinal);

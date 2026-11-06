@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Nothing here starts a program: an install is empty files and folders in a temporary directory.</remarks>
 public sealed class GitForWindowsTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-git-for-windows-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-git-for-windows-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Top => Path.Combine(_root, "Git");
 

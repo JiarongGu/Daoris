@@ -19,7 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class HandOverProcessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-handover-proc-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-handover-proc-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _root;
 

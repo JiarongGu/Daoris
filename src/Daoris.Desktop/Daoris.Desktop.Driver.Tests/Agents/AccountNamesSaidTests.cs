@@ -32,7 +32,7 @@ public sealed class AccountNamesSaidTests : IDisposable
     private static readonly IReadOnlyDictionary<string, string> Names =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { [Work] = "work", [Personal] = "personal" };
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-names-said-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-names-said-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

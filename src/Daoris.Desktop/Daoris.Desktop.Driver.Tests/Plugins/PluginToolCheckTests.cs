@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class PluginToolCheckTests : IDisposable
 {
-    private readonly string _scratch = Path.Combine(Path.GetTempPath(), "daoris-tool-check-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _scratch = Path.Combine(TestHomes.Root, "daoris-tool-check-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PluginToolCheckTests()
     {

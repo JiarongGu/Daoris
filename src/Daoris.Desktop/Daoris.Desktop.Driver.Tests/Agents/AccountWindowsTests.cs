@@ -18,7 +18,7 @@ public sealed class AccountWindowsTests : IDisposable
     /// <summary>Observation 4's weekly reset, read and margined: 3 October, 16:02 in the test's zone.</summary>
     private static readonly DateTimeOffset Reset = new(2026, 10, 3, 16, 2, 0, TimeSpan.FromMinutes(345));
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-windows-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-windows-" + Guid.NewGuid().ToString("N")[..8]);
 
     public AccountWindowsTests() => Directory.CreateDirectory(_home);
 

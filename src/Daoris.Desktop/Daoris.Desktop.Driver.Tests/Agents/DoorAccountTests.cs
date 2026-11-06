@@ -21,7 +21,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class DoorAccountTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-door-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-door-tests", Guid.NewGuid().ToString("N")[..8]);
 
     private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 

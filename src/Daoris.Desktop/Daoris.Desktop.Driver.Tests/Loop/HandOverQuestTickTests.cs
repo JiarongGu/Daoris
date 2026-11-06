@@ -18,7 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class HandOverQuestTickTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-hand-quest-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-hand-quest-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

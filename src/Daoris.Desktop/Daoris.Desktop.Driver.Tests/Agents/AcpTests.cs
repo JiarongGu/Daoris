@@ -950,7 +950,7 @@ public sealed class AcpTests
     [Fact]
     public async Task A_call_the_driver_refused_is_one_ask_in_the_machine_log()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-acp-asks-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-acp-asks-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(home);
         try
         {
@@ -2309,7 +2309,7 @@ public sealed class AcpTests
     [Fact]
     public async Task A_background_task_streams_its_output_file_and_ends_with_its_last_state()
     {
-        var file = Path.Combine(Path.GetTempPath(), $"daoris-task-{Guid.NewGuid():N}.output");
+        var file = Path.Combine(TestHomes.Root, $"daoris-task-{Guid.NewGuid():N}.output");
         File.WriteAllText(file, "bg tick 1\nbg tick 2\n\n[exited with code 0]\n");
         try
         {

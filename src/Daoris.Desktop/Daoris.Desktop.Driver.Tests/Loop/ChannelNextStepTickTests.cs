@@ -23,7 +23,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
 {
     private const string Words = "The budget lives in level.json, not in the manifest.";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-chan-tick-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-chan-tick-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

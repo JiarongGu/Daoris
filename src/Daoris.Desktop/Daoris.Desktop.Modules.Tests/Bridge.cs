@@ -27,8 +27,7 @@ public abstract class Bridge : IDisposable
 
     protected Bridge(string? repositoryFixture = null)
     {
-        Home = Path.Combine(repositoryFixture is null ? Path.Combine(Path.GetTempPath(), "daoris-modules-tests")
-            : Path.Combine(GitSeed.RepoRoot(), "_fixtures", repositoryFixture), Guid.NewGuid().ToString("N")[..8]);
+        Home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", repositoryFixture ?? "bridge-homes", Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(Home);
 
         // Set BEFORE any module or loop exists — see the remarks above. The home first (D63): every

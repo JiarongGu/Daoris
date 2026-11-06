@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class HarnessSettingsTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-harness-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-harness-tests", Guid.NewGuid().ToString("N")[..8]);
 
     private string Path_ => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
@@ -345,7 +345,7 @@ public sealed class HarnessSettingsTests : IDisposable
 public sealed class HarnessProbeTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-probe-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-probe-tests", Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {
@@ -749,7 +749,7 @@ public sealed class HarnessProbeTests : IDisposable
 public sealed class HarnessSelectionTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-selection-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-selection-tests", Guid.NewGuid().ToString("N")[..8]);
 
     private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 

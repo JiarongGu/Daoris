@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class LineageHookProcessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-lineage-hook-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-lineage-hook-" + Guid.NewGuid().ToString("N")[..8]);
 
     public LineageHookProcessTests() => Directory.CreateDirectory(_home);
 

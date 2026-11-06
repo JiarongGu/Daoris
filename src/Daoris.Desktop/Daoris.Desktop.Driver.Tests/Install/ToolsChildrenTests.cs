@@ -20,7 +20,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class ToolsChildrenTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-tools-children-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-tools-children-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Home => Path.Combine(_root, "data");
 

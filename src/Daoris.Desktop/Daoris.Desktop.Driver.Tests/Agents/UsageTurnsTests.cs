@@ -24,7 +24,7 @@ public sealed class UsageTurnsTests : IDisposable
 
     private static readonly TurnTokens Total = new(Input: 4, Output: 88, CacheRead: 48666, CacheWrite: 20035);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-turns-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-turns-" + Guid.NewGuid().ToString("N")[..8]);
 
     public UsageTurnsTests() => Directory.CreateDirectory(_home);
 

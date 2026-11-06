@@ -16,7 +16,7 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
     private const string Declaring = """{ "gates": [], "integration": { "by": "daoris", "scratch": ["obj/**"] } }""";
     private const string Without = """{ "gates": [] }""";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-integration-owed-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-integration-owed-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Root => Path.Combine(_home, "engine");
 

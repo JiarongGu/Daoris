@@ -14,7 +14,7 @@ public sealed class UsageProbeRosterTests : IDisposable
 {
     private static readonly DateTimeOffset Start = new(2026, 10, 7, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-usageprobe-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-usageprobe-" + Guid.NewGuid().ToString("N")[..8]);
 
     private DateTimeOffset _now = Start;
 

@@ -33,7 +33,7 @@ public sealed class ReviewerChoiceTests : IDisposable
 
     private static readonly DateTimeOffset Until = new(2026, 10, 10, 16, 2, 0, TimeSpan.FromMinutes(345));
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-reviewer-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-reviewer-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ReviewerChoiceTests()
     {

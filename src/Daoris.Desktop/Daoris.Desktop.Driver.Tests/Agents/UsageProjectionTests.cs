@@ -11,7 +11,7 @@ public sealed class UsageProjectionTests : IDisposable
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 19, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-projection-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-projection-" + Guid.NewGuid().ToString("N")[..8]);
 
     public UsageProjectionTests() => Directory.CreateDirectory(_home);
 

@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -11,7 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class MainWindowsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-mainwindows2-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-mainwindows2-" + Guid.NewGuid().ToString("N")[..8]);
     private int _ended;
 
     public MainWindowsTests() => Directory.CreateDirectory(_home);

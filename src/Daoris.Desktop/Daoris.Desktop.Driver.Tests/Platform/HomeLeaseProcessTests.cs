@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class HomeLeaseProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-driver-lock-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-driver-lock-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string LeaseFile => DaorisHome.Entry(_home, HomeEntry.HomeLease);
 

@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// moment, and the service is a stand-in.</remarks>
 public sealed class HelpWiredTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-wired-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-wired-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpWiredTests() => Directory.CreateDirectory(_home);
 

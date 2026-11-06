@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -9,7 +10,7 @@ namespace Daoris.Driver.Tests;
 /// </summary>
 public sealed class HelpAccessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-access-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-access-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpAccessTests() => Directory.CreateDirectory(_home);
 

@@ -18,7 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class AccountNamesTwinTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-names-twin-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-names-twin-" + Guid.NewGuid().ToString("N")[..8]);
 
     public AccountNamesTwinTests() => Directory.CreateDirectory(_home);
 

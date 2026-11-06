@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Collection(Alone.Name)]
 public sealed class GitLongPathsProcessTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-treelong-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-treelong-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly Dictionary<string, string?> _was = [];
 

@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>The holder here is this test's own process, holding a file open: nothing is started.</remarks>
 public sealed class HeldFilesTests : IDisposable
 {
-    private readonly string _folder = Path.Combine(Path.GetTempPath(), "daoris-held-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _folder = Path.Combine(TestHomes.Root, "daoris-held-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HeldFilesTests()
     {

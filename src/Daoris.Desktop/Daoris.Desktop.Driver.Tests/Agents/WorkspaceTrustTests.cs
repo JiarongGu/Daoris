@@ -25,7 +25,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class WorkspaceTrustTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-trust-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-trust-" + Guid.NewGuid().ToString("N")[..8]);
 
     public WorkspaceTrustTests() => Directory.CreateDirectory(_home);
 

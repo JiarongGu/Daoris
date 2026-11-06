@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -28,7 +29,7 @@ public sealed class HelpRoomLandingTests
     [Fact]
     public void The_room_is_told_which_installed_plugins_land_work()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-help-plugins-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-help-plugins-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             void Install(string id, string points)

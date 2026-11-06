@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Microsoft.Extensions.Logging;
 
@@ -10,7 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class MachineLogProviderTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-logprov-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-logprov-" + Guid.NewGuid().ToString("N")[..8]);
 
     public MachineLogProviderTests() => Directory.CreateDirectory(_home);
 

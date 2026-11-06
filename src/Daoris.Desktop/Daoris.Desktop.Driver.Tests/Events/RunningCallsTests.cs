@@ -12,7 +12,7 @@ public sealed class RunningCallsTests : IDisposable
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 19, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-calls-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-calls-" + Guid.NewGuid().ToString("N")[..8]);
 
     public RunningCallsTests() => Directory.CreateDirectory(_home);
 

@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
@@ -30,7 +31,7 @@ public sealed class DesktopPageTests
     [Fact]
     public void The_bundle_is_the_first_wwwroot_holding_a_page()
     {
-        var root = Path.Combine(Path.GetTempPath(), "daoris-bundle-" + Guid.NewGuid().ToString("N")[..8]);
+        var root = Path.Combine(TestHomes.Root, "daoris-bundle-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             // A workspace build: the host runs from bin, and its page is the project's, three folders up.

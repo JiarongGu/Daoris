@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -11,7 +12,7 @@ namespace Daoris.Driver.Tests;
 /// <remarks>No process and no git: the fast half.</remarks>
 public sealed class HelpCircleTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-circle-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-circle-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpCircleTests() => Directory.CreateDirectory(_home);
 

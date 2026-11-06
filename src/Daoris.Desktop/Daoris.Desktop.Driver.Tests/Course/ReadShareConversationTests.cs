@@ -12,7 +12,7 @@ public sealed class ReadShareConversationTests : IDisposable
 {
     private static readonly DateTimeOffset At = new(2026, 10, 23, 9, 12, 30, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-readshare-conversations-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-readshare-conversations-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

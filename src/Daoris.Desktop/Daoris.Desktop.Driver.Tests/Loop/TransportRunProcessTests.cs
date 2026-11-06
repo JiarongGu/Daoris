@@ -52,7 +52,7 @@ public sealed class TransportRunProcessTests : IDisposable
         }
         """;
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-transport-run-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-transport-run-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly ServiceClient _service = new("http://127.0.0.1:9", null);
 

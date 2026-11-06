@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class TreeLockTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-tree-lock-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-tree-lock-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _engine;
 

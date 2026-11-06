@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text;
 using Daoris.Driver;
 using Shenora.Core.Shell;
@@ -15,7 +16,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class KeptSchemeTests : IDisposable
 {
     private readonly string _folder = Path.Combine(
-        Path.GetTempPath(), "daoris-themestart1-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-themestart1-" + Guid.NewGuid().ToString("N")[..8]);
 
     public KeptSchemeTests() => Directory.CreateDirectory(_folder);
 

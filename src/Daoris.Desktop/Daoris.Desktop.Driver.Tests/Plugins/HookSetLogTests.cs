@@ -20,7 +20,7 @@ public sealed class HookSetLogTests : IDisposable
     private const string Words = "SECRET-WORDS";
 
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-hooklog-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-hooklog-" + Guid.NewGuid().ToString("N")[..8]);
 
     private DateTimeOffset _now = new(2026, 10, 1, 9, 12, 3, TimeSpan.Zero);
 

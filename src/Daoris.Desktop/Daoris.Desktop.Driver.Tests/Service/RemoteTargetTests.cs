@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class RemoteTargetTests : IDisposable
 {
     private readonly string _dir = Path.Combine(
-        Path.GetTempPath(), "daoris-remote-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-remote-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string ConfigPath => Path.Combine(_dir, "remotes.json");
 

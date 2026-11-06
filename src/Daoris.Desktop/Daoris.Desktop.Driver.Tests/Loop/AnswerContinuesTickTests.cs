@@ -19,7 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class AnswerContinuesTickTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-answer-tick-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-answer-tick-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

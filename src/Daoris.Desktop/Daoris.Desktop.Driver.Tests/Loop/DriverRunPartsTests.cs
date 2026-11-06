@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class DriverRunPartsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-run-parts-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-run-parts-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

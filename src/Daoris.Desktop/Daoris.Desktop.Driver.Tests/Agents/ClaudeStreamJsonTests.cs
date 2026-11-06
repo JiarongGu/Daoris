@@ -456,7 +456,7 @@ public sealed class ClaudeStreamJsonTests
     [Fact]
     public async Task The_capture_turns_a_denial_into_one_ask_in_the_machine_log()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-stream-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-stream-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(home);
         try
         {
@@ -507,7 +507,7 @@ public sealed class ClaudeStreamJsonTests
         Assert.Null(new ClaudeStreamJson().Read("""{"type":"rate_limit_event","rate_limit_info":"allowed"}""").Limits);
         Assert.Null(new ClaudeStreamJson().Read(Init).Limits);
 
-        var home = Path.Combine(Path.GetTempPath(), "daoris-stream-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-stream-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(home);
         try
         {
@@ -569,7 +569,7 @@ public sealed class ClaudeStreamJsonTests
     [Fact]
     public async Task The_capture_keeps_a_readable_transcript_and_the_conversation_beside_it()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-stream-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-stream-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(home);
         try
         {

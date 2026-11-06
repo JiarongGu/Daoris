@@ -12,7 +12,7 @@ public sealed class RegistrationFollowLoopTests : IDisposable
 {
     private static readonly TimeSpan Bound = Poll.Patience;
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-follow-loop-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-follow-loop-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

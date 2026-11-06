@@ -20,7 +20,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class WorkPausingTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-pause-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-pause-" + Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly DateTimeOffset Now = new(2026, 10, 3, 14, 2, 11, TimeSpan.Zero);
 

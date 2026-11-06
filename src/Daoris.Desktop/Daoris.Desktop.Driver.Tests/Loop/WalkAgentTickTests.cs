@@ -27,7 +27,7 @@ public sealed class WalkAgentTickTests : IDisposable
     /// <summary>The reset the stand-in's limit sentence names: 3 October, 16:02 in the test's zone.</summary>
     private static readonly DateTimeOffset Until = new(2026, 10, 3, 16, 2, 0, TimeSpan.FromMinutes(345));
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-walk-agent-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-walk-agent-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

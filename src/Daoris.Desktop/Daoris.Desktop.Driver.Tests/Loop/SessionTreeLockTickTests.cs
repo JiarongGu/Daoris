@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class SessionTreeLockTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-tree-lock-tick-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-tree-lock-tick-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

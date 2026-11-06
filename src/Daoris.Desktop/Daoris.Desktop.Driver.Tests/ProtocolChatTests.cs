@@ -20,7 +20,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class ProtocolChatTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-acp-chat-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-acp-chat-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ProtocolChatTests() => Directory.CreateDirectory(Path.Combine(_home, "engine"));
 

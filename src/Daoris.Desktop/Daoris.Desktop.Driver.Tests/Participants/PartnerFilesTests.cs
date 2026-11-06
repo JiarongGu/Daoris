@@ -11,7 +11,7 @@ public sealed class PartnerFilesTests : IDisposable
 {
     private static readonly DateTimeOffset At = new(2026, 10, 22, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-partner-files-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-partner-files-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PartnerFilesTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Partners));
 

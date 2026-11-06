@@ -18,7 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class ChatGoesOnProcessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-chat-goes-on-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-chat-goes-on-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _root;
 

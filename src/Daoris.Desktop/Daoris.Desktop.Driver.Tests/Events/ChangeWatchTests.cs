@@ -15,7 +15,7 @@ public sealed class ChangeWatchTests : IDisposable
 
     private static readonly TimeSpan Deadline = TimeSpan.FromSeconds(3);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-change-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-change-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly FakeChangeSource _source = new();
 

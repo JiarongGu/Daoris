@@ -17,7 +17,7 @@ public sealed class SessionBranchDiscardTests : IDisposable
 {
     private const string Branch = "daoris/s-1a2b3c4d";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-branch-discard-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-branch-discard-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {
