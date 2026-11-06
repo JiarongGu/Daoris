@@ -99,7 +99,7 @@ public static class OpenRoutes
         ("git review <session>", null,
             "alone: its `--time` counts and times the git this process starts itself (GITAPP1a-i), which a route's answer cannot carry; SESSION_DIFF answers the page's shape only"),
         ("workflow", null,
-            "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run; `workflow skip` and `stop` are the person's press (WORKFLOW_NODE)"),
+            "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run; `workflow skip` and `stop` are the person's press (WORKFLOW_NODE), and `workflow fix` is WORK_HELD's"),
         ("plugins show <id>", null, "alone: its words name the plugin's folders on this machine, which PLUGIN's page answers apart, and no said line carries"),
         ("plugins activity <id>", null, "alone: a read of the machine log this process reads itself; with no log its words name the log's folder"),
         ("plugins try <folder|id>", null, "alone: a trial starts the plugin as this terminal's own child, and its words name the folder it tried"),
@@ -276,6 +276,12 @@ public static class PersonPresses
     /// </summary>
     public static InstanceRoute WorkflowNode { get; } = Person("WORKFLOW_NODE");
 
+    /// <summary>
+    /// <c>workflow fix &lt;run&gt; [&lt;node&gt;]</c> (FABRIC-PIPELINE1): the window's <i>Ask for a fix…</i> on a failed verification, the person's
+    /// word <c>ask-fix</c> on its held attempt, which publishes an ask and writes nothing on the record.
+    /// </summary>
+    public static InstanceRoute WorkHeld { get; } = Person("WORK_HELD");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -320,6 +326,7 @@ public static class PersonPresses
         ("workflow done <run> <node> [\"…\"]", WorkflowNode),
         ("workflow approve <run> <node> [\"…\"]", WorkflowNode),
         ("workflow reject <run> <node> [\"…\"]", WorkflowNode),
+        ("workflow fix <run> [<node>]", WorkHeld),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

@@ -209,7 +209,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the held row as the person's and leaves the verdict failed. *Ask for a fix…* on a failure publishes one ask per failed gate to the
     repository (Daoris's fixed words naming the line, gate and run; the gate's last 256 KiB as the ask's file; the kind the check's
     `ask` option names), found again by its words so a restart makes none twice, and a later failure of the same gate goes to the open
-    ask's channel; a standing `failed: ask` is not built. A check with `reach: paths` runs only the gates the batch's changed paths
+    ask's channel; the terminal's `daoris workflow fix <run> [<node>]` is the same press (`WORK_HELD`'s `ask-fix`, answering its
+    `said`), and `work held` lists a failed check's words without `ask-fix` and names that verb beside them; a standing `failed: ask`
+    is not built. A check with `reach: paths` runs only the gates the batch's changed paths
     reach (a gate's optional `paths` in the accepted declaration; none reaches every change) and every gate whose newest evidence on
     the line is not a pass, and names the rest as *kept* in its result; a batch with no base runs them all. A person's verification of a branch or a commit (`daoris gate verify`, *Verify…*) is a run
     of its own under the accepted gates that the batching never counts. A check's outcome is recorded on `run:<run>` under the `gates`

@@ -164,6 +164,12 @@ internal static class HelpDoorRowsActs
             "Sessions → the session's *Workflow* view, *Done…*, *Approve…* or *Reject…* under the step; or *What needs you*",
             "`daoris workflow done <run> <node> [\"…\"]`, `daoris workflow approve <run> <node> [\"…\"]`, `daoris workflow reject <run> <node> [\"…\"]`",
             new HelpDoorAsk.Never("it is yours alone")),
+        // The person's ask for a fix of a failed verification. Never proposed: the ask is published in the person's name.
+        new("ask for a fix of a failed verification's gate: one ask for the gate with its log, which the kind the check names routes into "
+            + "the development pipeline; asking again finds the ask made",
+            "What needs you → the failed verification, *Ask for a fix…*",
+            "`daoris workflow fix <run> [<node>]`",
+            new HelpDoorAsk.Never("it is yours alone")),
         // The person's presses at the second opinion's gate, the terminal's `daoris session opinion` and the screen's. None is
         // proposed: a pass spends an account at the person's choice and a stop is theirs, and going on, or reading it themselves,
         // is their judgement.

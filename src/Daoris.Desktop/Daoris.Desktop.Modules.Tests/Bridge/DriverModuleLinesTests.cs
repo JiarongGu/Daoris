@@ -251,6 +251,26 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// The terminal's <c>workflow fix</c> is the window's <i>Ask for a fix…</i> (FABRIC-PIPELINE1): asked for its words it is answered the
+    /// verb's own line and exit code, a run the home keeps none of refused in the same sentence the window's press is told.
+    /// </summary>
+    [Fact]
+    public async Task Ask_fix_asked_for_its_words_answers_the_verb_s_line_and_a_refusal_for_a_run_that_is_not_kept()
+    {
+        var module = await ModuleOverAsync(new DiscardService(root: Home));
+        var pressed = new { unit = "run:v-00000000000000aa", node = "verify", attempt = 1, resolution = "ask-fix" };
+
+        var said = await AnswerAsync(module, "WORK_HELD", new { pressed.unit, pressed.node, pressed.attempt, pressed.resolution, said = true });
+        var window = await AnswerAsync(module, "WORK_HELD", pressed);
+
+        var lines = said.GetProperty("said").GetProperty("out").EnumerateArray().Select(each => each.GetString()).ToArray();
+        Assert.Equal(["workflow: that is not a failed verification held for you"], lines);
+        Assert.Equal(1, said.GetProperty("said").GetProperty("code").GetInt32());
+        Assert.Equal("not-asked", window.GetProperty("refused").GetString());
+        Assert.Equal("that is not a failed verification held for you", window.GetProperty("message").GetString());
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1q: each held attempt carries, additively, the words the person may say of it: a plugin's three as they were, and on a
     /// held close its recoveries and its stop, never a plugin's word, so the page offers a close only what the close takes.
     /// </summary>

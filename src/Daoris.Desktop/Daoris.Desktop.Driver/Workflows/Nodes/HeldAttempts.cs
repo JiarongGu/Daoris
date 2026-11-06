@@ -155,13 +155,21 @@ public static class HeldAttempts
     {
         unreadable ??= [];
         if (held.Count == 0 && unreadable.Count == 0) return ["work: no attempt is held for you."];
-        return [.. held.SelectMany(each => new[]
+        return [.. held.SelectMany(Of), .. unreadable.Select(each => $"work: {UnreadableSaid(each)}.")];
+
+        // `ask-fix` is not a word of this verb: it publishes an ask and records nothing, so its own verb is named beside the words.
+        static IEnumerable<string> Of(HeldAttempt each)
         {
-            $"{each.Unit}  {each.Node} (attempt {each.Attempt}, {each.Step}, node {each.NodeState}): {(each.Failed ? "failed" : "held")}, {WhySaid(each)}.",
-            each.Resolution is { } word
-                ? $"  your word `{word}` is recorded{(each.ResolvedAt is { } at ? $" ({Moments.Write(at)})" : "")}, and applied at the next look."
-                : $"  say: daoris work held {each.Unit} {each.Node} {each.Attempt} {string.Join('|', each.Words)}",
-        }), .. unreadable.Select(each => $"work: {UnreadableSaid(each)}.")];
+            yield return $"{each.Unit}  {each.Node} (attempt {each.Attempt}, {each.Step}, node {each.NodeState}): {(each.Failed ? "failed" : "held")}, {WhySaid(each)}.";
+            if (each.Resolution is { } word)
+            {
+                yield return $"  your word `{word}` is recorded{(each.ResolvedAt is { } at ? $" ({Moments.Write(at)})" : "")}, and applied at the next look.";
+                yield break;
+            }
+
+            yield return $"  say: daoris work held {each.Unit} {each.Node} {each.Attempt} {string.Join('|', each.Words.Where(word => word != HeldResolutions.AskFix))}";
+            if (each.Words.Contains(HeldResolutions.AskFix)) yield return $"  ask for a fix: daoris workflow fix {CheckExecution.RunOf(each.Unit)} {each.Node}";
+        }
     }
 
     /// <summary>
@@ -217,6 +225,8 @@ public static class HeldAttempts
         (_, WorkPerformer.NotHeld) => "work: this process does not hold the home, so it records nothing: the desktop holds it while it runs, so say it there, or close the desktop and run this again.",
         (_, WorkPerformer.Unreadable) => $"work: the node record of {done.Unit} does not read, so nothing on it is changed.",
         (_, WorkPerformer.Worded) => $"work: {done.Node} (attempt {attempt}) of {done.Unit} already has your word, which the next look applies.",
+        (_, WorkPerformer.NotResolution) when resolution == HeldResolutions.AskFix =>
+            "work: `ask-fix` is not a word this verb takes: `daoris workflow fix <run> <node>` asks for a fix of a failed verification.",
         (_, WorkPerformer.NotResolution) =>
             $"work: `{resolution}` is not a word for a held attempt: say happened, did-not or stop, on a held close record, resend or stop, or on a failed step again.",
         (_, WorkPerformer.NotAgain) when resolution == HeldResolutions.Again =>
