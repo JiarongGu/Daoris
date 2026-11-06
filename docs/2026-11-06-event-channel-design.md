@@ -4,7 +4,8 @@ Design, accepted by the owner (D244). Written by Claude Opus 5.5 from the code o
 the event hook design (`docs/2026-10-24-event-hook-design.md`) leaves to rows 1d and 1e (its §4.2, §6.2, §7, §9), and the design
 CHANNELJOIN1 is named for in the integration design (`docs/2026-10-28-integration-design.md` §7.1). Read with that design's §4.3 (the
 frame), §6.1 (the relay) and §8 (what a subscriber may do), the foundation design's §4 (the journal), and
-`docs/areas/co-working-and-messages.md`. Nothing here changes the first build (1a, 1b, 1c, 1g, 1h): every row below comes after 1b.
+`docs/areas/co-working-and-messages.md`. Nothing here changes the first build (1a, 1b, 1c, 1g, 1h). The sources of 1d's kinds rest on
+none of it and come first; every telling comes after 1b (D244's notes).
 
 Paths without a root are under `src/Daoris.Desktop/`: `Driver/` is `Daoris.Desktop.Driver/`, `Modules/` is `Daoris.Desktop.Modules/`,
 `Host/` is `Daoris.Desktop.Driver.Host/`. `Service/` is `src/Daoris.Service/Daoris.Service.Core/`, `Http/` is
@@ -118,8 +119,8 @@ Read at `df7f178bf`.
 
 They hold no `RAISE`, carry ids and the status's closed code only, and are bounded and trimmed by the journal's own rules. **Why the
 cache and not the operation**: the cache is what the replay says the quest is, written in the operation's transaction, so its move is
-the move and nothing else. A `quest-op` row says an operation was kept, which may not move the quest (a decline that lands on a taken
-quest, a second publish), and a rebase that loses this machine's close rewrites the log in place and journals nothing, so a teller of
+the move and nothing else. A `quest-op` row says an operation was kept, which may not move the quest (a take that lost to an earlier
+take, and the done it carries, on the winner's machine; a second publish), and a rebase that loses this machine's close rewrites the log in place and journals nothing, so a teller of
 `quest-op` rows would tell a close that never stood and never say it fell. The `quest-op` rows stay what they are, read by nothing.
 
 | Journal row | Kind told | Fields |
@@ -140,9 +141,14 @@ quest, a second publish), and a rebase that loses this machine's close rewrites 
 
 ### 3.2 One teller, the lease's, with no cursor kept
 
-**`WorkEventTeller`** (`Driver/Plugins/WorkEventTeller.cs`, new) is a journal teller that maps rows to `HookSet.Tell`, added as a
-second teller to the feeds that already run in the lease's process: the shell's lease feed (`LoopRun.cs:96-99`) and the headless host's
-(`DriveConsole.cs:104-108`). One wait serves both tellers.
+**`WorkEventTeller`** (`Driver/Plugins/WorkEventTeller.cs`, new) is a journal teller that maps rows to `WorkEvent`s handed to its
+sink, which is 1b's `HookSet.Tell`. It is added to the feeds that already run in the lease's process: the shell's lease feed
+(`LoopRun.cs:96-99`) and the headless host's (`DriveConsole.cs:104-108`). One wait serves every teller of a feed.
+
+- **First among the feed's tellers.** The feed hands a batch to its tellers in turn, and the news teller's `show` reads the service for
+  each piece it tells; the work-event teller's sink never waits, so placed first it tells before any of those reads.
+- **Built before 1b, wired with it.** The mapping and its gap rule rest on nothing of 1b: the teller is built and proved with the sink
+  its test hands it (EV-A), and joins the two feeds with 1b's `Tell` as its sink (EV-F).
 
 - **No kept cursor.** An event is a wake, never a replay (the event hook design §4.4), so the teller holds its position in memory: what
   moved while no process read is the records' to say. Its `Load` answers its memory, and its `Keep` keeps it there.
@@ -156,35 +162,45 @@ second teller to the feeds that already run in the lease's process: the shell's 
 - **It is row n's exemplar.** The foundation design's row n moves the session kinds onto the journal; this teller is the first
   `work/event` source that reads it.
 
-### 3.3 `person.answered` comes from the confirmation's record
+### 3.3 `confirmation.ended` comes from the confirmation's record
 
-- **Told at the press's settling, after its record says so.** `PipeConfirmations` gains `Answered` (`Action<PipeConfirmation,
+- **Named for what moved, never for who.** The kind is `confirmation.ended` and its field `end`: of its five ends, `withdrawn` is the
+  terminal's own take-back and `lost` a restart's, and a kind named `person.answered` would tell either as an answer the person gave.
+- **Told at the press's settling, after its record says so.** `PipeConfirmations` gains `Settled` (`Action<PipeConfirmation,
   PipeEnding>`), invoked in `Settle` beside `Noticed` (`:712-724`). `Settle` runs only after `Persisted` has written the ending, so an
   ending its record could not take (`Unrecorded`) and a Confirm the drain holds (`Draining`) are told nothing: they wait on, and are told
-  when they end. The shell wires `Answered` to its hook set where it wires `Noticed` (`LoopRun.ServePipe`, `:225-236`); the pipe is the
-  lease holder's (§2.3), so `Tell`'s lease check passes.
+  when they end. The shell wires `Settled` to its hook set where it wires `Noticed` (`LoopRun.ServePipe`, `:225-236`; EV-F); the pipe is
+  the lease holder's (§2.3), so `Tell`'s lease check passes.
 - **Only where no terminal waits on its line.** A terminal waiting hears the ending there, which ends its verb and wakes whoever waits on
   it; telling it again is a second wake for one answer. `WaitedOn` false at the ending, a press whose verb gave up (`--wait 0`, its
   thirty minutes, an interrupt), is the case the steward cannot learn otherwise.
-- **Fields.** `confirmation`, `^[0-9a-f]{32}$`, the pipe's own id; `answer`, one of `confirmed`, `refused`, `changed`, `withdrawn`,
+- **Fields.** `confirmation`, `^[0-9a-f]{32}$`, the pipe's own id; `end`, one of `confirmed`, `refused`, `changed`, `withdrawn`,
   `lost`. Never the terminal's request id: it is the asker's own string, of no shape Daoris mints, and with its key it reads the answer;
   the steward reads `daoris-driver result <id>` for each press it left waiting (§8 of the event hook design, a wake, never the answer).
-- **A press lost at a restart** is told as it is settled `Lost` by the restore; told before any plugin listens, it is counted by the next
-  handshake's `seq`, and the relay says the gap.
+- **A press lost at a restart** is counted by the restore and settled by no pipe of the new run, so it is not told: the run is new,
+  which the relay says as a gap, and the steward reads `result` again. A keyed press lost as Daoris closes is settled `Lost` and told,
+  heard only where a plugin still listens.
 - **The service door's confirmations are not told.** Their record is the service's (`ServiceConfirmations`), and no subscriber asks for
   them; a later kind of the same frame where one does.
 
-### 3.4 `work.ended`: link 1 names what ended, and row 1d-iii owns it
+### 3.4 `work.ended`: the end keeping tells what it wrote ended, and row 1d-iii owns it
 
-- **`EndKeeping.KeepAsync` answers the entries it wrote**, each with its session, its quest and its verdict, in place of a count. Link 1
-  (`RefWatch.JudgeAsync`) keeps emitting `work.held` once a repository, and emits the chain's `work.ended` once a repository where an
-  entry's verdict is *ended* (`EndVerdict.Ended`), as its table already declares. The tidy hears both, as it does today.
-- **The outside kind comes from the same answer.** For each entry written whose verdict is ended and that names a session, the lease's
-  hook set tells `work.ended` with `session` and `quest?`. Only the lease's holder writes (`EndKeeping.cs:40`), so only it tells. A fact
-  that still holds is not written again, so nothing is told twice; a fact cleared, the line no longer holding the work, is not told: the
-  kind says what was reached. An entry that names no session is not told.
-- **Why link 1 and not the bound run's end.** A run ends when its workflow says (its tidy, a stop), and an end judgement says the line
-  holds the work under its cycle. The event hook design's `work.ended` is the second, and a run's end has its own record.
+- **The one writer tells, whichever caller asked.** `EndKeeping` is written by link 1 (`RefWatch.JudgeAsync` through
+  `SessionTrees.KeepEndsAsync`), by the look's tidy and Accept's tidy (`AutoTidies`), and by the retirement of a landing whose branch is
+  gone (`KeepGoneAsync`, from `LandedCleanups`). Whoever writes an end first, the others find it holding and write nothing, so a kind told
+  from link 1's answer alone would never say an end the tidy or a person's Accept wrote: the commonest case. So `KeepAsync` and
+  `KeepGoneAsync` say each end they write through **`WorkEnds`** (`Driver/Workplace/WorkEnds.cs`, new), a per-home announcer of
+  `RefMoves`' shape, and the lease's hook set hears it and tells `work.ended` with `session` and `quest?` (EV-F).
+- **What is said.** An entry written with a fact (`EndKeeping.Next` answers one only for a verdict *ended*) that names a session: a
+  landing its own session and quest; a session branch those of the landing that carries its unit, where one stands; each session once a
+  pass. A fact that still holds is not written again, so nothing is said twice; a fact cleared, the line no longer holding the work, is
+  not said: the kind says what was reached. An entry that names no session is not said.
+- **Only the lease's holder writes** (`EndKeeping.cs:40`), so only it says. A verb alone, under the lease it took, writes and says, and
+  nothing in its process listens, as an event minted while no plugin listens; a verb beside the instance writes nothing.
+- **The chain's `work.ended` stays unemitted.** Link 1 emits `work.held` for every entry it writes, and the tidy wakes on it; a second
+  chain event for the same write would wake the same link for nothing. `KeepAsync` keeps answering its count.
+- **Why the end keeping and not the bound run's end.** A run ends when its workflow says (its tidy, a stop), and an end judgement says
+  the line holds the work under its cycle. The event hook design's `work.ended` is the second, and a run's end has its own record.
 
 ### 3.5 The grammar's additions
 
@@ -195,8 +211,8 @@ in `HookFrames.Event` alone, an optional field that fails left out, a required o
 |---|---|---|
 | `quest` | `quest.published`, `quest.closed`, `quest.close-lost`; `work.ended?` | §4.3's quest shapes |
 | `state` | `quest.closed`: `done`, `declined`; `quest.close-lost`: `open`, `taken` | closed codes |
-| `confirmation` | `person.answered` | `^[0-9a-f]{32}$` |
-| `answer` | `person.answered` | `confirmed`, `refused`, `changed`, `withdrawn`, `lost` |
+| `confirmation` | `confirmation.ended` | `^[0-9a-f]{32}$` |
+| `end` | `confirmation.ended` | `confirmed`, `refused`, `changed`, `withdrawn`, `lost` |
 | `session` | `work.ended` | `^[0-9a-f]{8}$` |
 
 ### 3.6 The relay's words
@@ -204,7 +220,7 @@ in `HookFrames.Event` alone, an optional field that fails left out, a required o
 `RelaySaid` gains one fixed sentence per kind, each over its checked ids and codes, such as
 `Daoris: quest 48f8ed9121ec closed, done [6c0f1a9e2b47 #31]`,
 `Daoris: quest 48f8ed9121ec is open again: its close lost to another machine [6c0f1a9e2b47 #32]`,
-`Daoris: confirmation <id> answered: refused [6c0f1a9e2b47 #33]` and
+`Daoris: confirmation <id> ended: refused [6c0f1a9e2b47 #33]` and
 `Daoris: session 4b62a9fe's work ended: the line holds it (quest 48f8ed9121ec) [6c0f1a9e2b47 #34]`.
 **`--kinds`' default stays the first build's four**: a quest kind floods at a sync, and the steward's procedure names the kinds it
 wants. A kind the relay leaves out still moves its watermark (§4.4 of the event hook design).
@@ -438,8 +454,10 @@ Each with its reason; D244 keeps them.
 - **The quest kinds from the `quest-op` rows**: an operation kept may not move the quest, and a lost close journals nothing (§3.1).
 - **From the look's snapshot, or a read of the quest per row**: C5.4's three faults, and a read later than the move tells a later state.
 - **A kept cursor for the work-event teller**: a replay across a restart, which an event is not.
-- **`person.answered` with the terminal's request id**, or for every ending: an id of the asker's shape, and two wakes for one answer.
-- **`work.ended` from the bound run's end**: a run's end is its workflow's, not the line holding the work.
+- **The confirmation's kind with the terminal's request id**, or for every ending: an id of the asker's shape, and two wakes for one
+  answer. **Named `person.answered`**: a withdrawal and a loss are no answer of the person's.
+- **`work.ended` from the bound run's end**: a run's end is its workflow's, not the line holding the work. **From link 1's answer
+  alone**: an end the look's tidy or Accept wrote first is found holding and never told.
 - **Building both 1e adapters, or either before the first build's figures**: two ways to wake, and a cost nobody measured.
 - **The knowledge server's channel**: twins of the grammar, the lease and the pipe rule, a workspace's home, and a launcher that drops a
   left server's notifications (§4.3).
@@ -454,8 +472,9 @@ Each chunk is one builder's, in the backlog plan's style: its tests written and 
 
 | Id | Rows | Files, starts | Exemplar | Proof | Model | After |
 |---|---|---|---|---|---|---|
-| **EV-A** | EVENTHOOK1d-i, 1d-ii | service `Service/Sessions/EventJournal.cs` (`QuestsSchema`), `Service/Quests/QuestSchema.cs:299`; driver `Driver/Plugins/WorkEventTeller.cs` (new), `WorkEventGrammar`, `HookFrames.Event`, `RelaySaid`; modules `Modules/Platform/PipeConfirmations.cs:712` (`Answered`), `Modules/Loop/LoopRun.cs:96`, `:225`; host `Host/DriveConsole.cs:104` | the sessions' `event_journal_state` (`EventJournal.cs:159`); `NewsTeller` (`Driver/Events/NewsTeller.cs:19`); `Noticed` (`PipeConfirmations.cs:92`) | service: a publish journals one `opened`, a done one `state`, a decline that does not apply, a repeat publish and a cache write that updates an existing row no `opened`, a rebase that loses a done `Done` to `Taken`, a sync's integrated publish one; driver: the teller tells each kind of §3.1 and nothing for a take, `events.missed` at its first place and at a `Missed` batch, a quest published and closed between two looks as two events, a held quest's close once; modules: each ending told once after its record, none for `Unrecorded`, `Draining` or a press a line waited on; the grammar's census over the new kinds, seen failing on a word-shaped `confirmation` | Opus | 1b (BL59) |
-| **EV-B** | EVENTHOOK1d-iii | `Driver/Workplace/EndKeeping.cs:37` (the entries written), `Driver/Workplace/RefWatch.cs:344` (`work.ended` emitted), the hook set's `work.ended`; `RelaySaid` | `RefWatch.JudgeAsync`'s `work.held` (`:373`) | a landed branch the line now holds tells one `work.ended` with its session; a fact still holding writes and tells nothing; a cleared fact tells nothing; a verb beside the instance writes and tells nothing; the chain's tidy hears `work.ended` | Opus | 1b, EV-A |
+| **EV-A** | EVENTHOOK1d-i, 1d-ii, their sources | service `Service/Sessions/EventJournal.cs` (`QuestsSchema`), `Service/Quests/QuestSchema.cs:299`; driver `Driver/Plugins/WorkEventTeller.cs` and `Driver/Plugins/Domain/WorkEvent.cs` (new); modules `Modules/Platform/PipeConfirmations.cs:712` (`Settled`) | the sessions' `event_journal_state` (`EventJournal.cs:159`); `NewsTeller` (`Driver/Events/NewsTeller.cs:19`); `Noticed` (`PipeConfirmations.cs:92`) | service: a publish journals one `opened`, a done one `state`, a cache write that updates an existing row with its status kept nothing, a rebase that loses a done `Done` to `Taken` and, on the winner's machine, the losing take and its done nothing, a sync's integrated publish one and a second pass nothing; driver: the teller tells each kind of §3.1 and nothing for a take, `events.missed` at its first place and at a `Missed` batch, a quest published and closed between two looks as two events, a held quest's close once; modules: each ending settled once after its record, none for `Unrecorded`, `Draining` or a press a line waited on | Opus | none |
+| **EV-B** | EVENTHOOK1d-iii, its source | `Driver/Workplace/WorkEnds.cs` (new), `Driver/Workplace/EndKeeping.cs:37`, `:211` (each end written said) | `RefMoves` (`Driver/Workplace/RefWatch.cs:20`) | a landed branch the line now holds says one end with its session and quest; a fact still holding writes and says nothing; a cleared fact says nothing; a process without the lease writes and says nothing; a gone landing retired with its end says it | Opus | none |
+| **EV-F** | EVENTHOOK1d-i to iii, the telling | driver the teller first in the lease's feeds (`Modules/Loop/LoopRun.cs:96`, `Host/DriveConsole.cs:104`) with `HookSet.Tell` as its sink, `WorkEnds.Listen` in the lease's hook set, `WorkEventGrammar` and `HookFrames.Event`'s fields; modules `Settled` wired in `LoopRun.ServePipe` (`:225`); `RelaySaid`'s sentences with 1c | 1b's `work/event` kinds | the grammar's census over the new kinds, seen failing on a word-shaped `confirmation`; each source told once at `work/event` by the lease's loop and by no `--share` loop; the relay's sentences read against `RelaySaid` | Opus | 1b (BL59), EV-A, EV-B; its relay half 1c |
 | **EV-C** | EVENTHOOK1e-i | `src/Daoris.Cli/test/fixtures/event-hook/` (`ProbeSession.cs`, the poster, the stand-in pipe and channel servers); the measurements record | `tools/console3-probe.mjs` (a probe's spend and stripped environment); `Driver/Platform/PseudoConsole.cs` | the record: each of §4.4's outcomes, or why it did not run, each a failure that blocks or a limit accepted; M11 from 1h's record; §4.5's verdict | Opus, one sitting, the owner's spend | 1h in use two weeks |
 | **EV-D** | EVENTHOOK1e-ii (only on EV-C's verdict) | the host's entry (`MessagingKey.Take`, `Driver/Roles/SupervisorProof.cs:46`); the relay's `--inbox`; `RelaySaid` | the relay's `--once` (1c); `HolderKey.Take` | a stand-in inbox pipe: the token on neither stream, in no file, in no exception; a server other than `--session-pid` refused with nothing sent; a refused batch folded into one gap line and never sent twice; three refusals ending the relay with its batch on stdout; every other verb dropping both variables unread, held by the wiring census | Opus | EV-C, 1c |
 | **EV-E** | EVENTHOOK1e-iii (only on EV-C's verdict, instead of EV-D) | the relay's `--channel`, `--where --front`, `channel.cmd`, `channel.since` | the relay's `--once`; `Mcp/Program.cs:173` (the revision probe) | a stand-in client: the handshake, one notification a batch with its `meta`, nothing but `ping` answered; the front laying out a new build and the watermark handed across an exit | Opus | EV-C, 1c |
@@ -464,8 +483,8 @@ Each chunk is one builder's, in the backlog plan's style: its tests written and 
 | **CJ-C** | CHANNELJOIN1c | web `work/team/CoWorkers.tsx`, `work/conversation/SenderChip.tsx`, `asks/ChannelSection.tsx`, `locales/{en,zh}`, the glossary; the look's end of a membership (`Driver/WorkOrders/ChannelMembersLook.cs`, new) | `CoWorkers.tsx`'s rows; rule 15's expiry of a claim never taken | stories in en and zh; *Remove* pressing the person's door; the look ending a membership with its line and after a quiet day; `i18n:check` and `names:check -- --strict` | Sonnet | CJ-A, CJ-B |
 | **CJ-D** | CHANNELJOIN1d | `channel.posted` in `WorkEventTeller` and the grammar; the relay's `--not-by`; the co-working skill, synced to this repository and both examples | EV-A's teller; the relay's `--kinds` | the teller tells a message kept, a mirrored one without `message`, `by` per poster; `--not-by` moves the watermark and prints nothing; the canon synced | Sonnet | EV-A, CJ-B, 1c |
 
-**Order.** EV-A after BL59 (1b); EV-B after it. CJ-A and CJ-B need nothing of the event hook and can run in any wave; CJ-C after them;
-CJ-D after EV-A and 1c. EV-C waits for 1h and two weeks of use; EV-D or EV-E, or neither, on its verdict.
+**Order.** EV-A and EV-B need nothing of the event hook and can run in any wave; EV-F after BL59 (1b) and both, its relay half after 1c.
+CJ-A and CJ-B need nothing of the event hook and can run in any wave; CJ-C after them; CJ-D after EV-F and 1c. EV-C waits for 1h and two weeks of use; EV-D or EV-E, or neither, on its verdict.
 
 ## 8. The weakest points
 
@@ -477,7 +496,7 @@ CJ-D after EV-A and 1c. EV-C waits for 1h and two weeks of use; EV-D or EV-E, or
   documentation promises. The rule builds it only where the inbox fails, so its weakness costs nothing while the inbox holds.
 - **M11 is a judgement over two weeks** of one steward's use. A *no* closes 1e on today's evidence; a later steward with longer turns
   may open it again with the same rule.
-- **`person.answered` reaches only the lease holder's pipe.** A shell that does not hold the home serves no pipe, so there is nothing to
+- **`confirmation.ended` reaches only the lease holder's pipe.** A shell that does not hold the home serves no pipe, so there is nothing to
   tell; a headless host has no pipe at all.
 
 ## 9. Not decided here
@@ -485,4 +504,4 @@ CJ-D after EV-A and 1c. EV-C waits for 1h and two weeks of use; EV-D or EV-E, or
 - A standing grant for joins, read from the Confirms' count once members are in use.
 - The connector as a member's second door, once an outside agent's connector is the install's.
 - A role holder as a relay subscriber (the event hook design §6.2's first bullet), which stays that design's later round.
-- The service door's confirmations as `person.answered`, where a subscriber asks for them.
+- The service door's confirmations as `confirmation.ended`, where a subscriber asks for them.

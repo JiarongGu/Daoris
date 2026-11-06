@@ -23,6 +23,9 @@ namespace Daoris.Driver;
 /// <para><b>Nothing is removed here</b> (§B8): the look's tidy takes its candidates from what is kept (FABRIC-END4a), and the
 /// inventory reads it (MILESTONE1a). <i>Ended</i> is derived at read from the
 /// kept fact and the effective cycle, never stored.</para>
+///
+/// <para><b>Each end it writes is said</b> (EVENTHOOK1d-iii) through <see cref="WorkEnds"/>, with the session its landing names, whichever
+/// caller asked: an end another caller wrote first is found holding and written by nobody again.</para>
 /// </remarks>
 internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
 {
@@ -64,6 +67,8 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
         DriverConfig? config = null;
         var now = DateTimeOffset.UtcNow;
         var written = 0;
+        // EVENTHOOK1d-iii: the sessions whose work an entry written here says the line now holds, said once the pass is done.
+        var said = new List<(string Session, string? Quest)>();
 
         // FABRIC-END2d: every landing's end this pass, by its branch (its kept fact where that still holds, else this pass's verdict), before
         // any is written: a landing inside another is judged once that one's own proof is known, and a session branch reads its landing's end
@@ -111,6 +116,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
             if (next == landing.Entry.Held) continue;
             context.Recorded.Hold(landing.Entry, next);
             written++;
+            if (next is not null) said.Add((landing.Entry.Session, landing.Entry.Quest));
         }
 
         foreach (var grown in context.Grown.All().Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)))
@@ -125,6 +131,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
                 if (tidiedHeld == grown.Held) continue;
                 context.Grown.Hold(grown.Repository, grown.Branch, tidiedHeld);
                 written++;
+                if (tidiedHeld is not null) said.Add((tidied.Landing.Session, tidied.Landing.Quest));
                 continue;
             }
 
@@ -142,18 +149,23 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
             // one it names has not ended), the landing whose record holds its work and whose own proof ended it carries it: what the clean-up's
             // press finds as the landing holding its tip (TreeSweeps.LandingHoldingAsync), and the squash's record vouching for its session
             // (SquashedHoldAsync). HolderAsync's ancestry is the inside fact the landed proof reads, so the verdict is judged on it alone.
+            // The landing that carries its work names its session: its unit's, or the one whose own proof ended it.
+            var carrier = landing;
             if (!verdict.Ended && landingEnd is not { Ended: true } && await EndJudgement.HolderAsync(root, tip, hosts, ct).ConfigureAwait(false) is { } holder)
             {
                 verdict = EndJudgement.Judge(EndCycle.Recorded(holder.Entry), subject with { Landing = holder.Entry },
                     new EndFacts(line) { Inside = true, LandingEnd = holder.End });
+                carrier = holder.Entry;
             }
 
             var next = Next(grown.Held, verdict, await OnAtAsync(verdict).ConfigureAwait(false), identity, now);
             if (next == grown.Held) continue;
             context.Grown.Hold(grown.Repository, grown.Branch, next);
             written++;
+            if (next is not null && carrier is not null) said.Add((carrier.Session, carrier.Quest));
         }
 
+        if (said.Count > 0) WorkEnds.Said(context.Home, said);
         return written;
 
         // One landing judged on its own proofs, kept for the inside pass and the write.
@@ -225,7 +237,9 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
             var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
             var on = forms.FirstOrDefault(form => string.Equals(form.Name, where, StringComparison.Ordinal))?.Ref;
             var onAt = on is null ? null : await TreeRefs.CommitOfAsync(root, on, ct, refs).ConfigureAwait(false);
-            return Next(null, verdict, onAt, identity, DateTimeOffset.UtcNow) is { } held && context.Recorded.HoldGone(entry, held);
+            if (Next(null, verdict, onAt, identity, DateTimeOffset.UtcNow) is not { } held || !context.Recorded.HoldGone(entry, held)) return false;
+            WorkEnds.Said(context.Home, [(entry.Session, entry.Quest)]);
+            return true;
         }
         finally
         {
