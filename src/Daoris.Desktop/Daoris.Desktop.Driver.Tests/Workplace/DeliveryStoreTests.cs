@@ -127,7 +127,8 @@ public sealed class DeliveryStoreTests : IDisposable
     [Fact]
     public void The_methods_are_the_land_node_s()
     {
-        Assert.Equal(LandNodes.Methods, DeliveryMethods.All);
+        // The land node lands by three methods; the store also reads the two a delivery recorded as a plugin's push or pull request.
+        Assert.Equal(LandNodes.Methods, DeliveryMethods.All.Where(method => method is not (DeliveryMethods.Push or DeliveryMethods.PullRequest)));
         Assert.Equal(DeliveryPhases.PluginAnswered, DeliveryPhases.ReachOf(DeliveryMethods.Push));
         Assert.Equal(DeliveryPhases.PluginAnswered, DeliveryPhases.ReachOf(DeliveryMethods.PullRequest));
         Assert.All(new[] { DeliveryMethods.Merge, DeliveryMethods.Branch, DeliveryMethods.Integrate }, method => Assert.Equal(DeliveryPhases.Recorded, DeliveryPhases.ReachOf(method)));

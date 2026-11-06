@@ -605,12 +605,12 @@ public sealed class PermissionRulesTests : IDisposable
 
         using var document = JsonDocument.Parse(File.ReadAllText(path!));
         var hardDeny = document.RootElement.GetProperty("autoMode").GetProperty("hard_deny").EnumerateArray().Select(e => e.GetString()!).ToList();
-        Assert.Equal(2, hardDeny.Count);
+        Assert.Equal(3, hardDeny.Count);
         Assert.Equal("$defaults", hardDeny[0]);
         Assert.Contains("git -C <dir> push", hardDeny[1]);
         Assert.Contains("git -c <key>=<value> push", hardDeny[1]);
-        Assert.Contains("publishing a package", hardDeny[1]);
-        Assert.Contains("creating a release", hardDeny[1]);
+        Assert.Contains("Publishing a package", hardDeny[2]);
+        Assert.Contains("creating a release", hardDeny[2]);
     }
 
     /// <summary>

@@ -50,7 +50,7 @@ public sealed class GitSessionAccessTests : IDisposable
         var tightened = GitSessionAccess.Tighten(Home, "s1", new Dictionary<string, string> { ["write"] = "deny" });
         Put("""{"machineGitAccess":{"write":"allow","read":"allow"}}""");
 
-        Assert.Equal("read=allow@machine write=deny@session dangerous=deny@default", Show(tightened.Classes));
+        Assert.Equal("read=allow@default write=deny@session dangerous=deny@default", Show(tightened.Classes));
         Assert.Equal("write=deny@session", Show(GitSessionAccess.Read(Home, "s1")!.Classes.Where(each => each.Source == "session")));
         Assert.Equal("allow", GitSessionAccess.Read(Home, "s2")!.Classes.First(each => each.Class == "write").Value);
         // Begun again, as a resumed session is, it keeps what was tightened.
