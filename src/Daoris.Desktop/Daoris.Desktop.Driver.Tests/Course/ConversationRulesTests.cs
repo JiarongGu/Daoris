@@ -108,7 +108,7 @@ public sealed class ConversationRulesTests : IDisposable
         var asks = Rules(Ruled(Rule(SupervisorRules.Limits, 1, SupervisorRules.Ask))).Judge(Chat(), "c1", StaffConditions.Limit, until: Now.AddHours(2));
         Assert.Equal(CourseHoldWhy.PolicyAsk, Assert.IsType<LineCourse.Hold>(asks!.Course).Why);
 
-        var moves = Rules(Ruled(Rule(SupervisorRules.Limits, 1, SupervisorRules.Next))).Judge(Chat("c2"), "c2", StaffConditions.Limit, until: Now.AddHours(2));
+        var moves = Rules(Ruled(Rule(SupervisorRules.Limits, 1, SupervisorRules.Next), Rule(SupervisorRules.Moves, 3, SupervisorRules.Ask))).Judge(Chat("c2"), "c2", StaffConditions.Limit, until: Now.AddHours(2));
         Assert.Null(moves);
     }
 

@@ -297,7 +297,7 @@ public sealed class WorkUnitsTests : IDisposable
 
         public bool Down { get; init; }
 
-        public ServiceClient Client() => new("http://units.test", null, new HttpClient(this, disposeHandler: false));
+        public ServiceClient Client() => new("http://units.test", null, new HttpClient(new SessionChanges(this), disposeHandler: false));
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {

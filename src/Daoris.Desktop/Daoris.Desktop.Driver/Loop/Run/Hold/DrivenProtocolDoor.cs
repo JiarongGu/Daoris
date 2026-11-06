@@ -155,7 +155,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
                 {
                     // Another session's message on the ask's channel, or a helper's answer, is that agent's claim, never the person's;
                     // Daoris's own word is never said as the person's either.
-                    run.Say(message.Channel is { Person: false } claim
+                    run.Say(message.Channel is { ByThisPerson: false } claim
                         ? reach == DrivenReach.NextStep
                             ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
                             : $"— another session's message `{claim.Id}` on the ask's channel, which goes beside what the session is told when its turn ends"
@@ -191,7 +191,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
                         asked: delivered =>
                         {
                             var message = ChatMessage.FromAgent(delivered);
-                            run.Say(message.Channel is { Person: false } claim
+                            run.Say(message.Channel is { ByThisPerson: false } claim
                                 ? $"— the session took another session's message `{claim.Id}` on the ask's channel"
                                 : message.Helped is { Helper: var helper }
                                     ? $"— the session took helper `{helper}`'s answer"

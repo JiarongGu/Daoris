@@ -115,7 +115,7 @@ public sealed class SupervisorRuleDoorTests : IDisposable
     public void CONTEXTDRIVE1d_set_roles_writes_a_role_and_a_place_s_rules_in_one_transaction_and_a_refused_rule_writes_neither()
     {
         Reach();
-        var designer = new RolePress(RoleChange.Set(RoleDoorTests.Designer()), [new ActorChoice("claude", "opus", "high")]);
+        var designer = new RolePress(RoleChange.Set(RoleDoorTests.Designer(new RoleScope(RoleScope.Workspace, "w1"))),[new ActorChoice("claude", "opus", "high")]);
         var unbounded = Read("""{ "id": "supervisor", "place": "repository:daoris", "rulesRevision": 0, "rules": [{ "count": "quiet", "at": 1, "do": "next" }] }""");
 
         Assert.Equal("moves-unbounded", Assert.Throws<RuleRefusedException>(() => RoleDoor.ApplyAll(Staffing, [designer, unbounded])).Code);

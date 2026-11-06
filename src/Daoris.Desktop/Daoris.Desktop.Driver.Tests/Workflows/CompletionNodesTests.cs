@@ -99,6 +99,10 @@ public sealed class CompletionNodesTests : IDisposable
     [Fact]
     public void The_save_refuses_a_monitor_no_pull_request_reaches_and_a_tidy_no_monitor_reaches()
     {
+        var dbg = NodeGraphs.Read(Graph(Tail, """
+                {"id":"m","kind":"after","from":"push","to":"monitor"},{"id":"t","kind":"after","from":"push","to":"tidy"}
+                """), onSave: false);
+        Assert.True(dbg.Graph is not null, "DBG " + string.Join(" | ", dbg.Problems.Select(p => p.ToString())));
         var early = CompletionGraphs.Unreached(
             NodeGraphs.Read(Graph(Tail, """
                 {"id":"m","kind":"after","from":"push","to":"monitor"},{"id":"t","kind":"after","from":"push","to":"tidy"}

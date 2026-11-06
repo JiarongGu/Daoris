@@ -43,6 +43,8 @@ public sealed class SessionsPartnerTests : IDisposable
 
         Assert.Equal(("partner-list", "s1"), (Read("partner", "s1", "--list").Verb, Read("partner", "s1", "--list").Ids[0]));
         Assert.Equal(("partner-stop", "p1"), (Read("partner", "#p1", "--stop").Verb, Read("partner", "#p1", "--stop").Ids[0]));
+        Assert.Equal(("partner-discard", "p1"), (Read("partner", "p1", "--discard").Verb, Read("partner", "p1", "--discard").Ids[0]));
+        Assert.Equal(("partner-hand-over", "p1"), (Read("partner", "p1", "--hand-over").Verb, Read("partner", "p1", "--hand-over").Ids[0]));
     }
 
     [Theory]
@@ -53,8 +55,6 @@ public sealed class SessionsPartnerTests : IDisposable
     [InlineData("partner", "s1", "Write it.", "--agent", "codex-acp", "--paths")]
     [InlineData("partner", "s1", "Write it.", "--agent", "codex-acp", "--agent", "stub")]
     [InlineData("partner", "s1", "Write it.", "--agent", "codex-acp", "--discard")]
-    [InlineData("partner", "p1", "--discard")]
-    [InlineData("partner", "p1", "--hand-over")]
     public void Anything_else_is_a_usage_problem(params string[] words)
     {
         Assert.Null(SessionsCommand.Read(words, out var problem));

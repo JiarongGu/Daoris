@@ -78,7 +78,7 @@ public sealed class AskWordsHandedTests
             "/api/sessions" => (HttpStatusCode.OK, """[{"id":"s6","state":"working","entry":"ask:a1/report"}]"""),
             _ => null,
         });
-        using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(standIn)));
         // The carry-on as the driver composes it (Driver.RunAsync): the cut-off's note, the last record's answer (none), the account
         // changed, and the ask's words read for the start; its brief (SESSCTX1b) is the record's, not the ask's.
         var carryOn = SessionTarget.ForQuest(Quest(), "C:/somewhere/report", service.BaseUrl) with

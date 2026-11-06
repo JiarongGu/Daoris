@@ -37,7 +37,7 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     /// The level the record keeps beside the person's words while they wait (COWORK1a): spelled for the person's own, null for
     /// another session's claim, whose level its own row carries (COWORK1d), so nothing reads a claim's default as one stated.
     /// </summary>
-    internal string? LevelSaid => Channel is { Person: false } || Helped is not null ? null : MessageLevels.Spelled(Level);
+    internal string? LevelSaid => Channel is { ByThisPerson: false } || Helped is not null ? null : MessageLevels.Spelled(Level);
 
     /// <summary>
     /// The words' id in a driven session's record (STEER1, D136), stamped by its inbox: it pairs the words shown at once,
@@ -140,9 +140,9 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
 
     /// <summary>Who said these words (COMMS1a), by the marks <see cref="Words"/> records them with.</summary>
     internal string Sender => Senders.Of(
-        Daoris is not null || Supervised is not null || Helped is not null || Channel is { Person: false } ? Senders.Target : null,
+        Daoris is not null || Supervised is not null || Helped is not null || Channel is { ByThisPerson: false } ? Senders.Target : null,
         Daoris is not null ? DaorisWords.From : Supervised is not null ? SupervisorHanded.From : null,
-        null, Helped?.Helper, null, Channel is { Person: false } ? "channel" : null);
+        null, Helped?.Helper, null, Channel is { ByThisPerson: false } ? "channel" : null);
 
     /// <summary>Told once this message's turn is on the wire: a helper's answer comes off the record then (MIXAGENT2a-iii).</summary>
     internal Action? Delivered { get; init; }
