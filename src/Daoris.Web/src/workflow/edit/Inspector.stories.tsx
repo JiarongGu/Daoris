@@ -16,8 +16,8 @@ import { Inspector } from './Inspector';
 const nothing = () => {};
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
-/** The merge workflow's landing made a pull request on a branch named by a pattern: its tail brought in the one change. */
-const HOSTED: GraphDraft = setOption(setLandMethod(PALETTE, draftOf(MERGE_GRAPH), 'landing', 'pull-request').draft, 'landing', 'pattern', 'feature/{quest}-{slug}');
+/** The merge workflow's landing made an integrate on a branch named by a pattern: its tail brought in the one change. */
+const HOSTED: GraphDraft = setOption(setLandMethod(PALETTE, draftOf(MERGE_GRAPH), 'landing', 'integrate').draft, 'landing', 'pattern', 'feature/{quest}-{slug}');
 
 /** The release workflow with the copy's input left unfed: the record's and the find's both make it. */
 const ASKING: GraphDraft = (() => {
