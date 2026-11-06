@@ -202,6 +202,34 @@ internal static class EventJournal
         """;
 
     /// <summary>
+    /// The quests cache's triggers (EVENTHOOK1d-i, D244 point 1): an <c>opened</c> row where the replay begins a quest (a publish, or a
+    /// publish after a delete) and a <c>state</c> row for each move of its status, whoever's operation the replay wrote: this machine's, a
+    /// remote's integrated by sync, or a rebase that lost this machine's close. The cache is written whole in the operation's transaction,
+    /// so its move is the quest's move; an operation kept that moves nothing rewrites the row with the same status and journals nothing.
+    /// The row names the quest and its circle and the status on either side, never its title, body or note.
+    /// </summary>
+    internal static readonly string QuestsSchema = $"""
+        {Table}
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_quest_opened AFTER INSERT ON quests
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, state_new, quest, workspace)
+          VALUES ({Now}, COALESCE(substr(NEW.id, 1, 64), ''), 'quests', 'opened', substr(NEW.status, 1, 32), substr(NEW.id, 1, 64),
+                  substr(NEW.workspace, 1, 64));
+          {Trim}
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_quest_state AFTER UPDATE OF status ON quests
+        WHEN OLD.status IS NOT NEW.status
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, state_old, state_new, quest, workspace)
+          VALUES ({Now}, COALESCE(substr(NEW.id, 1, 64), ''), 'quests', 'state', substr(OLD.status, 1, 32), substr(NEW.status, 1, 32),
+                  substr(NEW.id, 1, 64), substr(NEW.workspace, 1, 64));
+          {Trim}
+        END;
+        """;
+
+    /// <summary>
     /// The asks' triggers (row k part 2): an <c>ask</c> row for an ask kept and for each move of its state, guarded on the state changing, so a
     /// whole save that changes none, a word, a list appended to, an intake bound and a delete journal nothing. The row names the ask, its scope
     /// and the state on either side, never its sentence, note or words.
