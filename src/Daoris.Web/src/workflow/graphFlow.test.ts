@@ -177,6 +177,7 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
     const titles = (id: string) => draw(shipped(id).graph).nodes.map((node) => node.title);
     // The pull request is a plugin's step, titled by its node and its plugin; the push is Daoris's own.
     expect(titles('pull-request')).toEqual(expect.arrayContaining(['The push', 'pull-request by github-pull-request']));
+    expect(draw(shipped('pull-request').graph).nodes.find((node) => node.title.startsWith('pull-request by'))).toMatchObject({ glyph: 'stepPullRequest' });
     expect(titles('integrated')).toContain('The integration request');
     expect(titles('release')).toEqual(expect.arrayContaining(['The work', 'Your review', 'The landing', 'On the line']));
   });

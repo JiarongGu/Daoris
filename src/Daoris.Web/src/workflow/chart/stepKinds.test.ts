@@ -14,7 +14,7 @@ describe('the variant of a kind', () => {
     ['land', 'landing'], ['landing', 'landing'], ['handed', 'unknown'],
     ['line', 'line'], ['push', 'line'], ['pull-request', 'line'], ['monitor', 'line'], ['tidy', 'line'],
     ['request', 'other'], ['wait.unit', 'other'], ['integrate', 'other'], ['quest.close', 'other'], ['all', 'other'], ['stop', 'other'],
-    ['local-release/record', 'plugin'],
+    ['local-release/record', 'plugin'], ['acme-host/pull-request', 'line'],
     ['something-new', 'unknown'], ['', 'unknown'],
   ])('reads %s as %s', (kind, variant) => {
     expect(variantOf(kind, [])).toBe(variant);

@@ -8,17 +8,22 @@ import type { IconName } from '../../design/ui';
 /** The variants `StepNode` draws; a kind this page has none for is `unknown`, shown as recorded and never dropped. */
 export type StepVariant = 'work' | 'you' | 'check' | 'holds' | 'decision' | 'plugin' | 'landing' | 'line' | 'other' | 'unknown';
 
-// A built-in's variant is its kit's `look`, by its id and by the step a run draws it as (`work`, `landing`); the pull-request half of a
-// plugin's step is drawn on the line beside the steps around it.
-const BY_KIND = new Map<string, StepVariant>([
-  ...NODE_KINDS.flatMap((row): [string, StepVariant][] => [[row.kind, row.look as StepVariant], [row.drawn, row.look as StepVariant]]),
-  ['pull-request', 'line'],
-]);
+// A built-in's variant is its kit's `look`, by its id and by the step a run draws it as (`work`, `landing`).
+const BY_KIND = new Map<string, StepVariant>(
+  NODE_KINDS.flatMap((row): [string, StepVariant][] => [[row.kind, row.look as StepVariant], [row.drawn, row.look as StepVariant]]),
+);
+
+/**
+ * Whether a kind is a pull-request step: a plugin's (`plugin/pull-request`), or the bare `pull-request` an older
+ * steps version's run draws. Either is the line's step, drawn beside the push, the monitor and the tidy it is composed with.
+ */
+export const isPullRequestStep = (kind: string): boolean => kind === 'pull-request' || kind.endsWith('/pull-request');
 
 /** A step's variant from its kind; a plugin's step (`plugin/step`) declaring outcomes is a decision, and a built-in never is. */
 export function variantOf(kind: string, outcomes: readonly string[] = []): StepVariant {
   const known = BY_KIND.get(kind);
   if (known) return known;
+  if (isPullRequestStep(kind)) return 'line';
   if (kind.indexOf('/') > 0) return outcomes.length > 0 ? 'decision' : 'plugin';
   return 'unknown';
 }

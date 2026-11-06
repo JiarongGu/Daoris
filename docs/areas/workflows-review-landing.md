@@ -179,7 +179,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     reaches (`tidy-merged`), and a `push` no way from a method's landing reaches or after a landing not of the `branch` method
     (`land-tail`). The palette offers a monitor with its outcomes and its `when` ways. The keeper (`EndKeeping`, `EndBy.Tidied`) and the
     press (`TreeSweeps`, resting on the part's recovery ref) read that record for a part at the tip the tidy ended it at, and judge it no
-    further. (from D245, D247)
+    further: the keeper keeps that end once, and a later pass over the same repository starts the same git and writes nothing
+    (`TidiedPartKeepingTests`); a run's passes reach the `monitor` on a merged request, start the `tidy` on its door and leave it reached with
+    the part ended, and a closed request reaches the person's task and ends nothing (`TidyRunGitTests`). The web reads a pull-request step as a
+    plugin's `<plugin>/pull-request` or an older steps version's bare `pull-request` (`isPullRequestStep`), and a graph run finished at its
+    `tidy` as merged. (from D245, D247)
 32. A merge runs through the integration transport under the legacy policy: the owner's press, no gates, one at a time, a merge
     commit. (from D215)
 33. Each delivery's phases are written ahead of their effects: prepared, ref written, recorded, plugin dispatched, plugin answered.
@@ -319,7 +323,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's
   installed proof. A `request` under `start: you` waits for the person's *Send*, the `send` act of the run's node door (`WORKFLOW_NODE`, `daoris
   workflow send`), which keeps a mark on the record (`RunNodeWords.SendKey`) that the next pass reads as the start's say-so.
-- **FABRIC-SQUASHCHAIN1:** the monitor and the tidy are built and read (rule 31); left: the keeper's own proof that a tidied part is ended by the record with equal git starts across passes (`EndKeeping`), and a run's pass reaching both nodes end to end.
+- **FABRIC-SQUASHCHAIN1:** the monitor and the tidy are built, read and proved end to end (rule 31); nothing left but the owner's acceptance on an install.
 - **FABRIC-PERFORM1l:** the pull-request event keeps its fields; WORKFLOW1j and 1k on observed nodes.
 - **LANDNODE1j:** the installed window's proof.
 - **REVIEWFLOW1c and LINESTOGETHER1:** a session's steps as one flow, proven in the installed window.
