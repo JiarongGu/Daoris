@@ -51,7 +51,7 @@ const HOLDS = ['departed', 'evidence-unread', 'evidence-missing'];
 const TRIES = ['uncommitted', 'exists', 'completed', 'refused'];
 
 /** Why no second opinion could be had, the codes this page words (`ReviewerUnavailable`, a failed pass's); another is the general. */
-const OPINION_WHY = ['no-reviewer', 'cooling', 'signed-out', 'not-independent', 'ended', 'out-of-time'];
+const OPINION_WHY = ['no-reviewer', 'cooling', 'signed-out', 'not-independent', 'ended', 'transient', 'out-of-time'];
 
 /** A state's word, a status: the driver's own spelling where the page has none. */
 export function stateSaid(t: TFunction, state: string): string {

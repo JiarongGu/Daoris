@@ -42,8 +42,8 @@ internal static class TransientEnded
     }
 
     /// <summary>
-    /// The owner's check a pass hands its retry (§5.5): another try is wanted while the person has not stopped it. Each kind's own authority
-    /// (a helper's answer stored, an intake's quests published, an opinion recorded) ends its run before the next try, by its own end.
+    /// The check of a pass with no outcome of its own to outrank a retry (a brainstorm voice, §5.5): another try is wanted while the person has
+    /// not stopped it. The other kinds hand <see cref="TransientOwners"/>' check, each its own authority.
     /// </summary>
     public static Func<CancellationToken, Task<bool>> Wanted(SessionProcesses processes, string sessionId) =>
         _ => Task.FromResult(!processes.WasStopRequested(sessionId));

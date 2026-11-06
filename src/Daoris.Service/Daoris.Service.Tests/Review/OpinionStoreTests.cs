@@ -286,6 +286,13 @@ public sealed class OpinionStoreTests : IAsyncLifetime
         var (limited, limitedReviewer) = await AskedAsync(Ask(working.Id, Opinions.Asked, clone: "clone-limited"));
         await _sessions.SetStateAsync(limitedReviewer.Id, SessionState.Failed, "the account's limit", null, null, Now.AddMinutes(25), limit: true);
 
+        // AGENTERRORS1d: one whose provider kept failing carries the driver's `opinion.transient` line and reads `transient`.
+        var (transient, transientReviewer) = await AskedAsync(Ask(working.Id, Opinions.Asked, clone: "clone-transient"));
+        await _sessions.SetStateAsync(
+            transientReviewer.Id, SessionState.Failed, "The opinion of stub is unavailable.", null, null, Now.AddMinutes(4),
+            noteParts: """[{"code":"opinion.transient","values":{"agent":"stub","count":"3"},"text":"The opinion of stub is unavailable."}]""");
+
+        Assert.Equal((Opinions.Failed, Opinions.Transient), Read(await _desk.ReadAsync(transient.Id, Now.AddMinutes(30))));
         Assert.Equal((Opinions.Failed, Opinions.Limited), Read(await _desk.ReadAsync(limited.Id, Now.AddMinutes(30))));
         Assert.Equal((Opinions.Failed, Opinions.Ended), Read(await _desk.ReadAsync(early.Id, Now.AddMinutes(30))));
         Assert.Equal((Opinions.Reading, null), Read(await _desk.ReadAsync(slow.Id, Now.AddMinutes(19))));

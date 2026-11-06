@@ -174,7 +174,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
                 handedPlan: ConnectorPlans.For(sessionId, ask.Workspace, [], ConnectorPlans.ConnectorOnly),
                 said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter),
                 minutes: bound,
-                transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
+                transientWanted: TransientOwners.Helper(_context.Processes, sessionId, new HelperFiles(home), ask.Ask.Id),
                 noConnector: HelperPass.NoConnector,
                 stopMade: stop => stoppedFirst = stop,
                 // D205 §3.5(f): its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in

@@ -27,6 +27,12 @@ export type HelpWiredCheckout = { name: string; workspace: string; path: string 
 export type HelpWiredLack = { kind: string; name: string; door: string; why: string; plugin: string | null };
 
 /**
+ * What the agent's door said it loaded at a start (HELPWIRED1b, `WireLoaded`): the tools, servers with the status the door gave them,
+ * skills and plugins its init frame names. Kept apart from what was handed, so where the two differ it shows.
+ */
+export type HelpWiredLoaded = { tools: string[]; servers: { name: string; status: string }[]; skills: string[]; plugins: string[] };
+
+/**
  * What one start of an Ask Daoris conversation handed its agent (HELPWIRED1, D183 point 4, the modes design §6), as the driver
  * keeps it (`HelpReceipt`), field for field: recorded at the start, never worked out again. Its paths are this machine's.
  */
@@ -53,6 +59,8 @@ export type HelpReceipt = {
   checkouts: HelpWiredCheckout[];
   /** In restricted mode, what it lacks with the door that grants each; none in full access. */
   lacks: HelpWiredLack[];
+  /** What its door said it loaded (HELPWIRED1b); null until its init frame came, and on a start before it or a door that sends none. */
+  loaded?: HelpWiredLoaded | null;
 };
 
 /** `HELP_WIRED`'s answer: a conversation's receipts, the newest first; `recorded: false` for one started before they were kept. */

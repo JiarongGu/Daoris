@@ -514,6 +514,7 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
         var reviewer = await sessions.FindAsync(opinion.Session, ct).ConfigureAwait(false);
         if (reviewer is { Active: true }) return now > opinion.Due ? new(opinion, Opinions.Failed, Opinions.OutOfTime) : new(opinion, Opinions.Reading, null);
         if (reviewer is { Limit: true }) return new(opinion, Opinions.Failed, Opinions.Limited);
+        if (reviewer is not null && NoteParts.Carries(reviewer.NoteParts, Opinions.TransientCode)) return new(opinion, Opinions.Failed, Opinions.Transient);
         return new(opinion, Opinions.Failed, reviewer is not null && reviewer.Updated > opinion.Due ? Opinions.OutOfTime : Opinions.Ended);
     }
 

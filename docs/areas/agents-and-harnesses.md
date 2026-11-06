@@ -216,9 +216,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     *Try again*. Every run on the protocol door takes that one retry (`TransientRetries.For` at the hold, `ChatRetry` for a
     conversation), each with its owner's check: a driven session, an intake, a helper, an opinion, a partner and a
     brainstorm voice. A pass with minutes of its own waits none past them. Past the bound, or with its minutes ended inside
-    the episode, it fails with its kind's code (`helper.transient`, refused `transient`; `opinion.transient`;
-    `intake.transient`, its ask unbound; `partner.transient`, its work kept; a voice dropped), never *timed out*
-    (`TransientEnded`). (from D210, D229)
+    the episode, it fails with its kind's code (`helper.transient`, refused `transient`; `opinion.transient`, which the
+    host reads as the pass's `transient` and the gate as `Unavailable` with that code and no reset, so only the person's
+    press asks again; `intake.transient`, its ask unbound once and kept bound to the second such record
+    (`IntakeTransients`, in the service's session advance); `partner.transient`, its work kept; a voice dropped), never
+    *timed out* (`TransientEnded`). Each retry's check is its kind's own authority (`TransientOwners`): a helper's answer
+    stored, an intake's ask closed, deleted or gained quests, an opinion given, a partner's piece ending; a voice's is the
+    person's stop alone. (from D210, D229)
 40. Access goes to the person: the account is marked refused or signed out, with no retry. A fatal error fails with its
     reason and is a strike. (from D210)
 
@@ -385,9 +389,8 @@ Agents page, and `orient-index` and `code-map` once files move.
   agent-provider library as a package. Its rows wait on that library's releases; nothing is referenced by the driver yet.
 - **AGENTINFRA1**: an execution-neutral run for remote APIs and hosted runtimes, with scoped availability and explicit
   recovery. Accepted; built after AGENTPROVIDER1, isolated home first.
-- **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1d**'s rest: an intake's ask bound
-  again after a second `intake.transient`, an opinion's gate read `Unavailable` / `transient` from its code, and each
-  kind's own authority as its check; **1e**: what remains of point 8 (the native door's live, driven and one-turn tries).
+- **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1e**: what remains of point 8 (the
+  native door's live, driven and one-turn tries). 1d is built.
 - **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
   Waits on a recorded native limit, the owner's yes, which is all that remains of D210's row 1c. A failed native `result` is one
   `WireReading.Failed` (`pipe`, `DoorWhere.Result`, the result's own words) on the run's sink, and `NativeLimits`, a sink part composed in
@@ -402,6 +405,5 @@ Agents page, and `orient-index` and `code-map` once files move.
 - **STEER3**, **MSG1h**, **MSG1i**: steering and next-step words measured on other doors (Codex, native).
 - **BGWAIT2b**, **SESSCTX1a**, **HELPMODE1a3**, **FABRIC-C2b**: woken-turn words, resume and fresh part per door, full access
   on the installed pins, the two-harness canary.
-- **HELPWIRED1b**: what the door says it loaded, beside what was handed.
 - **POOL1d**: the install's fold of `harnesses.json` read rule by rule, applied on the person's press.
 - **MODELROLE1c4**, **MODELROLE1d3**: the installed proofs of a refused model passing an account and a chat's chosen model.

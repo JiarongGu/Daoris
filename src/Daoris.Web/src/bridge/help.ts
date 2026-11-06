@@ -274,6 +274,7 @@ export function wiredAnswer(answer: unknown, session: string): HelpWired {
   const held = (answer ?? {}) as { session?: unknown; recorded?: unknown; receipts?: unknown };
   const receipts = rowsOf(held.receipts).map((receipt): HelpReceipt => {
     const rules = typeof receipt.rules === 'object' && receipt.rules !== null ? receipt.rules as Record<string, unknown> : null;
+    const loaded = typeof receipt.loaded === 'object' && receipt.loaded !== null ? receipt.loaded as Record<string, unknown> : null;
     return {
       at: textOf(receipt.at) ?? '',
       start: textOf(receipt.start) ?? 'new',
@@ -300,6 +301,12 @@ export function wiredAnswer(answer: unknown, session: string): HelpWired {
         kind: textOf(lack.kind) ?? '', name: textOf(lack.name) ?? '', door: textOf(lack.door) ?? '', why: textOf(lack.why) ?? '',
         plugin: textOf(lack.plugin),
       })),
+      loaded: loaded ? {
+        tools: textsOf(loaded.tools),
+        servers: rowsOf(loaded.servers).map((server) => ({ name: textOf(server.name) ?? '', status: textOf(server.status) ?? '' })),
+        skills: textsOf(loaded.skills),
+        plugins: textsOf(loaded.plugins),
+      } : null,
     };
   });
   return { session: textOf(held.session) ?? session, recorded: held.recorded === true && receipts.length > 0, receipts };

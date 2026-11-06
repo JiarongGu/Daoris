@@ -74,6 +74,9 @@ public sealed record HelpReceipt
     /// <summary>In restricted mode, what it lacks, each with the door that grants it (D183 point 4); none in full access.</summary>
     public IReadOnlyList<HelpWiredLack> Lacks { get; init; } = [];
 
+    /// <summary>What the door said it loaded at this start, from its init frame (<see cref="HelpLoaded"/>); null until it said, and on a start before it.</summary>
+    public WireLoaded? Loaded { get; init; }
+
     /// <summary>
     /// The housekeeping operations its start was handed (HELPMODE1c2a, <see cref="ConfiguredAccess"/>), whatever its agent: each tool's
     /// call is judged by these and by the record at the call, so a grant chosen since takes the next start, at the conversation's next
@@ -250,6 +253,26 @@ public sealed class HelpWired(string home)
                 writer.WriteStartObject();
                 writer.WriteStartArray("receipts");
                 foreach (var each in kept.Append(receipt)) Write(writer, each);
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+            });
+        }
+    }
+
+    /// <summary>Change the newest receipt kept for a conversation, in the one write; nothing where it has none.</summary>
+    internal void Amend(string session, Func<HelpReceipt, HelpReceipt> change)
+    {
+        lock (Gate)
+        {
+            var kept = Oldest(session);
+            if (kept.Count == 0) return;
+            var changed = change(kept[^1]);
+            if (ReferenceEquals(changed, kept[^1])) return;
+            JsonFile.Write(PathOf(session), writer =>
+            {
+                writer.WriteStartObject();
+                writer.WriteStartArray("receipts");
+                foreach (var each in kept.Take(kept.Count - 1).Append(changed)) Write(writer, each);
                 writer.WriteEndArray();
                 writer.WriteEndObject();
             });
@@ -545,6 +568,7 @@ public sealed class HelpWired(string home)
         writer.WriteEndArray();
         Strings(writer, "housekeeping", receipt.Housekeeping);
         Strings(writer, "settings", receipt.Settings);
+        HelpLoaded.Write(writer, receipt.Loaded);
         writer.WriteEndObject();
     }
 
@@ -604,6 +628,7 @@ public sealed class HelpWired(string home)
             Housekeeping = Json.Strings(element, "housekeeping"),
             // And before HELPMODE1c3, no settings.
             Settings = Json.Strings(element, "settings"),
+            Loaded = HelpLoaded.Read(element),
         };
     }
 }

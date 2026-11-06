@@ -310,10 +310,9 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 preamble: Driver.JoinNotices(preamble, browserNotice),
                 handedPlan: ConnectorPlans.For(sessionId, ask.Workspace, servers),
                 drivesBrowser: drivesBrowser,
-                // The intake's own check (§5.5): no try once the person stopped it, or its ask gained quests or went away meanwhile.
-                transientWanted: async retryCt =>
-                    !_context.Processes.WasStopRequested(sessionId)
-                    && await service.FindAskAsync(ask.Id, retryCt).ConfigureAwait(false) is { } now && now.Quests.Count == ask.Quests.Count,
+                // The intake's own authority (§5.5): no try once the person stopped it, or its ask was closed, deleted or gained quests.
+                transientWanted: TransientOwners.Intake(
+                    _context.Processes, sessionId, retryCt => service.FindAskAsync(ask.Id, retryCt)!, ask.Quests.Count),
                 said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter),
                 stopMade: stop => stoppedFirst = stop,
                 // MODELROLE1d (D205 §3.5(f)): its agent's refusal of the entry's model at the open is kept as the account's reading and
