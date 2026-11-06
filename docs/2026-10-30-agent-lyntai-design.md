@@ -1405,6 +1405,16 @@ account's home reaches the vendor's server.
   `-p` ended at the ten-second patience, the others answered in two to eleven seconds. Codex (account B, its one): both
   readers answered the same two windows with the same use and the same week's reset, the session window's reset three seconds apart
   between two reads, as a server that rolls an unopened window gives; no plan said by either.
+- **Measured again, 2026-11-07, on Lyntai's local build `3.5.3-local.1ece575`**, whose `7957c4ef` reads an object scope naming a
+  model's `id` and `display_name`. One read of account A through each path, no model turn spent: today's reader answered both windows
+  and five history rows (the two windows, `limits:session`, `limits:weekly_all`, `limits:weekly_scoped`); the layer's was still
+  `unrecognised-answer`. The installed server (Claude Code 2.1.319) names the scoped row's model by its display name alone, its `id`
+  null (`{"model":{"display_name":…,"id":null},"surface":null}`), and Lyntai's reader takes a model only with a non-empty id, so the
+  whole answer still reads unknown. The oracle holds both shapes (`ClaudeUsageTests.ObjectScope`): with an id the two reads agree, the
+  layer's `ScopeName` and `Surface` mapped as today's reader reads an object scope, with no scope kept; with a null id the layer's whole
+  answer is the named unrecognised gap. Claude Code's question stays on today's reader. What remains of Lyntai: a model scope with a
+  null id read by its display name, and a row its reader cannot read skipping that row, never the answer. The answer also carries
+  per-model arrays beside the windows (`model_scoped`, `weekly_scoped_shares`), which neither reader reads.
 - **What a person sees.** The Accounts screen's windows on both agents as before; the screenshot is that screen with a signed-in account of
   each, in English and Chinese.
 - **Proof.** §12's 1c line. **Waits for** R-a and R-c (LQ2's restated answer, LQ14, LQ15); neither of AG20's answers.

@@ -7,8 +7,9 @@ namespace Daoris.Driver;
 /// Claude Code's windows read through the layer (AGENTLYNTAI1c, the agent-lyntai design §4.2): its CLI provider registered under
 /// <c>claude-code</c> for its usage source alone, never opened, its server in the account home's own folder as today's (Lyntai's AG22),
 /// and the reading named as <see cref="ClaudeUsage"/> names it, a window not yet opened turning over a window's length after the read.
-/// Not bound in place of today's question: the layer's reader reads a real answer's object <c>scope</c> as unknown and so answers nothing
-/// (D248's note of 2026-11-07); the oracle reads it, and it is bound again when Lyntai's reader keeps such an answer.
+/// Not bound in place of today's question: the installed server names a scoped row's model by its display name with a null <c>id</c>,
+/// which the layer's reader reads as unknown, so it answers nothing on a real account (D248's note of 2026-11-07, the agent-lyntai design's
+/// §9.2); the oracle reads that answer, and the binding returns when Lyntai's reader keeps it.
 /// </summary>
 internal static class ClaudeUsageLayer
 {
