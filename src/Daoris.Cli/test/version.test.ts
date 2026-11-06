@@ -130,8 +130,7 @@ const driverGroups = (): string[] => {
 };
 
 const treeCommands = (): string[] => {
-  // `chat` is the desktop program's own held verb, answered before the dispatcher (Driver.Host's Program.cs), so it carries no group mark.
-  const names = [...COMMANDS.map((command) => command.name), ...driverGroups(), 'chat', 'help'].sort();
+  const names = [...COMMANDS.map((command) => command.name), ...driverGroups(), 'help'].sort();
   assert.ok(names.length >= 30, 'the tree emptied — this test is worthless if it is');
   return names;
 };
