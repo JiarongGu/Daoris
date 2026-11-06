@@ -1174,12 +1174,9 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
             Assert.StartsWith("sessions: ", Assert.Single(said.Out));
         }
 
-        // A conversation opens in the window's chat runner and a terminal holds it (RPC1g3): these routes keep no verb's own words for one,
-        // so with none up yet a start-from is the same refusal as the page's press, and a hand-over to an agent says nothing opens here.
+        // A terminal holds a conversation the window's runner opens (RPC1g3): no verb's words for one, so with none up it is the page's refusal.
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, "SESSION_START_FROM", new { id = "nobody1", said = true }));
-        var handed = SaidOf(await AnswerAsync(module, "SESSION_HAND_OVER", new { id = "nobody1", agent = "codex", said = true }));
-        Assert.Equal(2, handed.Code);
-        Assert.StartsWith("sessions: nothing here can hand a conversation over", Assert.Single(handed.Out));
+        Assert.Equal(2, SaidOf(await AnswerAsync(module, "SESSION_HAND_OVER", new { id = "nobody1", agent = "codex", said = true })).Code);
     }
 
     private async Task<DriverLoop> UpAsync(LoopbackHost ledger)

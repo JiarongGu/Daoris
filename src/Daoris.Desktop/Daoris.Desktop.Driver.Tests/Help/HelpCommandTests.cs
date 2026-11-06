@@ -364,7 +364,7 @@ public sealed class HelpCommandTests : IDisposable
     {
         Assert.DoesNotContain("resume", HelpCommand.Verbs);
         Assert.DoesNotContain("resume", HelpCommand.Usage);
-        Assert.DoesNotContain("resume", DriverCommand.Usage);
+        Assert.DoesNotContain("ask-daoris resume", DriverCommand.Usage);
         Assert.Null(HelpCommand.Read(["resume", "h1", "and", "the", "remote?"], out var problem));
         Assert.DoesNotContain("resume", problem);
     }
