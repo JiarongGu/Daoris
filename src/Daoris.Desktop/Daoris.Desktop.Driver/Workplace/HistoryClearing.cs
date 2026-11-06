@@ -354,7 +354,7 @@ public static class HistoryClearing
             };
         }
 
-        return HistoryPieces.Keep(unit.Sessions, machine.Pieces);
+        return HistoryPieces.Keep(unit.Sessions, machine.Pieces());
     }
 
     /// <summary>The records a judgement reads beside the service's word: every session record, quest and ask, closed ones included.</summary>
@@ -396,7 +396,7 @@ public static class HistoryClearing
 
         public SessionHomeFiles Files { get; } = new(world.Home, world.Remover);
 
-        public PartnerFiles Pieces { get; } = new(world.Home);
+        public IReadOnlyList<HistoryPiece> Pieces() => HistoryPieceReadings.Current.Pieces(world.Home);
 
         public SessionTrees Trees => _trees;
 

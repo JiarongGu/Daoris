@@ -202,6 +202,13 @@ public sealed class ProcessStarts
         {
             await waiter.Task.ConfigureAwait(false);
         }
+
+        // A place handed on just as the wait was given up is given back: a start cancelled before it began never begins.
+        if (ct.IsCancellationRequested)
+        {
+            Leave(whose);
+            ct.ThrowIfCancellationRequested();
+        }
     }
 
     /// <summary>A wait given up: out of its queue, unless a place was handed to it first, which its start then uses.</summary>

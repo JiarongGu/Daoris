@@ -427,7 +427,7 @@ Agents page, and `orient-index` and `code-map` once files move.
   The provider censuses' ids and words are the registrations' own: Claude Code, Codex and dsh declare their `Vocabulary` part,
   `ProviderVocabulary` reads every provider's id, its program's name, its doors' ids and those words, the driver's census and the
   service's (`ServiceProviderCensusTests`, in the driver's tests, which hold the registrations; a service change reaches them through
-  the service lane's gates) read it, and the page's and tools' read it as the contracts' generator writes it (`PROVIDER_VOCABULARY` in the page's service types),
+  the service lane's gates; D250) read it, and the page's and tools' read it as the contracts' generator writes it (`PROVIDER_VOCABULARY` in the page's service types),
   every hyphened id counted in a sentence; a vocabulary's variable is its program's, kept in its spawn and stripped from every other
   provider's. The stored names' census (`StoredOldNamesCensusTests`: a fresh desktop store names no column by an old seam's word, and
   every source spelling `adapter`, `harness`, `intakeAdapter`, `helperAdapter`, `harnessVersion`, `pipe` or `acp` as a stored name is one

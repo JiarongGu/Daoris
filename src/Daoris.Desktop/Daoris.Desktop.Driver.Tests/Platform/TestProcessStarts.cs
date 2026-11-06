@@ -49,7 +49,8 @@ internal static class TestProcessStarts
         [
             "Daoris.Desktop.Driver.Tests/Agents/AgentSignInProcessTests.cs", "Daoris.Desktop.Driver.Tests/Agents/InAppBrowserServersTests.cs",
             "Daoris.Desktop.Driver.Tests/Agents/SessionProcessesProcessTests.cs", "Daoris.Desktop.Driver.Tests/Agents/LineageTokensTests.cs",
-            "Daoris.Desktop.Driver.Tests/Conversations/ChatTurnTakingTests.cs", "Daoris.Desktop.Driver.Tests/Install/HeldFilesProcessTests.cs",
+            "Daoris.Desktop.Driver.Tests/Conversations/ChatTurnTakingTests.cs", "Daoris.Desktop.Driver.Tests/Course/QuestPartStopProcessTests.cs",
+            "Daoris.Desktop.Driver.Tests/Install/HeldFilesProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Loop/LineageExitProcessTests.cs", "Daoris.Desktop.Driver.Tests/Loop/LineageRaceProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Loop/OrphanedSessionTests.cs", "Daoris.Desktop.Driver.Tests/Platform/ProcessJobTests.cs",
             "Daoris.Desktop.Driver.Tests/Platform/OwnedProcessesProcessTests.cs", "Daoris.Desktop.Driver.Tests/Review/HeavyRunProcessTests.cs",
