@@ -127,7 +127,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     *Try again*, failures in a row on one choice, transient tries, a quiet end, a limited end, and moves in 24 hours. (from D229)
 32. The actions are hold, ask, wait (5 to 600 minutes), next, weighted, refer and off, each count allowing its own set.
     `refer` (ask the agent supervisor) is not offered yet. (from D229)
-33. A place is the machine, `workspace:<id>`, `repository:<id>` or `line:<key>`. For each count the most specific place
+33. A place is the machine, `workspace:<id>` or `repository:<id>`; a line has no place of its own, so the judge refuses
+    `line:<key>` (`place`) and the chain has no line step. A failure is one thing for the quest's count and its run on
+    one choice: a failed end or a cut-off, never a limit, a refused account, a choice not offered, a transient end, an
+    update's close or the quiet end (`SessionReads.IsFailure`). For each count the most specific place
     holding a rule decides, with no layering. Rules naming the role beat those naming none; `off` ends inheritance. A
     repository's workspace is its wider place at the judge in every process as at the lines: the look keeps the registry's
     in the store (`repository_workspaces`, step 21) and the judge reads it there; `ROLES` answers each place's wider places,
@@ -292,8 +295,8 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **CONTEXTDRIVE1k (rest):** the room's goldens, regenerated at SCOPEVERIFY2; Ask Daoris's `role_propose` rules card is
   the driver's one English sentence (`HelpRoleProposals.RulesPlan`), not yet a catalogue's words in both languages.
 - **CONTEXTDRIVE1j:** `refer`, the agent supervisor's *course* act.
-- **CONTEXTDRIVE1t (rest):** line places have no retention and are judged well formed, never as driven (to be refused, with the
-  chain's `line:` step and the terminal's `line:<key>` gone); `Strikes` and `FailedRuns` part on quiet and cut-off ends.
+- **CONTEXTDRIVE1t (rest):** `RuledLine.Line` and `StaffPlace.Line` are carried and read by nothing now; a stored `line:`
+  set is read by nothing and the web's `ruleDoor` still opens one by its repository.
 - **CONTEXTDRIVE1l, m:** the installed proof. No class named `HelpCoverageTests` exists in the tree, so the hooks' coverage
   rows owed at CONTEXTDRIVE1g have nowhere to go until the coverage test that names them is written.
 - **STAFFPOLICY1h/i:** selection by measurement; the installed proof. A conversation's hand-over by the agent's ask

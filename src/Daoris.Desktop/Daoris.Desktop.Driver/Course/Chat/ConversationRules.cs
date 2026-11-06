@@ -92,7 +92,7 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
         try
         {
             var book = staff.Rules();
-            var effective = book.For(ruled.Role, ruled.Place.Repository, ruled.Place.Workspace, ruled.Place.Line);
+            var effective = book.For(ruled.Role, ruled.Place.Repository, ruled.Place.Workspace);
             if (SupervisorRuleBook.Acting(effective, count, does) is not { } rule) return;
             acts.Record(new RuleActed(ruled.Place.Line!, session, rule, book.RevisionOf(rule.Place), n, true, point, (clock ?? TimeProvider.System).GetUtcNow()));
         }

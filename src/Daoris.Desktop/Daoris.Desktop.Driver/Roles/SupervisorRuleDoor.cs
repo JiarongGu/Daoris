@@ -40,7 +40,7 @@ public static class SupervisorRuleDoor
         }
 
         if (Text(press, "change") is { } change && change != "set") throw Mixed($"`change: {change}`");
-        var place = Text(press, "place") ?? throw Refused("place", "the supervisor's rules name their place: `machine`, `workspace:<id>`, `repository:<id>` or `line:<key>`.");
+        var place = Text(press, "place") ?? throw Refused("place", "the supervisor's rules name their place: `machine`, `workspace:<id>`, or `repository:<id>`.");
         if (!press.TryGetProperty("rulesRevision", out var revision) || !revision.TryGetInt64(out var read))
         {
             throw Refused("revision", $"the press names no `rulesRevision`: read {place}'s rules first, then write them whole.");

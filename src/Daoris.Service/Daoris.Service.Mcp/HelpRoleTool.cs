@@ -41,7 +41,7 @@ public sealed class HelpRoleTool(IntakeScope? intake = null, HelpProposalBox? he
             + "the role's own.")]
         string? policy = null,
         [Description("The policy revision you read (`ROLES`' `policies`), so a policy changed since is refused rather than overwritten.")] long? policy_revision = null,
-        [Description("The supervisor's rules only: the place they are for, `machine`, `workspace:<id>`, `repository:<id>` or `line:<key>`.")] string? place = null,
+        [Description("The supervisor's rules only: the place they are for, `machine`, `workspace:<id>`, or `repository:<id>`.")] string? place = null,
         [Description(
             "The supervisor's rules only: the place's whole list as JSON, `[]` for none, each `{ \"count\": \"answers-alone\", \"at\": 3, \"do\": \"hold\" }` "
             + "with `upTo` minutes for a `wait` and `roles` (`[\"build\"]`) where it watches some roles alone. Counts: `answers-alone` (go-ons by answers "

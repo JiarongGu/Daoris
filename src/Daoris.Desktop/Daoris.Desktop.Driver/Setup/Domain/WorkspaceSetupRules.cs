@@ -85,7 +85,7 @@ public static class WorkspaceSetupRules
         SetupStanding Active(string repository, QuestView active, string what)
         {
             var failed = (strikes.TryGetValue(active.Id, out var count) ? count : 0) - config.ForgivenAt(active.Id);
-            var parks = SupervisorRuleBook.FailuresAt(rules.For(RoleWork.Build, active.To, plan.Workspace, active.Id));
+            var parks = SupervisorRuleBook.FailuresAt(rules.For(RoleWork.Build, active.To, plan.Workspace));
             return parks > 0 && failed >= parks
                 ? new(repository, SetupState.Parked, active.Id,
                     $"its {what} #{active.Id} is parked: {failed} session(s) failed on it. `daoris quest retry {active.Id}` "

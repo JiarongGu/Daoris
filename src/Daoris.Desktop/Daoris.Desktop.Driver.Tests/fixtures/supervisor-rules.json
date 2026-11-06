@@ -47,6 +47,7 @@
       "rules": [{ "id": "x", "count": "tries", "at": 5, "do": "hold", "upTo": 10 }], "expect": "upTo" },
     { "name": "a rule naming another place", "place": "repository:daoris", "revision": 0,
       "rules": [{ "id": "x", "count": "quiet", "at": 1, "do": "next", "place": "repository:other" }], "expect": "place" },
+    { "name": "a line's place, which nothing reads", "place": "line:7", "revision": 0, "rules": [], "expect": "place" },
     { "name": "a place of no kind Daoris drives", "place": "planet:earth", "revision": 0, "rules": [], "expect": "place" },
     { "name": "a repository place with no id", "place": "repository:", "revision": 0, "rules": [], "expect": "place" },
     { "name": "a role the catalogue does not hold", "place": "repository:daoris", "revision": 0,
@@ -81,12 +82,11 @@
     { "name": "a revision that moved", "place": "machine", "revision": 0, "rules": "base", "expect": "revision" }
   ],
   "effective": [
-    { "name": "the line's own place beats the repository's and the machine's",
+    { "name": "a line place's stored rules are read by nothing",
       "sets": [
         { "place": "machine", "rules": [{ "id": "m", "count": "answers-alone", "at": 2, "do": "hold" }] },
-        { "place": "repository:daoris", "rules": [{ "id": "r", "count": "answers-alone", "at": 4, "do": "hold" }] },
         { "place": "line:7", "rules": [{ "id": "l", "count": "answers-alone", "at": 6, "do": "hold" }] }],
-      "line": "7", "repository": "daoris", "role": "build", "expect": { "answers-alone": ["l"] } },
+      "repository": "daoris", "role": "build", "expect": { "answers-alone": ["m"] } },
     { "name": "the repository's replaces the machine's, a count the repository holds none on falls to the machine",
       "sets": [
         { "place": "machine", "rules": [{ "id": "m-aa", "count": "answers-alone", "at": 2, "do": "hold" }, { "id": "m-f", "count": "failures", "at": 3, "do": "hold" }] },

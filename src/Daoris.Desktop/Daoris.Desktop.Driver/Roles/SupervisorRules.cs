@@ -96,12 +96,12 @@ public static class SupervisorRules
     };
 
     /// <summary>
-    /// The places a line's rules come from, narrow to wide, ending at the machine: its own, its repository's, its workspace's.
+    /// The places a line's rules come from, narrow to wide, ending at the machine: its repository's, its workspace's. A line has no place of its
+    /// own: nothing reads one, and the judge refuses it.
     /// </summary>
-    public static IReadOnlyList<string> Chain(string? line, string? repository, string? workspace)
+    public static IReadOnlyList<string> Chain(string? repository, string? workspace)
     {
-        var chain = new List<string>(4);
-        if (line is not null) chain.Add($"line:{line}");
+        var chain = new List<string>(3);
         if (repository is not null) chain.Add($"repository:{repository}");
         if (workspace is not null) chain.Add($"workspace:{workspace}");
         chain.Add(Machine);
@@ -137,7 +137,7 @@ public static class SupervisorRules
 
     // The narrowest place is judged first, so a refusal names the place a wider write left unbounded.
     private static int Specificity(string place) =>
-        place.StartsWith("line:", StringComparison.Ordinal) ? 0 : place.StartsWith("repository:", StringComparison.Ordinal) ? 1 : place == Machine ? 3 : 2;
+        place.StartsWith("repository:", StringComparison.Ordinal) ? 1 : place == Machine ? 3 : 2;
 
     /// <summary>
     /// Judge a place's rules, written whole, before anything is written: null where they stand, else the refusal. <paramref name="held"/>
@@ -149,6 +149,7 @@ public static class SupervisorRules
     {
         var current = held.FirstOrDefault(set => set.Place == place)?.Revision ?? 0;
         if (revision != current) return new RuleRefusal("revision", $"{place}'s rules moved to revision {current}; read them again.", place);
+        if (place.StartsWith("line:", StringComparison.Ordinal)) return new RuleRefusal("place", $"`{place}` is a line: its rules are its repository's, its workspace's or the machine's.", place);
         if (!PlaceReads(place) || world.Known?.Invoke(place) == false) return new RuleRefusal("place", $"`{place}` is not a place Daoris drives.", place);
         foreach (var rule in rules)
         {
@@ -200,8 +201,8 @@ public static class SupervisorRules
         left is null ? right is null : right is not null && left.Intersect(right).Any();
 
     private static bool PlaceReads(string place) =>
-        place == Machine || ((place.StartsWith("workspace:", StringComparison.Ordinal) || place.StartsWith("repository:", StringComparison.Ordinal)
-                              || place.StartsWith("line:", StringComparison.Ordinal)) && place.IndexOf(':') < place.Length - 1);
+        place == Machine || ((place.StartsWith("workspace:", StringComparison.Ordinal) || place.StartsWith("repository:", StringComparison.Ordinal))
+                             && place.IndexOf(':') < place.Length - 1);
 
     private static RuleRefusal? Shape(SupervisorRule rule, string place, SupervisorRuleWorld world)
     {

@@ -33,8 +33,8 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     }
 
     /// <summary>A line's effective rules per count, for its role at its place (§4.4).</summary>
-    public IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> For(string? role, string? repository, string? workspace, string? line) =>
-        SupervisorRules.Effective(Sets, SupervisorRules.Chain(line, repository, workspace), role);
+    public IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> For(string? role, string? repository, string? workspace) =>
+        SupervisorRules.Effective(Sets, SupervisorRules.Chain(repository, workspace), role);
 
     /// <summary>The rule on <paramref name="count"/> that acts by <paramref name="does"/> first (its lowest <c>at</c>), for the act's record; none where none does.</summary>
     public static SupervisorRule? Acting(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective, string count, string does) =>
@@ -50,7 +50,7 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     public static int FailuresAt(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) => Lowest(effective, SupervisorRules.Failures, SupervisorRules.Hold) ?? 0;
 
     /// <summary>The failed sessions that park a quest at the machine's place, for any role: where a line with no narrower rule parks; 0 where none holds.</summary>
-    public int MachineFailures => FailuresAt(For(null, null, null, null));
+    public int MachineFailures => FailuresAt(For(null, null, null));
 
     /// <summary>The tries a run's transient episode makes: the lowest <c>at</c> of the effective tries rules, which every line holds (the judge refuses a write leaving none).</summary>
     public static int TriesLimit(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) =>

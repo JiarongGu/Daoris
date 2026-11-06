@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 internal sealed record RuledLine(string Role, string? Repository, string? Workspace, string? Line)
 {
     /// <summary>The line's effective rules per count in <paramref name="book"/>.</summary>
-    public IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> In(SupervisorRuleBook book) => book.For(Role, Repository, Workspace, Line);
+    public IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> In(SupervisorRuleBook book) => book.For(Role, Repository, Workspace);
 
     /// <summary>The line's place, as the staffing course reads it.</summary>
     public StaffPlace Place => new(Repository, Workspace, Line);

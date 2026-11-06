@@ -12,14 +12,14 @@ internal static class StaffCourse
     internal static int Tries(StaffLedger? staff, string? role, StaffPlace? place = null) =>
         staff is null || role is null
             ? TransientRetry.Bound
-            : SupervisorRuleBook.TriesLimit(staff.Rules().For(role, place?.Repository, place?.Workspace, place?.Line));
+            : SupervisorRuleBook.TriesLimit(staff.Rules().For(role, place?.Repository, place?.Workspace));
 
     /// <summary>
     /// The policy the course reads for <paramref name="role"/>'s line at <paramref name="place"/> (CONTEXTDRIVE1e; the context counters design §4.5):
     /// the applied policy's moves and bound are the line's effective rules'.
     /// </summary>
     internal static StaffPolicy? CourseOf(StaffLedger staff, string role, StaffPlace place) =>
-        SupervisorRuleBook.Course(staff.Policy(role).Applied, staff.Rules().For(role, place.Repository, place.Workspace, place.Line));
+        SupervisorRuleBook.Course(staff.Policy(role).Applied, staff.Rules().For(role, place.Repository, place.Workspace));
 
     /// <summary>
     /// The facts a driven quest's next start arranges by: the choices its line moved off within the hold, and the moves its rules set, which
