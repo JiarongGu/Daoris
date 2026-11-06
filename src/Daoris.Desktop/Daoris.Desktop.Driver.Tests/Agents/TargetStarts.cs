@@ -25,7 +25,7 @@ internal static class TargetStarts
             adapters.Resume(door, SpawnRequests.Of(target, command) with { Resume = conversation });
 
         /// <summary>A conversation's process on the registered <paramref name="door"/>.</summary>
-        public ProcessStartInfo Chat(AgentDoor door, SpawnRequest chat, IReadOnlyList<string>? command = null) =>
+        public ProcessStartInfo Chat(AgentDoor door, SpawnRequest chat, IReadOnlyList<string>? command) =>
             adapters.Chat(door, chat with { Command = command });
 
         /// <summary>A native resume's process on <paramref name="conversation"/>, or null where the door resumes none.</summary>

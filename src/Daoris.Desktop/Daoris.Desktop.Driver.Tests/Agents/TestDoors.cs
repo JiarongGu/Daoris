@@ -78,7 +78,7 @@ internal static class TestDoors
         new DoorIdentity(null, null, null),
         Known<ToolSpec>.Absent,
         agent?.Home ?? new DoorHome(null, false, null),
-        agent is null ? LentPart.None : new LentPart(agent.Pool, TablesPart.None, new UsagePart(agent.Usage)),
+        agent is null ? LentPart.None : new LentPart(agent.Pool, agent.Tables(withErrors: false), new UsagePart(agent.Usage)),
         Known<IDoorOffers>.Absent,
         postures ?? new PosturesPart(null, null, null, null),
         Known<ISpawn>.Declared(spawn ?? new UnusedSpawn(), Evidence),

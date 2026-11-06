@@ -118,7 +118,10 @@ public sealed class ProviderRegistry
     public ProviderRegistry Joined(IEnumerable<Provider> more, IEnumerable<string> declaredAgents)
     {
         var carried = new HashSet<string>(Known, StringComparer.OrdinalIgnoreCase);
-        var joining = more.Where(provider => !ProviderRegistration.Names(provider).Any(carried.Contains)).ToList();
+        // A provider joins unless its own id or one of its doors' ids is carried; the account key its doors run as is a name it shares.
+        var joining = more
+            .Where(provider => !provider.Doors.Select(door => door.Id.Value).Append(provider.Id.Value).Any(carried.Contains))
+            .ToList();
         return new ProviderRegistry([.. Providers.Where(provider => !provider.Unavailable), .. joining], _declared.Concat(declaredAgents));
     }
 
@@ -297,7 +300,7 @@ public sealed class ProviderRegistry
 
     /// <summary>Whether the door declared a program: its provider holds the program of the door that gives it its id, a door its own.</summary>
     private static bool Declares((AgentDoor Door, Provider Provider) entry) =>
-        Ids.Same(entry.Provider.Id.Value, entry.Door.Id.Value) ? entry.Provider.Program.IsKnown : entry.Door.Program.IsKnown;
+        !entry.Door.Declared && Ids.Same(entry.Provider.Id.Value, entry.Door.Id.Value) ? entry.Provider.Program.IsKnown : entry.Door.Program.IsKnown;
 
     private static AccountAgent AgentOf((AgentDoor Door, Provider Provider) entry)
     {
@@ -330,7 +333,7 @@ public sealed class ProviderRegistry
     private static (ToolSpec? Program, PoolFacts Accounts, TablesPart Tables, UsagePart Usage) Declarations((AgentDoor Door, Provider Provider) entry)
     {
         var (door, provider) = entry;
-        var owning = Ids.Same(provider.Id.Value, door.Id.Value);
+        var owning = !door.Declared && Ids.Same(provider.Id.Value, door.Id.Value);
         var program = owning ? provider.Program : door.Program;
         var programFacts = program.IsKnown ? program.Required : null;
         if (owning && Ids.Same(provider.KeyOf().Value, door.Id.Value))
