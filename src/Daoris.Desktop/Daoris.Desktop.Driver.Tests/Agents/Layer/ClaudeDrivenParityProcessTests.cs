@@ -48,11 +48,12 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
         ParityGap.None);
 
     /// <summary>
-    /// An answer's words: the layer's door spawns with <c>--include-partial-messages</c> and reads an answer's text from its deltas alone,
-    /// and these streams were recorded without them, so the layer shows none. Closed by a driven stream recorded with partial messages.
+    /// An answer's words: both paths spawn with <c>--include-partial-messages</c>, and today's reader shows a complete message's words that
+    /// no delta streamed where the layer's reads words from the deltas alone. These streams carry no deltas, so the layer shows none. Closed
+    /// by Lyntai reading a complete message's unstreamed words, or shown alike on a driven stream recorded with its deltas.
     /// </summary>
     private static readonly ParityGap Answer = new(
-        "an answer's words over a stream recorded without the partial messages the layer's door asks for",
+        "an answer's words no delta streamed, which today's reader shows and the layer's does not",
         seen =>
         {
             var answers = seen.Where(each => each.Channel == ParityChannel.Events && each["kind"] == SessionEventKind.Message).ToList();
@@ -116,7 +117,7 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
         var name = Path.GetFileNameWithoutExtension(fixture);
         var command = LayerTestProvider.Scenario(_scratch, new { @out = lines }, name);
         using var path = new ParityDaorisPath(Path.Combine(_scratch, "daoris-" + name), ParityDaorisPath.Shipped(ClaudeDrivenLayer.Door));
-        return (await path.RunAsync(command, Prompt, Start, _bound.Token), await LayerAsync(Shim(command, name)));
+        return (await path.RunAsync(command, Prompt, Start, _bound.Token), await LayerAsync(LayerTestProvider.Shim(_scratch, command, name)));
     }
 
     private async Task<ParityObservation> LayerAsync(string program)
@@ -138,22 +139,5 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
 
         ParityObserver.Transcript(seen, transcript);
         return seen;
-    }
-
-    /// <summary>The layer's Claude door spawns one program with its own arguments: a shim running the scenario's command before them.</summary>
-    private string Shim(IReadOnlyList<string> command, string name)
-    {
-        var quoted = string.Join(' ', command.Select(each => $"\"{each}\""));
-        if (OperatingSystem.IsWindows())
-        {
-            var cmd = Path.Combine(_scratch, name + ".cmd");
-            File.WriteAllText(cmd, $"@{quoted} %*\r\n");
-            return cmd;
-        }
-
-        var sh = Path.Combine(_scratch, name + ".sh");
-        File.WriteAllText(sh, $"#!/bin/sh\nexec {quoted} \"$@\"\n");
-        File.SetUnixFileMode(sh, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-        return sh;
     }
 }

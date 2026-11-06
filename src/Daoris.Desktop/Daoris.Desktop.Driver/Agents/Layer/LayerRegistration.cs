@@ -16,4 +16,10 @@ internal sealed record LayerRegistration(string Door, Action<LyntaiBuilder> Regi
     /// name alone, as a door with no vocabulary of its tools.
     /// </summary>
     public Func<Lyntai.Agents.ToolCall, SessionEvent>? Steps { get; init; }
+
+    /// <summary>
+    /// The door's own options type over the turn's prompt, holding what the start's carriers hand it (its rules file and its servers file,
+    /// §5.6); null takes the layer's own options, carrying neither.
+    /// </summary>
+    public Func<string, RunCarriers?, Lyntai.Agents.AgentSessionOptions>? Options { get; init; }
 }

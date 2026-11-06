@@ -23,7 +23,24 @@ internal static class ClaudeDrivenLayer
         {
             ModelRefusals = ModelRefusals,
             Steps = call => ClaudeStreamJson.Step(call.Name, call.ArgumentsJson, call.CallId),
+            Options = (prompt, carriers) => new Lyntai.Providers.ClaudeCli.ClaudeAgentOptions
+            {
+                Prompt = prompt, SettingsPath = carriers?.Settings, McpConfigPath = carriers?.Servers,
+            },
         };
+
+    /// <summary>
+    /// What today's driven start hands Claude Code, as the layer's start carries it: the mode it runs under (today's word, or
+    /// <c>acceptEdits</c> where none is asked), the model and effort its choice carries as today's native arguments carry them, and the
+    /// plugin folders it composed.
+    /// </summary>
+    public static LayerStart Start(LayerStart start, SpawnRequest request, IReadOnlyList<string> plugins) => start with
+    {
+        PermissionMode = request.Mode ?? "acceptEdits",
+        Model = request.Asked?.Model is { Source: "entry" or "override", Carried: true, Value: { } model } ? model : null,
+        Effort = request.Asked?.Effort is { Source: "entry" or "override", Carried: true, Value: { } effort } ? effort : null,
+        Plugins = plugins,
+    };
 
     /// <summary>The binding of the driven kind alone, over <paramref name="command"/>.</summary>
     public static LayerBinding Binding(string command) =>
