@@ -16,8 +16,13 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>In the Process half, beside a listener.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
-public sealed class GitHttpsProcessTests : IClassFixture<GitTlsHost>, IDisposable
+public class GitHttpsProcessTests : IClassFixture<GitTlsHost>, IDisposable
 {
+    /// <summary>Whether this run's git is the MinGit the toolchain pins (<see cref="PinnedMinGit"/>) rather than the runner's.</summary>
+    protected virtual bool Pinned => false;
+
+    private bool _pinnedLaid;
+
     private const string User = "fixture-user";
     private const string Token = "fixture-token-not-a-secret";
 
@@ -57,6 +62,12 @@ public sealed class GitHttpsProcessTests : IClassFixture<GitTlsHost>, IDisposabl
 
     private ProcessStartInfo Git(string folder, params string[] arguments)
     {
+        if (Pinned && !_pinnedLaid)
+        {
+            PinnedMinGit.Lay(Home);
+            _pinnedLaid = true;
+        }
+
         var (info, refusal) = WorkingTree.GitStart(folder, arguments, Home);
         Assert.Null(refusal);
         info!.Environment["GIT_CONFIG_NOSYSTEM"] = "1";

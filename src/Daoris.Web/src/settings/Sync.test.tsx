@@ -247,15 +247,15 @@ describe('bringing repositories up to date', () => {
     expect(said.getByText(/^2 of 3 repositories were not fetched, so each is judged against what origin said/)).toBeInTheDocument();
     expect(said.getByText(unreadable)).toBeInTheDocument();
     expect(said.getByText('engine: last fetched 1d ago · game: never fetched')).toBeInTheDocument();
-    expect(note.textContent).toMatch(/needs a key its own ssh reads, or core\.sshCommand/);
-    expect(note.textContent).not.toMatch(/credential helper/);
+    expect(note.textContent).toMatch(/add a git identity for its host in Settings → Git, with an SSH key/);
+    expect(note.textContent).not.toMatch(/core\.sshCommand|credential helper/);
     // Said once, before the rows: the rows carry a short mark, not the sentence.
     expect(note.compareDocumentPosition(screen.getByRole('group', { name: 'engine' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getAllByText(unreadable)).toHaveLength(1);
     expect(screen.getAllByText('not fetched')).toHaveLength(2);
   });
 
-  it('says what the git on the path needs for an origin over HTTPS, and nothing where every fetch landed', () => {
+  it('says an identity with a token is what an origin over HTTPS needs, and nothing where every fetch landed', () => {
     const { unmount } = render(
       <Tooltip.Provider>
         <SyncSection
@@ -263,7 +263,7 @@ describe('bringing repositories up to date', () => {
           onLook={vi.fn()} onSync={vi.fn()} />
       </Tooltip.Provider>,
     );
-    expect(screen.getByRole('note', { name: 'Not fetched' }).textContent).toMatch(/credential helper that answers without asking/);
+    expect(screen.getByRole('note', { name: 'Not fetched' }).textContent).toMatch(/add a git identity for its host in Settings → Git, with a token/);
     unmount();
 
     draw();

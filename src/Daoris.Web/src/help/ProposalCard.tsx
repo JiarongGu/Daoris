@@ -332,7 +332,7 @@ function DraftChange({ workflow }: { workflow: HelpWorkflowShown }) {
 /**
  * What a sync card's look did not fetch (LEFT3 b, WSR7), said once, after the rows, as the screen's note says it: how
  * many of the lines it looked at, grouped by git's reason, when each last heard from origin — which its row is judged
- * against — and what the git Daoris runs needs to reach an origin over SSH or HTTPS. Git's words are content.
+ * against — and the git identity an origin over SSH or HTTPS needs. Git's words are content.
  */
 function SyncNotFetched({ failed, lines, onGo }: {
   failed: NonNullable<HelpSyncShown['notFetched']>;

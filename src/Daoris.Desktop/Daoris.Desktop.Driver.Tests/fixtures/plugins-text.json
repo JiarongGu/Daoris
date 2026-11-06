@@ -74,7 +74,7 @@
         "  acme.tooled              Acme tooled",
         "                           declares nothing and speaks nothing",
         "                           runs Git >=2.60, Node.js, Acme CLI >=1 <2",
-        "                           tool not read: tool 4 in `tools` has the `id` `Bad Id`, which is not one: lowercase letters, digits, dots and dashes, like `az`.",
+        "                           tool not read: tool 4 in `tools` has the `id` `Bad Id`, which is not one: lowercase letters, digits, dots and dashes, like `node`.",
         "                           ⚠ `.daoris-source.json` does not read (it is not JSON: <why>).",
         "                           icon not drawn: `icon` `missing.svg` is not a file in the plugin's folder.",
         "  browser                  browser",

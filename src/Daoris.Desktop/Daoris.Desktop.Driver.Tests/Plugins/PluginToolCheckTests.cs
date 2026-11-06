@@ -291,7 +291,7 @@ public sealed class PluginToolCheckTests : IDisposable
         Assert.Equal(["tool git", "git check 1", "tool 2", "tool pwsh"], steps.Select(step => step.Name));
         Assert.Equal([true, false, false, false], steps.Select(step => step.Ok));
         Assert.Equal("not ready: It reads a repository. `git status` exited 2: `nope`.", steps[1].Sentence);
-        Assert.Equal("tool 2 in `tools` needs an `id`: a tool's name in lowercase, like `az`.", steps[2].Sentence);
+        Assert.Equal("tool 2 in `tools` needs an `id`: a tool's name in lowercase, like `node`.", steps[2].Sentence);
         Assert.StartsWith("`pwsh` is not on this machine's PATH.", steps[3].Sentence);
     }
 
