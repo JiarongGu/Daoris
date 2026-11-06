@@ -97,6 +97,7 @@ public static class HookFrames
         [
             ("session", told.Session), ("quest", told.Quest), ("ask", told.Ask), ("state", told.State?.ToLowerInvariant()),
             ("adapter", told.Adapter), ("strikes", told.Strikes), ("code", told.Code), ("confirmation", told.Confirmation), ("end", told.End),
+            ("message", told.Message), ("poster", told.Poster), ("by", told.By), ("urgent", told.Urgent),
         ];
         foreach (var (name, value) in carried)
         {

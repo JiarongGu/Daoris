@@ -54,7 +54,7 @@ public sealed class RelayRun
     private bool _gathering;
 
     private RelayRun(string home, RelayAsk ask, string build, RelayWorld world) =>
-        (_home, _world, _batch) = (home, world, new RelayBatch(ask.Since, ask.Kinds, build));
+        (_home, _world, _batch) = (home, world, new RelayBatch(ask.Since, ask.Kinds, build, ask.NotBy));
 
     /// <summary>The subscribers' folder in <paramref name="home"/>, every folder down to it plain.</summary>
     /// <exception cref="RelayStop">A folder on the way is a link (<c>home</c>).</exception>

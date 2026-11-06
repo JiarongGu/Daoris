@@ -62,6 +62,45 @@ public sealed class WorkEventTellerTests
         Assert.All(_told, each => Assert.Equal("a1b2c3", each.Quest));
     }
 
+    private static JournalEntry Posted(long position, string message, string? by, string marks = "message", string? ask = "a1b2c3", string change = "message") =>
+        new(position, Moved.ToUnixTimeMilliseconds(), message, "channel", change, null, null, null, null, null, marks.Split(','), "team", null,
+            Ask: ask, Message: message, FromSession: by);
+
+    /// <summary>CHANNELJOIN1d (D244; the event channel design §5.7): a message kept is told with its poster's class read from the poster's id.</summary>
+    [Fact]
+    public async Task A_message_kept_is_told_with_its_poster_s_class_and_a_member_s_join_none()
+    {
+        await Teller().TellAsync(Batch(false,
+            Posted(1, "0a1b2c3d", "4b62a9fe", "message,urgent"),
+            Posted(2, "1a1b2c3d", null, "question"),
+            Posted(3, "2a1b2c3d", "o0123abc", "answer"),
+            Posted(4, "3a1b2c3d", "4b62a9fe", "member", change: "member")));
+
+        Assert.Equal(
+            [
+                new WorkEvent(WorkEventKinds.ChannelPosted, Moved) { Message = "0a1b2c3d", Ask = "a1b2c3", Poster = "4b62a9fe", By = "part", Urgent = true },
+                new WorkEvent(WorkEventKinds.ChannelPosted, Moved) { Message = "1a1b2c3d", Ask = "a1b2c3", By = "person" },
+                new WorkEvent(WorkEventKinds.ChannelPosted, Moved) { Message = "2a1b2c3d", Ask = "a1b2c3", Poster = "o0123abc", By = "outside" },
+            ],
+            _told);
+    }
+
+    /// <summary>A mirrored message has an id of another machine's shape: told without <c>message</c>, as a teammate's unless its poster is a member's.</summary>
+    [Fact]
+    public async Task A_mirrored_message_is_told_without_message_and_a_line_s_own_channel_without_ask()
+    {
+        await Teller().TellAsync(Batch(false,
+            Posted(1, "0a1b2c3d", "4b62a9fe", "message,mirrored"),
+            Posted(2, "0a1b2c3d", "o0123abc", "message,mirrored", ask: null)));
+
+        Assert.Equal(
+            [
+                new WorkEvent(WorkEventKinds.ChannelPosted, Moved) { Ask = "a1b2c3", Poster = "4b62a9fe", By = "teammate" },
+                new WorkEvent(WorkEventKinds.ChannelPosted, Moved) { Poster = "o0123abc", By = "outside" },
+            ],
+            _told);
+    }
+
     /// <summary>
     /// 🔴 The place a teller with no cursor is handed is a gap: one <c>events.missed</c> at the first place of its life, none at later ones,
     /// and one for each batch whose history is incomplete, before that batch's own events. Its cursor is its memory alone.

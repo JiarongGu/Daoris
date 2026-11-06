@@ -40,7 +40,7 @@ public static class RelaySaid
 
     /// <summary>Words the verb does not take (exit 2).</summary>
     public const string Usage =
-        "Daoris: events relay takes --where, or --once with --home <home>, --since <run>:<seq>, --kinds <kind,...> and --session-pid <pid>; nothing was served";
+        "Daoris: events relay takes --where, or --once with --home <home>, --since <run>:<seq>, --kinds <kind,...>, --not-by <id> and --session-pid <pid>; nothing was served";
 
     /// <summary>A junction or a symbolic link met under the relay's folders: said, and never followed or removed through.</summary>
     public const string Linked = "Daoris: a link under the relay's folders was left, never followed";
@@ -99,6 +99,10 @@ public static class RelaySaid
             WorkEventKinds.QuestCloseLost => $"quest {fields["quest"]} is open again: its close lost to another machine ({fields["state"]})",
             WorkEventKinds.ConfirmationEnded => $"confirmation {fields["confirmation"]} ended: {fields["end"]}",
             WorkEventKinds.WorkEnded => $"session {fields["session"]}'s work ended: the line holds it{quest}",
+            // CHANNELJOIN1d (the event channel design §5.7): an id and codes only, never the message's words.
+            WorkEventKinds.ChannelPosted =>
+                $"{(fields.TryGetValue("message", out var kept) ? $"message {kept}" : "a message")} posted by {fields["by"]}{Of("poster", "poster")}{Of("ask", "ask")}"
+                + (fields.ContainsKey("urgent") ? ", urgent" : ""),
             _ => throw new ArgumentOutOfRangeException(nameof(frame), "a kind the relay has no sentence for is a gap, never a line"),
         };
         return $"Daoris: {said} {Bracket(frame.Run, frame.Seq)}";
@@ -109,6 +113,7 @@ public static class RelaySaid
     [
         WorkEventKinds.SessionParked, WorkEventKinds.QuestParked, WorkEventKinds.SessionEnded, WorkEventKinds.WorkLanded, WorkEventKinds.QuestPublished,
         WorkEventKinds.QuestClosed, WorkEventKinds.QuestCloseLost, WorkEventKinds.ConfirmationEnded, WorkEventKinds.WorkEnded,
+        WorkEventKinds.ChannelPosted,
     ];
 
     private static string Bracket(string run, long seq) => $"[{run} #{seq}]";
