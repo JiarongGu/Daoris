@@ -65,8 +65,10 @@ public static class WorkStateSlice
         ["attempt"] =
         [
             "unit", "node", "attempt", "plugin", "step", "nodeState", "why", "outcome", "revision", "at", "resolution", "resolvedAt", "said",
-            "words", "code",
+            "words", "code", "verification",
         ],
+        // A held check's verification: what the person reads a failed or unknown one by.
+        ["verification"] = ["run", "repository", "commit", "level", "line", "base", "branch", "gate", "why"],
         // FABRIC-PERFORM1j: a node record that does not read, which stops its unit until a person mends it.
         ["unreadable"] = ["file", "unit", "at", "said"],
         ["graphEnd"] = ["unit", "kind", "at", "nodes", "quest", "node", "attempt", "nodeState", "resolution", "words", "word"],
@@ -78,6 +80,7 @@ public static class WorkStateSlice
         ["part.units"] = "unit",
         ["part.recovery"] = "entry",
         ["held.held"] = "attempt",
+        ["attempt.verification"] = "verification",
         ["held.unreadable"] = "unreadable",
         ["held.ends"] = "graphEnd",
         ["unit.end"] = "end",

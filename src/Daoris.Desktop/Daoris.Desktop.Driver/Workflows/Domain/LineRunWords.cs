@@ -43,6 +43,11 @@ public static class LineRunWords
     {
         var who = line.Level == VerifyRuns.Person ? "asked by you" : $"asked by its {line.Level} route";
         yield return $"{who} at {line.At.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
+        if (line.Line is { } on)
+        {
+            yield return line.Base is { } from ? $"the batch landed on {on} since {TextBounds.ShortCommit(from, 7)}" : $"the first verification of {on}";
+        }
+
         foreach (var gate in line.Gates)
         {
             var exit = gate.Exit is { } code ? $", exit {code}" : "";

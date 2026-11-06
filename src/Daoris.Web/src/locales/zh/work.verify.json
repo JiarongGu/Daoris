@@ -1,0 +1,12 @@
+{
+  "work.verify.failed": "{{repository}} 的验证失败：{{gate}}",
+  "work.verify.failedNone": "{{repository}} 的验证失败",
+  "work.verify.unknown": "{{repository}} 的验证结果未知：{{why}}",
+  "work.verify.batch": "主线 {{line}} 上的 {{commit}}，即自 {{base}} 以来合入的提交",
+  "work.verify.first": "主线 {{line}} 上的 {{commit}}，它的首次验证",
+  "work.verify.branch": "{{branch}}，提交 {{commit}}",
+  "work.verify.commit": "{{commit}}",
+  "work.verify.failedDetail": "它验证的是 {{judged}}。在你再运行一次之前，不会再验证它。",
+  "work.verify.holdsLine": "它验证的是 {{judged}}，并占住了它的主线：在你再运行一次或选择暂不处理之前，这条主线不会开始其他验证；选择暂不处理后，下一次验证会把它一并纳入。",
+  "work.verify.unknownDetail": "它验证的是 {{judged}}，正等你再运行一次或选择暂不处理。"
+}

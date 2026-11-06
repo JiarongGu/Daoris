@@ -38,6 +38,9 @@ public sealed record HeldAttempt(string Unit, string Node, int Attempt, string P
 
     /// <summary>Whether it is a failure kept for the person (FABRIC-PERFORM1k), which takes their new attempt alone, rather than an attempt held.</summary>
     public bool Failed => Why is WorkPerformer.FailureKept or WorkPerformer.TriesSpent;
+
+    /// <summary>What a check on a verification run verifies, which the person reads it by; null for every other attempt.</summary>
+    public HeldVerification? Verification { get; init; }
 }
 
 /// <summary>
@@ -69,7 +72,7 @@ public static class HeldAttempts
     /// oldest first; with <paramref name="unit"/>, that unit's alone.
     /// </summary>
     public static IReadOnlyList<HeldAttempt> Read(NodeRecordFiles records, string? unit = null, IReadOnlyDictionary<string, QuestView>? quests = null) =>
-        [.. records.All().Records
+        VerifyHelds.Named(records, [.. records.All().Records
             .Where(record => unit is null || string.Equals(record.Unit, unit, StringComparison.Ordinal))
             .SelectMany(record => record.Attempts.Where(attempt => WorkPerformer.KeptFailure(record, attempt)).Select(attempt =>
                 new HeldAttempt(record.Unit, attempt.Node, attempt.Attempt, attempt.Plugin, attempt.Call.Step, NodeStates.Failed,
@@ -92,7 +95,7 @@ public static class HeldAttempts
                     Resolution = attempt.Resolution, ResolvedAt = attempt.ResolvedAt, Words = moved ? [HeldResolutions.Resend] : HeldResolutions.Of(attempt),
                 };
             })))
-            .OrderBy(held => held.RecordedAt)];
+            .OrderBy(held => held.RecordedAt)]);
 
     /// <summary>
     /// The node records that do not read (FABRIC-PERFORM1j), oldest written first; with <paramref name="unit"/>, only the one its text still
@@ -115,7 +118,8 @@ public static class HeldAttempts
         + "on its unit is judged or started until a person mends it";
 
     /// <summary>Why an attempt is held, as the terminal says it; the page words the same codes in the reader's language.</summary>
-    public static string WhySaid(HeldAttempt held) => held.Plugin == QuestClosing.Sender ? CloseWhy(held) : held.Why switch
+    public static string WhySaid(HeldAttempt held) =>
+        held.Plugin == QuestClosing.Sender ? CloseWhy(held) : held.Verification is { } verify ? VerifyHelds.WhySaid(held, verify) : held.Why switch
     {
         ReconcileStates.Unknown => "its plugin was asked and cannot say what became of it",
         WorkPerformer.NoReconcile => "its step declares no way to ask what became of it, so it is never sent again by itself",

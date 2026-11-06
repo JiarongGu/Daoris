@@ -203,11 +203,13 @@ public sealed class HelpRoomDoorsTests
         }
 
         var run = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris workflow run", StringComparison.Ordinal));
-        Assert.Equal("`daoris workflow run --session|--quest|--ask <id>`", run.Terminal);
+        Assert.Equal("`daoris workflow run --session|--quest|--ask <id>`, `daoris workflow run --line <repository>`", run.Terminal);
+        Assert.Contains("a repository's line, its newest verifications", run.To);
         foreach (var said in new[]
         {
             "Sessions → the session's *Workflow* view", "beside Timeline and Review", "View → Workflow",
             "*Workflow:* in a quest's page's head and an ask's", "*Workflow* on a row of What needs you",
+            "a repository's *Verifications* on its Workflow tab",
         })
         {
             Assert.Contains(said, run.Screen);

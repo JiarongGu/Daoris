@@ -13,6 +13,12 @@ public sealed record WorkflowRunLine(string Run, string Commit, string Level, Da
     /// <summary>The branch the person asked it of; null for a commit.</summary>
     public string? Branch { get; init; }
 
+    /// <summary>The line a landed run's batch landed on; null for a person's run.</summary>
+    public string? Line { get; init; }
+
+    /// <summary>Where a landed run's batch begins: the tip of the line's newest run with a verdict; null for its first verification.</summary>
+    public string? Base { get; init; }
+
     /// <summary>The gate a failed check named, where its verdict is <see cref="LineVerdicts.Failed"/>.</summary>
     public string? Gate { get; init; }
 

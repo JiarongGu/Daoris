@@ -37,6 +37,8 @@ export const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'stop-close': 'held',
   'open-records': 'openRecords',
   'again-step': 'held',
+  'again-check': 'held',
+  'stop-check': 'held',
   'stop-partial': 'held',
   'git-try-again': 'gitTryAgain',
   'git-set-up': 'gitSetUp',

@@ -86,11 +86,15 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
         return false;
     }
 
-    /// <summary>The versions of <paramref name="workflow"/> this home's runs name; a run's file that does not read names none.</summary>
+    /// <summary>
+    /// The versions of <paramref name="workflow"/> this home's runs name, a verification run's under <c>lines/</c> among them (the pipeline design
+    /// §4.3), so a version a kept run binds is never pruned under it; a run's file that does not read names none.
+    /// </summary>
     public IReadOnlyList<int> KeptVersions(string workflow)
     {
+        var lines = VerifyRuns.All(home).Where(run => string.Equals(run.Workflow, workflow, StringComparison.Ordinal)).Select(run => run.Version).ToList();
         var folder = WorkflowRunBindings.FolderOf(home);
-        if (!Directory.Exists(folder)) return [];
+        if (!Directory.Exists(folder)) return [.. lines.Distinct().Order()];
         var runs = new List<JsonElement>();
         foreach (var path in Directory.GetFiles(folder, "*.json"))
         {
@@ -106,7 +110,7 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
             }
         }
 
-        return WorkflowRunBindings.KeptVersions(runs, workflow);
+        return [.. WorkflowRunBindings.KeptVersions(runs, workflow).Concat(lines).Distinct().Order()];
     }
 
     /// <summary>A binding's file read back: null where it is not JSON, or misses what every binding says.</summary>
