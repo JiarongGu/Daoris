@@ -156,8 +156,7 @@ public static class CountTexts
     };
 
     private static string PlaceOf(string place) =>
-        place.StartsWith("line:", StringComparison.Ordinal) ? "this line"
-        : place.StartsWith("repository:", StringComparison.Ordinal) ? "this repository"
+        place.StartsWith("repository:", StringComparison.Ordinal) ? "this repository"
         : place.StartsWith("workspace:", StringComparison.Ordinal) ? "this workspace"
         : "this machine";
 

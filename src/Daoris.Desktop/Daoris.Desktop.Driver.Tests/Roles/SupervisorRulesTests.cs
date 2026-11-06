@@ -67,7 +67,7 @@ public sealed class SupervisorRulesTests
         var failures = new List<string>();
         foreach (var each in Fixture["effective"]!.AsArray())
         {
-            var chain = SupervisorRules.Chain(each!["line"]?.GetValue<string>(), each["repository"]?.GetValue<string>(), each["workspace"]?.GetValue<string>());
+            var chain = SupervisorRules.Chain(each!["repository"]?.GetValue<string>(), each["workspace"]?.GetValue<string>());
             var effective = SupervisorRules.Effective(Sets(each["sets"]), chain, each["role"]?.GetValue<string>());
             var actual = effective.ToDictionary(pair => pair.Key, pair => string.Join(",", pair.Value.Select(rule => rule.Id)));
             var expected = each["expect"]!.AsObject().ToDictionary(pair => pair.Key, pair => string.Join(",", pair.Value!.AsArray().Select(id => id!.GetValue<string>())));

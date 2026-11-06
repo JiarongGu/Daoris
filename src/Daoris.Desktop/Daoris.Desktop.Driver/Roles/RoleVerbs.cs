@@ -124,7 +124,7 @@ public sealed class RoleVerb : ChoiceVerb
     }
 
     private const string RulesGrammar =
-        "`role rules --place machine|workspace:<id>|repository:<id>|line:<key> [--roles <id,…>] [--set <count>=<at>:<do>[:<minutes>]]… "
+        "`role rules --place machine|workspace:<id>|repository:<id> [--roles <id,…>] [--set <count>=<at>:<do>[:<minutes>]]… "
         + "[--off <count>]… [--clear <count>|all]` (counts: answers-alone, failures, failures-on-choice, tries, quiet, limits, moves; "
         + "`role supervisor [--place <place>]` says them)";
 
@@ -235,9 +235,8 @@ public sealed class RoleVerb : ChoiceVerb
         {
             var chain = place.Split(':', 2) is [var kind, var id] ? kind switch
             {
-                "line" => SupervisorRules.Chain(id, null, null),
-                "repository" => SupervisorRules.Chain(null, id, null),
-                "workspace" => SupervisorRules.Chain(null, null, id),
+                "repository" => SupervisorRules.Chain(id, null),
+                "workspace" => SupervisorRules.Chain(null, id),
                 _ => [SupervisorRules.Machine],
             } : [SupervisorRules.Machine];
             foreach (var (count, rules) in SupervisorRules.Effective(sets, chain, null))
