@@ -503,9 +503,9 @@ public sealed class DriverCommandTests
         // walks it (FOUNDATION1j part iii, the foundation design §2.4's third row), never the machine's adapter.
         Assert.Contains("\n  session start-from <id>\n", usage);
         Assert.Contains("StartFrom = (id, _) => ChatConsole.StartFromAsync(id)", console);
+        // RPC1g3 (D238): the terminal holds the running Daoris's conversation; the chat's order is the instance's route's to walk.
         var chat = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "ChatConsole.cs"));
-        Assert.Contains("ActorChoices.NewChat(config)", chat);
-        Assert.Contains("runner.StartFromAsync(session, adapter, config, onEnded, order: order", chat);
+        Assert.Contains("HeldChatConsole.StartFromAsync(session)", chat);
         Assert.DoesNotContain("config.Adapter", chat);
     }
 

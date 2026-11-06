@@ -265,8 +265,7 @@ public sealed class PipeCensusTests
 
     /// <summary>
     /// RPC1e's proof (the terminal RPC design §1.2, §7.1): of the host's verbs with a window twin, only these stay off the pipe, each with
-    /// its reason. By design, a conversation the terminal runs (<c>chat</c>, <c>help resume</c>, until RPC1g), a loop (<c>drive</c>), the
-    /// updater's request (<c>update</c>) and the service's own doors; and, until a decision lets this machine's paths travel over the
+    /// its reason. By design, a loop (<c>drive</c>), the updater's request (<c>update</c>) and the service's own doors; and, until a decision lets this machine's paths travel over the
     /// local pipe (§4.3), the reads whose words name this machine's folders or quote its trees, with the few no route answers. A verb
     /// that becomes a client leaves this list in the change that sends its route, and one that joins it says why here.
     /// </summary>
@@ -275,7 +274,7 @@ public sealed class PipeCensusTests
     {
         string[] off =
         [
-            "chat", "help resume <id>", "drive", "update",
+            "drive", "update",
             "quest delete|accept|done|reopen|go-on|check|review", "ask \"…\"", "sync status", "ask channel <id>",
             "trace", "git branches", "workflow", "logs",
             // GITAPP1a-i: the bench's verb times the git its own process starts.

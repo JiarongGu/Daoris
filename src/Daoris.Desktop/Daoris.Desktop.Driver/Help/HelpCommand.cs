@@ -5,17 +5,14 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>What <c>daoris help</c> was asked (ASKHIST1).</summary>
-/// <param name="Verb"><c>list</c>, <c>resume</c>, <c>rename</c>, <c>pin</c>, <c>unpin</c> or <c>delete</c>.</param>
+/// <param name="Verb"><c>list</c>, <c>rename</c>, <c>pin</c>, <c>unpin</c>, <c>delete</c> or <c>mode</c>.</param>
 public sealed record HelpVerbAsk(string Verb)
 {
     /// <summary>The conversation a verb names.</summary>
     public string? Id { get; init; }
 
-    /// <summary>A resume's words, or a rename's name, joined by a space.</summary>
+    /// <summary>A rename's name, or a mode's, joined by a space.</summary>
     public string? Text { get; init; }
-
-    /// <summary>A resume's files, each as the person named its path.</summary>
-    public IReadOnlyList<string> Files { get; init; } = [];
 
     /// <summary>A listing's words to find.</summary>
     public string? Search { get; init; }
@@ -44,26 +41,25 @@ public sealed record HelpVerbAsk(string Verb)
 
 /// <summary>
 /// <c>daoris help</c> (ASKHIST1, D50): Ask Daoris's history from a terminal, the panel's other door. It lists and searches
-/// this machine's Ask Daoris conversations through <see cref="HelpConversations"/>, the one reader the panel's route reads; says
-/// words to one, which goes on in its own conversation, through <c>sessions say</c>'s own door; names, pins and unpins one; and
-/// deletes one through <c>sessions delete</c>'s owner, listed first and pressed with <c>--yes</c>, as the panel asks once.
+/// this machine's Ask Daoris conversations through <see cref="HelpConversations"/>, the one reader the panel's route reads; names,
+/// pins and unpins one; and deletes one through <c>sessions delete</c>'s owner, listed first and pressed with <c>--yes</c>, as the panel asks once.
 /// </summary>
 /// <remarks>
 /// <para><b>Only Ask Daoris's own conversations of this machine's</b>: an id that names any other session is refused, exit 1,
-/// naming the <c>sessions</c> verb that acts on it.</para>
+/// naming the <c>sessions</c> verb that acts on it. Words to one are <c>session say</c>'s, and <c>chat --session</c> holds one (RPC1g3,
+/// D238).</para>
 ///
 /// <para><b>Not here: a new conversation from an earlier one.</b> A conversation with Ask Daoris runs in the window's panel, and
 /// no terminal door opens one; the panel's history is where one starts from another's words.</para>
 ///
 /// <para>Exit codes are the family's: 0 done or listed · 1 refused · 2 could not, the usage among them.</para>
 /// </remarks>
-[CommandGroup("ask-daoris", "list", "resume", "rename", "pin", "unpin", "delete", "mode")]
+[CommandGroup("ask-daoris", "list", "rename", "pin", "unpin", "delete", "mode")]
 public static class HelpCommand
 {
     public const string Usage =
         """
         usage: daoris ask-daoris list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
-               daoris ask-daoris resume <id> "…" [--file <path>]…
                daoris ask-daoris rename <id> "…" | --clear  ·  daoris ask-daoris pin <id>  ·  daoris ask-daoris unpin <id>
                daoris ask-daoris delete <id> [--yes]
                daoris ask-daoris mode [restricted|full]
@@ -71,7 +67,7 @@ public static class HelpCommand
 
     /// <summary>The verbs this door answers; <c>help</c> alone, or anything else after it, is the host's usage.</summary>
     public static IReadOnlySet<string> Verbs { get; } =
-        new HashSet<string>(StringComparer.Ordinal) { "list", "resume", "rename", "pin", "unpin", "delete", "mode" };
+        new HashSet<string>(StringComparer.Ordinal) { "list", "rename", "pin", "unpin", "delete", "mode" };
 
     /// <summary>
     /// The fields of a conversation in <c>--json</c>, in order: <c>HELP_CONVERSATIONS</c>' row, field for field. ASKSCOPE1d added
@@ -98,8 +94,6 @@ public static class HelpCommand
         {
             case ["list", ..]:
                 return ReadList([.. args.Skip(1)], out problem);
-            case ["resume", ..]:
-                return ReadResume(args, out problem);
             case ["rename", var id, "--clear"] when SessionEventText.IsId(id):
                 return new HelpVerbAsk("rename") { Id = id, Clear = true };
             case ["rename", var id, _, ..] when SessionEventText.IsId(id) && words.Length > 0 && !args.Skip(2).Contains("--clear"):
@@ -128,7 +122,7 @@ public static class HelpCommand
                 return null;
         }
 
-        problem = "`help` takes `list`, `resume`, `rename`, `pin`, `unpin`, `delete` or `mode`.";
+        problem = "`help` takes `list`, `rename`, `pin`, `unpin`, `delete` or `mode`.";
         return null;
     }
 
@@ -225,24 +219,11 @@ public static class HelpCommand
         return ask;
     }
 
-    /// <summary><c>resume &lt;id&gt; "…" [--file &lt;path&gt;]…</c>, read as <c>sessions say</c> reads its words.</summary>
-    private static HelpVerbAsk? ReadResume(IReadOnlyList<string> args, out string? problem)
-    {
-        if (SessionsCommand.Read(["say", .. args.Skip(1)], out _) is { } say)
-        {
-            problem = null;
-            return new HelpVerbAsk("resume") { Id = say.Ids[0], Text = say.Text, Files = say.Files };
-        }
-
-        problem = "`resume` takes one conversation's id, then your words, and `--file <path>` for each file you give with them.";
-        return null;
-    }
-
     /// <summary>
     /// The verb, as the running Daoris's client where its world names an instance to look for (RPC1e, the terminal RPC design §7.2):
     /// <c>rename</c>, <c>pin</c>, <c>unpin</c> and <c>delete --yes</c> are the person's presses, which the window confirms, and <c>list</c> a
-    /// read; each route asked for its words runs this verb's own path in that Daoris, so the lines are the alone path's. <c>resume</c>
-    /// stays this terminal's own until RPC1g, and a delete's first ask reads here; alone where none runs.
+    /// read; each route asked for its words runs this verb's own path in that Daoris, so the lines are the alone path's. A delete's first
+    /// ask reads here; alone where none runs.
     /// </summary>
     public static async Task<int> RunAsync(HelpVerbAsk ask, SessionsWorld world, Func<string, bool> resumes, TextWriter output, CancellationToken ct = default)
     {
@@ -258,7 +239,7 @@ public static class HelpCommand
             _ => null,
         };
 
-        // Alone, nothing this verb runs looks for the instance again: `resume`'s say stays this terminal's own (RPC1g).
+        // Alone, nothing this verb runs looks for the instance again.
         var alone = world with { Instance = null };
         return press is { } sent
             ? await InstanceDoor.ThroughAsync(world.Instance, sent.Route, sent.Payload, () => AloneAsync(ask, alone, resumes, output, ct), output, ct)
@@ -293,13 +274,6 @@ public static class HelpCommand
         var kept = new HelpConversations(world.Home);
         switch (ask.Verb)
         {
-            case "resume":
-                if (new HarnessConversations(world.Home).Read(id) is null
-                    && !events.After(id, 0).Events.Any(e => e.Kind == SessionEventKind.User && e.Reaches is null))
-                    output.WriteLine($"help: {id}: never-spoken — it never took a turn.");
-                // The words go where the panel's box sends them: the say door, and the same conversation goes on with them.
-                return await SessionsCommand.RunAsync(
-                    new SessionsAsk("say") { Ids = [id], Text = ask.Text, Files = ask.Files }, world, output, ct).ConfigureAwait(false);
             case "rename":
                 try
                 {

@@ -251,7 +251,7 @@ public static class InstanceDoor
     /// A press's refusal as the verb's exit code: <c>already</c> 0, the world being as asked (CONFIRMWAIT1b, the confirm-wait design
     /// §5.1); the person's or the asker's word on it (<see cref="PersonEnds"/>) 1, a policy answer (RPC1c); any other 2.
     /// </summary>
-    private static int RefusalExit(string? code) => code == Already ? 0 : code is not null && PersonEnds.Contains(code) ? 1 : 2;
+    internal static int RefusalExit(string? code) => code == Already ? 0 : code is not null && PersonEnds.Contains(code) ? 1 : 2;
 
     /// <summary>The instance's refusal of a person's press the person refused in its window (RPC1c, <c>InstancePipe.Refused</c>).</summary>
     public const string Refused = "refused";
@@ -675,11 +675,11 @@ public static class InstanceDoor
         return confirming;
     }
 
-    private static bool Succeeded(JsonElement envelope) =>
+    internal static bool Succeeded(JsonElement envelope) =>
         envelope.TryGetProperty("success", out var success) && success.ValueKind == JsonValueKind.True;
 
     /// <summary>A refusal's code, sentence and <c>why</c>, as the kit's error envelope carries them.</summary>
-    private static (string? Code, string Message, string? Why) Refusal(JsonElement envelope)
+    internal static (string? Code, string Message, string? Why) Refusal(JsonElement envelope)
     {
         if (!envelope.TryGetProperty("error", out var error)) return (null, "Daoris answered no answer it could read", null);
         var why = error.TryGetProperty("parameters", out var parameters) ? InstanceClient.Text(parameters, "why") : null;

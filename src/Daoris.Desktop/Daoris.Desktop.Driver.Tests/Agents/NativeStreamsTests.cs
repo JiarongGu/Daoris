@@ -117,7 +117,7 @@ public sealed class NativeStreamsTests : IDisposable
         string[] Heard(params string[] lines)
         {
             var own = new HarnessWords();
-            foreach (var line in lines) own.Heard(line);
+            foreach (var line in lines) own.Heard(NativeFrame.Of(line));
             return [.. own.Ended(0).BackgroundCut];
         }
 
@@ -129,7 +129,7 @@ public sealed class NativeStreamsTests : IDisposable
             System("task_updated", new { task_id = "a1", patch = new { status = "killed" } })));
 
         var again = new HarnessWords();
-        foreach (var line in BackgroundCut) again.Heard(line);
+        foreach (var line in BackgroundCut) again.Heard(NativeFrame.Of(line));
         again.Begin();
         Assert.Empty(again.Ended(0).BackgroundCut);
     }

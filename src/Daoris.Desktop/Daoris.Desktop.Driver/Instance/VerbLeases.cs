@@ -41,9 +41,9 @@ public sealed record VerbLeaseReading(
 /// release downloads or npm installs and take it to publish the pin, and an unpinned <c>update</c> none at all (PUSH1f2e).</item>
 /// <item><b>The service's own doors</b>, whose one writer is the service already (§7.1): <c>quest delete</c>, <c>accept</c>,
 /// <c>done</c>, <c>check</c> and <c>review</c>, <c>answer</c>, an ask's words, publish, close and delete, and <c>ask channel</c>.</item>
-/// <item><b>A conversation in the terminal</b> (<c>chat</c>, <c>help resume</c>, <c>sessions start-from</c> and
-/// <c>hand-over</c>): it runs for as long as the person talks, and holding the home that long would keep the desktop's loop
-/// from starting; RPC1g moves its turns into the running instance.</item>
+/// <item><b>A conversation held from the terminal</b> (<c>chat</c>, <c>sessions start-from</c> and <c>hand-over</c>): it lasts as long as
+/// the person talks, and holding the home that long would keep the desktop's loop from starting; it runs in the running Daoris and
+/// the verb acts nothing on the home (RPC1g, D238).</item>
 /// <item><b>The loop</b> (<c>drive</c>), which takes the lease as an instance, for its life.</item>
 /// <item><b>A repository's heavy gates</b> (<c>run-heavy</c>, HEAVYRUN1a): they run for minutes, and holding the home that long would
 /// keep every other verb and the desktop's start waiting on a build; the run writes the home only in its own slot's files.</item>

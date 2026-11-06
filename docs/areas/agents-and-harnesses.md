@@ -33,7 +33,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `TargetPrompt` | same name (hub, 11 KB) | The composed first prompt: its doors, the head, the beneath and the tail; the pieces come from the units below |
 | `ClaimedPrompt`, `ResumedPrompt`, `AskedPrompt`, `RequirementsPrompt`, `WorkplacePrompt` | same names | The instruction's pieces for a claim and its retry, for a resume or a carry-on, for the ask, for the requirements and their evidence, and for the working tree |
 | `TransportRun`, `TransportStart` | `TransportRun.cs`, `TransportStart.cs` | The one run over both transports: spawn, lineage token, capture, wait, the next process of a go-on and a native resume's one retry; the start names its session, transcript, opening and preamble, and everything the door says leaves as readings to the sink its executor hands it |
-| `DoorInput`, `DoorWord`, `Delivery` | `DoorInput.cs` | A run's one queue of native words (D243): each word's ids kept from its write until the harness names the conversation, so the run's retry hands the next process every word the ended one never acknowledged, in order, and never one it did; a go-on's held words wait on it for the next process's prompt. Nothing above the run writes to a process's stdin (`ConversationRunCensusTests` holds it); a protocol door's words stay on its session |
+| `DoorInput`, `DoorWord`, `Delivery` | `DoorInput.cs` | A run's one queue of native words (D243): each word's ids kept from its write until the harness names the conversation, so the run's retry hands the next process every word the ended one never acknowledged, in order, and never one it did; a go-on's held words wait on it for the next process's prompt. Nothing above the run writes to a process's stdin (`ConversationRunCensusTests` holds it). It is the native door's port, beside the protocol door's `ProtocolWords` (D246): a protocol door's input refuses a line, a held word and a control line before anything is written, and `AgentRun` names both ports and no word operation of its own |
+| `ProtocolWords` | `ProtocolWords.cs` | A protocol door's words once its session opened, `AgentRun.Words` (D246): its prompt, a word into the running turn and the steer, each a request the session answers, acknowledged by that answer and retried on the same session within the turn; `ProtocolChat` says them here and never writes through the session |
 | `IResumeState` | `Contract/` | A native resume's state, which Course's `ResumeAsk` implements: the run marks it opened when its harness names the conversation, and its end tries a structured resume once more where the harness exited nonzero before naming it, never after a clean exit, a refusal, a stop asked or on the plain capture |
 | `WireReading`, `IReadingSink`, `ReadingSinks`, `DoorFailure` | `Events/Readings/` | The closed set of readings a run writes (an event, a console line, a stream beside, the conversation named, the account's windows, a failure), the one port it writes them to and its composition; each carries its run, the generation of the process that said it and its place in the run's order (`StampedSink`), the protocol door's windows and a conversation's failed turns among them; `Failed` carries the `DoorFailure` every failure is on either door, which `DoorFailures` in Agents builds from each wire. An executor composes its run's sink of its owners' parts: Context's `RecordReadings` (the event file and the console), the binding's conversation, the windows |
 | `ChatAgent`, `SpawnEquipment` | same names | What a conversation reads of its agent (its door's facts, its process prepared and equipped, its carriers, framing, failure reads, trailers) and the run it makes; the toolchain's environment and the tools-at-the-start switch every session's process is equipped with |
@@ -58,6 +59,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `AcpConsole` | same name | The console's lines joined from the agent's streamed words, ended when anything else is said or the words go quiet |
 | `AcpMeasure`, `AcpRender`, `AcpPermission` | same names | The stages: the context's high-water mark, the account's windows, the turn's models and the options the agent changed; each update as the record's event and the console's line, and the readings of an update the door's other units call; a permission request refused, or held for the person, and released |
 | `HarnessCapture`, `ClaudeStreams`, `StructuredOutput`, `NativePrompt` | same names | The native door: capture, `stream-json` mapping, the prompt written on stdin |
+| `NativeFrame` | `NativeFrame.cs` | A native stdout line parsed once: the capture reads each line into one frame, which the lineage, the run's own ending (`HarnessWords`), the streams beside (`ClaudeStreams`, a child's words included) and the dialect's mapper each take, none parsing the text again |
 | `HarnessRoster` | `HarnessRoster.cs` (hub, 26 KB) | One judgement for every start, kept as one-line doors to the units below, with the roster's state and settings reads |
 | `RosterCooling`, `RosterReport`, `RosterSelection` | same names | Cool-offs, refusals and signed-out accounts; the Agents page's report, a press and an account's status question; choosing the harness and account of a start, a resume and a carry-on |
 | `RosterWalk`, `RosterNext`, `RosterStarts`, `RosterUsage` | same names | The account walk and its pass; the next start's reason, last reading and wiring; the numbered starts in flight; the usage questions and the accounts a switch could reach |
@@ -104,6 +106,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
    run's `DoorInput`, then `ResumeAsync` and `EndAsync` again), the resume's one retry (a driven run's and a conversation's, the
    run's own under the same record, D243) and the conversation's runner. No executor prepares a process itself. A conversation reads its agent through `ChatAgent` and the
    run it makes; no file of `Loop/Chat/` names `ISessionAdapter`. (from D213)
+   A run's words are two named ports, one per transport: a native door's lines on `AgentRun.Input`, a protocol door's requests on
+   `AgentRun.Words`; each door's other port refuses or is absent, and the contract has no word operation of its own. (from D246)
 9. A provider translates; Daoris selects. A provider never walks accounts, picks a model, starts another participant or
    decides whether a line goes on. (from D213, D67)
 10. On the protocol door the wire enriches the console and transcript. A record still concludes from the exit code and the
@@ -346,17 +350,18 @@ Agents page, and `orient-index` and `code-map` once files move.
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
   `ChildBindings`' fold names no agent: each line is learnt, and each call read as the child it came from (`ChildCall`), by the
   reader its agent's `IChildVocabulary` gives (`ClaudeChildLines`, joining a call by the hook's tool use; `CodexChildLines`, a thread
-  with no parent the root), and whether a later line moves a reading is the vocabulary's `Wake`; the sink's rest (l: the lineage still
-  a writer the run makes rather than Participants' part, the four `stream-json` readers not yet one); the open's refused model is one
+  with no parent the root), and whether a later line moves a reading is the vocabulary's `Wake`; each native line is read once
+  (`NativeFrame`), and the lineage, `HarnessWords`, `ClaudeStreams` and the mapper take that frame; the sink's rest (l: the lineage
+  still a writer the run makes rather than Participants' part, and what the three read of the frame, a child's or a task's start and
+  end, not yet readings of their own); the open's refused model is one
   `WireReading.ModelRefused`, said by
-  the transport's `RefusalReading` before the re-ask and kept by the offers store's part, `OfferRefusals`), m-ii's rest (D243 is built
-  for the native door: the words go through the run's `DoorInput`, the chat's retry is the run's own and replays what the ended
-  process never acknowledged, `GoOnAsync` is gone, Claude Code and `alt-stub` declare their `IConversationHome`; a protocol door's
-  prompt, word into a running turn and steer are `TransportRun.Words` (`ProtocolWords`), which `ProtocolChat` says and the session
-  never is written through by; the protocol open or resume is `ProtocolOpen.BeginAsync`, read by the driven run and the conversation
-  alike; the hand-over's accounts are `HandOverAccounts.Of`, read by the chat runner, the curve and the loop; left: the protocol
-  words not yet through `DoorInput` itself (a prompt is a request the session answers, so `TransportRun.SendAsync` still refuses it
-  on a protocol door), `TransportRun.Session` kept for the options its agent lists), n is built (the doors' `Offers` part and the offers
+  the transport's `RefusalReading` before the re-ask and kept by the offers store's part, `OfferRefusals`), m-ii is built (D243 for
+  the native door: the words go through the run's `DoorInput`, the chat's retry is the run's own and replays what the ended
+  process never acknowledged, Claude Code and `alt-stub` declare their `IConversationHome`; D246 for both: the words are two named
+  ports, `AgentRun.Input` and `AgentRun.Words` (`ProtocolWords`), which `ProtocolChat` says and the session is never written through
+  by; the protocol open or resume is `ProtocolOpen.BeginAsync`, read by the driven run and the conversation alike; the hand-over's
+  accounts are `HandOverAccounts.Of`, read by the chat runner, the curve and the loop; `TransportRun.Session` is kept for the options
+  its agent lists), n is built (the doors' `Offers` part and the offers
   read through `AgentOffers.Offers` are built; the asked choice is read from the start's whole `SpawnRequest`
   (`ActorAsked.ForSpawn`: the request's asked choice, else the record's, else the opening's default; a flag of the machine's command
   the command's own; the program's own variables, `ISpawn.ChoiceVariables`, from the environment it starts with), never from the

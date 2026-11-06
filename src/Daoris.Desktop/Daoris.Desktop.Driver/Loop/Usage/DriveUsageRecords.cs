@@ -20,8 +20,10 @@ internal static class DriveUsageRecords
               Daoris's browser: its favorites, kept in a Daoris folder on its bar; other software's Chrome extensions,
               offered for your approval or refused; Daoris's own browser or your Edge on a profile of Daoris's; and
               whether links on Daoris's page open in the system's browser or Daoris's. Each is read when it starts.
-          chat --repository <name> [--agent <name>] [--account <name>] [--own-tree]
-              a conversation in a repository: stdin is you, stdout the session.
+          chat --repository <name> [--agent <name>] [--account <name>] [--own-tree]  ·  chat --session <id>
+              a conversation of the running Daoris, started in a repository or already open, which this terminal
+              holds once you confirm it in Daoris's window: stdin is you, stdout the session. Ctrl+C at rest lets
+              go, and the conversation goes on in Daoris. Needs the running Daoris.
           convert --plan | --apply <digest> [--leave <part>] | --undo [<digest>]
               convert this home's old records, every area's part in one plan: the plan reads and writes nothing,
               `--apply` is your press, confirmed in Daoris's window, a failed part is pressed again or left with

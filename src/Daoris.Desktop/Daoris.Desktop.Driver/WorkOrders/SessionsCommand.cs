@@ -69,9 +69,9 @@ public static class SessionsCommand
                 world, PersonPresses.SessionQueueEdit, SessionsPresses.QueueEditBody(ask), () => SessionsQueueEdit.TakeBackAsync(world, ask, output, ct), output, ct)
                 .ConfigureAwait(false),
             "take-back" or "reword" => await SessionsQueueEdit.TakeBackAsync(world, ask, output, ct).ConfigureAwait(false),
-            "start-from" => await SessionsPresses.ThroughAsync(
-                world, PersonPresses.SessionStartFrom, SessionsPresses.Body(("id", ask.Ids[0])), () => SessionsGoingOn.StartFromAsync(world, ask.Ids[0], output, ct), output, ct)
-                .ConfigureAwait(false),
+            // A conversation is held, never run here (RPC1g3, D238): the host's door sends the route with its hold.
+            "start-from" => await SessionsGoingOn.StartFromAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
+            "hand-over" when !string.IsNullOrWhiteSpace(ask.Agent) => await SessionsGoingOn.HandOverToAsync(world, ask, output, ct).ConfigureAwait(false),
             "hand-over" => await SessionsPresses.ThroughAsync(
                 world, PersonPresses.SessionHandOver, SessionsPresses.Body(("id", ask.Ids[0]), ("agent", ask.Agent), ("account", ask.Account)),
                 () => SessionsGoingOn.HandOverAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),

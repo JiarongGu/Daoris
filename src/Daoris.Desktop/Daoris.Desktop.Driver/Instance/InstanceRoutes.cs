@@ -85,7 +85,6 @@ public static class OpenRoutes
         ("ask --clear <id>", HistoryPlan, "the list; with `--yes` the person's press (HISTORY_CLEAR)"),
         ("help list", HelpConversations, "the list; `--json` prints the route's own answer"),
         ("help delete <id>", null, "alone: the first ask reads the conversation's name here, which no route answers; with `--yes` the person's press (SESSION_DELETE)"),
-        ("help resume <id>", null, "alone: the conversation goes on in this terminal's own process until RPC1g"),
         ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
         ("place --workspace <name> --adoption", null, "alone: no route writes a workspace's paced plan; PLACE_APPLY writes one when an adoption covers more repositories than it asks at once"),
         ("place <repository>… --plan", PlacePlan, "the plan; with `--apply` the person's press (PLACE_APPLY)"),
@@ -110,7 +109,6 @@ public static class OpenRoutes
         ("sessions partner <id> --list", null, "alone: a read of the pieces' box under the home, which says the same with or without the instance"),
         // What stays off the pipe by design (§7.1, §11): a conversation the terminal runs, a loop, the updater's request, and the
         // service's own doors, which the service writes once whoever asks.
-        ("chat", null, "alone: the conversation runs in this terminal's own process, with its own agent and its own Ctrl+C, until RPC1g"),
         ("drive", null, "alone: it is a loop, the home's lease's holder, refused where the desktop holds the home unless `--share` (DRV8a)"),
         ("update", null, "alone: a request file under the home the desktop's updater watches (D139); its window twin is the update banner, no route"),
         ("quest delete|accept|done|reopen|go-on|check|review", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),

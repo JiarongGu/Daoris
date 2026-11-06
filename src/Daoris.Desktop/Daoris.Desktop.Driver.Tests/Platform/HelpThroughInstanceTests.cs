@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// RPC1e: <c>daoris help</c> through the running Daoris (the terminal RPC design §7.2 and §7.3). <c>rename</c>, <c>pin</c>,
 /// <c>unpin</c> and <c>delete --yes</c> are the person's presses, sent to the instance, which shows each in its window; <c>list</c> is a
 /// read. The terminal prints the lines the route answers (<c>said</c>, the alone path's own words), and this process asks the service
-/// nothing. <c>resume</c> stays this terminal's own until RPC1g, and a delete's first ask reads alone.
+/// nothing. A delete's first ask reads alone.
 /// </summary>
 public sealed class HelpThroughInstanceTests
 {
@@ -129,14 +129,9 @@ public sealed class HelpThroughInstanceTests
         Assert.Single(standIn.Presses);
     }
 
-    /// <summary>
-    /// <c>resume</c> stays this terminal's own beside a running Daoris (RPC1g designs it first), and a delete's first ask reads the
-    /// conversation here: neither sends anything, and each says what it says alone.
-    /// </summary>
-    [Theory]
-    [InlineData("resume")]
-    [InlineData("delete")]
-    public async Task Resume_and_a_delete_s_first_ask_stay_alone_beside_a_running_Daoris(string verb)
+    /// <summary>A delete's first ask reads the conversation here: it sends nothing, and says what it says alone.</summary>
+    [Fact]
+    public async Task A_delete_s_first_ask_stays_alone_beside_a_running_Daoris()
     {
         if (!OperatingSystem.IsWindows()) return;
         await using var home = new InstanceTestHome();
@@ -144,7 +139,7 @@ public sealed class HelpThroughInstanceTests
         var service = new EmptyService();
         var output = new StringWriter();
 
-        var exit = await RunAsync(new HelpVerbAsk(verb) { Id = Id, Text = "and then?" }, service, home.Home, home.World("help"), output);
+        var exit = await RunAsync(new HelpVerbAsk("delete") { Id = Id }, service, home.Home, home.World("help"), output);
 
         Assert.Equal(1, exit);
         Assert.Equal($"help: no session here is {Id}.{Environment.NewLine}", output.ToString());

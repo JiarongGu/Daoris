@@ -391,7 +391,7 @@ public sealed class HelpRoomDoorsTests
         var history = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris ask-daoris list", StringComparison.Ordinal));
 
         Assert.Equal(
-            "`daoris ask-daoris list [--workspace <name> | --all] [--search \"…\"]`, `daoris ask-daoris resume <id> \"…\"`, "
+            "`daoris ask-daoris list [--workspace <name> | --all] [--search \"…\"]`, `daoris session say <id> \"…\"`, "
             + "`daoris ask-daoris rename|pin|unpin|delete <id>`",
             history.Terminal);
         Assert.Contains("[--workspace <name> | --all]", DriverCommand.Usage);

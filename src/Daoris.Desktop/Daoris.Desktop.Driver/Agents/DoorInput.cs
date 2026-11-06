@@ -33,7 +33,12 @@ internal enum Delivery
 /// one retry hands the next process every word written to that one, in order, and then those said during the restart, and a word
 /// acknowledged is never written again.
 /// </summary>
-internal sealed class DoorInput
+/// <remarks>
+/// It is the native door's port (D246). A protocol door's words are requests its session answers, each acknowledged by its own answer and
+/// retried on the same session, so they are <see cref="ProtocolWords"/>' and its input refuses every line, naming <see cref="Refuses"/>.
+/// </remarks>
+/// <param name="refuses">The ability a line is refused as, on a door whose words are not lines; null for a native door.</param>
+internal sealed class DoorInput(string? refuses = null)
 {
     private readonly object _gate = new();
     private readonly List<DoorWord> _written = [];
@@ -41,6 +46,9 @@ internal sealed class DoorInput
     private readonly HashSet<DoorWord> _told = [];
     private Func<string, CancellationToken, Task<bool>>? _write;
     private bool _closed;
+
+    /// <summary>The ability every line is refused as on a door whose words are requests rather than lines; null where lines are written.</summary>
+    public string? Refuses => refuses;
 
     /// <summary>Whether the run will start the same resume once more, so a word its process cannot take waits rather than is refused.</summary>
     public bool MayRetry { get; set; }
@@ -66,6 +74,7 @@ internal sealed class DoorInput
     /// </summary>
     public async Task<bool> AttachAsync(Func<string, CancellationToken, Task<bool>> write, CancellationToken ct)
     {
+        Admit();
         List<DoorWord> replay;
         lock (_gate)
         {
@@ -97,17 +106,20 @@ internal sealed class DoorInput
     /// </summary>
     public void Hold(DoorWord word)
     {
+        Admit();
         lock (_gate) _waiting.Add(word);
     }
 
     /// <summary>Hand a word to the process.</summary>
-    public Task<Delivery> SayAsync(DoorWord word, CancellationToken ct) => WriteAsync(word, ct, retried: false);
+    public Task<Delivery> SayAsync(DoorWord word, CancellationToken ct) =>
+        refuses is null ? WriteAsync(word, ct, retried: false) : Task.FromException<Delivery>(AgentRun.Unsupported(refuses));
 
     /// <summary>
     /// A control line that is no word (an interrupt): written to the process now, never kept, never replayed. False where nothing listens.
     /// </summary>
     public async Task<bool> ControlAsync(string line, CancellationToken ct)
     {
+        Admit();
         Func<string, CancellationToken, Task<bool>>? write;
         lock (_gate) write = _write;
         return write is not null && await write(line, ct).ConfigureAwait(false);
@@ -123,6 +135,11 @@ internal sealed class DoorInput
             MayRetry = false;
             return taken;
         }
+    }
+
+    private void Admit()
+    {
+        if (refuses is not null) throw AgentRun.Unsupported(refuses);
     }
 
     private async Task<Delivery> WriteAsync(DoorWord word, CancellationToken ct, bool retried)

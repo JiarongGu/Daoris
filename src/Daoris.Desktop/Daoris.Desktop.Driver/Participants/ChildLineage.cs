@@ -165,10 +165,10 @@ public static class ChildLineage
     {
         private readonly HashSet<string> _agents = new(StringComparer.Ordinal);
 
-        public void Stream(string line)
+        public void Stream(NativeFrame frame)
         {
             string? said;
-            lock (_agents) said = ChildBindings.StreamLine(line, DateTimeOffset.UtcNow, _agents, proc);
+            lock (_agents) said = ChildBindings.StreamLine(frame, DateTimeOffset.UtcNow, _agents, proc);
             if (said is not null) Append(home, sessionId, said);
         }
 

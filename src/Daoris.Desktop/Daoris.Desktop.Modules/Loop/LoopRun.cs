@@ -57,7 +57,6 @@ internal sealed class LoopRun(
             Say = loop.Words.HoldAsync,
             TakeBack = loop.Words.HoldTakeBackAsync,
             Told = press => StatePublisher.Publish(eventBus, press),
-            Turned = session => _ = TurnedAsync(session, ct),
             Log = log,
         };
         // The shell's power event reopens each watch's roots at a resume; their own overrun rule is the fallback.
@@ -309,23 +308,6 @@ internal sealed class LoopRun(
             Refused = why => log?.Warn("news.refused", ("teller", name), ("why", why)),
         };
         return new JournalTeller(teller.TellAsync, () => news.Cursor(name), position => news.Advance(name, position));
-    }
-
-    /// <summary>
-    /// A conversation another Daoris process runs told its turns anew, or left: the windows hear its queue as <c>SESSION_QUEUED</c>,
-    /// read the way <c>SESSION_QUEUE</c> reads it. A service that does not answer tells nothing; the next change tells.
-    /// </summary>
-    private async Task TurnedAsync(string session, CancellationToken ct)
-    {
-        try
-        {
-            var reach = await loop.Words.ReachAsync(session, ct).ConfigureAwait(false);
-            await eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", ConversationRoutes.QueueAnswer(loop, session, reach)).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is OperationCanceledException or HttpRequestException or DriverException)
-        {
-            // Nothing known is nothing claimed: the page asks again when it opens the conversation.
-        }
     }
 
     /// <summary>

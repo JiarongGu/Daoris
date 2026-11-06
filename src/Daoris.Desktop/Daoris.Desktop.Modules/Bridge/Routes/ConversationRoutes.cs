@@ -168,9 +168,8 @@ public sealed class ConversationRoutes(DriverContext context)
     private async Task<object?> SessionStartFromAsync(SessionIdPress press, CancellationToken cancellationToken)
     {
         var id = press.Id;
-        // RPC1d: `sessions start-from` sent over the pipe asks for the verb's own words; the conversation opens in this window.
-        if (press.Said) return await SessionsVerbs.SaidAsync(context, new SessionsAsk("start-from") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
-
+        // The terminal's `session start-from` sends this route as the window does, with `hold: true` beside it (RPC1g3, D238), and holds
+        // the conversation this answer names.
         var chat = _loop.Chat ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
         // A new conversation: Chat's order walked (MODELROLE1d, D205 §4.1).
@@ -345,12 +344,6 @@ public sealed class ConversationRoutes(DriverContext context)
         }
 
         if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
-        // CLITURN1: a turn another Daoris process runs is stopped there; "no turn was running" would be untrue of it.
-        if (RunsElsewhere(_loop, id))
-        {
-            throw new DriverException($"session {id} is run by another Daoris process on this machine, a terminal's: stop its turn there with Ctrl+C.");
-        }
-
         var stop = _loop.Chat is { } chat ? await chat.CancelTurnAsync(id, keep: press.Keep).ConfigureAwait(false) : TurnStop.Nothing;
         return new { stop.Cancelled, Withdrawn = stop.Withdrawn.Select(Said).ToArray() };
     }
@@ -483,20 +476,14 @@ public sealed class ConversationRoutes(DriverContext context)
     internal static object QueueAnswer(DriverLoop loop, string id, WordsAnswer reach)
     {
         var inbox = loop.Processes.InboxOf(id);
-        // CLITURN1: a conversation another Daoris process runs (a terminal's) is that process's to tell: what it told, or nothing
-        // known, which the answer leaves without a `taking` so the page keeps the record's word instead of reading idle.
-        var elsewhere = inbox is null && loop.HelpStarting.Queue(id) is null && RunsElsewhere(loop, id);
-        var told = elsewhere ? new TurnMarks(loop.Home).Read(id) : null;
         // Ask Daoris's conversation still starting holds its words itself, opening (HELPSTART1).
-        var queue = loop.HelpStarting.Queue(id) ?? inbox?.State
-            ?? (elsewhere ? new ChatQueue(told?.Taking ?? false, [], told?.LastTurnEnded, told?.Opening ?? false) : loop.Chat?.Queue(id))
-            ?? ChatQueue.Idle;
+        var queue = loop.HelpStarting.Queue(id) ?? inbox?.State ?? loop.Chat?.Queue(id) ?? ChatQueue.Idle;
         var queued = inbox is null && queue.Queued.Count == 0 && reach.Waiting is { } waiting
             ? waiting.Select(Said).ToArray()
             : queue.Queued.Select(Said).ToArray();
         return new
         {
-            Session = id, Queued = queued, Taking = elsewhere && told is null ? (bool?)null : queue.Taking, queue.Opening,
+            Session = id, Queued = queued, Taking = queue.Taking, queue.Opening,
             Listening = inbox is { State.Taking: true },
             // When its last turn ended here (RAIL2), the page's "moved" for a live chat.
             LastTurn = queue.LastTurnEnded,
@@ -507,13 +494,6 @@ public sealed class ConversationRoutes(DriverContext context)
             Reach = ReachOf(reach),
         };
     }
-
-    /// <summary>
-    /// Whether another Daoris process of this machine runs the session and this one holds nothing of it (CLITURN1): a terminal's chat,
-    /// whose runner is that process's. This process then knows nothing of its turns, and is no door to them.
-    /// </summary>
-    internal static bool RunsElsewhere(DriverLoop loop, string id) =>
-        !loop.Processes.RunsHere(id) && loop.Chat?.Holds(id) != true && loop.Processes.AliveOnThisMachine(id);
 
     /// <summary>
     /// What a word said now would do, as <c>SESSION_QUEUED</c> carries it (MSG1f2): <c>{ reaches, why }</c>, an object even

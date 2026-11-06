@@ -81,7 +81,7 @@ public sealed class ParticipantPortsTests : IDisposable
             return this;
         }
 
-        public void Stream(string line) => Calls.Add(line);
+        public void Stream(NativeFrame frame) => Calls.Add(frame.Line);
         public void Spawned(LineageAnnouncement said) => Calls.Add("spawned:" + said.Agent);
         public void Ended(string agent, string? state) => Calls.Add("ended:" + agent);
     }

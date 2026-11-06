@@ -74,6 +74,42 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     /// <summary>An answer made from the route and its payload, where one press's answer differs from the next's; else <see cref="Data"/>.</summary>
     public Func<string, JsonElement, object?>? Respond { get; set; }
 
+    /// <summary>The code a request of this type is refused with where it returns one, before anything else is done with it; else null.</summary>
+    public Func<string, JsonElement, string?>? RefuseBy { get; set; }
+
+    /// <summary>Told to every connection open now, as the pipe tells a held conversation's lines: one notification of <paramref name="module"/>'s <paramref name="type"/>.</summary>
+    public async Task PushAsync(string module, string type, object payload)
+    {
+        NamedPipeServerStream[] open;
+        lock (_open) open = [.. _open];
+        var line = JsonSerializer.Serialize(new
+        {
+            category = "notification",
+            id = Guid.NewGuid().ToString("N"),
+            payload = new[] { new { module, type, payload } },
+        });
+        foreach (var server in open)
+        {
+            try
+            {
+                await WriteAsync(server, line);
+            }
+            catch (Exception error) when (error is IOException or ObjectDisposedException or InvalidOperationException)
+            {
+                // That connection went.
+            }
+        }
+    }
+
+    /// <summary>Closes every connection open now without a word, as a Daoris that closes does.</summary>
+    public void Drop()
+    {
+        lock (_open)
+        {
+            foreach (var server in _open) server.Dispose();
+        }
+    }
+
     /// <summary>A press's refusal code, and its sentence.</summary>
     public string Code { get; set; } = "confirm-in-window";
 
@@ -217,6 +253,12 @@ internal sealed class InstanceStandIn : IAsyncDisposable
                     continue;
                 }
 
+                if (RefuseBy?.Invoke(type!, request.TryGetProperty("payload", out var refusedPayload) ? refusedPayload : default) is { } refusedBy)
+                {
+                    await WriteAsync(server, Refusal(id, refusedBy, null));
+                    continue;
+                }
+
                 if (Confirming)
                 {
                     await WriteAsync(server, JsonSerializer.Serialize(new
@@ -303,10 +345,21 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     private static string Refusal(string id, string code, object? parameters) =>
         JsonSerializer.Serialize(new { category = "ipc", id, success = false, error = new { code, message = $"refused {code}.", parameters } });
 
+    private static readonly SemaphoreSlim Writing = new(1, 1);
+
+    // One line at a time, so a pushed notification never lands inside an answer.
     private static async Task WriteAsync(Stream server, string line)
     {
-        await server.WriteAsync(Utf8.GetBytes(line + "\n"));
-        await server.FlushAsync();
+        await Writing.WaitAsync();
+        try
+        {
+            await server.WriteAsync(Utf8.GetBytes(line + "\n"));
+            await server.FlushAsync();
+        }
+        finally
+        {
+            Writing.Release();
+        }
     }
 
     public async ValueTask DisposeAsync()

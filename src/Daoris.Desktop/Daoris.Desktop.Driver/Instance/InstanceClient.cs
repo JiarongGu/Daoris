@@ -183,6 +183,39 @@ public sealed class InstanceClient : IAsyncDisposable
         }
     }
 
+    /// <summary>One line of the wire written and flushed; for a holder (<see cref="HeldConversation"/>), which owns the reading too and serializes its writes.</summary>
+    internal async Task WriteLineAsync(string line, CancellationToken ct)
+    {
+        await _stream.WriteAsync(Utf8.GetBytes(line + "\n"), ct).ConfigureAwait(false);
+        await _stream.FlushAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The next envelope on the wire, or null where the connection ended or the read was cancelled; a line that is no envelope is passed over.</summary>
+    internal async Task<JsonElement?> ReadAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (await _reader.ReadLineAsync(ct).ConfigureAwait(false) is { } read)
+            {
+                try
+                {
+                    var envelope = JsonDocument.Parse(read).RootElement.Clone();
+                    if (envelope.ValueKind == JsonValueKind.Object) return envelope;
+                }
+                catch (JsonException)
+                {
+                    // Not the wire.
+                }
+            }
+
+            return null;
+        }
+        catch (Exception error) when (error is IOException or ObjectDisposedException or OperationCanceledException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>The string <paramref name="element"/> holds in <paramref name="field"/>, or null.</summary>
     internal static string? Text(JsonElement element, string field) =>
         element.ValueKind == JsonValueKind.Object && element.TryGetProperty(field, out var value) && value.ValueKind == JsonValueKind.String

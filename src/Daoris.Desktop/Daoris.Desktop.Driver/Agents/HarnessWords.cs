@@ -39,25 +39,13 @@ public sealed class HarnessWords
     /// the turn's end (<c>result</c>), and that command ended after it (<c>task_updated</c> <c>killed</c>, or its
     /// <c>task_notification</c> <c>stopped</c>), which only the harness does there, since the door has no stop for one task.
     /// Work that ended before the turn did is no cut. Read before a console's streams take the line, so a run with no console
-    /// reads the same.
+    /// reads the same; read from the line's one frame, never parsed again.
     /// </summary>
-    public void Heard(string line)
+    public void Heard(NativeFrame frame)
     {
-        // Most lines are the agent's words: only a task's line or the turn's result is parsed.
-        if (!line.Contains("\"task_", StringComparison.Ordinal) && !line.Contains("\"result\"", StringComparison.Ordinal)) return;
-        JsonElement root;
-        try
-        {
-            using var document = JsonDocument.Parse(line);
-            root = document.RootElement.Clone();
-        }
-        catch (JsonException)
-        {
-            return;
-        }
-
-        if (root.ValueKind != JsonValueKind.Object) return;
-        var type = Text(root, "type");
+        if (!frame.IsObject) return;
+        var root = frame.Root;
+        var type = frame.Type;
         lock (_gate)
         {
             if (type == "result")
