@@ -12,6 +12,7 @@ import {
 import { ruleHearing, useRuleAnswer } from '../work/waits/ruleAnswer';
 import { SignIn } from './SignIn';
 import { byTool, type Tool } from './tools';
+import { usageOfTool } from './agentOfDoor';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
 import type { ViewLayout } from '../work/frame/ViewFrame';
 import { agentOf } from '../settings/accounts/accounts';
@@ -572,7 +573,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
       use={use}
       rules={rulesAnswer}
       usedBy={usedBy}
-      usage={used && used.filter((account) => tool.doors.some((each) => each.harness === account.harness))}
+      usage={used && usageOfTool(tool, used)}
       adapter={adapter}
       part={part}
       reading={read.isPending}

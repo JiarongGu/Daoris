@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TFunction } from 'i18next';
 import { toolOf } from '../../agents/tools';
+import type { AgentDoors } from '../../agents/agentOfDoor';
 import type { useActors } from '../../bridge/driver';
 import type { useSessionAtWork } from '../../bridge/sessions/atWork';
 import { useAccountUse, type useSessionOpenings, type useSessionWhere, useStopWaiting, useWorkPlan, type withCall } from '../../bridge/shell';
@@ -43,7 +44,7 @@ type Waits = ReturnType<typeof useAttendedWaits>;
  * limit's wait and Daoris's offer to hand over, its name, its facts line and its *next*; and the sessions it continues and helps.
  */
 export function useAttendedHead({
-  t, language, attended, here, live, quest, grouping, registry, roster, accounts, nameOf, actions, doors, asks, actors, wiring,
+  t, language, attended, here, live, quest, grouping, registry, roster, sheets, accounts, nameOf, actions, doors, asks, actors, wiring,
   entryAsks, channelAsk, attendedEntry, openings, sessions, quests, branch, partnerPieces, agentRoster, waiting, following, withIt,
   atWorkHeld, heavyPart, heavyTitleOf, integration, entryOffered, landsNow, standing, goToWait, chosen, rootOf, where, taking, supervision,
 }: {
@@ -58,6 +59,8 @@ export function useAttendedHead({
   grouping: ReturnType<typeof withCall> | null;
   registry: ReturnType<typeof useRegistry>['data'];
   roster: Parameters<typeof accountNames>[0];
+  /** The roster's sheet half, which says which agent each door is (AGENTPROVIDER1 s-vii); absent where the roster names none. */
+  sheets?: AgentDoors;
   accounts: Parameters<typeof limitWaitOf>[0]['answer'];
   nameOf: ReturnType<typeof namer>;
   actions: ReturnType<typeof useSessionActs>;
@@ -236,7 +239,7 @@ export function useAttendedHead({
     continuesAgent: continues
       ? roster.find((row) => row.harness === continues.session.adapter)?.product || continues.session.adapter
       : null,
-    leadingAgent: leadingAgentOf(attendedEntry, sessions ?? [], roster),
+    leadingAgent: leadingAgentOf(attendedEntry, sessions ?? [], roster, sheets),
     helping: helps?.title,
     // COAGENT1b: its partners, the agents its pieces went to by the roster's names, and how many work now.
     partners: partnersOf(partnerPieces.data ?? [], (agent) => agentRoster.names?.[agent] ?? agent),

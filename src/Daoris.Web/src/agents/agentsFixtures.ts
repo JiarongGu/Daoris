@@ -442,8 +442,8 @@ export const RULES: AgentRulesState = {
   }],
 };
 
-/** What each Claude Code account has carried (TOOL3). */
+/** What each Claude Code account has carried (TOOL3), counted by agent whichever of its doors ran (AGENTPROVIDER1 s-vii). */
 export const USAGE = [
-  { harness: 'claude-code', profile: 'account-2', sessions: 4, used: 412_000 },
-  { harness: 'claude-code-acp', profile: 'account-1', sessions: 2, used: 96_000 },
+  { agent: 'claude-code', profile: 'account-2', sessions: 4, used: 412_000 },
+  { agent: 'claude-code', profile: 'account-1', sessions: 2, used: 96_000 },
 ];

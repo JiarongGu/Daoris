@@ -1611,7 +1611,7 @@ describe('the Agents place', () => {
   it('opens at the part a door names, once that part is drawn', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESSES') return ROSTER;
-      if (type === 'USAGE') return { sessions: [], accounts: [{ harness: 'claude-code', profile: null, sessions: 1, used: 9000 }] };
+      if (type === 'USAGE') return { sessions: [], accounts: [{ agent: 'claude-code', profile: null, sessions: 1, used: 9000 }] };
       return WIRING;
     });
     const scrolled = vi.fn();
@@ -1658,8 +1658,9 @@ describe('the Agents place', () => {
         return {
           sessions: [],
           accounts: [
-            { harness: 'claude-code', profile: 'work', sessions: 2, used: 60000 },
-            { harness: 'claude-code', profile: null, sessions: 1, used: 9000 },
+            { agent: 'claude-code', profile: 'work', sessions: 2, used: 60000 },
+            { agent: 'claude-code', profile: null, sessions: 1, used: 9000 },
+            { agent: 'codex', profile: 'work', sessions: 5, used: 1000 },
           ],
         };
       }
@@ -1672,6 +1673,8 @@ describe('the Agents place', () => {
     expect(screen.getByText('60,000 context')).toBeTruthy();
     const usage = screen.getByRole('region', { name: 'Usage' });
     expect(within(usage).getByText('Your own sign-in')).toBeTruthy();
+    // Another agent's share is never this agent's, whatever its account is called.
+    expect(within(usage).queryByText('1,000 context')).toBeNull();
     expect(within(usage).getByText(/Measured, not billed/).className).not.toMatch(/\bmax-w-/);
     // 🔴 No price is claimed anywhere — Daoris does not know what a token costs (D24).
     expect(screen.queryByText(/[$£€]/)).toBeNull();
