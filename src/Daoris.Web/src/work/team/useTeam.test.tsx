@@ -22,8 +22,11 @@ const session = (over: Partial<Session> = {}) => ({
   id: 's1', adapter: 'claude-acp', repository: 'driver', state: 'working', tree: 'trees/s1', ...over,
 }) as Session;
 
-const teamOf = (attended: Session, open = vi.fn()) =>
-  renderHook(() => useTeam({ attended, here: true, nameOf: (agent) => agent, attend: vi.fn(), open })).result.current;
+const teamOf = (attended: Session, open = vi.fn()) => {
+  const team = renderHook(() => useTeam({ attended, here: true, nameOf: (agent) => agent, attend: vi.fn(), open })).result.current;
+  if (!team) throw new Error('a session here has a team');
+  return team;
+};
 
 afterEach(async () => {
   cleanup();
