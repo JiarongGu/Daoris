@@ -58,7 +58,7 @@ public sealed class PullRequestKeepingTests : IDisposable
         };
 
     private NodeRunKeeping Keeping(NodeRecordFiles records, bool lease = true) => new(
-        records, () => Then, () => lease, null!, null!, () => null, () => null, () => null, () => null, () => new PullRequestRecords(_home), () => null);
+        records, () => Then, () => lease, null!, null!, () => NodeDoors.None, () => null, () => new PullRequestRecords(_home));
 
     private NodeRecordFiles Recorded(GovernedUnit governed, WorkUnit branch, string? evidenceRef)
     {

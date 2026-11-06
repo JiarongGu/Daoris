@@ -28,7 +28,7 @@ public sealed class IntegrateNodeGitTests : LandedFixture
 
     private NodeRecordFiles Files => new(Home, () => true);
 
-    private NodeRuntime Runtime() => new(Files, _port, () => DateTimeOffset.UtcNow, () => true) { Integration = NodeRuntime.HomeDoor(Home) };
+    private NodeRuntime Runtime() => new(Files, _port, () => DateTimeOffset.UtcNow, () => true) { Doors = NodeDoors.None.With(NodeKinds.Integrate, NodeRuntime.HomeDoor(Home)) };
 
     private IntegrationStore Requests() => new(Home, () => StoreSettled.Yes);
 

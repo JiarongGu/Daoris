@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// waited on (<see cref="IntegrateStart"/>), reached and failed by the integration record. A <c>land</c> of the method <c>integrate</c> brings it.
 /// </summary>
 [NodeKind(NodeKinds.Integrate, NodeGroup.Landing, NodeKinds.Land)]
-internal sealed class IntegrateNode : BuiltInNode
+internal sealed class IntegrateNode : BuiltInNode, IStarts
 {
     /// <summary>
     /// Never skipped, since a skip satisfies <c>after</c> and would read as integrated where nothing was; the person's door is the stop, which the
@@ -44,4 +44,15 @@ internal sealed class IntegrateNode : BuiltInNode
     public override string? Title => "The integration";
 
     public override NodeLook Look => NodeLook.Other;
+
+    public override bool ReadsTheLanding => true;
+
+    public override bool EndsByTheLine => true;
+
+    /// <summary>The one door a unit's <c>integrate</c> asks (the integration design §17.4): the one handed, else the home's own.</summary>
+    public INodeDoor? Door(NodeDoorWiring wiring) => wiring.Integration ?? NodeRuntime.HomeDoor(wiring.Home);
+
+    /// <summary>A waited node, begun through its adapter: the unit's request asked of the one door, by its key.</summary>
+    public async Task<WorkPerformed?> StartAsync(NodeStarting starting, CancellationToken ct) =>
+        await starting.Integrating.IntegrateAsync(starting.Governed, starting.Node, starting.Start, starting.Statuses, starting.Said, ct).ConfigureAwait(false);
 }

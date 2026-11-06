@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>The agent's done on the ledger (§C2): a claim, observed, never skipped since <i>held</i> rests on it, and never a graph's end.</summary>
 [NodeKind(NodeKinds.Claimed, NodeGroup.Work)]
-internal sealed class ClaimedNode : BuiltInNode
+internal sealed class ClaimedNode : BuiltInNode, IObserves
 {
     /// <summary>The option name round 4 gave <c>claimed</c> for the hold on the work's requests, refused by name (INTEGRATE1o, C28).</summary>
     private const string WorkRequestsOption = "requests";
@@ -31,4 +31,8 @@ internal sealed class ClaimedNode : BuiltInNode
     public override string? Title => "The work";
 
     public override NodeLook Look => NodeLook.Work;
+
+    public override bool EndsByTheLine => true;
+
+    public NodeObservation Observe(NodeReading reading) => BuiltInNodes.Claimed(reading);
 }

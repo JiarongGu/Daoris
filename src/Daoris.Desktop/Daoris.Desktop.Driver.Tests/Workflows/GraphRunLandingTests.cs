@@ -60,7 +60,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
     /// </summary>
     private async Task PassAsync(string root, GrownBranch branch, string? tree = null, bool held = false, LandingDoor? door = null)
     {
-        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true) { Landing = door };
+        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true) { Doors = NodeDoors.None.With(NodeKinds.Land, door) };
         var pass = await runtime.PassAsync(new NodeRuntimeLook(Config(), Whole: true)
         {
             Units = _ => Task.FromResult(new NodeUnitsRead(
@@ -400,7 +400,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
         var branches = WorkInventory.Units(await WorkInventories.GatherAsync(
             _home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>(), recorded: WorkInventories.RecordedOf(sessions)));
         var units = WorkUnits.Linked(branches, QuestUnits.Read([.. _world.Quests.Values], sessions), [], sessions);
-        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true) { Landing = door };
+        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true) { Doors = NodeDoors.None.With(NodeKinds.Land, door) };
         var pass = await runtime.PassAsync(new NodeRuntimeLook(Config(), Whole: true)
         {
             Units = _ => Task.FromResult(new NodeUnitsRead(units, new Dictionary<string, string> { ["engine"] = root })),

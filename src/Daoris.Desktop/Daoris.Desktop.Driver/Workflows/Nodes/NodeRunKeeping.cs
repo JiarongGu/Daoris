@@ -7,30 +7,20 @@ namespace Daoris.Driver;
 /// <param name="say">The say door a run's work is told what was sent back to it through: the session, the words and the key.</param>
 internal sealed class NodeRunKeeping(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<bool> holdsLease, GraphRuns graphRuns, WorkPerformer performer,
-    Func<IIntegrationDoor?> integration, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<ILandingDoor?> landing,
-    Func<IPushDoor?> pushing, Func<IPullRequestRecords?> pullRequests, Func<ITidyDoor?> tidying)
+    Func<NodeDoors> doors, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<IPullRequestRecords?> pullRequests)
 {
-    /// <summary>The steps past a run's landing that Daoris performs, each started once on its door: the <c>push</c>, then the <c>tidy</c> (D245).</summary>
-    public void StartPerformed(GovernedUnit governed, RunScope scope)
-    {
-        StartPushes(governed, scope);
-        StartTidies(governed);
-    }
-
     /// <summary>
-    /// A run's <c>tidy</c>, active at the tip the landing recorded, started once on the door (D245): its <c>monitor</c> before it read the pull
-    /// request merged or closed, and the door ends the chain's parts or fails the node. Idempotent by node and tip, and a landing the tidy
-    /// already ended at that tip is not started again.
+    /// A run's active nodes after its rounds, each handed to its kind to start on its door off the pass (<see cref="IStarts.Keep"/>): the
+    /// <c>land</c>, and the steps past it Daoris performs. Each door is idempotent by node and tip, so a node kept again starts nothing twice.
     /// </summary>
-    public void StartTidies(GovernedUnit governed)
+    public void StartDoors(GovernedUnit governed, RunScope scope)
     {
-        if (tidying() is not { } door || !holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;
-        if (NodeEvaluations.Landed(governed, record.Statuses) is not { Unit: var unit } || BuiltInNodes.LandingOf(unit) is not { } landed) return;
-        foreach (var node in governed.Declared.Values.Where(each => each.Kind == NodeKinds.Tidy))
+        if (!holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;
+        var wired = doors();
+        foreach (var node in governed.Declared.Values)
         {
-            var status = WorkPerformer.StatusOf(record, node.Id);
-            if (status.State != NodeStates.Active || landed.Tidied?.Tip == landed.Tip) continue;
-            door.Start(new TidyStart(governed.Unit.Id, node, governed.Watched.Repository, governed.Watched.Workspace, governed.Watched.Root, landed.Branch, landed.Tip));
+            if (NodeKit.Of(node.Kind) is not IStarts starts || WorkPerformer.StatusOf(record, node.Id) is not { State: NodeStates.Active } status) continue;
+            starts.Keep(new NodeKept(governed, scope, node, status, record, wired));
         }
     }
 
@@ -48,39 +38,6 @@ internal sealed class NodeRunKeeping(
             if (record.Statuses.GetValueOrDefault(node.Id) is not { State: NodeStates.Reached, Acceptance.Evidence.Ref: { } address }) continue;
             if (!PullRequestSteps.IsAddress(address)) continue;
             kept.Keep(governed.Watched.Repository, landed.Branch, plugin, address);
-        }
-    }
-
-    /// <summary>
-    /// A run's <c>push</c>, active at the tip the landing recorded, started once on the door: the branch the <c>land</c> made is pushed through
-    /// the push act. The door is idempotent by node and tip, and the act is the person's press's own, so the two cannot push twice.
-    /// </summary>
-    public void StartPushes(GovernedUnit governed, RunScope scope)
-    {
-        if (pushing() is not { } door || !holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;
-        if (NodeEvaluations.Landed(governed, record.Statuses) is not { Unit: var unit } || BuiltInNodes.LandingOf(unit) is not { } landed) return;
-        foreach (var node in governed.Declared.Values.Where(each => each.Kind == NodeKinds.Push))
-        {
-            var status = WorkPerformer.StatusOf(record, node.Id);
-            if (status.State != NodeStates.Active || landed.Pushed && landed.PushedTip == landed.Tip) continue;
-            door.Start(new PushStart(governed.Unit.Id, node, governed.Watched.Repository, governed.Watched.Workspace, governed.Watched.Root, landed.Branch, landed.Tip));
-        }
-    }
-
-    /// <summary>
-    /// A run's <c>land</c>, active at the tip this pass read, started once on the door: a node reaches active only once its wires hold, its
-    /// subject is due and the gate holds nothing, and what authorizes it is the run's review word, or the standing authority judged again
-    /// before the first effect. The door is idempotent by node and tip; its delivery key fences a press and a pass at once.
-    /// </summary>
-    public void StartLandings(GovernedUnit governed, RunScope scope)
-    {
-        if (landing() is not { } door || !holdsLease() || scope.Branch is not { } branch || records.Read(governed.Unit.Id) is not { } record) return;
-        foreach (var node in governed.Declared.Values.Where(each => each.Kind == NodeKinds.Land))
-        {
-            var status = WorkPerformer.StatusOf(record, node.Id);
-            if (status.State != NodeStates.Active || status.Binding is not { SubjectRevision: { } tip } binding) continue;
-            door.Start(new LandStart(governed.Unit.Id, governed.Run, node.Id, branch.Id, branch.Executors, governed.Watched.Repository,
-                governed.Watched.Workspace, tip, binding.GraphDigest, governed.Graph.Nodes.FirstOrDefault(each => each.Kind == NodeKinds.Review)?.Id));
         }
     }
 
@@ -162,7 +119,7 @@ internal sealed class NodeRunKeeping(
             var scope = new NodeScope(each.GraphDigest, each.Run);
             var now = clock();
             // A stop of an `integrate` whose member promoted is refused, read from the integration record before it is applied.
-            var promoted = integration() is { } door && pending.Pending.Any(word => word.Act == NodeWordActs.Stop && each.Declared.GetValueOrDefault(word.Node)?.Kind == NodeKinds.Integrate)
+            var promoted = doors().Door<IIntegrationDoor>() is { } door &&pending.Pending.Any(word => word.Act == NodeWordActs.Stop && each.Declared.GetValueOrDefault(word.Node)?.Kind == NodeKinds.Integrate)
                 ? await IntegrateNodes.PromotedAsync(door, pending, ct).ConfigureAwait(false)
                 : null;
             var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted));

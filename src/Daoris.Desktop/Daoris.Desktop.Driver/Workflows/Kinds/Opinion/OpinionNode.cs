@@ -19,8 +19,10 @@ namespace Daoris.Driver;
 /// no rule asked of), reaches it.</para>
 /// </remarks>
 [NodeKind(NodeKinds.Opinion, NodeGroup.Checks, NodeKinds.Check)]
-public sealed class OpinionNode : BuiltInNode
+public sealed class OpinionNode : BuiltInNode, IObserves
 {
+    public NodeObservation Observe(NodeReading reading) => Observe(reading.Unit, reading.Node, reading.Binding, reading.Opinion);
+
     /// <summary>
     /// FABRIC-WORKFLOW2: D157's opinion never fails (a required one waits), and the person may pass it over, as its gate's unavailable reads as
     /// skipped. FABRIC-WIRE1g: the gate's own record passes it over where its rule asks none, or an optional one none could be had.

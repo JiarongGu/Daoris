@@ -58,7 +58,7 @@ public sealed class VerifyRunTests : NodeRuntimeFixture
         });
         var checks = new Checks { SendOf = (unit, attempt, node) => VerifyRuns.SendOf(_home, unit, attempt, node) };
         var runtime = Runtime();
-        runtime.Checks = checks;
+        runtime.Doors = runtime.Doors.With(NodeKinds.Check, checks);
 
         await runtime.PassAsync(Look("{}"), CancellationToken.None);
 

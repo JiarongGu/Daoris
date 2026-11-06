@@ -67,7 +67,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
 
     private NodeRuntime Runtime(string root) => new(Files, _port, () => DateTimeOffset.UtcNow, () => true)
     {
-        Integration = NodeRuntime.HomeDoor(Home),
+        Doors = NodeDoors.None.With(NodeKinds.Integrate, NodeRuntime.HomeDoor(Home)),
         Lines = Transport(root),
         Integrated = (unit, repository) =>
         {

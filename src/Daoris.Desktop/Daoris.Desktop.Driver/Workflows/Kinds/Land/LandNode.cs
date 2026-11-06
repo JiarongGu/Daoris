@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// (<see cref="LandNodes"/>). It takes no <c>accept</c>: it starts once its wires hold, and the person's Accept is a <c>review</c>'s (LANDNODE1c2).
 /// </summary>
 [NodeKind(NodeKinds.Land, NodeGroup.Landing)]
-internal sealed class LandNode : BuiltInNode
+internal sealed class LandNode : BuiltInNode, IObserves, IStarts
 {
     /// <summary>
     /// Reached when the landing record holds the bound tip, failed by the landing's own refusal. Never skipped, since a skip would read as landed;
@@ -40,4 +40,34 @@ internal sealed class LandNode : BuiltInNode
     public override string? Title => "The landing";
 
     public override NodeLook Look => NodeLook.Landing;
+
+    public override bool EndsByTheLine => true;
+
+    /// <summary>Reached where the landing record holds the bound tip, by the landing's authority (LANDNODE1c).</summary>
+    public NodeObservation Observe(NodeReading reading) => BuiltInNodes.Handed(reading, NodeSource.Landing);
+
+    /// <summary>The door a run's <c>land</c> is performed through, landing as the review's Accept lands it, off the pass (WORKFLOWCLEAN1 1c).</summary>
+    public INodeDoor? Door(NodeDoorWiring wiring) =>
+        wiring.Landing is { } landing ? new LandingDoor(landing, said => wiring.Say("landing.run", said), wiring.MayStart) : null;
+
+    /// <summary>Begun in the pass, and read from the landing record as <c>handed</c> is; its door takes it after the rounds.</summary>
+    public Task<WorkPerformed?> StartAsync(NodeStarting starting, CancellationToken ct) => Task.FromResult<WorkPerformed?>(starting.Begin());
+
+    /// <summary>
+    /// A run's <c>land</c>, active at the tip this pass read, started once on the door: a node reaches active only once its wires hold, its
+    /// subject is due and the gate holds nothing, and what authorizes it is the run's review word, or the standing authority judged again
+    /// before the first effect. The door is idempotent by node and tip; its delivery key fences a press and a pass at once.
+    /// </summary>
+    public void Keep(NodeKept kept)
+    {
+        if (kept.Doors.Door<ILandingDoor>(Row.Kind) is not { } door || kept.Scope.Branch is not { } branch
+            || kept.Status.Binding is not { SubjectRevision: { } tip } binding)
+        {
+            return;
+        }
+
+        var governed = kept.Governed;
+        door.Start(new LandStart(governed.Unit.Id, governed.Run, kept.Node.Id, branch.Id, branch.Executors, governed.Watched.Repository,
+            governed.Watched.Workspace, tip, binding.GraphDigest, governed.Graph.Nodes.FirstOrDefault(each => each.Kind == NodeKinds.Review)?.Id));
+    }
 }

@@ -37,13 +37,6 @@ public static class NodeGraphs
     /// </summary>
     public const int SyntheticWiresPerNode = 4;
 
-    /// <summary>The kinds an end is at or before the line by: the cleanup waits for no such end (§C2, §C3).</summary>
-    private static readonly HashSet<string> AtOrBeforeTheLine =
-        new([NodeKinds.Claimed, NodeKinds.WorkRequests, NodeKinds.Land, NodeKinds.Push, NodeKinds.Integrate, NodeKinds.Line], StringComparer.Ordinal);
-
-    /// <summary>The kinds that observe the landing record (INTEGRATE1n, F47): none can be reached before a <c>handed</c> has made one.</summary>
-    private static readonly string[] OfTheLanding = [NodeKinds.Push, NodeKinds.Line, NodeKinds.Integrate, NodeKinds.Monitor, NodeKinds.Tidy];
-
     /// <summary>
     /// Everything a save refuses in <paramref name="graph"/>, in a stable order; empty when it holds. The schema and the bounds; each
     /// node's declaration; the wires' (<see cref="NodeWires.Problems"/>); the entries; the end; each node no entry reaches; the protected
@@ -359,7 +352,7 @@ public static class NodeGraphs
         {
             var landed = landings.Select(landing => landing.Id).ToHashSet(StringComparer.Ordinal);
             var unlanded = Reach(starts, [.. local.Where(wire => !landed.Contains(wire.From!.Node))], forward: true);
-            foreach (var node in byId.Values.Where(node => OfTheLanding.Contains(node.Kind, StringComparer.Ordinal) && unlanded.Contains(node.Id)))
+            foreach (var node in byId.Values.Where(node => NodeKit.Of(node.Kind)?.ReadsTheLanding == true && unlanded.Contains(node.Id)))
             {
                 Say(GraphRefusal.BeforeLanding, null, node.Id, $"node `{node.Id}`: {(node.Kind == NodeKinds.Integrate ? "an" : "a")} `{node.Kind}` observes the landing, and a way to it passes no "
                     + $"`{landings[0].Kind}` ({string.Join(", ", landings.Select(landing => $"`{landing.Id}`"))}), so it would wait for ever before one.");
@@ -411,7 +404,7 @@ public static class NodeGraphs
                 ? "a bound in days is for a cleanup waiting on the end; at `held` the line's proof is the wait."
                 : $"the cleanup's bound is {days} days, and is 1 to 90.");
         }
-        else if (cleanup.Until == GraphCleanupUntil.End && end is not null && AtOrBeforeTheLine.Contains(end.Kind))
+        else if (cleanup.Until == GraphCleanupUntil.End && end is not null && NodeKit.Of(end.Kind)?.EndsByTheLine == true)
         {
             Say(GraphRefusal.Cleanup, null, end.Id, $"the end `{end.Id}` is at or before the line, so its cleanup goes at `held`: the wait is for an end after the line.");
         }

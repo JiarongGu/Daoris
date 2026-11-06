@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 public sealed record TidyStart(string Unit, NodeDeclaration Node, string Repository, string Workspace, string Root, string Branch, string Tip);
 
 /// <summary>The door a run's <c>tidy</c> is performed through (D245).</summary>
-public interface ITidyDoor
+public interface ITidyDoor : INodeDoor
 {
     /// <summary>Starts the tidy off the pass, once per node and tip; false where one runs already or none may begin now.</summary>
     bool Start(TidyStart start);

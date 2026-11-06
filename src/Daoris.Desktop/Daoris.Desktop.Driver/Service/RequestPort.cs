@@ -7,7 +7,7 @@ public sealed record RequestAsk(string Key, string From, string To, string Title
 public sealed record RequestPublished(bool Ok, string? Code, string Message, QuestView? Quest);
 
 /// <summary>The one door a request node publishes through, as a port so a node is judged over a stand-in. <see cref="ServiceClient"/> is the host's.</summary>
-public interface IRequestPort
+public interface IRequestPort : INodeDoor
 {
     /// <exception cref="HttpRequestException">The host did not answer: the publish is unknown, and the same key is sent again.</exception>
     Task<RequestPublished> PublishAsync(RequestAsk ask, CancellationToken ct);

@@ -50,7 +50,7 @@ public sealed class ChatGraphRunTests : ReviewLandingFixture
 
     private async Task<bool> PassAsync(string root, GrownBranch branch, LandingDoor door)
     {
-        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true) { Landing = door };
+        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true) { Doors = NodeDoors.None.With(NodeKinds.Land, door) };
         var pass = await runtime.PassAsync(new NodeRuntimeLook(Config(), Whole: true)
         {
             Units = _ => Task.FromResult(new NodeUnitsRead(

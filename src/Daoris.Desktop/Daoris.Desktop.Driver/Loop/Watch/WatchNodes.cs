@@ -51,27 +51,12 @@ internal sealed class WatchNodes
         // FABRIC-CLOSE1b: a closure graph arms it too, and its `quest.close` is sent through this loop's service client, the local host's close
         // door. FABRIC-CLOSE1l: a quest is bound at its take, as its first session opens (Driver's start), never here.
         var nodes = Runtime = new NodeRuntime(new NodeRecordFiles(home), hooks, () => DateTimeOffset.UtcNow, () => HomeLease.HeldHere(home), service);
-        // INTEGRATE1n part n3 (§17.4): the door a unit's `integrate` asks, the home's own where a test hands none.
-        nodes.Integration = watch.IntegrationDoor ?? NodeRuntime.HomeDoor(home);
-        // INTEGRATE1p (§17.5): a run's request publishes its quest through this loop's service client.
-        nodes.Requests = service;
         // DECIDE1c: what a run's review sends back is said on its work's session as Daoris's words, under their key, at its line's head.
         nodes.Say = async (session, text, key, ct) =>
             (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said;
 
-        // WORKFLOWCLEAN1 1c (the cleanup design §2.1): the door a run's `land` is performed through, landing as the review's Accept lands it, run
-        // off the pass; only where this loop holds the home's lease, and never while an update drains (DRAINHOLD1).
-        var landingPlugins = new LandingPlugins(home, say: (plugin, line) => watch.Output?.Append($"plugin:{plugin}", line), pluginLog: hooks.Log);
-        nodes.Landing = new LandingDoor(
-            () => new LandPerformer(home, new ServiceReviewLandingWorld(service), new SessionTrees(home, landingPlugins),
-                watch.Events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid),
-            said => Log?.Info("landing.run", ("said", said)), () => HomeLease.HeldHere(home) && !watch.DrainsNow());
-
-        // G8: the door a run's `push` is performed through, the push act of the act journal, under the same lease and drain rules.
+        // G8: where the pull request a plugin's step opened is written on its landing.
         nodes.PullRequests = new PullRequestRecords(home);
-        nodes.Pushing = new PushDoor(home, said => Log?.Info("push.run", ("said", said)), () => HomeLease.HeldHere(home) && !watch.DrainsNow());
-        // D245: the door a run's `tidy` ends its chain's parts through, under the same lease and drain rules.
-        nodes.Tidying = new TidyDoor(home, said => Log?.Info("tidy.run", ("said", said)), () => HomeLease.HeldHere(home) && !watch.DrainsNow());
 
         // FABRIC-PIPELINE1d (the pipeline design §4.2): the heavy executor a check is handed to; its answer asks a pass, which reconciles it.
         _executor = new HeavyExecutor(home, new VerifyWorld
@@ -79,7 +64,20 @@ internal sealed class WatchNodes
             Answered = (run, _) => watch.NodesWoken(RunUnits.IdOf(run)),
             Mapping = repository => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository),
         });
-        nodes.Checks = new CheckExecution(_executor, (unit, attempt, node) => VerifyRuns.SendOf(home, unit, attempt, node));
+
+        // D247 §3.5: each starting kind builds its door from this loop's wiring, starting only where the loop holds the home's lease and never
+        // while an update drains (DRAINHOLD1). A run's `land` lands as the review's Accept lands it (WORKFLOWCLEAN1 1c); a unit's `integrate`
+        // asks the door a test hands, else the home's own (INTEGRATE1n, §17.4); a run's `request` publishes through this loop's service client.
+        var landingPlugins = new LandingPlugins(home, say: (plugin, line) => watch.Output?.Append($"plugin:{plugin}", line), pluginLog: hooks.Log);
+        nodes.Doors = NodeDoors.Wired(new NodeDoorWiring(home, () => HomeLease.HeldHere(home) && !watch.DrainsNow())
+        {
+            Log = (code, said) => Log?.Info(code, ("said", said)),
+            Landing = () => new LandPerformer(home, new ServiceReviewLandingWorld(service), new SessionTrees(home, landingPlugins),
+                watch.Events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid),
+            Executor = _executor,
+            Integration = watch.IntegrationDoor,
+            Requests = service,
+        });
 
         // INTEGRATE1g (the integration design §5.1, §17.4): the transport an open request's line is sent to, run off the pass beside the heavy
         // executor; a member's conflict told to its session through the say door, each step told to the log, and its answer asking a pass.

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// not held for the person's yes (D133) or its evidence's verdict (D144).
 /// </summary>
 [NodeKind(NodeKinds.QuestHolds, NodeGroup.Checks, NodeKinds.WorkRequests)]
-internal sealed class QuestHoldsNode : BuiltInNode
+internal sealed class QuestHoldsNode : BuiltInNode, IObserves
 {
     /// <summary>
     /// Reached by what Daoris reads at the bound tip; a hold that does not let go keeps it active with its reason, as <c>work.requests</c> is kept,
@@ -30,4 +30,6 @@ internal sealed class QuestHoldsNode : BuiltInNode
     public override string? Title => "The quest's holds";
 
     public override NodeLook Look => NodeLook.Holds;
+
+    public NodeObservation Observe(NodeReading reading) => HoldNodes.Observe(reading.Unit, reading.Node, reading.Binding, reading.Git);
 }

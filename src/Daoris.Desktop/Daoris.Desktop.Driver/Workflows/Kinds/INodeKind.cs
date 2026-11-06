@@ -44,4 +44,10 @@ public interface INodeKind
 
     /// <summary>How the chart draws it.</summary>
     NodeLook Look { get; }
+
+    /// <summary>Whether it reads the landing record (INTEGRATE1n, F47): none is reached before a landing made one, so a way to it passes one.</summary>
+    bool ReadsTheLanding { get; }
+
+    /// <summary>Whether an end of it is at or before the line (§C2, §C3): a cleanup waits for no such end.</summary>
+    bool EndsByTheLine { get; }
 }

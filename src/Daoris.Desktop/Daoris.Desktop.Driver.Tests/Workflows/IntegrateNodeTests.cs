@@ -55,7 +55,7 @@ public sealed class IntegrateNodeTests : IDisposable
 
     private NodeRecordFiles Files => new(_home, () => true);
 
-    private NodeRuntime Runtime(Door? door = null) => new(Files, _port, () => Then, () => true) { Integration = door ?? _door };
+    private NodeRuntime Runtime(Door? door = null) => new(Files, _port, () => Then, () => true) { Doors = NodeDoors.None.With(NodeKinds.Integrate, door ?? _door) };
 
     private NodeRecord Record(string unit = "") => Files.Read(unit.Length == 0 ? RunUnit : unit)!;
 
