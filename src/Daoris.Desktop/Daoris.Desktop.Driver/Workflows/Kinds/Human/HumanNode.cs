@@ -2,9 +2,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A person's task (§D5; NODEKIT1 HUMAN, D245's second note): a manual operation the run waits on until the person presses <i>Done</i>, or an
-/// approval they <i>Approve</i> or <i>Reject</i>, as a release pipeline's manual action. Its outcomes are written in the file, so a flowchart
-/// routes on them with <c>when</c> wires: <c>done</c> for a task, <c>approved</c> and <c>rejected</c> for an approval; one declaring none is a task
-/// reached with no outcome.
+/// approval they <i>Approve</i> or <i>Reject</i>, as a release pipeline's manual action. Its outcome is written in the file, so a flowchart
+/// routes on it with a <c>when</c> wire: <c>done</c> for a task, <c>approved</c> for an approval, whose refusal is the graph's <c>rejected</c>
+/// wire as a review's changes are; one declaring none is a task reached with no outcome.
 /// </summary>
 [NodeKind(NodeKinds.Human, NodeGroup.You, NodeKinds.GoAhead)]
 internal sealed class HumanNode : BuiltInNode, IObserves, IPressed
@@ -12,10 +12,10 @@ internal sealed class HumanNode : BuiltInNode, IObserves, IPressed
     /// <summary>A task's outcome.</summary>
     public static readonly IReadOnlyList<string> Task = [Done];
 
-    /// <summary>An approval's outcomes, in this order.</summary>
-    public static readonly IReadOnlyList<string> Approval = [Approved, Rejected];
+    /// <summary>An approval's outcome: its refusal is a state, not an outcome.</summary>
+    public static readonly IReadOnlyList<string> Approval = [Approved];
 
-    private const string Done = "done", Approved = "approved", Rejected = "rejected";
+    private const string Done = "done", Approved = "approved";
 
     public override NodeAuthority Row { get; } = new(NodeKinds.Human, NodeReach.Pressed, NodeSource.Person, null, true, true, true, false);
 
@@ -25,6 +25,9 @@ internal sealed class HumanNode : BuiltInNode, IObserves, IPressed
     public override bool TakesOutcomes(IReadOnlyList<string> outcomes) => outcomes.SequenceEqual(Task) || outcomes.SequenceEqual(Approval);
 
     public override NodePart Part(NodeDeclaration node) => new(NodeKinds.Human, WorkflowParticipation.You, WorkflowExecutor.Daoris);
+
+    /// <summary>A step added from the palette is a task, reached with <c>done</c>; the editor turns it into an approval by declaring <c>approved</c>.</summary>
+    public override IReadOnlyList<string> Outcomes => Task;
 
     public override string? Title => "Your task";
 
@@ -44,12 +47,17 @@ internal sealed class HumanNode : BuiltInNode, IObserves, IPressed
     /// <summary>A waiting task offers its Done; a waiting approval its Approve and Reject.</summary>
     public IReadOnlyList<string> Acts(NodeDeclaration node, NodeStatus status) => status.State == NodeStates.Active ? Presses(node) : [];
 
-    /// <summary>Each press reaches it on the person's word at the binding it waits on, with the outcome the press names and their note.</summary>
-    public NodeMove? Move(NodeDeclaration node, NodeWord word, NodeStatus status, NodeScope scope) => new(NodeStates.Reached, NodeCause.Authority)
-    {
-        Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = status.Binding is { } bound ? bound with { Outcome = Outcome(node, word.Act) } : null,
-        Words = word.Words,
-    };
+    /// <summary>
+    /// Done and Approve reach it on the person's word at the binding it waits on, with the outcome the press names and their note; Reject
+    /// rejects it on that attempt with their note, as a review's changes do, and the graph's <c>rejected</c> wire routes it.
+    /// </summary>
+    public NodeMove? Move(NodeDeclaration node, NodeWord word, NodeStatus status, NodeScope scope) => word.Act == NodeWordActs.Reject
+        ? new NodeMove(NodeStates.Rejected, NodeCause.Person) { Attempt = status.Attempt, Words = word.Words }
+        : new NodeMove(NodeStates.Reached, NodeCause.Authority)
+        {
+            Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = status.Binding is { } bound ? bound with { Outcome = Outcome(node, word.Act) } : null,
+            Words = word.Words,
+        };
 
     /// <summary>The presses <paramref name="node"/> waits for once active: an approval's two, else a task's Done.</summary>
     public static IReadOnlyList<string> Presses(NodeDeclaration node) =>
@@ -59,7 +67,6 @@ internal sealed class HumanNode : BuiltInNode, IObserves, IPressed
     public static string? Outcome(NodeDeclaration node, string act) => act switch
     {
         NodeWordActs.Approve when node.Outcomes.Contains(Approved, StringComparer.Ordinal) => Approved,
-        NodeWordActs.Reject when node.Outcomes.Contains(Rejected, StringComparer.Ordinal) => Rejected,
         NodeWordActs.Done when node.Outcomes.Contains(Done, StringComparer.Ordinal) => Done,
         _ => null,
     };

@@ -1,3 +1,4 @@
+import { NODE_KINDS } from '../../bridge/generated/routes';
 import type { FlowNode } from '../../design/FlowCanvas';
 import type { IconName } from '../../design/ui';
 
@@ -7,19 +8,16 @@ import type { IconName } from '../../design/ui';
 /** The variants `StepNode` draws; a kind this page has none for is `unknown`, shown as recorded and never dropped. */
 export type StepVariant = 'work' | 'you' | 'check' | 'holds' | 'decision' | 'plugin' | 'landing' | 'line' | 'other' | 'unknown';
 
-const BY_KIND: Record<string, StepVariant> = {
-  claimed: 'work', work: 'work',
-  review: 'you', look: 'you', 'go-ahead': 'you', human: 'you',
-  check: 'check', opinion: 'check',
-  'work.requests': 'holds', 'quest.holds': 'holds', 'content.holds': 'holds',
-  land: 'landing', landing: 'landing',
-  line: 'line', push: 'line', 'pull-request': 'line', monitor: 'line', tidy: 'line',
-  request: 'other', 'wait.unit': 'other', integrate: 'other', 'quest.close': 'other', all: 'other', stop: 'other',
-};
+// A built-in's variant is its kit's `look`, by its id and by the step a run draws it as (`work`, `landing`); the pull-request half of a
+// plugin's step is drawn on the line beside the steps around it.
+const BY_KIND = new Map<string, StepVariant>([
+  ...NODE_KINDS.flatMap((row): [string, StepVariant][] => [[row.kind, row.look as StepVariant], [row.drawn, row.look as StepVariant]]),
+  ['pull-request', 'line'],
+]);
 
 /** A step's variant from its kind; a plugin's step (`plugin/step`) declaring outcomes is a decision, and a built-in never is. */
 export function variantOf(kind: string, outcomes: readonly string[] = []): StepVariant {
-  const known = BY_KIND[kind];
+  const known = BY_KIND.get(kind);
   if (known) return known;
   if (kind.indexOf('/') > 0) return outcomes.length > 0 ? 'decision' : 'plugin';
   return 'unknown';

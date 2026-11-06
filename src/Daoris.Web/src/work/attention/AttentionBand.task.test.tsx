@@ -74,7 +74,7 @@ describe("a person's task on What needs you", () => {
   it.each([
     ['en', 'Approve…', 'Approve', 'Reject…', 'Reject', 'The run waits at sign for your Approve or Reject.'],
     ['zh', '批准…', '批准', '驳回…', '驳回', '进展停在 sign，等你批准或驳回。'],
-  ])('offers an approval its Approve and Reject, a note left out where none is given, in %s', async (language, approveOpen, approve, rejectOpen, reject, why) => {
+  ])('offers an approval its Approve, a note left out where none is given, and its Reject, which waits for its reason, in %s', async (language, approveOpen, approve, rejectOpen, reject, why) => {
     await i18n.changeLanguage(language);
     start(['approve', 'reject']);
     const item = await screen.findByRole('listitem', { name: '#q7' });
@@ -86,7 +86,11 @@ describe("a person's task on What needs you", () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'q7', node: 'sign', act: 'approve' } }));
 
     await userEvent.click(within(item).getByRole('button', { name: rejectOpen }));
-    await userEvent.click(within(within(item).getByRole('group', { name: rejectOpen })).getByRole('button', { name: reject }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'q7', node: 'sign', act: 'reject' } }));
+    // A refusal is the run's rejection: it waits for its reason.
+    const refusing = within(item).getByRole('group', { name: rejectOpen });
+    expect(within(refusing).getByRole('button', { name: reject })).toBeDisabled();
+    await userEvent.type(within(refusing).getByRole('textbox'), 'the notes miss it');
+    await userEvent.click(within(refusing).getByRole('button', { name: reject }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'q7', node: 'sign', act: 'reject', words: 'the notes miss it' } }));
   });
 });

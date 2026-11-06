@@ -24,21 +24,10 @@ internal sealed class NodeRunKeeping(
         }
     }
 
-    /// <summary>
-    /// A run's <c>&lt;plugin&gt;/pull-request</c> step that reached: the pull request its evidence names is written on the landing record with its
-    /// plugin, once, so the <c>work/state</c> asks have an address and the page shows the pull request.
-    /// </summary>
+    /// <summary>A run's pull-request steps that reached, kept on the landing record by the step's own unit (<see cref="PullRequestStep.Keep"/>).</summary>
     public void KeepPullRequests(GovernedUnit governed)
     {
-        if (pullRequests() is not { } kept || !holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;
-        if (NodeEvaluations.Landed(governed, record.Statuses) is not { Unit: var unit } || NodeObserving.LandingOf(unit) is not { } landed) return;
-        foreach (var node in governed.Declared.Values)
-        {
-            if (PullRequestSteps.PluginOf(node.Kind) is not { } plugin) continue;
-            if (record.Statuses.GetValueOrDefault(node.Id) is not { State: NodeStates.Reached, Acceptance.Evidence.Ref: { } address }) continue;
-            if (!PullRequestSteps.IsAddress(address)) continue;
-            kept.Keep(governed.Watched.Repository, landed.Branch, plugin, address);
-        }
+        if (pullRequests() is { } kept && holdsLease() && records.Read(governed.Unit.Id) is { } record) PullRequestStep.Keep(governed, record, kept);
     }
 
     /// <summary>

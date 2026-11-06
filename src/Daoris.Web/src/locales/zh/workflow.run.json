@@ -289,6 +289,7 @@
   "workflow.run.node.rejectSays": "驳回 {{node}}，进展会走驳回的路线。Daoris 下次查看时会应用它。",
   "workflow.run.node.rejectMeanIt": "驳回",
   "workflow.run.node.taskWords": "备注（可不填）",
+  "workflow.run.node.rejectWords": "拒绝的理由",
   "workflow.run.node.asked.done": "你的完成已保存，Daoris 下次查看时会应用它。",
   "workflow.run.node.asked.approve": "你的批准已保存，Daoris 下次查看时会应用它。",
   "workflow.run.node.asked.reject": "你的驳回已保存，Daoris 下次查看时会应用它。",

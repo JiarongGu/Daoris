@@ -12,6 +12,7 @@
 // - distinct: no workflow, delivery or step name holds another kind's whole name, in either language
 //   (SETUPUX1g; the glossary's `distinct` lists, D221 §2.5);
 // - person: each person's press names its act in every language (`person-words.mjs`, from the generated routes);
+// - kind: each node kind the driver's kit declares has its two titles and each outcome's word in every language (`kind-words.mjs`);
 // - reword: a word a term lists under `avoid.later` is one a later rewording will forbid. Strings that still say it are
 //   reported; nothing fails on it. The glossary lists none now (SETUPUX1w moved them to `avoid`).
 //
@@ -26,6 +27,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from '../../../tools/fsx.mjs';
+import { readNodeKinds, unwordedKinds } from './kind-words.mjs';
 import { readPersonWords, unworded } from './person-words.mjs';
 
 const LOCALES = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'locales');
@@ -363,9 +365,9 @@ export function report(findings, { labels, accepted } = {}) {
   const count = (rule, language) => findings.filter((finding) => finding.rule === rule && (!language || finding.language === language)).length;
   const lines = [
     `names-check: ${labels ?? '?'} label keys; ${findings.length} findings — `
-      + ['glossary', 'budget', 'form', 'door', 'distinct', 'person', 'reword'].map((rule) => `${rule} ${count(rule)} (en ${count(rule, 'en')}, zh ${count(rule, 'zh')})`).join(', ')
+      + ['glossary', 'budget', 'form', 'door', 'distinct', 'person', 'kind', 'reword'].map((rule) => `${rule} ${count(rule)} (en ${count(rule, 'en')}, zh ${count(rule, 'zh')})`).join(', ')
       + (accepted === undefined ? '' : `; ${accepted} budget judgements accepted in the glossary`),
-    'Under --strict (the build runs it) a glossary, form, door, distinct or person finding fails; the budgets are a report and never fail (D54), and neither does a reword, a word a later rewording will forbid.',
+    'Under --strict (the build runs it) a glossary, form, door, distinct, person or kind finding fails; the budgets are a report and never fail (D54), and neither does a reword, a word a later rewording will forbid.',
   ];
   const order = (finding) => `${KINDS.indexOf(finding.kind).toString().padStart(2, '0')}|${finding.key}|${finding.rule}|${finding.language}`;
   for (const finding of [...findings].sort((a, b) => order(a).localeCompare(order(b)))) {
@@ -374,7 +376,7 @@ export function report(findings, { labels, accepted } = {}) {
   return lines.join('\n');
 }
 
-/** The exit code: 1 under --strict when a fact is found (glossary, form, door, distinct, person), never for a budget or a reword. */
+/** The exit code: 1 under --strict when a fact is found (glossary, form, door, distinct, person, kind), never for a budget or a reword. */
 export function verdict(findings, { strict }) {
   return strict && findings.some((finding) => finding.rule !== 'budget' && finding.rule !== 'reword') ? 1 : 0;
 }
@@ -392,7 +394,14 @@ if (isMain(import.meta.url)) {
     console.error('names-check: src/bridge/generated/routes.ts lists no person\'s presses: run `node tools/contracts.mjs`');
     process.exit(2);
   }
-  const findings = [...check(glossary, en, zh, { all: flags.has('--all'), others }), ...unworded(words, { en, zh, ...others })];
+  const kinds = readNodeKinds();
+  if (!kinds) {
+    console.error('names-check: src/bridge/generated/routes.ts lists no node kinds: run `node tools/contracts.mjs`');
+    process.exit(2);
+  }
+  const findings = [
+    ...check(glossary, en, zh, { all: flags.has('--all'), others }), ...unworded(words, { en, zh, ...others }), ...unwordedKinds(kinds, { en, zh, ...others }),
+  ];
   const kindFor = kindOf(glossary);
   const labels = Object.keys(en).filter((key) => LABELS.has(kindFor(key)) && !PLURAL.test(key)).length;
   const accepted = acceptances(glossary).size;

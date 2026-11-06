@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { NODE_KINDS } from '../../bridge/generated/routes';
 import { variantOf, VARIANT_GLYPH } from './stepKinds';
 
 // FLOWCHART2a (D223): a step is drawn by the variant of its kind, in the graph's words and in a Current's; a kind the page has none
@@ -22,6 +23,15 @@ describe('the variant of a kind', () => {
   it('reads a plugin step that declares outcomes as a decision, and no built-in as one', () => {
     expect(variantOf('local-release/find', ['release', 'none'])).toBe('decision');
     expect(variantOf('review', ['accepted'])).toBe('you');
+  });
+
+  it('draws every kind of the kit, by its id and by the step a run draws it as, as the kit says', () => {
+    expect(NODE_KINDS.length).toBeGreaterThan(20);
+    for (const row of NODE_KINDS) {
+      expect(variantOf(row.kind), row.kind).toBe(row.look);
+      expect(variantOf(row.drawn), row.drawn).toBe(row.look);
+      expect(VARIANT_GLYPH[row.look as keyof typeof VARIANT_GLYPH], row.look).toBeTruthy();
+    }
   });
 
   it('has a glyph for every variant', () => {

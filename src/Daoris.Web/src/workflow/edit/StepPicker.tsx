@@ -1,5 +1,6 @@
 import { type KeyboardEvent, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { NODE_KINDS } from '../../bridge/generated/routes';
 import { QuickPanel } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { isComposing } from '../../lib/composing';
@@ -11,15 +12,9 @@ import { type StepChoice, stepChoices } from './graphDraft';
 // new step goes said above it, so an insertion names the way it replaces. A kind added to the driver or a plugin installed is offered with
 // no change here; a plugin's steps stand under the plugin, titled by their manifest's words.
 
-/** The groups of the picker, in its order, by the kinds each holds; a plugin's steps follow, and what no group names is *Other*. */
-const GROUPS: readonly { key: string; kinds: readonly string[] }[] = [
-  { key: 'work', kinds: ['claimed'] },
-  { key: 'you', kinds: ['review', 'look', 'go-ahead', 'human'] },
-  { key: 'checks', kinds: ['check', 'opinion', 'work.requests', 'quest.holds', 'content.holds'] },
-  // D245: the prebuilt set past the landing stands with it.
-  { key: 'landing', kinds: ['land', 'push', 'monitor', 'tidy', 'line'] },
-  { key: 'others', kinds: ['request', 'wait.unit'] },
-];
+/** The kit's order (each built-in's place in it, which its `group` heads); a plugin's steps follow, and what the kit does not know is *Other*. */
+const OTHER = 'others';
+const KIT_RANK = new Map(NODE_KINDS.map((row, at) => [row.kind, at]));
 
 type Offered = { choice: StepChoice; title: string; about: string; group: string };
 
@@ -39,15 +34,12 @@ export function StepPicker({ open, palette, place, onPick, onClose }: {
   const offered = useMemo((): Offered[] => {
     // The palette says how each kind is offered: a landing's tail comes with its method.
     const all = stepChoices(palette).filter((choice) => choice.offered === 'alone').map((choice) => {
-      const known = GROUPS.find((group) => group.kinds.includes(choice.kind));
+      const known = NODE_KINDS.find((row) => row.kind === choice.kind);
       const group = choice.plugin ? t('workflow.edit.add.plugin', { plugin: choice.plugin })
-        : t(`workflow.edit.picker.group.${known?.key ?? 'other'}`);
+        : t(`workflow.edit.picker.group.${known?.group ?? OTHER}`);
       return { choice, title: stepTitle(t, i18n, palette, choice), about: stepAbout(i18n, palette, choice.kind), group };
     });
-    const rank = (each: Offered) => {
-      const at = GROUPS.findIndex((group) => group.kinds.includes(each.choice.kind));
-      return at >= 0 ? at : each.choice.plugin ? GROUPS.length : GROUPS.length + 1;
-    };
+    const rank = (each: Offered) => KIT_RANK.get(each.choice.kind) ?? (each.choice.plugin ? NODE_KINDS.length : NODE_KINDS.length + 1);
     return all.map((each, index) => ({ each, index })).sort((a, b) => rank(a.each) - rank(b.each) || a.index - b.index).map(({ each }) => each);
   }, [palette, t, i18n, i18n.language]);
 

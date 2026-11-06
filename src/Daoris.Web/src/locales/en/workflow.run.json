@@ -289,6 +289,7 @@
   "workflow.run.node.rejectSays": "Reject {{node}}, and the run takes its route for rejected. Daoris's next look applies it.",
   "workflow.run.node.rejectMeanIt": "Reject",
   "workflow.run.node.taskWords": "a note, if you like",
+  "workflow.run.node.rejectWords": "why you reject it",
   "workflow.run.node.asked.done": "Your Done is kept, and Daoris's next look applies it.",
   "workflow.run.node.asked.approve": "Your Approve is kept, and Daoris's next look applies it.",
   "workflow.run.node.asked.reject": "Your Reject is kept, and Daoris's next look applies it.",
