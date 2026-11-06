@@ -37,7 +37,7 @@ describe("the card of a place's supervisor rules", () => {
   it('words them in 中文', async () => {
     await i18n.changeLanguage('zh');
     render(<ul><ProposalCard proposal={RULES} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-    expect(screen.getByText('监督者：仓库 daoris的规则')).toBeInTheDocument();
+    expect(screen.getByText('主管：仓库 daoris的规则')).toBeInTheDocument();
     expect(screen.queryByText(/answers-alone at 3/)).toBeNull();
   });
 });

@@ -46,12 +46,12 @@ public sealed class BindingsTests : IDisposable
 
     private static string Sha(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
 
-    private IReadOnlyList<(string Session, string Adapter, string Conversation)> Rows()
+    private IReadOnlyList<(string Session, string Door, string Conversation)> Rows()
     {
         using var reader = DesktopStoreReader.Open(Db);
         return reader is null
             ? []
-            : reader.Query("SELECT session, adapter, conversation FROM bindings ORDER BY session", row => (row.GetString(0), row.GetString(1), row.GetString(2)));
+            : reader.Query("SELECT session, door, conversation FROM bindings ORDER BY session", row => (row.GetString(0), row.GetString(1), row.GetString(2)));
     }
 
     private IReadOnlyList<(string Path, string Sha, string Class, int Rows)> Receipts()
@@ -214,7 +214,7 @@ public sealed class BindingsTests : IDisposable
         conversations.Keep("s1", "codex-acp", "c-1b");
 
         using var reader = DesktopStoreReader.Open(Db)!;
-        Assert.Equal([("codex-acp", "c-1b", "the person")], reader.Query("SELECT adapter, conversation, picked FROM bindings WHERE session = 's1'", row => (row.GetString(0), row.GetString(1), row.GetString(2))));
+        Assert.Equal([("codex-acp", "c-1b", "the person")], reader.Query("SELECT door, conversation, picked FROM bindings WHERE session = 's1'", row => (row.GetString(0), row.GetString(1), row.GetString(2))));
     }
 
     [Fact]
@@ -441,7 +441,7 @@ public sealed class BindingsTests : IDisposable
         using var store = DesktopStore.Open(Db, new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
         Assert.Equal((DesktopStore.Steps.Count, DesktopStore.WriterStamp), store.Stamp);
         var columns = store.Query("SELECT name, \"notnull\" FROM pragma_table_info('bindings')", row => (row.GetString(0), row.GetInt32(1)));
-        Assert.Equal([("session", 0), ("adapter", 1), ("conversation", 1), ("kept", 1)], columns);
+        Assert.Equal([("session", 0), ("door", 1), ("conversation", 1), ("kept", 1)], columns);
 
         // The build of the row before reads and writes the store as it did: it never opens the new table, and its stamp is not past.
         using var older = DesktopStore.Open(Db, new DesktopStoreOptions { Steps = [DesktopStore.Steps[0]], Settled = () => StoreSettled.Yes });

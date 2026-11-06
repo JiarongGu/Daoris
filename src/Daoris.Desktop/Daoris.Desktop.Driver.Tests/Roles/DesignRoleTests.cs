@@ -65,15 +65,14 @@ public sealed class DesignRoleTests
     public void A_home_older_than_the_role_reads_the_seed_for_it_and_one_that_set_its_own_keeps_it()
     {
         IReadOnlyDictionary<string, string> none = new Dictionary<string, string>();
-        var paths = new StaffingPaths(null, null, null, null);
-        var older = StaffingProjection.Config(new StaffingRead(new Dictionary<string, IReadOnlyList<ActorChoice>>(), none, none, paths));
+        var older = StaffingProjection.Config(new StaffingRead(new Dictionary<string, IReadOnlyList<ActorChoice>>(), none, none));
         Assert.Equal([ActorChoices.DesignSeed], older.Actors["design"]);
 
         var own = new ActorChoice("codex", "gpt-5", null);
-        var set = StaffingProjection.Config(new StaffingRead(new Dictionary<string, IReadOnlyList<ActorChoice>> { ["design"] = [own] }, none, none, paths));
+        var set = StaffingProjection.Config(new StaffingRead(new Dictionary<string, IReadOnlyList<ActorChoice>> { ["design"] = [own] }, none, none));
         Assert.Equal([own], set.Actors["design"]);
 
-        var unread = StaffingProjection.Config(new StaffingRead(new Dictionary<string, IReadOnlyList<ActorChoice>>(), new Dictionary<string, string> { ["design"] = "bad" }, none, paths));
+        var unread = StaffingProjection.Config(new StaffingRead(new Dictionary<string, IReadOnlyList<ActorChoice>>(), new Dictionary<string, string> { ["design"] = "bad" }, none));
         Assert.False(unread.Actors.ContainsKey("design"));
     }
 

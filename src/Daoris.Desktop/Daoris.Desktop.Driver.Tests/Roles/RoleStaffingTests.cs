@@ -136,28 +136,9 @@ public sealed class RoleStaffingTests : IDisposable
         Assert.DoesNotContain(unknown, read.Errors.Keys);
     }
 
+    /// <summary>ONEWAY1b: a file with none of the four keys is a fresh home, seeded with the five roles' written orders.</summary>
     [Fact]
-    public void The_four_paths_are_recorded_as_written_as_the_file_shows_them_and_an_absent_path_is_none()
-    {
-        Write(Full);
-
-        Staffing().ImportFile();
-
-        var written = Staffing().Read()!.Written;
-        Assert.Equal("\"claude-code-acp\"", written.Adapter);
-        Assert.Equal("\" codex-acp \"", written.IntakeAdapter);
-        Assert.Null(written.HelperAdapter);
-        // The path's own text, compacted, every entry of it kept as found: an unreadable one and an id this build does not know too.
-        var actors = JsonNode.Parse(written.Actors!)!.AsObject();
-        Assert.Equal(["build", "intake", "chat", "opinion", "partner", "not-a-role"], actors.Select(each => each.Key));
-        Assert.Equal(JsonNode.Parse(Full)!["actors"]!.ToJsonString(), written.Actors);
-        Assert.Equal(1, Rows("SELECT COUNT(*) FROM role_staffing_projection", row => row.GetInt32(0))[0]);
-        Assert.Equal(0, Rows("SELECT COUNT(*) FROM role_staffing_found", row => row.GetInt32(0))[0]);
-    }
-
-    /// <summary>ONEWAY1b: a file with none of the four keys is a fresh home, seeded with the five roles' written orders, every path none.</summary>
-    [Fact]
-    public void ONEWAY1b_a_file_with_no_staffing_is_seeded_and_every_path_is_none()
+    public void ONEWAY1b_a_file_with_no_staffing_is_seeded()
     {
         Write("""{ "cap": 2 }""");
 
@@ -166,7 +147,6 @@ public sealed class RoleStaffingTests : IDisposable
         var read = Staffing().Read()!;
         Assert.Equal(ActorChoices.Ordered.Order(), read.Actors.Keys.Order());
         Assert.Empty(read.Errors);
-        Assert.Equal(new StaffingPaths(null, null, null, null), read.Written);
         Assert.True(Staffing().Seeded());
         Assert.Equal(["seeded"], Rows("SELECT class FROM imports WHERE family = 'role_staffing'", row => row.GetString(0)));
     }
@@ -240,7 +220,6 @@ public sealed class RoleStaffingTests : IDisposable
         Assert.Null(Staffing().Read());
         Assert.False(Staffing().InUse());
         Assert.Equal(0, Rows("SELECT COUNT(*) FROM role_staffing", row => row.GetInt32(0))[0]);
-        Assert.Equal(0, Rows("SELECT COUNT(*) FROM role_staffing_projection", row => row.GetInt32(0))[0]);
         Assert.Equal(0, Rows("SELECT COUNT(*) FROM imports", row => row.GetInt32(0))[0]);
 
         Assert.Equal(StaffingImported.Done, Staffing().ImportFile().How);

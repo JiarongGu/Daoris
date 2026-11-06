@@ -428,7 +428,23 @@ Agents page, and `orient-index` and `code-map` once files move.
   `ProviderVocabulary` reads every provider's id, its program's name, its doors' ids and those words, the driver's census reads it and
   the service's, page's and tools' read it as the contracts' generator writes it (`PROVIDER_VOCABULARY` in the page's service types),
   every hyphened id counted in a sentence; a vocabulary's variable is its program's, kept in its spawn and stripped from every other
-  provider's. Left: every record still reads.
+  provider's. The stored names' census (`StoredOldNamesCensusTests`: a fresh desktop store names no column by an old seam's word, and
+  every source spelling `adapter`, `harness`, `intakeAdapter`, `helperAdapter`, `harnessVersion`, `pipe` or `acp` as a stored name is one
+  of the records below, by file). Renamed through the migration's `store-names` step (store step 22): a binding's door is
+  `bindings.door`, and `role_staffing_projection` and `role_staffing_found`, which held `driver.json`'s old keys and which no code read,
+  are dropped. Kept, each with its end: `driver.json`'s `adapter`, `intakeAdapter` and `helperAdapter`, read only by the staffing import
+  nocompat1's `StaffingStep` runs and then takes out, deleted with that step when the next release's migration replaces nocompat1 (D232
+  point 2); **t-ii**, the `adapter` word: the session record's door (the service's `sessions.adapter` and `harness_version`, the sync's,
+  the contract's and the page's `adapter` and `harnessVersion`, the desktop's reads of the record) and every record that copies it (an
+  opinion's, a memory operation's author's `adapter` and `harness`, the machine log's fields, a note's part, a plugin's `session.ended`,
+  a brainstorm's and a meeting's files, `START_CHAT`'s press), kept because the record's one field runs across the service's store, the sync
+  between hosts and some hundred and twenty reads on the page, so it is renamed `door` in a chunk of its own, the service's schema step,
+  the contract and the page together; **t-iii**, the `harness`, `pipe` and `acp` words: the usage entries', the lineage's and a door
+  failure's `harness`, Ask Daoris's wired file's, the account presses' and their `HARNESSES` and `ACCOUNTS` reads, the bridge's
+  `intakeAdapter` and `helperAdapter`, the transport's `pipe` and `acp` (`AgentCapabilities`, `LayerStart`, `DoorFailures`, the
+  lineage's signal), and the binding files (`<session>.harness.json`, keyed `adapter`), which the look still imports into the store, so
+  that row's migration imports every file once and deletes the file's writer and the look's import. Not a seam's word, so with no end:
+  the instance's `run/pipe`, dsh's own `acp` profile and the doctrine layout's `harness`.
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30, D248): Daoris's providers consumed from the sibling
   agent-provider library, built against its local build. The reference and its census are in (rule 47). The host's policy for a
   layer door stands on Daoris's own types, read by Claude Code's driven door where the driver carries the layer: the access evidence each account reader reads (`AccessEvidence`), the

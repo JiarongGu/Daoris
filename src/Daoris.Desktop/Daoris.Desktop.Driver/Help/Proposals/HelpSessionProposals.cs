@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -34,7 +36,9 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
     // SESSUX1h2b: archive and unarchive; a delete is the `delete` kind's `session` door, and a stop is no door (SESSUX1h1).
     public string Tool => "session_propose";
 
-    public IReadOnlyList<string> Doors { get; } = ["archive", "unarchive"];
+    public IReadOnlyList<string> Doors { get; } = ["archive", "unarchive", "helper", "pass"];
+
+    public HelpProposal Read(HelpProposal proposal, JsonElement file) => HelpSessionHelperDoors.Read(proposal, file);
 
     /// <summary>
     /// ASKSCOPE1c2: each session it names by id, filed under the workspace its record says. Archive what ended names none by id,
@@ -46,9 +50,10 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         static HelpPlan Refused(string why) => new(why, "", "", null);
+        if (HelpSessionHelperDoors.Is(proposal.Door)) return HelpSessionHelperDoors.Plan(proposal, facts);
         if (proposal.Door is not ("archive" or "unarchive"))
         {
-            return Refused($"`{proposal.Door}` is not a session's change — `archive` or `unarchive`; " + (proposal.Door == "stop"
+            return Refused($"`{proposal.Door}` is not a session's change — `archive`, `unarchive`, `helper` or `pass`; " + (proposal.Door == "stop"
                 ? "a stop is the person's own, on the session's page, where a go takes them."
                 : proposal.Door == "delete" ? "a delete is `delete_propose`." : "nothing else is proposed of a session."));
         }
@@ -124,6 +129,7 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
 
     public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
+        if (HelpSessionHelperDoors.Is(applying.Proposal.Door)) return await HelpSessionHelperDoors.ApplyAsync(applying, ct).ConfigureAwait(false);
         var plan = applying.Plan;
         if (plan.Sessions is not { Count: > 0 } sessions)
         {
@@ -183,4 +189,13 @@ public interface IHelpSessionDoors
     /// </summary>
     /// <param name="archived">True to archive, false to unarchive.</param>
     Task<(bool Ok, string Message)> ArchiveSessionsAsync(IReadOnlyList<string> ids, bool archived, CancellationToken ct);
+
+    /// <summary>
+    /// The person's own ask of a helper for a session (COWORKUX1), the door <c>SESSION_HELPER_ASK</c> is: judged and written by
+    /// <see cref="HelperPersonAskDoor"/>, which the terminal's <c>sessions helper</c> shares. Its answer comes back as its sentence.
+    /// </summary>
+    Task<(bool Ok, string Message)> AskHelperAsync(string session, string question, string? agent, string? after, bool toPerson, CancellationToken ct);
+
+    /// <summary><i>Pass to the lead</i> (COWORKUX1), the door <c>SESSION_HELPER_PASS</c> is: <see cref="HelperPassToLead"/>'s judge, answered as its sentence.</summary>
+    Task<(bool Ok, string Message)> PassHelperAnswerAsync(string session, string ask, CancellationToken ct);
 }

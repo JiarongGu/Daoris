@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - `daoris chat` was refused before the host read it (FIX12)
+
+- **Symptom:** `HeldChatProcessTests` (Process, 2) failed: `daoris-driver chat --repository …` was handed to the CLI and refused,
+  red in CI 8 too.
+- **Root cause:** the command tree routes every word before `Program.cs` reads it, and a word no group owns goes to the CLI. The `chat`
+  group was declared on `TerminalOwner`, which RPC1g4 (f8817c5f5e) deleted with the terminal's conversation runner; the tree's test
+  exempted `chat` as answered before the tree, which hid it.
+- **Fix:** `HeldChat`, the unit that holds a terminal's conversation, declares the group, and the exemption is gone (b9234e6ff2).
+  Beside it, the reads of the process's home FIX11 left (Daoris's own git, a fetch's holds, a squash's author, a probe's tools) carry
+  their home or read the program's named one (`ProgramHome`, 920975d93d).
+- **Verify:** `CommandTreeTests` and `DriverCommandTests` red first (3), then green; `HeldChatProcessTests` 2 of 2.
+
 ## 2026-11-07 - A driven start and a conversation spawned with the process's home, and tests wrote into a real one (FIX11)
 
 - **Symptom:** CI runs 7 and 8 failed about 514 driver Process tests with `Value cannot be null (Parameter 'path1')` and a chat ledger

@@ -1154,7 +1154,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         var asked = SaidOf(await AnswerAsync(module, "SESSION_HELPER_ASK", new { id = "done1", question = "Why?", said = true }));
         Assert.Equal(0, asked.Code);
-        Assert.StartsWith("sessions: asked `#", Assert.Single(asked.Out));
+        Assert.StartsWith("sessions: Asked #", Assert.Single(asked.Out));
 
         foreach (var route in new[] { "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE" })
         {

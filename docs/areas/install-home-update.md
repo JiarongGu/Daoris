@@ -20,6 +20,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 | `InstallHome` | `Mod/Update/InstallHome.cs` | Finds the install above `app/`; sets the home, the account variable once, D105's override, D63's move-in; the working folder; the window's memory |
 | `HomePlacing` | `Mod/Update/HomePlacing.cs` | The one-time rename of an install's entries into D172's places, journalled and recovered |
 | `DaorisHome` | `Drv/Platform/DaorisHome.cs` | The home seam: `Resolve`, `InstallOf`, `Adopt`, `Entry`, `Places`, `FolderOf`, `InstallBin`, `HomeOf` |
+| `ProgramHome` | `Drv/Platform/ProgramHome.cs` | The home a program names once at its entry (the window's and the host's): what carries no home of its own, Daoris's own git and a probe's tools, reads it, never the variable a process inherited; a unit that acts for a home (a fetch's holds, a squash's author) is handed it. `ProcessHomeCensusTests` names each library read of the variable left, with why |
 | `HomeEntry` table | `Drv/Platform/DaorisHome.cs:342-468` | Every home file: name, category, new place, old place |
 | Home twins | `src/Daoris.Service/Daoris.Service.Core/Platform/DaorisHome.cs`, `src/Daoris.Cli/src/platform/home.ts` | The same table and rules, cell for cell |
 | `HomeLease`, `HomeIdentity` | `Drv/Platform/HomeLease.cs`, `HomeIdentity.cs` | One writer per home (`run/home.lease`); the home's id (`data/home.json`) |
@@ -191,8 +192,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     `home.migration-failed`), and the next start runs it and the steps after it. (from D232)
 54. This release's steps: the staffing into the store, the caps into the supervisor's rules, `driver.json`'s keys no code
     writes, `harnesses.json`'s old names and pooled sections, a waiting say's `now`, unkeyed solicited attempts, held presses
-    with no question, the event logs' `answered` receipts, `chat.told-routing` notes and old handed sections, and the session
-    records' `answer` column. The next release that changes a shape replaces them. (from D232)
+    with no question, the event logs' `answered` receipts, `chat.told-routing` notes and old handed sections, the session
+    records' `answer` column, and the desktop store's names (store step 22: a binding's `door`, the staffing's projection
+    tables dropped). The next release that changes a shape replaces them. (from D232)
 55. A read still kept until its chunk deletes it is one register entry with `// transitional: <id>` at the site; the gate
     fails a marker with no entry, an entry with no marker, and an entry whose row is closed. (from D228, D232)
 

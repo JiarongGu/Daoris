@@ -13,6 +13,7 @@ internal static class WorkflowConsole
     {
         if (args is ["keep", ..]) return await KeepAsync(args).ConfigureAwait(false);
         if (WorkflowNodeCommand.Asks(args)) return await NodeAsync(args).ConfigureAwait(false);
+        if (WorkflowFixCommand.Asks(args)) return await FixAsync(args).ConfigureAwait(false);
 
         // The usage before the service is asked for: a mistyped line needs no service to be told so.
         if (WorkflowRunCommand.Read(args, out var problem) is not { } asked)
@@ -58,6 +59,32 @@ internal static class WorkflowConsole
 
         var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
         return await WorkflowNodeCommand.RunAsync(asked, new NodeRecordFiles(home), Console.Out, InstanceHost.World(home, "workflow")).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// <c>workflow fix &lt;run&gt; [&lt;node&gt;]</c>: the window's <i>Ask for a fix…</i> on a failed verification, the running Daoris's client where
+    /// one answers; alone, the ask the service takes, made here.
+    /// </summary>
+    private static async Task<int> FixAsync(string[] args)
+    {
+        if (WorkflowFixCommand.Read(args, out var problem) is not { } asked)
+        {
+            Console.Error.WriteLine($"workflow: {problem}");
+            Console.Error.WriteLine(WorkflowFixCommand.Usage);
+            return 2;
+        }
+
+        var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
+        try
+        {
+            return await WorkflowFixCommand.RunAsync(
+                asked, new NodeRecordFiles(home), ServiceClient.FromEnvironment, Console.Out, InstanceHost.World(home, "workflow")).ConfigureAwait(false);
+        }
+        catch (HttpRequestException error)
+        {
+            Console.Error.WriteLine($"workflow: could not reach the service — {error.Message}");
+            return 2;
+        }
     }
 
     /// <summary><c>workflow keep &lt;session&gt; ["…"]</c>: the person's <i>Keep</i>, through the library's press.</summary>

@@ -21,41 +21,27 @@ internal sealed class SessionsAskDesk(DriverContext context)
         // `sessions helper` sent over the pipe asks for the verb's own words, judged by the same code.
         if (press.Said && question.Length > 0)
         {
-            return await SessionsVerbs.SaidAsync(context, new SessionsAsk("helper") { Ids = [id], Text = question, Agent = agent }, cancellationToken).ConfigureAwait(false);
+            return await SessionsVerbs.SaidAsync(
+                context, new SessionsAsk("helper") { Ids = [id], Text = question, Agent = agent, After = press.After, ToMe = press.ToPerson }, cancellationToken)
+                .ConfigureAwait(false);
         }
 
-        static object Refused(string why, string sentence) => new { Asked = (string?)null, Why = why, Message = $"{sentence} Nothing was asked." };
-        if (question.Length == 0) return Refused(HelperAskWhy.Blank, "A helper is asked a question, and none was given.");
-        if (question.Length > SessionsHelperCommand.MaxQuestion)
-        {
-            return Refused(HelperAskWhy.TooLong,
-                $"A question is at most {SessionsHelperCommand.MaxQuestion} characters, and this is {question.Length}.");
-        }
-
-        if (agent is not null && agent.Any(c => char.IsWhiteSpace(c) || char.IsControl(c)))
-        {
-            return Refused(HelperAskWhy.Agent, $"An agent is named as one word, as it is listed in Settings, and `{agent}` is not.");
-        }
-
-        // The verb's sentences, so the person reads the same one from either door; who may ask is the start layer's.
-        var asker = await service.RecordAsync(id, cancellationToken).ConfigureAwait(false);
-        var refused = asker is null or { Teammate: true }
-            ? (HelperAskWhy.NotHeld, $"No session `{id}` of this machine's is held to bring an answer back to.")
-            : SessionsHelperCommand.Unfit(id, asker);
-        if (refused is var (why, sentence)) return Refused(why, sentence);
-
-        // COWORKUX1d: the library writes it for both doors, `helper.person-asked` on the session where the answer goes to it.
-        var asked = HelperPersonAsk.Write(new HelperFiles(_loop.Home), _loop.Events, id, question, agent, press.After, press.ToPerson, DateTimeOffset.UtcNow);
+        // The verb's sentences, so the person reads the same one from either door; the library judges and writes for both.
+        var asked = await HelperPersonAskDoor.AskAsync(
+            service, new HelperFiles(_loop.Home), _loop.Events, id, question, agent, press.After, press.ToPerson, cancellationToken).ConfigureAwait(false);
         if (asked.Asked is not null) _loop.Nudge();
         return new { asked.Asked, asked.Why, asked.Message };
     }
 
     /// <summary><i>Pass to the lead</i> (COWORKUX1d): the library's judge, which marks the state for the look to hand.</summary>
-    public Task<object?> HelperPassAsync(SessionHelperPass press)
+    public async Task<object?> HelperPassAsync(SessionHelperPass press, CancellationToken cancellationToken)
     {
+        // `sessions pass` names the ask beside the session it found, and asks for the verb's own words.
+        if (press.Said) return await SessionsVerbs.SaidAsync(context, new SessionsAsk("pass") { Ids = [press.Ask] }, cancellationToken).ConfigureAwait(false);
+
         var answer = HelperPassToLead.Pass(new HelperFiles(_loop.Home), press.Session, press.Ask, DateTimeOffset.UtcNow);
         if (answer.Wrote) _loop.Nudge();
-        return Task.FromResult<object?>(new { Passed = answer.Stands, answer.Why, answer.Message });
+        return new { Passed = answer.Stands, answer.Why, answer.Message };
     }
 
     public Task<object?> HelpersAsync(SessionHelpers press, CancellationToken cancellationToken)

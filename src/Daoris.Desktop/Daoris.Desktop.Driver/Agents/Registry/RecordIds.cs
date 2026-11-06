@@ -30,7 +30,7 @@ public static class RecordIds
     [
         new("The session record", "Adapter", IdKind.Door),
         new("The role asked and ran", "agent", IdKind.Door),
-        new("The store's bindings", "adapter", IdKind.Door),
+        new("The store's bindings", "door", IdKind.Door),
         new("Ask Daoris's wired file", "harness", IdKind.Door),
         new("SessionEnded, the usage history", "Adapter", IdKind.Door),
         new("SessionEnded, the usage history", "TurnBinding.Agent", IdKind.AccountKey),

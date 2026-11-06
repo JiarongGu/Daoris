@@ -26,7 +26,7 @@ namespace Daoris.Driver;
 /// the usage among them.</para>
 /// </remarks>
 [CommandGroup("session", "list", "stop", "finish", "decline", "archive", "unarchive", "delete", "say", "take-back", "reword",
-    "start-from", "hand-over", "helper", "partner", "handback", "opinion", "supervise", "at-work", Nested = ["opinion: ask show stop anyway myself"])]
+    "start-from", "hand-over", "helper", "pass", "partner", "handback", "opinion", "supervise", "at-work", Nested = ["opinion: ask show stop anyway myself"])]
 public static class SessionsCommand
 {
     public const string Usage =
@@ -39,8 +39,9 @@ public static class SessionsCommand
                daoris session start-from <id>
                daoris session hand-over <id> [--agent <adapter> [--account <name>]]
                daoris session hand-over <id> --approve|--decline
-               daoris session helper <id> "<question>" [--agent <name>]
+               daoris session helper <id> "<question>" [--agent <name>] [--after <ask>] [--to-me]
                daoris session helper --approve|--decline <ask>
+               daoris session pass <ask>
                daoris session partner <id> "<piece>" --agent <name> [--paths <path>…]
                daoris session partner <id> --list  ·  session partner <piece> --stop
                daoris session supervise [<id>]  ·  session supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
@@ -82,8 +83,14 @@ public static class SessionsCommand
                 world, PersonPresses.SessionHandOverDecline, SessionsPresses.Body(("session", ask.Ids[0])),
                 () => HandOverAskWord.RunAsync(world.Home, ask.Ids, ask.Verb, output), output, ct).ConfigureAwait(false),
             "helper" => await SessionsPresses.ThroughAsync(
-                world, PersonPresses.SessionHelperAsk, SessionsPresses.Body(("id", ask.Ids[0]), ("question", ask.Text), ("agent", ask.Agent)),
+                world, PersonPresses.SessionHelperAsk,
+                SessionsPresses.Body(("id", ask.Ids[0]), ("question", ask.Text), ("agent", ask.Agent), ("after", ask.After), ("toPerson", ask.ToMe ? true : null)),
                 () => SessionsHelperCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
+            // The press names the session that asked beside the ask; an ask this machine holds none of is the judge's to refuse, alone.
+            "pass" when SessionsHelperCommand.AskerOf(world.Home, ask.Ids[0]) is { } asker => await SessionsPresses.ThroughAsync(
+                world, PersonPresses.SessionHelperPass, SessionsPresses.Body(("ask", ask.Ids[0]), ("session", asker)),
+                () => SessionsHelperCommand.RunPassAsync(world, ask, output), output, ct).ConfigureAwait(false),
+            "pass" => await SessionsHelperCommand.RunPassAsync(world, ask, output).ConfigureAwait(false),
             "helper-approve" => await SessionsPresses.ThroughAsync(
                 world, PersonPresses.SessionHelperApprove, SessionsPresses.Body(("ask", ask.Ids[0])),
                 () => SessionsHelperCommand.RunWordAsync(world, ask, output), output, ct).ConfigureAwait(false),

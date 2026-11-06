@@ -151,7 +151,16 @@ public sealed class SessionWatchProcessTests : IDisposable
             }
         });
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(180));
+        // A run past the bound says where the session stood and what it noted, which a bare timeout did not.
+        var run = driver.RunOnceAsync();
+        if (await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(180))) != run)
+        {
+            string state;
+            try { state = service.Session("s1").ToJsonString(); } catch (Exception error) { state = error.Message; }
+            Assert.Fail($"the run did not end in 180 s; s1: {state}; its events: {Events()}");
+        }
+
+        await run;
         await watching.CancelAsync();
         await looking;
 

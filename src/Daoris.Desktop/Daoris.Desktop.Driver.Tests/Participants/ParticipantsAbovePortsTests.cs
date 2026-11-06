@@ -68,7 +68,7 @@ public sealed class ParticipantsAbovePortsTests : IDisposable
         var made = new List<string>();
         static string Shape(string verb, IReadOnlyList<string> ids, string? text, string? agent, IReadOnlyList<string> paths) =>
             $"{verb}|{string.Join(',', ids)}|{text}|{agent}|{string.Join(',', paths)}";
-        string Say(string verb, IReadOnlyList<string> ids, string? text, string? agent, IReadOnlyList<string> paths)
+        string Say(string verb, IReadOnlyList<string> ids, string? text, string? agent, IReadOnlyList<string> paths, string? after, bool toMe)
         {
             made.Add(Shape(verb, ids, text, agent, paths));
             return verb;
@@ -102,7 +102,12 @@ public sealed class ParticipantsAbovePortsTests : IDisposable
         Assert.Contains("a question is at most", output.ToString());
     }
 
-    private sealed record Ask(string Verb, IReadOnlyList<string> Ids, string? Text, string? Agent, IReadOnlyList<string> Paths) : IParticipantsAsk;
+    private sealed record Ask(string Verb, IReadOnlyList<string> Ids, string? Text, string? Agent, IReadOnlyList<string> Paths) : IParticipantsAsk
+    {
+        public string? After => null;
+
+        public bool ToMe => false;
+    }
 
     private sealed record World(ServiceClient Service, string Home) : IParticipantsWorld
     {

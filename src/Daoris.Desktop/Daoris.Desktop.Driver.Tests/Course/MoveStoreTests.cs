@@ -588,7 +588,7 @@ public sealed class MoveStoreTests : IDisposable
         {
             Assert.False(older.Newer);
             older.Write(BindingStore.Family, write => write.Execute(
-                "INSERT INTO bindings (session, adapter, conversation, kept) VALUES ('s1', 'claude-code-acp', 'c-1', '2026-10-29T00:00:00.0000000Z')"));
+                "INSERT INTO bindings (session, door, conversation, kept) VALUES ('s1', 'claude-code-acp', 'c-1', '2026-10-29T00:00:00.0000000Z')"));
             older.Write(BindingStore.Family, write => write.Execute("DELETE FROM bindings WHERE session = 's1'"));
         }
 

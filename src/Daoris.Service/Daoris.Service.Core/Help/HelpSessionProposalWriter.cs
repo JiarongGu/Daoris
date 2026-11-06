@@ -14,13 +14,20 @@ internal sealed class HelpSessionProposalWriter(HelpProposalFile file)
     /// with <c>archive</c>). Whether a session exists, and which have ended, is the driver's to judge.
     /// </summary>
     /// <param name="sessions">The session ids, comma-separated; exactly one of this or <paramref name="ended"/>.</param>
-    public (string? Id, string Message) Propose(string door, string? sessions, bool ended, string why, string? session, DateTimeOffset at)
+    /// <param name="helper">
+    /// The person's helper doors (COWORKUX1): <c>helper</c> asks one session's helper a question, naming the answered ask it asks
+    /// again after and whether its answer is the person's, and <c>pass</c> sends an answer kept for the person to the session that
+    /// asked; the sessions then name exactly one. Null for archive and unarchive.
+    /// </param>
+    public (string? Id, string Message) Propose(
+        string door, string? sessions, bool ended, string why, string? session, DateTimeOffset at, SessionHelperProposal? helper = null)
     {
         var named = Blank(sessions);
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         var ids = named?.Split(',').Select(part => part.Trim()).ToArray();
-        var refused = door is not ("archive" or "unarchive")
-            ? "a session proposal's door is archive or unarchive."
+        var asked = door is "helper" or "pass";
+        var refused = door is not ("archive" or "unarchive" or "helper" or "pass")
+            ? "a session proposal's door is archive, unarchive, helper or pass."
             : (named is null) == !ended
                 ? "a session proposal names the sessions or says `ended`: name exactly one."
             : ended && door != "archive"
@@ -29,7 +36,8 @@ internal sealed class HelpSessionProposalWriter(HelpProposalFile file)
             : ids.Any(id => id.Length == 0) ? "an id is one word — an empty one is not."
             : ids.FirstOrDefault(id => !IsSessionId(id)) is { } path
                 ? $"a session is named by its id, never by its path: `{path}`."
-            : ids.Select(id => Word(id, "an id")).FirstOrDefault(said => said is not null);
+            : ids.Select(id => Word(id, "an id")).FirstOrDefault(said => said is not null)
+            ?? (asked ? Helping(door, ids, helper) : helper is null ? null : "only the helper and pass doors take a question, an agent, an ask or `toMe`.");
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
         return file.Write(writer =>
@@ -38,9 +46,32 @@ internal sealed class HelpSessionProposalWriter(HelpProposalFile file)
             writer.WriteString("door", door);
             Nullable(writer, "target", ids is null ? null : string.Join(',', ids));
             writer.WriteNull("workspace");
-            Nullable(writer, "value", ended ? "ended" : null);
+            Nullable(writer, "value", ended ? "ended" : door == "helper" ? Blank(helper?.Question) : null);
             writer.WriteNull("sentence");
+            if (!asked) return;
+            Nullable(writer, "agent", Blank(helper?.Agent));
+            Nullable(writer, "ask", Blank(helper?.Ask)?.TrimStart('#'));
+            writer.WriteBoolean("toMe", helper?.ToMe == true);
         }, why, session, at);
+    }
+
+    // The helper door asks one session's helper one question within the box's bound; the pass door names the ask to pass.
+    private static string? Helping(string door, string[]? ids, SessionHelperProposal? helper)
+    {
+        if (ids is not { Length: 1 }) return $"the {door} door names exactly one session.";
+        var (question, agent, ask) = (Blank(helper?.Question), Blank(helper?.Agent), Blank(helper?.Ask)?.TrimStart('#'));
+        if (door == "pass")
+        {
+            return ask is null ? "the pass door names the ask to pass."
+                : question is not null || agent is not null || helper!.ToMe ? "the pass door takes the session and the ask alone."
+                : Word(ask, "an ask's id");
+        }
+
+        return question is null ? "the helper door asks a question, and none was given."
+            : question.Length > HelperBox.MaxQuestion ? $"a question is at most {HelperBox.MaxQuestion} characters, and this is {question.Length}."
+            : agent is not null && Word(agent, "an agent") is { } why ? why
+            : ask is not null ? Word(ask, "an ask's id")
+            : null;
     }
 
     // A session is named by its id; a teammate's is `<origin>/<id>` (SYNC4), the one form with a slash that §5.2 lets be archived

@@ -364,6 +364,20 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.FromResult(Archived);
     }
 
+    public (bool Ok, string Message) Helped { get; set; } = (true, "Asked #h1.");
+
+    public Task<(bool Ok, string Message)> AskHelperAsync(string session, string question, string? agent, string? after, bool toPerson, CancellationToken ct)
+    {
+        Calls.Add($"SESSION_HELPER_ASK {session} {question} agent={agent} after={after} toPerson={toPerson}");
+        return Task.FromResult(Helped);
+    }
+
+    public Task<(bool Ok, string Message)> PassHelperAnswerAsync(string session, string ask, CancellationToken ct)
+    {
+        Calls.Add($"SESSION_HELPER_PASS {session} {ask}");
+        return Task.FromResult(Helped);
+    }
+
     // IHelpSettingDoors
     public DriverConfig Config { get; private set; } = DriverConfig.Empty;
 

@@ -391,11 +391,7 @@ public sealed class LinesRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
 
         // FABRIC-PIPELINE1f: *Ask for a fix…* on a failed verification publishes its ask; it moves no node and writes nothing on the record.
-        if (word == HeldResolutions.AskFix)
-        {
-            var pressed = await VerifyFixAsks.AskAsync(service, new NodeRecordFiles(_loop.Home), unit, node, attempt, cancellationToken);
-            return new { Unit = unit, Node = node, Attempt = attempt, Resolution = word, pressed.Done, Refused = pressed.Done ? null : "not-asked", pressed.Message };
-        }
+        if (word == HeldResolutions.AskFix) return await HeldFixPress.AnswerAsync(service, new NodeRecordFiles(_loop.Home), press, cancellationToken);
 
         var done = HeldAttempts.Word(new NodeRecordFiles(_loop.Home), unit, node, attempt, word);
         var worded = done.What == PerformedWhat.Worded;

@@ -224,7 +224,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
         var next = adapters.Resume(adapter, _start.Request! with { Resume = conversation }) ?? throw Unsupported("a resume");
         if (_carriers.Settings is not null) adapter.Spawned().HandSettings(next, _carriers.Settings);
         if (_carriers.Servers is not null) adapter.Spawned().HandServers(next, _carriers.Servers);
-        var info = host.Prepared(adapter, target, selection, next);
+        var info = host.Prepared(adapters, adapter, target, selection, next);
 
         var sessionId = SessionOf();
         var (process, proc) = await StartProcessAsync(sessionId, info, host.Bracketed(sessionId, info, moved: null), StartClass.Person, piece: null, ct)

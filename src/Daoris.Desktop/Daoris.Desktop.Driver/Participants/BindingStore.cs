@@ -36,8 +36,8 @@ public sealed record BindingImport(int Imported, int Unread, string? Held)
 /// </remarks>
 /// <param name="home">The home whose store and files these are.</param>
 /// <param name="settled">The reading of the start's confirmation; null reads this install's swap journal.</param>
-/// <param name="readFile">What a binding file at a path holds, the adapter and the conversation, or null where it does not read as one.</param>
-public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<string, (string Adapter, string Conversation)?> readFile)
+/// <param name="readFile">What a binding file at a path holds, the door and the conversation, or null where it does not read as one.</param>
+public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<string, (string Door, string Conversation)?> readFile)
 {
     /// <summary>The family's name in <c>imports</c> and <c>store_revisions</c>.</summary>
     public const string Family = "bindings";
@@ -77,24 +77,24 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
     }
 
     /// <summary>The conversation the store holds for a session, or null for none; the store's failure is thrown.</summary>
-    public (string Adapter, string Conversation)? Read(string session)
+    public (string Door, string Conversation)? Read(string session)
     {
         using var store = DesktopStoreReader.Open(Location);
         if (store is not { Version: >= 2 }) return null;
         return store.Query(
-            "SELECT adapter, conversation FROM bindings WHERE session = $session",
+            "SELECT door, conversation FROM bindings WHERE session = $session",
             row => ((string, string)?)(row.GetString(0), row.GetString(1)),
             ("$session", session)).FirstOrDefault();
     }
 
     /// <summary>
-    /// Keep what the wire named a session's conversation: its row's adapter and conversation set by name, the row's other columns left as
+    /// Keep what the wire named a session's conversation: its row's door and conversation set by name, the row's other columns left as
     /// they are, in one transaction of the store's. Throws what the store throws where it cannot write.
     /// </summary>
-    public void Keep(string session, string adapter, string conversation)
+    public void Keep(string session, string door, string conversation)
     {
         using var store = Open();
-        store.Write(Family, write => Upsert(write, session, adapter, conversation));
+        store.Write(Family, write => Upsert(write, session, door, conversation));
     }
 
     /// <summary>
@@ -269,7 +269,7 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
         {
             var outcome = store.Import(
                 new StoreImport(Family, receipt, bytes.Length, sha, 1, ImportClass.SetAside),
-                write => Upsert(write, session, conversation.Adapter, conversation.Conversation));
+                write => Upsert(write, session, conversation.Door, conversation.Conversation));
             if (!outcome.Done)
             {
                 why = outcome.Said ?? "the store would not take it";
@@ -299,13 +299,13 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
         }
     }
 
-    private static void Upsert(DesktopWrite write, string session, string adapter, string conversation) =>
+    private static void Upsert(DesktopWrite write, string session, string door, string conversation) =>
         write.Execute(
             """
-            INSERT INTO bindings (session, adapter, conversation, kept) VALUES ($session, $adapter, $conversation, $kept)
-            ON CONFLICT (session) DO UPDATE SET adapter = excluded.adapter, conversation = excluded.conversation, kept = excluded.kept
+            INSERT INTO bindings (session, door, conversation, kept) VALUES ($session, $door, $conversation, $kept)
+            ON CONFLICT (session) DO UPDATE SET door = excluded.door, conversation = excluded.conversation, kept = excluded.kept
             """,
-            ("$session", session), ("$adapter", adapter), ("$conversation", conversation),
+            ("$session", session), ("$door", door), ("$conversation", conversation),
             ("$kept", DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture)));
 
     /// <summary>The binding files of the home, by session: only a local session's, never a set-aside one.</summary>

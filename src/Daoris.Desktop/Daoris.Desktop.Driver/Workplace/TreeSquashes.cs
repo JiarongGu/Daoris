@@ -18,10 +18,10 @@ internal sealed class TreeSquashes(TreeContext context)
     /// </summary>
     /// <returns>The commit made, or null with git's reason.</returns>
     internal static async Task<(string? Commit, string? Why)> SquashAsync(
-        string root, string tip, string parent, string message, CancellationToken ct)
+        string home, string root, string tip, string parent, string message, CancellationToken ct)
     {
         // GITAUTH1c (the git-auth design §3.6): origin's identity's author where the repository names none of its own.
-        var author = GitAuthor.Arguments(await GitAuthor.OfAsync(DaorisHome.Resolve(), root, ct).ConfigureAwait(false));
+        var author = GitAuthor.Arguments(await GitAuthor.OfAsync(home, root, ct).ConfigureAwait(false));
         var (code, made, err) = await WorkingTree.GitAsync(root, [.. author, "commit-tree", $"{tip}^{{tree}}", "-p", parent, "-m", message], ct)
             .ConfigureAwait(false);
         return code == 0 && made.Trim().Length > 0 ? (made.Trim(), null) : (null, FirstLine(err));
@@ -32,9 +32,9 @@ internal sealed class TreeSquashes(TreeContext context)
     /// its <c>user.name</c> and <c>user.email</c> are both set there. Daoris names nobody of its own: a commit it makes is made as
     /// the person's git makes theirs, and one with no name would carry whatever git guessed from the machine.
     /// </summary>
-    internal static async Task<string?> IdentityProblemAsync(string root, string repository, CancellationToken ct)
+    internal static async Task<string?> IdentityProblemAsync(string home, string root, string repository, CancellationToken ct)
     {
-        if (await GitAuthor.OfAsync(DaorisHome.Resolve(), root, ct).ConfigureAwait(false) is not null) return null;
+        if (await GitAuthor.OfAsync(home, root, ct).ConfigureAwait(false) is not null) return null;
         var (_, name, _) = await WorkingTree.GitAsync(root, ["config", "--get", "user.name"], ct).ConfigureAwait(false);
         var (_, email, _) = await WorkingTree.GitAsync(root, ["config", "--get", "user.email"], ct).ConfigureAwait(false);
         var missing = (name.Trim().Length == 0, email.Trim().Length == 0) switch
@@ -102,7 +102,7 @@ internal sealed class TreeSquashes(TreeContext context)
     /// <param name="against">The line's form, from which a plugin is told every commit the branch holds now (D100).</param>
     /// <param name="delivering">The delivery it performs (LANDNODE1b2), whose transaction moves the branch in its phase; null moves it as before.</param>
     internal static async Task<Branched> AdvanceSquashedAsync(
-        string root, string name, string standsAt, string branch, string? line, string head, string grewFrom, bool handedOn,
+        string home, string root, string name, string standsAt, string branch, string? line, string head, string grewFrom, bool handedOn,
         string? against, LandingSubject squash, CancellationToken ct, TreeDelivering? delivering = null)
     {
         var (logCode, added, logErr) = await WorkingTree.GitAsync(
@@ -115,7 +115,7 @@ internal sealed class TreeSquashes(TreeContext context)
 
         var adds = Commits(added);
         var said = delivering?.Template;
-        var (made, why) = await SquashAsync(root, head, standsAt, SquashMessage.Of(squash.SquashTitle, adds, squash.Session, said), ct).ConfigureAwait(false);
+        var (made, why) = await SquashAsync(home, root, head, standsAt, SquashMessage.Of(squash.SquashTitle, adds, squash.Session, said), ct).ConfigureAwait(false);
         if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was changed.");
 
         // Compare-and-swap from the tip judged: git refuses where the branch moved since, and nothing is forced.
