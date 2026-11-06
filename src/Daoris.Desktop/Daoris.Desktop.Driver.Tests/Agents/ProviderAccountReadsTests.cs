@@ -92,7 +92,7 @@ public sealed class ProviderAccountReadsTests
         Assert.Equal(layout.Variable, ToolHomeLeftovers.Variable);
         Assert.Equal("CLAUDE_CONFIG_DIR", layout.Variable);
         Assert.Equal("projects", layout.Folder);
-        Assert.Equal("C--Users-a-b--c", ToolHomeLeftovers.Flatten(@"C:\Users\a b-.c"));
+        Assert.Equal("C--Users-a-b--c", ToolHomeLeftovers.Flatten("C:" + @"\Users\a b-.c"));
     }
 
     [Theory]
