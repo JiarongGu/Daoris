@@ -31,6 +31,9 @@ public sealed class NodeDoors
     /// <summary>These doors with <paramref name="kind"/>'s replaced by <paramref name="door"/>, or taken away where it is null.</summary>
     public NodeDoors With(string kind, INodeDoor? door) => new(door is null ? _doors.Remove(kind) : _doors.SetItem(kind, door));
 
-    /// <summary>The door of the shape <typeparamref name="T"/>, or null where none is wired.</summary>
-    public T? Door<T>() where T : class, INodeDoor => _doors.Values.OfType<T>().FirstOrDefault();
+    /// <summary>The door wired for <paramref name="kind"/> where it has the shape <typeparamref name="T"/>; else null.</summary>
+    public T? Door<T>(string kind) where T : class, INodeDoor => _doors.GetValueOrDefault(kind) as T;
+
+    /// <summary>The first door of the shape <typeparamref name="T"/> in the kit's order, for a reader beside the kinds; null where none is wired.</summary>
+    public T? Door<T>() where T : class, INodeDoor => NodeKit.Kinds.Select(Door<T>).FirstOrDefault(door => door is not null);
 }

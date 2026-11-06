@@ -36,7 +36,7 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts
     /// </summary>
     public void Keep(NodeKept kept)
     {
-        if (kept.Doors.Door<IPushDoor>() is not { } door || kept.Landed is not { } landed || landed.Pushed && landed.PushedTip == landed.Tip) return;
+        if (kept.Doors.Door<IPushDoor>(Row.Kind) is not { } door || kept.Landed is not { } landed || landed.Pushed && landed.PushedTip == landed.Tip) return;
         var watched = kept.Governed.Watched;
         door.Start(new PushStart(kept.Governed.Unit.Id, kept.Node, watched.Repository, watched.Workspace, watched.Root, landed.Branch, landed.Tip));
     }

@@ -60,7 +60,7 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts
     /// </summary>
     public void Keep(NodeKept kept)
     {
-        if (kept.Doors.Door<ILandingDoor>() is not { } door || kept.Scope.Branch is not { } branch
+        if (kept.Doors.Door<ILandingDoor>(Row.Kind) is not { } door || kept.Scope.Branch is not { } branch
             || kept.Status.Binding is not { SubjectRevision: { } tip } binding)
         {
             return;
