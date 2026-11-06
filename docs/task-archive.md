@@ -23292,3 +23292,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **HELPWIRED1b — what the door says it loaded, beside what was handed** (ONEWAY1h). → `docs/areas/agents-and-harnesses.md`, Open
 
   **Outcome** 2026-11-06: BL41: the native door's init frame is read once into a `Loaded` reading, kept on the newest receipt, and Ask Daoris's *What it has* shows it beside what was handed, flagging a server handed but not listed or listed but not handed. The protocol door sends no init frame, so its receipts say not said.
+
+## COAGENT1c and COAGENT1g (2026-11-06)
+
+- [x] **COAGENT1c** a conversation as the lead, and the head's menu; **COAGENT1g** a hand-over waits for the outgoing part's background work and children (D199). → `docs/2026-10-22-coagent-design.md`
+
+  **Outcome** 2026-11-06: BL46: one rule decides who leads pieces, so a conversation in its own tree shows the Pieces section and its head's ⋯ asks another agent to work on a piece (`PartnerChatProcessTests`); a conversation's hand-over and an account move take the outgoing part's job before the stop, then end and wait for what it still holds, up to 30 seconds, and the old record says so (`chat.left-ended`, `chat.left-running`; `HandOverLeftProcessTests`). A quest's session's hand-over stays on COAGENT1.
