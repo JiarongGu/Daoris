@@ -1883,7 +1883,7 @@ describe('Ask Daoris’s access and what it has', () => {
   });
   const RECEIPT = {
     at: '2026-10-19T10:00:00+00:00', start: 'new', mode: 'restricted', door: 'claude-code-acp', version: '0.9.1', account: null,
-    transport: 'protocol', posture: 'default', permissionMode: null, folder: 'C:/daoris/help/room', tools: [], skills: [],
+    posture: 'default', permissionMode: null, folder: 'C:/daoris/help/room', tools: [], skills: [],
     servers: [{ name: 'browser', plugin: 'browser', state: 'withheld', tools: null, why: 'not-approved' }],
     rules: { allow: ['Read'], ask: [], deny: [] }, guarded: true, checkouts: [],
     lacks: [

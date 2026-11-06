@@ -436,12 +436,17 @@ Agents page, and `orient-index` and `code-map` once files move.
   opinion's, a memory operation's author's `adapter` and `harness`, the machine log's fields, a note's part, a plugin's `session.ended`,
   a brainstorm's and a meeting's files, `START_CHAT`'s press), kept because the record's one field runs across the service's store, the sync
   between hosts and some hundred and twenty reads on the page, so it is renamed `door` in a chunk of its own, the service's schema step,
-  the contract and the page together; **t-iii**, the `harness`, `pipe` and `acp` words: the usage entries', the lineage's and a door
-  failure's `harness`, Ask Daoris's wired file's, the account presses' and their `HARNESSES` and `ACCOUNTS` reads, the bridge's
-  `intakeAdapter` and `helperAdapter`, the transport's `pipe` and `acp` (`AgentCapabilities`, `LayerStart`, `DoorFailures`, the
-  lineage's signal), and the binding files (`<session>.harness.json`, keyed `adapter`), which the look still imports into the store, so
-  that row's migration imports every file once and deletes the file's writer and the look's import. Not a seam's word, so with no end:
-  the instance's `run/pipe`, dsh's own `acp` profile and the doctrine layout's `harness`.
+  the contract and the page together; **t-iii**, the `harness`, `pipe` and `acp` words still stored or on a wire: the usage entries'
+  (`usage.json`'s `harness`, the pushed usage slice's field), the lineage's `harness` and `acp` signal, a door failure's `harness` and
+  its `pipe` door, the account presses' and their `HARNESSES` and `ACCOUNTS` reads, the bridge's `intakeAdapter` and `helperAdapter`
+  (the driver's state slice), and the transport's `pipe` and `acp` as the sheet's `wire` to the page (`AgentCapabilities`, `LayerStart`,
+  the page's `DoorSheet`), each renamed through a migration step and its readers in one chunk with the contract; the lineage file is
+  the service's `LineageFile` and a plugin may read its lines, so its end waits on that contract. Done: the binding files are imported
+  once by the `binding-files` step (a copy kept, the file and its `.imported` set-aside taken out), so a conversation is kept and read in
+  the store alone and no look imports anything; Ask Daoris's receipts name the door by `door` and the transport by `transport`
+  (`native` or `protocol`), the `wired-files` step renaming an older receipt's `harness` and `pipe`/`acp` `door`. Not a seam's word, so
+  with no end: the instance's `run/pipe`, dsh's own `acp` profile, the doctrine layout's `harness`, and a lack's granting door
+  `harness` (another agent's, `HelpWired.DoorHarness`).
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30, D248): Daoris's providers consumed from the sibling
   agent-provider library, built against its local build. The reference and its census are in (rule 47). The host's policy for a
   layer door stands on Daoris's own types, read by Claude Code's driven door where the driver carries the layer: the access evidence each account reader reads (`AccessEvidence`), the
