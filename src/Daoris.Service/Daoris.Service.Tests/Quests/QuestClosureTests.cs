@@ -94,7 +94,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     private async Task<Quest> Bound(bool chain = true, string title = "Write the bridge report", string next = "checker", string graph = Graph)
     {
         var quest = await Taken(chain, title, next);
-        var bound = await _quests.SeedBoundAsync(quest.Id, graph, Now);
+        var bound = await _quests.SeedBound(quest.Id, graph, Now);
         Assert.True(bound.Moved);
         return bound.Quest!;
     }
@@ -206,12 +206,12 @@ public sealed class QuestClosureTests : IAsyncLifetime
     public async Task A_bind_applies_once_to_a_taken_quest_before_its_first_submission()
     {
         var open = await Open();
-        Assert.False((await _quests.SeedBoundAsync(open.Id, Graph, Now)).Moved);
+        Assert.False((await _quests.SeedBound(open.Id, Graph, Now)).Moved);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(open.Id, "take", null, Now)).Refusal);
 
-        Assert.True((await _quests.SeedBoundAsync(open.Id, Graph, Now)).Moved);
+        Assert.True((await _quests.SeedBound(open.Id, Graph, Now)).Moved);
         // Another graph is refused, since a quest follows the graph bound at its start.
-        Assert.False((await _quests.SeedBoundAsync(open.Id, "sha256:another", Now)).Moved);
+        Assert.False((await _quests.SeedBound(open.Id, "sha256:another", Now)).Moved);
         Assert.Single(await _quests.HistoryAsync(open.Id), op => op.Kind == QuestOperationKind.Bound);
     }
 
@@ -447,7 +447,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         var second = Assert.Single(await _quests.ListAsync(), q => q.Parent == first.Id);
         Assert.Equal(next, second.To);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(second.Id, "take", null, Now)).Refusal);
-        Assert.True((await _quests.SeedBoundAsync(second.Id, Graph, Now)).Moved);
+        Assert.True((await _quests.SeedBound(second.Id, Graph, Now)).Moved);
         Assert.Equal(QuestHold.EvidenceUnread, (await Ready(second)).Quest!.Hold);
         Assert.Equal(QuestRespondRefusal.None, (await Found(second)).Refusal);
         var submitted = await Find(second.Id);
@@ -467,7 +467,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         var second = Assert.Single(await _quests.ListAsync(), q => q.Parent == first.Id);
         Assert.Equal("checker", second.To);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(second.Id, "take", null, Now)).Refusal);
-        Assert.True((await _quests.SeedBoundAsync(second.Id, Graph, Now)).Moved);
+        Assert.True((await _quests.SeedBound(second.Id, Graph, Now)).Moved);
         var submitted = await Ready(second);
         Assert.Null(submitted.Quest!.Hold);
         return (await Find(first.Id), submitted.Quest);
@@ -752,7 +752,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         await Found(first);
         var second = Assert.Single(await _quests.ListAsync(), q => q.Parent == first.Id);
         await _exchange.RespondAsync(second.Id, "take", null, Now);
-        await _quests.SeedBoundAsync(second.Id, Graph, Now);
+        await _quests.SeedBound(second.Id, Graph, Now);
         var held = (await Ready(second, new QuestAnswer(1, null, Departed: "Checked another way.", Quote: Report.Quote), Met(2))).Quest!;
         Assert.Equal(QuestHold.Departed, held.Hold);
 

@@ -386,7 +386,7 @@ public sealed class QuestShareTests : IAsyncLifetime
             then: [new QuestStep("Federated", "Verify {parent}", "Look at it.")]);
         await QuestSync.RunAsync(_quests, _service, new StoreRemote(remote), Workspaces.Default);
         Assert.True((await remote.MoveAsync(quest.Id, QuestStatus.Taken, "Its session.", Now.AddHours(1))).Moved);
-        Assert.True((await remote.SeedBoundAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", Now.AddHours(1))).Moved);
+        Assert.True((await remote.SeedBound(quest.Id, "sha256:0f1e2d3c4b5a6978", Now.AddHours(1))).Moved);
         var built = await remote.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2));
         var step = built.FollowUp!;
         await QuestSync.RunAsync(_quests, _service, new StoreRemote(remote), Workspaces.Default);

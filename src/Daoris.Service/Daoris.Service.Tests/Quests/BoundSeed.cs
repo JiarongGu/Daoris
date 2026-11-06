@@ -9,7 +9,7 @@ namespace Daoris.Service.Tests;
 /// </summary>
 internal static class BoundSeed
 {
-    public static Task<QuestMove> SeedBoundAsync(this QuestStore store, string id, string graph, DateTimeOffset now) =>
+    public static Task<QuestMove> SeedBound(this QuestStore store, string id, string graph, DateTimeOffset now) =>
         store.WriteAsync(tx => tx.Of<QuestBindOperation>().TakersMoveAsync(
             tx, id.TrimStart('#'), new QuestOperation(id.TrimStart('#'), QuestOperationKind.Bound, tx.Machine, 0, now, graph), now));
 }

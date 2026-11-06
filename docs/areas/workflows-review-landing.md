@@ -266,11 +266,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **WORKFLOWCLEAN1z (NOCOMPAT1b2, NOCOMPAT1b4):** the runtime suites still seeding work cycles in `driver.json` (`ObservedEventTests`,
   `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs. A workspace's page has three tabs
   (Details, Branches, Workflow); its setup is its place's (defaults under Workflow, access and Reach under Sessions) and the remote's
-  wiring a row of Details, so a door naming a section is sent there by the opener. The service answers no bind door, yet its exchange's
-  `BindAsync` still writes a quest's closure bind and the take still consumes a bind named for it (`QuestBindOperation`,
-  `QuestGraphBinds`, the `took_bind` session column, `ServiceClient.TookBindAsync`): service tests seed it, and no driver writes it, so
-  a bound run's close reads its run only once that whole chain goes. The look's second pass in `WorkflowRunStart.BindAsync` (a run whose
-  session opened with no binding) is the same leftover, a start binding its own run.
+  wiring a row of Details, so a door naming a section is sent there by the opener. The service has no door that binds a quest to a graph, none that names one for
+  a take, and no take bind: the store's open drops `quest_take_binds` and `quest_owned_take_binds`, and the `took_bind` session column is
+  gone. A `Bound` operation only arrives in a log from an older build, which the replay still reads; service tests seed one with
+  `BoundSeed.SeedBound`. A start binds its own run (`WorkflowRunStart.AtStartAsync`) and the look only says what the starts bound
+  (`WorkflowRunStart.Say`); the help room names no `workspace-setup` part.
 - **CHATFLOW1 (the rest):** the installed window.
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's
   installed proof. A `request` under `start: you` waits for the person's *Send*, the `send` act of the run's node door (`WORKFLOW_NODE`, `daoris
