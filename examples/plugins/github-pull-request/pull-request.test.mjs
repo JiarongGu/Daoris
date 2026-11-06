@@ -64,6 +64,7 @@ function start(env) {
   const data = mkdtempSync(join(scratch, 'data-'));
   const child = spawn(process.execPath, [join(folder, 'plugin.mjs')], {
     cwd: folder,
+    windowsHide: true,
     env: { PATH: process.env.PATH, DAORIS_PLUGIN_DATA: data, ...env },
     stdio: ['pipe', 'pipe', 'inherit'],
   });
@@ -164,6 +165,6 @@ test('it runs no git, gh or az, and declares no tool for them', () => {
   const source = readFileSync(join(folder, 'plugin.mjs'), 'utf8');
   const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
 
-  assert.equal(/child_process|spawn|exec(File)?Sync?\(/.test(source), false);
+  assert.equal(/child_process|spawn|execFile|execSync/.test(source), false);
   assert.deepEqual(manifest.tools.map((tool) => tool.id), ['node']);
 });

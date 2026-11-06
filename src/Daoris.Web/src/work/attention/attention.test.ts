@@ -793,7 +793,6 @@ describe('a declaration owed acceptance, worded', () => {
   });
 });
 
-/** UX6c (design §6.2): the three groups, in the order a person acts on them, and none shown empty. */
 /** STAFFPOLICY1e2 (D226, design §11 point 7): a quest its role's policy holds for the person's yes to one move. */
 describe('a quest its role’s policy holds, worded', () => {
   const asked: Consideration = {
