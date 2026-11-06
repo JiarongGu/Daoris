@@ -66,7 +66,19 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         }
 
         if (chosen.Count == 0) return (Unknown("the accepted declaration marks no heavy gate, so the check shows nothing"), false);
-        return (await GatesAsync(chosen, ct).ConfigureAwait(false), false);
+
+        // The pipeline design §4.7: a batch runs the gates its changed paths reach and those owed; the rest are named as kept. Where git cannot
+        // say what changed, every gate runs.
+        IReadOnlyList<VerifyGate> kept = [];
+        if (send.Reach is { } reach && await GateReach.ChangedAsync(send.Checkout, reach.Base, send.Commit, ct).ConfigureAwait(false) is { } changed)
+        {
+            var plan = GateReach.Of(chosen, changed, reach.Passed);
+            chosen = [.. plan.Run];
+            kept = [.. plan.Kept.Select(gate => new VerifyGate(gate.Name, VerifyGate.Kept))];
+        }
+
+        if (chosen.Count == 0) return (new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, kept) { Declaration = send.Accepted }, false);
+        return (await GatesAsync(chosen, kept, ct).ConfigureAwait(false), false);
     }
 
     private async Task<(VerifyResult? Result, bool Busy)> RunnerAsync(VerifyRunner runner, IReadOnlyList<DeclaredGate> declared, CancellationToken ct)
@@ -89,7 +101,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     }
 
     /// <summary>The gates one after another in Daoris's verification tree at the commit, the first failure ending the sequence.</summary>
-    private async Task<VerifyResult> GatesAsync(IReadOnlyList<DeclaredGate> gates, CancellationToken ct)
+    private async Task<VerifyResult> GatesAsync(IReadOnlyList<DeclaredGate> gates, IReadOnlyList<VerifyGate> kept, CancellationToken ct)
     {
         var tree = send.Tree ?? Path.Combine(VerifyFiles.LinesFolder(home), "trees", key);
         await TreeAtAsync(tree, ct).ConfigureAwait(false);
@@ -106,17 +118,17 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 var wall = Stopwatch.StartNew();
                 int? exit = Directory.Exists(folder) ? await StepAsync(gate.Run, folder, [gate.Name], new Dictionary<string, string>(), log, gate.Clock, ct).ConfigureAwait(false) : Missing(log, gate);
                 var rest = gates.Skip(at + 1).Select(each => new VerifyGate(each.Name, RunnerVerdicts.NotRun));
-                if (exit is null) return Ended([.. ran, new VerifyGate(gate.Name, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }, .. rest]);
+                if (exit is null) return Ended([.. ran, new VerifyGate(gate.Name, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }, .. rest, .. kept]);
                 ran.Add(new VerifyGate(gate.Name, exit == 0 ? RunnerVerdicts.Pass : RunnerVerdicts.Fail, exit) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds });
                 if (exit == 0) continue;
                 keep(holder => holder with { Failed = new HeavyGateFailed(gate.Name, exit.Value) });
-                return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Failed, $"the gate '{gate.Name}' failed with exit {exit}", [.. ran, .. rest])
+                return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Failed, $"the gate '{gate.Name}' failed with exit {exit}", [.. ran, .. rest, .. kept])
                 {
                     Failed = gate.Name, Declaration = send.Accepted,
                 };
             }
 
-            return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, ran) { Declaration = send.Accepted };
+            return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, [.. ran, .. kept]) { Declaration = send.Accepted };
         }
         finally
         {

@@ -24,6 +24,8 @@ export type AttentionActId =
   | 'again-step'
   // A held verification's *Run again* and *Not now*: a check's words, never a step's.
   | 'again-check' | 'stop-check'
+  // A failed verification's *Ask for a fix…*: one ask for its failed gate, with the gate's log.
+  | 'ask-fix-check'
   // The stop of a close found closed only in part, its node waiting again.
   | 'stop-partial'
   // A git remote held because it could not authenticate, tried again on the person's press.
@@ -51,6 +53,7 @@ export function heldActs(held: HeldAttempt): AttentionActId[] {
       case 'record': return 'record-close';
       case 'resend': return 'resend-close';
       case 'again': return check ? 'again-check' : 'again-step';
+      case 'ask-fix': return 'ask-fix-check';
       case 'stop': return close ? 'stop-close' : check ? 'stop-check' : 'stop-step';
       default: return word;
     }

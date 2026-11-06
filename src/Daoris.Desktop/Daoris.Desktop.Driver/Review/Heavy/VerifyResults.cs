@@ -41,6 +41,9 @@ public static class VerifyVerdicts
 /// <summary>One gate as a check ran it: its name as the declaration writes it, its verdict (the runner's words), its exit, its wall and its log.</summary>
 public sealed record VerifyGate(string Name, string Verdict, int? Exit = null)
 {
+    /// <summary>A gate the batch's paths did not reach, its newest pass on the line standing (the pipeline design §4.7): named, never run.</summary>
+    public const string Kept = "kept";
+
     public double? WallSeconds { get; init; }
 
     /// <summary>Where its log stays: the runner's own place, or the attempt's folder for a gate the executor ran.</summary>
