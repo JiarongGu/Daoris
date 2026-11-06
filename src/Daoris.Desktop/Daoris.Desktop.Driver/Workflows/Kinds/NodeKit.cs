@@ -44,10 +44,15 @@ public sealed class NodeKit
 
     /// <summary>
     /// What the save refuses by the kinds: the protected order the gate kinds share (<see cref="ProtectedOrder"/>), then each node's kind's own
-    /// rules of where it stands, each said against the node it is about. The rules every graph is held to are <see cref="NodeGraphs.Problems"/>'.
+    /// rules of where it stands, each said against the node it is about, then, for a graph a person saves now, what the landing's readers need
+    /// (<see cref="LandingRules"/>). The rules every graph is held to are <see cref="NodeGraphs.Problems"/>'.
     /// </summary>
-    internal static IReadOnlyList<WireProblem> Problems(GraphStanding standing, NodeGraph graph) =>
-        [.. ProtectedOrder.Problems(standing), .. standing.ById.Values.SelectMany(node => Of(node.Kind)?.Problems(graph, node) ?? [])];
+    internal static IReadOnlyList<WireProblem> Problems(GraphStanding standing, NodeGraph graph, bool savedNow = false) =>
+    [
+        .. ProtectedOrder.Problems(standing),
+        .. standing.ById.Values.SelectMany(node => Of(node.Kind)?.Problems(graph, node) ?? []),
+        .. savedNow ? LandingRules.Problems(standing) : [],
+    ];
 
     /// <summary>A built-in kind's contract row, or null for any other kind.</summary>
     public static NodeAuthority? Row(string kind) => Built.Find(kind) is BuiltInNode unit ? unit.Row : null;

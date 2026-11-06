@@ -24,6 +24,12 @@ public interface INodeKind
     /// </summary>
     string? Problem(NodeDeclaration node);
 
+    /// <summary>The save's refusal of <paramref name="field"/>, which <see cref="Problem"/> named, where the kind says it in words and a code of its own; null for the generic one.</summary>
+    WireProblem? DeclarationProblem(NodeDeclaration node, string field) => null;
+
+    /// <summary>Why a node of it is never a graph's end, read after <c>which is never an end:</c>.</summary>
+    string NeverEndBecause => "it is reached on a claim, and an end on evidence.";
+
     /// <summary>
     /// What the save refuses of where <paramref name="node"/> stands in <paramref name="graph"/> by its kind's own rules, each against the node it is
     /// about; the rules every graph is held to are <see cref="NodeGraphs.Problems"/>'.

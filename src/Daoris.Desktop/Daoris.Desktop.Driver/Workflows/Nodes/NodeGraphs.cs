@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// The choices §E7 left open, made here (D173's FABRIC-GRAPH1 note): synthetic nodes and every wire to or from one are counted apart,
 /// three nodes and four wires to each authored node; Current's landing nodes are the graph's own, counted; an entry takes no wire from
-/// another node; a <c>quest.close</c>'s only way out is its <c>failed</c> wire; and the cleanup's wait is refused for an end at or before
+/// another node; and the cleanup's wait is refused for an end at or before
 /// the line. The protected order before the landing is the kit's (<see cref="ProtectedOrder"/>).
 /// </remarks>
 public static class NodeGraphs
@@ -38,8 +38,8 @@ public static class NodeGraphs
 
     /// <summary>
     /// Everything a save refuses in <paramref name="graph"/>, in a stable order; empty when it holds. The schema and the bounds; each
-    /// node's declaration; the wires' (<see cref="NodeWires.Problems"/>); the entries; the end; each node no entry reaches; the landing's;
-    /// the kinds' (<see cref="NodeKit.Problems"/>); the closure's rules; the cleanup.
+    /// node's declaration; the wires' (<see cref="NodeWires.Problems"/>); the entries; the end; each node no entry reaches;
+    /// the kinds' (<see cref="NodeKit.Problems"/>: the landing's, the integration's and the closure's among them); the cleanup.
     /// </summary>
     /// <param name="graph">The graph judged.</param>
     /// <param name="saved">True for a graph a person authored and saves (a named graph version, a cycle): the rules only an authored graph is held to, the
@@ -77,14 +77,8 @@ public static class NodeGraphs
         {
             if (NodeDeclarations.Problem(node) is { } field)
             {
-                if (node.Kind == NodeKinds.Land && field == LandNodes.AcceptOption)
-                {
-                    Say(GraphRefusal.Accept, null, node.Id, $"node `{node.Id}`: a `land` takes no `accept`. Where you accept the work, put *Your review* before it; with no review it lands once the steps before it are done.");
-                }
-                else
-                {
-                    Say(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `{field}` does not hold for a `{node.Kind}`.");
-                }
+                problems.Add(NodeKit.Of(node.Kind)?.DeclarationProblem(node, field)
+                    ?? new(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `{field}` does not hold for a `{node.Kind}`."));
             }
             // DECIDE1d: judged with the graph, so the declarations' own checks are left as they were.
             else if (NodeOutcomes.OutputsOnProblem(node) is not null) Say(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `outputsOn` does not hold for a `{node.Kind}`.");
@@ -118,9 +112,7 @@ public static class NodeGraphs
         }
         else if (NodeAuthorities.Of(end) is { MayEnd: false })
         {
-            Say(GraphRefusal.EndKind, null, end.Id, end.Kind == NodeKinds.Stop
-                ? $"`{end.Id}` is a `{end.Kind}`, which is never an end: a failure stops the run there, short of its end."
-                : $"`{end.Id}` is a `{end.Kind}`, which is never an end: it is reached on a claim, and an end on evidence.");
+            Say(GraphRefusal.EndKind, null, end.Id, $"`{end.Id}` is a `{end.Kind}`, which is never an end: {NodeKit.Of(end.Kind)!.NeverEndBecause}");
         }
 
         if (starts.Count > 0)
@@ -148,86 +140,10 @@ public static class NodeGraphs
             }
         }
 
-        var (ordered, landings) = (standing.Ordered, standing.Landings);
-
-        // INTEGRATE1n (§17.4's graph rules): at most one `integrate`, after the landing, and a branch no plugin lands: no `pushed` or
-        // `pull-request` beside it. Each is said against the node it is about, once.
-        var integrates = byId.Values.Where(node => node.Kind == NodeKinds.Integrate).ToList();
-        foreach (var again in integrates.Skip(1))
-        {
-            Say(GraphRefusal.IntegrateTwice, null, again.Id, $"node `{again.Id}`: `{integrates[0].Id}` and `{again.Id}` are both an `{NodeKinds.Integrate}`, and the graph's landing is integrated once.");
-        }
-
-        if (integrates.Count > 0)
-        {
-            if (landings.Count == 0)
-            {
-                Say(GraphRefusal.IntegrateUnlanded, null, integrates[0].Id, $"node `{integrates[0].Id}`: an `{NodeKinds.Integrate}` integrates the landing a `{NodeKinds.Land}` makes, and the graph holds no `{NodeKinds.Land}`.");
-            }
-        }
-
-        // LANDNODE1a (the land node design §6): one landing, and the method's tail and no other. LANDNODE1c2: what precedes a `land` decides
-        // whether it waits on a person; nothing here refuses one that starts without a press.
-        foreach (var again in landings.Skip(1))
-        {
-            Say(GraphRefusal.LandOnce, null, again.Id, $"node `{again.Id}`: `{landings[0].Id}` and `{again.Id}` are both a landing, and a graph holds one `{NodeKinds.Land}`.");
-        }
-
-        foreach (var land in landings)
-        {
-            var method = NodeOptions.Text(land, "method");
-            if (method is not null && LandNodes.Methods.Contains(method, StringComparer.Ordinal))
-            {
-                // An integrate is the tail of its own method (G8).
-                var after = Reach([land.Id], ordered, forward: true);
-                if (method != LandNodes.Integrate)
-                {
-                    foreach (var extra in integrates)
-                    {
-                        Say(GraphRefusal.LandTail, null, extra.Id, $"node `{extra.Id}` is a `{NodeKinds.Integrate}`, which comes with a `land` whose method is `{LandNodes.Integrate}`: "
-                            + "choose that method on the landing and it brings this step.");
-                    }
-                }
-                else if (integrates.Count == 0)
-                {
-                    Say(GraphRefusal.LandTail, null, land.Id, $"node `{land.Id}`: a `{method}` land brings a `{NodeKinds.Integrate}` after it, and the graph holds none.");
-                }
-                else
-                {
-                    foreach (var late in integrates.Where(node => !after.Contains(node.Id)))
-                    {
-                        Say(GraphRefusal.LandTail, null, late.Id, $"node `{late.Id}`: a `{NodeKinds.Integrate}` is the tail of `{land.Id}`, and no way from `{land.Id}` reaches it.");
-                    }
-                }
-            }
-        }
-
         // D247: the kinds' rules, which the kit runs: the protected order the gates share, then each kind's own of where its node stands (a push
-        // after a branch landing, a monitor on a step that reports a state, a tidy on a monitor's merged route, a hold before the landing).
-        problems.AddRange(NodeKit.Problems(standing, graph));
-
-        // INTEGRATE1n, F47 (§17.4): every kind that observes the landing record is refused when saved where some way to it passes no `land`,
-        // since it would wait for ever before a landing. A way is any wire from an entry, a failure's included, and a `land` is passed
-        // through whole: its own wires are not followed. Said only of a graph that holds a landing, so one without (a quest's cycle) is as it was.
-        // WORKFLOWCLEAN1 1b: the one judge at the one save point; a `land` with no method chooses none, and a stored one still reads.
-        if (saved && onSave)
-        {
-            foreach (var chosen in landings.Where(land => !land.Options.ContainsKey("method")))
-            {
-                Say(GraphRefusal.LandMethod, null, chosen.Id, $"node `{chosen.Id}`: a `land` is saved with its method chosen: {string.Join(", ", LandNodes.Methods.SkipLast(1))} or {LandNodes.Methods[^1]}.");
-            }
-        }
-
-        if (saved && onSave && landings.Count > 0)
-        {
-            var landed = landings.Select(landing => landing.Id).ToHashSet(StringComparer.Ordinal);
-            var unlanded = Reach(starts, [.. local.Where(wire => !landed.Contains(wire.From!.Node))], forward: true);
-            foreach (var node in byId.Values.Where(node => NodeKit.Of(node.Kind)?.ReadsTheLanding == true && unlanded.Contains(node.Id)))
-            {
-                Say(GraphRefusal.BeforeLanding, null, node.Id, $"node `{node.Id}`: {(node.Kind == NodeKinds.Integrate ? "an" : "a")} `{node.Kind}` observes the landing, and a way to it passes no "
-                    + $"`{landings[0].Kind}` ({string.Join(", ", landings.Select(landing => $"`{landing.Id}`"))}), so it would wait for ever before one.");
-            }
-        }
+        // after a branch landing, a monitor on a step that reports a state, a tidy on a monitor's merged route, a hold before the landing, an
+        // integrate after its landing, a close at the end), and what a saved graph's landing needs of the kinds that read it.
+        problems.AddRange(NodeKit.Problems(standing, graph, saved && onSave));
 
         // FABRIC-GRAPH1g: §C4's second rule names the one observed node of an event's plugin step, so two of a plugin's step in one graph are
         // reached by neither (`not-named`, counted only). Said when saved, naming both.
@@ -238,28 +154,6 @@ public static class NodeGraphs
             {
                 Say(GraphRefusal.ObservedTwice, null, node.Id, $"node `{node.Id}` and `{firstObserved[node.Kind]}` are both observed nodes of `{node.Kind}`: an event of that step names one node, "
                     + "so neither would be reached.");
-            }
-        }
-
-        // §E5: in a graph that holds `quest.close`, it is the end, nothing comes after it but its failure's path, and nothing before it waits on
-        // the quest's own done, which a closure graph never writes before its end (canary 40).
-        var deadlocked = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var close in byId.Values.Where(node => node.Kind == NodeKinds.QuestClose))
-        {
-            if (end is not null && close.Id != end.Id)
-            {
-                Say(GraphRefusal.CloseEnd, null, close.Id, $"`{close.Id}` closes the quest, so it is the graph's end, never `{end.Id}`: the quest would read done while its work still moves.");
-            }
-
-            foreach (var wire in local.Where(wire => wire.From!.Node == close.Id && wire.Kind != WireKinds.Failed))
-            {
-                Say(GraphRefusal.AfterClose, wire.Id, close.Id, $"wire `{wire.Id}`: nothing comes after `{close.Id}`, which closes the quest; only its failure's path leaves it.");
-            }
-
-            foreach (var claim in Reach([close.Id], local, forward: false).Select(id => byId[id]).Where(node => node.Kind == NodeKinds.Claimed && deadlocked.Add(node.Id)))
-            {
-                Say(GraphRefusal.ClosureDeadlock, null, claim.Id, $"`{claim.Id}` waits on the quest's own done before `{close.Id}` closes it, and a closure graph "
-                    + "writes no done before its end: the agent submits as `ready` instead.");
             }
         }
 

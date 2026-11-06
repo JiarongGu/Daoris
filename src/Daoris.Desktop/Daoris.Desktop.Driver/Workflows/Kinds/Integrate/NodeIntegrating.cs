@@ -1,24 +1,18 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The two nodes the runtime starts through doors the watch sets: a unit's <c>integrate</c>, asked of the integration door by its key, and a
-/// run's <c>request</c>, published through the request port. Each is left ready, saying why once a pass, where its door is not set or its
-/// say-so is not given.
+/// The node the runtime starts through the door the watch sets: a unit's <c>integrate</c>, asked of the integration door by its key. It is left
+/// ready, saying why once a pass, where its door is not set or its landing's acceptance is not the request.
 /// </summary>
-/// <param name="quests">Every quest the last look read, by id.</param>
 internal sealed class NodeIntegrating(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<IIntegrationDoor?> integration, Func<IIntegrationLines?> lines,
-    Func<IRequestPort?> requests, Func<DriverConfig?> config, Func<Dictionary<string, QuestView>> quests, Func<Action<string, string>?> integrated)
+    Func<DriverConfig?> config, Func<Action<string, string>?> integrated)
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, IntegrationCardWait> _cards = new(StringComparer.Ordinal);
 
     private IntegrateStart? _integrateStart;
 
-    private RequestStart? _requestStart;
-
     private IntegrateStart Integrate => _integrateStart ??= new IntegrateStart(records, integration, clock) { Lines = lines };
-
-    private RequestStart Request => _requestStart ??= new RequestStart(records, requests, clock);
 
     /// <summary>The landed branches whose <c>integrate</c> waits for the owner's card, as each unit's last judgement found it, oldest landing first.</summary>
     public IReadOnlyList<IntegrationCardWait> CardWaits(IReadOnlyDictionary<string, GovernedUnit> governed) =>
@@ -35,14 +29,6 @@ internal sealed class NodeIntegrating(
     {
         var done = await Integrate.ReconcileAsync(ct).ConfigureAwait(false);
         return (done, Integrate.TakeSaid());
-    }
-
-    /// <summary>A run's request is read on this look's projection of its quest before any new start, its key found first.</summary>
-    public async Task<(IReadOnlyList<WorkPerformed> Done, IReadOnlyList<string> Said)> ReconcileRequestsAsync(
-        IEnumerable<GovernedUnit> governed, CancellationToken ct)
-    {
-        var done = await Request.ReconcileAsync(governed, quests(), ct).ConfigureAwait(false);
-        return (done, Request.TakeSaid());
     }
 
     /// <summary>
@@ -99,32 +85,6 @@ internal sealed class NodeIntegrating(
         _cards.TryRemove(unit, out _);
         var sent = await Integrate.StartAsync(node, start, statuses[start.Node], ask, settings, ct).ConfigureAwait(false);
         said.AddRange(Integrate.TakeSaid());
-        return sent;
-    }
-
-    /// <summary>
-    /// A <c>request</c> the evaluation proposes to start: sent only under <c>start: automatic</c>, the person's standing say-so, and never to
-    /// the run's own repository. Left ready, saying why once a look; null where nothing was done.
-    /// </summary>
-    public async Task<WorkPerformed?> RequestAsync(
-        GovernedUnit governed, NodeDeclaration node, WireStart start, NodeStatus status, List<string> said, CancellationToken ct)
-    {
-        if (requests() is null) return null;
-        var unit = governed.Unit.Id;
-        string? why = RequestOptions.Problem(node) is { } option ? $"its `{option}` option is not one a request takes"
-            : string.Equals(RequestOptions.Repository(NodeOptions.Text(node, "to") ?? ""), governed.Watched.Repository, StringComparison.OrdinalIgnoreCase)
-                ? "a request never goes to the run's own repository: a quest to itself is the chain's"
-            : NodeOptions.Text(node, "start") != RequestOptions.Automatic
-                && records.Read(unit)?.Fired.Contains(RunNodeWords.SendKey(node.Id, status.Attempt), StringComparer.Ordinal) != true ? "it waits for your send" : null;
-        if (why is not null)
-        {
-            var line = $"work  {unit}: its request `{node.Id}` was not sent: {why}.";
-            if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);
-            return null;
-        }
-
-        var sent = await Request.StartAsync(node, start, status, governed.Run, governed.Watched.Repository, quests(), ct).ConfigureAwait(false);
-        said.AddRange(Request.TakeSaid());
         return sent;
     }
 

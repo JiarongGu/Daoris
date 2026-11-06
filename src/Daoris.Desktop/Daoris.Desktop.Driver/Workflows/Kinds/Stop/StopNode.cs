@@ -11,6 +11,8 @@ internal sealed class StopNode : BuiltInNode
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Run;
 
+    public override string NeverEndBecause => "a failure stops the run there, short of its end.";
+
     public override string? Title => "Stop";
 
     public override NodeLook Look => NodeLook.Other;

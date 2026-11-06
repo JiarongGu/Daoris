@@ -86,7 +86,12 @@ public sealed class NodeRuntime(
         records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
-        records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => Doors.Door<IRequestPort>(), () => _config, () => _quests, () => Integrated))!;
+        records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => _config, () => Integrated))!;
+
+    private NodeRequesting? _requesting;
+
+    private NodeRequesting Requesting => LazyInitializer.EnsureInitialized(ref _requesting, () => new NodeRequesting(
+        records, clock, () => Doors.Door<IRequestPort>(), () => _quests))!;
 
     /// <summary>
     /// The doors its nodes are started on, by kind (D247 §3.5): none by default, so a runtime nobody wired starts nothing on a door and each such
@@ -397,7 +402,7 @@ public sealed class NodeRuntime(
             // A run's request is read on this look's projection of its quest before any new start, its key found first (§17.5).
             if (Doors.Door<IRequestPort>() is not null)
             {
-                var (reconciled, line) = await Integrating.ReconcileRequestsAsync(governed.Values, ct).ConfigureAwait(false);
+                var (reconciled, line) = await Requesting.ReconcileAsync(governed.Values, ct).ConfigureAwait(false);
                 done.AddRange(reconciled);
                 said.AddRange(line);
             }
@@ -496,7 +501,7 @@ public sealed class NodeRuntime(
                 {
                     Governed = governed, Node = governed.Declared[start.Node], Start = start, Statuses = evaluated.Statuses, Tipped = tipped, Tip = tip,
                     ReadThisPass = _readThisPass, Sends = sends, Said = said, Units = units, Performer = _performer, Port = port, Closing = Closing,
-                    Integrating = Integrating, Drop = () => _governed = null,
+                    Integrating = Integrating, Requesting = Requesting, Drop = () => _governed = null,
                 };
                 if (await starting.StartAsync(ct).ConfigureAwait(false) is { } performed)
                 {

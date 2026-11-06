@@ -41,7 +41,7 @@ internal sealed class RequestNode : BuiltInNode, IStarts, IPressed
     /// <summary>A run's request, published under its key once its start is standing say-so; on a unit it waits ready.</summary>
     public async Task<WorkPerformed?> StartAsync(NodeStarting starting, CancellationToken ct) => starting.Governed.Scope is null
         ? null
-        : await starting.Integrating.RequestAsync(starting.Governed, starting.Node, starting.Start, starting.Status, starting.Said, ct).ConfigureAwait(false);
+        : await starting.Requesting.StartAsync(starting.Governed, starting.Node, starting.Start, starting.Status, starting.Said, ct).ConfigureAwait(false);
 
     /// <summary>Its send, and its asking again or going on without it when declined (INTEGRATE1p).</summary>
     public IReadOnlyList<string> Takes { get; } = [NodeWordActs.Send, NodeWordActs.AskAgain, NodeWordActs.GoOn];
