@@ -15,7 +15,7 @@ public sealed class ViewGitCountTests(ITestOutputHelper output) : LandedFixture
 {
     // Each read's starts on its first open, and those asked twice, as measured (2026-11-06). The commit page and a compare are two by
     // design (D147 §2.4, §2.6); a plan reads the checkout's top, head and branch one start each before the state its press must find
-    // unchanged. Asked twice: the stash plan's `refs/stash`, and the landed review's `--show-toplevel`.
+    // unchanged. Asked twice: the stash plan's `refs/stash` (the plan's state, and the stash step's own read of it), left for the plan's own cut.
     private static readonly Dictionary<string, (int Starts, int Repeated)> Budgets = new(StringComparer.Ordinal)
     {
         ["GIT_BRANCHES"] = (3, 0),
@@ -31,7 +31,7 @@ public sealed class ViewGitCountTests(ITestOutputHelper output) : LandedFixture
         ["GIT_SWITCH_PLAN"] = (7, 0),
         ["GIT_STASH_PLAN"] = (11, 1),
         ["GIT_DELETES"] = (0, 0), // the journal alone, where it holds no delete
-        ["LANDED_REVIEW"] = (7, 1),
+        ["LANDED_REVIEW"] = (6, 0),
     };
 
     [Fact]
