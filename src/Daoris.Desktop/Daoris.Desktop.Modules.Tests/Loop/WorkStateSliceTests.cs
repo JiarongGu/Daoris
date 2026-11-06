@@ -243,13 +243,14 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
                 .Concat(FieldsOf(endsBuilt[0], "graphEnd")),
             field => Assert.Contains(field, Classed()));
         Assert.Equal(WorkStateSlice.Fields["graphEnd"], endsBuilt[0].EnumerateObject().Select(each => each.Name));
-        Same(built, part.GetProperty("units")[0]);
-        Same(Written(LinesRoutes.WorkEntry(entries[3])), part.GetProperty("recovery")[0]);
+        // The slice pushes as the one IPC serializer writes, where a null is left out; the builders are compared as it writes them.
+        Same(Wire(LinesRoutes.WorkUnit(unit)), part.GetProperty("units")[0]);
+        Same(Wire(LinesRoutes.WorkEntry(entries[3])), part.GetProperty("recovery")[0]);
         Assert.Equal("git could not list it", part.GetProperty("unread")[0].GetString());
-        Same(heldBuilt, held.GetProperty("held"));
-        Same(recordBuilt, held.GetProperty("unreadable"));
+        Same(Wire(LinesRoutes.HeldAnswer([attempt])), held.GetProperty("held"));
+        Same(Wire(LinesRoutes.UnreadableAnswer([record])), held.GetProperty("unreadable"));
         Assert.Equal("unit-a", held.GetProperty("unreadable")[0].GetProperty("unit").GetString());
-        Same(endsBuilt, held.GetProperty("ends"));
+        Same(Wire(LinesRoutes.EndsAnswer([end])), held.GetProperty("ends"));
     }
 
     [Fact]

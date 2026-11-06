@@ -29,7 +29,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolInstallTests.cs": 42450,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolResourcesTests.cs": 41787,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Instance/InstanceDoorTests.cs": 41068,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/HelpFactsTests.cs": 65907,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/HelpFactsTests.cs": 66356,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/TraceTests.cs": 56202,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AccountRotationTickTests.cs": 69333,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AnswerContinuesTickTests.cs": 43128,

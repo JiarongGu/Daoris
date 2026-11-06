@@ -700,7 +700,7 @@ public sealed class HelpFactsTests : IDisposable
         });
         using (ProcessStarts.Within(info =>
                {
-                   lock (starts) starts.Add(Path.GetFullPath(info.WorkingDirectory));
+                   lock (starts) starts.Add(Path.GetFullPath(info.WorkingDirectory) + " " + string.Join(' ', info.ArgumentList.SkipWhile(a => a == "-c" || a.Contains('='))));
                    return null;
                }))
         {
@@ -721,7 +721,11 @@ public sealed class HelpFactsTests : IDisposable
 
         lock (starts)
         {
-            Assert.Equal(engineTrees.Select(Path.GetFullPath).Order(StringComparer.Ordinal), starts.Order(StringComparer.Ordinal));
+            // Each tree is asked its own repository, working root and branch, and its own root, in itself and nowhere else.
+            string[] asks = ["rev-parse --path-format=absolute --git-common-dir --show-toplevel --abbrev-ref HEAD", "rev-parse --show-toplevel"];
+            Assert.Equal(
+                engineTrees.Select(Path.GetFullPath).SelectMany(tree => asks.Select(ask => $"{tree} {ask}")).Order(StringComparer.Ordinal),
+                starts.Order(StringComparer.Ordinal));
         }
     }
 

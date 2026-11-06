@@ -83,7 +83,10 @@ internal static class TestDoors
         toolchain is null ? Known<AccountsPart>.Absent : Known<AccountsPart>.Declared(new AccountsPart(new AccountKey(door.Id.Value), null, PoolFacts.Of(toolchain)), Evidence),
         toolchain is null ? Known<TablesPart>.Absent : Known<TablesPart>.Declared(TablesPart.Of(toolchain, true), Evidence),
         toolchain is null ? Known<UsagePart>.Absent : Known<UsagePart>.Declared(new UsagePart(toolchain.Usage), Evidence),
-        Known<LentPart>.Absent, Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent,
+        toolchain is null
+            ? Known<LentPart>.Absent
+            : Known<LentPart>.Declared(new LentPart(PoolFacts.Of(toolchain), TablesPart.Of(toolchain, false), new UsagePart(toolchain.Usage)), Evidence),
+        Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent,
         door.Abilities.TakesSettings.Value ? Known<IRuleLanguage>.Declared(ClaudeRules.Language, Evidence) : Known<IRuleLanguage>.Absent,
         Known<ISkillLayout>.Declared(ClaudeSkills.Layout, Evidence),
         Known<IConversationHome>.Absent, Reach.Everywhere, Known<VocabularyPart>.Absent);

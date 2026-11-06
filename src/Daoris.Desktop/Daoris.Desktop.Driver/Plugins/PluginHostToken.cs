@@ -12,7 +12,7 @@ public sealed record HostTokenHand(string? Token, string? Refusal);
 public static class PluginHostToken
 {
     /// <summary>The variable the token travels under.</summary>
-    public const string Variable = "DAORIS_HOST_TOKEN";
+    public const string Variable = GitRouting.HostTokenVariable;
 
     /// <summary>The identity serving <paramref name="origin"/> for a repository and its workspace, judged and read.</summary>
     public static HostTokenHand Hand(string home, string? repository, string? workspace, string? origin)

@@ -29,7 +29,8 @@ public sealed class StandInReadersTests
     private static List<string> OldOperands(ProviderRegistry set)
     {
         HarnessToolchain? Of(string each) => set.ToolchainOf(each);
-        return [.. set.Reserved.Where(each => Of(each) is { Binary.Count: > 0 })];
+        // A plugin's door that names a program is an operand as a built one is, so the set's names are read, in the roster's ordinal order.
+        return [.. set.Reserved.Concat(set.Names).Distinct(StringComparer.Ordinal).Where(each => Of(each) is { Binary.Count: > 0 }).Order(StringComparer.Ordinal)];
     }
 
     [Theory]
