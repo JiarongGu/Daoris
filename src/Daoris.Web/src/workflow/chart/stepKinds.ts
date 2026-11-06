@@ -1,4 +1,4 @@
-import { NODE_KINDS } from '../../bridge/generated/routes';
+import { NODE_KINDS } from '../../data/generated/service';
 import type { FlowNode } from '../../design/FlowCanvas';
 import type { IconName } from '../../design/ui';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NODE_KINDS } from '../bridge/generated/routes';
+import { NODE_KINDS } from '../data/generated/service';
 import { kindKeys, nodeKinds, readNodeKinds, unwordedKinds } from '../../scripts/kind-words.mjs';
 import { load } from '../../scripts/names-check.mjs';
 

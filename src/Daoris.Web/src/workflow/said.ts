@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { NODE_KINDS } from '../bridge/generated/routes';
+import { NODE_KINDS } from '../data/generated/service';
 import {
   flagOf, KNOWN_KINDS, KNOWN_LIMITS, namesOf, textOf, type CurrentWorkflow, type WorkflowStep, yourPart,
 } from './current';
