@@ -231,20 +231,16 @@ public sealed class StashActs(ActJournal journal)
 
     private static async Task<State?> StateAsync(string root, CancellationToken ct)
     {
-        var head = await ActCommits.HeadAsync(root, ct).ConfigureAwait(false);
-        if (head.Unread) return null;
-        var (symbolic, branch, _) = await WorkingTree.GitAsync(root, ["symbolic-ref", "-q", "HEAD"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
-        if (symbolic is not (0 or 1)) return null;
+        // Head, branch, changed paths and files in conflict are one status; the stash tip is read after it, as the press compares it.
+        if (await PlanStatus.ReadAsync(root, ct).ConfigureAwait(false) is not { } status) return null;
         var stash = await ActWorkSteps.StashTipAsync(root, ct).ConfigureAwait(false);
         if (stash.Unread) return null;
-        var (status, changed, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=no", "--no-renames"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
         var (others, untracked, _) = await WorkingTree.GitAsync(root, ["ls-files", "--others", "--exclude-standard", "-z"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
-        var (merging, unmerged, _) = await WorkingTree.GitAsync(root, ["ls-files", "--unmerged", "-z"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
         var (listed, trees, _) = await WorkingTree.GitAsync(root, ["worktree", "list", "--porcelain"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
-        if (status != 0 || others != 0 || merging != 0 || listed != 0) return null;
+        if (others != 0 || listed != 0) return null;
 
         var linked = trees.Split('\n').Count(line => line.StartsWith("worktree ", StringComparison.Ordinal)) - 1;
-        return new(head.Id, symbolic == 0 ? branch.Trim() : null, stash.Id, Count(changed), Count(untracked), Math.Max(0, linked), unmerged.Length > 0);
+        return new(status.Head, status.Branch, stash.Id, status.Tracked, Count(untracked), Math.Max(0, linked), status.Unmerged);
     }
 
     private static int Count(string zero) => zero.Split('\0', StringSplitOptions.RemoveEmptyEntries).Length;
