@@ -257,7 +257,7 @@ public sealed class MoveResolveTests : IDisposable
         using (var older = DesktopStore.Open(DesktopStore.LocationIn(_home), new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(3)], Settled = () => StoreSettled.Yes }))
         {
             older.Write(BindingStore.Family, write => write.Execute(
-                "INSERT INTO bindings (session, adapter, conversation, kept) VALUES ('s2', 'claude-code-acp', 'c-2', '2026-10-30T00:00:00.0000000Z')"));
+                "INSERT INTO bindings (session, door, conversation, kept) VALUES ('s2', 'claude-code-acp', 'c-2', '2026-10-30T00:00:00.0000000Z')"));
         }
 
         _said.Gone("s2", "w1");

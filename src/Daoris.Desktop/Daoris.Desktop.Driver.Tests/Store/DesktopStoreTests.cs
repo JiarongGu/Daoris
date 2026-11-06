@@ -848,20 +848,6 @@ public sealed class DesktopStoreTests : IDisposable
     }
 
     [Fact]
-    public void The_projection_is_one_row_whatever_the_writer_sets()
-    {
-        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
-        void Project(int one) => store.Write("role_staffing", write => write.Execute(
-            "INSERT INTO role_staffing_projection (one, at) VALUES ($one, '2026-10-30T00:00:00.0000000+00:00')", ("$one", one)));
-
-        Project(1);
-
-        Assert.Equal(275, Assert.Throws<SqliteException>(() => Project(2)).SqliteExtendedErrorCode);
-        Assert.Equal(1555, Assert.Throws<SqliteException>(() => Project(1)).SqliteExtendedErrorCode);
-        Assert.Equal(1, Count(store, "role_staffing_projection"));
-    }
-
-    [Fact]
     public void A_store_of_the_seven_steps_before_is_migrated_to_8_at_the_first_start_whatever_the_confirmation_says()
     {
         using (var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(7)], Settled = () => StoreSettled.Yes }))

@@ -53,8 +53,8 @@ public sealed class BindingRolesTests : IDisposable
         {
             older.Write("bindings", write => write.Execute(
                 """
-                INSERT INTO bindings (session, adapter, conversation, kept) VALUES ('s1', 'claude-code-acp', 'older', 'then')
-                ON CONFLICT (session) DO UPDATE SET adapter = excluded.adapter, conversation = excluded.conversation, kept = excluded.kept
+                INSERT INTO bindings (session, door, conversation, kept) VALUES ('s1', 'claude-code-acp', 'older', 'then')
+                ON CONFLICT (session) DO UPDATE SET door = excluded.door, conversation = excluded.conversation, kept = excluded.kept
                 """));
         }
 

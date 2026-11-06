@@ -40,6 +40,7 @@ public static class HomeMigration
         new NoteRecordsStep(),
         new ClosedQuestsStep(),
         new TurnMarksStep(),
+        new StoreNamesStep(),
     ];
 
     /// <summary>

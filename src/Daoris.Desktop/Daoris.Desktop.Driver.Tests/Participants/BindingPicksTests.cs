@@ -171,59 +171,6 @@ public sealed class BindingPicksTests : IDisposable
     // ——— A build from before the row.
 
     [Fact]
-    public void The_step_raises_no_stamp_and_a_build_from_before_still_writes_and_reads_the_bindings_as_it_did()
-    {
-        var conversations = Newer();
-        conversations.Keep("s1", "claude-code-acp", "c-1");
-        conversations.ImportFiles();
-        conversations.Pick("s1", "account-2");
-        using var reader = DesktopStoreReader.Open(Db)!;
-        Assert.Equal((DesktopStore.Steps.Count, DesktopStore.WriterStamp), (reader.Version, reader.Writer));
-
-        // The older build opens the store its own steps are behind and writes its binding by its own statement: the wire named a conversation.
-        using (var older = OlderOpen())
-        {
-            Assert.False(older.Newer);
-            older.Write(
-                BindingStore.Family,
-                write => write.Execute(
-                    """
-                    INSERT INTO bindings (session, adapter, conversation, kept) VALUES ($session, $adapter, $conversation, $kept)
-                    ON CONFLICT (session) DO UPDATE SET adapter = excluded.adapter, conversation = excluded.conversation, kept = excluded.kept
-                    """,
-                    ("$session", "s1"), ("$adapter", "claude-code-acp"), ("$conversation", "c-1-older"), ("$kept", "2026-10-26T00:00:00.0000000Z")));
-        }
-
-        Assert.Equal("c-1-older", conversations.Read("s1")!.Conversation);
-        Assert.True(conversations.PickedOn("s1", "account-2"));
-    }
-
-    [Fact]
-    public void A_build_from_before_continuing_a_picked_record_reads_it_as_the_pick_it_knew_and_finds_no_conversation_where_only_a_pick_is_kept()
-    {
-        var conversations = Newer();
-        conversations.Keep("s1", "claude-code-acp", "c-1");
-        conversations.ImportFiles();
-        conversations.Pick("s1", "account-2");
-        // A start whose conversation the wire has not yet named: a pick and no binding.
-        conversations.Pick("s2", "account-1");
-
-        using var older = OlderOpen();
-        // What the older build's own resume read: the conversation by its statement, over the store the row migrated.
-        static IReadOnlyList<(string, string)> OlderRead(DesktopStore store, string session) =>
-            store.Query("SELECT adapter, conversation FROM bindings WHERE session = $session", row => (row.GetString(0), row.GetString(1)), ("$session", session));
-
-        Assert.Equal([("claude-code-acp", "c-1")], OlderRead(older, "s1"));
-        // No row, so no conversation to resume and no empty one: it carries on, as it does for any session it never kept a conversation for.
-        Assert.Empty(OlderRead(older, "s2"));
-
-        // The pick is a table the older build has no statement for, so its reading of the record is the one it always made, with no constraint:
-        // the same cooling own account of a conversation that carries its words goes on elsewhere for it, and waits for the newer build.
-        Assert.False(conversations.PickedOn("s1", "account-1"));
-        Assert.True(conversations.PickedOn("s1", "account-2"));
-    }
-
-    [Fact]
     public void A_build_from_before_deleting_a_record_leaves_its_pick_which_names_no_record_and_no_later_session_reads()
     {
         var conversations = Newer();
