@@ -30,7 +30,7 @@ internal static class StaffCourse
         try
         {
             var facts = staff.Moves.LineFacts(quest.Id);
-            var named = role ?? RoleOf(staff, workspace, quest, null);
+            var named = role ?? RuledLine.OfQuest(staff.Home, quest, null, workspace).Role;
             return facts with { Moves = CourseOf(staff, named, new StaffPlace(quest.To, workspace, quest.Id))?.Moves ?? new Dictionary<string, StaffMove>() };
         }
         catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
@@ -67,27 +67,6 @@ internal static class StaffCourse
         StaffConditions.Budget => "it was over its budget",
         _ => $"the {condition} condition was met",
     };
-
-    /// <summary>
-    /// The role a record's line goes on under, whose policy the course reads: the role its start was bound to (<c>binding_roles</c>) while the
-    /// catalogue holds it, else the role taking the quest's work at its place now. The record's <c>actor</c> is the seeded role's id on every
-    /// driven record, so a scoped added role's policy is never read from it.
-    /// </summary>
-    /// <param name="workspace">The circle the quest's repository is in; null for none.</param>
-    /// <param name="record">The record the line goes on from; null for a first start, which takes the role of the work at its place.</param>
-    internal static string RoleOf(StaffLedger staff, string? workspace, QuestView quest, PriorSession? record)
-    {
-        try
-        {
-            var bound = record is null ? null : new BindingStore(staff.Home, null, _ => null).RoleOf(record.Session)?.Role;
-            var work = string.Equals(quest.Weight, ParticipantWork.Design, StringComparison.Ordinal) ? ParticipantWork.Design : ParticipantWork.Build;
-            return RoleOrders.Bound(bound, work, RoleCatalog.ReadHome(staff.Home), new RolePlace(workspace, quest.To));
-        }
-        catch (Exception error) when (error is DriverException or DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
-        {
-            return record?.Actor is { Length: > 0 } kept ? kept : RoleWork.Build;
-        }
-    }
 
     /// <summary>The choice a record ran, as the policy keys it.</summary>
     internal static StaffKey? ChoiceOf(PriorSession record, StaffPolicy? policy) =>

@@ -19,7 +19,7 @@ internal sealed class StartAgent(IRunWiring wiring) : IRunStage
         state.StepRole = stepRole;
 
         // Its step's role, else the role its line was bound to, else the work's at its place: never the seeded Build's by default.
-        state.PolicyRole = stepRole ?? StaffCourse.RoleOf(context.Harnesses.StaffFor(context.Home), start.Workspace, quest, start.Resumes);
+        state.PolicyRole = stepRole ?? RuledLine.OfQuest(context.Home, quest, start.Resumes, start.Workspace).Role;
         state.Agent = StartPlan.AgentFor(
             Driver.StartWork(quest), context.Config, handed: handedQuest?.Agent, catalogue: wiring.CatalogueForReport(),
             place: Driver.PlaceOf(start), role: stepRole);
