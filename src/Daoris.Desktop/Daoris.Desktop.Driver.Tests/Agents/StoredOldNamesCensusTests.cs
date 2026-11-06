@@ -82,11 +82,7 @@ public sealed class StoredOldNamesCensusTests : IDisposable
             "Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/BrainstormRoomMeasure.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/MeetingPacket.cs",
         ],
-        ["a binding file"] =
-        [
-            "Daoris.Desktop/Daoris.Desktop.Driver/Participants/GoOn/HarnessConversationFiles.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Workplace/SessionHomeFiles.cs",
-        ],
+        ["a binding file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/BindingFilesStep.cs"],
         ["driver.json's staffing keys"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Roles/RoleStaffing.cs",

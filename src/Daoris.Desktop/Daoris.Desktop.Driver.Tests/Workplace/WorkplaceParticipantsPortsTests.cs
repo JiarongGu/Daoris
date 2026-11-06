@@ -29,11 +29,6 @@ public sealed class WorkplaceParticipantsPortsTests : IDisposable
     [Fact]
     public void The_lower_suffixes_and_state_words_are_the_bytes_the_higher_constants_alias()
     {
-        Assert.Equal(".harness.json", SessionHomeFiles.HarnessSuffix);
-        Assert.Equal(".imported", SessionHomeFiles.HarnessSetAsideSuffix);
-        Assert.Equal(SessionHomeFiles.HarnessSuffix, HarnessConversations.Suffix);
-        Assert.Equal(SessionHomeFiles.HarnessSetAsideSuffix, HarnessConversations.SetAsideSuffix);
-        Assert.Equal(SessionHomeFiles.HarnessSetAsideSuffix, BindingStore.SetAsideSuffix);
         Assert.Equal((PieceKeptStates.Held, PieceKeptStates.Imported, PieceKeptStates.Uncertain), (PartnerStates.Held, PartnerStates.Imported, PartnerStates.Uncertain));
         Assert.Equal(("held", "imported", "uncertain"), (PieceKeptStates.Held, PieceKeptStates.Imported, PieceKeptStates.Uncertain));
         Assert.Equal(
@@ -91,7 +86,7 @@ public sealed class WorkplaceParticipantsPortsTests : IDisposable
             var removed = new SessionHomeFiles(_home).Remove(["s1", "s2"], null);
 
             Assert.Equal([$"open:{_home}", "forget:s1,s2"], bindings.Calls);
-            Assert.Equal(["conversation", "harness"], removed.Went["s1"]);
+            Assert.Equal(["conversation", "binding"], removed.Went["s1"]);
             Assert.Empty(removed.Went["s2"]);
             Assert.Empty(removed.Failed);
         }
@@ -114,7 +109,7 @@ public sealed class WorkplaceParticipantsPortsTests : IDisposable
 
             Assert.Equal([$"open:{_home}", "forget:s1,s2", "holding:s1,s2"], bindings.Calls);
             Assert.Equal(["store-here"], removed.Failed);
-            Assert.Equal(["harness"], removed.Stayed["s2"]);
+            Assert.Equal(["binding"], removed.Stayed["s2"]);
             Assert.Empty(removed.Stayed["s1"]);
         }
         finally { WorkplaceHarnessBindings.Current = actual; }
@@ -129,8 +124,8 @@ public sealed class WorkplaceParticipantsPortsTests : IDisposable
             WorkplaceHarnessBindings.Current = new Stores(new Bindings { ForgetFails = Failure("store"), HoldingFails = Failure("io") });
             var removed = new SessionHomeFiles(_home).Remove(["s1", "s2"], null);
             Assert.Equal(["store-here"], removed.Failed);
-            Assert.Equal(["harness"], removed.Stayed["s1"]);
-            Assert.Equal(["harness"], removed.Stayed["s2"]);
+            Assert.Equal(["binding"], removed.Stayed["s1"]);
+            Assert.Equal(["binding"], removed.Stayed["s2"]);
 
             // Neither filter catches a failure of another kind, at the forget or at the read of what is held.
             var other = new InvalidOperationException("not a store's");

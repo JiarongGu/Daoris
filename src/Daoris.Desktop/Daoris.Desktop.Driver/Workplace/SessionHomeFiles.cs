@@ -44,7 +44,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string Conversation = "conversation";
     public const string Transcript = "transcript";
     public const string Files = "files";
-    public const string Harness = "harness";
+    public const string Binding = "binding";
     public const string Marker = "marker";
     public const string Mark = "mark";
     public const string Choice = "choice";
@@ -102,8 +102,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// </summary>
     private sealed record SessionFile(string Name, Place Place, string Suffix, bool Folder, Func<long, HistoryBytes> Counts);
 
-    internal const string HarnessSuffix = ".harness.json";
-    internal const string HarnessSetAsideSuffix = ".imported";
+    internal const string ImportedSuffix = ".imported";
 
     internal const string GoOnMarkSuffix = ".cannot.json";
     internal const string ReopenMarkSuffix = ".reopened.json";
@@ -137,9 +136,6 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Conversation, Place.Sessions, ".events.jsonl", false, bytes => HistoryBytes.None with { Conversations = bytes }),
         new(Transcript, Place.Sessions, ".log", false, bytes => HistoryBytes.None with { Transcripts = bytes }),
         new(Files, Place.Files, "", true, bytes => HistoryBytes.None with { Files = bytes }),
-        new(Harness, Place.Sessions, HarnessSuffix, false, Beside),
-        // FOUNDATION1 z-iii: the file once its conversation is imported into the store, set aside beside it; the binding itself goes below.
-        new(Harness, Place.Sessions, HarnessSuffix + HarnessSetAsideSuffix, false, Beside),
         new(Marker, Place.Pids, ".pid", false, Beside),
         new(Mark, Place.Sessions, GoOnMarkSuffix, false, Beside),
         // FABRIC-CLOSE1c8: the reopens it was told of, a mark too, which goes with its record.
@@ -160,9 +156,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(HandOver, Place.Sessions, LimitMoveSuffix, false, Beside),
         // FOUNDATION1f-vi part a: that box once the come-up imports it into the move record, set aside beside it (MoveBoxImport), which goes
         // with its record's delete as the box did, under the same name.
-        new(HandOver, Place.Sessions, LimitMoveSuffix + HarnessSetAsideSuffix, false, Beside),
+        new(HandOver, Place.Sessions, LimitMoveSuffix + ImportedSuffix, false, Beside),
         // FOUNDATION1f-v part a: a conversation's hand-over box once the come-up imports it, set aside beside it the same way.
-        new(HandOver, Place.Sessions, HandOverBoxSuffix + HarnessSetAsideSuffix, false, Beside),
+        new(HandOver, Place.Sessions, HandOverBoxSuffix + ImportedSuffix, false, Beside),
         new(Spawn, Place.Spawn, ClaudeServers.FileSuffix, false, Beside),
         new(Spawn, Place.Spawn, ClaudeRules.FileSuffix, false, Beside),
         // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.
@@ -290,7 +286,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
             {
                 foreach (var id in bindings.ForgetBindings(sessions))
                 {
-                    if (removed.TryGetValue(id, out var went)) Named(went, Harness);
+                    if (removed.TryGetValue(id, out var went)) Named(went, Binding);
                 }
             }
             catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
@@ -306,7 +302,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
                     held = sessions;
                 }
 
-                foreach (var id in held) Named(stayed[id], Harness);
+                foreach (var id in held) Named(stayed[id], Binding);
             }
 
             // FOUNDATION1f-i: the record's move records go with it, under the name the boxes they replace went by. A store that will not

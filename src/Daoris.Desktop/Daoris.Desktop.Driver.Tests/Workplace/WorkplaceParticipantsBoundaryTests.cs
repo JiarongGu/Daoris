@@ -30,52 +30,35 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
 
     private HarnessConversations Newer() => new(_home, () => StoreSettled.Yes);
 
-    // ——— The harness suffix and its set-aside spelling
-
-    [Fact]
-    public void The_harness_suffix_and_its_set_aside_spelling_keep_their_literal_bytes_in_the_inventory()
-    {
-        Assert.Equal(".harness.json", HarnessConversations.Suffix);
-        Assert.Equal(".imported", HarnessConversations.SetAsideSuffix);
-        Assert.Equal(".imported", BindingStore.SetAsideSuffix);
-        Assert.Contains(".harness.json", SessionHomeFiles.SessionSuffixes);
-        Assert.Contains(".harness.json.imported", SessionHomeFiles.SessionSuffixes);
-        Assert.Equal(Path.Combine(Sessions, "s1.harness.json"), new HarnessConversations(_home).PathOf("s1"));
-        Assert.Equal(Path.Combine(Sessions, "s1.harness.json.imported"), new BindingStore(_home, null, _ => null).SetAsideOf("s1"));
-    }
+    // ——— The files go in inventory order, and the store is no file
 
     [Theory]
     [InlineData(null)]
-    [InlineData(".harness.json")]
-    [InlineData(".harness.json.imported")]
-    public void The_harness_files_go_in_inventory_order_under_the_harness_name_and_a_refusal_goes_on(string? refused)
+    [InlineData(".events.jsonl")]
+    public void The_session_s_files_go_in_inventory_order_and_a_refusal_goes_on_and_no_store_is_made(string? refused)
     {
         Directory.CreateDirectory(Sessions);
         var conversation = Path.Combine(Sessions, "s1.events.jsonl");
-        var kept = Path.Combine(Sessions, "s1.harness.json");
-        var setAside = Path.Combine(Sessions, "s1.harness.json.imported");
-        var other = Path.Combine(Sessions, "s2.harness.json");
+        var transcript = Path.Combine(Sessions, "s1.log");
+        var other = Path.Combine(Sessions, "s2.log");
         File.WriteAllText(conversation, "abc");
-        File.WriteAllText(kept, "12345");
-        File.WriteAllText(setAside, "1234567");
+        File.WriteAllText(transcript, "12345");
         File.WriteAllText(other, "another session");
         var calls = new List<string>();
         var files = new SessionHomeFiles(_home, (path, folder) =>
         {
             Assert.False(folder);
             calls.Add(path);
-            if (refused is not null && path.EndsWith(refused, StringComparison.Ordinal) && !path.EndsWith(refused + ".imported", StringComparison.Ordinal))
-                throw new IOException("held");
+            if (refused is not null && path.EndsWith(refused, StringComparison.Ordinal)) throw new IOException("held");
             SessionHomeFiles.FromDisk(path, folder);
         });
 
-        Assert.Equal((3L, 12L), (files.Size("s1").Conversations, files.Size("s1").Other));
         var result = files.Remove(["s1"], null);
 
-        Assert.Equal([conversation, kept, setAside], calls);
-        Assert.Equal(["conversation", "harness"], result.Went["s1"]);
-        Assert.Equal(refused is null ? [] : ["harness"], result.Stayed["s1"]);
-        Assert.Equal(refused is null ? [] : [refused == ".harness.json" ? kept : setAside], result.Failed);
+        Assert.Equal([conversation, transcript], calls);
+        Assert.Equal(refused is null ? ["conversation", "transcript"] : ["transcript"], result.Went["s1"]);
+        Assert.Equal(refused is null ? [] : ["conversation"], result.Stayed["s1"]);
+        Assert.Equal(refused is null ? [] : [conversation], result.Failed);
         Assert.Equal("another session", File.ReadAllText(other));
         Assert.False(File.Exists(Db));
     }
@@ -83,24 +66,22 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
     // ——— The binding's forget, the held read and the refusal
 
     [Fact]
-    public void A_record_deleted_forgets_its_binding_after_its_files_and_names_it_as_the_harness()
+    public void A_record_deleted_forgets_its_binding_after_its_files_and_names_it_as_the_binding()
     {
         var conversations = Newer();
         conversations.Keep("s1", "claude-code-acp", "c-1");
         conversations.Keep("s2", "codex-acp", "c-2");
-        conversations.ImportFiles();
         conversations.Keep("s3", "claude-code-acp", "c-3");
 
         var removed = new SessionHomeFiles(_home).Remove(["s1", "s3", "s9"], events: null);
 
         Assert.Empty(removed.Failed);
-        Assert.Equal(["harness"], removed.Went["s1"]);
-        Assert.Equal(["harness"], removed.Went["s3"]);
+        Assert.Equal(["binding"], removed.Went["s1"]);
+        Assert.Equal(["binding"], removed.Went["s3"]);
         Assert.Empty(removed.Went["s9"]);
         Assert.Null(conversations.Read("s1"));
         Assert.Null(conversations.Read("s3"));
         Assert.Equal("c-2", conversations.Read("s2")!.Conversation);
-        Assert.True(File.Exists(conversations.PathOf("s2") + ".imported"));
     }
 
     [Fact]
@@ -109,7 +90,6 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
         var conversations = Newer();
         conversations.Keep("s1", "claude-code-acp", "c-1");
         conversations.Keep("s2", "claude-code-acp", "c-2");
-        conversations.ImportFiles();
         // A newer Daoris migrated the store and stamped it past this build's: this build reads what it knows and writes nothing.
         using (DesktopStore.Open(Db, new DesktopStoreOptions
         {
@@ -126,9 +106,8 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
         var removed = new SessionHomeFiles(_home).Remove(["s1", "s7"], events: null);
 
         Assert.Equal([Db], removed.Failed);
-        Assert.Equal(["harness"], removed.Stayed["s1"]);
+        Assert.Equal(["binding"], removed.Stayed["s1"]);
         Assert.Empty(removed.Stayed["s7"]);
-        Assert.Equal(["harness"], removed.Went["s1"]); // its set-aside file went; the binding stayed
         Assert.Equal(["c-1", "c-2"], new[] { "s1", "s2" }.Select(session => conversations.Read(session)!.Conversation));
     }
 
@@ -137,41 +116,18 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
     private static string Records(string session = "s1") => JsonSerializer.Serialize(new object[] { new { id = session, state = "completed", tree = "trees/" + session } });
 
     [Fact]
-    public void The_origin_of_an_ended_record_without_a_profile_keeps_what_the_conversation_answers()
+    public void A_binding_in_the_store_is_a_conversation_the_origin_of_an_ended_record_keeps()
     {
         // Nothing kept.
         Assert.Null(Assert.Single(ToolHomeLeftovers.Origins(_home, Records())!).Keeps);
 
-        // A readable file: resumable; one that does not read as a conversation: unread; one that will not open: unread.
-        Directory.CreateDirectory(Sessions);
-        var file = Path.Combine(Sessions, "s1.harness.json");
-        HarnessConversationFiles.Write(file, "claude-code-acp", "c-1");
-        Assert.Equal("resumable", Assert.Single(ToolHomeLeftovers.Origins(_home, Records())!).Keeps);
-        File.WriteAllText(file, "{broken");
-        Assert.Equal("record-unread", Assert.Single(ToolHomeLeftovers.Origins(_home, Records())!).Keeps);
-        HarnessConversationFiles.Write(file, "claude-code-acp", "c-1");
-        using (new FileStream(file, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
-            Assert.Equal("record-unread", Assert.Single(ToolHomeLeftovers.Origins(_home, Records())!).Keeps);
-        File.Delete(file);
-        Assert.Null(Assert.Single(ToolHomeLeftovers.Origins(_home, Records())!).Keeps);
-    }
-
-    [Fact]
-    public void A_binding_in_the_store_is_a_conversation_and_a_later_file_is_read_as_it_stands()
-    {
         var conversations = Newer();
         conversations.Keep("s1", "claude-code-acp", "c-1");
-        conversations.ImportFiles();
-        Assert.False(File.Exists(conversations.PathOf("s1")));
 
         Assert.Equal((true, true), conversations.Kept("s1"));
         Assert.Equal("resumable", Assert.Single(ToolHomeLeftovers.Origins(_home, Records())!).Keeps);
         Assert.Equal((false, false), conversations.Kept("s2"));
         Assert.Null(Assert.Single(ToolHomeLeftovers.Origins(_home, Records("s2"))!).Keeps);
-
-        File.WriteAllText(conversations.PathOf("s2"), "{broken");
-        Assert.Equal((true, false), conversations.Kept("s2"));
-        Assert.Equal("record-unread", Assert.Single(ToolHomeLeftovers.Origins(_home, Records("s2"))!).Keeps);
         Assert.Equal((false, false), conversations.Kept("not an id/s3"));
     }
 

@@ -568,7 +568,7 @@ public sealed class MoveStoreTests : IDisposable
         var removed = new SessionHomeFiles(_home).Remove(["s1", "s2"], events: null);
 
         Assert.Equal([Db], removed.Failed);
-        Assert.Equal([SessionHomeFiles.Harness, SessionHomeFiles.HandOver], removed.Stayed["s1"]);
+        Assert.Equal([SessionHomeFiles.Binding,SessionHomeFiles.HandOver], removed.Stayed["s1"]);
         Assert.Empty(removed.Stayed["s2"]);
         Assert.Single(Store("run-a").Of("s1"));
     }

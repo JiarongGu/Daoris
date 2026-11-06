@@ -41,6 +41,7 @@ public static class HomeMigration
         new ClosedQuestsStep(),
         new TurnMarksStep(),
         new StoreNamesStep(),
+        new BindingFilesStep(),
     ];
 
     /// <summary>

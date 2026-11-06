@@ -112,19 +112,6 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.True(told);
     }
 
-    /// <summary>READSHARE1: <see cref="HarnessConversations.Read"/> (HarnessConversationFiles.Read) reads a conversation id while its move into place still holds it.</summary>
-    [Fact]
-    public void A_harness_conversation_is_read_while_its_move_into_place_still_holds_it()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var conversations = new HarnessConversations(_home);
-        conversations.Keep("s1", "claude-code", "conv-0001");
-
-        var conversation = Held(conversations.PathOf("s1"), () => conversations.Read("s1"));
-
-        Assert.Equal(new HarnessConversation("claude-code", "conv-0001"), conversation);
-    }
-
     // ——— A hand-over's files (HandOverFiles, HandOverAskFiles).
 
     /// <summary>READSHARE1: <see cref="HandOverBox.Read"/> (HandOverFiles.ReadBox) reads a box while its move into place still holds it.</summary>
