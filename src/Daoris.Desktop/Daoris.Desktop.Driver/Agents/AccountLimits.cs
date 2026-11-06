@@ -116,7 +116,7 @@ public static class AccountLimits
             if (First(entry.Markers, clauses[i]) is not { } marker) continue;
 
             var hit = marker.Groups["hit"] is { Success: true } said ? said.Value.Trim() : clauses[i];
-            var byDefault = new LimitSeen(hit, null, seen + (coolOff ?? DefaultCoolOff), Stated: false, AssumedZone: false);
+            var defaultCoolOff = coolOff ?? DefaultCoolOff;
 
             // The reset comes AFTER what was hit (D125 §0.2): a later clause, or, for an agent that writes its refusal as
             // sentences in one clause, the rest of the marker's own (TOOL4k, Codex). A marker that ends its clause, as
@@ -128,15 +128,14 @@ public static class AccountLimits
 
                 var window = reset.Groups["window"] is { Success: true, Value.Length: > 0 } w ? w.Value.Trim() : null;
                 var named = reset.Groups["zone"] is { Success: true } z ? Iana(z.Value.Trim()) : null;
-                var moment = When(reset.Groups["when"].Value.Trim(), seen, named ?? machineZone);
-
-                if (moment is null) return byDefault with { Window = window };
-                // A year names one date, which may be past (TOOL4k): not believed, as a date too far ahead is not.
-                if (moment.Value < seen || moment.Value - seen > Furthest) return byDefault with { Window = window, NotBelieved = true };
-                return new LimitSeen(hit, window, moment.Value + Margin, Stated: true, AssumedZone: named is null);
+                // A year names one date, which may be past (TOOL4k): the bounds do not believe it, as a date too far ahead.
+                var stated = When(reset.Groups["when"].Value.Trim(), seen, named ?? machineZone) is { } moment
+                    ? new StatedReset(moment.At, moment.Precision, AssumedZone: named is null)
+                    : null;
+                return ResetBounds.Limit(hit, window, stated, seen, defaultCoolOff);
             }
 
-            return byDefault;
+            return ResetBounds.Limit(hit, null, null, seen, defaultCoolOff);
         }
 
         return null;
@@ -213,11 +212,11 @@ public static class AccountLimits
     private static readonly string[] Weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
     /// <summary>
-    /// The moment a reset names (D125 §2.1), in <paramref name="zone"/>: a time of day, or a weekday and a time, is
+    /// The moment a reset names (D125 §2.1), in <paramref name="zone"/>, with its precision: a time of day, or a weekday and a time, is
     /// the first such moment after <paramref name="seen"/>; a month, a day and a time the one in the year that puts
-    /// it first after it, or in the year it names; and a dated one up to <see cref="Grace"/> before it is
-    /// <paramref name="seen"/> itself. Null when this grammar does not read it. Month and weekday names are English,
-    /// as the sentences print them.
+    /// it first after it, or in the year it names, or the one up to <see cref="Grace"/> before it, which
+    /// <see cref="ResetBounds"/> reads as <paramref name="seen"/> itself. Null when this grammar does not read it. Month and weekday
+    /// names are English, as the sentences print them.
     /// </summary>
     /// <remarks>
     /// <para>🔴 A time of day gets no grace (FIX 2026-10-02): the agent drops the date once the reset is under a day
@@ -230,11 +229,11 @@ public static class AccountLimits
     /// <para>A named year is that one date, so it may lie behind <paramref name="seen"/>, which the reader does not
     /// believe. Only a year next to this one is read: any other is a date no limit names, and is not read.</para>
     /// </remarks>
-    private static DateTimeOffset? When(string when, DateTimeOffset seen, TimeZoneInfo zone)
+    private static (DateTimeOffset At, ResetPrecision Precision)? When(string when, DateTimeOffset seen, TimeZoneInfo zone)
     {
         var local = TimeZoneInfo.ConvertTime(seen, zone).DateTime;
         IEnumerable<DateTime> candidates;
-        var dated = false;
+        var precision = ResetPrecision.TimeOfDay;
 
         if (Clock(when) is { } time)
         {
@@ -242,6 +241,7 @@ public static class AccountLimits
         }
         else if (WeekdayAndTime.Match(when) is { Success: true } weekday && Clock(weekday.Groups["time"].Value) is { } on)
         {
+            precision = ResetPrecision.WeekdayAndTime;
             var named = (DayOfWeek)Array.IndexOf(Weekdays, weekday.Groups["weekday"].Value.ToLowerInvariant());
             candidates = Enumerable.Range(0, 8)
                 .Select(days => local.Date.AddDays(days))
@@ -250,7 +250,7 @@ public static class AccountLimits
         }
         else if (DayAndTime.Match(when) is { Success: true } date && Clock(date.Groups["time"].Value) is { } at)
         {
-            dated = true;
+            precision = ResetPrecision.DateAndTime;
             var month = Array.IndexOf(Months, date.Groups["month"].Value.ToLowerInvariant()) + 1;
             var day = int.Parse(date.Groups["day"].Value, CultureInfo.InvariantCulture);
             var near = new[] { local.Year - 1, local.Year, local.Year + 1 };
@@ -268,10 +268,13 @@ public static class AccountLimits
 
         // The zone's offset AT that wall-clock moment, so a reset across a change of offset lands on its minute.
         var moments = candidates.Select(c => new DateTimeOffset(c, zone.GetUtcOffset(c))).OrderBy(m => m).ToList();
-        if (dated && moments.Any(m => m <= seen && seen - m <= Grace)) return seen;
-        // Every moment behind the refusal happens only for a named year: the latest, for the reader not to believe.
-        return moments.Where(m => m > seen).Select(m => (DateTimeOffset?)m).FirstOrDefault()
-            ?? moments.Select(m => (DateTimeOffset?)m).LastOrDefault();
+        var dated = precision == ResetPrecision.DateAndTime;
+        // Every moment behind the refusal but a dated one in the grace happens only for a named year: the latest, for the bounds
+        // not to believe.
+        var chosen = (dated ? moments.Where(m => m <= seen && seen - m <= Grace).Select(m => (DateTimeOffset?)m).FirstOrDefault() : null)
+                     ?? moments.Where(m => m > seen).Select(m => (DateTimeOffset?)m).FirstOrDefault()
+                     ?? moments.Select(m => (DateTimeOffset?)m).LastOrDefault();
+        return chosen is { } moment ? (moment, precision) : null;
     }
 
     /// <summary>A twelve-hour clock's time of day (<i>7am</i>, <i>7:50am</i>, <i>12pm</i>, <i>4:05 PM</i>), or null.</summary>

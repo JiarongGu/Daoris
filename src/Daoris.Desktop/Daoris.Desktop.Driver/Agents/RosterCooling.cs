@@ -173,8 +173,19 @@ internal sealed class RosterCooling(HarnessRoster roster)
         var now = roster.Clock();
         var read = AccountLimits.Read(LimitsOf(resolved.Name), failure, now, roster.Zone, coolOff ?? AccountLimits.DefaultCoolOff)
                    ?? (byCode is { Stated: false } coded ? coded with { Until = now + (coolOff ?? AccountLimits.DefaultCoolOff) } : null);
-        if (read is not { } seen) return null;
+        return read is { } seen ? Cool(agent, profile, seen, now, session) : null;
+    }
 
+    /// <summary>
+    /// <see cref="Limited"/>'s trusted entry (the agent-lyntai design §5.2, round 3): a bound kind's limit, read whole by the agent layer's
+    /// ingress under D125's bounds, cools its account with the same writes, reading no sentence. Null where the door cools no account.
+    /// </summary>
+    public (CoolingEntry Entry, LimitSeen Seen)? LimitedTrusted(string adapter, string? profile, LimitSeen seen, string session) =>
+        CoolingAgent(roster.Adapters.Resolve(adapter)) is { } agent ? Cool(agent, profile, seen, roster.Clock(), session) : null;
+
+    /// <summary>The writes a limit makes: the cooling entry, the account's set point, and a named weekly reset kept for the weeks after.</summary>
+    private (CoolingEntry Entry, LimitSeen Seen) Cool(string agent, string? profile, LimitSeen seen, DateTimeOffset now, string session)
+    {
         var entry = new CoolingEntry(agent, profile, seen.Until, seen.Stated, seen.Window, now, session, seen.AssumedZone, seen.NotBelieved);
         // LIMITRESUME1b (D206; D125 point 3 amended): a cool-off the file will not take is held in memory, never lost to a strike.
         AccountCooling.Keep(roster.Home, entry, now);
