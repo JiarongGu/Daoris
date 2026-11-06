@@ -296,8 +296,8 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 ## Open
 
 - **CONTEXTDRIVE1j:** `refer`, the agent supervisor's *course* act.
-- **CONTEXTDRIVE1l, m:** the installed proof. No class named `HelpCoverageTests` exists in the tree, so the hooks' coverage
-  rows owed at CONTEXTDRIVE1g have nowhere to go until the coverage test that names them is written.
+- **CONTEXTDRIVE1l, m:** the installed proof. The hooks' coverage rows owed at CONTEXTDRIVE1g are not written: the every-door
+  census that would hold them was retired with the door-only-where-wanted rule (D233 point 1), so no test names a hook.
 - **STAFFPOLICY1h/i:** selection by measurement; the installed proof. A conversation's hand-over by the agent's ask
   (`HandsOver`, the shell's chat runner) still starts the agent's own entry.
 - **MODELROLE1l/e2:** the installed proof of a design quest on Design; the partner's real-process case. D233 choice 5

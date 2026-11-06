@@ -22,4 +22,13 @@ public sealed class ProcessStartsCensusTests
         Assert.True(problems.Count == 0, string.Join('\n', problems));
         Assert.Empty(NoConsoleStarts.Stale(sources));
     }
+
+    /// <summary>Every direct start a modules test makes is git past the ceiling or named with its purpose in <see cref="TestProcessStarts"/> (D249).</summary>
+    [Fact]
+    public void Every_direct_start_a_modules_test_makes_is_named_with_its_purpose()
+    {
+        var problems = TestProcessStarts.Problems(TestProcessStarts.Sources("Daoris.Desktop.Modules.Tests"), "Daoris.Desktop.Modules.Tests");
+
+        Assert.True(problems.Count == 0, string.Join('\n', problems));
+    }
 }
