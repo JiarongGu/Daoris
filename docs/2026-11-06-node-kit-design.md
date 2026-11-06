@@ -194,8 +194,14 @@ the save, the palette and the reading of a version use it with no runtime. `Node
 - **The wire evaluation**: eligibility, `allOf` and `anyOf` groups and their witness, receipts, firing keys, lapsing, the `all`
   join and the `stop` sink (`WireEvaluation`, `WireEligible`, `WireReceipts`, `WireLapsing`). `all` and `stop` get units for their
   declaration and words; their reaching is the evaluator's, since it is wiring, not a kind's reading.
-- **The graph's generic rules**: bounds, cycles, reachability, one landing, the protected order before it (`NodeGraphs`), and a
-  version's reading and digest (`NodeGraphReading`, `NodeGraphPlaces`).
+- **The graph's generic rules**: bounds, cycles, reachability, one landing (`NodeGraphs`), and a version's reading and digest
+  (`NodeGraphReading`, `NodeGraphPlaces`).
+- **The rules several kinds share**, the kit's: the protected order before the landing (`Kinds/ProtectedOrder.cs`) reads the gates
+  together, each gate reached before every landing and wired straight into it, and a look passed on every way to one, with the wire
+  rule said only where the order holds. A kind takes its part by `INodeKind.Guard` (`Before` for `opinion` and `review`, `Passed` for
+  `look`), and `NodeKit.Problems` runs the rule once per save, then each kind's own `Problems`, so `NodeGraphs` names no gate kind.
+  Each gate's own `Problems` cannot say it: every gate would judge the whole order again, and the wire rule's silence where the
+  order already failed spans the gates.
 - **The run's keeping**: governing, owing, telling, the person's skips and stops, back to work, the run's end and reopening
   (`NodeGoverning`, `NodeOwing`, `NodeTelling`, `NodeRunKeeping`'s non-door half), and the performer's attempt journal for a
   port (`WorkPerformer`, `WorkHearing`, `WorkBelief`, `WorkReceipting`, `WorkOutcomes`).

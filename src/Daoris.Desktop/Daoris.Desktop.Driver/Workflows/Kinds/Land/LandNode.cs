@@ -27,7 +27,48 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts
         NodeOptionFields.Text("message"),
     ];
 
-    public override string? Problem(NodeDeclaration node) => LandNodes.Problem(node);
+    /// <summary>
+    /// The first option that does not hold, by its name, or null: each held to its choices, and the method's own refusals (a pattern on a merge,
+    /// a squash of an integrate). Where the graph's other nodes must stand is the graph's rules'.
+    /// </summary>
+    public override string? Problem(NodeDeclaration node)
+    {
+        var method = LandNodes.Written(node, "method");
+        if (node.Options.ContainsKey("method") && (method is null || !LandNodes.Methods.Contains(method, StringComparer.Ordinal))) return "method";
+        if (node.Options.ContainsKey(LandNodes.AcceptOption)) return LandNodes.AcceptOption;
+        if (node.Options.ContainsKey("target") && !(LandNodes.Written(node, "target") is { } target && BranchName.IsValid(target))) return "target";
+        // Every method but an integrate lands on the tree's line, so a target there would only misname it; an integrate's must also be the
+        // line the repository declares, which the landing's door judges (CurrentDeliveries.StartAsync).
+        if (node.Options.ContainsKey("target") && method is not null && method != LandNodes.Integrate) return "target";
+
+        if (node.Options.ContainsKey("pattern"))
+        {
+            // A merge makes no branch to name.
+            if (method == LandNodes.Merge || LandNodes.Written(node, "pattern") is not { } pattern || BranchPatterns.Problem(pattern) is not null) return "pattern";
+        }
+
+        // A landing hands the work to no plugin: a pull request is the plugin's own step after a push (G8, D241 point 4).
+        if (node.Options.ContainsKey("plugin")) return "plugin";
+
+        // The ticket's key (WORKFLOWCLEAN1 1a): read only for a pattern that says {ticket}, so a merge, a pattern without it and an
+        // integrate (which names no branch by a pattern) refuse one; its shape is the landing key's to judge.
+        if (node.Options.ContainsKey(LandNodes.KeyOption))
+        {
+            if (LandNodes.Written(node, LandNodes.KeyOption) is not { } key || BranchPatterns.KeyProblem(key) is not null) return LandNodes.KeyOption;
+            if (method == LandNodes.Merge || (LandNodes.Written(node, "pattern") is { } written && !written.Contains("{ticket}", StringComparison.Ordinal)))
+            {
+                return LandNodes.KeyOption;
+            }
+        }
+
+        if (node.Options.TryGetValue("squash", out var squash))
+        {
+            if (NodeOptions.Value(squash) is not bool on) return "squash";
+            if (on && method == LandNodes.Integrate) return "squash";
+        }
+
+        return node.Options.ContainsKey("message") && !(LandNodes.Written(node, "message") is { } message && LandNodes.MessageProblem(message) is null) ? "message" : null;
+    }
 
     /// <summary>Drawn as the landing; with no press of its own, unless a stored <c>accept</c> it was saved with before LANDNODE1c2 says the person's.</summary>
     public override NodePart Part(NodeDeclaration node) =>
