@@ -32,7 +32,7 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
         }
 
         // FABRIC-PIPELINE1d: a check's reach and failure are its kind's own source, the gates' exits as the executor ran them.
-        var source = IsCheck(attempt) ? NodeSource.Gates : NodeSource.Plugin;
+        var source = OnPort(attempt) ? NodeSource.Gates : NodeSource.Plugin;
         NodeMove move;
         switch (outcome.State)
         {

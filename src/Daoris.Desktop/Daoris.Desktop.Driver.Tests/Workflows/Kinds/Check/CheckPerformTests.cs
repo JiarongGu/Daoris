@@ -12,7 +12,7 @@ public sealed class CheckPerformTests : IDisposable
     private const string Unit = "run:v-0123456789abcdef";
     private const string Tip = "0123456789abcdef0123456789abcdef01234567";
 
-    private static readonly NodeDeclaration Check = CheckNodes.Performed(new NodeDeclaration("verify", NodeKinds.Check, 1, NodeReach.Performed));
+    private static readonly NodeDeclaration Check = new CheckNode().Performed(new NodeDeclaration("verify", NodeKinds.Check, 1, NodeReach.Performed));
 
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "check-perform", Guid.NewGuid().ToString("N")[..8]);
     private readonly Checks _checks = new();
@@ -67,7 +67,7 @@ public sealed class CheckPerformTests : IDisposable
 
     private NodeRecordFiles Files => new(_home, () => true);
 
-    private WorkPerformer Performer() => new(Files, new NoPlugins(), () => _now) { Checks = _checks };
+    private WorkPerformer Performer() => new(Files, new NoPlugins(), () => _now) { Doors = NodeDoors.None.With(NodeKinds.Check, _checks) };
 
     private NodeDeclaration? Declared(string unit, string node) => unit == Unit && node == Check.Id ? Check : null;
 

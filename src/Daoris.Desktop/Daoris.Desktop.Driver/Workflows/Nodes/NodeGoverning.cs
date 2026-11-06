@@ -124,10 +124,11 @@ internal static class NodeGoverning
         {
             declared[node.Id] = node;
 
-            // A check's declaration is given its kind's perform once judged, as a plugin's node its step's; its executor is Daoris's own.
-            if (node.Kind == NodeKinds.Check && node.Reach == NodeReach.Performed)
+            // A kind started on a port through the attempt journal is given its kind's perform once judged, as a plugin's node its step's; its
+            // port is Daoris's own.
+            if (NodeKit.Of(node.Kind) is IJournalled journalled && node.Reach == NodeReach.Performed)
             {
-                declared[node.Id] = CheckNodes.Performed(node);
+                declared[node.Id] = journalled.Performed(node);
                 dispatchable.Add(node.Id);
                 continue;
             }

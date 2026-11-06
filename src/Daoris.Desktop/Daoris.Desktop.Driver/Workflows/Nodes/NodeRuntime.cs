@@ -88,16 +88,14 @@ public sealed class NodeRuntime(
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
         records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => Doors.Door<IRequestPort>(), () => _config, () => _quests, () => Integrated))!;
 
-    private NodeDoors _doors = NodeDoors.None;
-
     /// <summary>
     /// The doors its nodes are started on, by kind (D247 §3.5): none by default, so a runtime nobody wired starts nothing on a door and each such
-    /// node waits. The watch wires them (<see cref="NodeDoors"/>); a check's is its performer's port.
+    /// node waits. The watch wires them (<see cref="NodeDoors"/>); they are its performer's, which sends a journalled kind's attempts to its port.
     /// </summary>
     public NodeDoors Doors
     {
-        get => _doors;
-        set => (_doors, _performer.Checks) = (value, value.Door<ICheckPort>());
+        get => _performer.Doors;
+        set => _performer.Doors = value;
     }
 
     /// <summary>The transport an open request's line is sent to: none by default, and an admitted request then waits queued. The watch sets it.</summary>
