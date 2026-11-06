@@ -7,6 +7,7 @@ import { chmodSync, closeSync, existsSync, lstatSync, mkdirSync, openSync, readd
 import { delimiter, dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture, PATIENCE } from '../test/_fixture.ts';
+import { folderSet } from './support/folder-set.ts';
 
 /**
  * MOD9 (`docs/2026-09-30-parallel-development-design.md` §3 rule 6): the parent's one merge tool. It
@@ -2390,19 +2391,6 @@ function namedReads(text: string, files: readonly string[]): string[] {
   if (/\bSourceFiles\.Driver\(\s*\$/.test(text)) reads.add(`${under(driver)}probe.cs`);
   return [...reads];
 }
-
-/** Every folder that holds a tracked file, at any depth. */
-function folderSet(files: readonly string[]): Set<string> {
-  // The scan asks once per .cs file for the same tracked list; building the set each time was minutes of the gate's wall time.
-  let held = FOLDER_SETS.get(files);
-  if (!held) {
-    held = new Set(files.flatMap((path) => path.split('/').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('/'))));
-    FOLDER_SETS.set(files, held);
-  }
-  return held;
-}
-
-const FOLDER_SETS = new WeakMap<readonly string[], Set<string>>();
 
 /** MOD9d: a read names something here, a tracked file or a file in a tracked folder (`probe.txt`, `probe.cs`), or it holds nothing. */
 function isReal(read: string, files: readonly string[], folders: ReadonlySet<string>): boolean {

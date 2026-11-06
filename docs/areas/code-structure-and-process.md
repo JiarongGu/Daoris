@@ -29,6 +29,7 @@ finishes first and the whole set runs once.
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
 | The gates' declaration | `daoris.gates.json` | each component gate, its command and what may run unasked |
 | The merge tool | `tools/merge-branch.mjs` | merges a branch, runs the gates its paths reach, runs the CI (`--ci`) and stages the install |
+| The tests' wall time | `local/scratch/ci-<sha>/status.json`, each Process gate's `.trx`; `DriverTree.cs`, `GridRun.cs`; the web's `vite.config.ts` | measured per gate and per class, then cut (OPTIMIZE1d); the figures are in the rule below |
 | The dispatch skill and agents | `.claude/skills/dispatch-subagent/`, `.claude/agents/branch-worker.md`, `branch-scout.md` | how a parent briefs and merges a builder, and the builder's half |
 | The measurement tools | `tools/subagent-usage.mjs`, `tools/subagent-time.mjs` | a builder's tokens and clock, judged against `docs/2026-11-04-consolidation-plan.md`'s targets |
 | The generated index | `docs/index/`, ignored, written by `tools/orient-index.mjs` on checkout, merge and the knowledge server's read | where things are in the code, row by row |
@@ -115,6 +116,24 @@ finishes first and the whole set runs once.
 15. The FIX-LOG takes regressions only, with the root cause in the commit body as well. (from CONSOLIDATE1)
 16. Never write into another repository; send a request. No machine path, private name or credential in a tracked file or commit.
     (from the canon's rules)
+17. The tests' wall time is measured before it is cut, one gate or class alone, since a full CI run shares the machine between three
+    light gates and a Process lane, which turns a minute of work into ten (CI run 7155c53, 2026-11-06: driver 17 m 48 s, web-types 17 m 19 s, tool-tests
+    16 m 30 s, web-measured 13 m 18 s, web-unit 11 m, web-rules 8 m 39 s, service 7 m 59 s, modules 6 m 57 s, web 6 m 48 s, universal 6 m 26 s,
+    test-map 6 m 8 s, censuses 4 m 51 s, service-process 3 m 17 s, devkit 2 m 4 s, cli 1 m 30 s). Alone, on a quiet machine: the driver's
+    fast half runs 19,184 tests in 6 m 57 s (3,161 s of test time over 1,029 classes, run about seven at once), the rules gate 87 s, the
+    typecheck 86 s after the contracts' cold build of 98 s (which the first web gate pays and the rest wait on), `test-map` 45 s, and the
+    web's whole unit run 12 m 57 s, 73% of it in the tests themselves. The driver's slowest fast-half classes are `LineAccountTests` (310 s
+    of 11 tests, a grid of 984 cases each building its own scratch home, 28 ms a build), `StructureTests` (105 s, Roslyn compiles of the
+    driver's tree), `AcpBackgroundTests`, `SessionsOutliveTheirLookTests`, `StagedBuildTests` and `TreeScratchTests` (50 to 100 s each, fixed
+    `Task.Delay` staging that is the claim of the case). The Process half's slowest passing classes in that run were the SSH, HTTPS and TLS
+    git classes (`GitSshPinnedProcessTests` 359 s, `GitSshProcessTests` 300 s, `GitDoorsPinnedProcessTests` 227 s, `GitTlsProcessTests` 183 s,
+    `GitPushActProcessTests` 178 s, `CheckoutLockProcessTests` 158 s); the 160 s a failed move-class test spent were timeouts. Cuts made: the
+    merge tool's MOD9 read-scan built the tracked folders' set once per `.cs` file (247 s to 14 s); `LineAccountTests` reads each grid case
+    once for its class (`Todays`, `Rules`) and runs the cases eight wide through `GridRun` (185 s to 84 s); `StructureTests` and
+    `ShellStructureTests` share one analysis, `DriverTree.Shared` (one compile fewer, about 50 s of CPU, no change in either class's wall);
+    the web's vitest keeps its transformed modules (`fsModuleCache`: the rules gate 87 s to 42 s warm). Still redundant: the `censuses` gate
+    reruns the Census classes that the driver's and modules' fast halves already run (a full CI run could skip it when both run), and the
+    modules' fast half did not finish in a worktree beside a long Process run. (from OPTIMIZE1d)
 
 ## Where a change goes
 
