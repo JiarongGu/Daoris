@@ -1,0 +1,61 @@
+== lineage/claude-family.stream.jsonl, with a console
+transcript: → subagent: a9b1456decf181940
+transcript: → subagent: af7e45b4d6f2967a9
+transcript:   ✓ subagent: af7e45b4d6f2967a9
+transcript:   ✓ subagent: a9b1456decf181940
+transcript: → subagent: a24ebe27d77bec19f
+transcript:   ✓ subagent: a24ebe27d77bec19f
+console: → subagent: a9b1456decf181940
+console: → subagent: af7e45b4d6f2967a9
+console:   ✓ subagent: af7e45b4d6f2967a9
+console:   ✓ subagent: a9b1456decf181940
+console: → subagent: a24ebe27d77bec19f
+console:   ✓ subagent: a24ebe27d77bec19f
+stream: s1/subagent/a9b1456decf181940 subagent 'a9b1456decf181940' completed live=False stops=False
+stream: s1/subagent/af7e45b4d6f2967a9 subagent 'af7e45b4d6f2967a9' completed live=False stops=False
+stream: s1/subagent/a24ebe27d77bec19f subagent 'a24ebe27d77bec19f' completed live=False stops=False
+ending: failure= cut=[] refused=False
+== lineage/claude-family.stream.jsonl, with none
+ending: failure= cut=[] refused=False
+== lineage/claude-kill.stream.jsonl, with a console
+transcript: → subagent: a47dc441076104543
+transcript:   subagent: a47dc441076104543 ended with its session
+console: → subagent: a47dc441076104543
+console:   subagent: a47dc441076104543 ended with its session
+stream: s1/subagent/a47dc441076104543 subagent 'a47dc441076104543' session-ended live=False stops=False
+  — ended with its session
+ending: failure= cut=[] refused=False
+== lineage/claude-kill.stream.jsonl, with none
+ending: failure= cut=[] refused=False
+== native/claude-background-cut.stream.jsonl, with a console
+transcript: → git fetch
+transcript: → background: git fetch
+transcript:   ✓ git fetch
+transcript:   ✓ background: git fetch
+transcript: → npm run gates
+transcript: → background: npm run gates
+transcript:   ✓ npm run gates
+transcript: The gates are running in the background (lint, then the tests); I'll pick up when they finish.
+transcript: — the turn ended: success
+transcript:   ■ background: npm run gates stopped
+console: → git fetch
+console: → background: git fetch
+console:   ✓ git fetch
+console:   ✓ background: git fetch
+console: → npm run gates
+console: → background: npm run gates
+console:   ✓ npm run gates
+console: The gates are running in the background (lint, then the tests); I'll pick up when they finish.
+console: — the turn ended: success
+console:   ■ background: npm run gates stopped
+stream: s1/task/b0fetch task 'git fetch' completed live=False stops=False
+stream: s1/task/b1gates task 'npm run gates' stopped live=False stops=False
+ending: failure= cut=[npm run gates] refused=False
+== native/claude-background-cut.stream.jsonl, with none
+transcript: → git fetch
+transcript:   ✓ git fetch
+transcript: → npm run gates
+transcript:   ✓ npm run gates
+transcript: The gates are running in the background (lint, then the tests); I'll pick up when they finish.
+transcript: — the turn ended: success
+ending: failure= cut=[npm run gates] refused=False
