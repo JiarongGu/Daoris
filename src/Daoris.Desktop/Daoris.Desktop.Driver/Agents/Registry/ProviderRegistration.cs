@@ -44,9 +44,17 @@ internal static class ProviderRegistration
         // Rule 1's targets: the providers whose key is their own id, which no declaration made after them can change.
         var keyed = new Dictionary<string, Group>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in doors.Where(name => Ids.Same(keyOf[name], name))) keyed[name] = new Group(name) { Doors = { name } };
+        var toolchains = new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in doors)
+        {
+            if (set.Resolve(name).Toolchain is { } toolchain) toolchains[name] = toolchain;
+        }
+
         foreach (var name in set.Reserved.Where(name => !held.Contains(name)))
         {
-            if (set.ToolchainOf(name) is { } holder) keyed[name] = new Group(name) { Holder = holder };
+            if (set.Holder(name) is not { } holder) continue;
+            keyed[name] = new Group(name) { Holder = holder };
+            toolchains[name] = holder;
         }
 
         var own = new Dictionary<string, Group>(StringComparer.OrdinalIgnoreCase);
@@ -73,9 +81,15 @@ internal static class ProviderRegistration
         var unavailable = set.Agents.Where(agent => !named.Contains(agent)).Select(Descriptor);
         providers.AddRange(unavailable);
 
-        var reserved = set.Reserved.Where(name => set.DeclaredBy(name) is null).ToList();
-        return new ProviderRegistry([.. providers.OrderBy(provider => provider.Id.Value, StringComparer.Ordinal)], reserved);
+        var reserved = set.Reserved.Where(name => DeclaredBy(set, name) is null).ToList();
+        return new ProviderRegistry([.. providers.OrderBy(provider => provider.Id.Value, StringComparer.Ordinal)], reserved, toolchains);
     }
+
+    /// <summary>The plugin a door of the set came from (D64), or null for one this build carries and for a name that is no door.</summary>
+    private static string? DeclaredBy(AdapterSet set, string name) =>
+        set.Names.Contains(name, StringComparer.OrdinalIgnoreCase) && set.Resolve(name) is LegacyDoor { Declared: true } declared
+            ? declared.Door.Identity.DeclaredBy
+            : null;
 
     /// <summary>Every name a provider answers for: its id, its doors', its account key and each door's declared one.</summary>
     internal static IEnumerable<string> Names(Provider provider) =>
@@ -119,7 +133,7 @@ internal static class ProviderRegistration
         // agent's, not the door's: the provider holds them, and the door is read through it (row d, O3-F2). What a joined plugin door
         // reads of it stays its `Lent` part's below.
         if (group.Holder is not null
-            && group.Doors.Order(StringComparer.Ordinal).FirstOrDefault(name => set.DeclaredBy(name) is null) is { } builtDoor
+            && group.Doors.Order(StringComparer.Ordinal).FirstOrDefault(name => DeclaredBy(set, name) is null) is { } builtDoor
             && set.Resolve(builtDoor).Toolchain is { } builtToolchain)
         {
             tables = TablesPart.Of(builtToolchain, withErrors: false);
@@ -138,7 +152,7 @@ internal static class ProviderRegistration
 
         var identity = new ProviderIdentity(
             declaring?.Product, declaring?.Maker, declaring?.Mark, Providers.IsStandIn(group.Id),
-            [.. group.Doors.Select(set.DeclaredBy).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)]);
+            [.. group.Doors.Select(name => DeclaredBy(set, name)).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)]);
 
         // A provider a built door presents is the registration itself, every part of it, with the doors this set joins to it.
         if (group.Doors.Select(set.Resolve).OfType<LegacyDoor>().FirstOrDefault(door => !door.Declared && Ids.Same(door.Provider.Id.Value, group.Id)) is { } registered)
@@ -180,7 +194,7 @@ internal static class ProviderRegistration
         var adapter = set.Resolve(name);
         if (adapter is LegacyDoor { Declared: false } built) return built.Door;
         var toolchain = adapter.Toolchain;
-        var plugin = set.DeclaredBy(name);
+        var plugin = DeclaredBy(set, name);
         var owning = Ids.Same(name, provider);
         var key = KeyOf(set, name);
         var declared = toolchain?.AccountOf is { Length: > 0 } accountOf ? new AccountKey(accountOf) : (AccountKey?)null;

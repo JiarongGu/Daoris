@@ -31,9 +31,9 @@ internal static class AgentListCommand
         var now = world.Now();
         Say($"{Prefix}: {path}");
 
-        foreach (var name in AgentsCommand.Named(world, path).Where(each => set.DeclaredBy(each) is null))
+        foreach (var name in AgentsCommand.Named(world, path).Where(each => set.Registry.DeclaredBy(each) is null))
         {
-            var toolchain = set.ToolchainOf(name)!;
+            var toolchain = set.Registry.ToolchainOf(name)!;
             var report = await ProbeAsync(name, toolchain, settings, home, set.Registry.OwnerOfAgent(name).Value, now, ct).ConfigureAwait(false);
             Say("");
             // What it IS, before what state it is in: `dsh` meant nothing to the owner until it said whose.
@@ -70,7 +70,7 @@ internal static class AgentListCommand
 
             // One account list per tool (TOOL6g): a door onto another agent's accounts lists them nowhere of its own, since its owner
             // listed them with what the agent said of each.
-            if (toolchain.AccountOf is { Length: > 0 } owner && set.ToolchainOf(owner) is { } owned)
+            if (toolchain.AccountOf is { Length: > 0 } owner && set.Registry.ToolchainOf(owner) is { } owned)
             {
                 var whose = owned.Product ?? owner;
                 Say($"{Under}its accounts are {whose}'s, listed under `{owner}`: this is another way {whose} runs on them");
@@ -82,9 +82,9 @@ internal static class AgentListCommand
 
         // The harnesses this machine's plugins declare (D64), beside the build's with the plugin each came from. One with no version
         // question is asked whether it is THERE rather than run, as the roster asks it: an ACP agent started bare waits on its stdin.
-        foreach (var name in set.Names.Where(each => set.DeclaredBy(each) is not null))
+        foreach (var name in set.Names.Where(each => set.Registry.DeclaredBy(each) is not null))
         {
-            var toolchain = set.Resolve(name).Toolchain!;
+            var toolchain = set.Registry.ToolchainOf(name)!;
             Say("");
             var command = toolchain.Binary.Count > 0 ? toolchain.Binary[0] : "";
             string state;
@@ -98,7 +98,7 @@ internal static class AgentListCommand
                 state = probed.Present ? probed.Version ?? "null" : $"absent — {probed.Problem}";
             }
 
-            Say($"  {name,-Name} {state}  (declared by plugin `{set.DeclaredBy(name)}`)");
+            Say($"  {name,-Name} {state}  (declared by plugin `{set.Registry.DeclaredBy(name)}`)");
             var existing = HarnessSettings.Profiles(home, name);
             Say($"{Under}{(existing.Count > 0 ? $"accounts: {string.Join(", ", existing)}" : NoAccounts(name))}");
         }
@@ -200,7 +200,7 @@ internal static class AgentListCommand
         // The set (POOL1b, the account-pool design §5.1): its order, how it is used beneath it (TOOL6a) and its next start (TOOL6f), one
         // for every workspace.
         var says = AgentAccountsCommand.Says(set, owner);
-        var product = set.ToolchainOf(owner)?.Product ?? owner;
+        var product = set.Registry.ToolchainOf(owner)?.Product ?? owner;
         if (scope.List.Count > 0)
         {
             lines.Add($"{Under}{"order".PadRight(col)} {string.Join(", then ", scope.List.Select(Shown))}, for every workspace");

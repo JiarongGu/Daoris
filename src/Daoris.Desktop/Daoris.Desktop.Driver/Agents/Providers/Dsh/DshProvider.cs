@@ -2,8 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// dsh written on the contract (AGENTPROVIDER1 row d; the agent-provider design §2.3, §11): provider <c>dsh</c> with its one door of the
-/// same id on the protocol. Its facts are what <see cref="DshAdapter"/> declares until row t takes the class away; the shim
-/// (<see cref="LegacyDoor"/>) presents them to today's readers and a test holds the two sides equal.
+/// same id on the protocol. The shim (<see cref="LegacyDoor"/>) presents its door to the adapter seam's readers.
 /// </summary>
 /// <remarks>It has no sign-in and no login question: there is no account here to be out of.</remarks>
 internal static class DshProvider
