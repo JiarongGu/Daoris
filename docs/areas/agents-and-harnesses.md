@@ -244,6 +244,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     offers nothing for a tool whose settings it has not read. `max` is refused as an account default. (from D98)
 46. A conversation's model and effort options are the ones the agent offered on its wire. The session's mode is never offered
     as an option. (from D98)
+47. Lyntai's agent layer (`Lyntai.Core` and `Lyntai.Providers.Basic`, never the metapackage) is taken by the driver alone, from
+    Lyntai's local build: the desktop's package props import the service's ignored `local/lyntai-local.props`, and the driver
+    references the layer only under `DaorisLyntaiLayer`, true when that build is in use. Without it the driver has no Lyntai
+    assembly. In the driver the layer is named by `Agents/Layer/` and the providers' folders alone, a vendor's registration and
+    options by its folder alone, with no `global using` of it and no layer-own id (`LayerCensusTests`). (from D213, D248)
 
 ## Where a change goes
 
@@ -253,6 +258,8 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
 
 - A new agent or door: a registration line in `Registry/Providers.cs` and a folder under `Agents/Providers/<id>/`, on the
   contract. Do not add another `ISessionAdapter` class (none implements it but `LegacyDoor`); a test's harness is a `TestDoors.Door`.
+- Code that names Lyntai's agent layer: `Agents/Layer/`, compiled only where the local build is in use, or a vendor's registration
+  in its provider's folder (rule 47).
 - A new fact about an existing real agent (a flag, a posture, a word table entry): its adapter or `HarnessToolchain` in
   its adapter file today, measured first, with a recorded sentence for any word table.
 - New protocol-door behaviour on a frame: a stage of its own beside `Acp.cs`, marked `[TurnStage]` with its phase and what it
@@ -402,8 +409,9 @@ Agents page, and `orient-index` and `code-map` once files move.
   `AdapterChoiceVariables` (each a reader of a declared door's rules and layout, which go with the interface), and
   `provider-vocabulary.json` (the service's, page's and tools' censuses read it, so each needs a source out of the registrations
   first); and every record still reads.
-- The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30): Daoris's providers consumed from the sibling
-  agent-provider library as a package. Its rows wait on that library's releases; nothing is referenced by the driver yet.
+- The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30, D248): Daoris's providers consumed from the sibling
+  agent-provider library, built against its local build. The reference and its census are in (rule 47); nothing names a layer
+  type yet. The adapter (1b-i) is next; the moves wait on the capabilities requested in `docs/2026-11-06-lyntai-requests.md`.
 - **AGENTINFRA1**: an execution-neutral run for remote APIs and hosted runtimes, with scoped availability and explicit
   recovery. Accepted; built after AGENTPROVIDER1, isolated home first.
 - **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1e**: what remains of point 8 (the

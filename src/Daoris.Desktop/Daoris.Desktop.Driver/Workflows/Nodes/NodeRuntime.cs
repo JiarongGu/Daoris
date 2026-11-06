@@ -461,8 +461,11 @@ public sealed class NodeRuntime(
                 break;
             }
 
-            // A `land` attempt a lapse left unreconciled is settled by its deliveries before anything new starts on it.
-            record = await LandAttemptSettling.SettleAsync(records, governed, record, ct).ConfigureAwait(false);
+            // An attempt a lapse left unreconciled is settled by its kind before anything new starts on it.
+            foreach (var starts in governed.Graph.Nodes.Select(node => NodeKit.Of(node.Kind)).OfType<IStarts>().Distinct())
+            {
+                record = await starts.SettleAsync(records, governed, record, ct).ConfigureAwait(false);
+            }
 
             // What git says for the built-ins this round's record holds waiting on it, read once a pass; the gates its opinion and look wait
             // on, likewise.

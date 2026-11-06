@@ -5,11 +5,10 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A <c>land</c> node's options (LANDNODE1a; the land node design §2): <c>method</c>, <c>target</c>, <c>pattern</c>,
-/// <c>squash</c> and <c>message</c>. Each is optional here, since a version leaves some open and the bind resolves them; a written one is held
-/// to its choices, and the method's own refusals (a pattern on a merge, a squash of an integrate) are the
-/// declaration's. Where the graph's other nodes must stand is <see cref="NodeGraphs.Problems"/>'s. The person's Accept is a
-/// <see cref="NodeKinds.Review"/> before it (LANDNODE1c2), so an <c>accept</c> option is refused: a version 1a to 1h saved with one is held,
-/// never landed without the press it named.
+/// <c>squash</c> and <c>message</c>, their resolution at the bind and the landing intent a run carries. Each is optional, since a version leaves
+/// some open and the bind resolves them; a written one is held to its choices by the declaration (<see cref="LandNode.Problem"/>). The person's
+/// Accept is a <see cref="NodeKinds.Review"/> before it (LANDNODE1c2), so an <c>accept</c> option is refused: a version 1a to 1h saved with one
+/// is held, never landed without the press it named.
 /// </summary>
 public static class LandNodes
 {
@@ -93,50 +92,12 @@ public static class LandNodes
     /// <summary>Whether the person's Accept comes before the graph's landing: a <see cref="NodeKinds.Review"/>, which the graph rules hold before every landing.</summary>
     public static bool Reviewed(NodeGraph? graph) => graph?.Nodes.Any(node => node.Kind == NodeKinds.Review) == true;
 
-    /// <summary>The first option that does not hold, by its name, or null.</summary>
-    public static string? Problem(NodeDeclaration node)
-    {
-        var method = Written(node, "method");
-        if (node.Options.ContainsKey("method") && (method is null || !Methods.Contains(method, StringComparer.Ordinal))) return "method";
-        if (node.Options.ContainsKey(AcceptOption)) return AcceptOption;
-        if (node.Options.ContainsKey("target") && !(Written(node, "target") is { } target && BranchName.IsValid(target))) return "target";
-        // Every method but an integrate lands on the tree's line, so a target there would only misname it; an integrate's must also be the
-        // line the repository declares, which the landing's door judges (CurrentDeliveries.StartAsync).
-        if (node.Options.ContainsKey("target") && method is not null && method != Integrate) return "target";
-
-        if (node.Options.ContainsKey("pattern"))
-        {
-            // A merge makes no branch to name.
-            if (method == Merge || Written(node, "pattern") is not { } pattern || BranchPatterns.Problem(pattern) is not null) return "pattern";
-        }
-
-        // A landing hands the work to no plugin: a pull request is the plugin's own step after a push (G8, D241 point 4).
-        if (node.Options.ContainsKey("plugin")) return "plugin";
-
-        // The ticket's key (WORKFLOWCLEAN1 1a): read only for a pattern that says {ticket}, so a merge, a pattern without it and an
-        // integrate (which names no branch by a pattern) refuse one; its shape is the landing key's to judge.
-        if (node.Options.ContainsKey(KeyOption))
-        {
-            if (Written(node, KeyOption) is not { } key || BranchPatterns.KeyProblem(key) is not null) return KeyOption;
-            if (method == Merge || (Written(node, "pattern") is { } written && !written.Contains("{ticket}", StringComparison.Ordinal))) return KeyOption;
-        }
-
-        if (node.Options.TryGetValue("squash", out var squash))
-        {
-            if (NodeOptions.Value(squash) is not bool on) return "squash";
-            if (on && method == Integrate) return "squash";
-        }
-
-        if (node.Options.ContainsKey("message") && !(Written(node, "message") is { } message && MessageProblem(message) is null)) return "message";
-        return null;
-    }
-
     /// <summary>The <c>method</c> and <c>pattern</c> a graph's <c>land</c> node writes, null for one it leaves open or a graph with none.</summary>
     public static (string? Method, string? Pattern) WrittenLanding(NodeGraph? graph) =>
         graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } land ? (Written(land, "method"), Written(land, "pattern")) : (null, null);
 
     /// <summary>An option written as a JSON string, or null: <see cref="NodeOptions.Text"/> reads a number by its text, which no option here takes.</summary>
-    private static string? Written(NodeDeclaration node, string name) =>
+    internal static string? Written(NodeDeclaration node, string name) =>
         node.Options.TryGetValue(name, out var raw) && raw.TrimStart().StartsWith('"') ? NodeOptions.Value(raw) as string : null;
 
     /// <summary>

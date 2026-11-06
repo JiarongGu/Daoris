@@ -13,9 +13,8 @@ namespace Daoris.Driver;
 /// <remarks>
 /// The choices §E7 left open, made here (D173's FABRIC-GRAPH1 note): synthetic nodes and every wire to or from one are counted apart,
 /// three nodes and four wires to each authored node; Current's landing nodes are the graph's own, counted; an entry takes no wire from
-/// another node; the protected order is the look's before every landing, and the opinion's before every look and landing
-/// (FABRIC-WORKFLOW2); a <c>quest.close</c>'s only way out is its <c>failed</c>
-/// wire; and the cleanup's wait is refused for an end at or before the line.
+/// another node; a <c>quest.close</c>'s only way out is its <c>failed</c> wire; and the cleanup's wait is refused for an end at or before
+/// the line. The protected order before the landing is the kit's (<see cref="ProtectedOrder"/>).
 /// </remarks>
 public static class NodeGraphs
 {
@@ -39,8 +38,8 @@ public static class NodeGraphs
 
     /// <summary>
     /// Everything a save refuses in <paramref name="graph"/>, in a stable order; empty when it holds. The schema and the bounds; each
-    /// node's declaration; the wires' (<see cref="NodeWires.Problems"/>); the entries; the end; each node no entry reaches; the protected
-    /// order; the closure's rules; the cleanup.
+    /// node's declaration; the wires' (<see cref="NodeWires.Problems"/>); the entries; the end; each node no entry reaches; the landing's;
+    /// the kinds' (<see cref="NodeKit.Problems"/>); the closure's rules; the cleanup.
     /// </summary>
     /// <param name="graph">The graph judged.</param>
     /// <param name="saved">True for a graph a person authored and saves (a named graph version, a cycle): the rules only an authored graph is held to, the
@@ -149,56 +148,7 @@ public static class NodeGraphs
             }
         }
 
-        // D157 §2.2's protected order: the gates come before the landing. Of them the opinion (FABRIC-WORKFLOW2)
-        // and the look are nodes (§E4), so each must be reached before every landing starts: through wires a reach satisfies, never a
-        // failure's or a rejection's path. The holds stay the rules' gate at the landing, no node yet. FABRIC-CUTOVER1b (the cutover design
-        // §5.1): the opinion is not asked to reach a look, whose set-up the review gate holds while an agent reads the opinion.
-        // DECIDE1b: a decision's route is an order too, so a landing on one outcome's route is judged by the gates on that route.
         var (ordered, landings) = (standing.Ordered, standing.Landings);
-        var lands = landings;
-        var looks = byId.Values.Where(node => node.Kind == NodeKinds.Look).ToList();
-        var unreached = new HashSet<string>(StringComparer.Ordinal);
-        // LANDNODE1c2: a `review` is the person's Accept, a gate before every landing as the look is.
-        foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Review))
-        {
-            var after = Reach([gate.Id], ordered, forward: true);
-            var later = landings.Select(landing => ("landing", landing));
-            if (gate.Kind == NodeKinds.Look) unreached.UnionWith(landings.Where(landing => !after.Contains(landing.Id)).Select(landing => landing.Id));
-            if (later.FirstOrDefault(each => !after.Contains(each.Item2.Id)) is ({ } what, { } early))
-            {
-                Say(GraphRefusal.ProtectedOrder, null, gate.Id, $"the {gate.Kind} `{gate.Id}` comes before the {what} `{early.Id}` (D157 §2.2's order: holds, opinion, look, landing).");
-            }
-        }
-
-        // FABRIC-GRAPH1's review, finding 4: every look reaching a landing is not enough; no landing may start before a look has passed,
-        // whichever member of an `anyOf` a run takes. One problem a landing the looks all reach, naming the first look.
-        if (looks.Count > 0)
-        {
-            var unlooked = StartsWithNoLook(byId, starts, local);
-            foreach (var landing in landings.Where(landing => !unreached.Contains(landing.Id) && unlooked.Contains(landing.Id)))
-            {
-                Say(GraphRefusal.ProtectedOrder, null, looks[0].Id, $"the landing `{landing.Id}` can start with no look passed, though `{looks[0].Id}` reaches it: every way to it "
-                    + "passes a look (D157 §2.2's order: holds, opinion, look, landing).");
-            }
-        }
-
-        // FABRIC-GRAPH1i: a skip satisfies `after` (§E2), so a person's skip of the look lets a wire from it pass while the opinion before it is
-        // unsettled, and reachability holds the order no further. Where the order holds by reach, each gate is wired straight into each later
-        // one, as the decoder wires a version's (FABRIC-GRAPH1h): a wire of the order's kinds, in no `anyOf` group, whose other members would
-        // let a way past it. Said only where the order is not already refused, so one fault is not two.
-        if (!problems.Any(problem => problem.Code == GraphRefusal.ProtectedOrder))
-        {
-            bool Wired(string from, string to) => ordered.Any(wire => wire.From!.Node == from && wire.To.Node == to && wire.Group?.Mode != WireGroupModes.AnyOf);
-            foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Review))
-            {
-                var later = landings.Select(landing => ("landing", landing));
-                if (later.FirstOrDefault(each => !Wired(gate.Id, each.Item2.Id)) is ({ } what, { } next))
-                {
-                    Say(GraphRefusal.ProtectedWire, null, gate.Id, $"the {gate.Kind} `{gate.Id}` is not wired into the {what} `{next.Id}`: a skip of a gate between them would let an `after` "
-                        + $"wire pass while `{gate.Id}` is unsettled, so wire `{gate.Id}` into `{next.Id}` (D157 §2.2's order: holds, opinion, look, landing).");
-                }
-            }
-        }
 
         // INTEGRATE1n (§17.4's graph rules): at most one `integrate`, after the landing, and a branch no plugin lands: no `pushed` or
         // `pull-request` beside it. Each is said against the node it is about, once.
@@ -223,7 +173,7 @@ public static class NodeGraphs
             Say(GraphRefusal.LandOnce, null, again.Id, $"node `{again.Id}`: `{landings[0].Id}` and `{again.Id}` are both a landing, and a graph holds one `{NodeKinds.Land}`.");
         }
 
-        foreach (var land in lands)
+        foreach (var land in landings)
         {
             var method = NodeOptions.Text(land, "method");
             if (method is not null && LandNodes.Methods.Contains(method, StringComparer.Ordinal))
@@ -252,12 +202,9 @@ public static class NodeGraphs
             }
         }
 
-        // D247: each kind's own rules of where its node stands (a push after a branch landing, a monitor on a step that reports a state, a tidy
-        // on a monitor's merged route, a work.requests after a claimed and before every landing, a hold before it), said against the node they are about.
-        foreach (var node in byId.Values)
-        {
-            if (NodeKit.Of(node.Kind) is { } unit) problems.AddRange(unit.Problems(graph, node));
-        }
+        // D247: the kinds' rules, which the kit runs: the protected order the gates share, then each kind's own of where its node stands (a push
+        // after a branch landing, a monitor on a step that reports a state, a tidy on a monitor's merged route, a hold before the landing).
+        problems.AddRange(NodeKit.Problems(standing, graph));
 
         // INTEGRATE1n, F47 (§17.4): every kind that observes the landing record is refused when saved where some way to it passes no `land`,
         // since it would wait for ever before a landing. A way is any wire from an entry, a failure's included, and a `land` is passed
@@ -265,7 +212,7 @@ public static class NodeGraphs
         // WORKFLOWCLEAN1 1b: the one judge at the one save point; a `land` with no method chooses none, and a stored one still reads.
         if (saved && onSave)
         {
-            foreach (var chosen in lands.Where(land => !land.Options.ContainsKey("method")))
+            foreach (var chosen in landings.Where(land => !land.Options.ContainsKey("method")))
             {
                 Say(GraphRefusal.LandMethod, null, chosen.Id, $"node `{chosen.Id}`: a `land` is saved with its method chosen: {string.Join(", ", LandNodes.Methods.SkipLast(1))} or {LandNodes.Methods[^1]}.");
             }

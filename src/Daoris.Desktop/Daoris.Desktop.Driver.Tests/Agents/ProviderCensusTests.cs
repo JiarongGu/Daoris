@@ -335,7 +335,7 @@ public sealed class ProviderCensusTests
     // ---- reading ----
 
     /// <summary>A source's text with its comments blanked and its strings kept, every offset and line kept.</summary>
-    private static string StripComments(string text)
+    internal static string StripComments(string text)
     {
         var builder = new StringBuilder(text.Length);
         var i = 0;

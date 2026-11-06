@@ -41,6 +41,8 @@ public record PluginStep : INodeKind, IStarts
 
     public bool ReadsTheLanding => false;
 
+    public LandingGuard Guard => LandingGuard.None;
+
     public bool EndsByTheLine => false;
 
     /// <summary>None: its door is its plugin's port, the runtime's own.</summary>

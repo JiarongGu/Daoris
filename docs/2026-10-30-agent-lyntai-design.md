@@ -1118,7 +1118,8 @@ release. **Not kept equal to the service's pin as a gate**: no desktop process l
 on its own when its knowledge-search suites pass, so one changelog is read for both. The desktop's SQLite pair stays the service's (FOUNDATION1
 z-i); a Lyntai release moves it only through a package that pins SQLite (`Lyntai.Storage.Sqlite`), which neither tree takes. **Transitive
 versions** against Shenora 0.24.0 and SQLite 10.0.12 and 3.0.5: unmeasured, measured on a pack of the named commit before LQ1 is sent (§7.3),
-and again at the release in row 1a: the resolved graph before and after, duplicate and downgrade warnings, the publish layout.
+and again at the release in row 1a: the resolved graph before and after, duplicate and downgrade warnings, the publish layout. **Measured
+at row 1a (2026-11-06), on the local build, by D248**: §7.4's note.
 
 ### 7.2 Versioning
 
@@ -1168,6 +1169,13 @@ its release. Making such a pack publishes nothing and is not the owner's. **Unde
 it; a pack only: evidence, the row waits; a shared prerelease feed (D235's re-open): a separate amendment of D22, never adopted by default;
 a capability declined: the working path kept, the unmet request recorded, the boundary re-opened, the mechanism never rebuilt here.
 
+**Amended by D248 (2026-11-06), on the owner's answer that the driver builds against Lyntai's local library (D240 point 8).** The rows build,
+merge and pass the gates on Lyntai's local build, through the service's one mechanism (the ignored `local/lyntai-local.props`, imported
+when present, copied into the merge tool's gate trees); the explicit property above and the gates' refusal of it are withdrawn, and no
+row waits on a release. Since released 3.5.3 carries no agent layer, the driver references it, and compiles `Agents/Layer/`, only where
+that build is in use; a build without it, the CI's, is today's driver. §7.2's *until one exists the row is not dispatched* and §9.2's
+1a *waits for LQ1's release* fall with it, and LQ1 is withdrawn (§8).
+
 ### 7.4 No feed reachable
 
 A build restores from the machine's global packages folder when the pinned versions are there, so a machine that has built once builds
@@ -1177,6 +1185,22 @@ remote sources cleared; and the published app started with package feeds unreach
 nothing at run time: the publish copies `Lyntai.Core`, `Lyntai.Providers.Basic` and their dependencies, listed in the publish layout. A
 person with no network keeps working: the layer spawns only what the host deployed and fetches nothing (Lyntai's D20); a usage read starts
 the vendor's own server, which needs the vendor's network as today's does.
+
+**Measured at row 1a (2026-11-06), on Lyntai's local build `3.5.3-local.1fd4573`** (Lyntai `master` `1fd45734`, 2026-11-01; its tip was
+`8aacfb8f` that day). Released 3.5.3's `Lyntai.Core` holds no `IAgentProvider`, `AgentProviderRegistry`, `AgentFailure` or
+`IAgentUsageSource`; the local build's does. *The driver's closure* goes from 7 packages to 22: `Lyntai.Core`, `Lyntai.Providers.Basic`
+and 13 `Microsoft.Extensions` packages at 10.0.12 (Configuration with its Abstractions and Binder, DependencyInjection with its
+Abstractions, Diagnostics with its Abstractions, Http, Logging with its Abstractions, Options with ConfigurationExtensions, Primitives),
+the container among them, and the SQLite seven unchanged (`Microsoft.Data.Sqlite` 10.0.14, `SQLitePCLRaw` 3.0.5, `SQLite` 3.53.4). *The
+application's* goes from 15 to 27: those 12 added, and Shenora 0.25.0's `Microsoft.Extensions.DependencyInjection`, its Abstractions and
+`Logging.Abstractions` lifted from 10.0.0 to 10.0.12; no restore warning (no downgrade, no constraint outside a range, no conflict) and no
+assembly conflict at the modules' build. *The publish layout*, read from the application's runtime assets, gains `Lyntai.Core.dll`,
+`Lyntai.Providers.Basic.dll` and ten `Microsoft.Extensions` assemblies, and carries three at 10.0.12 where it carried them at 10.0.0.
+*The isolated restore*: the driver restored from a folder feed holding exactly its 22 packages into an empty packages folder, every
+other source and fallback folder cleared and the HTTP cache unused: the closure feed the only feed used, 22 packages installed, no
+warning. Without `local/lyntai-local.props` the driver's and the application's graphs are the 7 and 15 above, unchanged. Not run here:
+the published app started with the feeds unreachable (the parent's installed proof), and a restore after clearing the machine's HTTP
+cache, which other sessions share.
 
 ## 8. The requests to Lyntai
 
@@ -1206,6 +1230,31 @@ request (§5.3).
 | filed | AG15, AG16 | the study's | filed | 1b's protocol own-vocabulary cases; j |
 | filed | AG17 | the study's | filed | s-vi's declared reads |
 | filed | AG13, AG14 | the study's | filed | AGENTINFRA1's stage D |
+
+**Each request's state, read 2026-11-06 at Lyntai `master` `8aacfb8f`** against its built AG rows (its `docs/task-archive.md` Parts 381
+to 445). Lyntai's records already name its memory requests LQ16 to LQ20, so the quest calls these A-LQ1 to A-LQ17. What is open or partly
+answered travels as one quest, `docs/2026-11-06-lyntai-requests.md`, published by the steward.
+
+| Request | State |
+|---|---|
+| LQ1 | **withdrawn** (D248): no release is asked; the rows build on Lyntai's local build, which carries AG1 to AG9 and D234, unreleased |
+| LQ2 | **answered**: AG24, Lyntai's D236 (`IAgentUsageVersionPolicy`, `ValidatedOnly` by default and `AnyVersion`) |
+| LQ3 | **open**: one `StreamAsync` call is still one turn, `Taken` still counts a session start, no opening operation alone; AG19 lets a host answer a permission request but refuses one held past half the turn's inactivity window |
+| LQ4 | **open**: `AgentToolPolicy`'s two intents alone; its second half still waits on 1s-ii |
+| LQ5 | **open**: `AgentChoice.Effort` carried by no door |
+| LQ6 | **open**: no plugins option on the Claude door |
+| LQ7 | **partly**: AG10 (a subagent's calls and results carry `ParentCallId`; its text and thinking are dropped) and AG18 (`AgentTaskStarted`, `AgentTaskEnded`); a child's words, start and end, the turn a task wakes, a replay told from live and an unread frame kept are open |
+| LQ8 | **partly**: AG11 (the model carried by the agent's model option, or the turn ended, the agent's answer deciding); the open's offered models and options, accepted and refused, as a reading apart from a diagnostic's words, are open |
+| LQ9 | **partly**: AG17 (`AgentAccount.Environment` per turn, within the provider's declared variables); a turn's own variables beyond those, and a null removing one, are open |
+| LQ10 | **open**: the built-in doors and usage sources still internal |
+| LQ11 | **open**: `Access` and an owner action carry no reason |
+| LQ12 | **open**: the pool's reducer still internal, no evidence observation, a hold id still from scope and cause |
+| LQ13 | **open**: `CliAgentLoop` still internal |
+| LQ14 | **answered**: AG23, Lyntai's D237 |
+| LQ15 | **answered**: AG21 and AG22, Lyntai's D238 |
+| LQ16 | **open**: a restriction names no window and nothing hit; a recovery is a kind and an instant alone |
+| LQ17 | **open**: no denial, no context window, `UsageFinal` one model, and `SessionStarted` still keyed on any `system` frame's new id |
+| filed AG10, AG11, AG12, AG13 to AG19 | **built** (Parts 429 to 439, 445) |
 
 **Not asked now, each with its trigger** (§13 gives why): Q-F, a door's failure reader usable without its transport (no trigger: failures
 move with their door); Q-K, a variable per door on one account (when Daoris takes a layer pool on a key one of whose doors reads another

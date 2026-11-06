@@ -61,7 +61,7 @@ public sealed partial class NodeDispatchCensusTests
     [GeneratedRegex(@"NodeKinds\.([A-Z]\w*)")]
     private static partial Regex Named();
 
-    /// <summary>A list of kinds kept beside the kit, or a start loop by kind.</summary>
-    [GeneratedRegex(@"\bObserved\s*=|RunBegins|\bBegins\(string|StartLandings|StartPushes|StartTidies")]
+    /// <summary>A list of kinds kept beside the kit, a start loop by kind, or a kind's own settling called by name.</summary>
+    [GeneratedRegex(@"\bObserved\s*=|RunBegins|\bBegins\(string|StartLandings|StartPushes|StartTidies|LandAttemptSettling")]
     private static partial Regex Lists();
 }

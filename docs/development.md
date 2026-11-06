@@ -20,10 +20,14 @@ runs `node tools/merge-rows.mjs --install`; ROUTERMERGE1). A clone whose depende
 once; worktrees share it. Without it git merges `docs/README.md` as plain text, which conflicts on two neighbouring rows
 rather than merging them.
 
-Until Lyntai's next release the service builds against a local build of its main line (D22's note). With the Lyntai
-checkout beside this one, check out its `master` and run `node tools/lyntai-local.mjs [path]`: it packs the tip into the
-ignored `local/lyntai-feed/` and writes `local/lyntai-local.props`, and reruns do nothing while the tip is packed. Delete
-the props to restore the released pin. The merge tool copies the props into its gate trees.
+Until Lyntai's next release the service and the driver build against a local build of its main line (D22's note, D248). With
+the Lyntai checkout beside this one, check out its `master` and run `node tools/lyntai-local.mjs [path]`: it packs the tip into
+the ignored `local/lyntai-feed/` and writes `local/lyntai-local.props`, and reruns do nothing while the tip is packed. Both
+trees' package props import that file; delete it to restore the released pins. The merge tool copies it into its gate trees; copy
+the main checkout's into a worktree that builds the layer. Lyntai's agent layer is only in the local build, so the driver references it, and
+compiles `Agents/Layer/`, only while the file is there (`DaorisLyntaiLayer`); without it the driver builds as it did before the
+layer, which is what the CI builds. A change to the layer's reference is built both ways: with the file, then with it moved
+aside and the projects restored again.
 
 The web package has its own lockfile and is not an npm workspace of the root. Windows is needed
 for the desktop application and deployment rehearsal; native AOT publishing needs the target
