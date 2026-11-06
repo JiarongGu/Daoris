@@ -31,7 +31,7 @@ public sealed class ProviderAccountReadsTests
         Assert.Same(CodexLimits.Words, roster.LimitsOf("codex-acp"));
         Assert.Null(roster.SignInOf("codex-acp"));
         Assert.Null(roster.WindowsOf("codex-acp"));
-        Assert.IsType<CodexUsageQuestion>(roster.UsageOf("codex-acp"));
+        Assert.Same(UsageReads.Of(CodexUsage.Question), roster.UsageOf("codex-acp"));
     }
 
     [Fact]

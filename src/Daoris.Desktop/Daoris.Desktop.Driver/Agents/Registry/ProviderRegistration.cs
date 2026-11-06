@@ -171,7 +171,7 @@ internal static class ProviderRegistration
             declaring is null ? Known<ToolSpec>.Absent : Known<ToolSpec>.Declared(ToolSpecs.Of(declaring), evidence),
             Known<AccountsPart>.Declared(accounts, evidence),
             Empty(tables) ? Known<TablesPart>.Absent : Known<TablesPart>.Declared(tables, evidence),
-            usage.Question is null ? Known<UsagePart>.Absent : Known<UsagePart>.Declared(usage, evidence),
+            usage.Read is null ? Known<UsagePart>.Absent : Known<UsagePart>.Declared(usage, evidence),
             lent is null ? Known<LentPart>.Absent : Known<LentPart>.Declared(lent, evidence),
             // A plugin's adapter is read for its rules and skills as it declares them (AdapterParts), never through its provider.
             Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent, Known<IConversationHome>.Absent,

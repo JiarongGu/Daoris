@@ -149,13 +149,13 @@ public sealed class ProvidersBuiltTests
         {
             var codex = registry.Provider("codex");
             Assert.Same(CodexLimits.Words, codex.Tables.Required.Limits);
-            Assert.Same(CodexUsage.Question, codex.Usage.Required.Question);
+            Assert.Same(UsageReads.Of(CodexUsage.Question), codex.Usage.Required.Read);
             Assert.Same(CodexLimits.Words, registry.LimitsOf(door));
-            Assert.Same(CodexUsage.Question, registry.UsageOf(door));
+            Assert.Same(UsageReads.Of(CodexUsage.Question), registry.UsageOf(door));
             Assert.Null(codex.Lent.Required.Tables.Limits);
-            Assert.Null(codex.Lent.Required.Usage.Question);
+            Assert.Null(codex.Lent.Required.Usage.Read);
             Assert.Same(CodexLimits.Words, registry.Door("codex-acp").Lent.Tables.Limits);
-            Assert.Same(CodexUsage.Question, registry.Door("codex-acp").Lent.Usage.Question);
+            Assert.Same(UsageReads.Of(CodexUsage.Question), registry.Door("codex-acp").Lent.Usage.Read);
             // The door's own words stand beside the provider's: the door says its limits as Codex does, and the lent words are the same.
             Assert.Same(CodexLimits.Words, registry.Door("codex-acp").Tables.Limits);
             Assert.Same(registry.Door("codex-acp").Tables.Limits, registry.Door("codex-acp").Lent.Tables.Limits);
@@ -308,7 +308,8 @@ public sealed class ProvidersBuiltTests
         Assert.True(typeof(ISpawn).IsInterface);
         Assert.True(typeof(INativeDialect).IsInterface && typeof(IDialect).IsAssignableFrom(typeof(INativeDialect)));
         Assert.True(typeof(IProtocolDialect).IsInterface && typeof(IDialect).IsAssignableFrom(typeof(IProtocolDialect)));
-        Assert.True(typeof(IUsageQuestion).IsInterface && typeof(IUsageQuestion).IsAssignableFrom(typeof(UsageQuestion)));
+        Assert.True(typeof(IUsageRead).IsInterface && typeof(IUsageQuestion).IsAssignableFrom(typeof(IUsageRead))
+                    && typeof(IUsageRead).IsAssignableFrom(typeof(UsageQuestion)));
         Assert.True(typeof(IChildVocabulary).IsInterface);
         Assert.True(typeof(IConversationHome).IsInterface);
         Assert.True(typeof(AgentRun).IsAbstract);
@@ -316,7 +317,7 @@ public sealed class ProvidersBuiltTests
         Assert.Equal(typeof(Known<IDialect>), typeof(AgentDoor).GetProperty("Dialect")!.PropertyType);
         Assert.Equal(typeof(Known<IChildVocabulary>), typeof(Provider).GetProperty("Children")!.PropertyType);
         Assert.Equal(typeof(Known<IConversationHome>), typeof(Provider).GetProperty("Conversations")!.PropertyType);
-        Assert.Equal(typeof(IUsageQuestion), typeof(UsagePart).GetProperty("Question")!.PropertyType);
+        Assert.Equal(typeof(IUsageRead), typeof(UsagePart).GetProperty("Read")!.PropertyType);
     }
 
     /// <summary>Each provider that has children says them: Claude Code its hook, stream and calls with an end, Codex its thread calls and no end.</summary>

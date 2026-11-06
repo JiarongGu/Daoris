@@ -371,7 +371,7 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     internal readonly ConcurrentDictionary<string, DateTimeOffset> _limitSaid = new(StringComparer.OrdinalIgnoreCase);
 
     /// <inheritdoc cref="RosterUsage.UsageOf"/>
-    public UsageQuestion? UsageOf(string adapter) => Usage.UsageOf(adapter);
+    public IUsageRead? UsageOf(string adapter) => Usage.UsageOf(adapter);
 
     /// <inheritdoc cref="RosterUsage.Speaks"/>
     public bool Speaks(string adapter) => Usage.Speaks(adapter);

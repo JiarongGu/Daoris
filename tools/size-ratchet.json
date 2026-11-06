@@ -15,7 +15,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AgentsCommandTests.cs": 44049,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ClaudeStreamJsonTests.cs": 40961,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/HarnessTests.cs": 55180,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ProviderConformanceCases.cs": 45734,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ProviderConformanceCases.cs": 45722,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ResumeAccountTests.cs": 42663,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/ChatGoOnTests.cs": 80350,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/ContinuationTests.cs": 48935,
