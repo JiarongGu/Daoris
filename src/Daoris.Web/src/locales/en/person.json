@@ -125,6 +125,7 @@
   "person.route.RETRY_QUEST": "try a parked quest again",
   "person.route.HELP_APPLY": "apply a proposal of Ask Daoris",
   "person.route.CHANNEL_POST": "post words to an ask's channel as yours",
+  "person.route.CHANNEL_LINE_POST": "post words to a line of work's own channel as yours",
   "person.route.CHANNEL_FORWARD": "pass an ask's message on to a repository's session",
   "person.route.START_CHAT": "start a conversation with your words",
   "person.route.START_HELP": "start a conversation with Ask Daoris",

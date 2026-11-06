@@ -12,8 +12,8 @@ import { WorkflowRunView } from '../../workflow/WorkflowRunView';
 import { noteIsInTheHead } from '../AttendedSession';
 import { AtWorkView } from '../atWork/AtWorkView';
 import type { ExchangeSeek } from '../atWork/exchangeSeek';
-import { useLineChannel } from '../../bridge/sessions/asks';
-import { lastMessages, lastWords } from '../channel';
+import { useLineChannel, usePostLineChannel } from '../../bridge/sessions/asks';
+import { lastMessages, lastWords, repositoriesOf } from '../channel';
 import { SessionConsole } from '../console/SessionConsole';
 import { TerminalView } from '../terminals/TerminalView';
 import { panelTabs } from '../console/streams';
@@ -104,6 +104,7 @@ export function useRegionSurfaces({
     ? !collapsed && panelView === 'atWork'
     : !dockClosed && dock === 'atWork');
   const lineChannel = useLineChannel(attended && !channelAsk ? attended.id : null, { enabled: atWorkShown });
+  const postLine = usePostLineChannel();
   // Why an untaken quest sits is the driver's last look's, read beside the answer from memory (COWORKVIEW1b-ii).
   const considered = useConsidered().data;
   // FABRIC-PIPELINE1d: *Run again* and *Not now* under a check held unknown, the person's word on the held attempt.
@@ -285,7 +286,15 @@ export function useRegionSurfaces({
               // Under 768 px the view replaces the conversation: leaving it shows the panel it opened.
               if (layout.dock.mode === 'full') closeDock(true);
             },
-          } : lineChannel ? { words: lastMessages(lineChannel) } : undefined}
+          } : lineChannel && attended ? {
+            words: lastMessages(lineChannel),
+            // COMMS1k: the person's words on it, to every part of the line or one repository its messages name.
+            recipients: repositoriesOf(lineChannel.items, []),
+            onPost: (post, answered) => postLine.mutate({ session: attended.id, post }, {
+              onSuccess: (posted) => (posted.posted ? answered.done() : answered.refused(posted.code ?? 'other')),
+              onError: (error) => answered.refused(sentence(error)),
+            }),
+          } : undefined}
           onRetry={() => { void atWork.refetch(); }}
           // A child's console tab, while the window holds its stream (the harness's agent id ends the stream's key).
           streamOf={(child) => streams.find((row) => row.key.endsWith(`/${child}`))?.key}

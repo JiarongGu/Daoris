@@ -123,6 +123,28 @@ public sealed class TeammateAskChannelTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 A part here on a teammate's ask is handed the holder's message by the look (COMMS1 loose item): its entry's claim is one part's
+    /// only, taken once, and the entry's read carries what it acknowledged, so a message taken is not handed again; an ask nothing
+    /// mirrors has none to acknowledge.
+    /// </summary>
+    [Fact]
+    public async Task COMMS1_a_part_on_a_teammates_ask_claims_the_holder_s_message_once_and_its_read_carries_the_acknowledgment()
+    {
+        var (ask, session, theirs) = await OnTeammatesAskAsync();
+        var entry = (await _ledger.WithEntryAsync(session)).Entry!;
+
+        var claimed = await _channel.AcknowledgeAsync(ask, entry, session.Id, ChannelAcks.Taking, [theirs.Id], Now.AddMinutes(2));
+        var again = await _channel.AcknowledgeAsync(ask, entry, "another-part", ChannelAcks.Taking, [theirs.Id], Now.AddMinutes(2));
+
+        Assert.Equal([theirs.Id], claimed);
+        Assert.Empty(again!);
+        Assert.Equal(ChannelAcks.Taking, (await _channel.ReadAsync(ask, entry, null, moveMark: false))!.Acknowledged[theirs.Id].State);
+        await _channel.AcknowledgeAsync(ask, entry, session.Id, ChannelAcks.Taken, [theirs.Id], Now.AddMinutes(3));
+        Assert.Equal(ChannelAcks.Taken, (await _channel.ReadAsync(ask, entry, null, moveMark: false))!.Acknowledged[theirs.Id].State);
+        Assert.Null(await _channel.AcknowledgeAsync("0f0f0f", entry, session.Id, ChannelAcks.Taking, ["x"], Now));
+    }
+
+    /// <summary>
     /// The person reads a line's own channel by one of its parts: a chat's post to everyone and to one repository, with its origin; a line
     /// on an ask held here has none of its own, so it is read at the ask.
     /// </summary>
@@ -145,5 +167,34 @@ public sealed class TeammateAskChannelTests : IAsyncLifetime
         Assert.Equal(read.Origin, (await _channel.Line.ReadAsync(chat.Id))!.Origin);
         Assert.Null(await _channel.Line.ReadAsync(onAsk.Id));
         Assert.Null(await _channel.Line.ReadAsync("nope"));
+    }
+
+    /// <summary>
+    /// 🔴 The person posts on a line's own channel (COMMS1 loose item): their words, to everyone or to one repository the line holds, kept at
+    /// their level with no cap; the line's parts are handed it as the person's, never a session's claim; a blank, a repository the line does
+    /// not hold, and a session on an ask held here are refused or answered none.
+    /// </summary>
+    [Fact]
+    public async Task COMMS1_the_person_posts_on_a_line_s_own_channel_and_its_parts_are_waiting_with_it()
+    {
+        var onAsk = (await _ledger.OpenAsync(
+            (await _asks.AskAsync(new AskRequest("work", "check it") { To = "checker" }, Now)).Quest!.Id, "stub", Now,
+            tree: Path.Combine(_root, "trees", "on-ask"))).Session!;
+        var chat = (await _ledger.OpenChatAsync("reports", "stub", Now, tree: Path.Combine(_root, "trees", "chat"))).Session!;
+        var published = await _exchange.PublishAsync(new QuestAsk("reports", "checker", "Check the export", "Please.") { PublishedBy = chat.Id }, Now);
+        var checker = (await _ledger.OpenAsync(published.Quest!.Id, "stub", Now, tree: Path.Combine(_root, "trees", "check"))).Session!;
+
+        var posted = await _channel.Line.PostAsPersonAsync(checker.Id, "use v4 from now on", "checker", urgent: false, Now.AddMinutes(1));
+
+        Assert.Equal(ChannelRefusal.None, posted!.Refusal);
+        Assert.True(posted.Message!.ByPerson);
+        Assert.Equal(("checker", (bool?)false, $"session:{chat.Id}"), (posted.Message.To, posted.Message.Urgent, posted.Message.Channel));
+        var waiting = await _channel.Parts.WaitingAsync(checker.Id);
+        Assert.Contains(waiting!, each => each.Message.Id == posted.Message.Id);
+        Assert.Contains(await _channel.Line.ReadAsync(chat.Id) is { } read ? read.Messages : [], m => m.Id == posted.Message.Id);
+        Assert.Equal(ChannelRefusal.Empty, (await _channel.Line.PostAsPersonAsync(chat.Id, "  ", null, urgent: true, Now))!.Refusal);
+        Assert.Equal(ChannelRefusal.BadTo, (await _channel.Line.PostAsPersonAsync(chat.Id, "hello", "nowhere", urgent: true, Now))!.Refusal);
+        Assert.Null(await _channel.Line.PostAsPersonAsync(onAsk.Id, "hello", null, urgent: true, Now));
+        Assert.Null(await _channel.Line.PostAsPersonAsync("nope", "hello", null, urgent: true, Now));
     }
 }

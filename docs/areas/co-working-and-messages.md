@@ -24,8 +24,8 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | Channel records | `Service/Asks/Records/` | `ChannelMessage`, `ChannelLine`, `ChannelRead`, `ChannelOutcome`, `ChannelReadOutcome`, `ElsewhereAsk`, `IChannelItem` |
 | HistoryDesk | `Service/Asks/HistoryDesk.cs`, its units and refusals in `Service/Asks/Records/` (`HistoryUnit`, `HistoryKept`, `HistoryRefusal` and the words beside them) | The records' half of clearing finished history: listed first, then pressed, each unit judged again inside the transaction that clears it |
 | ChannelParts | `Service/Asks/ChannelParts.cs` | A line's own channel and messages to one part, kept in `channel_addressed`, never synced |
-| LineChannel | `Service/Asks/LineChannel.cs`, `GET /api/channel/line`, the window's `CHANNEL_LINE` | The person's read of the channel of a line on no ask held here, each message to one part with its receipt |
-| TeammateAskChannel | `Service/Asks/TeammateAskChannel.cs` | A teammate's ask's channel, posted to by the person and by a session here on it, and read by that session |
+| LineChannel | `Service/Asks/LineChannel.cs`, `GET` and `POST /api/channel/line`, the window's `CHANNEL_LINE` and `CHANNEL_LINE_POST` | The person's read of, and post on, the channel of a line on no ask held here, each message to one part with its receipt; a teammate's ask's line posts on that ask's channel |
+| TeammateAskChannel | `Service/Asks/TeammateAskChannel.cs` | A teammate's ask's channel, posted to by the person and by a session here on it, read by that session, and acknowledged by its entry as an ask's is |
 | ChannelBounds, ChannelRefusal, ChannelAcks | `Service/Asks/ChannelTerms.cs` | The bounds (4,000 chars, 10 posts, 3 urgent, 20 handed), refusal codes, acknowledgment states |
 | ChannelTools | `Mcp/ChannelTools.cs` | `channel_post` (urgent or ordinary, `to`, `re`) and `channel_read` |
 | CallTable, ToolClasses | `Mcp/CallTable.cs`, `Mcp/ToolClasses.cs` | Which work may call which connector tool; a census holds every tool to a class |
@@ -82,8 +82,10 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
    ask, held on another machine, is posted to from here by the person and by a session here on its quest: the message is kept as this
    machine's own, at its level, and travels to the holder, where a teammate's person's message is a claim named as theirs that reopens
    nothing, never the holder's person's words. (from D167, D225)
-10. A line on no ask posts on its own channel, on its entry's origin, which the person reads on *At work*. A helper and a reviewer
-    have no channel: they neither post nor read. (from D225, D163, D155)
+10. A line on no ask posts on its own channel, on its entry's origin, which the person reads and posts on from *At work* (their words,
+    to everyone on it or one repository, taken by a part at its look as theirs; a teammate's ask's line posts on that ask's channel).
+    A part here on a teammate's ask is handed the mirrored messages at its look, claimed and acknowledged by its entry as on an ask held
+    here, never left to its own `channel_read`. A helper and a reviewer have no channel: they neither post nor read. (from D225, D163, D155)
 11. A part posts at most 10 messages of at most 4,000 characters, and at most 3 urgent. A further urgent post is kept ordinary, and its
     poster is told. The person has no cap. (from D188, D167)
 12. A post may name one other part of the poster's own entry on this machine by its session. It is kept apart, never travels, and is
@@ -245,8 +247,7 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 - **COWORKUX1** (rows d, f, i): the terminal's `sessions helper --after --to-me` and `sessions pass`; Ask Daoris's `session` cards for the person's helper doors; the dialog's *Write a piece*, *Second opinion* and *Work alongside* doors; the glossary's *co-worker* and *lead*; row i, the lead's wait on its own partner.
 - **COAGENT1b2** (built: *Discard…*, *Hand over what it left*, the taken-in read; left: the not-taken-in verdict at the landing's own moment where the lead's tree is gone, the retention proof through tidy, clear and sync, and the partner's real-process case) **, 1c, 1g**: a conversation as the lead; a hand-over that waits for children. The lead's own `partner_ask` has no row.
 - **CHANNELJOIN1**: an agent the owner runs outside Daoris joins a channel.
-- No row: a look handing a teammate's ask's messages to a part here that runs on its quest (today they wait for the agent's own
-  `channel_read`); the person posting on a line's own channel; *Send to its session* from a line's own channel.
+- No row: *Send to its session* from a line's own channel.
 - **AGENTROOM1b**: `meeting_say`, so a real agent takes a meeting turn (today refused `no-message-tool`). **AGENTROOM1c**: `daoris meeting`. **AGENTROOM1d**: one account's turns one at a time across meetings. D177's floor request has no row.
 - **MEETUX1a-d**: a meeting from the window, its rounds and a brainstorm's document on their pages, a waiting meeting in *What needs you*.
 - **BRAINSTORM1b2, 1b3, 1c, 1d, 1e, 1f, 1a2b, 1a4**: the CLI's stop and id, a limit on a real door, the measured run, a caller from another repository and the page, the skeptical pass, a workflow step, a no-connector pass test, a pass's traces.

@@ -5,8 +5,9 @@ import { leftFor, SOUGHT } from '../waits/WaitAnchor';
 import { type ExchangeSeek, useSoughtExchange } from './exchangeSeek';
 import { cn } from '../../lib/cn';
 import { ago, clockOf } from '../../locales/format';
-import { whoOf } from '../../asks/ChannelSection';
-import type { ChannelItem } from '../channel';
+import { type ChannelAnswered, whoOf } from '../../asks/ChannelSection';
+import type { ChannelItem, ChannelPost } from '../channel';
+import { LineChannelComposer } from './LineChannelComposer';
 import { Dot, Inline, SectionTitle } from '../../design/ui';
 import { ExternalLink } from '../../design/links';
 import { type Consideration, sittingBecause, sittingSentence } from '../../data/signals';
@@ -25,6 +26,10 @@ export type AtWorkChannel = {
   words: readonly ChannelItem[];
   /** *All messages*: opens the panel that holds the channel. Absent for a line's own channel, which no panel holds. */
   onOpen?: () => void;
+  /** The person's words on a line's own channel (COMMS1k): present only for one, which then draws a composer under its words. */
+  onPost?: (post: ChannelPost, answered: ChannelAnswered) => void;
+  /** The repositories a post on a line's own channel may be addressed to, as its messages name them. */
+  recipients?: readonly string[];
 };
 
 export type AtWorkViewProps = {
@@ -231,6 +236,7 @@ function ChannelWords({ channel, parts }: { channel: AtWorkChannel; parts: reado
           </button>
         </div>
       )}
+      {channel.onPost && <LineChannelComposer onPost={channel.onPost} recipients={channel.recipients ?? []} />}
     </section>
   );
 }

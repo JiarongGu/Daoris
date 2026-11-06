@@ -113,6 +113,7 @@
   "work.atWork.group.channel": "On the channel",
   "work.atWork.channel.all": "All messages",
   "work.atWork.channel.none": "Nothing on the channel yet.",
+  "work.atWork.channel.postNote": "Your words, to every part of this line of work.",
   "work.atWork.ask.none": "Nothing is at work on this ask yet.",
   "work.atWork.ask.parts_one": "{{count}} part · {{working}} working",
   "work.atWork.ask.parts_other": "{{count}} parts · {{working}} working",

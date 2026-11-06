@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import i18n from '../../locales/i18n';
 import { AtWorkView } from './AtWorkView';
 import { LANES_ALONGSIDE_AND_UNTAKEN, LINE_SAID, SAID, THREE } from './atWork.fixtures';
@@ -65,6 +65,43 @@ describe('the channel’s last words in the view', () => {
     render(<AtWorkView held={THREE} channel={{ words: lone, onOpen: () => {} }} />);
 
     expect(screen.getByText('On the channel').closest('section')!.textContent).toContain('Started.');
+  });
+
+  /** COMMS1k: the person posts on a line's own channel from the view: to everyone or a repository, the box clearing once it is kept. */
+  it('lets the person post on a line’s own channel, to a repository its messages name, and clears the box once it is kept', () => {
+    const post = vi.fn();
+    render(<AtWorkView held={LANES_ALONGSIDE_AND_UNTAKEN} channel={{ words: LINE_SAID, onPost: post, recipients: ['checker'] }} />);
+
+    const box = screen.getByRole('textbox', { name: 'Write to the channel' }) as HTMLTextAreaElement;
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(box, { target: { value: '  Use v4 from now on.  ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(post).toHaveBeenCalledOnce();
+    expect(post.mock.calls[0][0]).toEqual({ text: 'Use v4 from now on.', to: null });
+    expect(screen.getByText('Your words, to every part of this line of work.')).toBeTruthy();
+    act(() => post.mock.calls[0][1].done());
+    expect(box.value).toBe('');
+  });
+
+  it('keeps the words and says the service’s refusal in the reader’s language', async () => {
+    const post = vi.fn();
+    await i18n.changeLanguage('zh');
+    render(<AtWorkView held={LANES_ALONGSIDE_AND_UNTAKEN} channel={{ words: LINE_SAID, onPost: post }} />);
+
+    const box = screen.getByRole('textbox', { name: '写给频道' }) as HTMLTextAreaElement;
+    fireEvent.change(box, { target: { value: 'hello' } });
+    fireEvent.click(screen.getByRole('button', { name: '发送' }));
+    act(() => post.mock.calls[0][1].refused('too-long'));
+
+    expect(screen.getByText('内容太长，一条消息最多 4,000 个字符。')).toBeTruthy();
+    expect(box.value).toBe('hello');
+    expect(screen.getByText('你的话，发给这条工作线的每一段。')).toBeTruthy();
+  });
+
+  it('draws no composer for a channel with no post door, the ask’s own', () => {
+    render(<AtWorkView held={LANES_ALONGSIDE_AND_UNTAKEN} channel={{ words: SAID, onOpen: () => {} }} />);
+    expect(screen.queryByRole('textbox')).toBeNull();
   });
 
   it('says the block in Chinese', async () => {
