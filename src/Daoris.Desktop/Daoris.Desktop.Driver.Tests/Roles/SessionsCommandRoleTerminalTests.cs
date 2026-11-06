@@ -18,7 +18,7 @@ public sealed class SessionsCommandRoleTerminalTests : IDisposable
 {
     private const string Key = "5e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a1";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-role-terminal-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-role-terminal-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SessionsCommandRoleTerminalTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 

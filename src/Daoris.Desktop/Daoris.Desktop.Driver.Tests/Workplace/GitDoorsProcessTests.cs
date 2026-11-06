@@ -25,7 +25,7 @@ public class GitDoorsProcessTests : IDisposable
 
     private readonly HashSet<string> _pinnedHomes = [];
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-git-doors-process-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-git-doors-process-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Home => Path.Combine(_root, "data");
 

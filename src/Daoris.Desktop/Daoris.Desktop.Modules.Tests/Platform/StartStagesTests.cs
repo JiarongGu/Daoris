@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Daoris.Driver;
@@ -12,7 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class StartStagesTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-startfast1-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-startfast1-" + Guid.NewGuid().ToString("N")[..8]);
 
     public StartStagesTests() => Directory.CreateDirectory(_home);
 

@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,7 +14,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class MachineLoggingTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-machinelogging-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-machinelogging-" + Guid.NewGuid().ToString("N")[..8]);
 
     public MachineLoggingTests() => Directory.CreateDirectory(_home);
 

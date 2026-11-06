@@ -15,7 +15,7 @@ public sealed class NativeCarryTickTests : IDisposable
 {
     private const string Words = "Your quest is done, but your tree has 1 uncommitted path(s).";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-native-carry-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-native-carry-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

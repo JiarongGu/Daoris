@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class LineageExitProcessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-lineage-exit-process-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-lineage-exit-process-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly LineageTokens _tokens = new(Environment.ProcessId, DateTime.UtcNow);
 

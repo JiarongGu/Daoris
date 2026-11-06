@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class PluginCycleFixtureTests : IDisposable
 {
-    private readonly string _scratch = Path.Combine(Path.GetTempPath(), "daoris-cycle-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _scratch = Path.Combine(TestHomes.Root, "daoris-cycle-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PluginCycleFixtureTests() => Directory.CreateDirectory(_scratch);
 

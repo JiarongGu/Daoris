@@ -12,7 +12,7 @@ public sealed class CleanupLeftoversTests : IDisposable
     private static readonly DateTimeOffset Then = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
     private static readonly string Trees = Path.GetFullPath(Path.Combine("cleanup-trees", "default", "engine"));
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-cleanup-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-cleanup-" + Guid.NewGuid().ToString("N")[..8]);
 
     public CleanupLeftoversTests() => Directory.CreateDirectory(_home);
 

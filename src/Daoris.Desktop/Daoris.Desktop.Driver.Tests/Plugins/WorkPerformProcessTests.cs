@@ -15,7 +15,7 @@ public sealed class WorkPerformProcessTests : IDisposable
     private const string Unit = "unit-a";
     private const string Tip = "0123456789abcdef0123456789abcdef01234567";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-performproc-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-performproc-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly MachineLog _log;
 

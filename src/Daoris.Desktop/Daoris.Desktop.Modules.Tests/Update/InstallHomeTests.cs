@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -14,7 +15,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class InstallHomeTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-install-home-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-install-home-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly Dictionary<string, string> _process = new(StringComparer.Ordinal);
     private string? _user;

@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class UsageTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-usage-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-usage-tests", Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

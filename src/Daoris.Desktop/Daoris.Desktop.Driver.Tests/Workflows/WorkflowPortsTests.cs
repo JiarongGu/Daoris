@@ -196,7 +196,7 @@ public sealed class WorkflowPortsTests
     [Fact]
     public async Task A_run_bound_to_a_graph_version_is_drawn_from_its_record_read_through_the_port()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-graph-run-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-graph-run-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             RunHome.Bind(home, "q1", RunHome.SaveGraph(home, """
@@ -247,7 +247,7 @@ public sealed class WorkflowPortsTests
     [InlineData(false)]
     public async Task A_run_view_offers_a_promoted_integrate_no_stop(bool promoted)
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-graph-run-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-graph-run-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             RunHome.Bind(home, "q1", RunHome.SaveGraph(home, """

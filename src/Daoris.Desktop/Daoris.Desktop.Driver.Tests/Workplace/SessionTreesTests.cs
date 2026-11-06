@@ -220,7 +220,7 @@ public sealed class SessionTreesTests : IDisposable
     {
         // Outside the scratch (which lives inside the Daoris repository — where git would walk up and
         // find a repository): the OS temp root belongs to no checkout, which is the very thing under test.
-        var bare = Path.Combine(Path.GetTempPath(), $"daoris-norepo-{Guid.NewGuid():N}");
+        var bare = Path.Combine(TestHomes.Root, $"daoris-norepo-{Guid.NewGuid():N}");
         Directory.CreateDirectory(bare);
         try
         {
@@ -280,7 +280,7 @@ public sealed class SessionTreesTests : IDisposable
     public async Task A_tracked_path_that_fits_the_root_but_not_a_trees_longer_prefix_still_opens()
     {
         // OS temp, as many of this assembly's fixtures are: `_fixtures/` sits as deep as the checkout.
-        var shortRoot = Path.Combine(Path.GetTempPath(), "daoris-lp-" + Guid.NewGuid().ToString("N")[..8]);
+        var shortRoot = Path.Combine(TestHomes.Root, "daoris-lp-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var home = Path.Combine(shortRoot, "daoris-home");

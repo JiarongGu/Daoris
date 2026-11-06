@@ -17,7 +17,7 @@ public sealed class HelpHousekeepingTests : IDisposable
 {
     private const string Branch = "daoris/s-1a2b3c4d";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-housekeeping-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-housekeeping-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpHousekeepingTests() => Directory.CreateDirectory(_home);
 

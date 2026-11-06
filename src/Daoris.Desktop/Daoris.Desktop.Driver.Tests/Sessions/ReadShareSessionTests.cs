@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>READSHARE1: each reader of a record AtomicFile moves into place reads it while the move still holds it (MoveHold).</summary>
 public sealed class ReadShareSessionTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-readshare-sessions-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-readshare-sessions-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ReadShareSessionTests() => Directory.CreateDirectory(_home);
 

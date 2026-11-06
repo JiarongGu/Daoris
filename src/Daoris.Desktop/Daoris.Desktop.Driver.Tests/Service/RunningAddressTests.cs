@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class RunningAddressTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-running-tests", Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-running-tests", Guid.NewGuid().ToString("N")[..8]);
 
     public RunningAddressTests() => Directory.CreateDirectory(_home);
 

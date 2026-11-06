@@ -13,7 +13,7 @@ public sealed class PullRequestAskTests : IDisposable
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 4, 14, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-pr-ask-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-pr-ask-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PullRequestAskTests()
     {

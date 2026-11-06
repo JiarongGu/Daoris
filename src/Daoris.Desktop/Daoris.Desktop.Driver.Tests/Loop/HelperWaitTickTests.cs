@@ -24,7 +24,7 @@ public sealed class HelperWaitTickTests : IDisposable
 
     private const string Answer = "The window is exclusive at src/report.ts:42.";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-helper-wait-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-helper-wait-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

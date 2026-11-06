@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class ProviderRegistryTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-provider-registry-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-provider-registry-tests", Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

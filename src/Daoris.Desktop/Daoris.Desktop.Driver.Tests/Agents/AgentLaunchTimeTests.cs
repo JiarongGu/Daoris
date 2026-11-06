@@ -18,7 +18,7 @@ public sealed class AgentLaunchTimeTests(ITestOutputHelper output) : IDisposable
 {
     private const int Runs = 15;
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-agent-launch-time-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-agent-launch-time-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

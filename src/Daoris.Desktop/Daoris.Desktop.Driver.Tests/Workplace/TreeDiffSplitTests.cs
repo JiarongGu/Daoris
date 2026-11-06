@@ -301,7 +301,7 @@ public sealed class TreeDiffSplitTests
     [Fact]
     public async Task A_root_git_places_elsewhere_is_refused_before_the_range_is_asked()
     {
-        var git = new FakeGit(Captured, topLevel: Path.GetTempPath());
+        var git = new FakeGit(Captured, topLevel: TestHomes.Root);
 
         Assert.Null(await WorkingTree.DiffAsync(Root, Before, git.Read, CancellationToken.None));
         Assert.Single(git.Calls);
@@ -427,7 +427,7 @@ public sealed class TreeDiffSplitTests
         Assert.Empty(clean!.Files);
         Assert.Null(clean.Truncated);
 
-        Assert.Null(await WorkingTree.UncommittedDiffAsync(Root, new FakeGit(Captured, topLevel: Path.GetTempPath()).Read, CancellationToken.None));
+        Assert.Null(await WorkingTree.UncommittedDiffAsync(Root, new FakeGit(Captured, topLevel: TestHomes.Root).Read, CancellationToken.None));
         Assert.Null(await WorkingTree.UncommittedDiffAsync(Root, new FakeGit("", code: 128).Read, CancellationToken.None));
     }
 

@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class HelperPersonAskTests : IDisposable
 {
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-11-06T10:00:00Z");
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-helper-person-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-helper-person-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly Events _events = new();
 
     public HelperPersonAskTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Helpers));

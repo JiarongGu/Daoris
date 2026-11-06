@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class JsonFileTests : IDisposable
 {
     private readonly string _folder = Path.Combine(
-        Path.GetTempPath(), "daoris-jsonfile-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-jsonfile-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

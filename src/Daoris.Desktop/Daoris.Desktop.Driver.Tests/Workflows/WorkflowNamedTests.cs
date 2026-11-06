@@ -158,7 +158,7 @@ public sealed class WorkflowNamedTests
     [Fact]
     public void A_workflow_is_written_under_the_home_atomically_and_read_back_by_its_id()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-workflow-store-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-workflow-store-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var steps = JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""");
@@ -203,7 +203,7 @@ public sealed class WorkflowNamedTests
     [Fact]
     public void A_file_that_does_not_read_is_listed_with_its_problem_and_never_written_over()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-workflow-unread-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-workflow-unread-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var folder = DaorisHome.Entry(home, HomeEntry.Workflows);

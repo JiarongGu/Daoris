@@ -19,7 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class ApiKeyAccountTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-key-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-key-tests", Guid.NewGuid().ToString("N")[..8]);
 
     private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 

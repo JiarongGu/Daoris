@@ -26,7 +26,7 @@ public sealed class AccountWalkGateTests : IDisposable
 
     private static readonly UsageQuestion Question = new CodexUsageQuestion("fake", ["fake-agent", "app-server"], CodexUsage.Question.Recorded);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-walk-gate-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-walk-gate-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly DateTimeOffset _now = Seen;
 

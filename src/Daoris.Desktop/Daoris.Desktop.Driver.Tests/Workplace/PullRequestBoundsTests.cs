@@ -12,7 +12,7 @@ public sealed class PullRequestBoundsTests : IDisposable
 {
     private static readonly DateTimeOffset At = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-bounds-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-bounds-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PullRequestBoundsTests() => Directory.CreateDirectory(_home);
 

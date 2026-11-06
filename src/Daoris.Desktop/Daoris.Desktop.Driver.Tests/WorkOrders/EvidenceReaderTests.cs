@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Reads and writes files only (the tree's own, for what is uncommitted), so it is in the fast half (MOD8).</remarks>
 public sealed class EvidenceReaderTests : IDisposable
 {
-    private readonly string _tree = Path.Combine(Path.GetTempPath(), "daoris-evidence-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _tree = Path.Combine(TestHomes.Root, "daoris-evidence-" + Guid.NewGuid().ToString("N")[..8]);
 
     public EvidenceReaderTests() => Directory.CreateDirectory(_tree);
 

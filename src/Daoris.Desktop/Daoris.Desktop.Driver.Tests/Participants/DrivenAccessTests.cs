@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class DrivenAccessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-driven-access-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-driven-access-" + Guid.NewGuid().ToString("N")[..8]);
 
     public DrivenAccessTests() => Directory.CreateDirectory(_home);
 

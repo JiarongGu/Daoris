@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class RepositoryIndexesTests : IDisposable
 {
     private readonly string _tree = Path.Combine(
-        Path.GetTempPath(), "daoris-repository-indexes-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-repository-indexes-" + Guid.NewGuid().ToString("N")[..8]);
 
     public RepositoryIndexesTests() => Directory.CreateDirectory(_tree);
 

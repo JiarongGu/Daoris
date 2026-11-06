@@ -56,7 +56,7 @@ public sealed class AskSignatureTests
 public sealed class IntakeTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-intake-driver-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-intake-driver-" + Guid.NewGuid().ToString("N")[..8]);
 
     public IntakeTests() => Directory.CreateDirectory(_home);
 

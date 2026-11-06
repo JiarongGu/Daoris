@@ -13,7 +13,7 @@ public sealed class DriverConfigFenceTests : IDisposable
 {
     private const string Start = "{\n  \"cap\": 3,\n  \"intakeAdapter\": \"codex-acp\"\n}\n";
 
-    private readonly string _folder = Path.Combine(Path.GetTempPath(), "daoris-fence-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _folder = Path.Combine(TestHomes.Root, "daoris-fence-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _path;
 

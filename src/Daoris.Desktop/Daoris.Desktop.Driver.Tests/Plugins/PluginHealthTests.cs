@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class PluginHealthTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-health-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-health-" + Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly DateTimeOffset Zero = new(2026, 10, 1, 9, 0, 0, TimeSpan.Zero);
 

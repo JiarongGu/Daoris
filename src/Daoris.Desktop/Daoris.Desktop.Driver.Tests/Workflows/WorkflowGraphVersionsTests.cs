@@ -162,7 +162,7 @@ public sealed class WorkflowGraphVersionsTests
     [Fact]
     public void A_runs_first_start_binds_the_newest_version_when_it_is_a_graph_by_its_graph_digest()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-graph-versions-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-graph-versions-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var steps = JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""")!;

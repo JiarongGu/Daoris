@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HarnessConversationsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-harness-conv-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-harness-conv-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HarnessConversationsTests() => Directory.CreateDirectory(_home);
 

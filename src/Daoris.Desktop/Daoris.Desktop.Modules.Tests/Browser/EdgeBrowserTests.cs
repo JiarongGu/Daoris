@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -8,7 +9,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class EdgeBrowserTests : Bridge
 {
-    private static readonly string Root = Path.Combine(Path.GetTempPath(), "daoris-edge");
+    private static readonly string Root = Path.Combine(TestHomes.Root, "daoris-edge");
 
     private static Func<string, string?> Environment(params (string Name, string Value)[] set) =>
         name => set.FirstOrDefault(pair => pair.Name == name).Value;

@@ -14,7 +14,7 @@ public sealed class PartnerAdmissionTests : IDisposable
 
     private static readonly IReadOnlyDictionary<string, string?> NoChain = new Dictionary<string, string?>();
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-partner-admission-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-partner-admission-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PartnerAdmissionTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Partners));
 

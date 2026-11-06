@@ -17,7 +17,7 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpRoomTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-help-room-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-help-room-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpRoomTests() => Directory.CreateDirectory(_home);
 

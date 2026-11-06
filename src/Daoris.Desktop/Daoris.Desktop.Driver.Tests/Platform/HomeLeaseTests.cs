@@ -21,7 +21,7 @@ public sealed class HomeLeaseTests : IDisposable
     /// <summary>A process id no process has: Windows hands out multiples of four, from the bottom.</summary>
     private const int NoProcess = 0x7FFFFFFC;
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-home-lease-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-home-lease-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HomeLeaseTests() => Directory.CreateDirectory(_home);
 

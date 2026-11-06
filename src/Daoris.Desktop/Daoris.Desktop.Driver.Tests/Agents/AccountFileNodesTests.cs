@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class AccountFileNodesTests : IDisposable
 {
     private readonly string _folder = Path.Combine(
-        Path.GetTempPath(), "daoris-accountnodes-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-accountnodes-" + Guid.NewGuid().ToString("N")[..8]);
 
     public AccountFileNodesTests() => Directory.CreateDirectory(_folder);
 

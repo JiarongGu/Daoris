@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class ChatAgentTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-chat-agent-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-chat-agent-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly SessionProcesses _processes;
 
@@ -59,7 +59,7 @@ public sealed class ChatAgentTests : IDisposable
     public void Its_process_is_its_doors_own_equipped_as_every_sessions_is()
     {
         var adapter = ProviderRegistry.Built().Resolve("claude-code");
-        var request = SpawnRequests.Chat("engine", Path.GetTempPath(), "http://localhost:5177", "c1");
+        var request = SpawnRequests.Chat("engine", TestHomes.Root, "http://localhost:5177", "c1");
         var selection = new HarnessSelection(null);
 
         var info = new ChatAgent(adapter).Prepare(request, selection);

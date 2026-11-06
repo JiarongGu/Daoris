@@ -17,7 +17,7 @@ public sealed class PermissionSeamTests
         "abc123", "Expose a streaming budget", "World streaming needs a per-frame cap.",
         "game", "engine", root, "http://localhost:5177");
 
-    private static readonly string File = Path.Combine(Path.GetTempPath(), "daoris-home", "spawn", "s1.settings.json");
+    private static readonly string File = Path.Combine(TestHomes.Root, "daoris-home", "spawn", "s1.settings.json");
 
     /// <summary>
     /// `--settings &lt;file&gt;` — *"load additional settings from"* (`claude --help`, 2.1.280, HELP3's
@@ -28,7 +28,7 @@ public sealed class PermissionSeamTests
     public void The_pipe_door_takes_the_rules_as_its_settings_flag()
     {
         var adapter = ProviderRegistry.Built().Resolve("claude-code");
-        var info = adapter.Prepare(Target(Path.GetTempPath()), command: null);
+        var info = adapter.Prepare(Target(TestHomes.Root), command: null);
 
         Assert.True(adapter.TakesSettings);
         adapter.HandSettings(info, File);
@@ -46,7 +46,7 @@ public sealed class PermissionSeamTests
     public void A_pipe_door_conversation_takes_them_too()
     {
         var adapter = ProviderRegistry.Built().Resolve("claude-code");
-        var info = adapter.PrepareChat(SpawnRequests.Chat("engine", Path.GetTempPath(), "http://localhost:5177", null));
+        var info = adapter.PrepareChat(SpawnRequests.Chat("engine", TestHomes.Root, "http://localhost:5177", null));
 
         adapter.HandSettings(info, File);
 
@@ -63,7 +63,7 @@ public sealed class PermissionSeamTests
     public void The_protocol_door_takes_them_on_session_new()
     {
         var adapter = ProviderRegistry.Built().Resolve("claude-code-acp");
-        var info = adapter.Prepare(Target(Path.GetTempPath()), command: null);
+        var info = adapter.Prepare(Target(TestHomes.Root), command: null);
 
         Assert.True(adapter.TakesSettings);
         adapter.HandSettings(info, File);
@@ -86,7 +86,7 @@ public sealed class PermissionSeamTests
     public void Every_other_harness_is_handed_nothing(string name)
     {
         var adapter = ProviderRegistry.Built().Resolve(name);
-        var info = adapter.Prepare(Target(Path.GetTempPath()), command: ["node", "agent.mjs"]);
+        var info = adapter.Prepare(Target(TestHomes.Root), command: ["node", "agent.mjs"]);
         var before = info.ArgumentList.ToList();
 
         Assert.False(adapter.TakesSettings);

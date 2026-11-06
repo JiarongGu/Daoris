@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class TransportRunTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-transport-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-transport-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly ServiceClient _service = new("http://127.0.0.1:9", null);
 

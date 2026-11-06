@@ -11,7 +11,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
 {
     private static readonly DateTimeOffset At = new(2026, 10, 9, 9, 12, 30, 250, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-workflow-runs-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-workflow-runs-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class WorkEventWiringTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-workevent-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-workevent-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly MachineLog _log;
     private DateTimeOffset _now = new(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);
 

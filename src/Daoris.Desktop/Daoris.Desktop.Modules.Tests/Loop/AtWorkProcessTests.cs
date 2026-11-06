@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
@@ -14,7 +15,7 @@ namespace Daoris.Desktop.Modules.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class AtWorkProcessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-atwork-proc-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-atwork-proc-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly EventBus _bus = new(NullLogger<EventBus>.Instance);
     private readonly LineageTokens _tokens = new(4243, new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc));
     private readonly StateSlice _groups;

@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class StubFileTests : IDisposable
 {
     private readonly string _path = Path.Combine(
-        Path.GetTempPath(), "daoris-stub-file-" + Guid.NewGuid().ToString("N")[..8] + ".txt");
+        TestHomes.Root, "daoris-stub-file-" + Guid.NewGuid().ToString("N")[..8] + ".txt");
 
     public void Dispose()
     {

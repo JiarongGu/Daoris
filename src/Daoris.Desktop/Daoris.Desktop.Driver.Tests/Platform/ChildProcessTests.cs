@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class ChildProcessTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-child-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-child-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ChildProcessTests() => Directory.CreateDirectory(_root);
 

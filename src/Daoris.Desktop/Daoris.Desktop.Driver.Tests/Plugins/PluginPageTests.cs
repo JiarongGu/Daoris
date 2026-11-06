@@ -13,7 +13,7 @@ public sealed class PluginPageTests : IDisposable
     private const string Secret = "s3cr3t-value-never-shown";
 
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-page-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-page-" + Guid.NewGuid().ToString("N")[..8]);
 
     /// <summary>The Daoris home, beside the checkout a plugin was added from: a source inside the home is refused.</summary>
     private string Home => Path.Combine(_root, "home");

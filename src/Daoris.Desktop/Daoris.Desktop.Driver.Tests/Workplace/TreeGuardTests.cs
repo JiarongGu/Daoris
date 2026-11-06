@@ -22,7 +22,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class TreeGuardTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-tree-guard-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-tree-guard-" + Guid.NewGuid().ToString("N")[..8]);
 
     public TreeGuardTests() => Directory.CreateDirectory(_home);
 

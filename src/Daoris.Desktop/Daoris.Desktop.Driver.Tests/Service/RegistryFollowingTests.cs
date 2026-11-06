@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class RegistryFollowingTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-registry-following-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-registry-following-" + Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly DateTimeOffset Noon = new(2026, 10, 1, 12, 0, 0, TimeSpan.Zero);
 

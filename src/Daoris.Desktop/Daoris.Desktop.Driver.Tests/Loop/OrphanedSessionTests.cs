@@ -23,7 +23,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class OrphanedSessionTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-orphans-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-orphans-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Markers => DaorisHome.Entry(_home, HomeEntry.Sessions);
 

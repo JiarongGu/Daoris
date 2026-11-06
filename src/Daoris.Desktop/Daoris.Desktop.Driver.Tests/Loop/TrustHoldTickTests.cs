@@ -24,7 +24,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class TrustHoldTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-trust-tick-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-trust-tick-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
     private readonly string _trustFile;

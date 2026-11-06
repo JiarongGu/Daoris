@@ -19,7 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class PinnedUpdatesTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-pinned-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-pinned-tests", Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

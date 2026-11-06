@@ -19,7 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class SessionsCommandTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-sessions-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-sessions-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SessionsCommandTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 

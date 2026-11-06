@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -37,7 +38,7 @@ public sealed class SystemWiringTests : IDisposable
 
     private string Scratch(string name)
     {
-        var folder = Path.Combine(Path.GetTempPath(), "daoris-wiring-tests", Guid.NewGuid().ToString("N")[..8], name);
+        var folder = Path.Combine(TestHomes.Root, "daoris-wiring-tests", Guid.NewGuid().ToString("N")[..8], name);
         Directory.CreateDirectory(folder);
         _made.Add(Path.GetDirectoryName(folder)!);
         return folder;

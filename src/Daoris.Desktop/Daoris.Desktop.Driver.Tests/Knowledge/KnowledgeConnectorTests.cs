@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class KnowledgeConnectorTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-connector-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-connector-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

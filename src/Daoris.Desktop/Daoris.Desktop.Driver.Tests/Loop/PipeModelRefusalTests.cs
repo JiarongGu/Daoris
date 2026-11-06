@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Nothing here starts a process: the native door's output is fed through the real capture from text.</remarks>
 public sealed class PipeModelRefusalTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-pipe-refusal-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-pipe-refusal-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

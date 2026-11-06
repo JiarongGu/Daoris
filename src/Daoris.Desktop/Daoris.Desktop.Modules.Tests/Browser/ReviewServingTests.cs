@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -14,7 +15,7 @@ public sealed class ReviewServingTests : IDisposable
 {
     private readonly StandInChromium _chromium = new();
     private readonly PersonServer _person = new();
-    private readonly string _folder = Path.Combine(Path.GetTempPath(), "daoris-review-serving-" + Guid.NewGuid().ToString("N")[..8], "dist", "app");
+    private readonly string _folder = Path.Combine(TestHomes.Root, "daoris-review-serving-" + Guid.NewGuid().ToString("N")[..8], "dist", "app");
     private readonly ReviewTabs _tabs;
 
     public ReviewServingTests()

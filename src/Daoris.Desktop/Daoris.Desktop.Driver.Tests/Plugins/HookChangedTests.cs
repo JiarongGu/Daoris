@@ -18,7 +18,7 @@ public sealed class HookChangedTests : IDisposable
     // f306b46) left the sample plugin unstarted, 6 of 6 alone five times.
     private static readonly TimeSpan Patience = Poll.Patience;
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-changed-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-changed-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

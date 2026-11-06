@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -18,7 +19,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class FirstWindowTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-log2b-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-log2b-" + Guid.NewGuid().ToString("N")[..8]);
 
     public FirstWindowTests() => Directory.CreateDirectory(_home);
 

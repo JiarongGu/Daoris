@@ -293,7 +293,7 @@ public sealed class NativeResumeTests
     [Fact]
     public async Task The_native_capture_tells_the_conversation_once_as_the_init_line_names_it()
     {
-        var folder = Path.Combine(Path.GetTempPath(), "daoris-native-named-" + Guid.NewGuid().ToString("N")[..8]);
+        var folder = Path.Combine(TestHomes.Root, "daoris-native-named-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(folder);
         try
         {

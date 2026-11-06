@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class HelpChatTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-help-chat-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-help-chat-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpChatTests()
     {

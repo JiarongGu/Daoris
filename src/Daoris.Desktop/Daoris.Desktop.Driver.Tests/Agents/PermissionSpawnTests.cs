@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class PermissionSpawnTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-permission-spawn-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-permission-spawn-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

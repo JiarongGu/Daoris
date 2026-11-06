@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
@@ -12,7 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class AnswerRuleWordsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-answer-rule-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-answer-rule-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

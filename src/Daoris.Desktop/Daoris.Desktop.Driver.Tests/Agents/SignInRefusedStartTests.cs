@@ -26,7 +26,7 @@ public sealed class SignInRefusedStartTests : IDisposable
     /// <summary>The install's refusal (2026-10-04), as the protocol door says it.</summary>
     private const string Refusal = "the ACP agent refused the call: Authentication required";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-signin-start-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-signin-start-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

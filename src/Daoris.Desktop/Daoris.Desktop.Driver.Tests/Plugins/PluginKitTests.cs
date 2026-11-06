@@ -20,7 +20,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class PluginKitTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(
-        Path.GetTempPath(), "daoris-kit-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-kit-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PluginKitTests() => Directory.CreateDirectory(_scratch);
 

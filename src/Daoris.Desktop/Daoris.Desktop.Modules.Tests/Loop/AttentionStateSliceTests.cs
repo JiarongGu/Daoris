@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
@@ -1531,7 +1532,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     [Fact]
     public void The_answers_alone_waits_are_the_marks_held_for_the_person()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-answer-waits-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-answer-waits-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var marks = new GoOnMarks(home);
@@ -2062,7 +2063,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     [Fact]
     public void The_slice_reads_the_homes_git_go_aheads_and_hears_one_raised()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-attention-git-ask-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-attention-git-ask-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             using var woken = new SemaphoreSlim(0);
@@ -2085,7 +2086,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     [Fact]
     public void The_slice_reads_the_homes_holds_and_hears_them_move()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-attention-git-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-attention-git-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var root = Path.Combine(home, "engine");

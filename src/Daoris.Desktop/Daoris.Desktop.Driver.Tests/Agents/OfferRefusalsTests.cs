@@ -11,7 +11,7 @@ public sealed class OfferRefusalsTests : IDisposable
 {
     private static readonly ModelRefusal Refused = new("model", "opus-9", "not-offered");
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-offer-refusals-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-offer-refusals-" + Guid.NewGuid().ToString("N")[..8]);
 
     public OfferRefusalsTests() => Directory.CreateDirectory(_home);
 

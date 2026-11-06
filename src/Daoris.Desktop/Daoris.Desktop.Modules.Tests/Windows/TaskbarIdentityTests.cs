@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -16,7 +17,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class TaskbarIdentityTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-taskbar-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-taskbar-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

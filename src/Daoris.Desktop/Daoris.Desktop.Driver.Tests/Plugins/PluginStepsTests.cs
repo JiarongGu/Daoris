@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>🔴 <b>A problem refuses the plugin</b>, as a skill's does (§C4): its code and words, and nothing of the plugin is taken.</remarks>
 public sealed class PluginStepsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-plugin-steps-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-plugin-steps-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HelpAccessSwapTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-swap-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-swap-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly SessionOutput _output = new();
 
     public HelpAccessSwapTests() => Directory.CreateDirectory(_home);

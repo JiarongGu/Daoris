@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -11,7 +12,7 @@ namespace Daoris.Driver.Tests;
 /// </summary>
 public sealed class NativeStreamsTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-native-streams-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-native-streams-" + Guid.NewGuid().ToString("N")[..8]);
 
     public NativeStreamsTests() => Directory.CreateDirectory(_root);
 

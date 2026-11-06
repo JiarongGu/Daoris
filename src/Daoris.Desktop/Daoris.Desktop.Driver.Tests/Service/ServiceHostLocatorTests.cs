@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class ServiceHostLocatorTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-locator-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-locator-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

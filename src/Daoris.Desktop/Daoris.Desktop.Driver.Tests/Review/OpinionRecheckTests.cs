@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class OpinionRecheckTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-recheck-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-recheck-" + Guid.NewGuid().ToString("N")[..8]);
 
     public OpinionRecheckTests()
     {
