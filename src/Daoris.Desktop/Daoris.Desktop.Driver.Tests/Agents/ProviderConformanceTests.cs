@@ -115,8 +115,8 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
     ];
 
     /// <summary>
-    /// The layout (D213's row b part 2 note): every provider the suite runs brings its own file, a stand-in's beside its <c>provider.json</c>
-    /// and a real provider's under <c>fixtures/providers/&lt;id&gt;/</c>, each in the one shape, and no file stands for a provider nobody runs.
+    /// The layout (D213's row b part 2 note): every provider the suite runs brings its own file, beside its <c>provider.json</c> where it has a
+    /// folder and else under <c>fixtures/providers/&lt;id&gt;/</c>, each in the one shape, and no file stands for a provider nobody runs.
     /// </summary>
     [Fact]
     public void Each_provider_brings_its_own_pending_file_by_one_layout()
@@ -128,7 +128,7 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
             Path.Combine(SourceFiles.Project(SourceFiles.DriverProject), "Agents", "Providers", "Stub", ConformancePending.FileName),
             ConformancePending.FileOf("stub"));
         Assert.Equal(
-            Path.Combine(SourceFiles.Project(SourceFiles.DriverTestsProject), "fixtures", "providers", "claude-code", ConformancePending.FileName),
+            Path.Combine(SourceFiles.Project(SourceFiles.DriverProject), "Agents", "Providers", "ClaudeCode", ConformancePending.FileName),
             ConformancePending.FileOf("claude-code"));
     }
 

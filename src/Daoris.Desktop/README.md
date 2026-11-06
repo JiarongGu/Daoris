@@ -36,7 +36,7 @@ and tests mirrored under `Driver.Tests/Agents/`. Namespaces remain `Daoris.Drive
 (`ISpawn`, the dialects, `IUsageQuestion`, `AgentRun`), `Providers.Built()`, the one registration list, and the stand-ins written on the contract
 in `Agents/Providers/Stub/`, which `LegacyDoor` presents to today's readers as adapters; the stand-in flag, the roster's listing and the verbs'
 operands read the registry. `Driver.Tests/Agents/ProviderConformanceTests.cs` is the conformance suite (design §10), every case run per provider
-and door, each one a provider cannot pass yet held in its own `pending.json` (a stand-in's beside its `provider.json`, a real provider's under
+and door, each one a provider cannot pass yet held in its own `pending.json` (beside its `provider.json`; a provider with no folder keeps it under
 `Driver.Tests/fixtures/providers/<id>/`) with the row that makes it pass.
 `AgentRun` holds, beside its eight operations, the five members every executor uses (AGENTPROVIDER1 row m-i, D213's 2026-10-30 note): the records
 handed at the open, the carriers, the end, the go-on and the restart. `Agents/TransportRun.cs` implements it over today's two transports, a

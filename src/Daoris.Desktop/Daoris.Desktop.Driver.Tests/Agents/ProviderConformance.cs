@@ -233,7 +233,7 @@ internal sealed class NotAnsweredYet(string reader) : Exception($"no reader answ
 
 /// <summary>
 /// The pending layout (D213's row b part 2 note): one <c>pending.json</c> per provider, an array of <c>{ case, door, row, why }</c>, a
-/// stand-in's beside its <c>provider.json</c> in its folder under <c>Agents/Providers/</c>, a real provider's under the tests'
+/// beside its <c>provider.json</c> in its folder under <c>Agents/Providers/</c>, or, for a provider with no folder, under the tests'
 /// <c>fixtures/providers/&lt;id&gt;/</c>. A new provider brings its own file and edits none shared.
 /// </summary>
 internal static class ConformancePending
