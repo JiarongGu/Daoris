@@ -15,6 +15,11 @@ public static class ChatNoteCodes
     public static readonly NoteCode ChatTakenOver = new("chat.taken-over", ["agent", "session", "why"]) { Why = NoteCodes.Handed };
     public static readonly NoteCode ChatBriefingUnsaid = new("chat.briefing-unsaid", []);
 
+    // ——— What the outgoing part left running as a hand-over or a move ended it (COAGENT1g): ended and waited for before the next part
+    // started in its tree, or still running at the bound, which the next part then started beside.
+    public static readonly NoteCode ChatLeftEnded = new("chat.left-ended", ["count"]);
+    public static readonly NoteCode ChatLeftRunning = new("chat.left-running", ["count", "seconds"]);
+
     // ——— A conversation moved to another account of its agent by the usage curve: the old one's last line says where it went and how
     // far over its curve its account was, the new one's first where it came from. They name the accounts, since a conversation's
     // record stays on this machine.
