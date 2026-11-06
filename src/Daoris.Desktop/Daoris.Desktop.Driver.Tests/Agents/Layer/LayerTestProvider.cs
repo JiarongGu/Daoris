@@ -22,9 +22,10 @@ internal static class LayerTestProvider
 {
     public const string Id = "layer-stub";
 
-    public static AgentProviderDescriptor Descriptor { get; } = new()
+    /// <summary>The provider as registered under <paramref name="id"/>, the Daoris door it is bound to.</summary>
+    public static AgentProviderDescriptor Descriptor(string id = Id) => new()
     {
-        Id = Id,
+        Id = id,
         Doors =
         [
             new LayerDoor
@@ -41,9 +42,12 @@ internal static class LayerTestProvider
     };
 
     /// <summary>The provider's registration under <paramref name="door"/>, its program <paramref name="command"/>.</summary>
-    public static LayerRegistration Registration(IReadOnlyList<string> command, string door = Id) =>
-        new(door, builder => builder.AddAgentProvider(
-            Descriptor, services => new AgentProvider(Descriptor, _ => new Session(services.GetRequiredService<IProcessRunner>(), command))));
+    public static LayerRegistration Registration(IReadOnlyList<string> command, string door = Id)
+    {
+        var descriptor = Descriptor(door);
+        return new(door, builder => builder.AddAgentProvider(
+            descriptor, services => new AgentProvider(descriptor, _ => new Session(services.GetRequiredService<IProcessRunner>(), command))));
+    }
 
     /// <summary>A scenario's program in <paramref name="scratch"/>, saying what <paramref name="spec"/> says, as a command.</summary>
     /// <remarks>

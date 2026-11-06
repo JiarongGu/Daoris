@@ -44,7 +44,8 @@ public sealed class LayerContainerTests
     [Fact]
     public void A_registration_that_registers_another_id_than_its_door_is_refused()
     {
-        var refused = Assert.Throws<DriverException>(() => LayerContainer.ForRegistry([LayerTestProvider.Registration(Command, door: "elsewhere")]));
+        var refused = Assert.Throws<DriverException>(() => LayerContainer.ForRegistry(
+            [new LayerRegistration("elsewhere", LayerTestProvider.Registration(Command).Register)]));
 
         Assert.Contains("elsewhere", refused.Message);
     }
