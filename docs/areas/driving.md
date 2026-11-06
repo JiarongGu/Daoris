@@ -204,9 +204,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     person at 3Q. While it waits on its own background work these are 3Q and 5Q. A wait for a permission answer is
     never quiet. Daoris ends nothing quiet but a dead process and a headless `--quiet-end`. A quest session on any door
     that takes words, once marked, is told once as Daoris's urgent word (`watch/<session>/<episode>`; `QuietWord`), unless
-    `LongCalls` told the same call: the protocol door's reaches the agent at its next step, and the native and text-only
+    it told the same call as long: the protocol door's word reaches the agent at its next step, and the native and text-only
     doors' waits for the turn's end, judged by its episode where it leaves, so it goes to no turn once the session was heard
-    again. The word is taken off the record when the episode or the run ends, is no word a record waits on (`SessionViews.Waiting`,
+    again. The same look finds a light session's call or background task past its pipeline's `callMinutes` (20 by default;
+    `CallBound`, `LongCallLook`) and tells it once, urgent (`long-call/<session>/…`), only where the door takes words at its
+    next step; Daoris ends neither. The page's row says *quiet* with its time and, once the word was kept, that Daoris told
+    it (`quietTold` on the calls slice). The quiet word is taken off the record when the episode or the run ends, is no word a record waits on (`SessionViews.Waiting`,
     so no look goes on with it and no carry-on resumes from it), is settled at the come-up (`UncertainWords`) where a crash left it on
     an ended record, and is marked on its event (`SessionEvent.Watcher`) so it resets no answers-alone count. Q is `quietMinutes` in
     `driver.json`, 10 by default and 5 to 120, written only when set and read at each look; it is set at Settings → Driver, by
@@ -325,7 +328,6 @@ The gates that bite: `driver` (which also runs `StructureTests`: the module stru
 
 - **D214** (no backlog row): a repository's pool of trees handed from line to line; proposed, both makers' reads of
   round 3 owed.
-- **SESSWATCH1b (rest)**: the row's *told* line; `LongCalls`' look folded into the watcher's.
 - **SESSWATCH1d, 1e**: the record of quiet episodes, then an automatic end only where it shows such quiet is not work.
 - **SESSWATCH1f**: each pass asked for its own minutes.
 - **ONEWAY1j / SESSCTX1e**: *Go on fresh*, one press per go-on case.

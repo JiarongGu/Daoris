@@ -1,392 +1,388 @@
 # Documentation router
 
-Find a document here, then read the relevant section. A **contract** states what a part must keep;
-a **method** describes how to build it; **studies** inform decisions; **evidence** records a dated
-observation; **records** hold history; a **proposal** needs a decision before adoption. A **design**
-runs through brief, proposals, reads and the synthesis (D191); a row says which of them it is and whether it is
-accepted or proposed. Its banner holds the rounds, the findings and the backlog rows.
+Find a document here. A **contract** states what a part must keep; a **method** how to build it; **studies**
+inform decisions; **evidence** records a dated observation; **records** hold history; a **proposal** needs a
+decision before adoption. A **design** runs through brief, proposals, reads and synthesis (D191); its row says
+which, and whether accepted or proposed. Its banner holds the rounds, findings and backlog rows.
 
-Later decisions override earlier contracts. A contract's baseline is historical; implementation
-and amendments live in its numbered decision's dated notes. `TASKS.md` holds remaining work.
-This router points to those homes rather than maintaining another build-status list (D127/D159).
-Paths below are relative to this file. Historical documents have their own [archive router](archive/README.md).
+Later decisions override earlier contracts; amendments live in the numbered decision's dated notes. `TASKS.md`
+holds remaining work (D127/D159). Paths are relative to this file. Historical documents have the
+[archive router](archive/README.md). In the tables a family's rows share a tag (e.g. FOUNDATION1).
 
 ## Guides
 
 | Document | Purpose
 |---|---|
-| `../README.md` | Landing page on GitHub and npm (D211); links absolute
-| `guide/README.md` | Reference behind the README: commands, manifest, layers, seams
-| `../llms.txt`, `../context7.json` | For coding agents (D211); rules held equal to README's
-| `assets/` | Package icon, its SVG, the README logo
-| `../AGENTS.md` | Shared brief and generated doctrine
-| `../CLAUDE.md` | Generated import of AGENTS
-| `development.md` | Contributor setup, checks, integration, documentation upkeep
-| `../ROADMAP.md` | Forward sequence; TASKS owns acceptance
-| `../src/Daoris.Desktop/README.md` | Desktop installation, machine bridge, instruments
-| `../src/Daoris.Service/README.md` | Knowledge, quests, hosts, trust, configuration
-| `../src/Daoris.Web/README.md` | Platform views, frontend conventions, test loop
-| `../src/Daoris.Devkit/README.md` | Universal gates, code map, distribution
-| `../examples/README.md` | Adoption and routing; family rehearsal
-| `../examples/engine/README.md` | Example engine adopter
-| `../examples/game/README.md` | Example game adopter
-| `../examples/plugins/README.md` | Example plugins index
-| `../examples/plugins/local-release/README.md` | Publish and release performed steps plugin example
-| `../examples/plugins/hold-by-title/README.md` | Family rehearsal plugin fixture
-| `../examples/plugins/browser/README.md` | Standalone browser plugin example
-| `../examples/plugins/in-app-browser/README.md` | Browser connection plugin example
-| `../examples/plugins/github-pull-request/README.md` | GitHub landing plugin example
-| `../examples/plugins/azure-devops-pull-request/README.md` | Azure DevOps landing plugin example
-| `../examples/plugins/local-preview/README.md` | Performed step plugin example
-| `../examples/plugins/event-relay/README.md` | Work event relay plugin example
-| `../tools/dsh-probes/README.md` | Dated protocol probe instructions
+|`../README.md`|Landing page (D211)
+|`guide/README.md`|Commands, manifest, layers, seams
+|`../llms.txt`, `../context7.json`|For coding agents (D211)
+|`assets/`|Icon, logo
+|`../AGENTS.md`|Shared brief, doctrine
+|`../CLAUDE.md`|Generated import of AGENTS
+|`development.md`|Contributor setup, checks, upkeep
+|`../ROADMAP.md`|Forward sequence
+|`../src/Daoris.Desktop/README.md`|Desktop installation, bridge
+|`../src/Daoris.Service/README.md`|Knowledge, quests, hosts
+|`../src/Daoris.Web/README.md`|Views, conventions, test loop
+|`../src/Daoris.Devkit/README.md`|Gates, code map, distribution
+|`../examples/README.md`|Adoption, family rehearsal
+|`../examples/engine/README.md`|Engine adopter
+|`../examples/game/README.md`|Game adopter
+|`../examples/plugins/README.md`|Plugin examples
+|`../examples/plugins/local-release/README.md`|Release steps plugin
+|`../examples/plugins/hold-by-title/README.md`|Rehearsal plugin fixture
+|`../examples/plugins/browser/README.md`|Browser plugin
+|`../examples/plugins/in-app-browser/README.md`|Browser connection plugin
+|`../examples/plugins/github-pull-request/README.md`|GitHub landing plugin
+|`../examples/plugins/azure-devops-pull-request/README.md`|Azure DevOps landing plugin
+|`../examples/plugins/local-preview/README.md`|Performed step plugin
+|`../examples/plugins/event-relay/README.md`|Event relay plugin
+|`../tools/dsh-probes/README.md`|Protocol probes
 
 ## Doctrine, knowledge and development contracts
 
 | Document | Kind and subject
 |---|---|
-| `2026-08-04-daoris-design.md` | Contract: CLI doctrine lifecycle
-| `2026-08-05-knowledge-service-design.md` | Contract: indexing and disclosure
-| `2026-09-22-instruction-file-design.md` | Contract: always-loaded instruction region
-| `2026-09-23-map-design.md` | Contract: workspace, workflow and code maps
-| `2026-09-30-parallel-development-design.md` | Contract: records, splits, lanes
-| `2026-10-01-self-development-design.md` | Contract: concurrent work, landing queue
-| `2026-10-01-agent-layout-design.md` | Contract: agent layouts, mirrors, rooms
-| `2026-10-01-development-documents-design.md` | Contract: roles, safe-work declarations
-| `2026-10-01-workspace-setup-design.md` | Contract: setup quests, registration
-| `2026-10-02-session-economy-design.md` | Contract: reading cost, record shapes
-| `2026-10-02-setup-pilot-lessons-design.md` | Contract: preserve knowledge, green checks
-| `2026-10-02-knowledge-design-review.md` | Contract: discovery floor, recall
-| `2026-10-03-decisions-record-design.md` | Contract: per-decision files, checks
-| `2026-10-04-orientation-everywhere-design.md` | Contract: repository indexes, source ranges
-| `2026-10-24-ci-scope-design.md` | Accepted design (D207): modular CI by reach
-| `2026-10-24-ci-scope-reads.md` | Reads: CISCOPE1 rounds 1-5
+|`2026-08-04-daoris-design.md`|Contract: CLI doctrine
+|`2026-08-05-knowledge-service-design.md`|Contract: indexing, disclosure
+|`2026-09-22-instruction-file-design.md`|Contract: instruction region
+|`2026-09-23-map-design.md`|Contract: maps
+|`2026-09-30-parallel-development-design.md`|Contract: records, lanes
+|`2026-10-01-self-development-design.md`|Contract: concurrent work, landing queue
+|`2026-10-01-agent-layout-design.md`|Contract: agent layouts
+|`2026-10-01-development-documents-design.md`|Contract: roles, safe work
+|`2026-10-01-workspace-setup-design.md`|Contract: setup quests
+|`2026-10-02-session-economy-design.md`|Contract: reading cost
+|`2026-10-02-setup-pilot-lessons-design.md`|Contract: preserving knowledge
+|`2026-10-02-knowledge-design-review.md`|Contract: discovery, recall
+|`2026-10-03-decisions-record-design.md`|Contract: decision files
+|`2026-10-04-orientation-everywhere-design.md`|Contract: indexes, ranges
+|`2026-10-24-ci-scope-design.md`|Accepted design: CI by reach (D207)
+|`2026-10-24-ci-scope-reads.md`|Reads: CISCOPE1
 
 ## Driver, sessions, sharing and landing contracts
 
 | Document | Kind and subject
 |---|---|
-| `2026-09-19-driver-design.md` | Contract: planning, session lifecycle
-| `2026-09-20-workspace-design.md` | Contract: workspace membership, sharing
-| `2026-09-20-interactive-design.md` | Contract: chat, console, managed agents
-| `2026-09-20-remote-design.md` | Contract: optional team deployment
-| `2026-09-22-toolchain-design.md` | Contract: binaries, accounts, usage
-| `2026-09-23-api-key-accounts.md` | Contract: API-key account declarations
-| `2026-09-23-intake-design.md` | Contract: asks become repository quests
-| `2026-09-23-sync-design.md` | Contract: fetch, rebase, push
-| `2026-09-24-permission-scopes-design.md` | Contract: permissions, reading across
-| `2026-09-27-ask-and-wait-design.md` | Contract: cross-repository questions, carry-on
-| `2026-09-30-machine-log-design.md` | Contract: machine-local measurements
-| `2026-09-30-terminal-design.md` | Contract: person's shell in the panel
-| `2026-10-01-account-rotation-design.md` | Contract: limits, cool-off, rotation
-| `2026-10-02-account-use-design.md` | Contract: participation, capacity
-| `2026-10-02-session-management-design.md` | Contract: groups, actions, archive, deletion
-| `2026-10-02-answer-continues-design.md` | Contract: resume on the same conversation
-| `2026-10-02-pause-and-clean-up-design.md` | Contract: pause, resume, abandon
-| `2026-10-03-session-messages-design.md` | Contract: queued words, reopened runs
-| `2026-10-03-update-when-idle-design.md` | Contract: staged update, drain, rollback
-| `2026-10-03-evidence-design.md` | Contract: completion evidence checks
-| `2026-10-04-landing-and-proof-design.md` | Contract: automatic landing, kept proof
-| `2026-10-04-built-in-git-design.md` | Contract: branches, history, ref actions
-| `2026-10-07-history-clearing-design.md` | Contract: clear local finished history
-| `2026-10-08-review-environment-design.md` | Contract: setup, person's review verdict
-| `2026-10-08-second-agent-design.md` | Contract: another maker's agent reviews
-| `model-roles.md` | Reference: which model does which role; living, dated
-| `2026-10-09-person-door-design.md` | Contract: person/driver authorization
-| `2026-10-09-workflow-design.md` | Contract: choices, versions, gates
-| `2026-10-14-co-working-design.md` | Contract: one session per line; an ask's channel
-| `2026-10-16-install-layout-design.md` | Contract: the Daoris folder's layout
-| `2026-10-16-terminal-rpc-design.md` | Contract: terminal verbs over a pipe; home lease
-| `2026-10-16-fabric-events-design.md` | Contract: events over polling; part C proposed
-| `2026-10-19-verification-lanes-design.md` | Proposed design: checks as lanes beside work
-| `2026-10-19-ask-daoris-modes-design.md` | Proposed design: Ask Daoris's modes
-| `2026-10-19-cross-agent-brainstorming-design.md` | Contract: one question fanned to several makers
-| `2026-10-20-message-urgency-design.md` | Accepted design: message urgency levels
-| `2026-10-20-session-context-design.md` | Accepted design: session context is Daoris's record
-| `2026-10-21-company-concept.md` | Contract (D193): Daoris as a company run by agents
-| `2026-10-20-fabric-cutover-design.md` | Accepted design: runs bound to a graph version
-| `2026-10-20-pipeline-design.md` | Proposed design: start node routes into pipelines
-| `2026-10-21-alone-path-design.md` | Proposed design: driver verbs run alone or via Daoris
-| `2026-10-21-cleanup-design.md` | Accepted design: one keep rule per kind
-| `2026-10-21-account-pool-design.md` | Proposed design: one account pool for all workspaces
-| `2026-10-22-coagent-design.md` | Accepted design: agents of different makers in one session
-| `2026-10-22-git-auth-design.md` | Accepted design: Daoris's own git identities and access
-| `2026-10-23-session-watch-design.md` | Accepted design: no limit on a working session; a watcher
-| `2026-10-23-start-path-design.md` | Reading and proposal: the desktop's start timed
-| `2026-10-23-terminal-trust-design.md` | Accepted design: standing confirmation for a terminal
-| `2026-10-23-coworker-brief.md` | Brief: COWORKUX1 co-workers
-| `2026-10-23-coworker-proposals.md` | Proposals: COWORKUX1, sealed
-| `2026-10-23-coworker-reads.md` | Reads: COWORKUX1 rounds 1-2
-| `2026-10-23-coworker-design.md` | Proposed design: a session's co-workers (D203)
-| `2026-10-23-limit-goes-on-design.md` | Design note, built: a limited conversation goes on
-| `2026-10-23-git-app-brief.md` | Brief: GITAPP1 git app and fast Review
-| `2026-10-23-git-app-proposals.md` | Proposals: GITAPP1, sealed
-| `2026-10-23-git-app-design.md` | Proposed design: Review as a parallel git graph (D202)
-| `2026-10-23-git-writes-design.md` | Design: the person's git writes (D204), round 3, accepted after both reads' named changes
-| `2026-10-31-git-writes-read-codex.md` | Reads: GITAPP2, three reads and the steward's settlement; accepted
-| `2026-10-23-git-app-reads.md` | Reads: GITAPP1 rounds 1-4
-| `2026-10-23-actors-brief.md` | Brief: MODELROLE1 actors
-| `2026-10-23-actors-proposals.md` | Proposals: MODELROLE1, sealed
-| `2026-10-23-actors-reads.md` | Reads: MODELROLE1 rounds 1-3
-| `2026-10-23-actors-design.md` | Proposed design: actors, each an ordered range (D205)
-| `2026-10-23-limit-resume-design.md` | Accepted design: limit-cut work resumes (D206)
-| `2026-10-23-limit-resume-reads.md` | Reads: LIMITRESUME1 rounds 1-2
-| `2026-10-24-agent-errors-design.md` | Accepted design: one error policy per agent (D210)
-| `2026-10-24-agent-errors-reads.md` | Reads: AGENTERRORS1 rounds 1-3
-| `2026-10-24-supervisor-design.md` | Accepted design: appointed roles; the supervisor (D208)
-| `2026-10-24-steward-role-design.md` | Accepted design: the steward role (D209)
-| `2026-10-24-steward-role-reads.md` | Reads: STEWARDROLE1 rounds 1-3
-| `2026-10-24-supervisor-reads.md` | Reads: SUPERVISOR1 rounds 1-4
-| `2026-10-24-keep-size-design.md` | Accepted design: the install's size kept (D195 note)
-| `2026-10-24-keep-size-reads.md` | Reads: KEEPSIZE1 rounds 2-3
-| `2026-10-24-confirm-wait-design.md` | Accepted design: a press waits for the person's Confirm
-| `2026-10-24-confirm-wait-reads.md` | Reads: CONFIRMWAIT1 rounds 1-2
-| `2026-10-24-cowork-view-design.md` | Row a accepted design: subagents in *At work*; routing half proposed
-| `2026-10-24-chat-flow-design.md` | Accepted design: a chat in its own tree runs the workflow
-| `2026-10-24-cowork-view-reads.md` | Reads: COWORKVIEW1 rounds 1-10
-| `2026-10-24-chat-flow-reads.md` | Reads: CHATFLOW1 rounds 1-2 and Codex's
-| `2026-10-24-event-hook-design.md` | Accepted design, rows 1a-1c: events pushed to an outside agent
-| `2026-10-24-event-hook-reads.md` | Reads: EVENTHOOK1 rounds 1-4
-| `2026-10-24-switch-context-design.md` | Proposed design: a move keeps the agent's context
-| `2026-10-24-switch-context-reads.md` | Reads: SWITCHCTX1 rounds 1-5
-| `2026-10-25-foundation-survey.md` | Evidence: FOUNDATION1 structure by file:line
-| `2026-10-25-foundation-design.md` | Accepted design (D212): Part A building, Part B accepted
-| `2026-10-25-foundation-reads.md` | Reads: FOUNDATION1 rounds 1-8
-| `2026-10-25-foundation-brief.md` | Brief: FOUNDATION1 one foundation
-| `2026-10-25-foundation-proposal-opus.md` | Proposal: FOUNDATION1, Opus, sealed
-| `2026-10-25-foundation-proposal-claude.md` | Proposal: FOUNDATION1, Claude, sealed
-| `2026-10-25-foundation-proposal-codex.md` | Proposal: FOUNDATION1, Codex, sealed
-| `2026-10-26-agent-provider-survey.md` | Evidence: AGENTPROVIDER1 sites by file:line
-| `2026-10-26-agent-provider-brief.md` | Brief: AGENTPROVIDER1 one provider contract
-| `2026-10-26-agent-provider-proposal-codex.md` | Proposal: AGENTPROVIDER1, Codex, sealed
-| `2026-10-26-agent-provider-proposal-opus.md` | Proposal: AGENTPROVIDER1, Opus, sealed
-| `2026-10-26-agent-provider-design.md` | Accepted design: the provider contract (D213)
-| `2026-10-26-agent-provider-reads.md` | Reads: AGENTPROVIDER1 rounds 1-2
-| `2026-10-27-provider-infrastructure-design.md` | Accepted D213 amendment: provider infrastructure (AGENTINFRA1)
-| `2026-10-26-tree-pool-brief.md` | Brief: TREEPOOL1 a pool of session trees
-| `2026-10-26-tree-pool-design.md` | Proposed design: the tree pool (D214)
-| `2026-10-26-tree-pool-reads.md` | Evidence: TREEPOOL1 round 1 reads
-| `2026-10-26-tree-pool-proposal-codex.md` | Proposal: TREEPOOL1, Codex, sealed
-| `2026-10-26-tree-pool-proposal-opus.md` | Proposal: TREEPOOL1, Opus, sealed
-| `2026-10-26-tree-pool-survey.md` | Evidence: TREEPOOL1 how a tree is held today
-| `2026-10-28-integration-design.md` | Accepted design, round 5: one integration run per line (D215)
-| `2026-10-30-agent-lyntai-survey.md` | Evidence: AGENTLYNTAI1 against Lyntai's layer
-| `2026-10-30-agent-lyntai-brief.md` | Brief: AGENTLYNTAI1 providers on Lyntai's layer
-| `2026-10-30-agent-lyntai-proposal-opus.md` | Proposal: AGENTLYNTAI1, Opus, sealed
-| `2026-10-30-agent-lyntai-proposal-codex.md` | Proposal: AGENTLYNTAI1, Codex, sealed
-| `2026-10-30-agent-lyntai-design.md` | Accepted design, round 5: providers on Lyntai's layer
-| `2026-10-30-agent-lyntai-reads.md` | Reads: AGENTLYNTAI1 rounds 1-5
-| `2026-10-30-memory-currency-brief.md` | Brief: KNOWCENTRAL1 memory kept current
-| `2026-10-30-memory-currency-proposal-codex.md` | Proposal: KNOWCENTRAL1, Codex, sealed
-| `2026-10-30-knowledge-freshness-design.md` | Accepted design, round 3: search hits say their commit
-| `2026-10-31-memory-coordinator-brief.md` | Brief: KNOWCENTRAL1 round 2, Daoris coordinating Lyntai's memory
-| `2026-10-31-memory-coordinator-proposal-opus.md` | Proposal: KNOWCENTRAL1 round 2, Opus, sealed
-| `2026-10-31-memory-coordinator-proposal-codex.md` | Proposal: KNOWCENTRAL1 round 2, Codex, sealed
-| `2026-10-31-memory-coordinator-design.md` | Accepted design: KNOWCENTRAL1 round 2, the memory coordinator
-| `2026-10-31-memory-coordinator-reads.md` | Reads: KNOWCENTRAL1 round 2's synthesis
-| `2026-10-31-review-flow-brief.md` | Brief: REVIEWFLOW1 and LINESTOGETHER1, the review page as one flow
-| `2026-10-31-review-flow-proposal-opus.md` | Proposal: REVIEWFLOW1 and LINESTOGETHER1, Opus, sealed
-| `2026-10-31-review-flow-proposal-codex.md` | Proposal: REVIEWFLOW1 and LINESTOGETHER1, Codex, sealed
-| `2026-10-31-review-flow-reads.md` | Reads: REVIEWFLOW1 and LINESTOGETHER1's synthesis
-| `2026-10-31-company-view-brief.md` | Brief: COMPANYVIEW1, the company's structure as a list and a graph
-| `2026-10-31-company-view-proposal-opus.md` | Proposal: COMPANYVIEW1, Opus, sealed
-| `2026-10-31-company-view-proposal-codex.md` | Proposal: COMPANYVIEW1, Codex, sealed
-| `2026-10-31-company-view-design.md` | Design: COMPANYVIEW1, the agents' structure as the Agents place's Roles mode; accepted 2026-10-31
-| `2026-10-31-company-view-reads.md` | Reads: COMPANYVIEW1, the makers' reads and the steward's settlement
-| `2026-10-31-review-flow-design.md` | Accepted design: REVIEWFLOW1 and LINESTOGETHER1, the review page as one flow
-| `2026-11-01-profile-fixture-proposal.md` | Proposal: PROFILEFIX1, a repository's facts as a Lyntai profile, Opus; recommends no
-| `2026-11-01-profile-fixture-reads.md` | Reads: PROFILEFIX1, Codex's read and the steward's settlement; no, today
-| `2026-11-01-agents-place-brief.md` | Brief: AGENTSPLACE1, the Agents place made usable: Roles, a repository's set-up at once, the workflow's configuration
-| `2026-11-01-agents-place-proposal-opus.md` | Proposal: AGENTSPLACE1, Opus, sealed
-| `2026-11-01-agents-place-proposal-codex.md` | Proposal: AGENTSPLACE1, Codex, sealed
-| `2026-11-01-agents-place-design.md` | Design: AGENTSPLACE1, the Agents place: place pages, one plan and one Apply, presets as recipes; accepted 2026-11-01
-| `2026-11-01-agents-place-reads.md` | Reads: AGENTSPLACE1, both makers' reads and the steward's settlement
-| `2026-11-01-land-node-brief.md` | Brief: LANDNODE1, landing a performed, configurable node of the workflow
-| `2026-11-01-land-node-proposal-opus.md` | Proposal: LANDNODE1, Opus, sealed
-| `2026-11-01-land-node-proposal-codex.md` | Proposal: LANDNODE1, Codex, sealed
-| `2026-11-01-land-node-design.md` | Design: LANDNODE1, a performed `land` node, the rule as Current's options, the line's epoch; accepted 2026-11-01
-| `2026-11-01-land-node-reads.md` | Reads: LANDNODE1, both makers' reads and the steward's settlement
-| `2026-11-01-fabric2-plan.md` | Plan: FABRIC2, dynamic workflows, fifteen slices in five waves with their contracts
-| `2026-11-01-setup-ux-brief.md` | Brief: SETUPUX1, one design for setting work up, composing its workflow and staffing it
-| `2026-11-01-setup-ux-proposal-opus.md` | Proposal: SETUPUX1, Opus, sealed
-| `2026-11-01-setup-ux-proposal-codex.md` | Proposal: SETUPUX1, Codex, sealed
-| `2026-11-01-setup-ux-design.md` | Design: SETUPUX1, the place page, Set up… as choices then review, one top-to-bottom drawing, the editor's page, one role editor; accepted 2026-11-01 (D221)
-| `2026-11-01-setup-ux-reads.md` | Reads: SETUPUX1, both makers' reads and the steward's settlement
-| `2026-11-02-flowchart-brief.md` | Brief: FLOWCHART2, a proper flowchart for composing and reading workflows, with Ask Daoris composing beside you
-| `2026-11-02-flowchart-proposal-opus.md` | Proposal: FLOWCHART2, Opus, sealed
-| `2026-11-02-flowchart-proposal-codex.md` | Proposal: FLOWCHART2, Codex, sealed
-| `2026-11-02-flowchart-design.md` | Design: FLOWCHART2, one component set on Flow's layout, editing on the chart, Ask Daoris's draft door; accepted 2026-11-02 (D223)
-| `2026-11-02-flowchart-reads.md` | Reads: FLOWCHART2, Codex's read, settled in the design's §8
-| `2026-11-02-canvas-brief.md` | Brief: CANVAS1, one proper canvas for every graph Daoris draws
-| `2026-11-02-staff-policy-brief.md` | Brief: STAFFPOLICY1, a role's staffing as weighted choices and the conditions that switch them
-| `2026-11-02-canvas-proposal-opus.md` | Proposal: CANVAS1, Opus, sealed
-| `2026-11-02-canvas-proposal-codex.md` | Proposal: CANVAS1, Codex, sealed
-| `2026-11-02-canvas-design.md` | Design: CANVAS1, one canvas platform, placed and positioned worlds, the engine chosen by measurement; accepted 2026-11-02 (D224)
-| `2026-11-02-canvas-reads.md` | Reads: CANVAS1, Codex's read, settled in the design's §11
-| `2026-11-02-staff-policy-proposal-opus.md` | Proposal: STAFFPOLICY1, Opus, sealed
-| `2026-11-02-staff-policy-proposal-codex.md` | Proposal: STAFFPOLICY1, Codex, sealed
-| `2026-11-02-staff-policy-design.md` | Design: STAFFPOLICY1, a policy beside a role's choices, order or weight, conditions that move a line; accepted 2026-11-02 (D226)
-| `2026-11-02-staff-policy-reads.md` | Reads: STAFFPOLICY1, Codex's read, settled in the design's §11
-| `2026-11-02-comms-brief.md` | Brief: COMMS1, one model for how sessions, agents and the person talk and hand work to each other
-| `2026-11-02-comms-proposal-opus.md` | Proposal: COMMS1, Opus, sealed
-| `2026-11-02-comms-proposal-codex.md` | Proposal: COMMS1, Codex, sealed
-| `2026-11-02-comms-design.md` | Design: COMMS1, communication as a read over its records, one door for answers to the line's head, parts that address each other; accepted 2026-11-02 (D225)
-| `2026-11-02-comms-reads.md` | Reads: COMMS1, Opus's read, settled in the design's §13; Codex's owed
-| `2026-11-02-review2-findings.md` | Record: REVIEW2, the full review's findings by area and where each went; open
-| `2026-11-02-workflow-cleanup-inventory.md` | Inventory: WORKFLOWCLEAN1, the old workflow logic still live beside the new, and the default setup
-| `2026-11-02-parked-triage.md` | Triage: the parked backlog against D228, each row back, into a chunk, parked with its condition, or dropped
-| `2026-11-02-oneway-census.md` | Census: ONEWAY1, every job that still has two ways, beside the workflows (D228)
-| `2026-11-02-workflow-cleanup-design.md` | Design: WORKFLOWCLEAN1, a place follows a saved graph, the runtime lands it, the old shapes convert on the person's press; accepted 2026-11-02 (D227)
-| `2026-11-02-workflow-cleanup-reads.md` | Reads: WORKFLOWCLEAN1, Opus's read, settled in the design's §13; Codex's owed
-| `2026-11-02-oneway-design.md` | Design: ONEWAY1, each job done one way: one conversion door in parts, a register of kept reads with their ends, one name (`daoris`) with one command tree, the waves; accepted 2026-11-03 after two Opus reads, the other maker's read owed (D228)
-| `2026-11-03-context-counters-brief.md` | Brief: CONTEXTDRIVE1, behaviors counted in a session's context and a supervisor that acts on them, an agent or a rule the person sets, within the structure (D229 reserved)
-| `2026-11-03-context-counters-design.md` | Design: CONTEXTDRIVE1, a line's behaviors counted from their records and seen by the session, today's caps as the person's rules, the supervisor an agent or a rule; accepted 2026-11-03 after two Opus reads (D229)
-| `2026-11-06-context-drive-read.md` | Reads: CONTEXTDRIVE1, the other maker's owed read taken as an Opus read (D240 point 9), the design against the built code: one blocking finding, six rows' worth, notes, and k and j rewritten
-| `2026-11-03-context-one-design.md` | Design: CONTEXTONE1, a repository owns its context and reconciles with the canon through its own session's model, and Daoris manages only the sessions it runs; round 2 proposed 2026-11-03 (D230)
-| `2026-11-04-consolidation-plan.md` | Plan: CONSOLIDATE1, the current truth per area, the contradictions settled and one lean way to make a change, before any more features (the owner's yes, 2026-11-04)
-| `2026-11-04-codeshape-plan.md` | Plan: CODESHAPE1, each contract declared once (the contracts project, attributes, the command halves, the file map from folders) and the hubs as registered modules, cut into hour-long chunks A to F
-| `2026-11-05-backlog-plan.md` | Plan: every open row of the backlog closed, folded, parked, held for the owner or the install, or cut into chunks BL0 to BL30 and the sweeps, in waves of five (D237 to D239 reserved)
-| `2026-11-05-git-design.md` | Design: GITDESIGN1, git's place in Daoris: git built into the core with every remote act through the doors, one push, a pull request composed as a place's workflow steps with a hosted-service step that runs no git or CLI, proven in CI against stand-ins, in chunks G1 to G10; proposed for the owner's yes (D241)
-| `2026-11-05-merge-tool-design.md` | Design: MERGETOOL1 with QUEUEHANG1, the merge tool and rehearsals cut by what each becomes, run folders kept by age and size, a gate killed from outside said as lost; chunks MT1 to MT9, FR1 to FR3; proposed (D237)
-| `2026-11-06-terminal-conversation-design.md` | Design: RPC1g, a terminal's conversation is the running Daoris's: one runner, a hold of one conversation by one pipe connection under one Confirm that also carries its lines, nothing alone with no instance, ONEWAY1's area T; rows RPC1g1 to RPC1g5; proposed for the owner's yes (D238)
-| `2026-11-06-map-ux-design.md` | Design: MAPUX1, the Map's UI and UX: four questions, two levels in one place, what each zoom shows, one choice read in one line and one detail, find on the level shown, the list as one tree, the empty and large cases in en and zh; rows MAPUX1a to MAPUX1g; proposed for the owner's yes (D239)
-| `2026-11-06-backlog-plan-2.md` | Plan: the backlog's rest, each of the 79 open rows classified against main (buildable, installed, the owner's, done, a design, another repository), the closes and stale text, ten owner questions, retirements proposed, chunks BL31 to BL57 in waves of five with the conversation track serial, the verification, the installed batch in order (D244 to D246 reserved)
-| `2026-11-06-event-channel-design.md` | Design: EVENTHOOK1d, 1e and CHANNELJOIN1, an outside session's events read from records (the quests' replayed moves, the confirmation's record, link 1's ends), a relay that lives for the session built only where the first build's use asks (the inbox first, measured in a probe session), and an outside agent on a channel as a member of its own under the person's Confirm; chunks EV-A to EV-E, CJ-A to CJ-D; proposed for the owner's yes (D244)
-| `2026-11-06-event-hook-measurements.md` | Evidence: EVENTHOOK1a, the installed Claude Code measured in a probe session (M1, M5, M8) and pipes across elevations (M9, M10), each outcome a pass, a named limit or a blocking failure, the decision rule read, the spend
-| `2026-11-06-node-kit-design.md` | Design: NODEKIT1, each node kind one folder registered once as the parts kit registers its parts, the shared runtime reading the registrations and the tables gone; the survey of where each kind lives, D245's monitor built first with its outcomes, chunks 1a to 3; proposed for the owner's yes (D247)
-| `2026-11-06-lyntai-requests.md` | Quest text: what Daoris's agent providers still need of Lyntai's agent layer, A-LQ3 to A-LQ17 read against Lyntai's built AG rows, each need with its evidence and the move that waits on it; for the steward to publish (D248)
-| `2026-11-07-backlog-plan-3.md` | Plan: the 76 open rows read against main, each buildable, installed, waiting on a named condition or done; the archive blocks for the seven done; chunks BL70 to BL82 in three waves of five on disjoint files; the conditional chunks; the installed batch's steps per row; where SCOPEVERIFY1, the comment sweeps, MERGETOOL1 and SCOPEVERIFY2 sit
+|`2026-09-19-driver-design.md`|Contract: planning, sessions
+|`2026-09-20-workspace-design.md`|Contract: membership, sharing
+|`2026-09-20-interactive-design.md`|Contract: chat, console, agents
+|`2026-09-20-remote-design.md`|Contract: team deployment
+|`2026-09-22-toolchain-design.md`|Contract: binaries, accounts, usage
+|`2026-09-23-api-key-accounts.md`|Contract: API-key accounts
+|`2026-09-23-intake-design.md`|Contract: asks become quests
+|`2026-09-23-sync-design.md`|Contract: fetch, rebase, push
+|`2026-09-24-permission-scopes-design.md`|Contract: permissions
+|`2026-09-27-ask-and-wait-design.md`|Contract: cross-repository questions
+|`2026-09-30-machine-log-design.md`|Contract: machine measurements
+|`2026-09-30-terminal-design.md`|Contract: shell panel
+|`2026-10-01-account-rotation-design.md`|Contract: limits, rotation
+|`2026-10-02-account-use-design.md`|Contract: participation, capacity
+|`2026-10-02-session-management-design.md`|Contract: groups, archive, deletion
+|`2026-10-02-answer-continues-design.md`|Contract: resume conversation
+|`2026-10-02-pause-and-clean-up-design.md`|Contract: pause, abandon
+|`2026-10-03-session-messages-design.md`|Contract: queued words
+|`2026-10-03-update-when-idle-design.md`|Contract: staged update
+|`2026-10-03-evidence-design.md`|Contract: completion evidence
+|`2026-10-04-landing-and-proof-design.md`|Contract: landing, proof
+|`2026-10-04-built-in-git-design.md`|Contract: branches, ref actions
+|`2026-10-07-history-clearing-design.md`|Contract: clear history
+|`2026-10-08-review-environment-design.md`|Contract: review setup, verdict
+|`2026-10-08-second-agent-design.md`|Contract: second maker reviews
+|`model-roles.md`|Reference: model per role; living
+|`2026-10-09-person-door-design.md`|Contract: authorization
+|`2026-10-09-workflow-design.md`|Contract: choices, versions, gates
+|`2026-10-14-co-working-design.md`|Contract: one session per line
+|`2026-10-16-install-layout-design.md`|Contract: install layout
+|`2026-10-16-terminal-rpc-design.md`|Contract: terminal verbs
+|`2026-10-16-fabric-events-design.md`|Contract: events; part C proposed
+|`2026-10-19-verification-lanes-design.md`|Proposed design: checks as lanes
+|`2026-10-19-ask-daoris-modes-design.md`|Proposed design: Ask Daoris modes
+|`2026-10-19-cross-agent-brainstorming-design.md`|Contract: question to several makers
+|`2026-10-20-message-urgency-design.md`|Accepted design: urgency
+|`2026-10-20-session-context-design.md`|Accepted design: session context
+|`2026-10-21-company-concept.md`|Contract: company of agents (D193)
+|`2026-10-20-fabric-cutover-design.md`|Accepted design: graph-bound runs
+|`2026-10-20-pipeline-design.md`|Proposed design: pipelines
+|`2026-10-21-alone-path-design.md`|Proposed design: alone path
+|`2026-10-21-cleanup-design.md`|Accepted design: keep rule
+|`2026-10-21-account-pool-design.md`|Proposed design: account pool
+|`2026-10-22-coagent-design.md`|Accepted design: coagents
+|`2026-10-22-git-auth-design.md`|Accepted design: git identities
+|`2026-10-23-session-watch-design.md`|Accepted design: session watcher
+|`2026-10-23-start-path-design.md`|Reading, proposal: desktop start
+|`2026-10-23-terminal-trust-design.md`|Accepted design: terminal confirmation
+|`2026-10-23-coworker-brief.md`|Brief: COWORKUX1
+|`2026-10-23-coworker-proposals.md`|Proposals: COWORKUX1
+|`2026-10-23-coworker-reads.md`|Reads: COWORKUX1
+|`2026-10-23-coworker-design.md`|Proposed design: co-workers (D203)
+|`2026-10-23-limit-goes-on-design.md`|Design, built: limited conversation goes on
+|`2026-10-23-git-app-brief.md`|Brief: GITAPP1
+|`2026-10-23-git-app-proposals.md`|Proposals: GITAPP1
+|`2026-10-23-git-app-design.md`|Proposed design: Review git graph (D202)
+|`2026-10-23-git-writes-design.md`|Accepted design: person's git writes (D204)
+|`2026-10-31-git-writes-read-codex.md`|Reads: GITAPP2
+|`2026-10-23-git-app-reads.md`|Reads: GITAPP1
+|`2026-10-23-actors-brief.md`|Brief: MODELROLE1
+|`2026-10-23-actors-proposals.md`|Proposals: MODELROLE1
+|`2026-10-23-actors-reads.md`|Reads: MODELROLE1
+|`2026-10-23-actors-design.md`|Proposed design: actors (D205)
+|`2026-10-23-limit-resume-design.md`|Accepted design: limit resume (D206)
+|`2026-10-23-limit-resume-reads.md`|Reads: LIMITRESUME1
+|`2026-10-24-agent-errors-design.md`|Accepted design: agent errors (D210)
+|`2026-10-24-agent-errors-reads.md`|Reads: AGENTERRORS1
+|`2026-10-24-supervisor-design.md`|Accepted design: supervisor (D208)
+|`2026-10-24-steward-role-design.md`|Accepted design: steward (D209)
+|`2026-10-24-steward-role-reads.md`|Reads: STEWARDROLE1
+|`2026-10-24-supervisor-reads.md`|Reads: SUPERVISOR1
+|`2026-10-24-keep-size-design.md`|Accepted design: install size
+|`2026-10-24-keep-size-reads.md`|Reads: KEEPSIZE1
+|`2026-10-24-confirm-wait-design.md`|Accepted design: press waits for Confirm
+|`2026-10-24-confirm-wait-reads.md`|Reads: CONFIRMWAIT1
+|`2026-10-24-cowork-view-design.md`|Design: subagents view; routing proposed
+|`2026-10-24-chat-flow-design.md`|Accepted design: chat runs workflow
+|`2026-10-24-cowork-view-reads.md`|Reads: COWORKVIEW1
+|`2026-10-24-chat-flow-reads.md`|Reads: CHATFLOW1
+|`2026-10-24-event-hook-design.md`|Accepted design: events to outside agent
+|`2026-10-24-event-hook-reads.md`|Reads: EVENTHOOK1
+|`2026-10-24-switch-context-design.md`|Proposed design: moves keep context
+|`2026-10-24-switch-context-reads.md`|Reads: SWITCHCTX1
+|`2026-10-25-foundation-survey.md`|Evidence: FOUNDATION1
+|`2026-10-25-foundation-design.md`|Accepted design: foundation (D212)
+|`2026-10-25-foundation-reads.md`|Reads: FOUNDATION1
+|`2026-10-25-foundation-brief.md`|Brief: FOUNDATION1
+|`2026-10-25-foundation-proposal-opus.md`|Proposal: FOUNDATION1, Opus
+|`2026-10-25-foundation-proposal-claude.md`|Proposal: FOUNDATION1, Claude
+|`2026-10-25-foundation-proposal-codex.md`|Proposal: FOUNDATION1, Codex
+|`2026-10-26-agent-provider-survey.md`|Evidence: AGENTPROVIDER1
+|`2026-10-26-agent-provider-brief.md`|Brief: AGENTPROVIDER1
+|`2026-10-26-agent-provider-proposal-codex.md`|Proposal: AGENTPROVIDER1, Codex
+|`2026-10-26-agent-provider-proposal-opus.md`|Proposal: AGENTPROVIDER1, Opus
+|`2026-10-26-agent-provider-design.md`|Accepted design: provider contract (D213)
+|`2026-10-26-agent-provider-reads.md`|Reads: AGENTPROVIDER1
+|`2026-10-27-provider-infrastructure-design.md`|Accepted D213 amendment: AGENTINFRA1
+|`2026-10-26-tree-pool-brief.md`|Brief: TREEPOOL1
+|`2026-10-26-tree-pool-design.md`|Proposed design: tree pool (D214)
+|`2026-10-26-tree-pool-reads.md`|Evidence: TREEPOOL1 reads
+|`2026-10-26-tree-pool-proposal-codex.md`|Proposal: TREEPOOL1, Codex
+|`2026-10-26-tree-pool-proposal-opus.md`|Proposal: TREEPOOL1, Opus
+|`2026-10-26-tree-pool-survey.md`|Evidence: TREEPOOL1
+|`2026-10-28-integration-design.md`|Accepted design: integration run (D215)
+|`2026-10-30-agent-lyntai-survey.md`|Evidence: AGENTLYNTAI1
+|`2026-10-30-agent-lyntai-brief.md`|Brief: AGENTLYNTAI1
+|`2026-10-30-agent-lyntai-proposal-opus.md`|Proposal: AGENTLYNTAI1, Opus
+|`2026-10-30-agent-lyntai-proposal-codex.md`|Proposal: AGENTLYNTAI1, Codex
+|`2026-10-30-agent-lyntai-design.md`|Accepted design: Lyntai providers
+|`2026-10-30-agent-lyntai-reads.md`|Reads: AGENTLYNTAI1
+|`2026-10-30-memory-currency-brief.md`|Brief: KNOWCENTRAL1
+|`2026-10-30-memory-currency-proposal-codex.md`|Proposal: KNOWCENTRAL1, Codex
+|`2026-10-30-knowledge-freshness-design.md`|Accepted design: hits name commit
+|`2026-10-31-memory-coordinator-brief.md`|Brief: KNOWCENTRAL1 round 2
+|`2026-10-31-memory-coordinator-proposal-opus.md`|Proposal: KNOWCENTRAL1 r2, Opus
+|`2026-10-31-memory-coordinator-proposal-codex.md`|Proposal: KNOWCENTRAL1 r2, Codex
+|`2026-10-31-memory-coordinator-design.md`|Accepted design: memory coordinator
+|`2026-10-31-memory-coordinator-reads.md`|Reads: KNOWCENTRAL1 r2
+|`2026-10-31-review-flow-brief.md`|Brief: REVIEWFLOW1
+|`2026-10-31-review-flow-proposal-opus.md`|Proposal: REVIEWFLOW1, Opus
+|`2026-10-31-review-flow-proposal-codex.md`|Proposal: REVIEWFLOW1, Codex
+|`2026-10-31-review-flow-reads.md`|Reads: REVIEWFLOW1
+|`2026-10-31-company-view-brief.md`|Brief: COMPANYVIEW1
+|`2026-10-31-company-view-proposal-opus.md`|Proposal: COMPANYVIEW1, Opus
+|`2026-10-31-company-view-proposal-codex.md`|Proposal: COMPANYVIEW1, Codex
+|`2026-10-31-company-view-design.md`|Accepted design: Roles mode
+|`2026-10-31-company-view-reads.md`|Reads: COMPANYVIEW1
+|`2026-10-31-review-flow-design.md`|Accepted design: review as one flow
+|`2026-11-01-profile-fixture-proposal.md`|Proposal: PROFILEFIX1; recommends no
+|`2026-11-01-profile-fixture-reads.md`|Reads: PROFILEFIX1; no, today
+|`2026-11-01-agents-place-brief.md`|Brief: AGENTSPLACE1
+|`2026-11-01-agents-place-proposal-opus.md`|Proposal: AGENTSPLACE1, Opus
+|`2026-11-01-agents-place-proposal-codex.md`|Proposal: AGENTSPLACE1, Codex
+|`2026-11-01-agents-place-design.md`|Accepted design: Agents place
+|`2026-11-01-agents-place-reads.md`|Reads: AGENTSPLACE1
+|`2026-11-01-land-node-brief.md`|Brief: LANDNODE1
+|`2026-11-01-land-node-proposal-opus.md`|Proposal: LANDNODE1, Opus
+|`2026-11-01-land-node-proposal-codex.md`|Proposal: LANDNODE1, Codex
+|`2026-11-01-land-node-design.md`|Accepted design: land node
+|`2026-11-01-land-node-reads.md`|Reads: LANDNODE1
+|`2026-11-01-fabric2-plan.md`|Plan: FABRIC2 dynamic workflows
+|`2026-11-01-setup-ux-brief.md`|Brief: SETUPUX1
+|`2026-11-01-setup-ux-proposal-opus.md`|Proposal: SETUPUX1, Opus
+|`2026-11-01-setup-ux-proposal-codex.md`|Proposal: SETUPUX1, Codex
+|`2026-11-01-setup-ux-design.md`|Accepted design: set-up flow (D221)
+|`2026-11-01-setup-ux-reads.md`|Reads: SETUPUX1
+|`2026-11-02-flowchart-brief.md`|Brief: FLOWCHART2
+|`2026-11-02-flowchart-proposal-opus.md`|Proposal: FLOWCHART2, Opus
+|`2026-11-02-flowchart-proposal-codex.md`|Proposal: FLOWCHART2, Codex
+|`2026-11-02-flowchart-design.md`|Accepted design: flowchart components (D223)
+|`2026-11-02-flowchart-reads.md`|Reads: FLOWCHART2
+|`2026-11-02-canvas-brief.md`|Brief: CANVAS1
+|`2026-11-02-staff-policy-brief.md`|Brief: STAFFPOLICY1
+|`2026-11-02-canvas-proposal-opus.md`|Proposal: CANVAS1, Opus
+|`2026-11-02-canvas-proposal-codex.md`|Proposal: CANVAS1, Codex
+|`2026-11-02-canvas-design.md`|Accepted design: canvas platform (D224)
+|`2026-11-02-canvas-reads.md`|Reads: CANVAS1
+|`2026-11-02-staff-policy-proposal-opus.md`|Proposal: STAFFPOLICY1, Opus
+|`2026-11-02-staff-policy-proposal-codex.md`|Proposal: STAFFPOLICY1, Codex
+|`2026-11-02-staff-policy-design.md`|Accepted design: staffing policy (D226)
+|`2026-11-02-staff-policy-reads.md`|Reads: STAFFPOLICY1
+|`2026-11-02-comms-brief.md`|Brief: COMMS1
+|`2026-11-02-comms-proposal-opus.md`|Proposal: COMMS1, Opus
+|`2026-11-02-comms-proposal-codex.md`|Proposal: COMMS1, Codex
+|`2026-11-02-comms-design.md`|Accepted design: communication (D225)
+|`2026-11-02-comms-reads.md`|Reads: COMMS1
+|`2026-11-02-review2-findings.md`|Record: REVIEW2 findings; open
+|`2026-11-02-workflow-cleanup-inventory.md`|Inventory: WORKFLOWCLEAN1
+|`2026-11-02-parked-triage.md`|Triage: parked backlog against D228
+|`2026-11-02-oneway-census.md`|Census: ONEWAY1 (D228)
+|`2026-11-02-workflow-cleanup-design.md`|Accepted design: WORKFLOWCLEAN1 (D227)
+|`2026-11-02-workflow-cleanup-reads.md`|Reads: WORKFLOWCLEAN1
+|`2026-11-02-oneway-design.md`|Accepted design: ONEWAY1 (D228)
+|`2026-11-03-context-counters-brief.md`|Brief: CONTEXTDRIVE1
+|`2026-11-03-context-counters-design.md`|Accepted design: CONTEXTDRIVE1 (D229)
+|`2026-11-06-context-drive-read.md`|Reads: CONTEXTDRIVE1 against built code
+|`2026-11-03-context-one-design.md`|Proposed design: CONTEXTONE1 (D230)
+|`2026-11-04-consolidation-plan.md`|Plan: CONSOLIDATE1
+|`2026-11-04-codeshape-plan.md`|Plan: CODESHAPE1
+|`2026-11-05-backlog-plan.md`|Plan: backlog chunks BL0-BL30
+|`2026-11-05-git-design.md`|Proposed design: GITDESIGN1 (D241)
+|`2026-11-05-merge-tool-design.md`|Proposed design: MERGETOOL1 (D237)
+|`2026-11-06-terminal-conversation-design.md`|Proposed design: RPC1g (D238)
+|`2026-11-06-map-ux-design.md`|Proposed design: MAPUX1 (D239)
+|`2026-11-06-backlog-plan-2.md`|Plan: backlog chunks BL31-BL57
+|`2026-11-06-event-channel-design.md`|Proposed design: EVENTHOOK1d/e, CHANNELJOIN1 (D244)
+|`2026-11-06-event-hook-measurements.md`|Evidence: EVENTHOOK1a measured
+|`2026-11-06-node-kit-design.md`|Proposed design: NODEKIT1 (D247)
+|`2026-11-06-lyntai-requests.md`|Quest text: needs of Lyntai's agent layer (D248)
+|`2026-11-07-backlog-plan-3.md`|Plan: backlog chunks BL70-BL82
 
 ## UI, browser, tools and plugin contracts
 
 | Document | Kind and subject
 |---|---|
-| `2026-09-19-platform-design.md` | Contract: shared platform
-| `2026-09-19-platform-ux.md` | Contract: design language; read for UI changes
-| `2026-09-19-frontend-architecture.md` | Method: stack, test boundaries
-| `2026-09-21-working-surface-design.md` | Contract: session-oriented working surface
-| `2026-09-21-working-surface-components.md` | Method: stories, hook-free molecules
-| `2026-09-21-desktop-frame-design.md` | Contract: window and frame
-| `2026-09-23-plugin-design.md` | Contract: declarations, wire, plugin kit
-| `2026-09-24-menus-design.md` | Contract: domain menus, workspace naming
-| `2026-09-27-in-app-browser-design.md` | Contract: browser seam, agent tools
-| `2026-09-28-chromium-host-design.md` | Contract: shipped Chromium
-| `2026-09-29-ask-daoris-design.md` | Contract: help conversations, proposals
-| `2026-09-29-dock-design.md` | Contract: movable panels, Quick Ask
-| `2026-09-30-setup-guide-design.md` | Contract: first-start guidance
-| `2026-10-01-naming-design.md` | Contract: bilingual names, glossary
-| `2026-10-01-frame-model-design.md` | Contract: each view's list and main panes
-| `2026-10-01-plugins-screen-design.md` | Contract: plugin pages, actions
-| `2026-10-01-tools-design.md` | Contract: system, named, managed tools
-| `2026-10-01-plugin-distribution-design.md` | Contract: workshop, packages
-| `2026-10-03-context-menu-design.md` | Contract: context actions, engine boundary
-| `2026-10-03-plugin-catalogue-design.md` | Contract: offers, icons, monograms
-| `2026-10-03-language-design.md` | Contract: coded notes, session language
-| `2026-10-04-plugin-hooks-design.md` | Contract: hook occasions, PR state
-| `2026-10-04-ux6-redesign.md` | Contract: settings on their things
-| `2026-10-05-ux7-design.md` | Contract: menus, accounts, page heads
-| `2026-10-16-this-daoris-design.md` | Contract: Settings → This Daoris
-| `2026-10-20-flowchart-design.md` | Accepted contract: processes drawn as flowcharts
-| `2026-10-20-ui-ux-design.md` | Accepted contract: every screen audited; shared rules
-| `2026-10-21-notification-design.md` | Accepted design: one view for all notifications
-| `2026-10-22-park-ask-design.md` | Settled, built: a parked session's ask
+|`2026-09-19-platform-design.md`|Contract: shared platform
+|`2026-09-19-platform-ux.md`|Contract: design language; read for UI changes
+|`2026-09-19-frontend-architecture.md`|Method: stack, test boundaries
+|`2026-09-21-working-surface-design.md`|Contract: working surface
+|`2026-09-21-working-surface-components.md`|Method: stories, molecules
+|`2026-09-21-desktop-frame-design.md`|Contract: window, frame
+|`2026-09-23-plugin-design.md`|Contract: plugin kit
+|`2026-09-24-menus-design.md`|Contract: menus, naming
+|`2026-09-27-in-app-browser-design.md`|Contract: browser seam
+|`2026-09-28-chromium-host-design.md`|Contract: shipped Chromium
+|`2026-09-29-ask-daoris-design.md`|Contract: help conversations
+|`2026-09-29-dock-design.md`|Contract: panels, Quick Ask
+|`2026-09-30-setup-guide-design.md`|Contract: first-start guidance
+|`2026-10-01-naming-design.md`|Contract: bilingual names
+|`2026-10-01-frame-model-design.md`|Contract: list and main panes
+|`2026-10-01-plugins-screen-design.md`|Contract: plugin pages
+|`2026-10-01-tools-design.md`|Contract: tools
+|`2026-10-01-plugin-distribution-design.md`|Contract: workshop, packages
+|`2026-10-03-context-menu-design.md`|Contract: context actions
+|`2026-10-03-plugin-catalogue-design.md`|Contract: offers, icons
+|`2026-10-03-language-design.md`|Contract: coded notes, language
+|`2026-10-04-plugin-hooks-design.md`|Contract: hook occasions
+|`2026-10-04-ux6-redesign.md`|Contract: settings on their things
+|`2026-10-05-ux7-design.md`|Contract: menus, accounts, heads
+|`2026-10-16-this-daoris-design.md`|Contract: Settings, This Daoris
+|`2026-10-20-flowchart-design.md`|Accepted contract: flowcharts
+|`2026-10-20-ui-ux-design.md`|Accepted contract: screen rules
+|`2026-10-21-notification-design.md`|Accepted design: notifications
+|`2026-10-22-park-ask-design.md`|Built: parked session's ask
 
 ## Studies and evidence
 
-These retain their original dates, versions and measurement limits.
+Original dates, versions and measurement limits are kept.
 
 | Document | Kind and subject
 |---|---|
-| `2026-09-20-working-surface-research.md` | Study: working-surface references
-| `2026-09-21-dsh-evaluation.md` | Evidence: protocol evaluation
-| `2026-09-21-ide-reference-study.md` | Study: IDE reference
-| `2026-09-22-acp3-probe-evidence.md` | Evidence: ACP postures
-| `2026-09-22-first-deployment-case-study.md` | Evidence: deployment defects; read for desktop
-| `2026-09-22-plugin-design-study.md` | Study: extension seams
-| `2026-09-24-agt2b-channel-evidence.md` | Evidence: vendor channels
-| `2026-09-24-deploy1-acp-trust-evidence.md` | Evidence: folder trust
-| `2026-09-24-reference-gap-study.md` | Study: conversation gaps
-| `2026-09-25-stream-json-evidence.md` | Evidence: native streams
-| `2026-09-25-message-content-evidence.md` | Evidence: message content
-| `2026-09-27-first-goal-study.md` | Study: first real workspace
-| `2026-09-28-console2-streams-evidence.md` | Evidence: ACP background streams
-| `2026-09-30-console3-native-streams-evidence.md` | Evidence: native background streams
-| `2026-09-28-after-the-first-workspace.md` | Study: workspace, sessions, help gaps
-| `2026-09-28-managed-edge-evidence.md` | Evidence: managed Edge profiles
-| `2026-09-28-chromium-embedding-evidence.md` | Evidence: embedding, sign-in, debug port
-| `2026-10-01-entry-point-evidence.md` | Evidence: instructions read by harnesses
-| `2026-10-01-tools-resources-evidence.md` | Evidence: resource lists, digests
-| `2026-10-02-knowledge-bench-results.md` | Evidence: headless discovery bench
-| `2026-10-02-limit-signals-evidence.md` | Evidence: account windows by door
-| `2026-10-02-ask-drift-evidence.md` | Evidence: requirements lost across runs
-| `2026-10-03-steer-evidence.md` | Evidence: live steering boundaries
-| `2026-10-03-knowledge-use-evidence.md` | Evidence: questions, owner-only answers
-| `DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | Proposal, preserved: unified collaboration plan; no implicit adoption
-| `2026-10-03-future-directions-review.md` | Study: proposal weighed against record
-| `2026-10-05-integration-review.md` | Evidence: earlier recovery and integration
-| `2026-10-07-second-opinion-review.md` | Evidence: code and UI findings
-| `2026-10-07-codex-usage-evidence.md` | Evidence: own-sign-in account windows
-| `2026-10-09-review-serving-evidence.md` | Evidence: Chromium serving
-| `2026-10-10-subagent-load-evidence.md` | Evidence: dispatched subagents' context cost
-| `2026-10-11-entry1-audit.md` | Evidence: what Ask Daoris can start
-| `2026-10-12-entry-and-heads-design.md` | Contract: New conversation from a prompt; bounded heads
-| `2026-10-12-mixed-agents-design.md` | Contract: task handed to another agent; helpers
-| `2026-10-12-account-switch-design.md` | Contract: account use, switching curve
-| `2026-10-12-usage-read-evidence.md` | Evidence: plan usage read with no prompt
-| `2026-10-12-code-structure-design.md` | Contract: domain modules, structure gate
-| `2026-10-14-duplication-survey.md` | Evidence: duplicated .NET code by cluster
-| `2026-10-14-partial-types-survey.md` | Evidence: hand-split partial types, their gate
-| `2026-10-16-fabric-contract-audit.md` | Evidence: each collaboration concept's store and writer
-| `2026-10-23-model-effort-doors-evidence.md` | Evidence: what each door accepts for model, effort
-| `2026-10-24-modelrole1b-build.md` | Build record: MODELROLE1b
-| `2026-10-24-modelrole1c-build.md` | Build record: MODELROLE1c
-| `2026-10-24-modelrole1d-build.md` | Build record: MODELROLE1d
-| `2026-10-25-modelrole1e-build.md` | Build record: MODELROLE1e
-| `2026-10-25-modelrole1d2-build.md` | Build record: MODELROLE1d2
+|`2026-09-20-working-surface-research.md`|Study: working-surface references
+|`2026-09-21-dsh-evaluation.md`|Evidence: protocol evaluation
+|`2026-09-21-ide-reference-study.md`|Study: IDE reference
+|`2026-09-22-acp3-probe-evidence.md`|Evidence: ACP postures
+|`2026-09-22-first-deployment-case-study.md`|Evidence: deployment defects
+|`2026-09-22-plugin-design-study.md`|Study: extension seams
+|`2026-09-24-agt2b-channel-evidence.md`|Evidence: vendor channels
+|`2026-09-24-deploy1-acp-trust-evidence.md`|Evidence: folder trust
+|`2026-09-24-reference-gap-study.md`|Study: conversation gaps
+|`2026-09-25-stream-json-evidence.md`|Evidence: native streams
+|`2026-09-25-message-content-evidence.md`|Evidence: message content
+|`2026-09-27-first-goal-study.md`|Study: first workspace
+|`2026-09-28-console2-streams-evidence.md`|Evidence: ACP streams
+|`2026-09-30-console3-native-streams-evidence.md`|Evidence: native streams
+|`2026-09-28-after-the-first-workspace.md`|Study: workspace, help gaps
+|`2026-09-28-managed-edge-evidence.md`|Evidence: managed Edge
+|`2026-09-28-chromium-embedding-evidence.md`|Evidence: embedding
+|`2026-10-01-entry-point-evidence.md`|Evidence: instructions read
+|`2026-10-01-tools-resources-evidence.md`|Evidence: resource lists
+|`2026-10-02-knowledge-bench-results.md`|Evidence: discovery bench
+|`2026-10-02-limit-signals-evidence.md`|Evidence: account windows
+|`2026-10-02-ask-drift-evidence.md`|Evidence: lost requirements
+|`2026-10-03-steer-evidence.md`|Evidence: steering
+|`2026-10-03-knowledge-use-evidence.md`|Evidence: questions
+|`DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md`|Proposal, preserved; not adopted
+|`2026-10-03-future-directions-review.md`|Study: proposal weighed
+|`2026-10-05-integration-review.md`|Evidence: recovery, integration
+|`2026-10-07-second-opinion-review.md`|Evidence: code, UI findings
+|`2026-10-07-codex-usage-evidence.md`|Evidence: account windows
+|`2026-10-09-review-serving-evidence.md`|Evidence: Chromium serving
+|`2026-10-10-subagent-load-evidence.md`|Evidence: subagent cost
+|`2026-10-11-entry1-audit.md`|Evidence: what Ask Daoris starts
+|`2026-10-12-entry-and-heads-design.md`|Contract: new conversation, heads
+|`2026-10-12-mixed-agents-design.md`|Contract: handed tasks, helpers
+|`2026-10-12-account-switch-design.md`|Contract: account switching
+|`2026-10-12-usage-read-evidence.md`|Evidence: usage read
+|`2026-10-12-code-structure-design.md`|Contract: modules, structure gate
+|`2026-10-14-duplication-survey.md`|Evidence: duplicated .NET code
+|`2026-10-14-partial-types-survey.md`|Evidence: partial types
+|`2026-10-16-fabric-contract-audit.md`|Evidence: concept stores
+|`2026-10-23-model-effort-doors-evidence.md`|Evidence: model, effort doors
+|`2026-10-24-modelrole1b-build.md`|Build record: MODELROLE1b
+|`2026-10-24-modelrole1c-build.md`|Build record: MODELROLE1c
+|`2026-10-24-modelrole1d-build.md`|Build record: MODELROLE1d
+|`2026-10-25-modelrole1e-build.md`|Build record: MODELROLE1e
+|`2026-10-25-modelrole1d2-build.md`|Build record: MODELROLE1d2
 
 ## Records and generated indexes
 
-Read records by identifier; do not read a whole log to find one entry.
+Read records by identifier, not whole.
 
 | Document | Job
 |---|---|
-| `../TASKS.md` | Open work, dependencies, contract, proof
-| `backlog-parked.md` | Open rows set aside; moved back to `TASKS.md` when taken up
-| `../CHANGELOG.md` | Release-facing changes; workflow stamps headings
-| `DECISIONS.md` | Pointer to decisions; append none here
-| `areas/README.md` | The areas: the current truth per area, read first, and the choices still open
-| `areas/agents-and-harnesses.md` | Area: Agents and harnesses, how it works now
-| `areas/co-working-and-messages.md` | Area: Co-working and messages, how it works now
-| `areas/code-structure-and-process.md` | Area: Code structure and the development process, how it works now
-| `areas/conversations-and-context.md` | Area: Conversations and context, how it works now
-| `areas/desktop-app.md` | Area: The desktop app and its window, how it works now
-| `areas/doctrine-and-cli.md` | Area: Doctrine and the CLI, how it works now
-| `areas/driving.md` | Area: Driving, how it works now
-| `areas/git-and-remotes.md` | Area: Git and remotes, how it works now
-| `areas/install-home-update.md` | Area: Install, home and update, how it works now
-| `areas/knowledge-memory-records.md` | Area: Knowledge, memory and records, how it works now
-| `areas/plugins.md` | Area: Plugins, how it works now
-| `areas/roles-and-supervision.md` | Area: Roles and supervision, how it works now
-| `areas/workflows-review-landing.md` | Area: Workflows, review and landing, how it works now
-| `decisions/` | History: numbered decisions, dated amendments, one file each, read for the reasoning
-| `decisions/README.md` | Which rule of each decision lives in which area, generated
-| `task-archive.md` | Completed tasks: wording, date, outcome
-| `FIX-LOG.md` | Defect cause, repair, verification
-| `2026-09-25-rev3-review.md` | REV3/CLEAN1 ledger
-| `2026-09-26-ux5-screen-audit.md` | UX5 ledger
-| `2026-09-28-sess1-session-view.md` | SESS1 ledger
-| `2026-09-29-sess2-session-head.md` | SESS2 ledger
-| `2026-10-01-naming-audit.md` | NAME1 ledger
-| `2026-10-01-frame-audit.md` | FRAME1 ledger
-| `2026-10-10-integration-review.md` | Recovery, review, gate receipts
-| `2026-10-27-branch-recovery.md` | Branch audit, landing receipts (BRANCHRECOVER1)
-| `2026-10-10-documentation-review.md` | DOCSYS1/DOCSYS2 plans, findings
-| `2026-10-10-code-and-docs-review.md` | MAINT1 review, findings
-| `adoption/` | Local mechanics draft; adoption has not run
-| `code-map.json` | Generated by devkit `map`; checked by `map --check`
+|`../TASKS.md`|Open work
+|`backlog-parked.md`|Parked rows
+|`../CHANGELOG.md`|Release-facing changes
+|`DECISIONS.md`|Pointer to decisions
+|`areas/README.md`|Areas: current truth, open choices
+|`areas/agents-and-harnesses.md`|Area: agents, harnesses
+|`areas/co-working-and-messages.md`|Area: co-working, messages
+|`areas/code-structure-and-process.md`|Area: code structure, process
+|`areas/conversations-and-context.md`|Area: conversations, context
+|`areas/desktop-app.md`|Area: desktop app
+|`areas/doctrine-and-cli.md`|Area: doctrine, CLI
+|`areas/driving.md`|Area: driving
+|`areas/git-and-remotes.md`|Area: git, remotes
+|`areas/install-home-update.md`|Area: install, home, update
+|`areas/knowledge-memory-records.md`|Area: knowledge, memory, records
+|`areas/plugins.md`|Area: plugins
+|`areas/roles-and-supervision.md`|Area: roles, supervision
+|`areas/workflows-review-landing.md`|Area: workflows, review, landing
+|`decisions/`|Numbered decisions, read for reasoning
+|`decisions/README.md`|Rule of each decision by area, generated
+|`task-archive.md`|Completed tasks
+|`FIX-LOG.md`|Defect cause, repair
+|`2026-09-25-rev3-review.md`|REV3/CLEAN1 ledger
+|`2026-09-26-ux5-screen-audit.md`|UX5 ledger
+|`2026-09-28-sess1-session-view.md`|SESS1 ledger
+|`2026-09-29-sess2-session-head.md`|SESS2 ledger
+|`2026-10-01-naming-audit.md`|NAME1 ledger
+|`2026-10-01-frame-audit.md`|FRAME1 ledger
+|`2026-10-10-integration-review.md`|Recovery, review, gate receipts
+|`2026-10-27-branch-recovery.md`|Branch audit, landing receipts (BRANCHRECOVER1)
+|`2026-10-10-documentation-review.md`|DOCSYS1/DOCSYS2 plans, findings
+|`2026-10-10-code-and-docs-review.md`|MAINT1 review, findings
+|`adoption/`|Local mechanics draft; adoption has not run
+|`code-map.json`|Generated by devkit `map`
 
-`index/` (routes, verbs, catalogues, outlines, the decision digest) is ignored and written in each
-checkout by `node tools/orient-index.mjs`. The generated
-index links hand-kept indexes and does not restate their rows. `.claude/INDEX.md` is generated by
-doctrine sync and lists on-demand knowledge and skills. `node tools/doc-system.mjs` checks this
-router's coverage; semantic claims still require a source review.
+`index/` (routes, verbs, catalogues, outlines, the decision digest) is ignored and written per checkout by
+`node tools/orient-index.mjs`. `.claude/INDEX.md` is generated by doctrine sync and lists on-demand knowledge
+and skills. `node tools/doc-system.mjs` checks this router's coverage; semantic claims need a source review.

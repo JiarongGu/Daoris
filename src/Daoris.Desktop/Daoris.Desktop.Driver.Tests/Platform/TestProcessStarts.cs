@@ -95,6 +95,7 @@ internal static class TestProcessStarts
         [
             "Daoris.Desktop.Driver.Tests/GitStartTally.cs", "Daoris.Desktop.Driver.Tests/Loop/StartTreeCloseGitTests.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/TidyGitCountTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/TidyEffectGitTests.cs",
+            "Daoris.Desktop.Driver.Tests/Workplace/TidiedPartKeepingTests.cs",
         ]),
         (TestStartKind.Words,
         [

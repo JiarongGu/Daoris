@@ -158,29 +158,14 @@ public sealed class LayerParityProcessTests : IDisposable
     {
         var command = LayerTestProvider.Scenario(_scratch, spec);
         using var daoris = new ParityDaorisPath(Path.Combine(_scratch, "daoris"));
-        return (await daoris.RunAsync(command, Prompt, Start, _bound.Token), await LayerAsync(command, plant));
-    }
-
-    private async Task<ParityObservation> LayerAsync(
-        IReadOnlyList<string> command, Func<IReadOnlyList<AgentStreamEvent>, IEnumerable<AgentStreamEvent>>? plant)
-    {
-        var transcript = Path.Combine(_scratch, "layer.log");
-        var seen = new ParityObservation("layer", Start);
-        await using (var run = new LayerRun(
-            LayerTestProvider.Registration(command, ParityDaorisPath.Door, plant),
-            new LayerStart(ParityDaorisPath.Door, Prompt, transcript, TimeSpan.FromHours(1)),
-            new LauncherSeat(ContainedKind.Agent, StartClass.Background, Home: null, Log: null),
-            exists: _ => true))
-        {
-            run.HandSink(ParityObserver.Sink(seen));
-            await run.OpenAsync(_bound.Token);
-            var end = await run.EndAsync(_bound.Token);
-            ParityObserver.Ended(seen, end, run.Stopped);
-            if (run.Failure is { } failure) ParityObserver.Failed(seen, AgentErrors.OfNormalized(failure), failure.Delivery);
-        }
-
-        ParityObserver.Transcript(seen, transcript);
-        return seen;
+        using var layer = new ParityLayerPath(Path.Combine(_scratch, "layer"));
+        return (
+            await daoris.RunAsync(command, Prompt, Start, _bound.Token),
+            await layer.RunAsync(
+                LayerTestProvider.Registration(command, ParityDaorisPath.Door, plant),
+                new LayerStart(ParityDaorisPath.Door, Prompt, Path.Combine(_scratch, "layer.log"), TimeSpan.FromHours(1)),
+                Start,
+                _bound.Token));
     }
 
     [Fact]
