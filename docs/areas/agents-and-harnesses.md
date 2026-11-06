@@ -420,10 +420,16 @@ Agents page, and `orient-index` and `code-map` once files move.
   trusted limit and sign-out entries that read no sentence (`HarnessRoster.LimitedTrusted`, `RefusedAccounts.SignOut`), which
   readers each door's site calls (`AccountReaders`), a refused model by its whole outcome and then by door and phase
   (`ModelRefusals`), the retry table by door, phase and run (`RetryTable`) and what was hit (`LimitHit`). `Agents/Layer/` holds the
-  failure ingress (`LayerFailures`) and the translations of claims (`LayerClaims`) and accounts (`LayerAccounts`). Left of the adapter
-  (1b-i): the registry's and each spawn's containers, `LauncherRunner`, `LayerRun`, the events' translation, the registry's layer view,
-  the suite's fourth view, the two-path oracle and the pending lines' re-pointing; the moves wait on the capabilities requested in
-  `docs/2026-11-06-lyntai-requests.md`.
+  failure ingress (`LayerFailures`), the translations of claims (`LayerClaims`), accounts (`LayerAccounts`) and events
+  (`LayerReadings`, each event into today's readings in today's order, a stop Daoris asked read as a stop), the two containers
+  (`LayerContainer`: the registry's, which never spawns and refuses a door registered twice; one per start or read over its own
+  runner), `LauncherRunner` (every layer start through `AgentStarts`, no clock on a turn, a read bounded by its patience, each raw line
+  heard, the lines outside a frame and stderr kept as the harness's own, stdin recorded, a stop the kill of the tree), `LayerRun`
+  (`AgentRun` over one turn per call, a resume a start of its own, an operation the layer's members do not carry refused before a
+  write) and the registry's layer view (`LayerView`: bound doors by the registry's spelling and by run kind, their layer doors and
+  claims). The conformance suite's fourth view runs the registry through that view on its run kind (`LayerConformanceTests`). All of it
+  is used by no door yet and proven on the tests' own provider (`LayerTestProvider`). Left of the adapter (1b-i): the two-path oracle
+  and the pending lines' re-pointing; the moves wait on the capabilities requested in `docs/2026-11-06-lyntai-requests.md`.
 - **AGENTINFRA1**: an execution-neutral run for remote APIs and hosted runtimes, with scoped availability and explicit
   recovery. Accepted; built after AGENTPROVIDER1, isolated home first.
 - **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1e**: what remains of point 8 (the
