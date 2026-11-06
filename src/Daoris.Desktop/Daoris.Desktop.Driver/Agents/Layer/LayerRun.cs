@@ -105,7 +105,7 @@ internal sealed class LayerRun(LayerRegistration registration, LayerStart start,
     private Task BeginAsync(string? resume)
     {
         if (_turn is not null) return Task.FromException(new InvalidOperationException("a layer run is one turn: a resume is a run of its own."));
-        _readings = new LayerReadings(start.Transport, start.Clock, start.CoolOff, new LayerRefusals(registration.ModelRefusals));
+        _readings = new LayerReadings(start.Transport, start.Clock, start.CoolOff, new LayerRefusals(registration.ModelRefusals), registration.Steps);
         _file = AgentContext.Current.OpenTranscript(start.Transcript, append: resume is not null);
         _runner = new LauncherRunner(seat with { Outside = Own, Error = Own }, patience: null, exists);
         Container = LayerContainer.ForSpawn(registration, _runner);

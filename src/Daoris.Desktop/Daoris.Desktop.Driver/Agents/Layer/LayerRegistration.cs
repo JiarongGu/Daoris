@@ -10,4 +10,10 @@ internal sealed record LayerRegistration(string Door, Action<LyntaiBuilder> Regi
 {
     /// <summary>The layer's entries (<c>AgentFailure.By</c>) this door spells a refused model with: the door's model-refusal entries (§5.3, round 5).</summary>
     public IReadOnlySet<string> ModelRefusals { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The door's own reading of a tool call, its title and kind as the door's native reader shows the same call; null shows a call by its
+    /// name alone, as a door with no vocabulary of its tools.
+    /// </summary>
+    public Func<Lyntai.Agents.ToolCall, SessionEvent>? Steps { get; init; }
 }

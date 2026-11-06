@@ -22,7 +22,9 @@ namespace Daoris.Driver;
 /// <param name="door">The bound door's transport word, the failure's door.</param>
 /// <param name="clock">The clock the failure is seen on.</param>
 /// <param name="coolOff">D125's default cool-off, for a limit whose recovery is not stated.</param>
-internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan coolOff, LayerRefusals? refusals = null)
+/// <param name="steps">The door's own reading of a tool call (<see cref="LayerRegistration.Steps"/>); null shows a call by its name alone.</param>
+internal sealed class LayerReadings(
+    string door, TimeProvider clock, TimeSpan coolOff, LayerRefusals? refusals = null, Func<LayerToolCall, SessionEvent>? steps = null)
 {
     private readonly Dictionary<string, string> _titles = new(StringComparer.Ordinal);
 
@@ -110,20 +112,17 @@ internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan co
 
     private IReadOnlyList<WireReading> Called(LayerToolCall call)
     {
-        var title = AcpRender.OneLine(call.Name);
+        var step = steps?.Invoke(call) ?? new SessionEvent
+        {
+            Kind = SessionEventKind.Tool,
+            Id = call.CallId,
+            Title = AcpRender.OneLine(call.Name),
+            Status = "in_progress",
+            Input = SessionEventText.Cut(call.ArgumentsJson, SessionEventText.RawLimit),
+        };
+        var title = AcpRender.OneLine(step.Title ?? call.Name);
         if (call.CallId is { } id) _titles[id] = title;
-        return
-        [
-            Shown($"→ {title}"),
-            Said(new SessionEvent
-            {
-                Kind = SessionEventKind.Tool,
-                Id = call.CallId,
-                Title = title,
-                Status = "in_progress",
-                Input = SessionEventText.Cut(call.ArgumentsJson, SessionEventText.RawLimit),
-            }),
-        ];
+        return [Shown($"→ {title}"), Said(step)];
     }
 
     private IReadOnlyList<WireReading> Returned(LayerToolResult result)
