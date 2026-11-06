@@ -27,6 +27,9 @@ public sealed record ChannelMember(
     /// <summary>The person removed it.</summary>
     public const string ByPerson = "removed";
 
+    /// <summary>Daoris's look ended it: its channel's claims expired, or it was quiet for a day.</summary>
+    public const string Expired = "expired";
+
     /// <summary>An agent whose harness this build does not name.</summary>
     public const string OtherAgent = "other";
 

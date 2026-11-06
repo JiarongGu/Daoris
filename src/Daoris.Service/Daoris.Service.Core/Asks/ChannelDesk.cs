@@ -27,6 +27,9 @@ public sealed class ChannelDesk(
     /// <summary>The agents outside Daoris on a channel, each a member of its own (CHANNELJOIN1).</summary>
     public ChannelMembers Members => new(this, store, asks);
 
+    /// <summary>The members a channel holds now and whether their channel's claims have expired (CHANNELJOIN1c).</summary>
+    public ChannelMemberRoll Roll => new(this, store, asks, ledger);
+
     /// <summary>A teammate's ask's channel, which the person and a session here on it post to and read (SESSONE2i).</summary>
     private TeammateAskChannel Teammates => new(store, StaleAsync);
 
@@ -504,7 +507,7 @@ public sealed class ChannelDesk(
     }
 
     /// <summary>The quests that belong to the ask: asked by it (chain steps included), or whose entry's origin is it (D167 point 2).</summary>
-    private async Task<IReadOnlyList<Quest>> QuestsOfAsync(Ask ask, CancellationToken ct)
+    internal async Task<IReadOnlyList<Quest>> QuestsOfAsync(Ask ask, CancellationToken ct)
     {
         var origin = SessionEntries.AskOrigin(ask.Id);
         var held = new List<Quest>();

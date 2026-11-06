@@ -41,4 +41,30 @@ public sealed class ChannelMemberDoorsTests(KeyedHost host) : IClassFixture<Keye
         var removed = await host.PostAsync($"/api/channel/members/{second}/leave", new { }, person: Key);
         Assert.Equal("removed", removed.Json.GetProperty("why").GetString());
     }
+
+    /// <summary>
+    /// CHANNELJOIN1c: the listing of a channel's members is the driver's read, with the key alone, naming only those still on it; the
+    /// look's end of one is the key's leave with <c>expired</c>, and a member's own leave cannot say it.
+    /// </summary>
+    [Fact]
+    public async Task CHANNELJOIN1c_the_listing_is_the_keyed_read_and_the_look_ends_a_member_as_expired()
+    {
+        var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Check the export again.", to = "Keeper" }, person: Key);
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var member = (await host.PostAsync("/api/channel/members", new { ask, agent = "codex" }, person: Key)).Json.GetProperty("id").GetString()!;
+
+        Assert.Equal(403, (await host.GetAsync($"/api/channel/members?ask={ask}")).Status);
+        var listed = await host.GetAsync($"/api/channel/members?ask={ask}", person: Key);
+        Assert.Equal(200, listed.Status);
+        var row = Assert.Single(listed.Json.GetProperty("members").EnumerateArray());
+        Assert.Equal((member, true), (row.GetProperty("id").GetString(), row.TryGetProperty("spent", out _)));
+
+        var ended = await host.PostAsync($"/api/channel/members/{member}/leave", new { why = "expired" }, person: Key);
+        Assert.Equal("expired", ended.Json.GetProperty("why").GetString());
+        Assert.Empty((await host.GetAsync($"/api/channel/members?ask={ask}", person: Key)).Json.GetProperty("members").EnumerateArray());
+
+        var other = (await host.PostAsync("/api/channel/members", new { ask, agent = "codex" }, person: Key)).Json.GetProperty("id").GetString()!;
+        var itself = await host.PostAsync($"/api/channel/members/{other}/leave", new { why = "expired" });
+        Assert.Equal("left", itself.Json.GetProperty("why").GetString());
+    }
 }

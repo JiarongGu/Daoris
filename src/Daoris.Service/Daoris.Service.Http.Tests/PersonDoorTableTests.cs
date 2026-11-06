@@ -131,6 +131,7 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/channel/line", Person),
         // CHANNELJOIN1: the person's admission of an outside agent, and that member's read, post and leave, judged as its own.
         ("POST", "/api/channel/members", Person),
+        ("GET", "/api/channel/members", Driver),
         ("GET", "/api/channel/members/{id}/messages", Agent),
         ("POST", "/api/channel/members/{id}/messages", Agent),
         ("POST", "/api/channel/members/{id}/leave", Agent),
@@ -216,7 +217,8 @@ public sealed class PersonDoorTableTests
         // The person's post on a line's own channel (COMMS1k); CHANNELJOIN1: an outside agent's read, post and leave, and the person's
         // admission of it.
         Assert.Equal(8, Routes.Count(route => route.Class == Agent));
-        Assert.Equal(31, Routes.Count(route => route.Class == Driver));
+        // CHANNELJOIN1c: the listing of a channel's members, which holds the ids only the key may read.
+        Assert.Equal(32, Routes.Count(route => route.Class == Driver));
         Assert.Equal(38, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));
