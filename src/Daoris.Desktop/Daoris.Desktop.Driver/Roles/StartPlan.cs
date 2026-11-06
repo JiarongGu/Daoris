@@ -19,6 +19,12 @@ public static class StartPasses
     /// <summary>The pipe door, for a repository that has not adopted Daoris: passed before any account is asked.</summary>
     public const string NoConnector = "no-connector";
 
+    /// <summary>
+    /// Its provider works only where it is opened, and the start's place is not opened to it (AGENTPROVIDER1 row u): passed before any
+    /// account is asked, so a later choice runs.
+    /// </summary>
+    public const string NotOpened = "not-opened";
+
     /// <summary>Every account that may run it was passed for the entry's model (D205 §3.3): never a cool-off.</summary>
     public const string NotOffered = AgentOffers.NotOffered;
 
@@ -32,15 +38,17 @@ public static class StartPasses
     public const string Held = "held";
 
     /// <summary>Every code, the closed set.</summary>
-    public static IReadOnlyList<string> Codes { get; } = [Unavailable, NoPosture, NoConnector, NotOffered, Cooling, SignedOut, Held];
+    public static IReadOnlyList<string> Codes { get; } = [Unavailable, NoPosture, NoConnector, NotOpened, NotOffered, Cooling, SignedOut, Held];
 
     /// <summary>
     /// The code of an entry whose account walk held, read from the walk's facts and never its words: an agent absent, or absent at its pin,
-    /// first, since nothing of it can run (FOUNDATION1j part ii, as the reviewer's walk reads the same facts); then a model not offered, since
-    /// the next entry may still run on the same accounts; then a cool-off, which waits for a time; then a sign-in; else held.
+    /// first, since nothing of it can run (FOUNDATION1j part ii, as the reviewer's walk reads the same facts); then a provider not opened to
+    /// the place, which no account changes; then a model not offered, since the next entry may still run on the same accounts; then a
+    /// cool-off, which waits for a time; then a sign-in; else held.
     /// </summary>
     public static string Of(HarnessSelection selection) =>
         selection.Absent is not null ? Unavailable
+        : selection.NotOpened ? NotOpened
         : selection.NotOffered is not null ? NotOffered
         : selection.Cooling is not null ? Cooling
         : selection.SignedOut is not null ? SignedOut
@@ -105,8 +113,9 @@ internal sealed record StartWalked<TEntry>(
 /// </summary>
 /// <remarks>
 /// <para><b>The walk</b> (D205 §4.1): an entry naming no agent of this machine is passed <c>unavailable</c>, and one the caller's
-/// <see cref="Gate"/> refuses by the gate's code, each before any account is asked; every other entry's accounts are asked, judged for its
-/// model, and the first whose walk allows a start is taken. With none, the start holds on the wait's sentence, in the role's words (§4.5),
+/// <see cref="Gate"/> refuses by the gate's code, and one whose provider is not opened to the start's place <c>not-opened</c> (row u), each
+/// before any account is asked; every other entry's accounts are asked, judged for its model, and the first whose walk allows a start is
+/// taken. A provider's reach is never a refusal of the whole start: a later choice runs, and an order of one holds on its sentence. With none, the start holds on the wait's sentence, in the role's words (§4.5),
 /// the soonest cool-off beside it. An order of one entry is today's walk exactly: its one account walk asked, its own hold or refusal
 /// unchanged, nothing passed or said.</para>
 /// <para><b>The reservation</b>: the plan takes no count of its own. Each account walk it asks counts the start where it chooses an
@@ -164,7 +173,30 @@ internal sealed class StartPlan
         Order = order ?? (found is { Role: null } ? [] : ActorChoices.Effective(Role, config, fence: fence));
         _staffed = order is null && found is not { Role: null };
         (_config, _roster, _adapters, _memory) = (config, roster, adapters, memory);
+        // Ask Daoris's room works across repositories, so its start's place is the machine's room (row u).
+        Where = work == AskDaoris ? ReachPlace.Machine : new ReachPlace(place.Workspace, place.Repository);
     }
+
+    /// <summary>The work whose start is across repositories, spelled as the participant's work code spells it (<see cref="RoleOf"/>).</summary>
+    private const string AskDaoris = "ask-daoris";
+
+    /// <summary>
+    /// The start's place as a provider's reach reads it (AGENTPROVIDER1 row u, D212 §2.4): the repository, the workspace where it names no
+    /// repository, or the machine's room for a start across repositories.
+    /// </summary>
+    public ReachPlace Where { get; init; }
+
+    /// <summary>
+    /// Whether each choice's provider may work at <see cref="Where"/>, read in every ask of the plan (<see cref="AccountsAsync"/>) before an
+    /// account is asked: the machine's agents with nothing opened, unless the caller hands the openings.
+    /// </summary>
+    public ProviderReach Reaching
+    {
+        get => _reaching ??= new ProviderReach(_adapters.Registry);
+        init => _reaching = value;
+    }
+
+    private ProviderReach? _reaching;
 
     /// <summary>
     /// Whether an order the caller holds is the role's own effective order (a new conversation's), which a policy then arranges as it does
@@ -388,11 +420,15 @@ internal sealed class StartPlan
     /// The plan's one ask of D197's account walk for an entry (§4.1): <paramref name="agent"/>'s accounts for this start's workspace and kind,
     /// each judged by its reading for <paramref name="model"/>, those this start already passed for it left out. Where it chooses an account
     /// and the start <paramref name="counts"/>, the roster counts the start under its gate: the start's one reservation. A probe counts nothing.
+    /// An agent whose provider is not opened to the start's place is held first (<see cref="HarnessSelection.NotOpened"/>), no account asked
+    /// and nothing counted (row u): every walk asks here, the plan's own, a reviewer's and a brainstorm voice's, so none sends it anything.
     /// </summary>
     /// <param name="except">The start's own count, left out of the accounts' facts for a re-ask.</param>
     public Task<HarnessSelection> AccountsAsync(
         string agent, string? model, IReadOnlyCollection<string>? passed, CancellationToken ct, bool counts = true, long except = 0) =>
-        _roster.SelectAsync(agent, _config, Workspace, Pinned, Kind, ct, model, passed, except, counts);
+        Reaching.Closes(agent, Where) is { } closed
+            ? Task.FromResult(new HarnessSelection(closed) { NotOpened = true })
+            : _roster.SelectAsync(agent, _config, Workspace, Pinned, Kind, ct, model, passed, except, counts);
 
     /// <summary>
     /// The plan's own try of an entry: an agent this machine lacks passed <c>unavailable</c>, and one the caller's gate refuses by the gate's
