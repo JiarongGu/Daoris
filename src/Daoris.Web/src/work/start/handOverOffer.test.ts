@@ -180,7 +180,7 @@ describe('handOverOffer', () => {
     });
   });
 
-  it('offers nothing from an answer an older shell gave', () => {
+  it('offers nothing from an answer that lacks it', () => {
     expect(offer(undefined as unknown as AccountsAnswer)).toBeNull();
     expect(offer({} as AccountsAnswer)).toBeNull();
   });

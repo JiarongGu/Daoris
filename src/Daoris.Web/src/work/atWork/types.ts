@@ -165,7 +165,7 @@ export type AtWorkA = {
   /** Where its newest generation started two subagents and the repository's routing standing is not open (the design §6.4 point 3). */
   hint?: AtWorkHint;
   subagents: AtWorkSubagents;
-  /** When the shell's process began; absent from an older host. */
+  /** When the shell's process began; absent where the answer has none. */
   windowOpened?: string;
 };
 

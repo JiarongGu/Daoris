@@ -73,8 +73,8 @@ export type SyncInclude = 'all' | string[];
 
 /**
  * The driver's TREES_SYNC_PLAN answer: each line, each branch, and the landed branches whose work reached the line;
- * then what the look took, and every other repository with a checkout, listed apart (D112). A host older than WSR7
- * answers neither of the last two.
+ * then what the look took, and every other repository with a checkout, listed apart (D112). An answer without WSR7
+ * carries neither of the last two.
  */
 export type SyncPlan = {
   lines: LinePull[];

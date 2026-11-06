@@ -57,7 +57,7 @@ export function reviewKnown(session: Session, { title, ownTree }: { title: strin
 /**
  * The branch the review's head names (REVIEWBASE4, D164's note): the record's guess until the review answers with the branch its
  * tree's HEAD stands on, since the agent may have switched it (TREEFOLLOW1), or deleted its `daoris/` branch and detached. Said only
- * where the record names a tree of its own, and only from the tree's own answer: a landed branch's review and a host older than
+ * where the record names a tree of its own, and only from the tree's own answer: a landed branch's review and an answer without
  * REVIEWBASE4 name none, so the guess stands. A detached tree names no branch, and says so.
  */
 export function reviewBranch(
@@ -129,7 +129,7 @@ export type SessionDiff = {
   files: DiffFile[];
   /**
    * Where the files were read from (REVIEW2): the session's own tree, or its landed branch in the repository's
-   * checkout once the tree cannot be read. A host older than REVIEW2 names none, which is the tree.
+   * checkout once the tree cannot be read. An answer without REVIEW2 names none, which is the tree.
    */
   source?: 'tree' | 'branch';
   /** Where this session's work landed, where this machine's landing record holds it. */
@@ -137,18 +137,18 @@ export type SessionDiff = {
   /**
    * What the session's own tree holds that no commit does (REVIEWDIRTY1, D164 point 4): the modified and the untracked,
    * each file as the committed ones are (status `added` for an untracked one, its patch empty where large or not text).
-   * Absent or null where nothing is uncommitted or the files were read from a branch; a host older than REVIEWDIRTY1 names none.
+   * Absent or null where nothing is uncommitted or the files were read from a branch; the answer names none.
    */
   uncommitted?: { files: DiffFile[]; truncated: boolean } | null;
   /**
    * How the session's own tree stands against the latest its line is known on this machine, the branch and its copy on origin
    * together, as the last fetch left them (REVIEWBASE1, D164's note). Absent or null where the files were read from a branch or the
-   * line could not be read; a host older than REVIEWBASE1 names none.
+   * line could not be read; the answer names none.
    */
   behind?: LineBehind | null;
   /**
    * The branch the session's own tree stands on, as its HEAD names it (REVIEWBASE4, D164's note): null where HEAD is detached, and
-   * where the files were read from a branch. Absent from a host older than REVIEWBASE4, whose head says the record's guess.
+   * where the files were read from a branch. Absent where the answer lacks it, whose head says the record's guess.
    */
   treeBranch?: string | null;
   /**

@@ -189,7 +189,7 @@ describe('Ask Daoris’s access on Settings', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it('offers no access on a shell older than the mode', async () => {
+  it('offers no access where the answer lacks it', async () => {
     helpMode = undefined;
     show(<SettingsView notify={() => {}} section="ai" />);
 
@@ -378,7 +378,7 @@ describe('Ask Daoris’s configured access on Settings', () => {
     expect(within(grant).queryByText(i18n.t('help.grants.pending'))).toBeNull();
   });
 
-  it('draws no configured access on a shell older than the grant', async () => {
+  it('draws no configured access where the answer lacks it', async () => {
     grants = false;
     show(<SettingsView notify={() => {}} section="ai" />);
 

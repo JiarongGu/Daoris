@@ -303,7 +303,7 @@ function CallingLine({ call, mark }: { call: RunningCall | null; mark?: CallMark
   const now = useNow(10_000);
   const at = new Date(now).toISOString();
   // AUTONOMY1b3e (D184): a call held for the person's answer is the driver's mark, which the record cannot show; it is timed from
-  // the hold and, as on the rail, an untitled one is a tool call. No mark (an older host) reads as running.
+  // the hold and, as on the rail, an untitled one is a tool call. No mark reads as running.
   if (mark?.waiting) {
     const title = mark.title || call?.title;
     return (

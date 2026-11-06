@@ -39,7 +39,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   // Whether this machine interrupts the person (SURF5b) — the same `driver.json` field
   // `daoris settings notify on|off` edits, which is what makes this a door rather than the door.
   const driver = useDriver();
-  // The catalogue the Plugins place reads, for its folder and its plugins' settings. An older shell names none, and the row is absent.
+  // The catalogue the Plugins place reads, for its folder and its plugins' settings. Where it names none, the row is absent.
   const plugins = usePlugins();
   const pluginsFolder = typeof plugins.data?.folder === 'string' ? plugins.data.folder : null;
   const setNotify = useSetNotify();

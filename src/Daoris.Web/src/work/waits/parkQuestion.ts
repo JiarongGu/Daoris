@@ -53,7 +53,7 @@ const text = (value: unknown): string | null => (typeof value === 'string' && va
 export const QUESTION_BOUNDS = { question: 1000, choices: 6, label: 80, does: 300, by: 200, why: 300 } as const;
 
 /**
- * `SESSION_QUESTION`'s answer read defensively: an older shell's none, a question with no id or words, one past a bound the writer keeps,
+ * `SESSION_QUESTION`'s answer read defensively: an absent answer, a question with no id or words, one past a bound the writer keeps,
  * an answer with no label and a recommendation that names no answer are each nothing; a null the bridge left out is absent. The driver
  * reads the file by the same table (`Daoris.Desktop.Driver.Tests/fixtures/park-question.json`).
  */

@@ -451,7 +451,7 @@ describe("a row as the list's reader places it", () => {
     expect(screen.getByText(/goes on with your words once engine is no longer held/)).toBeInTheDocument();
     held({ why: 'cap', reason: 'the concurrency cap (2) is spent — it frees as sessions finish.' });
     expect(screen.getByText(/goes on with your words when a running session here ends/)).toBeInTheDocument();
-    // A host older than the account says the time alone, and no longer that the words wait for the session's own account.
+    // An answer without the account says the time alone, and no longer that the words wait for the session's own account.
     held({ why: 'cooling', reason: 'its account is cooling.', until: '2026-10-04T12:30:00Z' });
     const reset = `your words go on by themselves once an account is ready again, at ${moment('2026-10-04T12:30:00Z')}`;
     expect(screen.getByText((said) => said.includes(reset))).toBeInTheDocument();

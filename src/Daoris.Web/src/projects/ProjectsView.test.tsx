@@ -659,7 +659,7 @@ describe("a workspace's page (UX6g)", () => {
 
   /**
    * WSR6, WSR7: this workspace's page lists and brings up to date its own rows alone, each waiting as long as the host may
-   * work, and asks the driver for its own (BRSCOPE1), even where an older host answers the machine's look.
+   * work, and asks the driver for its own (BRSCOPE1), even where the machine's look is answered.
    */
   it("brings up to date only this workspace's rows of what the look listed", async () => {
     const plan = {

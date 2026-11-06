@@ -368,7 +368,7 @@ describe('the review of a tree with nothing beyond the line', () => {
     expect(screen.queryByText(/^since /)).toBeNull();
   });
 
-  it("keeps the record's branch where the answer names none, as a host older than REVIEWBASE4 answers", async () => {
+  it("keeps the record's branch where the answer names none, as an absent answer does", async () => {
     drive({});
     attended();
 

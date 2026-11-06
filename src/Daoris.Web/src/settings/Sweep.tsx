@@ -31,12 +31,12 @@ export type SweepBranch = {
   removable: boolean;
   /**
    * Whether its discard is offered beside it (LAND3b), by the driver's own rule: a failed or superseded attempt's commits,
-   * which no clean-up takes. A shell older than LAND3b answers none, and nothing is offered.
+   * which no clean-up takes. An answer without LAND3b carries none, and nothing is offered.
    */
   discardable?: boolean;
   /**
    * The session its tree is, by id and how it ended (LAND4), where its tree is still here and a record of this machine's
-   * names it. Absent on a shell older than LAND4.
+   * names it. Absent where the answer lacks it.
    */
   session?: { id: string; state: string } | null;
   /**
@@ -119,7 +119,7 @@ export type LandedBranch = {
   /** Ahead of its remote: the commits the remote lacks; otherwise those the line lacks. */
   commits: number;
   removable: boolean;
-  /** When the landing recorded it (LANDRETIRE1 part 2), the age its row says; a shell older than the field answers none. */
+  /** When the landing recorded it (LANDRETIRE1 part 2), the age its row says; the answer is none. */
   landedAt?: string | null;
   /** The quest the landing is named for, where it names one. */
   quest?: string | null;

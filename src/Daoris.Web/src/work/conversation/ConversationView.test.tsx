@@ -175,7 +175,7 @@ describe('ConversationView', () => {
       expect(screen.getByText(unnamed)).toBeTruthy();
       second.unmount();
 
-      // The mark gone, or an older host's none: running, as before.
+      // The mark gone: running, as before.
       for (const callMark of [undefined, { title: 'npm test', since: held }, { title: 'npm test', since: held, waiting: false }]) {
         const again = view(events, { live: true, callMark });
         expect(screen.getByText(running)).toBeTruthy();

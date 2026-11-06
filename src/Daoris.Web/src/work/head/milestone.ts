@@ -19,11 +19,11 @@ export type MilestoneEntry = {
   /** A recovery's purge date, where one stands. */
   until?: string | null;
   proof?: string | null;
-  /** The repository a recovery belongs to (RECOVERYVIEW1); a shell older than it answers none. */
+  /** The repository a recovery belongs to (RECOVERYVIEW1); the answer is none. */
   repository?: string | null;
-  /** The commit a recovery ref names (RECOVERYDROP1), which a delete is verified against; a shell older than it answers none. */
+  /** The commit a recovery ref names (RECOVERYDROP1), which a delete is verified against; the answer is none. */
   commit?: string | null;
-  /** Why a blocked entry is blocked (OVERVIEWNOISE1b), which the page words (`entryDetail`); a shell older than it answers none. */
+  /** Why a blocked entry is blocked (OVERVIEWNOISE1b), which the page words (`entryDetail`); the answer is none. */
   code?: string | null;
   /** The values its code is worded with, by name. */
   facts?: Record<string, string> | null;
@@ -336,7 +336,7 @@ export function workOf(all: WorkState, unit: string | null): WorkState {
 export function readWorkState(answer: unknown): WorkState {
   const read = answer as
     { units?: unknown; recovery?: unknown; unread?: unknown; held?: unknown; unreadable?: unknown; ends?: unknown } | null | undefined;
-  // FABRIC-PERFORM1g: a shell older than the field answers none held; FABRIC-CLOSE1j, none ended.
+  // FABRIC-PERFORM1g: the answer is none held; FABRIC-CLOSE1j, none ended.
   const held = Array.isArray(read?.held) ? read.held as HeldAttempt[] : [];
   const ends = Array.isArray(read?.ends) ? read.ends as GraphEnd[] : [];
   const units = Array.isArray(read?.units) ? read.units as MilestoneUnit[] : [];
@@ -345,7 +345,7 @@ export function readWorkState(answer: unknown): WorkState {
     recovery: Array.isArray(read?.recovery) ? read.recovery as MilestoneEntry[] : [],
     unread: Array.isArray(read?.unread) ? read.unread.filter((each): each is string => typeof each === 'string') : [],
     held,
-    // FABRIC-PERFORM1j: a shell older than the field answers none.
+    // FABRIC-PERFORM1j: the answer is none.
     unreadable: Array.isArray(read?.unreadable) ? read.unreadable as UnreadableRecord[] : [],
     ends,
   };

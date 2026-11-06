@@ -20,7 +20,7 @@ export type ResolvedPause = { pause: string; value: string; source: AccessSource
 
 /**
  * One repository's access setup as the driver resolves it (`LINES`' `access`, AUTONOMY1a): whether every pause is open, and each
- * pause in the order every door says them. Never null for a repository the driver judged; absent on a shell older than it.
+ * pause in the order every door says them. Never null for a repository the driver judged; absent where the answer lacks it.
  */
 export type RepositoryAccess = { repository: string; workspace: string; full: boolean; pauses: ResolvedPause[] };
 

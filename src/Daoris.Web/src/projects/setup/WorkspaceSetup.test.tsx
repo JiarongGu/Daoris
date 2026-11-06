@@ -469,7 +469,7 @@ describe("a workspace's sessions' access", () => {
     expect(within(row('Permission prompts')).queryByRole('alert')).toBeNull();
   });
 
-  it('is absent on a shell older than it', () => {
+  it('is absent where the answer lacks it', () => {
     at();
     expect(screen.queryByRole('button', { name: "Sessions' access" })).toBeNull();
   });

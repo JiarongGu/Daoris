@@ -249,7 +249,7 @@ describe('what agents proposed', () => {
     expect(within(declined).getByText(/Not from a session\./)).toBeTruthy();
   });
 
-  it('is absent when no agent has proposed anything, and from an older shell that never sends proposals', () => {
+  it('is absent when no agent has proposed anything, and where the answer sends no proposals', () => {
     show({ onAnswer: vi.fn() });
     expect(screen.queryByRole('heading', { name: 'Proposals' })).toBeNull();
   });

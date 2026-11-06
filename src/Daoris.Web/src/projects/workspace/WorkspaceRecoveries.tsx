@@ -107,7 +107,7 @@ function DropAsk({ groups, onDrop, onClose, onDone }: {
  * person's does, until they delete it, with the command to do that, copyable. Nothing is drawn where there are none.
  *
  * @remarks
- * **A molecule**: the entries arrive as a prop, read from `WORK_STATE.recovery` by the holder; a browser and a shell older than the
+ * **A molecule**: the entries arrive as a prop, read from `WORK_STATE.recovery` by the holder; a browser and an answer without the field
  * field pass none. They are the machine's, so only the workspace's own repositories' are listed, by name in any case. A folder is
  * named, never its path; a clause the page has no words for passes through as the driver recorded it.
  */
@@ -117,7 +117,7 @@ export function WorkspaceRecoveries({ recoveries, repositories, onDrop }: {
   repositories: readonly string[];
   /**
    * The person's press to delete the refs nothing holds (RECOVERYDROP1): sent each repository's refs with the commits shown, it
-   * answers what went and what was kept. None, and a shell older than the commit, offer the copyable commands alone.
+   * answers what went and what was kept. None, or an answer without the commit, offers the copyable commands alone.
    */
   onDrop?: (groups: RecoveryDropGroup[]) => Promise<RecoveryDropResult>;
 }) {

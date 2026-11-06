@@ -269,7 +269,7 @@ export function PluginPage({
   onSwitch, onHelp, onTry, onAskUpdate, onApplyUpdate, onCancelUpdate, onAskRemove, onRemove, onCancelRemove,
 }: {
   plugin: PluginShown;
-  /** The kit's points with their kinds, which name what each point asks; an older shell sends none. */
+  /** The kit's points with their kinds, which name what each point asks; none arrives with no kinds. */
   kitPoints?: KitPoint[] | null;
   /** This shell has the kit, so a plugin can be tried; an older one offers no *Try*. */
   canTry?: boolean;

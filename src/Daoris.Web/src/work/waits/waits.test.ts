@@ -110,7 +110,7 @@ describe('the waits on the person', () => {
     expect(waitsOf({ session: session(), rules: { proposals, onAnswer: press } })).toEqual([
       { kind: 'rule', id: 'r1' }, { kind: 'rule', id: 'r2' },
     ]);
-    // With no door to answer them (a browser has no rules), none; an older shell's answer that is no list holds none.
+    // With no door to answer them (a browser has no rules), none; an answer that is no list holds none.
     expect(waitsOf({ session: session(), rules: { proposals } })).toEqual([]);
     expect(rulesAsked({ proposals }, 's1a2b3c4')).toEqual([]);
     expect(rulesAsked(undefined, 's1a2b3c4')).toEqual([]);

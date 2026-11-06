@@ -80,12 +80,12 @@ export type WorkspaceSetupProps = {
   defaults: WorkspaceDefaults;
   /**
    * The access setup its repositories' sessions start under where they set none of their own (AUTONOMY1d, D184 point 1): each
-   * pause as it resolves from the workspace, this machine or Daoris's default; absent on a shell older than it.
+   * pause as it resolves from the workspace, this machine or Daoris's default; absent where the answer lacks it.
    */
   access?: Omit<AccessSetup, 'workspace'> | null;
   /**
    * The hosts its repositories' git remotes reach and the identity this workspace chooses for each (GITAUTH1e, the git-auth design §7.3);
-   * absent on a shell older than it, and the section is not drawn.
+   * absent where the answer lacks it, and the section is not drawn.
    */
   /** Its git identities by host (GITAUTH1e) and its git access (GITAUTH1f, §7.3). */
   git?: { hosts: GitHostShown[]; identities: GitIdentityShown[]; acts: GitHostActs; access?: GitAccessSetup | null } | null;

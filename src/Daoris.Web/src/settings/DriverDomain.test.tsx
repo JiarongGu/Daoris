@@ -21,7 +21,7 @@ vi.mock('@shenora/react', async () => ({
 
 import { SettingsView } from './SettingsView';
 
-/** The page has drawn and the driver's state has been asked and answered: what an older shell leaves out is then known to be absent. */
+/** The page has drawn and the driver's state has been asked and answered: what the answer leaves out is then known to be absent. */
 const driverRead = async () => {
   await screen.findByRole('checkbox', { name: 'Announce what needs you or ended' });
   await vi.waitFor(() => expect(invoke.mock.calls.some(([, type, options]) =>
@@ -129,7 +129,7 @@ describe('the driver domain', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_GIT_ACCESS', { payload: { machine: true, access: { write: 'deny' } } });
   });
 
-  it("offers no sessions' access on a shell older than it", async () => {
+  it("offers no sessions' access where the answer lacks it", async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, home: 'D:/somewhere/Daoris/data' } : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);
     expect(await screen.findByText('D:/somewhere/Daoris/data')).toBeTruthy();
@@ -231,9 +231,9 @@ describe('the driver domain', () => {
 
   /**
    * CAPSET1 (D130's CAPCOUNT1 note): how many sessions Daoris starts at once, the `cap` `daoris settings cap` edits. Written
-   * only when changed to a whole number of at least one; an older shell that answers no such field is offered no row.
+   * only when changed to a whole number of at least one; an answer with no such field is offered no row.
    */
-  it('sets the cap of sessions Daoris starts, and offers nothing to a shell older than it', async () => {
+  it('sets the cap of sessions Daoris starts, and offers nothing where the answer lacks it', async () => {
     const notify = vi.fn();
     invoke.mockImplementation(async (module: string, type: string) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
@@ -264,10 +264,10 @@ describe('the driver domain', () => {
 
   /**
    * TOOL4g (D125 §2.2, §6): how long an account cools when its agent names no reset, the `cooloff` `daoris settings cooloff`
-   * edits. Written only when changed to a whole number of at least one; an older shell that answers no such field is offered no
+   * edits. Written only when changed to a whole number of at least one; an answer with no such field is offered no
    * row.
    */
-  it('sets the cool-off a limit naming no time takes, and offers nothing to a shell older than it', async () => {
+  it('sets the cool-off a limit naming no time takes, and offers nothing where the answer lacks it', async () => {
     const notify = vi.fn();
     invoke.mockImplementation(async (module: string, type: string) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
@@ -298,9 +298,9 @@ describe('the driver domain', () => {
 
   /**
    * `quietMinutes`, the one quiet setting, the `quiet` `daoris settings quiet` edits: written only when changed to whole minutes
-   * from 5 to 120; an older shell that answers no such field is offered no row.
+   * from 5 to 120; an answer with no such field is offered no row.
    */
-  it('sets how long a session may be quiet in its bounds, and offers nothing to a shell older than it', async () => {
+  it('sets how long a session may be quiet in its bounds, and offers nothing where the answer lacks it', async () => {
     const notify = vi.fn();
     invoke.mockImplementation(async (module: string, type: string) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;

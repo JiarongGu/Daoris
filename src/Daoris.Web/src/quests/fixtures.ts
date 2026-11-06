@@ -131,7 +131,7 @@ export const REFILED: Quest = {
   short: 'continue the prod half of the ticket…',
 };
 
-/** The same quest as an older host answers it, with no short title: its title names it. */
+/** The same quest with no short title: its title names it. */
 export const REFILED_UNNAMED: Quest = { ...REFILED, short: undefined };
 
 /** The same quest named by its intake's short title, its whole title said once under the head. */

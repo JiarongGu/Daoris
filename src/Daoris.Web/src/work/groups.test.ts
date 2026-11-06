@@ -379,7 +379,7 @@ describe('a row as the list shows it', () => {
 
   /**
    * LIMITSWITCH3b (D137's note of 2026-10-26): an ended record held for an account's reset shows *limit-waits* by the reader's word, in
-   * place of the state it ended in; with no word from the reader (a host older than it) the record's own state stands.
+   * place of the state it ended in; with no word from the reader (none) the record's own state stands.
    */
   it('shows a record held for an account’s reset as its wait, by the reader’s word', () => {
     const ended = session({ id: 'e2', state: 'completed' });

@@ -64,7 +64,7 @@ describe('LandedNote', () => {
   });
 
   // LANDRETIRE1 part 2: a branch the person withdrew says when, their reason and the recovery ref its commits stay on, never that the
-  // clean-up removed it, and an older shell's answer with no `withdrawn` reads as it did.
+  // clean-up removed it, and an answer with no `withdrawn` reads as it did.
   it('says a branch the person withdrew, with why and where its commits stay, and never the clean-up’s removal', () => {
     show({
       ...LANDED, state: 'gone',

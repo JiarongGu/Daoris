@@ -209,7 +209,7 @@ const heldRow = (attempt: HeldAttempt) => attentionWorded({
 describe('an attempt held for the person', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('joins each unit its held attempts, keeps every one held of any unit, and reads none from an older shell', () => {
+  it('joins each unit its held attempts, keeps every one held of any unit, and reads none where the answer has none', () => {
     const read = readWorkState({ units: [unit()], recovery: [], unread: [], held: [heldAttempt(), heldAttempt({ unit: 'quest:q7' })] });
     expect(read.held).toHaveLength(2);
     expect(read.units[0]!.held).toEqual([heldAttempt()]);
@@ -389,7 +389,7 @@ const endedRow = (end: GraphEnd) => attentionWorded({ kind: 'work', id: `${end.u
 describe('a closure graph’s end', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('joins each unit its ends, keeps every one of any unit, and reads none from an older shell', () => {
+  it('joins each unit its ends, keeps every one of any unit, and reads none where the answer has none', () => {
     const read = readWorkState({ units: [unit()], recovery: [], unread: [], held: [], ends: [graphEnd(), graphEnd({ unit: 'quest:q7' })] });
     expect(read.ends).toHaveLength(2);
     expect(read.units[0]!.ends).toEqual([graphEnd()]);

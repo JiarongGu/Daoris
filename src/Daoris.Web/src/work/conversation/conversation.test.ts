@@ -1132,7 +1132,7 @@ describe('the words’ answers', () => {
     expect(invoke).toHaveBeenCalledTimes(1);
   });
 
-  it('reads what a word said now would do, and asks an older shell again when the session moves', async () => {
+  it('reads what a word said now would do, and asks again when the session moves', async () => {
     invoke.mockResolvedValueOnce({ session: 's1', queued: [], taking: true, reaches: 'next-step' })
       .mockResolvedValueOnce({ session: 's1', queued: [], taking: false, reaches: 'resume' });
     const { result, rerender } = renderHook(({ state }) => useSessionReach({ id: 's1', state }, true), {
@@ -1145,7 +1145,7 @@ describe('the words’ answers', () => {
     expect(invoke).toHaveBeenCalledTimes(2);
   });
 
-  it('reads a never’s code, and an older shell’s answer as nothing taking words and nothing refusing', async () => {
+  it('reads a never’s code, and an absent answer as nothing taking words and nothing refusing', async () => {
     invoke.mockResolvedValueOnce({ session: 's1', queued: [], taking: false, why: 'teammate' });
     const { result } = renderHook(() => useSessionReach({ id: 's1', state: 'completed' }), { wrapper });
     await waitFor(() => expect(result.current).toEqual({ reaches: null, why: 'teammate' }));

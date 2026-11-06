@@ -540,7 +540,7 @@ describe('Settings → This Daoris', () => {
     expect(await list.findByText(/^已移除 0 个版本/)).toBeTruthy();
   });
 
-  it('draws no card from a shell older than the list', async () => {
+  it('draws no card where the answer lacks it', async () => {
     invoke.mockImplementation(shell({ ...WIRED, toolHome: undefined }));
     open();
     await screen.findByRole('region', { name: 'Folders' });

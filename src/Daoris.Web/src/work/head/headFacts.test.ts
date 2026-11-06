@@ -166,7 +166,7 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session(), shown: 'working', grouping: heard, calling: read }).at(-1)).toBe('running npm test for 8m');
     // The reader answered none open: the head says none, as the row does.
     expect(sessionFacts(t, { session: session(), shown: 'working', grouping: grouping({ calling: null }), calling: read }).join()).not.toMatch(/running/);
-    // No reader, or a host older than the fact: the record read here.
+    // No reader, or no fact: the record read here.
     expect(sessionFacts(t, { session: session(), shown: 'working', calling: read }).at(-1)).toBe('running npm run build for 2m');
     expect(sessionFacts(t, { session: session(), shown: 'working', grouping: grouping(), calling: read }).at(-1)).toBe('running npm run build for 2m');
     expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', grouping: heard }).join()).not.toMatch(/running/);

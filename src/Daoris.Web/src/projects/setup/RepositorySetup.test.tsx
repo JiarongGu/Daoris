@@ -494,7 +494,7 @@ describe("a repository's review before landing", () => {
     expect(onReview).toHaveBeenLastCalledWith({ clear: true });
   });
 
-  it('is absent on a shell older than it', () => {
+  it('is absent where the answer lacks it', () => {
     draw(SETUP_OWN);
     expect(screen.queryByText('Review before landing')).toBeNull();
   });
@@ -560,7 +560,7 @@ describe("a repository's second opinion before landing", () => {
     expect(onOpinion).toHaveBeenLastCalledWith({ clear: true });
   });
 
-  it('is absent on a shell older than it', () => {
+  it('is absent where the answer lacks it', () => {
     draw(SETUP_OWN);
     expect(screen.queryByText('Second opinion before landing')).toBeNull();
   });
@@ -604,7 +604,7 @@ describe("a repository's commit rule", () => {
     expect(onCommits).toHaveBeenLastCalledWith({ clear: true });
   });
 
-  it('is absent on a shell older than it', () => {
+  it('is absent where the answer lacks it', () => {
     draw(SETUP_OWN);
     expect(screen.queryByText('Commits')).toBeNull();
   });
@@ -649,7 +649,7 @@ describe("a repository's helpers rule", () => {
     expect(onHelpers).toHaveBeenLastCalledWith({ clear: true });
   });
 
-  it('is absent on a shell older than it', () => {
+  it('is absent where the answer lacks it', () => {
     draw(SETUP_OWN);
     expect(screen.queryByText('Helpers')).toBeNull();
   });
@@ -726,7 +726,7 @@ describe("a repository's sessions' access", () => {
     expect(head('会话的访问')).toHaveAccessibleDescription('完全访问（工作区的默认）');
   });
 
-  it('is absent on a shell older than it', () => {
+  it('is absent where the answer lacks it', () => {
     draw(SETUP_OWN);
     expect(screen.queryByRole('button', { name: "Sessions' access" })).toBeNull();
   });
@@ -834,7 +834,7 @@ describe("a repository's heavy gates", () => {
     expect(head('重型检查')).toHaveAccessibleDescription('本机未设定');
   });
 
-  it('is absent on a shell older than it', () => {
+  it('is absent where the answer lacks it', () => {
     draw(SETUP_OWN);
     expect(screen.queryByRole('button', { name: 'Heavy gates' })).toBeNull();
   });

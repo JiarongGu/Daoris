@@ -136,7 +136,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
 
   /**
    * Its session language (LANG1c, D142 point 7): the driver's resolution from the lines, its workspace's by the table's name, and the table.
-   * A shell older than it answers no table, and nothing is offered rather than a field whose save is refused.
+   * An answer without it carries no table, and nothing is offered rather than a field whose save is refused.
    */
   const languageOfPage = (): NonNullable<RepositorySetupProps['sessions']>['language'] => {
     const table = state.languageTable;
@@ -224,12 +224,12 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
     }),
   } : null;
 
-  // This machine's heavy gates for it (HEAVYRUN1b2b), where it can be driven, matched without case as the driver keys them; a shell older
-  // than them answers none, and no section is drawn. The whole list goes out, and a refusal is said where Save was pressed.
+  // This machine's heavy gates for it (HEAVYRUN1b2b), where it can be driven, matched without case as the driver keys them; an answer without
+  // them has none, and no section is drawn. The whole list goes out, and a refusal is said where Save was pressed.
   const heavyGates = state.heavyGates;
   const heavy: RepositorySetupProps['heavy'] = driving && Array.isArray(heavyGates) ? {
     gates: heavyGates.find((row) => same(row.repository))?.gates ?? [],
-    // Until the driver has answered (or on a shell older than the read) the section says only the general rule.
+    // Until the driver has answered (or where the answer lacks it) the section says only the general rule.
     marks: heavyMarks.data && typeof heavyMarks.data.marks !== 'undefined' ? heavyMarks.data : null,
     onSave: (gates, answered) => setHeavy.mutate({ repository, gates }, {
       onSuccess: () => {
@@ -359,7 +359,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
   } : null;
 
   // GITAUTH1f (§7.3): its git access as `LINES` resolves it, the level above as STATE sets its workspace's and this machine's; absent on a
-  // shell older than it.
+  // where the answer lacks it.
   const gitResolved = resolved<RepositoryGitAccess>(lines.data?.gitAccess);
   const gitAccess = gitResolved ? {
     workspace: gitResolved.workspace,

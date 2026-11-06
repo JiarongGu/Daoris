@@ -30,7 +30,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  * A catalogue as an older or a stranger shell may answer it, read defensively (SES1's reason): a field it never sent is
  * an empty list, never a blank page.
  */
-/** What a plugin hands Ask Daoris (HELPPLUG1a), each server with what Ask Daoris may call on it; none from an older shell. */
+/** What a plugin hands Ask Daoris (HELPPLUG1a), each server with what Ask Daoris may call on it; none where the answer has none. */
 const STATES = ['approved', 'waits', 'refused'] as const;
 const helpServersOf = (raw: unknown): HelpServerShown[] =>
   list<HelpServerShown>(raw).filter((server) => typeof server?.name === 'string')
@@ -44,7 +44,7 @@ const helpServersOf = (raw: unknown): HelpServerShown[] =>
       refusal: typeof server.refusal === 'string' ? server.refusal : null,
     }));
 
-/** The skills a plugin hands (HELPPLUG1b), each with who it goes to; none from an older shell. */
+/** The skills a plugin hands (HELPPLUG1b), each with who it goes to; none where the answer has none. */
 const skillsOf = (raw: unknown): SkillShown[] =>
   list<SkillShown>(raw).filter((skill) => typeof skill?.name === 'string')
     .map((skill) => ({ name: skill.name, to: list<string>(skill.to), problem: typeof skill.problem === 'string' ? skill.problem : null }));
@@ -54,7 +54,7 @@ const portsOf = (raw: unknown): Record<string, string> =>
     ? Object.fromEntries(Object.entries(raw).filter((port): port is [string, string] => typeof port[1] === 'string'))
     : {};
 
-/** The steps a plugin declares (FABRIC-UNIT1e), each with its reach, version and ports; none from an older shell. */
+/** The steps a plugin declares (FABRIC-UNIT1e), each with its reach, version and ports; none where the answer has none. */
 const stepsOf = (raw: unknown): StepShown[] =>
   list<StepShown>(raw).filter((step) => typeof step?.name === 'string')
     .map((step) => ({
@@ -66,12 +66,12 @@ const stepsOf = (raw: unknown): StepShown[] =>
       evidence: typeof step.evidence === 'string' ? step.evidence : null,
     }));
 
-/** What a plugin's steps create (FABRIC-UNIT1e), each with its role; none from an older shell. */
+/** What a plugin's steps create (FABRIC-UNIT1e), each with its role; none where the answer has none. */
 const resourcesOf = (raw: unknown): ResourceShown[] =>
   list<ResourceShown>(raw).filter((resource) => typeof resource?.schema === 'string')
     .map((resource) => ({ schema: resource.schema, role: typeof resource.role === 'string' ? resource.role : 'temporary' }));
 
-/** The tools a plugin declares (ADOSIGNIN1), each with its checks; none from an older shell. */
+/** The tools a plugin declares (ADOSIGNIN1), each with its checks; none where the answer has none. */
 const toolsOf = (raw: unknown): ToolShown[] =>
   list<ToolShown>(raw).filter((tool) => typeof tool?.id === 'string')
     .map((tool) => ({ ...tool, checks: list<ToolCheckShown>(tool.checks) }));
@@ -153,7 +153,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
   const answered = Array.isArray(catalog.data?.plugins);
   const plugins = answered ? installedOf(catalog.data?.plugins) : [];
   const offers = offersOf(catalog.data?.offers);
-  // An older shell has never heard of the kit (PLUG8), and is offered nothing that needs it.
+  // An answer that names no kit is offered nothing that needs it (PLUG8).
   const kitPoints = Array.isArray(catalog.data?.kit?.points) ? catalog.data.kit.points as KitPoint[] : null;
   const groups = pluginGroups(plugins, offers, i18n.language);
   const loading = active && !answered && catalog.isPending;

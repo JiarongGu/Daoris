@@ -329,7 +329,7 @@ export function placedFact(
     if (why === 'cap') return { line: 'work.rail.wordsHeld.cap', tip };
     if (why === 'cooling' && until) {
       // LIMITSWITCH1 (D137's note of 2026-10-25): words held for an account's limit say the wait as D206 §3.7 does, its time and the account
-      // that resets first, never only that the session ended. An agent's own sign-in has no id; a host older than the account says a time.
+      // that resets first, never only that the session ended. An agent's own sign-in has no id; the answer says a time.
       const time = moment(until);
       if (typeof account === 'string') return { line: 'work.limit.waits', values: { time, account: accountName || account }, tip };
       if (account === null) return { line: 'work.rail.wordsHeld.limitWaitsOwn', values: { time }, tip };

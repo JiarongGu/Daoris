@@ -33,7 +33,7 @@ export type HandOverOffer = {
  *
  * @remarks
  * The scope is the conversation's workspace's own where it names one, else the machine's, as the start's chip reads it, for the
- * agent that owns the door's accounts (AGT7). A shell older than the facts answers none, and then there is no offer.
+ * agent that owns the door's accounts (AGT7). An answer without the facts carries none, and then there is no offer.
  */
 export function handOverOffer({ session, workspace, doors, answer, now, actor }: {
   session: Pick<Session, 'adapter' | 'profile'>;
@@ -89,7 +89,7 @@ export function handOverOffer({ session, workspace, doors, answer, now, actor }:
  * Whether the switch moves the conversation to another account of its own agent at its turn's end, so the offer, the fallback,
  * stays down (SWITCH1e, D165 point 4, the switch design §4): its scope's switch is not `off`, its account is over the scope's curve
  * (`overCurve`, what `SwitchDecision` moves by), and another account of that scope has room (`room`). Each is .NET's verdict
- * (D182 point 6); a shell older than SWITCH1e answers no `room`, and the offer stands as before.
+ * (D182 point 6); an answer with no `room`, and the offer stands as before.
  */
 function switchesAway(
   session: Pick<Session, 'adapter' | 'profile'>,

@@ -88,7 +88,7 @@ describe('the acts on a work', () => {
    * CARRY2d (D80's CARRY2c note): a resume's report of what still holds a quest of its work carried the verdict and the
    * driver's English alone, so 中文 said a stop, a pause, a park and a take elsewhere in English. The host now hands each
    * hold's facts beside the sentence, as the tick hands a sitting quest's, and the page words each from both catalogues; a
-   * host older than the facts hands none, and the driver's sentence stands, as English always passes it through.
+   * answer without the facts hands none, and the driver's sentence stands, as English always passes it through.
    */
   describe('a resume says what still holds a quest of it in the reader’s language', () => {
     const STOP = 'you stopped session `b3f0re00`; Try again carries it on — `daoris quest retry q8 --session b3f0re00`.';
@@ -150,7 +150,7 @@ describe('the acts on a work', () => {
       expect(await resumeWith(hold)).toEqual([zh, 'ok']);
     });
 
-    it.each(HOLDS)('in the driver’s words where an older host hands no facts: $name', async ({ hold }) => {
+    it.each(HOLDS)('in the driver’s words where the answer hands no facts: $name', async ({ hold }) => {
       await i18n.changeLanguage('zh');
       const bare: ResumeHold = { quest: hold.quest, verdict: hold.verdict, reason: hold.reason };
       expect(await resumeWith(bare)).toEqual([`#${hold.quest} 仍在搁置：${hold.reason}`, 'ok']);

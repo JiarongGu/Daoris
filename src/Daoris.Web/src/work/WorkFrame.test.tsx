@@ -1045,7 +1045,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * The console is the part that may be missing — a shell older than this surface answers something
+   * The console is the part that may be missing — an answer that lacks the surface answers something
    * else entirely. It degrades to an empty panel; the RECORD is what the region is for.
    */
   it('leaves the record standing when the answer is not a console', async () => {

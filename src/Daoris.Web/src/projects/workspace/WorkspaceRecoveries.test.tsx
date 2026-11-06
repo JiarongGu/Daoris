@@ -28,7 +28,7 @@ const unheld = recovery({});
 describe('what is kept for recovery', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('draws nothing where there is none, or where an older shell answered none', () => {
+  it('draws nothing where there is none, or where the answer was none', () => {
     const { container, rerender } = render(<WorkspaceRecoveries recoveries={[]} repositories={['billing']} />);
     expect(container).toBeEmptyDOMElement();
     rerender(<WorkspaceRecoveries recoveries={readWorkState({ units: [] }).recovery} repositories={['billing']} />);

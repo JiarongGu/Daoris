@@ -84,7 +84,7 @@ export const isHelper = (session: Session): boolean => !session.opinion && Boole
 
 /**
  * Whether the host that answered a record says its work is a partner's (FOUNDATION1c, D212; D203 point 1): a naming only, read from the
- * pushed `work` where a host sends it and false where it sends none, so an older host's partner is drawn by today's predicates, as a
+ * pushed `work` where a host sends it and false where it sends none, so a partner is drawn by today's predicates, as a
  * helper. A partner's record also serves, so `isHelper` stays true for it and the readers of that, the composer's one turn (`WorkFrame`'s
  * `oneTurn`) and the acts that take words (`acts.ts`), keep refusing it exactly as they do: the naming repair offers a partner no box and
  * no act it is not offered now (X4-1.3, X4-2.1).

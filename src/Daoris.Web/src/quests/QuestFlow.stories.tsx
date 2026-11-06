@@ -78,7 +78,7 @@ export const HeldDone: Story = {
   args: { quest: { ...DONE, hold: 'departed' }, moves: WENT.slice(0, 6).map((each, index) => (index === 5 ? { ...each, hold: 'departed' } : each)) },
   decorators: light,
 };
-/** An older host, which keeps no moves (trap 18): the statuses alone, as without them. */
+/** A host that keeps no moves (trap 18): the statuses alone, as without them. */
 export const NotKept: Story = { args: { quest: DONE, moves: null }, decorators: light };
 
 /** The section as the page draws it: folded to its line until it is opened. */

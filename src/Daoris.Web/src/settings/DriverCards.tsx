@@ -15,20 +15,20 @@ import { UpdateSection } from './machine/Update';
 export type DriverFacts = {
   /** Where this machine's Daoris lives; none while the shell has not answered. */
   home?: string | null;
-  /** Where plugins are looked for (UX6j); none on an older shell, and the row is absent. */
+  /** Where plugins are looked for (UX6j); none where the answer has none, and the row is absent. */
   pluginsFolder: string | null;
-  /** The installed plugins, for the Plugins section (PLUGSET1); none on an older shell or before it answers, and the section is absent. */
+  /** The installed plugins, for the Plugins section (PLUGSET1); none where the answer has none or before it answers, and the section is absent. */
   plugins?: readonly PluginShown[] | null;
   notify: boolean;
-  /** Minutes an account cools when its agent names no reset (TOOL4g); absent on a shell older than the field. */
+  /** Minutes an account cools when its agent names no reset (TOOL4g); absent where the answer lacks it. */
   coolOff?: number | null;
-  /** Minutes a session may be quiet before Daoris looks in; absent on a shell older than the field. */
+  /** Minutes a session may be quiet before Daoris looks in; absent where the answer lacks it. */
   quiet?: number | null;
-  /** How many sessions Daoris starts at once here (CAPSET1); absent on a shell older than the route. */
+  /** How many sessions Daoris starts at once here (CAPSET1); absent where the answer lacks it. */
   cap?: number | null;
-  /** This machine's sessions' access (AUTONOMY1d); absent on a shell older than it. */
+  /** This machine's sessions' access (AUTONOMY1d); absent where the answer lacks it. */
   machineAccess?: AccessLevel | null;
-  /** This machine's git access as set (GITAUTH1f); absent on a shell older than it. */
+  /** This machine's git access as set (GITAUTH1f); absent where the answer lacks it. */
   machineGitAccess?: GitAccessLevel | null;
   /** The install's update (UPDATE1b). */
   update?: UpdateState;
@@ -118,7 +118,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
           </SettingRow>
 
           {/* How long an account cools when its agent names no reset (TOOL4g, D125 §2.2): offered where the shell says it,
-              since an older shell answers no such field and has no route to write it. */}
+              since the answer has no such field and has no route to write it. */}
           {typeof facts.coolOff === 'number' && (
             <MinutesSetting setting={minutes.cooloff} held={facts.coolOff} onSet={onCoolOff} />
           )}
@@ -166,7 +166,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
 
       {/* This machine's sessions' access (AUTONOMY1d, D184 point 1): the level under every workspace's and repository's, whose
           own are on their Setup tabs. Here because it is the machine's, as the driver's dials are, and offered where the shell
-          answers it, since an older shell has no route to write it. Nothing stands above it, so turning full access off clears it.
+          answers it, since an answer without the field has no route to write it. Nothing stands above it, so turning full access off clears it.
           Its lead paragraph is its title's ⓘ, as Setup's fold carries its summary line (ACCESSASK1, the UI/UX design §3.3). */}
       {facts.machineAccess && (
         <Card>

@@ -83,7 +83,7 @@ export function TermsLine() {
  * Which account the set's next start takes, in any workspace, and why (TOOL6e; D130 §3–§4, D125 §3.7): the walk's step, since
  * when that account is offered again where its cool-off just ended, what holds every other account, and that the tool's own
  * sign-in carries none of these starts, which is the switch a person makes at their terminal and expects Daoris to follow.
- * Drawn only where the answer carries it, so a shell older than TOOL6e shows nothing rather than a guess.
+ * Drawn only where the answer carries it, so an answer without it shows nothing rather than a guess.
  */
 export function NextStartRow({ agent, product, scope, labelOf, isKey }: {
   agent: AgentAccounts;
@@ -330,7 +330,7 @@ function SwitchRow({ agent, product, scope, labelOf, busy, acts, now = new Date(
           <div key={window} className="flex min-w-0 flex-col gap-2">
             <CurveChart
               window={window}
-              // The curve in effect, as .NET resolves it (PUSH1e); none drawn from a shell older than that.
+              // The curve in effect, as .NET resolves it (PUSH1e); none drawn where the answer lacks it.
               points={scope.curves?.[window] ?? []}
               own={switched === 'curve' && own(window) !== null}
               accounts={placed(window)}
