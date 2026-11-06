@@ -39,6 +39,7 @@ export const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'again-step': 'held',
   'again-check': 'held',
   'stop-check': 'held',
+  'ask-fix-check': 'held',
   'stop-partial': 'held',
   'git-try-again': 'gitTryAgain',
   'git-set-up': 'gitSetUp',

@@ -17,7 +17,7 @@ public sealed class LineBatchingTests : IDisposable
 
     private const string Graph = """
         {"schemaVersion":2,"entries":["verify"],"end":"verify",
-         "nodes":[{"id":"verify","kind":"check","version":1,"reach":"performed","timeoutSeconds":600}],"wires":[]}
+         "nodes":[{"id":"verify","kind":"check","version":1,"reach":"performed","timeoutSeconds":600,"options":{"ask":"fix"}}],"wires":[]}
         """;
 
     private static readonly NodeDeclaration Check = CheckNodes.Performed(new NodeDeclaration("verify", NodeKinds.Check, 1, NodeReach.Performed));
@@ -122,8 +122,11 @@ public sealed class LineBatchingTests : IDisposable
     private async Task AnswerAsync(VerifyRun run, string verdict)
     {
         var invocation = Attempt(run).Call.Invocation;
+        // A failed gate's log is longer than the ask carries, ending in a mark the ask's file must still hold.
+        var log = Path.Combine(_home, $"{run.Run}-suite.log");
+        File.WriteAllText(log, new string('x', 300 * 1024) + "THE END");
         var result = new VerifyResult(invocation, run.Commit, verdict, verdict == VerifyVerdicts.Reached ? null : "why",
-            [new VerifyGate("suite", verdict == VerifyVerdicts.Failed ? "fail" : "pass", 3)])
+            [new VerifyGate("suite", verdict == VerifyVerdicts.Failed ? "fail" : "pass", 3) { Log = log }])
         {
             Failed = verdict == VerifyVerdicts.Failed ? "suite" : null, Code = verdict == VerifyVerdicts.Unknown ? VerifyResult.Changed : null,
         };
@@ -248,6 +251,98 @@ public sealed class LineBatchingTests : IDisposable
         Assert.Equal((run.Run, (string?)null, VerifyResult.Changed), (held.Verification!.Run, held.Verification.Base, held.Verification.Why));
         Assert.Contains("(its line main, its first verification) is not known (the gates changed since they were accepted), and holds its line main",
             HeldAttempts.WhySaid(held), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Not_now_on_a_failure_settles_it_as_the_person_s_and_the_verdict_stays_failed()
+    {
+        var run = await SettledAsync(First, VerifyVerdicts.Failed);
+        var held = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal([HeldResolutions.AskFix, HeldResolutions.Again, HeldResolutions.Stop], held.Words);
+
+        Assert.Equal(PerformedWhat.Worded, HeldAttempts.Word(Files, RunUnits.IdOf(run.Run), Check.Id, 1, HeldResolutions.Stop).What);
+
+        // It leaves *What needs you* and asks nothing again, yet the run is still the line's failed verdict, the next batch's base.
+        Assert.Empty(HeldAttempts.Read(Files));
+        Assert.Equal(LineVerdicts.Failed, LineBatching.Settled(Files.Read(RunUnits.IdOf(run.Run)), [Check.Id]));
+        Assert.Equal(First, Owed(Second)?.Base);
+    }
+
+    [Fact]
+    public async Task Ask_for_a_fix_publishes_one_ask_for_the_failed_gate_with_its_log_and_the_kind_the_check_names()
+    {
+        var run = await SettledAsync(First, VerifyVerdicts.Failed);
+        var (service, heard) = ReviewChoiceStandIn.Of((method, path, _) => (method, path) switch
+        {
+            ("GET", "/api/asks") => (System.Net.HttpStatusCode.OK, "[]"),
+            ("POST", "/api/asks") => (System.Net.HttpStatusCode.OK, """{"ask":{"id":"a1b2c3"},"message":"Asked."}"""),
+            _ => null,
+        });
+
+        var pressed = await VerifyFixAsks.AskAsync(service, Files, RunUnits.IdOf(run.Run), Check.Id, 1, CancellationToken.None);
+
+        Assert.True(pressed.Done);
+        Assert.Equal("a1b2c3", pressed.Ask);
+        using var sent = System.Text.Json.JsonDocument.Parse(Assert.Single(heard, call => call.Method == "POST").Body);
+        var root = sent.RootElement;
+        Assert.Equal(("engine", "default", "fix"), (root.GetProperty("to").GetString(), root.GetProperty("workspace").GetString(), root.GetProperty("kind").GetString()));
+        Assert.StartsWith(VerifyFixAsks.First("main", "suite", run.Run), root.GetProperty("sentence").GetString(), StringComparison.Ordinal);
+        var file = Assert.Single(root.GetProperty("attachments").EnumerateArray());
+        Assert.Equal("suite.log", file.GetProperty("name").GetString());
+        var content = Convert.FromBase64String(file.GetProperty("content").GetString()!);
+        Assert.Equal(VerifyFixAsks.LogBytes, content.Length);
+        Assert.EndsWith("THE END", System.Text.Encoding.UTF8.GetString(content), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Ask_for_a_fix_finds_the_ask_it_made_and_adds_a_later_failure_of_the_gate_to_its_channel()
+    {
+        var first = await SettledAsync(First, VerifyVerdicts.Failed);
+        string Listed(string run) =>
+            $$"""[{"id":"a1","workspace":"default","sentence":"{{VerifyFixAsks.First("main", "suite", run)}}","state":"Published","tier":"named"}]""";
+        var (service, heard) = ReviewChoiceStandIn.Of((method, path, _) => (method, path) switch
+        {
+            ("GET", "/api/asks") => (System.Net.HttpStatusCode.OK, Listed(first.Run)),
+            _ => null,
+        });
+
+        var again = await VerifyFixAsks.AskAsync(service, Files, RunUnits.IdOf(first.Run), Check.Id, 1, CancellationToken.None);
+
+        Assert.Equal((true, "a1"), (again.Done, again.Ask));
+        Assert.DoesNotContain(heard, call => call.Method == "POST");
+
+        // The next batch's failure of the same gate is another run: the open ask takes it on its channel, and no second ask is made.
+        var second = await SettledAsync(Second, VerifyVerdicts.Failed);
+        await Record.ExceptionAsync(() => VerifyFixAsks.AskAsync(service, Files, RunUnits.IdOf(second.Run), Check.Id, 1, CancellationToken.None));
+        Assert.DoesNotContain(heard, call => call.Method == "POST" && call.Path == "/api/asks");
+        Assert.Contains(heard, call => call.Method == "POST" && call.Path.StartsWith("/api/asks/a1", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Ask_for_a_fix_is_refused_on_a_verification_that_did_not_fail()
+    {
+        var run = await SettledAsync(First, VerifyVerdicts.Unknown);
+        var (service, heard) = ReviewChoiceStandIn.Of((_, _, _) => null);
+
+        var pressed = await VerifyFixAsks.AskAsync(service, Files, RunUnits.IdOf(run.Run), Check.Id, 1, CancellationToken.None);
+
+        Assert.False(pressed.Done);
+        Assert.Empty(heard);
+    }
+
+    [Fact]
+    public async Task A_run_no_later_run_made_needed_is_cleared_with_the_history_and_the_newest_verdict_and_an_unsettled_run_stay()
+    {
+        var first = await SettledAsync(First, VerifyVerdicts.Reached);
+        var second = await SettledAsync(Second, VerifyVerdicts.Failed);
+        var third = Bound(Third);
+
+        var going = LandedRunsLeft.Of(_home).Select(each => each.Path).ToList();
+
+        Assert.Contains(VerifyRuns.PathOf(_home, first.Run), going);
+        Assert.Contains(NodeRecordFiles.PathOf(_home, RunUnits.IdOf(first.Run)), going);
+        Assert.DoesNotContain(VerifyRuns.PathOf(_home, second.Run), going);
+        Assert.DoesNotContain(VerifyRuns.PathOf(_home, third.Run), going);
     }
 
     [Fact]

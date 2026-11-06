@@ -20,7 +20,7 @@ const held = (over: Partial<HeldAttempt> = {}): HeldAttempt => ({
   at: '2026-11-06T09:00:00Z', said: 'the verification of engine …', words: ['again', 'stop'], verification: verification({ why: 'changed' }), ...over,
 });
 
-const failed = held({ nodeState: 'failed', why: 'failure-kept', code: 'gate-failed', words: ['again'], verification: verification({ gate: 'suite' }) });
+const failed = held({ nodeState: 'failed', why: 'failure-kept', code: 'gate-failed', words: ['ask-fix', 'again', 'stop'], verification: verification({ gate: 'suite' }) });
 
 const row = (attempt: HeldAttempt): PushedAttention => ({
   kind: 'work', id: `${attempt.unit}#${attempt.node}#${attempt.attempt}`, since: '2026-11-06T09:00:00Z', where: attempt.unit, held: attempt,
@@ -60,10 +60,14 @@ describe('a held verification on What needs you', () => {
     expect(onHeld.mock.calls.map((call) => call[1])).toEqual(['again', 'stop']);
   });
 
-  it('offers a failure Run again alone', () => {
-    render(<ul><AttentionRow item={worded(failed)} acts={{ held: vi.fn() }} /></ul>);
-    expect(screen.getByRole('button', { name: 'Run again' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Not now' })).toBeNull();
+  it('offers a failure Ask for a fix…, Run again and Not now, each a word the driver takes', async () => {
+    const onHeld = vi.fn();
+    render(<ul><AttentionRow item={worded(failed)} acts={{ held: onHeld }} /></ul>);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ask for a fix…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Run again' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(onHeld.mock.calls.map((call) => call[1])).toEqual(['ask-fix', 'again', 'stop']);
   });
 
   it('says the person’s word once given as any held step does', () => {
@@ -78,5 +82,7 @@ describe('a held verification on What needs you', () => {
     render(<ul><AttentionRow item={worded(held())} acts={{ held: vi.fn() }} /></ul>);
     expect(screen.getByRole('button', { name: '再运行一次' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '暂不处理' })).toBeInTheDocument();
+    render(<ul><AttentionRow item={worded(failed)} acts={{ held: vi.fn() }} /></ul>);
+    expect(screen.getByRole('button', { name: '请求修复…' })).toBeInTheDocument();
   });
 });

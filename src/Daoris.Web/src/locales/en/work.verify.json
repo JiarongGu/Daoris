@@ -8,5 +8,6 @@
   "work.verify.commit": "{{commit}}",
   "work.verify.failedDetail": "It judged {{judged}}. Nothing verifies it again until you run it again.",
   "work.verify.holdsLine": "It judged {{judged}}, and holds its line: no other verification of it starts until you run this one again, or say not now and the next one takes it in.",
-  "work.verify.unknownDetail": "It judged {{judged}}, and waits until you run it again or say not now."
+  "work.verify.unknownDetail": "It judged {{judged}}, and waits until you run it again or say not now.",
+  "work.verify.askFix": "Ask for a fix…"
 }
