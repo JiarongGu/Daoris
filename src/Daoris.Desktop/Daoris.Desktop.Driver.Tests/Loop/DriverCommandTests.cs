@@ -498,7 +498,7 @@ public sealed class DriverCommandTests
 
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "SessionsConsole.cs"));
         Assert.Contains("SessionsCommand.Read(args, out var problem)", console);
-        Assert.Contains("SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, door, log)", console);
+        Assert.Contains("SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, unadopted, log)", console);
         // MSG1f3 (D50, D137 §2.2): *Start a conversation with these words* at a terminal opens the terminal's own conversation,
         // as `chat` does, through the chat runner's one act the screen's `SESSION_START_FROM` calls, on Chat's order as the screen's press
         // walks it (FOUNDATION1j part iii, the foundation design §2.4's third row), never the machine's adapter.

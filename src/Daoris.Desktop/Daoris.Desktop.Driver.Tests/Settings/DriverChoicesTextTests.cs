@@ -88,7 +88,6 @@ public sealed partial class DriverChoicesTextTests
             string Spelled(string text) => text.Replace(config, "<config>", StringComparison.Ordinal).Replace(home, "<home>", StringComparison.Ordinal);
             static IReadOnlyList<string> Lines(string text) =>
                 text.Length == 0 ? [] : text.Replace("\r\n", "\n", StringComparison.Ordinal).TrimEnd('\n').Split('\n');
-            File.WriteAllText(@"C:\Users\jiaro\AppData\Local\Temp\claude\D--Development-Games-Daoris\8c634328-26ba-4250-9525-fc689031930b\scratchpad\ch-" + new string(name.Where(char.IsLetter).ToArray()) + ".txt", string.Join("\n", Lines(Spelled(output.ToString()))));
             Assert.Equal(Expected(row, "out"), Lines(Spelled(output.ToString())));
             Assert.Equal(Expected(row, "err"), Lines(Spelled(error.ToString())));
             Assert.Equal(row.GetProperty("exit").GetInt32(), exit);

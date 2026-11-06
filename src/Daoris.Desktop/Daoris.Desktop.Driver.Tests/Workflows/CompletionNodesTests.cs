@@ -99,17 +99,13 @@ public sealed class CompletionNodesTests : IDisposable
     [Fact]
     public void The_save_refuses_a_monitor_no_pull_request_reaches_and_a_tidy_no_monitor_reaches()
     {
-        var dbg = NodeGraphs.Read(Graph(Tail, """
+        // A graph with such a monitor or tidy is no graph: its read names each, whether or not it is being saved.
+        var early = NodeGraphs.Read(Graph(Tail, """
                 {"id":"m","kind":"after","from":"push","to":"monitor"},{"id":"t","kind":"after","from":"push","to":"tidy"}
                 """), onSave: false);
-        Assert.True(dbg.Graph is not null, "DBG " + string.Join(" | ", dbg.Problems.Select(p => p.ToString())));
-        var early = CompletionGraphs.Unreached(
-            NodeGraphs.Read(Graph(Tail, """
-                {"id":"m","kind":"after","from":"push","to":"monitor"},{"id":"t","kind":"after","from":"push","to":"tidy"}
-                """), onSave: false).Graph!.Nodes,
-            ids => ids.ToHashSet(StringComparer.Ordinal)).ToList();
 
-        Assert.Equal(["monitor", "tidy"], early.Select(each => each.Node));
+        Assert.Null(early.Graph);
+        Assert.Equal(["monitor", "tidy"], early.Problems.Where(problem => problem.Code == "land-tail").Select(problem => problem.Node));
         Assert.NotEmpty(NodeGraphs.Read(Graph(Tail, """
             {"id":"m","kind":"after","from":"push","to":"monitor"},{"id":"t","kind":"after","from":"monitor","to":"tidy"}
             """), onSave: true).Problems);
