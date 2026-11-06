@@ -169,8 +169,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     once the answer the opening plugin gave through `work/state` (asked at D148's moments) says completed, a squash read as merged, and
     `closed` once it says abandoned. The monitor declares those outcomes in the file, and the shipped delivery wires `when merged` to the
     `tidy` and `when closed` to a person's task (`human`); the page says those outcomes, and the task's `done` and `approved`, in its own words
-    (`workflow.outcome.<kind>.<outcome>`, read by the editor's rows, ways and causes and the chart's ports and edges by the kind of the step they
-    leave, the raw name left as identity and as the words of a kind with none). The tidy (`TidyDoor`, off the pass, under the lease) ends each part of the
+    (`workflow.outcome.<kind>.<outcome>`, read by the editor's rows, ways and causes, the chart's ports and edges and the run view's outcome line and
+    routes by the kind of the step they leave, the raw name left as identity and as the words of a kind with none). The tidy (`TidyDoor`, off the pass, under the lease) ends each part of the
     chain, the session branch of every unit its landing carries: each part's commits kept on a recovery ref, its branch deleted through
     the journal (`JournaledDeletes`, with its Undo), one a tree has checked out left standing and ended all the same, and what it ended
     written on the landing as `tidied` (`ChainTidied`). Nothing fails a tidy: where the request did not merge its door ends nothing. Each

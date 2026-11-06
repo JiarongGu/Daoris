@@ -980,6 +980,30 @@ describe("a run's view of where its work stands", () => {
     expect(screen.getByText('Finished')).toBeInTheDocument();
   });
 
+  it("says a monitor's outcome and its routes in the kind's words, en and zh, and leaves a kind with none as it spelled it", async () => {
+    const decided = GRAPH_RUN_DECIDED;
+    const monitored = answerOf({
+      ...decided,
+      steps: decided.steps.map((each) => (each.step.id === 'find' ? { ...each, step: { ...each.step, kind: 'monitor' } } : each)),
+      graph: {
+        ...decided.graph!,
+        wires: decided.graph!.wires.map((wire) => (wire.from === 'find' ? { ...wire, outcome: 'merged' } : wire)),
+        outcomes: { find: 'closed' },
+      },
+    });
+    const { unmount } = render(<WorkflowRunView answer={monitored} />);
+    expect(row('find')).toHaveTextContent('Its outcome: closed without a merge.');
+    const [merged, closed] = within(within(row('find')).getByRole('list', { name: 'Routes' })).getAllByRole('listitem');
+    expect(merged).toHaveTextContent(/merged → release/);
+    expect(closed).toHaveTextContent('closed without a merge → No further step');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkflowRunView answer={monitored} />);
+    expect(row('find')).toHaveTextContent('它的结果：未合并即关闭。');
+    expect(within(within(row('find')).getByRole('list')).getAllByRole('listitem')[0]).toHaveTextContent(/已合并 → /);
+  });
+
   it('says the route a decision took when its outcome is routed, and names no outcome it never declared', () => {
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_RELEASED)} />);
     expect(row('find')).toHaveTextContent('Its outcome: release.');
