@@ -186,7 +186,7 @@ public sealed class AccountSetupTests : IDisposable
     [Theory]
     [InlineData("http://example.com:5198")]
     [InlineData("https://daoris.example.org")]
-    [InlineData("http://192.168.1.20:5198")]
+    [InlineData("http://192.0.2.20:5198")]
     [InlineData("http://localhost.example.com:5198")]
     public void An_address_that_is_not_this_machine_s_is_refused_as_SERVICE_NOT_LOOPBACK_since_the_local_service_is_sent_this_machine_s_paths(string asked)
     {
