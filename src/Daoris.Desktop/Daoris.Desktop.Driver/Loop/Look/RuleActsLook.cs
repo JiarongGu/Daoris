@@ -16,7 +16,7 @@ internal sealed class RuleActsLook(ILookWiring wiring) : ILookPass
         try
         {
             planned = PlannedRuleActs.Of(
-                snapshot, round.State.Plan, staff.Rules(), (quest, last) => StaffSnapshotCourse.RoleOf(staff, snapshot, quest, last), wiring.Harnesses.Clock());
+                snapshot, round.State.Plan, staff.Rules(), (quest, last) => StaffSnapshotCourse.LineOf(staff, snapshot, quest, last), wiring.Harnesses.Clock());
         }
         catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
         {

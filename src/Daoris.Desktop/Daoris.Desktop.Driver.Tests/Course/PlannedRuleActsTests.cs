@@ -35,7 +35,7 @@ public sealed class PlannedRuleActsTests : IDisposable
         new([new SupervisorRuleSet(SupervisorRules.Machine, 2, [.. SupervisorRuleBook.Seeded(3), .. more])]);
 
     private static IReadOnlyList<RuleActed> Acts(Snapshot snapshot, IReadOnlyList<Consideration> plan, SupervisorRuleBook book) =>
-        PlannedRuleActs.Of(snapshot, plan, book, (_, _) => RoleWork.Build, At);
+        PlannedRuleActs.Of(snapshot, plan, book, (quest, _) => new RuledLine(RoleWork.Build, quest.To, null, quest.Id), At);
 
     [Fact]
     public void A_quest_the_failures_rule_parks_is_that_rule_s_act_at_the_count_it_stood_at()

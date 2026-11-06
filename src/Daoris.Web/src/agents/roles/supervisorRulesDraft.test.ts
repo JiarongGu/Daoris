@@ -19,14 +19,14 @@ const READ: SupervisorRulesRead = {
 describe('The supervisor rules draft', () => {
   it('opens a place on its set at its revision, and an empty place at revision 0', () => {
     expect(draftOf('repository:daoris', setOf(READ, 'repository:daoris'))).toEqual({
-      place: 'repository:daoris', revision: 1, rows: [{ key: 0, count: 'answers-alone', at: '3', do: 'hold', upTo: '', role: 'build' }],
+      place: 'repository:daoris', revision: 1, rows: [{ key: 0, count: 'answers-alone', at: '3', do: 'hold', upTo: '', roles: ['build'] }],
     });
     expect(draftOf('workspace:w', setOf(READ, 'workspace:w'))).toEqual({ place: 'workspace:w', revision: 0, rows: [] });
   });
 
   it('writes the set whole at the revision read, a wait with its minutes and a role with its id, a window left to the door', () => {
     const draft = draftOf('machine', setOf(READ, 'machine'));
-    draft.rows.push({ key: 9, count: 'limits', at: '1', do: 'wait', upTo: '30', role: 'build' });
+    draft.rows.push({ key: 9, count: 'limits', at: '1', do: 'wait', upTo: '30', roles: ['build'] });
 
     expect(pressOf(draft)).toEqual({
       change: 'set', id: 'supervisor', place: 'machine', rulesRevision: 3,
@@ -34,17 +34,35 @@ describe('The supervisor rules draft', () => {
     });
   });
 
+  it("keeps a rule's roles whole: a rule set at the terminal for two roles writes back for both when another rule is saved", () => {
+    const read: SupervisorRulesRead = {
+      ...READ,
+      sets: [{ place: 'repository:x', revision: 4, rules: [
+        { id: 'r-1', count: 'limits', window: 'this-end', at: 1, do: 'weighted', roles: ['build', 'design'] },
+        { id: 'r-2', count: 'failures', window: 'since-try-again', at: 3, do: 'hold', roles: ['build', 'design'] },
+      ] }],
+    };
+    const draft = draftOf('repository:x', setOf(read, 'repository:x'));
+    expect(sameAsStored(draft, setOf(read, 'repository:x'))).toBe(true);
+    draft.rows[1]!.at = '4';
+
+    expect(pressOf(draft).rules!.map((rule) => rule.roles)).toEqual([['build', 'design'], ['build', 'design']]);
+    draft.rows[1]!.at = '3';
+    draft.rows[0]!.roles = ['build'];
+    expect(sameAsStored(draft, setOf(read, 'repository:x'))).toBe(false);
+  });
+
   it('starts a new rule on the first count not ruled here, at its least and its first act', () => {
     const rows = draftOf('machine', setOf(READ, 'machine')).rows;
     const count = nextCount(READ.counts, rows)!;
 
     expect(count.count).toBe('limits');
-    expect(blankRule(count, 5)).toEqual({ key: 5, count: 'limits', at: '1', do: 'ask', upTo: '', role: '' });
+    expect(blankRule(count, 5)).toEqual({ key: 5, count: 'limits', at: '1', do: 'ask', upTo: '', roles: [] });
   });
 
   it('holds a moved rule to the new count: its threshold within the bounds, its act one the count allows, minutes only for a wait', () => {
-    const row = { key: 1, count: 'answers-alone', at: '12', do: 'hold', upTo: '', role: '' };
-    expect(recount(row, READ.counts[2]!)).toEqual({ key: 1, count: 'limits', at: '1', do: 'ask', upTo: '', role: '' });
+    const row = { key: 1, count: 'answers-alone', at: '12', do: 'hold', upTo: '', roles: [] };
+    expect(recount(row, READ.counts[2]!)).toEqual({ key: 1, count: 'limits', at: '1', do: 'ask', upTo: '', roles: [] });
     expect(reaction(row, 'wait').upTo).toBe('30');
     expect(reaction({ ...row, do: 'wait', upTo: '45' }, 'hold').upTo).toBe('');
   });
@@ -63,7 +81,7 @@ describe('The supervisor rules draft', () => {
     const here = draftOf('repository:daoris', setOf(READ, 'repository:daoris'));
     const machine = setOf(READ, 'machine')!.rules;
 
-    expect(replaced({ ...here.rows[0]!, role: '' }, machine).map((rule) => rule.at)).toEqual([2]);
+    expect(replaced({ ...here.rows[0]!, roles: [] }, machine).map((rule) => rule.at)).toEqual([2]);
     expect(replaced(here.rows[0]!, machine)).toEqual([]);
     expect(inheritedFrom(READ, 'repository:daoris', here.rows).map((rule) => rule.count)).toEqual(['failures']);
     expect(inheritedFrom(READ, 'machine', [])).toEqual([]);

@@ -41,14 +41,6 @@ public sealed record SupervisorRuleWorld(
     Func<string, bool>? Known = null,
     Func<string, IReadOnlyList<string>>? Wider = null);
 
-/// <summary>A count as read for a line (the course's <c>LineCount</c>): its code, what it stands at and whether that is known.</summary>
-/// <param name="N">What the count stands at; none where it is not known.</param>
-/// <param name="Known">False for a count read as unknown, which never acts; <i>at least</i> counts as known.</param>
-public sealed record RuleCountRead(string Count, int? N, bool Known = true);
-
-/// <summary>The rule that acts at a point, and the count it watched.</summary>
-public sealed record RuleAct(string Count, SupervisorRule Rule);
-
 /// <summary>
 /// The rule supervisor's pure half (the context counters design §4.4, §4.5): the judge of a write, the effective rules of a line and the act
 /// at a point. Nothing here reads a model or a store.
@@ -89,7 +81,7 @@ public static class SupervisorRules
 
     /// <summary>The refusals, a closed set.</summary>
     public static IReadOnlyList<string> Codes { get; } =
-        ["count", "window", "at", "do", "upTo", "place", "roles", "moves-unbounded", "tries-unbounded", "refer-not-offered", "revision"];
+        ["count", "window", "at", "do", "upTo", "place", "roles", "ladder", "moves-unbounded", "tries-unbounded", "refer-not-offered", "revision"];
 
     // The actions each count allows (§4.2); `off` is every ruled count's but tries'.
     private static readonly IReadOnlyDictionary<string, string[]> Allowed = new Dictionary<string, string[]>(StringComparer.Ordinal)
@@ -102,9 +94,6 @@ public static class SupervisorRules
         [Limits] = [Ask, Wait, Next, Weighted, Refer, Off],
         [Moves] = [Ask, Refer, Off],
     };
-
-    // The narrowest act first (§4.5).
-    private static readonly string[] Narrowness = [Hold, Ask, Refer, Wait, Next, Weighted];
 
     /// <summary>
     /// The places a line's rules come from, narrow to wide, ending at the machine: its own, its repository's, its workspace's.
@@ -146,31 +135,9 @@ public static class SupervisorRules
         return effective;
     }
 
-    /// <summary>
-    /// The act at a point, or none: for each count the rule with the highest <c>at</c> the count has reached, and of those the narrowest act
-    /// (hold, ask, refer, wait, then a move). A count not known never acts; one read <i>at least</i> acts on what it is known to stand at.
-    /// </summary>
-    public static RuleAct? Decide(IReadOnlyList<RuleCountRead> counts, IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective)
-    {
-        var acts = new List<RuleAct>();
-        foreach (var (count, rules) in effective)
-        {
-            var read = counts.FirstOrDefault(each => each.Count == count);
-            if (read is not { N: { } n, Known: true }) continue;
-            var reached = rules.Where(rule => rule.Do != Off && rule.At <= n).ToList();
-            if (reached.Count == 0) continue;
-            var top = reached.Max(rule => rule.At);
-            acts.Add(new RuleAct(count, reached.Where(rule => rule.At == top).MinBy(Narrow)!));
-        }
-
-        return acts.Count == 0 ? null : acts.MinBy(act => Narrow(act.Rule));
-    }
-
     // The narrowest place is judged first, so a refusal names the place a wider write left unbounded.
     private static int Specificity(string place) =>
         place.StartsWith("line:", StringComparison.Ordinal) ? 0 : place.StartsWith("repository:", StringComparison.Ordinal) ? 1 : place == Machine ? 3 : 2;
-
-    private static int Narrow(SupervisorRule rule) => Array.IndexOf(Narrowness, rule.Do);
 
     /// <summary>
     /// Judge a place's rules, written whole, before anything is written: null where they stand, else the refusal. <paramref name="held"/>
@@ -188,9 +155,13 @@ public static class SupervisorRules
             if (Shape(rule, place, world) is { } refusal) return refusal;
         }
 
-        var clash = rules.Where(rule => rule.Do == Off).FirstOrDefault(off => rules.Any(other =>
-            other != off && other.Count == off.Count && Overlap(off.Roles, other.Roles)));
-        if (clash is not null) return new RuleRefusal("do", $"`off` on {clash.Count} stands alone for its roles: another rule there would also apply.", place);
+        // Every executor acts on one rule per count, so a second rule a line would read beside the first (a ladder) is refused.
+        var ladder = rules.Select((rule, at) => (rule, at)).FirstOrDefault(each => rules.Skip(each.at + 1).Any(other =>
+            other.Count == each.rule.Count && SameTier(each.rule.Roles, other.Roles))).rule;
+        if (ladder is not null)
+        {
+            return new RuleRefusal("ladder", $"{ladder.Count} takes one rule here for its roles: another rule there would also apply.", place);
+        }
 
         var after = held.Where(set => set.Place != place).Append(new SupervisorRuleSet(place, current + 1, rules)).ToList();
         var places = after.Where(set => set.Rules.Count > 0).Select(set => set.Place).Append(Machine).Distinct(StringComparer.Ordinal)
@@ -224,8 +195,9 @@ public static class SupervisorRules
         return null;
     }
 
-    private static bool Overlap(IReadOnlyList<string>? left, IReadOnlyList<string>? right) =>
-        left is null || right is null || left.Intersect(right).Any();
+    // Two rules a line reads together: both for every role, or both naming one role; a rule naming the role beats one naming none.
+    private static bool SameTier(IReadOnlyList<string>? left, IReadOnlyList<string>? right) =>
+        left is null ? right is null : right is not null && left.Intersect(right).Any();
 
     private static bool PlaceReads(string place) =>
         place == Machine || ((place.StartsWith("workspace:", StringComparison.Ordinal) || place.StartsWith("repository:", StringComparison.Ordinal)

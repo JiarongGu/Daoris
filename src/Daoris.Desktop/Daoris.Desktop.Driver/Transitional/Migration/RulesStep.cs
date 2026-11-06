@@ -27,16 +27,12 @@ public sealed class RulesStep : IHomeMigrationStep
             using var store = DesktopStore.Open(location, StoreProcess.Options(() => StoreSettled.Yes));
             var world = SupervisorRuleDoor.World(home);
             store.Write(SupervisorRuleStore.Family, write =>
-                SupervisorRuleStore.WriteIn(write, SupervisorRules.Machine, 0, [.. SupervisorRuleBook.Seeded(strikes), Moves()], Door, world));
+                SupervisorRuleStore.WriteIn(write, SupervisorRules.Machine, 0, SupervisorRuleBook.Seeded(strikes), Door, world));
             run.Said(location);
         }
 
         run.ChangeJson(file, root => root.Remove("strikes"));
     }
-
-    /// <summary>A role's moves bounded by day on every line, as a policy's moves were by its bound.</summary>
-    private static SupervisorRule Moves() => new(
-        "moves", SupervisorRules.Moves, SupervisorRules.Windows[SupervisorRules.Moves], SupervisorRuleBook.MovesByDefault, SupervisorRules.Ask, null, SupervisorRules.Machine, null);
 
     /// <summary>The failed sessions the file's <c>strikes</c> parked a quest at, its default where it says none.</summary>
     private static int Strikes(string file)

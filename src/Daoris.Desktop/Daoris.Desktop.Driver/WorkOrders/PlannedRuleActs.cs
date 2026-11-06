@@ -11,16 +11,16 @@ internal static class PlannedRuleActs
     /// The acts <paramref name="plan"/> and <paramref name="snapshot"/> hold, each on its quest's last session. A quest whose last session,
     /// role or rule does not read acts nothing.
     /// </summary>
-    /// <param name="roleOf">The role a quest's line goes on under.</param>
+    /// <param name="lineOf">A quest's line as its rules read it.</param>
     public static IReadOnlyList<RuleActed> Of(
-        Snapshot snapshot, IReadOnlyList<Consideration> plan, SupervisorRuleBook book, Func<QuestView, PriorSession, string> roleOf, DateTimeOffset at)
+        Snapshot snapshot, IReadOnlyList<Consideration> plan, SupervisorRuleBook book, Func<QuestView, PriorSession, RuledLine> lineOf, DateTimeOffset at)
     {
         var acts = new List<RuleActed>();
 
         void Add(QuestView quest, string count, Func<SupervisorRule, bool> acting, int? n, string point, string? session = null)
         {
             if (!snapshot.LastRun.TryGetValue(quest.Id, out var last)) return;
-            var effective = book.For(roleOf(quest, last), quest.To, WorkspaceOf(snapshot, quest), quest.Id);
+            var effective = lineOf(quest, last).In(book);
             if (!effective.TryGetValue(count, out var rules) || rules.Where(acting).MinBy(rule => rule.At) is not { } rule) return;
             acts.Add(new RuleActed(quest.Id, session ?? last.Session, rule, book.RevisionOf(rule.Place), n ?? rule.At, Known: true, point, at));
         }
@@ -60,7 +60,4 @@ internal static class PlannedRuleActs
         StaffConditions.Limit => SupervisorRules.Limits,
         _ => null,
     };
-
-    private static string? WorkspaceOf(Snapshot snapshot, QuestView quest) =>
-        snapshot.Repositories.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Workspace;
 }

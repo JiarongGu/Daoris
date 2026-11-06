@@ -181,7 +181,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
 
         Assert.True(restarted.Holds(handed, Records(handed, Asker("s0"), HelperRecord), At));
         Assert.Equal(2, CountOf("s1", Records(handed, Asker("s0"), HelperRecord)).N);
-        Assert.False(AnswersAlone.Holds([Answer("w2")], Events.After("s1", 0).Events));
+        Assert.True(AnswersAlone.Count(Events.After("s1", 0).Events) < SupervisorRuleBook.AnswersAloneBound);
     }
 
     /// <summary>A wrapper Daoris composed, a brief, a retry's instruction and a hand-over reset nothing; the person's word and Daoris's fact word do.</summary>
@@ -263,7 +263,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
         Assert.False(Hold.Holds(Asker(said: [Answer("w1")]), records, At));
 
         Assert.True(Hold.AtBound("s1", records));
-        Assert.False(AnswersAlone.AtBound(Events.After("s1", 0).Events));
+        Assert.True(AnswersAlone.Count(Events.After("s1", 0).Events) < SupervisorRuleBook.AnswersAloneBound);
     }
 
     /// <summary>The steward's choice 2: a line with no events here counts nothing, and a teammate's record is never this machine's.</summary>

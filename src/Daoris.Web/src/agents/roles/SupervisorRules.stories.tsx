@@ -62,6 +62,16 @@ export const EmptyDark: Story = { args: EMPTY, decorators: [dark] };
 export const Machine: Story = { args: { place: 'machine', placeName: 'This Daoris' } };
 export const MachineNarrow: Story = { args: { place: 'machine', placeName: 'This Daoris' }, decorators: [storyWidths.narrow] };
 
+/** A rule set at the terminal for two roles: drawn with both, kept as read, written back whole. */
+const TWO_ROLES = {
+  read: { ...READ, sets: [READ.sets[0]!, { place: 'repository:daoris', revision: 2, rules: [
+    { id: 'r-1', count: 'tries', window: 'episode', at: 2, do: 'weighted', roles: ['build', 'review'] },
+    { id: 'r-2', count: 'moves', window: '24-hours', at: 3, do: 'ask' },
+  ] }] },
+};
+export const TwoRoles: Story = { args: TWO_ROLES };
+export const TwoRolesChineseNarrow: Story = { args: TWO_ROLES, decorators: [storyWidths.narrow, chinese] };
+
 /** The driver's sentence under Save, the draft kept. */
 const REFUSED = { refused: 'repository:daoris would leave build lines moving to another choice with no moves rule.' };
 export const Refused: Story = { args: REFUSED };

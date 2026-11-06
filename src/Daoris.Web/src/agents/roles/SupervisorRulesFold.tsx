@@ -3,10 +3,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RoleChangePress, SupervisorRuleWire, SupervisorRulesRead } from '../../data/wiring';
 import { Button, FormField, FormGrid, FormRow, Icon, SelectField, WhyGlyph } from '../../design/ui';
+import { list } from '../../locales/format';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 import { NumberField } from './RolePolicy';
 import {
-  blankRule, draftOf, inheritedFrom, MACHINE, nextCount, pressOf, readable, reaction, recount, replaced, type RuleDraft, sameAsStored, setOf,
+  blankRule, draftOf, inheritedFrom, MACHINE, nextCount, pressOf, readable, reaction, recount, replaced, type RuleDraft, rowOf, sameAsStored, setOf,
 } from './supervisorRulesDraft';
 
 const ANY = '';
@@ -53,7 +54,7 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
   const copyHere = (rule: SupervisorRuleWire) => {
     setDraft((was) => ({
       ...was,
-      rows: [...was.rows, { key: keys, count: rule.count, at: String(rule.at), do: rule.do, upTo: rule.upTo ? String(rule.upTo) : '', role: rule.roles?.[0] ?? ANY }],
+      rows: [...was.rows, rowOf(rule, keys)],
     }));
     setKeys(keys + 1);
   };
@@ -63,8 +64,9 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
     onSave(pressOf(draft), { done: () => setSaid(null), refused: setSaid });
   };
   // A rule on tries is the machine's last bound: it is never taken out there, only changed.
-  const mayRemove = (row: RuleDraft) => !(place === MACHINE && row.count === 'tries' && row.role === ANY);
+  const mayRemove = (row: RuleDraft) => !(place === MACHINE && row.count === 'tries' && row.roles.length === 0);
   const roleOptions = [{ value: ANY, label: t('settings.supervisor.everyRole') }, ...roles];
+  const roleNames = (ids: readonly string[]) => list(ids.map((id) => roles.find((role) => role.value === id)?.label ?? id));
   const first = draft.rows.length === 0;
 
   return (
@@ -117,10 +119,15 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
                   />
                 </FormField>
                 <FormField label={t('settings.supervisor.field.for')} when="stacked">
-                  <SelectField
-                    value={row.role} disabled={locked} ariaLabel={t('settings.supervisor.forOf', { n })}
-                    onChange={(role) => patch(row.key, (was) => ({ ...was, role }))} options={roleOptions}
-                  />
+                  {row.roles.length > 1 ? (
+                    // A rule set at the terminal for several roles: the fold edits one role, so it keeps these as read.
+                    <span className="text-small text-ink" aria-label={t('settings.supervisor.forOf', { n })} data-rule-roles={row.roles.join(',')}>{roleNames(row.roles)}</span>
+                  ) : (
+                    <SelectField
+                      value={row.roles[0] ?? ANY} disabled={locked} ariaLabel={t('settings.supervisor.forOf', { n })}
+                      onChange={(role) => patch(row.key, (was) => ({ ...was, roles: role === ANY ? [] : [role] }))} options={roleOptions}
+                    />
+                  )}
                 </FormField>
                 <span className="flex items-center">
                   <Button

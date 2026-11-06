@@ -25,8 +25,8 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
     public ConversationRuled? Judge(PriorSession record, string line, string condition, DateTimeOffset? until = null)
     {
         if (staff is null) return null;
-        var role = SupervisorRuleBook.RoleOf(record);
-        var place = new StaffPlace(record.Repository, record.Workspace, line);
+        var ruled = RuledLine.Of(staff.Home, record, line);
+        var (role, place) = (ruled.Role, ruled.Place);
         StaffPolicy? policy;
         StaffMoved moved;
         try
