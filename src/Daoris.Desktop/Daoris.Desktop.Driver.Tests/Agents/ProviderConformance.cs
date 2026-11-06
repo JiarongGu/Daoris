@@ -36,10 +36,17 @@ internal sealed record ConformanceCase(
 
 /// <summary>
 /// A view of the providers the suite runs over: the registry over today's adapters, the registration list's providers as written on the
-/// contract, or a plugin's provider made in a test home. Each with the adapters its doors are presented through.
+/// contract, a plugin's provider made in a test home, or, where the agent layer is built, the registry through its layer view. Each with
+/// the adapters its doors are presented through.
 /// </summary>
 internal sealed record ConformanceSubject(string Source, ProviderRegistry Adapters, ProviderRegistry Registry, IReadOnlyList<Provider> Providers)
 {
+    /// <summary>The registry through its layer view (the agent-lyntai design §6.2): its providers those with a door the view binds.</summary>
+    public const string LayerSource = "layer";
+
+    /// <summary>The run kind the view's doors run as: a bound kind for the layer's view, null for the three that run every kind as today.</summary>
+    public StartKind? Run { get; init; }
+
     /// <summary><c>ProviderRegistry.Built()</c>: every provider and door today's adapters hold.</summary>
     public const string RegistrySource = "registry";
 
@@ -165,10 +172,11 @@ internal static class Conformance
 
     public static IReadOnlyList<ConformanceCase> Cases => ConformanceCases.All;
 
-    /// <summary>Every case each view runs, per provider and, for a door's case, per door it applies to.</summary>
-    public static IEnumerable<(ConformanceSubject Subject, Provider Provider, string Door, ConformanceCase Case)> Runs()
+    /// <summary>Every case each view runs, per provider and, for a door's case, per door it applies to: the suite's views, or those given.</summary>
+    public static IEnumerable<(ConformanceSubject Subject, Provider Provider, string Door, ConformanceCase Case)> Runs(
+        IReadOnlyList<ConformanceSubject>? subjects = null)
     {
-        foreach (var subject in ConformanceSubjects.Every)
+        foreach (var subject in subjects ?? ConformanceSubjects.Every)
         {
             foreach (var provider in subject.Providers)
             {
@@ -190,10 +198,10 @@ internal static class Conformance
     }
 
     /// <summary>One half's rows, as a theory's data: the view, the provider, the door (<c>*</c> for a provider's case) and the case.</summary>
-    public static TheoryData<string, string, string, string> Rows(ConformanceHalf half)
+    public static TheoryData<string, string, string, string> Rows(ConformanceHalf half, IReadOnlyList<ConformanceSubject>? subjects = null)
     {
         var rows = new TheoryData<string, string, string, string>();
-        foreach (var (subject, provider, door, each) in Runs().Where(run => run.Case.Half == half))
+        foreach (var (subject, provider, door, each) in Runs(subjects).Where(run => run.Case.Half == half))
         {
             rows.Add(subject.Source, provider.Id.Value, door, each.Name);
         }
@@ -207,9 +215,13 @@ internal static class Conformance
     /// </summary>
     /// <param name="pending">The lines to read; the provider's own file's where null.</param>
     public static Task<string?> RunAsync(
-        string source, string provider, string door, string @case, string scratch, IReadOnlyList<PendingLine>? pending = null)
+        string source, string provider, string door, string @case, string scratch, IReadOnlyList<PendingLine>? pending = null) =>
+        RunAsync(ConformanceSubjects.Of(source), provider, door, @case, scratch, pending);
+
+    /// <summary>One row on <paramref name="subject"/>, a view the suite's own three or one made where it is built (the layer's).</summary>
+    public static Task<string?> RunAsync(
+        ConformanceSubject subject, string provider, string door, string @case, string scratch, IReadOnlyList<PendingLine>? pending = null)
     {
-        var subject = ConformanceSubjects.Of(source);
         var held = subject.Providers.Single(each => each.Id.Value == provider);
         var on = door == EveryDoor ? null : held.Doors.Single(each => each.Id.Value == door);
         var run = Cases.Single(each => each.Name == @case);
