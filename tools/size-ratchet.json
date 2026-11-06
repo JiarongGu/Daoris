@@ -3,7 +3,7 @@
   "src/Daoris.Cli/test/dogfood.test.ts": 45173,
   "src/Daoris.Cli/test/usage-report.test.ts": 89392,
   "src/Daoris.Cli/tool-test/desktop-publish.test.ts": 79997,
-  "src/Daoris.Cli/tool-test/merge-branch.test.ts": 564933,
+  "src/Daoris.Cli/tool-test/merge-branch.test.ts": 564737,
   "src/Daoris.Cli/tool-test/merge-queue.test.ts": 240596,
   "src/Daoris.Cli/tool-test/setup-kit.test.ts": 56607,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountRotationGoalTests.cs": 43468,
@@ -118,7 +118,7 @@
   "src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx": 63644,
   "tools/deployment-rehearsal.mjs": 109949,
   "tools/family-rehearsal.mjs": 371226,
-  "tools/merge-branch.mjs": 525449,
+  "tools/merge-branch.mjs": 525317,
   "tools/merge-queue.mjs": 67204,
   "tools/rehearsal-kit.mjs": 57033,
   "tools/rehearsal-kit.test.mjs": 46171

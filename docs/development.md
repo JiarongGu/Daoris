@@ -72,7 +72,7 @@ same review path. Do not substitute another deletion API, wrapper or shell to ev
 `npm run verify` is the baseline check, not a substitute for testing a component you changed. Its
 exact steps are in `package.json`; the component gates are in `daoris.gates.json`. Run focused checks
 during the task and the complete reached set before recording completion. `npm run quick` is a builder's
-fast set before a hand-back: the index written, the CLI's types, the doctrine check and the size, partial,
+fast set before a hand-back: the index and the page's generated types written, the CLI's types, the doctrine check and the size, partial,
 transitional-marker and optional-lock censuses.
 
 | Change | Additional verification |

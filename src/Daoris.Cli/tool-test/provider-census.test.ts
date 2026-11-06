@@ -8,9 +8,10 @@ import { fileURLToPath } from 'node:url';
  * AGENTPROVIDER1 row a, part 3 (the agent-provider design §9, D213): the tools' twin of the driver's `ProviderCensusTests`. Every site
  * in the repository's tools (`tools/`) and in the CLI's doctrine code (`src/Daoris.Cli/src/`) that names a provider's id, variable, file
  * or wire key is counted over the source with its comments blanked, and each is a named exception in the `tools` section of the driver's
- * `fixtures/provider-census.json` by file and token (the count is not pinned, CENSUSRULES1), the design's row that moves it and its class. The ids and the vocabulary are read
- * from `fixtures/provider-vocabulary.json`, the one table the four censuses share; nothing here copies a word of it. Run by the `tool-tests`
- * gate (the merge tool's `REACH` rows send both fixtures here).
+ * `fixtures/provider-census.json` by file and token (the count is not pinned, CENSUSRULES1), the design's row that moves it and its class. The ids and the vocabulary are the
+ * driver's registrations', `PROVIDER_VOCABULARY` in the page's generated service types (`node tools/contracts.mjs` writes it), the one
+ * table the four censuses share; nothing here copies a word of it. Run by the `tool-tests` gate (the merge tool's `REACH` rows send the
+ * fixture here).
  */
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -25,18 +26,32 @@ interface Section { roots: string[]; exceptions: Row[] }
 interface Token { name: string; pattern: RegExp }
 
 const census = JSON.parse(readFileSync(join(fixtures, 'provider-census.json'), 'utf8')) as { tools: Section };
-const vocabulary = JSON.parse(readFileSync(join(fixtures, 'provider-vocabulary.json'), 'utf8')) as {
-  ids: [string, string][]; words: [string, string, string][];
-};
 const section = census.tools;
 
+/** The generated `PROVIDER_VOCABULARY` object: one row a line, its end a line holding `};` alone. */
+function readVocabulary(): { ids: [string, string][]; words: [string, string, string][] } {
+  const path = join(root, 'src', 'Daoris.Web', 'src', 'data', 'generated', 'service.ts');
+  assert.ok(existsSync(path), "the page's service types are not written, and the census reads its table there: run `node tools/contracts.mjs`");
+  const text = readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
+  const start = text.indexOf('export const PROVIDER_VOCABULARY');
+  const open = start < 0 ? -1 : text.indexOf('= {', start);
+  const close = open < 0 ? -1 : text.indexOf('\n};', open);
+  assert.ok(close > 0, 'the page\'s service types hold no PROVIDER_VOCABULARY: run `node tools/contracts.mjs`');
+  return JSON.parse(text.slice(open + 2, close + 2));
+}
+
+const vocabulary = readVocabulary();
+
 const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// A hyphened id is no ordinary word, so every one the registrations hold is counted in a sentence.
+const hyphened = vocabulary.ids.map(([id]) => id).filter((id) => id.includes('-')).sort((a, b) => b.length - a.length).map(escape);
 
 const tokens: Token[] = [
   ...vocabulary.ids.map(([id]) => ({ name: `"${id}"`, pattern: new RegExp(`["'\`]${escape(id)}["'\`]`, 'g') })),
   { name: 'StartsWith(agent)', pattern: /\.startsWith\(\s*["'`](?:claude|codex|dsh)/g },
   // An id as an example or a name in a sentence (help, a refusal): words, but still a site that names a provider.
-  { name: 'id in a sentence', pattern: /(?<![\w@/.-])(?:claude-code-acp|claude-code|codex-acp|acp-stub|alt-stub)(?![\w"'`-])/g },
+  { name: 'id in a sentence', pattern: new RegExp(`(?<![\\w@/.-])(?:${hyphened.join('|')})(?![\\w"'\`-])`, 'g') },
   ...vocabulary.words.map(([word]) => {
     const plain = /^[A-Za-z0-9_]+$/.test(word) && !word.startsWith('_') && !word.endsWith('_');
     return { name: word, pattern: new RegExp(plain ? `(?<![A-Za-z0-9_])${escape(word)}(?![A-Za-z0-9_])` : escape(word), 'g') };

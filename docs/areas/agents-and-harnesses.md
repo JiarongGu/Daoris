@@ -290,7 +290,7 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
   transport is the thing asked: the transports, the providers and the shim.
 
 **Tests that pin the area** (`src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/`):
-- contract: `ProviderCensusTests`, `ProviderConformanceTests` (and its process and live cases), `PendingRowsTests`,
+- contract: `ProviderCensusTests`, `ProviderVocabularyTests`, `ProviderConformanceTests` (and its process and live cases), `PendingRowsTests`,
   `ParityOracleTests`, `ProviderRegistryTests`, `ProvidersBuiltTests`, `StandInShimProcessTests`;
 - doors: `AcpTests`, `AcpPartsTests`, `AcpSteerTests`, `AcpTransientTests`, `AcpTypedFailureTests`, `AcpResumeTests`,
   `HarnessRunTests`, `ClaudeStreamJsonTests`, `NativePromptProcessTests`, `AdapterTests`, `Acp3AdapterTests`, `WireReadingsTests` (the
@@ -416,8 +416,11 @@ Agents page, and `orient-index` and `code-map` once files move.
   joins as a door the registry places (`JoinedProviders`), never a provider of the plugin's making. The desktop tests are on providers
   too: a test's door is `TestDoors.Door` over a `TestAgent`, its registry `TestDoors.Registry`, a shipped door's `TestDoors.Shipped`,
   a holder `TestDoors.Holder`, and the census (`OldSeamNamesCensusTests`) pins none of the old names in any source, tests included.
-  Left: `provider-vocabulary.json` (the service's, page's and tools' censuses read it, so each needs a source out of the
-  registrations first); and every record still reads.
+  The provider censuses' ids and words are the registrations' own: Claude Code, Codex and dsh declare their `Vocabulary` part,
+  `ProviderVocabulary` reads every provider's id, its program's name, its doors' ids and those words, the driver's census reads it and
+  the service's, page's and tools' read it as the contracts' generator writes it (`PROVIDER_VOCABULARY` in the page's service types),
+  every hyphened id counted in a sentence; a vocabulary's variable is its program's, kept in its spawn and stripped from every other
+  provider's. Left: every record still reads.
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30, D248): Daoris's providers consumed from the sibling
   agent-provider library, built against its local build. The reference and its census are in (rule 47). The host's policy for a
   layer door stands on Daoris's own types, used by no door yet: the access evidence each account reader reads (`AccessEvidence`), the

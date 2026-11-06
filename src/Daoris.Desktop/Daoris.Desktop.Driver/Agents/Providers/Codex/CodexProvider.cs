@@ -14,9 +14,13 @@ internal static class CodexProvider
 {
     private const string Evidence = "Codex's declaration";
 
+    private const string HomeVariable = "CODEX_HOME";
+
     public static Provider Registration()
     {
         var pool = CodexAccounts.Pool;
+        // Its refused resume's reason on the protocol, and the turn header its connector calls carry their lineage in.
+        var vocabulary = new VocabularyPart([HomeVariable], [], ["thread_active_writer", "x-codex-turn-metadata"]);
         var door = new AgentDoor(
             new DoorId("codex-acp"), Transport.Protocol, new DoorIdentity(null, null, null),
             // The binary is the adapter's own bin, `codex-acp`, verified against the installed package's `bin` map.
@@ -26,7 +30,7 @@ internal static class CodexProvider
                     "@agentclientprotocol/codex-acp", null, null, ProbeByPresence: false),
                 Evidence),
             // Its home must exist before `initialize` completes (ACP3); every managed home is made before a launch.
-            new DoorHome("CODEX_HOME", OwnHome: false, TrustFile: null),
+            new DoorHome(HomeVariable, OwnHome: false, TrustFile: null),
             // The same words and question, lent to a harness naming this door (O3-F2): a plugin's door onto `codex-acp` reads Codex's
             // by reference, while one joined to `codex` reads neither.
             new LentPart(PoolFacts.None, TablesPart.None with { Limits = CodexLimits.Words }, new UsagePart(UsageReads.Of(CodexUsage.Question))),
@@ -59,6 +63,6 @@ internal static class CodexProvider
             Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent,
             Known<IConversationHome>.Absent,
             Reach.Everywhere,
-            Known<VocabularyPart>.Absent);
+            Known<VocabularyPart>.Declared(vocabulary, Evidence));
     }
 }

@@ -23,7 +23,7 @@ if (output is null || routes is null || stamp is null)
 string service, window;
 try
 {
-    service = PageTypes.Write(RouteDeclaration.In(typeof(IRoute<>).Assembly)) + PageNodeKinds.Write();
+    service = PageTypes.Write(RouteDeclaration.In(typeof(IRoute<>).Assembly)) + PageNodeKinds.Write() + PageProviderVocabulary.Write();
     window = PageRoutes.Write() + PageSettings.Write();
 }
 catch (InvalidOperationException refused)

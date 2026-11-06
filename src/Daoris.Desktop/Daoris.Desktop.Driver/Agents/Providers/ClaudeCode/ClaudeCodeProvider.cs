@@ -56,6 +56,16 @@ internal static class ClaudeCodeProvider
         var usage = new UsagePart(UsageReads.Of(ClaudeUsage.Question));
         var home = new DoorHome(ConfigVariable, OwnHome: false, TrustFile: ClaudeTrust.FileName);
         var skills = new InstructionsPart(LoadsTreeSkills: true, FileLimit: null);
+        var choices = ClaudeCodeSpawn.ChoiceVariablesOfClaude;
+        var vocabulary = new VocabularyPart(
+            Variables:
+            [
+                ConfigVariable, pool.KeyVariable!, choices.Model!, choices.Effort!, ClaudeAcp.ExecutableVariable,
+                .. ClaudeCodeSpawn.StayPinned.Keys, .. ClaudeCodeSpawn.LoadToolsUpFront.Keys,
+            ],
+            Files: [ClaudeTrust.FileName, ClaudeServers.FileSuffix],
+            // Its protocol door's meta keys: a rate limit, a model and a turn's origin under `_claude/`, its capabilities under `claudeCode`.
+            WireKeys: ["_claude/", "claudeCode."]);
 
         var native = new AgentDoor(
             new DoorId("claude-code"), Transport.Native, new DoorIdentity(null, null, null),
@@ -103,6 +113,6 @@ internal static class ClaudeCodeProvider
             Known<ISkillLayout>.Declared(ClaudeSkills.Layout, Evidence),
             Known<IConversationHome>.Declared(ClaudeConversationHome.Home, Evidence),
             Reach.Everywhere,
-            Known<VocabularyPart>.Absent);
+            Known<VocabularyPart>.Declared(vocabulary, Evidence));
     }
 }

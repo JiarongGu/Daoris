@@ -9,6 +9,8 @@ internal static class DshProvider
 {
     private const string Evidence = "dsh's declaration";
 
+    private const string HomeVariable = "DSH_HOME";
+
     public static Provider Registration()
     {
         // `-V, --version`, verified against the installed CLI.
@@ -17,7 +19,7 @@ internal static class DshProvider
         var door = new AgentDoor(
             new DoorId("dsh"), Transport.Protocol, new DoorIdentity(null, null, null),
             Known<ToolSpec>.Absent,
-            new DoorHome("DSH_HOME", OwnHome: false, TrustFile: null),
+            new DoorHome(HomeVariable, OwnHome: false, TrustFile: null),
             LentPart.None, Known<IDoorOffers>.Absent,
             // Its posture is its own mechanism, an environment variable its spawn sets, never a mode on the wire.
             new PosturesPart(null, null, null, null),
@@ -42,6 +44,6 @@ internal static class DshProvider
             Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent,
             Known<IConversationHome>.Absent,
             Reach.Everywhere,
-            Known<VocabularyPart>.Absent);
+            Known<VocabularyPart>.Declared(new VocabularyPart([HomeVariable], [], []), Evidence));
     }
 }
