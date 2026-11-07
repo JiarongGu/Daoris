@@ -6,16 +6,16 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ROSTER1b through REAL ticks, the install's case of 2026-10-04: no account read yet, the list
+/// Through REAL ticks: no account read yet, the list
 /// <c>[account-1, account-2]</c>, and the protocol door's agent refusing every start on account-1 with
 /// <i>Authentication required</i>. The first start runs on account-1 and is refused; its record fails saying why;
 /// <c>reads.json</c> holds account-1 signed out with its time; the quest holds no strike, though one would park it; and the
 /// next start walks past account-1 to account-2, which closes the quest.
 /// </summary>
 /// <remarks>
-/// The protocol stub runs as the stub's accounts (TOOL4j) and reads the stub's words as its owner's (AGT7). Its agent
-/// speaks the wire and nothing else on stdout, refuses <c>session/new</c> on account-1 as Claude Code's adapter refused on the
-/// install, and on any other account takes the quest and closes it, writing down where it ran.
+/// The protocol stub runs as the stub's accounts and reads the stub's words as its owner's. Its agent
+/// speaks the wire and nothing else on stdout, refuses <c>session/new</c> on account-1 as Claude Code's adapter refuses,
+/// and on any other account takes the quest and closes it, writing down where it ran.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class SignInRefusalTickTests : IDisposable
@@ -86,7 +86,7 @@ public sealed class SignInRefusalTickTests : IDisposable
         Assert.Contains("The agent refused the `stub` account `account-1` for its sign-in", note);
         Assert.Contains(refused["noteParts"]!.AsArray(), part => part?["code"]?.GetValue<string>() == "account.signed-out");
 
-        // reads.json holds account-1 signed out, with its time, as a reading would; account-2 was never read.
+        // reads.json holds account-1 signed out, with its time, as a reading would; account-2 is never read.
         Assert.Equal(new AccountRead(LoginState.Out, Seen), AccountReads.Of(_home, "stub").Accounts["account-1"]);
         Assert.False(AccountReads.Of(_home, "stub").Accounts.ContainsKey("account-2"));
 
@@ -97,7 +97,7 @@ public sealed class SignInRefusalTickTests : IDisposable
             Assert.False(ServiceClient.ReadStrikes(records).ContainsKey("q1"));
         }
 
-        // LIMITPICK2: the same start went on under the walk's next account, with no second look.
+        // The same start goes on under the walk's next account, with no second look.
         var carried = service.Session("s2");
         Assert.Equal(("completed", "account-2"), (carried["state"]!.GetValue<string>(), carried["profile"]!.GetValue<string>()));
         Assert.Equal("Done", service.Status("q1"));
@@ -113,7 +113,7 @@ public sealed class SignInRefusalTickTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITPICK2: from the moment the refused record is failed until the next run's record is open, the quest stays reserved, so a look
+    /// From the moment the refused record is failed until the next run's record is open, the quest stays reserved, so a look
     /// between the two runs plans nothing for it. Watched from beside the look: any instant with the first record failed, no second record
     /// yet and no reservation of q1 is the window a look could have taken the quest in.
     /// </summary>
@@ -160,7 +160,7 @@ public sealed class SignInRefusalTickTests : IDisposable
         Assert.Empty(driver.Context.Runs.Reserved);
     }
 
-    /// <summary>LIMITPICK2: with no other account in the list the start ends as it did, failed with no strike, its quest open.</summary>
+    /// <summary>With no other account in the list the start ends failed with no strike, its quest open.</summary>
     [Fact]
     public async Task A_start_refused_for_its_sign_in_with_no_other_account_free_ends_failed_and_waits()
     {
@@ -194,8 +194,8 @@ public sealed class SignInRefusalTickTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL6h through real ticks: account-1 was last read signed in, and its agent refuses it while its status question still
-    /// says signed in. Its refusal marks it and the same start goes on to account-2 (LIMITPICK2), which closes the quest, so no status
+    /// Through real ticks: account-1 is last read signed in, and its agent refuses it while its status question still
+    /// says signed in. Its refusal marks it and the same start goes on to account-2, which closes the quest, so no status
     /// question is asked in that look.
     /// </summary>
     [Fact]
@@ -215,7 +215,7 @@ public sealed class SignInRefusalTickTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>>
             {
                 ["acp-stub"] = ["node", AcpAgent(), Log],
-                // The door's accounts are the stub's (AGT7), so its status question is the stub's command's.
+                // The door's accounts are the stub's, so its status question is the stub's command's.
                 ["stub"] = ["node", StatusScript(), AskedLog],
             },
         };
@@ -224,7 +224,7 @@ public sealed class SignInRefusalTickTests : IDisposable
 
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
-        // LIMITPICK2: the same start went on under account-2 at once, so nothing asked account-1's status in this look.
+        // The same start goes on under account-2 at once, so nothing asked account-1's status in this look.
         Assert.Empty(Asked.Where(line => line.StartsWith("status ", StringComparison.Ordinal)));
         Assert.Equal(
             [("failed", "account-1"), ("completed", "account-2")],
@@ -244,7 +244,7 @@ public sealed class SignInRefusalTickTests : IDisposable
     private IReadOnlyList<string> Asked => File.Exists(AskedLog) ? File.ReadAllLines(AskedLog) : [];
 
     /// <summary>
-    /// The stub's own command, asked only its version and its status question (TOOL6g's exemplar, <c>SignedOutLooksTests</c>):
+    /// The stub's own command, asked only its version and its status question, as in <c>SignedOutLooksTests</c>:
     /// each written to the log, and the status answered signed in, as an agent whose local credential outlived its sign-in says.
     /// </summary>
     private string StatusScript()

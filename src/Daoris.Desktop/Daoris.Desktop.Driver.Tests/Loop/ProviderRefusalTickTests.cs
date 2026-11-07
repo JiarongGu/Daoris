@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// APIREFUSAL1, through a REAL tick on the protocol door. Seen on the install (2026-10-23): a driven session took its quest, and
-/// its model's provider refused a call. The adapter said the refusal as the agent's message (an <c>API Error: …</c> with its
-/// request id) and answered the prompt with <c>stopReason: refusal</c>, then exited 0. Its quest was still taken, so the record
-/// parked on the person, quoting the error as a question nobody could answer.
+/// Through a REAL tick on the protocol door: a driven session takes its quest, and
+/// its model's provider refuses a call. The adapter says the refusal as the agent's message (an <c>API Error: …</c> with its
+/// request id) and answers the prompt with <c>stopReason: refusal</c>, then exits 0. Its quest is still taken, so the record
+/// must not park on the person, quoting the error as a question nobody could answer.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class ProviderRefusalTickTests : IDisposable

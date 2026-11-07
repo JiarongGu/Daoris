@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PERF1: one record's change on a home of a working machine's size (<see cref="BenchHome"/>, 3,000 records), read as the window's
+/// One record's change on a home of a working machine's size (<see cref="BenchHome"/>, 3,000 records), read as the window's
 /// sessions slice reads it: the whole list asked and parsed again, against the list kept by its change since the last mark. The kept
 /// list is held equal to the whole one, record by record and in order, and its read to its budget.
 /// </summary>

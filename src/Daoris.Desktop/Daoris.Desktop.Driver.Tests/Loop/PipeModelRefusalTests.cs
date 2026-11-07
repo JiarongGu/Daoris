@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MODELROLE1c3 (D205 §3.3's pipe exception, §3.5(a)): the pipe door has no offer list and its prompt rides its arguments, so a model it
-/// refuses is read only from row a's measured words, the <c>assistant</c> frame's <c>error: "model_not_found"</c> on a turn with no output
-/// and no tool use (<c>docs/2026-10-23-model-effort-doors-evidence.md</c>). Such a run's account keeps a <c>refused</c> reading for that
+/// The pipe door has no offer list and its prompt rides its arguments, so a model it
+/// refuses is read only from Claude's measured words, the <c>assistant</c> frame's <c>error: "model_not_found"</c> on a turn with no output
+/// and no tool use. Such a run's account keeps a <c>refused</c> reading for that
 /// model, and its part ends with <c>account.refused-model</c>, which no strike counts; on a go-on run its words wait for the next look, whose
 /// resume judges the reading. Never from words its agent wrote.
 /// </summary>
@@ -88,7 +88,7 @@ public sealed class PipeModelRefusalTests : IDisposable
         Assert.False(ended.ModelRefused);
     }
 
-    /// <summary>The agent's words quoting the error word, on a turn its harness ended normally, are its words (D125 point 1.4).</summary>
+    /// <summary>The agent's words quoting the error word, on a turn its harness ended normally, are its words.</summary>
     [Fact]
     public async Task The_agent_s_words_quoting_the_error_word_are_no_refusal()
     {
@@ -133,7 +133,7 @@ public sealed class PipeModelRefusalTests : IDisposable
         Assert.Null(AgentOffers.Offers(_home, "fake", "2.1.281", "account-2", DateTimeOffset.UtcNow).Session.Judge("opus"));
     }
 
-    /// <summary>A run that was not refused, or that asked no model of its actor's, keeps its conclusion and writes no reading.</summary>
+    /// <summary>A run that is not refused, or that asks no model of its actor's, keeps its conclusion and writes no reading.</summary>
     [Fact]
     public async Task A_run_not_refused_or_asking_no_model_keeps_its_conclusion()
     {

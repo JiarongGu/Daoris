@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1a rule 5's races through the driver's own run (the design §3.6; rule 5's <i>Process</i> cases): starts of one record,
+/// Races through the driver's own run: starts of one record,
 /// each held by <c>Driver.HoldAsync</c> over a real stand-in agent, interleaved by the test holding the service's doors. The lineage
 /// is the run's own brackets and what each agent's hook writes; each step's fold is read against the test's own record of which agents
 /// live, kept from their processes, never from the code under test.
@@ -286,7 +286,7 @@ public sealed class LineageRaceProcessTests : IDisposable
                 ct: CancellationToken.None, movedFirst: movedFirst, moved: moved);
         });
 
-    /// <summary>A start's agent once it has written its child's line: its process, opened by the test, and the token it was handed.</summary>
+    /// <summary>A start's agent once it has written its child's line: its process, opened by the test, and the token it is handed.</summary>
     private async Task<(Process Process, string Proc)> AgentAsync(string name, bool holds = false)
     {
         var pid = Path.Combine(_signals, $"{name}.pid");

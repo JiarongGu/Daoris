@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSUX1g (D126 §7.1) through a REAL tick: a terminal's <c>sessions stop</c> reaches a session the running loop runs. The
+/// Through a REAL tick: a terminal's <c>sessions stop</c> reaches a session the running loop runs. The
 /// verb writes its request, the loop's watch takes it and stops the process as the person's stop, the record says so
-/// within the verb's wait, and the next look holds the quest (SESSUX1b). A real process (node) and the stand-in service
+/// within the verb's wait, and the next look holds the quest. A real process (node) and the stand-in service
 /// <see cref="AskAndWaitTickTests.StandIn"/>, as the stop-hold ticks use them; no model and no account.
 /// </summary>
 /// <remarks>
@@ -25,8 +25,8 @@ public sealed class SessionRequestTickTests : IDisposable
     public SessionRequestTickTests()
     {
         Directory.CreateDirectory(_home);
-        // The markers' own entry, as the driver host's loop keeps them and the verb reads them (HOMEFIX1): the sessions folder
-        // is another place since D172's places, where the verb found no marker and took the session for nobody's.
+        // The markers' own entry, as the driver host's loop keeps them and the verb reads them: not the sessions folder,
+        // where the verb would find no marker and take the session for nobody's.
         _processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.SessionPids));
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);

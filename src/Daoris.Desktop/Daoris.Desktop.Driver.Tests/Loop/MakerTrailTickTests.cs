@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MAKERTRAIL2 through REAL ticks: a session takes the quest, leaves its work uncommitted in its tree and fails; the next tick carries
+/// Through REAL ticks: a session takes the quest, leaves its work uncommitted in its tree and fails; the next tick carries
 /// the quest on in that tree. Carried on to another harness, the new maker's brief names the first one's trailer beside its own, its
 /// model unreported since that part's door reported none; carried on within the harness, it says nothing more. A real process (node)
 /// and the stand-in service on a loopback port, the shapes <see cref="StartInSyncTickTests"/> uses; no model and no account.
@@ -53,8 +53,8 @@ public sealed class MakerTrailTickTests : IDisposable
     private JsonObject[] Runs() => [.. File.ReadAllLines(Log).Select(line => JsonNode.Parse(line)!.AsObject())];
 
     /// <summary>
-    /// 🔴 The incident's shape: one harness ran out with its work uncommitted; the line carried on to another in its tree. A plain failure's
-    /// carry-on goes on where its record ran (FOUNDATION1j part ii, D212's note), so the move to another maker is the one a limit makes: the
+    /// One harness ran out with its work uncommitted; the line carried on to another in its tree. A plain failure's
+    /// carry-on goes on where its record ran, so the move to another maker is the one a limit makes: the
     /// first harness's account is cut off and cools, and the walk of Build's order, which lists the protocol stand-in alone, takes it.
     /// </summary>
     [Fact]
@@ -86,7 +86,7 @@ public sealed class MakerTrailTickTests : IDisposable
         await Driver(client, adapters, roster, "stub", build: [new ActorChoice("acp-stub")]).RunOnceAsync().WaitAsync(Poll.Patience);
 
         // The carry-on's brief is the part's first prompt: the stub's left work stays uncommitted in the tree, so the part's turn
-        // ending done is carried on in Daoris's own words after it (LANDBACK1 part 2), and that prompt is a later one.
+        // ending done is carried on in Daoris's own words after it, and that prompt is a later one.
         var prompt = Runs().First(line => line["method"]?.GetValue<string>() == "session/prompt")["prompt"]!.GetValue<string>();
         Assert.Contains("You are carrying on quest `#q1`", prompt);
         Assert.Contains("This start runs on `acp-stub`", prompt);
@@ -143,7 +143,7 @@ public sealed class MakerTrailTickTests : IDisposable
 
     /// <summary>
     /// The pipe door's stand-in: a first start takes the quest, writes its fix and fails with it uncommitted; a carry-on closes it.
-    /// What it was handed goes to the log.
+    /// What it is handed goes to the log.
     /// </summary>
     private string Agent()
     {

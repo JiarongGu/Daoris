@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PARALLEL1g (D181 point 3): the owed opinions, the asks for a helper and the due landings are each judged as their topic's judge beside
+/// The owed opinions, the asks for a helper and the due landings are each judged as their topic's judge beside
 /// the look, which plans over the facts as last judged. A slow judgment holds its own subject alone: another chain's quest starts; a
 /// chain whose opinion is owed and not yet judged is held, never started early, and goes on once the judgment lets it; the landing's
 /// wakes are spent once.
@@ -25,7 +25,7 @@ public sealed class LookJudgesTests : IDisposable
     public LookJudgesTests()
     {
         Directory.CreateDirectory(_home);
-        // The checkouts sit under a folder of their own: `tools` beside the home would read as its entry (HOMELAYOUT2's census).
+        // The checkouts sit under a folder of their own: `tools` beside the home would read as its entry.
         _ledger.Register("engine", Path.Combine(_home, "repos", "engine")).Register("tools", Path.Combine(_home, "repos", "tools"));
     }
 

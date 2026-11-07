@@ -4,7 +4,7 @@ using Daoris.Driver.Tests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSWATCH1b (D200; the session-watch design §2.1, cases 2, 8 and 10): a quest session the watcher marks quiet is told once, urgent, as
+/// A quest session the watcher marks quiet is told once, urgent, as
 /// Daoris's word under its episode's key; the word is taken off when the episode ends or the run ends; an intake is told nothing.
 /// </summary>
 public sealed class QuietWordTests : IDisposable
@@ -57,7 +57,7 @@ public sealed class QuietWordTests : IDisposable
         var kept = Assert.Single(said.Said);
         Assert.StartsWith("Daoris: nothing came from this session for 10 minutes.", kept.Text);
         Assert.Single(word.Told);
-        // The row says it was told, for as long as the episode lasts.
+        // The row says it is told, for as long as the episode lasts.
         await Settled(() => _watch.QuietNow().TryGetValue("s1", out var mark) && mark.Told);
         Assert.True(_watch.QuietNow()["s1"].Told);
 

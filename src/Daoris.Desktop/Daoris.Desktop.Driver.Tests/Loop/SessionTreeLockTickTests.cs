@@ -5,8 +5,8 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREELOCK1 (D51's note) through a REAL tick: a driven session's own tree is locked in its name while it runs, so git refuses it an
-/// unforced remove, the move the merge tool's prune made (the FIX-LOG's 2026-10-20 DOGFOOD1 entry), and is let go when it ends. A
+/// Through a REAL tick: a driven session's own tree is locked in its name while it runs, so git refuses it an
+/// unforced remove, the move the merge tool's prune makes, and is let go when it ends. A
 /// real process (node), real git and the stand-in service <see cref="AskAndWaitTickTests.StandIn"/>; no model and no account.
 /// </summary>
 /// <remarks>The lock's git half, a prune included, is <c>SessionLocksTests</c>'.</remarks>
@@ -64,7 +64,7 @@ public sealed class SessionTreeLockTickTests : IDisposable
         Assert.NotEqual(0, removed.ExitCode);
         Assert.Contains("locked", removed.Stderr);
 
-        // 2. It closes its quest and ends: its tree stands, as nothing deletes itself (D51), and is no longer locked.
+        // 2. It closes its quest and ends: its tree stands, as nothing deletes itself, and is no longer locked.
         await File.WriteAllTextAsync(release, "");
         await run.WaitAsync(Poll.Patience);
 

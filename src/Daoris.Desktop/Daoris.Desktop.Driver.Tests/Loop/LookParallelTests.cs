@@ -3,14 +3,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PARALLEL1b (D181 point 3): the look's independent work leaves its serial path. The remote sync runs on its own task and clock, so
+/// The look's independent work leaves its serial path. The remote sync runs on its own task and clock, so
 /// a slow remote holds no local start; a start is reserved (its quest, its tree, its place under the cap) and runs beside the look
 /// past that, so a stalled start holds only itself, repeated wakes start it once, and the cap holds; the plugins are asked about
 /// each planned start at once, each answer its own start's veto.
 /// </summary>
 /// <remarks>
-/// Over the real client and planner with the service's doors and each start's run standing in, in-process, as the DEV3 tests drive
-/// the watch. The watch runs on the pool, so a part of it that blocks never blocks the test.
+/// Over the real client and planner with the service's doors and each start's run standing in, in-process, as the other watch tests drive
+/// it. The watch runs on the pool, so a part of it that blocks never blocks the test.
 /// </remarks>
 public sealed class LookParallelTests : IDisposable
 {
@@ -23,7 +23,7 @@ public sealed class LookParallelTests : IDisposable
     public LookParallelTests()
     {
         Directory.CreateDirectory(_home);
-        // The checkouts sit under a folder of their own: `tools` beside the home would read as its entry (HOMELAYOUT2's census).
+        // The checkouts sit under a folder of their own: `tools` beside the home would read as its entry.
         _ledger.Register("engine", Path.Combine(_home, "repos", "engine")).Register("tools", Path.Combine(_home, "repos", "tools"))
             .Register("docs", Path.Combine(_home, "repos", "docs"));
     }
@@ -325,7 +325,7 @@ public sealed class LookParallelTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PARALLEL1h: the node runtime's pass runs beside the look, so a pass held (a read or a plugin that does not answer) holds no next
+    /// The node runtime's pass runs beside the look, so a pass held (a read or a plugin that does not answer) holds no next
     /// look: the look the next wake asks for reports, and a quest published after it starts, while the pass still waits. It is timed as a
     /// stage beside the look, <c>~nodes</c>, once it ends.
     /// </summary>

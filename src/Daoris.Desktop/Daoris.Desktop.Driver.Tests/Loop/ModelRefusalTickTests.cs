@@ -5,14 +5,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MODELROLE1c2 (D205 §3.3, §3.5(c), §4.6) through REAL ticks on the protocol door: a stand-in Build whose first choice names a model
+/// Through REAL ticks on the protocol door: a stand-in Build whose first choice names a model
 /// one stub account refuses at the open runs that choice on the other account; with neither offering it, its second choice runs and
 /// says so. A record its agent's refusal ended before any prompt ends <c>choice-not-offered</c>, holds no strike (one failure would
 /// park the quest here), and the next look starts what the walk then answers, judging the reading the refusal kept.
 /// </summary>
 /// <remarks>
 /// The stand-in agent offers <c>default</c>, <c>opus</c> and <c>sonnet</c>, and refuses the models its argument names for each stub
-/// account at <c>session/set_config_option</c>, as Claude's door was measured to (MODELROLE1a); it writes down each open's account and
+/// account at <c>session/set_config_option</c>, as Claude's door does; it writes down each open's account and
 /// each model set, and closes its quest on its first prompt.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -85,7 +85,7 @@ public sealed class ModelRefusalTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var (driver, _) = Driver(service.Url, "account-1:opus");
 
-        // MODELREFUSE1: one look, one start: the refused record ends and the same start goes on under the walk's next answer.
+        // One look, one start: the refused record ends and the same start goes on under the walk's next answer.
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var refused = service.Session("s1");
         Assert.Equal(("failed", "account-1"), (refused["state"]!.GetValue<string>(), refused["profile"]!.GetValue<string>()));
@@ -111,14 +111,14 @@ public sealed class ModelRefusalTickTests : IDisposable
 
         Assert.Null(AgentOffers.Offers(_home, "acp-stub", null, "account-2", DateTimeOffset.UtcNow).Session.Judge("opus"));
 
-        // Its conversation record says which model was refused and on which agent, by code.
+        // Its conversation record says which model is refused and on which agent, by code.
         var opening = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s2", 0).Events;
         var moved = Assert.Single(opening, line => line.Parts?.Any(part => part.Code == "opening.moved-off-model") == true);
         Assert.Equal("The same start moved here: `acp-stub` refused `opus` on the account it ran on.", moved.Text);
     }
 
     /// <summary>
-    /// MODELREFUSE1: an agent that answers the set with another model it lists, without saying no, is a refusal as well: the same start
+    /// An agent that answers the set with another model it lists, without saying no, is a refusal as well: the same start
     /// goes on to the walk's next answer and says so.
     /// </summary>
     [Fact]
@@ -137,8 +137,8 @@ public sealed class ModelRefusalTickTests : IDisposable
     }
 
     /// <summary>
-    /// MODELREFUSE1: from the moment the refused record is failed until the next run's record is open, the quest stays reserved, as
-    /// LIMITPICK2 holds it across an account's move.
+    /// From the moment the refused record is failed until the next run's record is open, the quest stays reserved, as
+    /// it does across an account's move.
     /// </summary>
     [Fact]
     public async Task A_look_between_the_refused_model_s_end_and_the_next_run_finds_the_quest_reserved()
@@ -172,8 +172,8 @@ public sealed class ModelRefusalTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The row's proof, second half: with neither account offering `opus`, Build's second choice runs, its record's choice `2`, and its
-    /// conversation's opening note says it ran as Build's choice 2, naming the choice passed; no strike was read on the way.
+    /// With neither account offering `opus`, Build's second choice runs, its record's choice `2`, and its
+    /// conversation's opening note says it ran as Build's choice 2, naming the choice passed; no strike is read on the way.
     /// </summary>
     [Fact]
     public async Task With_neither_account_offering_the_first_choice_the_second_runs_and_says_so()
@@ -201,8 +201,8 @@ public sealed class ModelRefusalTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1c3's proof (D205 §3.3's pipe exception): the pipe door has no offer list, so account-1's refusal of `opus` arrives as row
-    /// a's measured words on a silent turn, after its prompt was handed. Its part ends failed with the account's `account.refused-model`
+    /// The pipe door has no offer list, so account-1's refusal of `opus` arrives as Claude's
+    /// measured words on a silent turn, after its prompt is handed. Its part ends failed with the account's `account.refused-model`
     /// line and no strike (one failure would park the quest here), the reading kept; the next look's walk passes account-1 without spawning
     /// it and runs choice 1 on account-2, which takes and closes the quest.
     /// </summary>
@@ -220,13 +220,13 @@ public sealed class ModelRefusalTickTests : IDisposable
         Assert.DoesNotContain("account-1", refused["note"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.NotNull(AgentOffers.Offers(_home, PipeStub.Named, null, "account-1", DateTimeOffset.UtcNow).Session.Judge("opus"));
 
-        // MODELREFUSE1: the same look went on to account-2.
+        // The same look goes on to account-2.
         var ran = service.Session("s2");
         Assert.Equal(("completed", "account-2"), (ran["state"]!.GetValue<string>(), ran["profile"]!.GetValue<string>()));
         Assert.Equal("1", ran["choice"]?.GetValue<string>());
         Assert.Equal("Done", service.Status("q1"));
 
-        // Two spawns, each handed `--model opus`: account-1 was never spawned again.
+        // Two spawns, each handed `--model opus`: account-1 is never spawned again.
         Assert.Equal([("account-1", "opus", false), ("account-2", "opus", true)],
             Runs().Select(run => (run["account"]!.GetValue<string>(), run["model"]?.GetValue<string>(), run["prompted"]!.GetValue<bool>())));
     }
@@ -270,8 +270,8 @@ public sealed class ModelRefusalTickTests : IDisposable
     }
 
     /// <summary>
-    /// The pipe door's stand-in: refuses the models its argument names for its account with row a's measured frames on a silent turn and
-    /// exits 1; otherwise takes and closes its quest. It writes down each run's account and the model it was handed.
+    /// The pipe door's stand-in: refuses the models its argument names for its account with Claude's measured frames on a silent turn and
+    /// exits 1; otherwise takes and closes its quest. It writes down each run's account and the model it is handed.
     /// </summary>
     private string PipeAgent()
     {

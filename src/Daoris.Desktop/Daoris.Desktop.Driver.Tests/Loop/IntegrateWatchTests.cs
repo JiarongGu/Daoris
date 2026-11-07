@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1n part n3 (D215's note; the integration design §17.4, F51): the watch wires the <c>integrate</c> node. A real watch's look, over a
+/// The watch wires the <c>integrate</c> node. A real watch's look, over a
 /// stand-in door, asks once for a landed branch under a rule carrying <c>integrate</c> and never for one without it; an older build's runtime
 /// (no door set) asks nothing; and the look's inventory read names only the integrating repositories' branch units, with none of the service's
 /// quests or asks read for them, its cost measured over many repositories.

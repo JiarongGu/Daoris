@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSWATCH1a's headless end (D200, the session-watch design §2, case 12), through a REAL look on the pipe door: a stand-in takes its
-/// quest and then hangs, saying nothing and running nothing. No time limit ends it any more; under <c>--quiet-end</c> the watcher ends
+/// The headless end, through a REAL look on the pipe door: a stand-in takes its
+/// quest and then hangs, saying nothing and running nothing. No time limit ends it; under <c>--quiet-end</c> the watcher ends
 /// it through the run's own wait once it has been unheard that long, the record concludes <c>failed</c> with <c>ended.quiet</c> (a
-/// strike, as a timeout was), and <c>--once</c> returns. Without it the run would wait for its operator.
+/// strike), and <c>--once</c> returns. Without it the run would wait for its operator.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class QuietEndProcessTests : IDisposable
