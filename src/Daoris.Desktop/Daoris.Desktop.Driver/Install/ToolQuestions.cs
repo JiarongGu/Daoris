@@ -29,8 +29,8 @@ public static partial class ToolQuestions
     /// <param name="Started">Whether the program started at all.</param>
     public sealed record Answer(bool Started, int? ExitCode, string Output, string? Problem);
 
-    /// <summary>Ask a program one question: its whole path, fixed arguments, both streams read as UTF-8.</summary>
-    public static async Task<Answer> AskAsync(string file, IReadOnlyList<string> arguments, CancellationToken ct)
+    /// <summary>Ask a program one question: its whole path, fixed arguments, both streams read as UTF-8, in <paramref name="folder"/> where one is given.</summary>
+    public static async Task<Answer> AskAsync(string file, IReadOnlyList<string> arguments, CancellationToken ct, string? folder = null)
     {
         var info = new ProcessStartInfo
         {
@@ -45,6 +45,7 @@ public static partial class ToolQuestions
             UseShellExecute = false,
             CreateNoWindow = true, // a question from a window must not open a console (Adapters.Shell)
         };
+        if (folder is not null) info.WorkingDirectory = folder;
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         // Asked as a child is started: on the PATH a session would be given.
         Tools.Hand(info);

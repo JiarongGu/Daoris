@@ -29,6 +29,12 @@ public interface IRegistrationWorld
     /// <summary>Ask the service to read the index again, the refresh every door has; null when it did, else why not.</summary>
     Task<string?> RefreshAsync(CancellationToken ct);
 
+    /// <summary>
+    /// The analysis's look at the row's line at <paramref name="commit"/>: the found layer written where a trigger holds
+    /// (<see cref="FoundReads"/>), and nothing where none does. Never fails a registration.
+    /// </summary>
+    Task FilesAsync(RegistrationRow row, string commit, CancellationToken ct);
+
     /// <summary>One repository followed: kept for its row, and handed to whoever logs it.</summary>
     void Followed(RegistrationFollowed what);
 }
@@ -40,7 +46,7 @@ public interface IRegistrationWorld
 /// else.
 /// </summary>
 /// <remarks>
-/// <para><b>Three moments, never every tick</b>: after Daoris moves a line (a landing under <c>merge</c>, a
+/// <para><b>Three moments, never every tick</b> (the found layer's analysis looks at the line in the same ones, see <see cref="FollowOneAsync"/>): after Daoris moves a line (a landing under <c>merge</c>, a
 /// fast-forward of <i>Bring up to date</i>, both recorded by <see cref="SessionTrees"/> in <see cref="RegistryFollowing"/>),
 /// once as a watch starts, and when the person asks (<c>daoris repository register</c>, the row's <i>Refresh</i>).</para>
 ///
@@ -68,7 +74,7 @@ public static class RegistrationFollow
         {
             foreach (var row in rows.Where(row => !string.IsNullOrWhiteSpace(row.Root)).OrderBy(row => row.Repository, StringComparer.Ordinal))
             {
-                followed.Add(await OneAsync(world, row, ct).ConfigureAwait(false));
+                followed.Add(await FollowOneAsync(world, row, ct).ConfigureAwait(false));
             }
         }
         else
@@ -80,7 +86,7 @@ public static class RegistrationFollow
                     ? new(name.Trim(), RegistryOutcome.NotOnRegistry,
                         $"`{name.Trim()}` is not on this machine's registry, so there is nothing to register. Add it on Repositories, "
                         + "or with `daoris repository import <folder> --workspace <name>`.")
-                    : await OneAsync(world, row, ct).ConfigureAwait(false));
+                    : await FollowOneAsync(world, row, ct).ConfigureAwait(false));
             }
         }
 
@@ -100,6 +106,17 @@ public static class RegistrationFollow
             RegistryOutcome.Registered or RegistryOutcome.DeclaresNothing when !followed.Sent => null,
             _ => $"registry  {followed.Repository}: {followed.Said}",
         };
+
+    /// <summary>
+    /// One row followed, and its line looked at by the analysis in the same moments (a line moved, a watch started, the person asking),
+    /// for any line with a commit: a repository not set up has files git does not manage too.
+    /// </summary>
+    private static async Task<RegistrationFollowed> FollowOneAsync(IRegistrationWorld world, RegistrationRow row, CancellationToken ct)
+    {
+        var one = await OneAsync(world, row, ct).ConfigureAwait(false);
+        if (one.Commit is { } commit) await world.FilesAsync(row, commit, ct).ConfigureAwait(false);
+        return one;
+    }
 
     private static async Task<RegistrationFollowed> OneAsync(IRegistrationWorld world, RegistrationRow row, CancellationToken ct)
     {

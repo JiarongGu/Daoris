@@ -82,6 +82,16 @@ internal sealed class FileSignatures
         return hits;
     }
 
+    /// <summary>
+    /// Whether a tracked file changing can change what the analysis finds: a row's signature file, its manifest or workspace file, or an
+    /// ignore file, at any depth.
+    /// </summary>
+    internal bool Reaches(string path)
+    {
+        var name = path[(path.LastIndexOf('/') + 1)..];
+        return name == ".gitignore" || Rows.Any(row => row.Manifest == name || row.WorkspaceFile == name || row.Signature.Any(glob => UnionJoins.Glob(glob).IsMatch(name)));
+    }
+
     /// <summary>The local signature <paramref name="path"/> matches, or null.</summary>
     internal string? LocalOf(string path)
     {
