@@ -70,8 +70,6 @@ public static class StewardActNames
     /// <summary>A session's tree landed on its line, or cleaned unforced; neither pushes.</summary>
     public const string Land = "land";
     public const string Clean = "clean";
-
-    /// <summary>A quest's own session handed over to an agent it names, on an account it may name.</summary>
     public const string HandOver = "handover";
     public const string Setup = "setup";
 }

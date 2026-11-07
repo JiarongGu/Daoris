@@ -39,7 +39,6 @@ public sealed class StewardAskedTests
         Assert.Contains("nothing was done", asked.Ended("hold engine", done: false), StringComparison.Ordinal);
     }
 
-    /// <summary>A press its route's own judge refuses is never put to the owner: the verb says the route's words, not a Confirm withheld.</summary>
     [Fact]
     public void An_asked_act_its_route_refuses_before_any_card_says_the_route_s_words()
     {

@@ -45,10 +45,7 @@ public sealed class StewardCommandTests : IDisposable
         Assert.Equal(form, JsonSerializer.Serialize(read.Value.Form));
     }
 
-    /// <summary>
-    /// What is the owner's has no verb here: trees off, a decline, words, a forced clean, an update's later word, or a hand-over
-    /// naming no agent, which would leave the walk to pick one.
-    /// </summary>
+    /// <summary>What is the owner's has no verb here: trees off, a decline, words, a forced clean, an update's later word, a hand-over naming no agent.</summary>
     [Theory]
     [InlineData("trees engine off")]
     [InlineData("decline s1")]
