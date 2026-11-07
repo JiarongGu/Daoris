@@ -55,7 +55,7 @@ public sealed class LineageBracketTickTests : IDisposable
         var proc = File.ReadAllText(told).Trim();
         Assert.Matches("^[0-9a-f]{16}$", proc);
         Assert.Equal(
-            [("start", (string?)null), ("acp", "started"), ("acp", "ended"), ("end", null)],
+            [("start", (string?)null), ("announced", "started"), ("announced", "ended"), ("end", null)],
             lines.Select(line => (line.GetProperty("by").GetString(), line.TryGetProperty("event", out var said) ? said.GetString() : null)));
         Assert.All(lines, line => Assert.Equal(proc, line.GetProperty("proc").GetString()));
         Assert.True(tokens.Issued(lines[0].GetProperty("issuer").GetString()));
