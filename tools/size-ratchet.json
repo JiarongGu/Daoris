@@ -43,7 +43,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginKitTests.cs": 66771,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginStepsTests.cs": 44192,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/OpinionDeliveryTests.cs": 52984,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/OpinionResumeTickTests.cs": 43740,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/OpinionResumeTickTests.cs": 43737,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Roles/SupervisorDecisionTests.cs": 42826,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/RemoteSyncTests.cs": 72690,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Setup/WorkspaceSetupTests.cs": 42428,
@@ -116,10 +116,10 @@
   "src/Daoris.Web/src/work/rail/SessionRail.test.tsx": 57858,
   "src/Daoris.Web/src/work/rail/SessionRow.test.tsx": 48017,
   "src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx": 63644,
-  "tools/deployment-rehearsal.mjs": 109943,
+  "tools/deployment-rehearsal.mjs": 107404,
   "tools/family-rehearsal.mjs": 371135,
   "tools/merge-branch.mjs": 524730,
   "tools/merge-queue.mjs": 67204,
-  "tools/rehearsal-kit.mjs": 57033,
-  "tools/rehearsal-kit.test.mjs": 46171
+  "tools/rehearsal-kit.mjs": 56329,
+  "tools/rehearsal-kit.test.mjs": 45819
 }
