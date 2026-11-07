@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 FOUNDATION1j part ii (the foundation design §2.4's first row and §7 row 5; D205 point 1) through REAL ticks on the protocol door: a part
-/// that ran on Build's second choice and was cut off is carried on with that choice, its agent, model and effort, never the machine's
+/// 🔴 Through REAL ticks on the protocol door: a part
+/// that ran on Build's second choice and is cut off is carried on with that choice, its agent, model and effort, never the machine's
 /// <c>adapter</c> key's agent with the part before's model. Build lists the stub first and another agent second; every account of the stub
 /// is cooling, so the walk takes the second choice; its turn fails with the quest taken, and the next look's carry-on opens on the second
 /// choice again, asking its own model and effort, and closes the quest. No frame reaches the stub.

@@ -6,8 +6,8 @@ using SaidStandIn = Daoris.Desktop.Driver.Tests.SessionMessagesTickTests.SaidSta
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDBACK1 part 3 (b), through REAL ticks on the protocol door. A session closed its quest done and was left clean; the person then
-/// said a word to it, and the resumed run (a went-on run, D83, whose quest stays as it closed) left a file uncommitted. It is carried on
+/// Through REAL ticks on the protocol door. A session closes its quest done and is left clean; the person then
+/// says a word to it, and the resumed run (a went-on run, whose quest stays as it closed) leaves a file uncommitted. It is carried on
 /// once in Daoris's own words, as a start's turn end is carried on twice, and no Confirm card is made. Daoris commits nothing: any commit in
 /// the tree is the stand-in's.
 /// </summary>
@@ -41,7 +41,7 @@ public sealed class ClosedQuestCarryTickTests : IDisposable
 
     private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
-    /// <summary>The prompts the resumed conversation was given, in order: the person's word, then each carry-on.</summary>
+    /// <summary>The prompts the resumed conversation is given, in order: the person's word, then each carry-on.</summary>
     private IReadOnlyList<string> ResumedPrompts() => [.. Heard()
         .Where(line => line["method"]!.GetValue<string>() == "session/prompt" && line["resumed"]!.GetValue<bool>())
         .Select(line => string.Join("\n", line["blocks"]!.AsArray().Select(block => block!.GetValue<string>())))];
@@ -71,7 +71,7 @@ public sealed class ClosedQuestCarryTickTests : IDisposable
         Assert.Equal(1, Notes(ChatNoteCodes.BackgroundCarriedOn));
         Assert.Equal(0, Notes(ChatNoteCodes.BackgroundCarryBound));
 
-        // The tree is clean, and the commit is the stand-in's: Daoris committed nothing, and no card was made.
+        // The tree is clean, and the commit is the stand-in's: Daoris commits nothing, and no card is made.
         var tree = JsonNode.Parse(service.Record("s1"))!["tree"]!.GetValue<string>();
         Assert.Equal("", Git(tree, "status", "--porcelain").Trim());
         Assert.Equal("stand-in agent", Git(tree, "log", "-1", "--format=%an").Trim());

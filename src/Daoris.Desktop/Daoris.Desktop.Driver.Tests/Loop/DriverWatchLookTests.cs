@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The watch's look, timed (FABRIC-EVENT2, the design §A2's correction to row 1): each look writes <c>watch.looked</c> to the
+/// The watch's look, timed: each look writes <c>watch.looked</c> to the
 /// machine log with its ms and what woke it, the loop's start, its pace, a session's end or a nudge, and a nudge's topic and
-/// subject where it carried one. A plain <see cref="DriverWatch.Nudge()"/> carries none, and means everything, as it always did.
+/// subject where it carried one. A plain <see cref="DriverWatch.Nudge()"/> carries none, and means everything.
 /// </summary>
 /// <remarks>
 /// A torn <c>driver.json</c> fails each look before it asks the service anything, so no service stands in: the failure is
@@ -49,7 +49,7 @@ public sealed class DriverWatchLookTests : IDisposable
                     {
                         case 1: watch.Nudge(ChangeTopics.Requests, "requests"); break;
                         case 2: watch.Nudge(); break;
-                        // FABRIC-EVENT2b: a terminal's words kept by a loop wake it by their topic, the session as the subject.
+                        // A terminal's words kept by a loop wake it by their topic, the session as the subject.
                         case 3: watch.Said("s1"); break;
                         default: stop.Cancel(); break;
                     }
@@ -69,7 +69,7 @@ public sealed class DriverWatchLookTests : IDisposable
         Assert.Equal(["start", "nudge", "nudge", "nudge"], looks.Select(data => data.GetProperty("by").GetString()));
         Assert.Equal([null, "requests", null, "requests"], looks.Select(data => data.GetProperty("topic").GetString()));
         Assert.Equal([null, "requests", null, "s1"], looks.Select(data => data.GetProperty("subject").GetString()));
-        // FABRIC-EVENT3a: a topic's wake runs the local plan alone; the start and a plain nudge, which means everything, the whole look.
+        // A topic's wake runs the local plan alone; the start and a plain nudge, which means everything, the whole look.
         Assert.Equal(["look", "plan", "look", "plan"], looks.Select(data => data.GetProperty("part").GetString()));
         Assert.All(looks, data =>
         {

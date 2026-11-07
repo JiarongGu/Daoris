@@ -7,15 +7,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSONE2f (D167's SESSONE2b note) and COWORK1d (D188; the message-urgency design §2.3, §3.1, §4.2) through REAL ticks: another
+/// Through REAL ticks: another
 /// session's message on the ask's channel, read at a look while a part runs. On the protocol door that takes prompts during a turn
-/// (D136, <c>promptQueueing</c>) an urgent claim, and one from before, is sent at the part's next step, as Daoris's words around that
+/// (<c>promptQueueing</c>) an urgent claim, and one from before, is sent at the part's next step, as Daoris's words around that
 /// agent's claim, which its record keeps as <c>target</c>, and the entry acknowledges it by its id; an ordinary claim never enters the
 /// turn. On a door that takes words only when its turn ends, even an urgent claim earns no earlier delivery: no extra prompt is sent,
-/// the run ends on its own turn, and the claim is let go for the entry's next part (D155: an agent's message never extends a run).
+/// the run ends on its own turn, and the claim is let go for the entry's next part (an agent's message never extends a run).
 /// </summary>
 /// <remarks>
-/// The stand-in service answers the session records with their <c>entry</c> key (SESSONE1a) and the channel's two routes
+/// The stand-in service answers the session records with their <c>entry</c> key and the channel's two routes
 /// (<c>GET /api/asks/{id}/channel</c>, <c>POST …/channel/ack</c>), holding the entry's acknowledgments.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -119,7 +119,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Trap 3 (the design §3.1): a door that takes words only at its turn's end is never extended by an agent's message (D155), an
+    /// 🔴 A door that takes words only at its turn's end is never extended by an agent's message, an
     /// urgent one included, which earns no earlier delivery there: across two looks no second prompt is sent, and the run ends on its
     /// one turn, the claim let go for the entry's next part and never recorded as said to this one.
     /// </summary>
@@ -269,7 +269,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
             ["body"] = "The report needs a port.", ["status"] = "Open",
         };
         private readonly List<JsonObject> _items = [];
-        // COWORK1d: the entry's acknowledgment of each message, and every state it moved through, in order.
+        // The entry's acknowledgment of each message, and every state it moved through, in order.
         private readonly Dictionary<string, (string State, string? Session)> _acks = new(StringComparer.Ordinal);
         private readonly List<(string Message, string State)> _acked = [];
 
@@ -320,7 +320,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
 
         /// <summary>
         /// Another session's message, from <paramref name="repository"/>, to <c>engine</c>, at its level (none for one from before):
-        /// the moment it was posted.
+        /// the moment it is posted.
         /// </summary>
         public DateTimeOffset Post(string id, string repository, string text, bool? urgent = null)
         {

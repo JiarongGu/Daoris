@@ -7,11 +7,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1a (D176 points 1-4 and 8): a brainstorm's round trip at the look, in process. The request a verb wrote is frozen into
+/// A brainstorm's round trip at the look, in process. The request a verb wrote is frozen into
 /// one packet the person shows and sends; each generator's turn answers in a room holding that packet byte for byte; Daoris
 /// validates every answer with no model, gives a malformed one its one repair, hands the synthesis the proposals anonymous and
 /// re-attaches who gave which; and the document is kept and the rooms go. The turns are stand-ins here (the real ones, on the
-/// native stub and the ACP stub, are the <c>Process</c> half's <c>BrainstormProcessTests</c>), so nothing starts a process (MOD8).
+/// native stub and the ACP stub, are the <c>Process</c> half's <c>BrainstormProcessTests</c>), so nothing starts a process.
 /// </summary>
 public sealed class BrainstormLookTests : IDisposable
 {
@@ -28,7 +28,7 @@ public sealed class BrainstormLookTests : IDisposable
 
     private BrainstormFiles Files => new(_home);
 
-    /// <summary>Every request the driver made of the service, by method and path: the proof no quest operation was made.</summary>
+    /// <summary>Every request the driver makes of the service, by method and path: the proof no quest operation is made.</summary>
     private sealed class Service : HttpMessageHandler
     {
         public List<string> Asked { get; } = [];
@@ -122,7 +122,7 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PARALLEL1b (D181 point 3): under the watch a request's packet is frozen as the <c>freeze</c> topic's judge beside the look, so
+    /// Under the watch a request's packet is frozen as the <c>freeze</c> topic's judge beside the look, so
     /// a checkout or a knowledge search slow to answer holds no start; looked at again while it freezes, it is frozen once, and its
     /// line joins a later look's report.
     /// </summary>
@@ -160,7 +160,7 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PARALLEL1b2 (D181 point 3, PARALLEL1g's note): a freeze that keeps failing says so once until it is judged again, and a look
+    /// A freeze that keeps failing says so once until it is judged again, and a look
     /// that meets it again asks it again but says nothing, so its failing line wakes no look of its own and the loop does not spin.
     /// </summary>
     [Fact]
@@ -194,7 +194,7 @@ public sealed class BrainstormLookTests : IDisposable
 
     /// <summary>
     /// 🔴 A request is frozen at the look into one packet, whose digest the state names, and waits for the person's send: no turn
-    /// runs on a packet nobody saw (D176 point 2).
+    /// runs on a packet nobody saw.
     /// </summary>
     [Fact]
     public async Task A_request_is_frozen_at_a_look_and_waits_for_the_person_s_send()
@@ -223,7 +223,7 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
-    /// DRAINHOLD1 (the driver follow-up): an update's drain holds a sent brainstorm, which would take agents' turns and slots. The look
+    /// An update's drain holds a sent brainstorm, which would take agents' turns and slots. The look
     /// runs none, says the drain's hold once and leaves the packet frozen and sent; after *Not now* it runs.
     /// </summary>
     [Fact]
@@ -303,7 +303,7 @@ public sealed class BrainstormLookTests : IDisposable
         Assert.Contains("stubs are no maker diversity", printed, StringComparison.Ordinal);
         Assert.Contains("the rank is its claim", printed, StringComparison.Ordinal);
 
-        // Each pass kept its record; the rooms went; the service was asked nothing at all.
+        // Each pass keeps its record; the rooms go; the service is asked nothing at all.
         Assert.Equal("answered", JsonNode.Parse(File.ReadAllText(Files.PathOf(id, "passes", "g2.json")))!["state"]!.GetValue<string>());
         Assert.False(Directory.Exists(Files.Rooms(id)));
         Assert.Empty(service.Asked);
@@ -367,7 +367,7 @@ public sealed class BrainstormLookTests : IDisposable
 
     /// <summary>
     /// 🔴 A question about a repository is frozen from Daoris's own knowledge, asked in more than one wording, its sources named by
-    /// path, lines, revision and why, cut to their bound with what was cut said; and the search is the only thing asked of the
+    /// path, lines, revision and why, cut to their bound with what is cut said; and the search is the only thing asked of the
     /// service.
     /// </summary>
     [Fact]
@@ -424,8 +424,8 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1e (D205 §4.4): with nothing named, the Brainstorm actor's entries are the voices, one each, each asking its own model
-    /// and effort; its pass record keeps the choice and what was asked; and the synthesis takes its generator's asked choice, not the
+    /// With nothing named, the Brainstorm actor's entries are the voices, one each, each asking its own model
+    /// and effort; its pass record keeps the choice and what is asked; and the synthesis takes its generator's asked choice, not the
     /// actor as it stands.
     /// </summary>
     [Fact]
@@ -445,7 +445,7 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1e (D205 §4.4, the row's proof): a voice that cannot run is dropped and never replaced, by another entry or by another
+    /// A voice that cannot run is dropped and never replaced, by another entry or by another
     /// agent: its pass is unavailable with its code, the other voice answers, and no third pass takes its place.
     /// </summary>
     [Fact]
@@ -465,7 +465,7 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1e (D205 §4.4): its agent's refusal of the voice's model at the open is the voice's one bounded restart on the agent's
+    /// A voice's agent's refusal of the voice's model at the open is the voice's one bounded restart on the agent's
     /// next account, the refusing account passed for it, the same entry asked again; never a second voice.
     /// </summary>
     [Fact]
@@ -487,7 +487,7 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1j part ii (the foundation design §2.4's table): every pass of a brainstorm on a repository is asked for that repository's
+    /// Every pass of a brainstorm on a repository is asked for that repository's
     /// workspace, which its account walk reads for the version the workspace pins; a request on no repository asks the machine's.
     /// </summary>
     [Fact]
@@ -524,7 +524,7 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1e (D205 §4.4): the agents a request names decide who runs, each taking the actor's entry for it, else account default
+    /// The agents a request names decide who runs, each taking the actor's entry for it, else account default
     /// (<c>rule-default</c>); the actor never adds a voice the request did not name.
     /// </summary>
     [Fact]

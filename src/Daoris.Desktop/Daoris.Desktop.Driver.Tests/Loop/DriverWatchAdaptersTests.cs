@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1m-i part 1 (the agent-layer design §6.3 point 1): the watch is handed its adapter set, so a look's driver and the roster are
-/// built over the set a caller gives it, which the parity oracle builds a look over for either path. Handed none, it builds over today's, so the
-/// twenty places that build a watch are unchanged.
+/// The watch is handed its adapter set, so a look's driver and the roster are
+/// built over the set a caller gives it, which the parity oracle builds a look over for either path. Handed none, it builds over the
+/// built-in set.
 /// </summary>
 public sealed class DriverWatchAdaptersTests : IDisposable
 {
@@ -60,7 +60,7 @@ public sealed class DriverWatchAdaptersTests : IDisposable
     }
 
     /// <summary>
-    /// Each look's driver is built over the set the watch holds: a look puts the adapters it runs on the roster (D64 §3), so the roster reads
+    /// Each look's driver is built over the set the watch holds: a look puts the adapters it runs on the roster, so the roster reads
     /// the injected set's names after it, never the built set's.
     /// </summary>
     [Fact]

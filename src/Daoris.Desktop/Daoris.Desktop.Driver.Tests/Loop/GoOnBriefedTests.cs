@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSCTX1c part B (D189 point 3; the session-context design §2, §8's D137): *Go on with Daoris's brief*, the person's press beside *Start
+/// *Go on with Daoris's brief*, the person's press beside *Start
 /// a conversation with these words* where a conversation, or a closed quest's session, waits for them. It opens a new part of the session
 /// in its tree, on its agent and account, its record naming the one it continues, why <c>resume</c>, by the person. Refused before
 /// anything opens, by a code. The real client over the in-process ledger and an adapter that spawns nothing, so the fast half: the runs
@@ -109,7 +109,7 @@ public sealed class GoOnBriefedTests : IDisposable
         return id;
     }
 
-    /// <summary>What the course answered each briefed move, by session (FOUNDATION1h branch 4), heard from the runner.</summary>
+    /// <summary>What the course answered each briefed move, by session, heard from the runner.</summary>
     private static List<(string Session, LineCourse Answer)> Deciding(ChatRunner runner)
     {
         var decided = new List<(string Session, LineCourse Answer)>();
@@ -129,9 +129,9 @@ public sealed class GoOnBriefedTests : IDisposable
     };
 
     /// <summary>
-    /// 🔴 FOUNDATION1h branch 4 (the foundation design §3.1, §14.2): the person's press is the course's one decision for
+    /// 🔴 The person's press is the course's one decision for
     /// <see cref="CourseTrigger.BriefedPress"/>. Heard from the runner, its answer is what refuses each press, by the code and the sentence the
-    /// press has always had, or the move the new part opens by: why <c>resume</c>, by the person, the person's words alone.
+    /// press keeps, or the move the new part opens by: why <c>resume</c>, by the person, the person's words alone.
     /// </summary>
     [Theory]
     [InlineData("running", StartFrom.Running, "hold:Refused:running")]
@@ -179,9 +179,9 @@ public sealed class GoOnBriefedTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 TREEGONE2 (ONEWAY1's design §3 C5): a closed quest's session whose tree is gone is moved, not refused, as a conversation's is: the
+    /// 🔴 A closed quest's session whose tree is gone is moved, not refused, as a conversation's is: the
     /// person's words alone, its new part asked for a fresh tree. This checkout is no repository to grow one in, so nothing opens, and the
-    /// words stay where they were (<c>BriefedMoveTests</c> runs the part that opens).
+    /// words stay where they are (<c>BriefedMoveTests</c> runs the part that opens).
     /// </summary>
     [Fact]
     public async Task A_closed_quests_session_whose_tree_is_gone_is_moved_to_a_fresh_tree()

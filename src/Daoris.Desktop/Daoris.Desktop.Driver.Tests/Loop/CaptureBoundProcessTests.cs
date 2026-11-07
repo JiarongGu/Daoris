@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSWATCH1a's state E (D200, the session-watch design §2, case 9), through a REAL look on the pipe door: the agent's process exits
-/// and leaves a grandchild holding its output open, ORPHAN1's own case. With no time limit left on a run, nothing else would let the
+/// Through a REAL look on the pipe door: the agent's process exits
+/// and leaves a grandchild holding its output open. With no time limit left on a run, nothing else would let the
 /// capture go. Within the capture's bound the job is ended, the capture let go, the strays' end said as a note line, and the run
 /// concluded by its exit: a clean exit with its quest done is <c>completed</c>, a crash <c>failed</c>; never a cut-off.
 /// </summary>
@@ -60,7 +60,7 @@ public sealed class CaptureBoundProcessTests : IDisposable
         Assert.Contains("\"ended.gone\"", events, StringComparison.Ordinal);
         Assert.DoesNotContain("still held its output", note, StringComparison.Ordinal);
 
-        // What held its output was ended with the run's job.
+        // What held its output is ended with the run's job.
         var stray = int.Parse(File.ReadAllText(pidFile).Trim(), System.Globalization.CultureInfo.InvariantCulture);
         await Poll.Until(() => !Alive(stray), () => $"the stray {stray} still runs", TimeSpan.FromSeconds(20));
     }

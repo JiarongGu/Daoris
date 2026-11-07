@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PROCESS1d-iii (D164's amendment point 4): a conversation in a tree of its own is told its repository's process once, with its first
+/// A conversation in a tree of its own is told its repository's process once, with its first
 /// message and before the person's words, and kept in the record as a note of its own; its next message is told nothing of it again.
 /// One in the person's checkout is told nothing of it at all.
 /// </summary>

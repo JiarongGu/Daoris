@@ -3,18 +3,18 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTERRORS1b (D210, the agent-errors design §5.1, §7, §11's row) with real conversations: a transient failure of a turn of Ask Daoris or
+/// With real conversations: a transient failure of a turn of Ask Daoris or
 /// a repository's chat, on the protocol door, is tried again in the SAME conversation, on the same process, inside the turn, on the retry
 /// clock the test holds (<c>.claude/knowledge/held-clocks.md</c>). A turn that fails transient twice and then answers is one turn: the failed
 /// tries release no queue, end no turn in the record, move no curve, notify nobody and move no limit. A word said during the wait goes at
-/// once, first, in one prompt with Daoris's go-on. A limit on a try goes to LIMITGOON1/2 once, holding no word a try carried and not the
+/// once, first, in one prompt with Daoris's go-on. A limit on a try moves the conversation once, holding no word a try carried and not the
 /// failed turn's own, each original word received once at the limit's wake or move. A conversation whose every try fails ends the turn
 /// <c>error</c> with <c>chat.transient-stopped</c>, and the person's next word is a turn of the same conversation.
 /// </summary>
 /// <remarks>
 /// The conversations run on the <c>acp-stub</c> adapter (a node stand-in on the protocol door), never an agent's binary
 /// (<c>node tools/live-logins.mjs</c>). Its 529 is replayed from <c>claude-agent-acp</c> 0.84.0's source (<c>acp-agent.js:4178-4180</c>,
-/// <c>:7249-7251</c>): source-derived (the design §3.3). Which prompts fail, and with what, is a gate folder the test writes, so a case
+/// <c>:7249-7251</c>): source-derived. Which prompts fail, and with what, is a gate folder the test writes, so a case
 /// decides each turn's fate at the moment it matters. The service is <see cref="ChatLedger"/>'s in-process stand-in. No window, no real
 /// console, no account, no sign-in.
 /// </remarks>
@@ -95,7 +95,7 @@ public sealed class ChatTransientProcessTests : IDisposable
 
     private void Lifted(string account) => File.Delete(Path.Combine(Gate, "limited-" + account));
 
-    /// <summary>An account the stand-in refuses with a limit by its code alone, <c>rate_limit</c> and no sentence the table reads (FOUNDATION1g part a).</summary>
+    /// <summary>An account the stand-in refuses with a limit by its code alone, <c>rate_limit</c> and no sentence the table reads.</summary>
     private void LimitedByCode(string account) => File.WriteAllText(Path.Combine(Gate, "limited-code-" + account), "");
 
     private IReadOnlyList<string> Prompts => [.. StubFile.Lines(Heard).Where(line => line.StartsWith("prompt[", StringComparison.Ordinal))];
@@ -226,7 +226,7 @@ public sealed class ChatTransientProcessTests : IDisposable
             ["wait", "try:1", "wait", "try:2"],
             all.Where(e => e.Kind == SessionEventKind.Transient).Select(e => e.Try is { } number ? $"try:{number}" : e.Next is not null ? "wait" : "neither"));
 
-        // The queue was never released and the curve never asked until the turn ended: every state of the turn in flight was Taking, and none
+        // The queue is never released and the curve never asked until the turn ends: every state of the turn in flight is Taking, and none
         // read as a turn just ended.
         List<ChatQueue> since;
         lock (queues) since = [.. queues.Skip(sayAt)];
@@ -314,8 +314,8 @@ public sealed class ChatTransientProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A limit on a try goes to LIMITGOON1 once, as the move to the next account: the failed turn's own word is held to be sent again by
-    /// nobody, since the agent took it and failed after it, and the word the refused try carried is handed to the new part (AGENTERRORS1b2),
+    /// 🔴 A limit on a try moves the conversation once, to the next account: the failed turn's own word is held to be sent again by
+    /// nobody, since the agent took it and failed after it, and the word the refused try carried is handed to the new part,
     /// since the limit refused it before the agent took it. So each original word is received once: the failed turn's by the old account's
     /// prompt, the word said during the wait by the new part's, in the same prompt as Daoris's brief, never lost. The conversation moves
     /// once, the account cools once, and the turn ends <c>error</c> as a limit's turn does.
@@ -349,7 +349,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         await Poll.Until(() => Prompts.Any(line => line.StartsWith("prompt[account-2]: ", StringComparison.Ordinal)), () => Seen(ledger, events, next.Session));
         await Poll.Until(() => Turns(events.After(next.Session, 0).Events) == 1, () => Seen(ledger, events, next.Session));
 
-        // The failed turn's word was taken once, by the prompt the 529 answered, and is not handed again; the word the limit refused is taken
+        // The failed turn's word is taken once, by the prompt the 529 answered, and is not handed again; the word the limit refused is taken
         // once, by the new part, handed with the brief, and never marked lost.
         var prompts = Prompts;
         Assert.Single(Carrying(prompts, "Make the port configurable."), line => line.StartsWith("prompt[account-1]: ", StringComparison.Ordinal));
@@ -373,10 +373,10 @@ public sealed class ChatTransientProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1g part a (the agent-errors design §3.2): a chat's first failure is a limit the agent answered by its code alone
+    /// 🔴 A chat's first failure is a limit the agent answers by its code alone
     /// (<c>rate_limit</c>, no sentence the table reads), so no episode opens. The reader's code cools the account, as a driven run's does, and
-    /// the turn's end moves the conversation to the next account. Red before: the sentence alone was read, the account never cooled, and the
-    /// turn ended as a refusal with the person's words stranded on the limited account.
+    /// the turn's end moves the conversation to the next account. Reading the sentence alone would leave the account uncooled and end the
+    /// turn as a refusal with the person's words stranded on the limited account.
     /// </summary>
     [Fact]
     public async Task A_chats_limit_by_code_alone_moves_it()
@@ -411,7 +411,7 @@ public sealed class ChatTransientProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 AGENTERRORS1's C4-6 on a conversation (the agent-errors design §5.6; a conversation's open keeps today's end, so the case is a turn's
+    /// 🔴 On a conversation (its open keeps the plain end, so the case is a turn's
     /// own): the turn fails transient and its try meets a limit by its code alone. The reader's last reading is the limit, so the limited
     /// account cools and the conversation moves, once, as a limit on a try with a sentence does.
     /// </summary>
@@ -444,9 +444,9 @@ public sealed class ChatTransientProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The same limit on a try with every account of its agent cooling: the conversation waits for its limit (LIMITRESUME1c), a word said
+    /// 🔴 The same limit on a try with every account of its agent cooling: the conversation waits for its limit, a word said
     /// meanwhile kept once, and at the reset the stage wakes it once, in the same process and its own conversation, with the word said
-    /// while it waited and Daoris's word, each once. The failed turn's own words are not among them: each original word was received once.
+    /// while it waited and Daoris's word, each once. The failed turn's own words are not among them: each original word is received once.
     /// </summary>
     [Fact]
     public async Task A_limit_on_a_try_with_every_account_cooling_waits_and_the_wake_receives_each_original_word_once()
@@ -639,9 +639,9 @@ public sealed class ChatTransientProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A hand-over is no recovery (Codex's owed read of D210, finding 1, on a conversation's turn): a word said while a turn runs is
+    /// 🔴 A hand-over is no recovery (on a conversation's turn): a word said while a turn runs is
     /// handed to it at its next step, and the agent answers the turn it hands off, <c>end_turn</c>, at the word's echo; the word's own turn
-    /// then meets the 529. That turn's prompt was refused after the word was taken, so the turn that failed is the one the word opened: it
+    /// then meets the 529. That turn's prompt is refused after the word is taken, so the turn that failed is the one the word opened: it
     /// is tried again inside the conversation's turn, which lasts, never a note of the word's own and never a turn that ended. One turn
     /// ends in the queue, the word is received once, and the try is Daoris's go-on.
     /// </summary>

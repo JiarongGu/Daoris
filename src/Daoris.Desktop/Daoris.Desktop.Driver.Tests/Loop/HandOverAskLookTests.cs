@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1c (D163 point 3; the mixed agents design §2, §5; D191's settling): the driver's look settles an agent's ask to hand its
+/// The driver's look settles an agent's ask to hand its
 /// session over by the person's `handOver` rule. `ask` holds it for the person's word with the agent it would go to and says so on the
 /// session's record; `off` refuses it, saying why; `on` takes it to the next agent in the person's order: a conversation's box is kept
 /// for its turn's end (or handed to the shell's chat runner where one is wired), a running quest session's ask waits for its turn's end,
@@ -39,7 +39,7 @@ public sealed class HandOverAskLookTests : IDisposable
             ? HandOverRules.Apply(config, new HandOverEdit { Repository = "engine", Set = new HandOverSet { Mode = mode, ModeGiven = true } })
             : config;
 
-    /// <summary>What the chat runner's take was handed: the conversation, the agent, and the arranged order's step for it, where it names one.</summary>
+    /// <summary>What the chat runner's take is handed: the conversation, the agent, and the arranged order's step for it, where it names one.</summary>
     private readonly List<(string Session, string Agent, string? Model)> _taken = [];
 
     /// <summary>A driver for a look: the roster's doors a stand-in, its starts only said, and the chat runner's take where <paramref name="wired"/>.</summary>
@@ -131,7 +131,7 @@ public sealed class HandOverAskLookTests : IDisposable
 
         await Driver(HandOverRules.On).TickAsync().WaitAsync(Poll.Patience);
 
-        // FOUNDATION1f-v part a: kept as a move the store carries, decided, and no box.
+        // Kept as a move the store carries, decided, and no box.
         var move = new MoveStore(_home).Standing("c0nv0001")!;
         Assert.Equal(("decided", "codex-acp", HandOverWhy.Agent, HandOverBy.Agent), (move.PhaseWord, move.Agent, move.Why, move.By));
         Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
@@ -148,7 +148,7 @@ public sealed class HandOverAskLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 STAFFPOLICY1 (D205): a conversation's ask handed to the shell's chat runner takes the arranged order's step for the agent it goes to,
+    /// 🔴 A conversation's ask handed to the shell's chat runner takes the arranged order's step for the agent it goes to,
     /// its model with it, as a quest's move and a headless look's do; an order that names no model hands none.
     /// </summary>
     [Fact]
@@ -169,7 +169,7 @@ public sealed class HandOverAskLookTests : IDisposable
     }
 
     /// <summary>
-    /// DRAINHOLD1 (the driver follow-up): an update's drain holds a conversation's hand-over to the shell's chat runner, which opens a turn of
+    /// An update's drain holds a conversation's hand-over to the shell's chat runner, which opens a turn of
     /// its own. The look hands nothing over, writes no state and says the drain's hold once; after *Not now* the runner takes it.
     /// </summary>
     [Fact]
@@ -208,7 +208,7 @@ public sealed class HandOverAskLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 `on`, a quest's session whose turn ended holding its quest (parked, STANDDOWN2): handed over at once, its record stopped with its
+    /// 🔴 `on`, a quest's session whose turn ended holding its quest (parked): handed over at once, its record stopped with its
     /// own line, the quest held on the next agent with the agent's note, which the carry-on is told as that agent's claim.
     /// </summary>
     [Fact]
@@ -269,7 +269,7 @@ public sealed class HandOverAskLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HANDOVERSAID1: a quest's session whose quest is closed is refused at the ask, by that reason, never left to wait on a yes the
+    /// 🔴 A quest's session whose quest is closed is refused at the ask, by that reason, never left to wait on a yes the
     /// take cannot honour: nothing waits on the person, and its record says why.
     /// </summary>
     [Fact]
@@ -287,8 +287,8 @@ public sealed class HandOverAskLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HANDOVERSAID1 (the owner's report, 2026-10-23): the person said yes to a quest's session's ask, and its quest closed before the
-    /// look took it: said as not taken with that reason and what the session does next, never as refused, which reads as their own no.
+    /// 🔴 The person says yes to a quest's session's ask, and its quest closes before the
+    /// look takes it: said as not taken with that reason and what the session does next, never as refused, which reads as their own no.
     /// </summary>
     [Fact]
     public async Task An_approved_hand_over_of_a_closed_quests_session_is_said_as_not_taken_with_its_reason()
