@@ -106,7 +106,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
    a role holder's and a meeting's start, outside the plan, refuse it before anything starts. (from D53, D57, D213, D212)
 7. Each `AgentRun` operation is admitted by the run's own evidence. One it lacks is refused as unsupported before anything is
    written. (from D213)
-8. Every executor holds its run through `TransportRun`: the driven start, the continuations, the go-on (the held words on the
+8. Every executor holds its run through `TransportRun` (a driven start's, where the driver carries Lyntai's layer, is the driven kind's
+   `LayerRun` on `DrivenRuns`, both a `HeldRun`, rule 47): the driven start, the continuations, the go-on (the held words on the
    run's `DoorInput`, then `ResumeAsync` and `EndAsync` again), the resume's one retry (a driven run's and a conversation's, the
    run's own under the same record, D243) and the conversation's runner. No executor prepares a process itself. A conversation reads its agent through `ChatAgent` (its door with the
    registry beside it) and the run it makes. (from D213)
@@ -125,7 +126,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     every other provider's registered credential and home dropped (a plugin's door, its program unmeasured, keeps all), the
     repository and service, the tools, the session's git, the identity variables, the recipe's own; then the account's key,
     the binary and its pin, the program resolved on the tools' `PATH`, Claude Code's seam on a door whose program runs it
-    (Claude Code's protocol door, `acp-stub`, a plugin's protocol door; never Codex's or dsh's), the home last; then the
+    (Claude Code's protocol door and the protocol stand-in `acp-stub`; never Codex's, dsh's or a plugin's door), the home last; then the
     tools-at-the-start switch (`ENABLE_TOOL_SEARCH=false` for Claude Code); the carriers after all of it. A provider declaring
     a name of Daoris's list is refused at registration, but for the session's tokens. (from D49, D230, D172 point 3)
 13. A start's connectors are one `ConnectorPlan`, composed once per workspace by `ConnectorPlans.For` (the workspace, the servers, the
@@ -133,14 +134,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     partner or brainstorm pass, and the servers it requires; a server from a source not permitted, a name given twice or a required
     server missing is refused naming it). The protocol door's open (`session/new`, `session/resume`) reads that plan's servers; the
     door's own carrier (`IServerHanding`) is asked the same plan once: Claude Code's native door writes its `.mcp.json` layout under the
-    home (`--mcp-config`, the name `ClaudeServers.FileSuffix`), removed with the session; a door with no carrier at its spawn (dsh, the
-    stand-ins) is written nothing. No start leaves the agent's own servers out, so the plan has no exclusion and no door states an ability for one. A native door drives an adopted repository by its own
+    home (`--mcp-config`, the name `ClaudeServers.FileSuffix`), removed with the session; a door with no carrier at its spawn (every door but Claude Code's native one: Codex, dsh, the stand-ins, a plugin's) is written
+    nothing. No start leaves the agent's own servers out, so the plan has no exclusion and no door states an ability for one. A native door drives an adopted repository by its own
     `.mcp.json` only where its servers inherit its environment (`ServersInherit`, Claude Code's native door and every undeclared native
     door), and `Adoption.Drives(abilities, adopted)` is the judge. Daoris's connector is always offered. A server declared through `npx` is
     handed as the whole path of node and its package's own script, so the harness starts one node: the package is installed
     once by npm `--prefix` into `cache/toolchain/<package>/<version>`, npm's cache first, and the log says so
     (`server.installed`). A tag or a range is read at that first install; later starts take the newest version installed. A
-    server whose package cannot be started is not handed (`server.refused`). A server that drives Daoris's browser is
+    server whose package cannot be started is not handed (`server.refused`). A server declared through `npx` that drives Daoris's browser is
     started under `server-keeper.mjs`, which starts it afresh when its working set passes 512 MB, checked every 15
     seconds and only with no call in flight; the tabs are the browser's, so a chat loses only its snapshot references: a call that names a `ref` from before the
     restart is answered by the keeper itself with a fresh `browser_snapshot` and a sentence saying the reference is out of
@@ -154,7 +155,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 15. Every Claude session's settings file turns auto-memory, synced skills, synced plugins and account connectors off for that
     run. No account home, vendor folder or the person's tool home is written. (from D230)
 16. The standing block is composed by the driver for every kind of session, handed at a start and at a move, never on a
-    resume. The whole first prompt fits the native door's single argument. (from D230)
+    resume. The whole first prompt stays under `StandingBlock.Budget` (30,000 characters, the text `DAORIS_TARGET` carries too); past it the block goes in
+    its own file and the prompt names it. (from D230)
 17. Every session runs in a configuration home Daoris owns. With no Daoris account signed in, a start waits for a sign-in. It
     never runs in the person's own tool home, but a conversation begun there goes on there. (from D175, D197)
 
