@@ -2,10 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// One toolchain's row: its signature files, the manifest beside them, the file besides the manifest that names its workspace
-/// members where there is one, and the rules of the folders beside each.
-/// </summary>
+/// <summary>One toolchain's row: its signature files, the manifest and workspace file beside them, and the rules of the folders beside each.</summary>
 internal sealed record SignatureRow(
     string Toolchain, IReadOnlyList<string> Signature, string? Manifest, bool Workspaces, IReadOnlyList<string> ReadsNothing, IReadOnlyList<FileRule> Rules,
     string? WorkspaceFile = null);
@@ -82,10 +79,6 @@ internal sealed class FileSignatures
         return hits;
     }
 
-    /// <summary>
-    /// Whether a tracked file changing can change what the analysis finds: a row's signature file, its manifest or workspace file, or an
-    /// ignore file, at any depth.
-    /// </summary>
     internal bool Reaches(string path)
     {
         var name = path[(path.LastIndexOf('/') + 1)..];

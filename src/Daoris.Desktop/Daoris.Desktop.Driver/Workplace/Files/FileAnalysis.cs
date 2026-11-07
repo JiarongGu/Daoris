@@ -202,7 +202,6 @@ internal static partial class FileAnalysis
         }
     }
 
-    /// <summary>The rule with each workspace member's <c>node_modules/</c> after its own paths, each once.</summary>
     private static FileRule WithMembers(FileRule rule, string folder, IReadOnlyList<string> members) =>
         members.Count == 0 ? rule : rule with { Paths = [.. rule.Paths.Concat(WorkspaceMembers.Modules(folder, members)).Distinct(StringComparer.Ordinal)] };
 

@@ -73,9 +73,7 @@ internal static class SetAsideReads
     }
 
     /// <summary>
-    /// Whether a folder with a bare repository's shape is one: git asked read-only for the directory it takes the folder to be, and
-    /// anything but its own answer for another place leaves it one, since a folder git cannot answer for may still hold refs no other
-    /// repository has, and holding a folder that is not one costs a held tree where missing one loses them.
+    /// A folder git cannot answer for stays one: holding a folder that is no repository costs a held tree, and missing one loses its refs.
     /// </summary>
     private static async Task<bool> IsOwnGitDirectoryAsync(string folder, CancellationToken ct)
     {

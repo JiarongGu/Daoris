@@ -5,26 +5,21 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// When the analysis writes the found layer (the tree-pool design §28.4, <i>When it reads</i>): at a repository's registration, where
-/// its line's tip moved and the commits between name a signature file, a manifest, an ignore file or the gates file, where its
-/// toolchain's answers moved (asked at most once a day), and at a line's finish, which adds what the session wrote and reads nothing
-/// again. A look that finds none of these writes nothing, so the file, which a person may be reading, is never touched by one.
+/// When the analysis writes the found layer (design §28.4, <i>When it reads</i>): at registration, where the line moved past a signature,
+/// manifest, ignore or gates file, where the toolchain's answers moved, and at a finish. A look that finds none writes nothing.
 /// </summary>
 internal static class FoundReads
 {
-    /// <summary>What a rule says of a top a session was seen to write; the finish's read looks for it, and a later reading keeps it.</summary>
+    /// <summary>The evidence a finish gives a top, which a later reading finds by it and keeps.</summary>
     internal const string WrittenBySession = "written by a session";
 
     private static readonly TimeSpan ToolchainEvery = TimeSpan.FromDays(1);
 
-    /// <summary>The last time each repository's toolchain was asked in this process, so a run of looks asks it once a day, not at each.</summary>
+    /// <summary>The last asking of each repository's toolchain, so a run of looks asks it once a day.</summary>
     private static readonly ConcurrentDictionary<string, DateTimeOffset> Asked = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// One look at <paramref name="repository"/>'s line at <paramref name="commit"/>: the found layer written again where a trigger holds,
-    /// and the words saying which; null where none does and nothing was written. A git or file failure throws, and the next look tries again.
-    /// </summary>
-    /// <param name="ask">How a toolchain command is answered in the checkout; <see cref="AskAsync"/> in production.</param>
+    /// <summary>The layer written where a trigger holds, and why; null where none does. A failure throws, and the next look tries again.</summary>
+    /// <param name="ask">Answers a toolchain command in the checkout; <see cref="AskAsync"/> in production.</param>
     internal static async Task<string?> LookAsync(
         string home, string repository, string root, string commit, DateTimeOffset now, Func<string, string, CancellationToken, Task<string>> ask,
         CancellationToken ct)
@@ -50,10 +45,7 @@ internal static class FoundReads
         return why;
     }
 
-    /// <summary>
-    /// A line's finish: each top the last reading left <c>unknown</c> that the tree held (<paramref name="observed"/>, paths from the tree's
-    /// root) is now <c>scratch</c>, written by a session. Nothing is read again, and nothing is written where no top changed. True where it wrote.
-    /// </summary>
+    /// <summary>A finish: an <c>unknown</c> top among <paramref name="observed"/> becomes <c>scratch</c>, nothing read again. True where it wrote.</summary>
     internal static bool Finished(string home, string repository, IEnumerable<string> observed)
     {
         if (FoundFiles.Read(home, repository).Reading is not { } last) return false;
@@ -70,7 +62,7 @@ internal static class FoundReads
         return true;
     }
 
-    /// <summary>One toolchain command asked in <paramref name="root"/> through the shell a person's own would be, its answer or why it gave none; never throws.</summary>
+    /// <summary>One toolchain command asked in <paramref name="root"/> through the shell, its answer or why it gave none.</summary>
     internal static async Task<string> AskAsync(string root, string command, CancellationToken ct)
     {
         var windows = OperatingSystem.IsWindows();
@@ -86,7 +78,7 @@ internal static class FoundReads
         return changed.Any(path => path == GeneratedWriters.DeclarationFile || FileSignatures.Shipped.Reaches(path));
     }
 
-    /// <summary>Whether the toolchain is asked now: not yet today in this process; true marks it asked.</summary>
+    /// <summary>Whether the toolchain is due; true marks it asked.</summary>
     private static bool Due(string home, string repository, DateTimeOffset now)
     {
         var key = Key(home, repository);

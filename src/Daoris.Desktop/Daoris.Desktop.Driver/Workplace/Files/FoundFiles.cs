@@ -3,10 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// One reading of a repository: the commit read, when, the rules found, and the digest of what its toolchain commands answered (null
-/// where none was taken), against which a later look tells that the toolchain moved.
-/// </summary>
+/// <summary>One reading of a repository: the commit read, when, the rules found, and a digest of its toolchain commands' answers.</summary>
 internal sealed record FoundReading(string Commit, DateTimeOffset At, IReadOnlyList<FileRule> Rules, string? Toolchain = null);
 
 /// <summary>A repository's last reading in the found layer, or none, and why the file or a rule of it does not read.</summary>
