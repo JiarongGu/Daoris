@@ -238,8 +238,7 @@ internal sealed class LoopRun(
             // A press taken back after it was shown, or lost at the close, is kept in Done and failed.
             served.Confirmations.Noticed = loop.Notices.Ended;
             // EV-F: a press no terminal waits on, told at `work/event` as it settles, after its record says how.
-            served.Confirmations.Settled = (shown, ending) =>
-                shared.Hooks?.Tell(WorkEventPlugins.Settled(shown.Id, ending.End.ToString(), DateTimeOffset.UtcNow));
+            served.Confirmations.Settled = SettledTelling.Of(() => shared.Hooks, () => DateTimeOffset.UtcNow);
             served.Grounds = new LoopGrounds(loop, served);
             // A finish runs here where this machine's registry says so, and a resume is of a hold the file holds now.
             served.StandingConfirmation.RunsHere = loop.Processes.AliveOnThisMachine;

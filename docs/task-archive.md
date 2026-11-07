@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## EVENTHOOK1d — the quest kinds, `confirmation.ended` and `work.ended` (2026-11-07)
+
+> **EVENTHOOK1d** (D244): the quest kinds, `confirmation.ended` and `work.ended` told at `work/event`. Outcome: the last proof built; a press made over the pipe and left by its terminal is told to the lease's plugin with the pipe's own id and its end, a waited one told nothing (`PipeConfirmationToldTests`, over the loop's own sink `SettledTelling`); it found no gap.
+
+## EVENTHOOK1f — `event-relay` offered from Daoris.Plugins (2026-11-07)
+
+> **EVENTHOOK1f** (D120 point 3): the plugin offered to its owner. Outcome: Daoris.Plugins holds `event-relay`; `examples/plugins/event-relay/` and its `node --test` are removed from Daoris, the relay's Process tests run their own stand-in (`Driver.Tests/Plugins/RelayStandIn/`), and the two document rows naming the example are gone.
+
 ## PRUNELINKS1 — a worktree removed without reaching through its links (2026-11-07)
 
 > **PRUNELINKS1** (tools): removing a builder's worktree with `git worktree remove --force` followed its junctions to the main checkout's `node_modules` and, through the workspace link, deleted the CLI's tracked sources. Outcome: `tools/worktree-remove.mjs` removes each link under a worktree as a link, stops if one stays, then runs `git worktree remove` and checks the main checkout lost no tracked file; the merge tool's prune and gate-tree removal and the dispatch skill go through it.

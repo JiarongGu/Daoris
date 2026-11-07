@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The relay end to end as processes (EVENTHOOK1c; the event hook design §9's 1c proofs): the built host's <c>events relay --where</c> lays
 /// its copy out in a home beside a stand-in instance and prints its command; that copy's <c>--once</c> serves its pipe; and the real
-/// <c>event-relay</c> plugin, started into the stand-in instance's agents' job and spoken to over the hook wire as the driver does, finds
+/// stand-in for the <c>event-relay</c> plugin (<see cref="RelayStandIn"/>), started into the stand-in instance's agents' job and spoken to over the hook wire as the driver does, finds
 /// the relay by its file, passes step 3 by the job, and tells two events, after which its stop ends the relay with what it gathered.
 /// Every process is started hidden: no window, no console, no real agent.
 /// </summary>
@@ -101,7 +101,7 @@ public sealed class RelayOnceProcessTests : IDisposable
             await Task.Delay(20);
         }
 
-        var plugin = Start("node", [Path.Combine(WorkspaceRoot.Folder, "examples", "plugins", "event-relay", "plugin.mjs")],
+        var plugin = Start("node", [RelayStandIn.File],
             new Dictionary<string, string?> { ["DAORIS_PLUGIN_ID"] = "event-relay", ["DAORIS_PLUGIN_DATA"] = data }, input: true);
         Assert.True(job.Join(plugin.Handle), "the plugin could not join the holder's agents' job");
         // The plugin says each connection on its stderr: its first line has reached the relay once it says this one's.

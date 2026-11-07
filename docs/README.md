@@ -36,7 +36,6 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`../examples/plugins/github-pull-request/README.md`|GitHub landing plugin
 |`../examples/plugins/azure-devops-pull-request/README.md`|Azure DevOps landing plugin
 |`../examples/plugins/local-preview/README.md`|Performed step plugin
-|`../examples/plugins/event-relay/README.md`|Event relay plugin
 |`../tools/dsh-probes/README.md`|Protocol probes
 
 ## Doctrine, knowledge and development contracts
