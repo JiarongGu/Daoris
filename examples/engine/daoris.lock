@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "414f2f820c04e0a0abb61c774adbcf2f72a5214170bedaab65b0b76cb4613045",
+  "canonDigest": "cd4009e467abe424f1f2a90c9b28e42f79c0edd07a8aba8d9db07257f758f777",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -73,6 +73,13 @@
       "target": "knowledge/reaching-in.md",
       "canonVersion": "0.0.1",
       "sha256": "ed1f7729783fe48b4feee772e54478262be4fe0c41eab9f5e0f62cbb52494f20"
+    },
+    {
+      "pack": "core",
+      "source": "core/knowledge/rooms-and-classes.md",
+      "target": "knowledge/rooms-and-classes.md",
+      "canonVersion": "0.0.1",
+      "sha256": "073dd56b9e11239d340ea588d67ffafaa37835c52fc5d29070cbe8fd5c89a502"
     },
     {
       "pack": "core",

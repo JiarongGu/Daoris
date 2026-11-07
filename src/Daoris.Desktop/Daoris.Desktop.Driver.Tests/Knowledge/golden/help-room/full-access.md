@@ -34,6 +34,10 @@ Daoris's rules, the person's own denies still hold.
   Applying a write-to is the person's standing say-so for writing across, and its card says so.
 - `ask_propose`: something to start, as an ask at a workspace, with an optional short title (at most 40 characters,
   the few words that tell it apart in a list, the person's own where they gave one).
+  A repository set up already that declares no rooms (no lane with `builds`) and no classes of its ignored files (no
+  `trees` in its gates file) is offered them by `ask_propose` at its workspace: words naming the repository and asking its
+  session to propose its rooms and classes by the doctrine's `rooms-and-classes` knowledge, on its own branch, for the person
+  to accept where it lands. You draft nothing into the repository yourself; a set-up's adoption asks the same.
 - `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them.
   Daoris's accounts for an agent are one set that serves every workspace, in one order, so these name no workspace:
   `use` sets how they are used (`use` goal or order, `keep` one of them or none,
