@@ -1,10 +1,11 @@
 /**
- * Comments shrink where code is touched (the gate of the comment rules in the area document on code structure).
+ * Comments shrink where code is touched, and name no row, decision or history anywhere (the gate of the comment rules in the area document on code structure).
  *
  *   node tools/comment-gate.mjs                    the working tree against its merge-base with main (exit 0 clean, 1 breach, 2 tool error)
  *   node tools/comment-gate.mjs --base <ref>       against the merge-base with <ref> instead of main
  *   node tools/comment-gate.mjs --tip <ref>        the change from the merge-base to <ref> (a merge's diff) instead of the working tree
  *   node tools/comment-gate.mjs --root <dir>       the repository at <dir> instead of the one the tool sits in
+ *   node tools/comment-gate.mjs --all              every source file of the work tree, held to the naming rule alone (no base, no share)
  *
  * For each source file the change touches (`.cs`, `.ts`, `.tsx`, `.mjs`, `.js`; generated and build output skipped):
  *
@@ -15,13 +16,14 @@
  *    digits) or a history note (the words for what the code once did). The commit or the decision holds those. A comment is
  *    added where its trimmed text stands on the new side more often than on the old, so a moved or untouched comment is not.
  *
+ * `--all` holds every file to the second rule, for each comment it has. The census marker `Not the tools' environment (TOOLS5):` is no naming.
  * A comment on a code line counts for the second rule, not the first. Strings, templates, regular expressions and C#'s
  * verbatim and raw strings are not comments. A tool's or a standard's name that is capitals and digits (`UTF8`, `SHA256`) is no id.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execGit, isMain } from './fsx.mjs';
+import { execGit, isMain, repositoryFiles } from './fsx.mjs';
 
 const SOURCE = /\.(cs|ts|tsx|mjs|js)$/;
 const SKIPPED = /(^|\/)(bin|obj|node_modules|_fixtures|wwwroot|dist|generated|local)\//;
@@ -31,10 +33,12 @@ const ROW = /\b[A-Z]{2,}\d+[a-z]?\b/g;
 const KNOWN = /^(?:UTF|SHA|MD|HTTP|HS|RS|ES|PS|AES|X|ISO|RFC|TLS|SSL|CRC|BASE|GB|PBKDF|SSH|IPV|WIN|MP|H|OS)\d+$/;
 const DECISION = /\bD\d{1,4}\b/g;
 const HISTORY = /\b(?:was|used to|formerly|previously)\b/gi;
+/** The marker the modules' census of child environments reads, its row id part of the text it matches. */
+const EXEMPT = "Not the tools' environment (TOOLS5):";
 
 /**
- * The comments of `src`, one entry per line that carries one: `{ line, text, whole }`, `text` the comment's words on that line
- * and `whole` true where nothing else is on the line.
+ * The comments of `src`, one entry per line that carries one: `{ line, text, whole, ranges }`, `text` the comment's words on that
+ * line, `whole` true where nothing else is on the line and `ranges` the `[from, to)` columns the comment spans there.
  */
 export function comments(src) {
   const found = [];
@@ -158,7 +162,7 @@ export function comments(src) {
     const text = lines[line];
     const words = ranges.map(([lo, hi]) => text.slice(lo, hi)).join(' ').replace(/\*+\//g, ' ').replace(/\/\*+|^\s*\*+|\/\/+/g, ' ').replace(/\s+/g, ' ').trim();
     const rest = ranges.reduceRight((s, [lo, hi]) => s.slice(0, lo) + s.slice(hi), text);
-    found.push({ line: line + 1, text: words, whole: rest.trim() === '' });
+    found.push({ line: line + 1, text: words, whole: rest.trim() === '', ranges });
   }
   return found;
 }
@@ -184,7 +188,8 @@ export function added(before, after) {
 }
 
 /** What a comment's text names that a comment may not: `[kind, word]` pairs. */
-export function namings(text) {
+export function namings(raw) {
+  const text = raw.split(EXEMPT).join(' ');
   const names = [];
   for (const m of text.matchAll(ROW)) if (!KNOWN.test(m[0])) names.push(['a row id', m[0]]);
   for (const m of text.matchAll(DECISION)) names.push(['a decision number', m[0]]);
@@ -256,6 +261,18 @@ export function checkChange(root, base, tip = null) {
   return { problems, checked };
 }
 
+/** The breaches of every source file of the work tree at `root`: each comment is held to the naming rule; the share rule is a change's alone. */
+export function checkAll(root) {
+  const problems = [];
+  let checked = 0;
+  for (const path of repositoryFiles(root)) {
+    if (!SOURCE.test(path) || SKIPPED.test(path)) continue;
+    problems.push(...judge(path, null, readFileSync(join(root, path), 'utf8')));
+    checked++;
+  }
+  return { problems, checked };
+}
+
 const readWork = (root, path) => (existsSync(join(root, path)) ? readFileSync(join(root, path), 'utf8') : null);
 
 function main(argv) {
@@ -265,6 +282,13 @@ function main(argv) {
   };
   const root = option('--root') ?? dirname(dirname(fileURLToPath(import.meta.url)));
   try {
+    if (argv.includes('--all')) {
+      const { problems, checked } = checkAll(root);
+      for (const p of problems) console.error(`comment-gate: ${p}`);
+      if (problems.length) return 1;
+      console.log(`comment-gate: clean (all ${checked} source files)`);
+      return 0;
+    }
     const tip = option('--tip');
     const trunk = option('--base') ?? MAIN;
     const base = gitOrNull(root, ['merge-base', trunk, tip ?? 'HEAD'])?.trim();
