@@ -134,6 +134,11 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
             }
         }
 
+        // No attempt runs after a restart: one with no outcome is closed failed, and a subject whose attempts ended is the person's,
+        // so no choice is spent on it again and no supervisor reconsiders it.
+        foreach (var _ in book.Attempts.CloseUnended(now)) log?.Info("supervisor.attempt-failed", ("why", SupervisorWhy.Restarted));
+        foreach (var subject in book.Attempts.EndedSubjects()) book.Closed.TryAdd(subject, SupervisorState.Interrupted);
+
         return swept;
     }
 
