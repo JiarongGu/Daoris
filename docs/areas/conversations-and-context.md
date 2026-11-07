@@ -282,7 +282,9 @@ of everything it handed, section by section.
   account's home. Proposed (`docs/2026-10-24-switch-context-design.md`, its round 5 read and another round owed), with no backlog row. A driven line's
   limit move and a conversation's carry through the providers' `IConversationCarry` (`Loop/Run/Hand/LimitCarried.cs`, `Course/Chat/ChatLimitCarry.cs`);
   the curve's move and the hand-over carry nothing; a carried resume the agent refuses after the copy is briefed on the same part, the copy removed.
-  A conversation's carried move keeps the `brief` how on its move record, so a shell cut off under it is taken up by the brief.
+  A carried move cut off by a restart before its new part ran goes on in the carried conversation: a chat's new part is bound to
+  it as its record opens (`ChatLimitCarry.Bound`), so its go-on resumes it, and a driven start continuing a limit part that never
+  ran plans the carry again from the part the limit ended (`CutLimitPart`); a copy gone by then is briefed, saying why.
   `Course/MoveRecords.cs` reserves the `carry` kind and the `copied` and `verified` phases.
 - **SESSCTX1a:** resume and a fresh part measured on each door. No brief has been counted on a harness.
 - **SESSCTX1e (ONEWAY1j):** *Go on fresh*, Daoris's compaction on the person's press, re-cut as a hand-over to the same

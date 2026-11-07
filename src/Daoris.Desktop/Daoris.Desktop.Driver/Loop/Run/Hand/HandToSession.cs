@@ -30,6 +30,12 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         var (sessionId, keyed, fenced, continues) = (state.Opened.SessionId, state.Opened.Keyed, state.Opened.Fenced, state.Opened.Continues);
         var (carry, workTree, runBound, setUp) = (state.Carry, state.WorkTree, state.Bound, state.SetUp);
         var prior = carryingOn ? start.Resumes : null;
+        if (await CutLimitPart.BehindAsync(context, prior, ct).ConfigureAwait(false) is { } ended)
+        {
+            prior = ended;
+            continues = new ContinuedFrom(ended.Session, HandOverWhy.Limit, continues?.By ?? HandOverBy.Daoris);
+        }
+
         var refusedHanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var endings = new RunEndings(wiring, run, sessionId, agent, workTree, state.Opened.LocksTree);
         try
@@ -80,8 +86,6 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 : await ContextBriefs.ComposeAsync(
                     service, context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
                     config: config, tree: workTree, ct: ct).ConfigureAwait(false);
-            // Bound to the part's record before it runs, so a restart that cuts it off before its first prompt resumes that conversation.
-            if (conversation is not null) context.Conversations.Keep(sessionId, adapter.Id.Value, conversation.Conversation);
             if (prior is not null && continues is not null && conversation is not null) wiring.SayCarried(prior, sessionId, agent, selection.Profile, continues.Why, conversation);
             if (prior is not null && continues is not null && brief is not null)
             {

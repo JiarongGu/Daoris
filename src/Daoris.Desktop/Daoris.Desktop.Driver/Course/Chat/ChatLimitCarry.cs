@@ -54,10 +54,6 @@ internal sealed class ChatLimitCarry(
     /// <summary>The carry's code where the move asked to carry and is briefed instead; null where it carries or asked nothing.</summary>
     public static string? NotCarried(CarryPlan? plan) => (plan as CarryPlan.Briefed)?.Why;
 
-    /// <summary>
-    /// The new part's record bound to the conversation its files were copied for, the moment it exists, so a shell cut off before the part
-    /// ran goes on by resuming it, not by the brief; a resume the door then refuses is the brief's, said.
-    /// </summary>
     public void Bound(string to) => context.Conversations.Keep(to, door.Id.Value, carried.Conversation);
 
     /// <summary>
