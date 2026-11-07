@@ -44,13 +44,15 @@ public sealed class DevLineLandingTests : ReviewLandingFixture
     [InlineData("remote")]
     [InlineData("ignored")]
     [InlineData("quest-moved")]
+    [InlineData("own-branch")]
+    [InlineData("moved-on")]
     public async Task A_dev_line_run_whose_tree_stands_with_a_commit_beyond_its_line_lands_with_no_press(string shape)
     {
         using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
         var root = await RepositoryAsync("engine");
         if (shape == "ignored") await CommitAsync(root, ".gitignore", "bin/\n", "ignore the build");
         await DevLineAsync();
-        var tree = await NamedDoneAsync(root, "s1", "q1");
+        var tree = await NamedDoneAsync(root, "s1", "q1", ownBranch: shape == "own-branch");
         var commit = await HeadAsync(tree);
         Assert.NotEqual(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
         var door = Door();
@@ -70,6 +72,11 @@ public sealed class DevLineLandingTests : ReviewLandingFixture
                 Directory.CreateDirectory(Path.Combine(tree, "bin"));
                 await File.WriteAllTextAsync(Path.Combine(tree, "bin", "out.dll"), "built\n");
                 break;
+            case "moved-on":
+                // The agent moved its tree onto a branch of its own after its first commit, and committed more there (TREEFOLLOW1).
+                await GitAsync(tree, "checkout", "--quiet", "-b", "feature/own");
+                await CommitAsync(tree, "own.txt", "more work of s1", "more work of s1");
+                break;
             case "quest-moved":
                 _world.Quests["q1"] = _world.Quests["q1"] with { Status = "Taken", Updated = DateTimeOffset.UtcNow.AddMinutes(-5) };
                 await InventoryPassAsync(root, door);
@@ -77,9 +84,11 @@ public sealed class DevLineLandingTests : ReviewLandingFixture
                 break;
         }
 
-        // The loop's turn: the ref watch keeps what the line holds, then a pass judges the runs and starts their doors.
+        // The loop's turn: the look learns where each tree is (TREEFOLLOW1), the ref watch keeps what the line holds, then a pass judges the runs
+        // and starts their doors.
         for (var turn = 0; turn < 3; turn++)
         {
+            await new TreeFollows(new TreeContext(_home, new LandingPlugins(_home))).LearnTreesAsync("aurora", "engine", CancellationToken.None, root);
             await new SessionTrees(_home).KeepEndsAsync(root, "engine", "aurora");
             await InventoryPassAsync(root, door);
             await door.IdleAsync();
@@ -87,11 +96,15 @@ public sealed class DevLineLandingTests : ReviewLandingFixture
 
         // A line that moved replays the work onto it, under another commit; the line holds the session's file either way.
         Assert.True((await GitAsync(root, "show", "main:s1.txt")).Trim() == "the work of s1", Said());
-        Assert.StartsWith(string.Join(", ", Steps.Select(node => $"{node} {NodeStates.Reached}")) + "\n", Said());
+        if (shape == "moved-on") Assert.True((await GitAsync(root, "show", "main:own.txt")).Trim() == "more work of s1", Said());
+        var said = Said();
+        Assert.True(said.StartsWith(string.Join(", ", Steps.Select(node => $"{node} {NodeStates.Reached}")) + "\n", StringComparison.Ordinal), said);
 
-        // Its merge is requested through the automatic landing's own door, and settled in its words, never as the person's press.
+        // Its merge is requested through the automatic landing's own door, for the branch its work stood on, and settled in its words, never as
+        // the person's press.
         var store = new IntegrationStore(_home);
-        var request = Assert.Single(store.Of("engine", Assert.Single(new SessionBranches(_home).All()).Branch));
+        var grown = Assert.Single(new SessionBranches(_home).All());
+        var request = Assert.Single(store.Of("engine", grown.Now ?? grown.Branch));
         Assert.Equal((IntegrationRequester.Landing, IntegrationRequestCloses.Settled), (request.Requester, request.ClosedWhy));
         Assert.Equal("merged by its workflow's landing, with no press.", store.MemberOf(request.Id)?.Said);
     }
@@ -99,6 +112,7 @@ public sealed class DevLineLandingTests : ReviewLandingFixture
     /// <summary>The run's steps as its record holds them, each with its state and the revision it is bound to.</summary>
     private string Said() => (new NodeRecordFiles(_home, () => false).Read(RunUnits.IdOf("q1")) is { } record
         ? string.Join(", ", Steps.Select(node => record.Statuses.GetValueOrDefault(node) is { } status ? $"{node} {status.State}" : $"{node} none"))
+          + "\nbound at " + string.Join(", ", Steps.Select(node => $"{node} {record.Statuses.GetValueOrDefault(node)?.Binding?.SubjectRevision ?? "-"}"))
         : "no record") + "\n" + string.Join("\n", _passes);
 
     /// <summary>A version copied from the default <i>Merge automatically</i>, as <c>new --from</c> copies it, saved, and the run bound to it.</summary>

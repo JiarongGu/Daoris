@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - A run whose tree's agent moved onto a branch of its own sat at `content.holds`, or ended with its work off the line (LANDAUTO1)
+
+- **Symptom:** on the owner's install, after its update to the build of 778dfe5d29, finished sessions with commits beyond their line sat
+  at their run's `content` step ("Holds the work while the line or a branch of yours already holds it…") until the steward merged them by
+  hand; the step was then reached only through the hold's landed clause (`landings.json#<unit>`).
+- **Root cause:** a run's branch-side steps bound the tip of its session branch by name (`branch.Subject.Artifact`, 5098ff71c8,
+  FABRIC-CUTOVER1c), and the end keeper judged that branch by name too (`EndKeeping`). A tree whose agent moved it onto a branch of its own
+  (TREEFOLLOW1) leaves its session branch behind: with commits on both, `content.holds` was bound at the session branch's tip, the read
+  at the bound commit found the tree elsewhere (`HoldReads`: "not read at the bound commit"), and it held for good; with all the work on its
+  own branch, the session branch stood on the line, its held fact ended the run as landed and the work never reached the line. The landing
+  rules followed the moved tree until 50f1fb9056 (NOCOMPAT1b2) deleted them, between the install's builds f3ebcb986 and 778dfe5d29, with
+  the own-branch test (dc6bba0768). The two Lyntai records kept show a second hold: their `work` (`claimed`) was active and never reached
+  from the quest's update until the hand merge, so `content` was first bound after it: the quest read as not done, or done with a step
+  still to come here, until then; that hold is not found here.
+- **Fix:** a run watches the branch its work stands on, the one the look learned its tree moved onto (`GrownBranch.Now`) else its session
+  branch (`NodeGoverning`), and binds its branch-side steps at that tip (`NodeRuntime`); the end keeper judges the same branch's tip.
+- **Verify:** `DevLineLandingTests`' `moved-on` shape failed first at `content active`, its `own-branch` shape with every step reached and
+  the line lacking the work; both land with no press now, beside the five shapes before.
+
 ## 2026-11-07 - A `dev-line` run held before its landing on the install, and its automatic merge was filed as the person's press (LANDAUTO1)
 
 - **Symptom:** on the owner's install, after its update to the build of 778dfe5d29, Lyntai's `dev-line` runs stopped landing by

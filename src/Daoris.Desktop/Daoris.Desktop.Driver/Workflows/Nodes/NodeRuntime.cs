@@ -452,7 +452,7 @@ public sealed class NodeRuntime(
         // its chain came back here lapses, and the run goes on (§3).
         if (governed.Scope is { } scope)
         {
-            tip = scope.Branch is { } branch ? await tips.TipAsync(scope.Root, branch.Subject.Artifact ?? "", ct).ConfigureAwait(false) : null;
+            tip = scope.Branch is not null ? await tips.TipAsync(scope.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
             Keeping.Reopen(governed, scope);
         }
 
