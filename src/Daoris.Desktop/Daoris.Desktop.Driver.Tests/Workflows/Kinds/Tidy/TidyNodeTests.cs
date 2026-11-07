@@ -2,10 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>
-/// The tidy node is reached where the landing record holds what its door ended at the landing's tip; started only on a monitor's
-/// <c>when merged</c>, so a closed request starts nothing and fails nothing; its record reads back whole.
-/// </summary>
+/// <summary>The tidy node is reached where the landing record holds what its door ended at the tip; only a monitor's <c>when merged</c> starts it.</summary>
 public sealed class TidyNodeTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "tidy-node", Guid.NewGuid().ToString("N")[..8]);
