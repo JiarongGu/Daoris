@@ -13,7 +13,7 @@ const LOCK_VERSION = 1;
 
 // `harness` names which agent layout to generate. It defaults rather than being required, because a
 // manifest written before harnesses existed must keep working: absent is `claude-code`, the older
-// layout, and `agents` is chosen by name (D117).
+// layout, and `agents` is chosen by name.
 /**
  * `coreBudgetBytes` is what a repository is willing to pay, in always-loaded bytes, on every task.
  *
@@ -28,11 +28,11 @@ const LOCK_VERSION = 1;
  * earned its keep on — it caught a 45% overage on first contact with one adopter, and forced the
  * retirement of an 8.3 KB duplicated rule in another.
  *
- * 🔴 **Since D59 that is no longer what is measured.** The always-loaded tier became Daoris's region
+ * 🔴 **That is not quite what is measured.** The always-loaded tier is Daoris's region
  * of `AGENTS.md`, and `inspect` counts that region's body alone — the canon's rules and the index. A
  * repository's own always-loaded material (the rest of `AGENTS.md`, `CLAUDE.md`, a local
- * `.claude/rules/` file) is not counted, and `analyze` still projects the pre-D59 quantity. What the
- * number should cap is open in `TASKS.md` (REV3 CLI F10).
+ * `.claude/rules/` file) is not counted, and `analyze` still projects the whole-tier quantity. What the
+ * number should cap is open in `TASKS.md`.
  */
 export const DEFAULT_CORE_BUDGET_BYTES = 30000;
 
@@ -65,7 +65,7 @@ export function readManifest(root: string): Manifest {
   const manifest = { ...DEFAULTS, ...parsed } as Manifest;
   if (!manifest.source) throw new DaorisError(`${MANIFEST_FILE} has no 'source'`);
 
-  // Knowledge feeds only from a joined repository (D47 §4): a manifest saying "share my knowledge but
+  // Knowledge feeds only from a joined repository: a manifest saying "share my knowledge but
   // do not join" has no meaning a service could honour, so it fails here — at the edge, with the fix —
   // rather than being silently narrowed somewhere a reviewer never sees.
   if (manifest.remote !== undefined) {
@@ -79,7 +79,7 @@ export function readManifest(root: string): Manifest {
     manifest.remote = { join, knowledge };
   }
 
-  // A confirmation is a map from a core row to the pack that switches it off (D71). Anything else —
+  // A confirmation is a map from a core row to the pack that switches it off. Anything else —
   // a list, a boolean, a row with no pack — says something this tool cannot honour, and a switch
   // that silently did nothing would leave a core row on that the repository believes is off.
   if ((parsed as Record<string, unknown>).switchedOff === null) delete manifest.switchedOff;
@@ -94,7 +94,7 @@ export function readManifest(root: string): Manifest {
     }
   }
 
-  // A keep is a reason and the canon file's digest it was judged against (D230). One without either could never be
+  // A keep is a reason and the canon file's digest it is judged against. One without either could never be
   // reopened by the canon or read by the next person, so it is refused here rather than honoured half.
   if ((parsed as Record<string, unknown>).kept === null) delete manifest.kept;
   if (manifest.kept !== undefined) {
@@ -116,11 +116,11 @@ export function readManifest(root: string): Manifest {
   // Resolve here so an unknown name fails at the edge, naming what exists, rather than deeper down
   // where the message would be about a missing directory.
   manifest.harnessDescriptor = resolveHarness(manifest.harness);
-  // D18 over the roots the descriptor declares and the rooms the manifest does (D117 §5.1): refused at
+  // Containment over the roots the descriptor declares and the rooms the manifest does: refused at
   // the edge, before a single path is planned, rather than corrected somewhere a reviewer never sees.
   manifest.target = checkTarget(manifest.target ?? manifest.harnessDescriptor.defaultTarget, manifest.harnessDescriptor);
   manifest.rooms = checkRooms((parsed as Record<string, unknown>).rooms, manifest.target, manifest.harnessDescriptor);
-  // The development documents (D122 §2.7), refused at the same edge for the same reason: a role nobody
+  // The development documents, refused at the same edge for the same reason: a role nobody
   // knows, a path that leaves, or a role declared twice is never half-honoured.
   manifest.documents = checkDocuments(
     (parsed as Record<string, unknown>).documents, text, manifest.target, manifest.harnessDescriptor);
@@ -148,14 +148,14 @@ export function writeLock(root: string, lock: Lock): void {
     ...(lock.canonDigest !== undefined ? { canonDigest: lock.canonDigest } : {}),
     source: lock.source,
     entries: [...lock.entries].sort((a, b) => a.target.localeCompare(b.target)),
-    // Only when something is off (D71), so a lock that switches nothing is byte-for-byte what it was.
+    // Only when something is off, so a lock that switches nothing is byte-for-byte unchanged.
     ...(lock.switchedOff?.length
       ? { switchedOff: [...lock.switchedOff].sort((a, b) => a.target.localeCompare(b.target)) }
       : {}),
-    // The same for the layout (D117 §5.1): absent means the older one, so a lock on it is unchanged.
+    // The same for the layout: absent means the older one, so a lock on it is unchanged.
     ...(lock.harness !== undefined ? { harness: lock.harness } : {}),
     ...(lock.target !== undefined ? { target: lock.target } : {}),
-    // Where the index was written (D128 §2.4); absent in a lock from before it, which reads as none yet.
+    // Where the index is written; absent in a lock from before it, which reads as none yet.
     ...(lock.index !== undefined ? { index: lock.index } : {}),
     ...(lock.mirrors?.length
       ? { mirrors: [...lock.mirrors].sort((a, b) => a.path.localeCompare(b.path)) }

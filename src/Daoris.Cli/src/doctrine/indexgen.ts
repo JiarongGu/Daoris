@@ -14,7 +14,7 @@ import { declaredPaths, jobOf } from '../layout/documents.ts';
 /**
  * What a sync is about to do to the tiers, by canon target: the bytes it writes and what it deletes.
  * Laid over the disk, it is the tier as the sync will leave it, which is what decides whether an index
- * already on disk is what would be written (D128 §2.4) before anything is.
+ * already on disk is what would be written before anything is.
  */
 export interface TierOverlay {
   writes: ReadonlyMap<string, string>;
@@ -31,7 +31,7 @@ export interface TierOverlay {
  * wrong about the repository.
  *
  * Offline and canon-free, which is what lets `check` rebuild the index to tell whether it has gone
- * stale (D8 — `check` sits inside build gates). With an overlay, what the sync writes is the canon's
+ * stale (`check` sits inside build gates). With an overlay, what the sync writes is the canon's
  * and everything else is the repository's own, which is what the lock will say once it is written.
  */
 export function readTier(
@@ -84,7 +84,7 @@ export function indexInput(
 }
 
 /**
- * `<target>/INDEX.md` as this repository's DISK says it should be (D128 §2.4): what `check` compares the
+ * `<target>/INDEX.md` as this repository's DISK says it should be: what `check` compares the
  * file with. What catches the case that actually happens — a document added and never synced. `check`
  * renders it from `indexInput` itself, since it also counts the documents without frontmatter there.
  */
@@ -99,7 +99,7 @@ export function indexFromDisk(
  * sentence, the rooms and where the records are.
  *
  * 🔴 The rules half is deliberately absent. Its rows come from frontmatter that is stripped on the way
- * into the region (D59), so nothing offline can rebuild them; a canon change is `status`'s report and
+ * into the region, so nothing offline can rebuild them; a canon change is `status`'s report and
  * `sync`'s job.
  */
 export function rosterFromDisk(
@@ -119,7 +119,7 @@ export function rosterFromDisk(
 
 /**
  * What the roster says beyond the tiers: where the skills live and what mirrors them, and each declared
- * room with its heading (D117 §5.3); and where each declared record is (D122 §2.7). One function for
+ * room with its heading; and where each declared record is. One function for
  * `sync`'s render and `check`'s rebuild, so the two cannot disagree about a region neither changed.
  */
 export function rosterExtras(
@@ -140,9 +140,8 @@ export function rosterExtras(
  * `daoris index` — says where the roster is, and writes nothing.
  *
  * @remarks
- * It used to write `RULES_INDEX.md`, a generated file in an always-loaded directory. The rules table
- * lives inside the region (D59), where it is loaded rather than merely present, and since WSSETUP14a
- * the knowledge and skills are listed in `<target>/INDEX.md` (D128 §2.5). Both are `sync`'s to write:
+ * The rules table lives inside the region, where it is loaded rather than merely present, and the
+ * knowledge and skills are listed in `<target>/INDEX.md`. Both are `sync`'s to write:
  * the region needs the canon's rule bodies, and the two are rendered by one run. The command stays as
  * a signpost for anyone whose habit is to run it.
  */

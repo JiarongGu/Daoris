@@ -16,7 +16,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
   const manifest = readManifest(root);
   const canon = readCanon(resolveCanonRoot(packageRoot));
   const lock = readLock(root);
-  // Before anything is planned, for every mode (WSSETUP4, D124 §1.4): the state space D19 enumerates assumes
+  // Before anything is planned, for every mode: the sync's state space assumes
   // the canon is not older than the lock, and a dry run is how a person asks whether this would refuse.
   refuseNewerLock(lock, canon.version, ['sync', ...argv]);
   const plan = planSync({ root, manifest, canon, lock });
@@ -27,14 +27,14 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
   const renamedTo = new Set(plan.renames.map((rename) => rename.to));
 
   // A switched-off row's files leave by the same delete a retirement uses, and are named apart from
-  // one (D71): what happened is a decision the manifest records, not the canon letting go of a file.
+  // one: what happened is a decision the manifest records, not the canon letting go of a file.
   const lockEntries = lockIndex(readLock(root));
   const offDeletes = new Set(plan.deletes.filter((target) => {
     const entry = lockEntries.get(target);
     return entry !== undefined && isSwitchedOff(plan.switchedOff, entry);
   }));
 
-  // 🔴 Never silent (D71): every sync names what is off and every offer still waiting, so neither a
+  // 🔴 Never silent: every sync names what is off and every offer still waiting, so neither a
   // missing core rule nor a pack's pending switch can be a surprise to the person reading the output.
   const sayWhatIsOff = () => {
     for (const row of plan.switchedOff) write(`  off       ${row.target} (switched off by pack '${row.by}')`);
@@ -43,7 +43,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
       write(`            it stays on; to confirm, add to daoris.json: "switchedOff": { "${offer.target}": "${offer.by}" }`);
     }
   };
-  // Never silent either (D230): each keep this sync passed over, `--force` included, and each it dropped.
+  // Never silent either: each keep this sync passed over, `--force` included, and each it dropped.
   const sayWhatIsKept = () => {
     for (const keep of plan.kept) {
       write(`  kept      ${keep.target} — this repository's own text: ${keep.reason}`
@@ -54,7 +54,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     }
   };
 
-  // What a move and the layout do, said beside what D19 does (D117 §5.2): each move with both paths,
+  // What a move and the layout do, said beside what an ordinary sync does: each move with both paths,
   // each pointer, and every old `rules/` file that stays where only one agent reads it.
   const moved = new Set(plan.moves.map((move) => move.target));
   const sayTheLayout = (dry: boolean) => {
@@ -67,7 +67,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     for (const path of plan.keptRules) {
       write(`  kept      ${path} — read by Claude Code alone; its text could go in AGENTS.md, above the region`);
     }
-    // Said, never refused (D122 §2.8): an absent record is `check`'s fact, and the table still names it.
+    // Said, never refused: an absent record is `check`'s fact, and the table still names it.
     for (const doc of plan.documents.missing) {
       write(`  document  ${doc.path} (${doc.role}) is declared in daoris.json, and absent — 'daoris check' fails until it is there`);
     }
@@ -119,7 +119,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
 
   // --force is the only way to lose work with this tool. A refusal names the
   // file it is protecting; the override that overrules that refusal has to name
-  // it too, or nothing anywhere records what was destroyed.
+  // it too, or nothing anywhere records what is destroyed.
   if (force) {
     for (const target of plan.drifted) write(`  overwrote ${target} (local edit discarded)`);
     for (const target of plan.collisions) write(`  overwrote ${target} (this repo's own file)`);

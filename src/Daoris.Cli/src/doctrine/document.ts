@@ -51,7 +51,7 @@ export function withHeader(header: string, body: string): string {
  * What a canon file becomes on disk — the single answer to that question.
  *
  * Only markdown gets stamped: an HTML comment in a script is a syntax error, and the lock's hash
- * catches an edit to it either way (D6).
+ * catches an edit to it either way.
  *
  * It lives here because `sync` and `analyze` both have to answer it and must answer it identically.
  * `analyze` decides whether a file on disk is a collision by comparing against this; `sync` decides
@@ -99,8 +99,8 @@ export function parseFrontmatter(
 
 /**
  * A document's first heading, of any level, or null when it has none: what a room's row says it is about
- * (D117 §2.2), and what the index lists a knowledge document without frontmatter by (WSSETUP14c, D128
- * §3.1). One reading for both, so the two never disagree about which line is a heading.
+ * and what the index lists a knowledge document without frontmatter by. One reading for both, so the two
+ * never disagree about which line is a heading.
  *
  * @remarks
  * Below a leading frontmatter block, where a `#` line is a comment among the fields, and outside a
@@ -146,7 +146,7 @@ export function markdownFence(): (line: string) => boolean {
   };
 }
 
-/** A document's body with its frontmatter removed and the edges trimmed — what a span carries (D59). */
+/** A document's body with its frontmatter removed and the edges trimmed — what a span carries. */
 export function stripFrontmatter(text: string): string {
   const { meta, body } = parseFrontmatter(text, []);
   return (meta ? body : text).trim();

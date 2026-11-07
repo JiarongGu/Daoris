@@ -21,8 +21,8 @@ import {
 const CLAUDE = HARNESSES[DEFAULT_HARNESS]!;
 const DEFAULT_TARGET = CLAUDE.defaultTarget;
 const TIERS = tierNames(CLAUDE);
-// A repository that adopted before D59 has a generated roster in its rules directory. `analyze` runs
-// on repositories that never adopted AND on ones that did, so it still skips that name rather than
+// An older repository has a generated roster in its rules directory. `analyze` runs
+// on repositories that never adopted AND on ones that did, so it skips that name rather than
 // counting a generated file as doctrine somebody wrote.
 const INDEX_FILE = 'RULES_INDEX.md';
 
@@ -130,7 +130,7 @@ function findCollisions(
   for (const file of selected) {
     const body = readText(join(canon.root, file.source));
 
-    // The always-loaded tier is a span (D59), so "what is already here" is a question about the
+    // The always-loaded tier is a span, so "what is already here" is a question about the
     // region. A repository that has no region yet simply has nothing there — which is the ordinary
     // pre-adoption case this command exists for.
     if (regionTier && file.target.startsWith(`${regionTier.name}/`)) {
@@ -150,7 +150,7 @@ function findCollisions(
     const content = renderCanonFile(file, body, canonVersion);
     if (sha256(readText(abs)) === sha256(content)) continue;
 
-    // Provenance decides which of the two this is (D12). In the lock, daoris wrote it, so a
+    // Provenance decides which of the two this is. In the lock, daoris wrote it, so a
     // difference is an UPDATE to install. Absent from the lock, the repository wrote it first, and
     // overwriting would destroy work the tool never had a claim to.
     (locked.has(file.target) ? updates : collisions).push(file.target);
@@ -164,12 +164,12 @@ function findCollisions(
  * `doctor` answers this too, but only for a repository that has already synced — it compares against
  * the LOCK. Before adoption there is no lock, which is exactly when the answer is most useful: a twin
  * found now is a decision made deliberately, and one found afterwards is a duplicate already living
- * in the tree. Compared within a tier, for the reason recorded in D17.
+ * in the tree. Compared within a tier, since a rule and a skill never stand in for each other.
  */
 function findTwinsAgainstCanon(
   root: string, target: string, canon: Canon, selected: readonly CanonFile[], harness: Harness, threshold = 0.3,
 ): Twin[] {
-  // A skill is its entry file (DOC3): the templates beside it are supporting material, never a twin.
+  // A skill is its entry file: the templates beside it are supporting material, never a twin.
   const entry = (tierPath: string) => {
     const [tier, ...rest] = tierPath.split('/');
     return isEntry(harness, tier!, rest.join('/'));
@@ -237,7 +237,7 @@ export function analyze(
 ): AnalysisReport {
   const existing = survey(root, target);
   const locked = lockIndex(lock);
-  // One selection for every projection below, with the repository's confirmations applied (D71): a
+  // One selection for every projection below, with the repository's confirmations applied: a
   // core row a pack switches off is neither a collision, a twin, nor a byte this adoption would add.
   const selection = resolveSelection(canon, packs, switchedOff);
   const { collisions, updates } = findCollisions(root, target, canon, selection.files, canon.version, locked);
@@ -254,7 +254,7 @@ export function analyze(
     budget: { ...projectBudget(root, target, canon, selection.files, existing, collisions), limit: budgetLimit },
     offers: selection.offers,
     switchedOff: selection.switchedOff,
-    // The records this repository seems to keep, by role (D122 §2.7): named for the session that
+    // The records this repository seems to keep, by role: named for the session that
     // declares them, never declared here.
     documents: candidateDocuments(root),
   };
@@ -280,8 +280,8 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
   const requested = argv.filter((arg) => !arg.startsWith('--'));
   const packs = requested.length ? requested : (manifest?.packs ?? []);
   // Confirmations belong to the manifest's own pack list: packs named on the command line are a
-  // "what if", and a confirmation naming a pack the what-if left out would refuse a question it
-  // was never part of.
+  // "what if", and a confirmation naming a pack the what-if leaves out would refuse a question it
+  // is no part of.
   const switchedOff = requested.length ? {} : (manifest?.switchedOff ?? {});
 
   const report = analyze({
@@ -313,7 +313,7 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
   }
   if (others.length) {
     write(`  ALSO SEEN       ${others.map((h) => `${h.name} (${h.evidence.join(', ')})`).join('; ')}`);
-    // 🔴 D59 reversed half of this. The always-loaded tier is a region in `AGENTS.md`, so a
+    // 🔴 The always-loaded tier is a region in `AGENTS.md`, so a
     // repository already on that convention is not blind to what daoris writes — that file is
     // exactly where the largest tier lands. Only the on-demand tiers stay out of its reach, and
     // saying so is the difference between a warning and a wrong one.
@@ -352,7 +352,7 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
     write(`  ${report.updates.length} file(s) daoris already owns would be updated — no conflict.`);
   }
 
-  // A pack that would take a core row out is a different choice from one that only adds (D71), so it
+  // A pack that would take a core row out is a different choice from one that only adds, so it
   // is said while the packs are being chosen — with the reason, and the fact that nothing goes off
   // until the manifest confirms it.
   if (report.offers.length || report.switchedOff.length) {
@@ -386,8 +386,8 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
 
   write('');
   const { current, projected, limit } = report.budget;
-  // "OVER" used to imply the first `check` would fail; since D54 it does not, and a projection that
-  // over-promises a failure is the same misleading sentence in the other direction.
+  // "OVER" is advisory: `check` does not fail on it, and a projection that
+  // over-promises a failure is a misleading sentence.
   const verdict = projected > limit
     ? `OVER by ${projected - limit} — advisory, not a gate`
     : `${limit - projected} to spare`;

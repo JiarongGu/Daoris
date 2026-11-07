@@ -29,7 +29,7 @@ function localDocs(root: string, target: string, harness: Harness = HARNESSES[DE
   const found = [];
 
   for (const tier of Object.values(harness.tiers)) {
-    // The always-loaded tier is a span in a file the repository owns (D59), and a repository's OWN
+    // The always-loaded tier is a span in a file the repository owns, and a repository's OWN
     // always-loaded text lives in that same file outside the region — which is its own prose, not a
     // document this can enumerate.
     if (!tier.dir) continue;
@@ -60,27 +60,27 @@ export function commandInit(
   if (existsSync(join(root, MANIFEST_FILE))) {
     throw new DaorisError(`${MANIFEST_FILE} already exists — edit it, or delete it to start over`);
   }
-  // A new adopter may choose the agents layout (D117). Resolved before anything is written, so an
+  // A new adopter may choose the agents layout. Resolved before anything is written, so an
   // unknown name is a tool error naming what exists and leaves no manifest behind. The older layout
   // stays the default: the family's newcomers write `.claude/knowledge/` after `init`, and the service
-  // reads `.claude` until it reads the lock's root (LAYOUT4).
+  // reads `.claude` until it reads the lock's root.
   const harness = resolveHarness(flagValue(argv, '--harness') ?? DEFAULT_HARNESS);
   const older = harness.id === DEFAULT_HARNESS;
   const canon = readCanon(resolveCanonRoot(packageRoot));
-  // Planned before anything is written and applied before the manifest (INIT1): a run that fails between the two
+  // Planned before anything is written and applied before the manifest: a run that fails between the two
   // leaves the file a re-run keeps, rather than a manifest that refuses the re-run before it is written.
   const lineEndings = planLineEndings(root);
   applyLineEndings(root, lineEndings);
 
   writeManifest(root, {
-    // The npm package the canon shipped in, at the canon's version (DIST1, D105): provenance, and the
-    // command to re-run as `npx <source> sync` (D11). A git ref could not run: the repository's root
+    // The npm package the canon ships in, at the canon's version: provenance, and the
+    // command to re-run as `npx <source> sync`. A git ref cannot run: the repository's root
     // package is a private workspace with no `bin`.
     source: `daoris@${canon.version}`,
     packs: [],
     ...(older ? {} : { harness: harness.id }),
     target: harness.defaultTarget,
-    // Declared, never found (D117 §2.2): a folder with an AGENTS.md of its own is named here.
+    // Declared, never found: a folder with an AGENTS.md of its own is named here.
     ...(older ? {} : { rooms: [] }),
     coreBudgetBytes: 30000,
     // Scaffolded empty and deliberately so. Filling it in is how a repository registers what it is and
@@ -99,7 +99,7 @@ export function commandInit(
   write('  available packs:');
   for (const pack of [...canon.packs.values()].filter((entry) => entry.name !== 'core')) {
     write(`    ${pack.name.padEnd(20)} — ${pack.description}`);
-    // Said at the moment of choosing (D71): a pack that would take a core row out is a different
+    // Said at the moment of choosing: a pack that would take a core row out is a different
     // choice from one that only adds, and nothing it offers goes off until the manifest confirms it.
     const switches = Object.keys(pack.switchesOff);
     if (switches.length) {
@@ -113,27 +113,27 @@ export function commandInit(
     write("  this repo's own docs (never synced, never touched):");
     for (const file of local) write(`    ${file}`);
   }
-  // Under the root the older layout used, its index lists nothing (D117 §5.2): each is named with the
-  // move that brings it under the target, which is the repository's own act (D5).
+  // Under the root the older layout uses, its index lists nothing: each is named with the
+  // move that brings it under the target, which is the repository's own act.
   const former = formerDocuments({ root, harness, target: harness.defaultTarget });
   if (former.length) {
     write('');
     write(`  this repo's own docs where the ${harness.id} layout's index will not list them:`);
     for (const doc of former) write(`    ${doc.path} — ${doc.move}`);
   }
-  // Said now, because `sync` will refuse it (D117 §5.4): the choice of what replaces it is the repository's.
+  // Said now, because `sync` will refuse it: the choice of what replaces it is the repository's.
   const links = linkProblems(root, { pairs: ['AGENTS.md', 'CLAUDE.md'] });
   if (links.length) {
     write('');
     for (const problem of links) write(`  ${describeLink(problem)}`);
   }
-  // The repository's own file, kept as it is (INIT1): said, because a checkout with core.autocrlf holds CRLF.
+  // The repository's own file, kept as it is: said, because a checkout with core.autocrlf holds CRLF.
   if (lineEndings.state === 'kept' && lineEndings.pinned === false) {
     write('');
     write(`  ${lineEndings.path} is this repo's own, left as it is: it pins no line endings for every file, so a`);
     write(`  machine with core.autocrlf checks out CRLF where sync wrote LF. \`${LINE_ENDINGS_RULE}\` pins them.`);
   }
-  // Named and never written (D122 §2.7): declaring is the repository's act, done by its own session.
+  // Named and never written: declaring is the repository's act, done by its own session.
   sayCandidates(candidateDocuments(root), write);
   write('');
   write('  then: daoris sync');
@@ -144,7 +144,7 @@ export function commandStatus(
   { root, argv = [], write, packageRoot }:
     Pick<CommandArgs, 'root' | 'write' | 'packageRoot'> & { argv?: CommandArgs['argv'] },
 ): ExitCode {
-  // ONEWAY1ai-i: this machine's remotes are `daoris remote list`'s, the desktop's program's; a repository's status says the repository.
+  // This machine's remotes are `daoris remote list`'s, the desktop's program's; a repository's status says the repository.
   if (argv.includes('--machine')) {
     throw new DaorisError('`status --machine` is no flag now: `daoris remote list` reads this machine\'s remotes; nothing was done.');
   }
@@ -157,7 +157,7 @@ export function commandStatus(
   // separately are two paths that can disagree about whether an update exists — the same reasoning
   // that gave the service one QuestExchange for its two hosts.
   const inspection = lock ? inspect({ root, manifest, lock }) : null;
-  // Where the files are is the lock's answer (D117 §5.1), so a pending move lists them where they stand.
+  // Where the files are is the lock's answer, so a pending move lists them where they stand.
   const was = lockLayout(root, lock, manifest);
   const local = localDocs(root, was.target, was.harness);
   const canonAvailable = existsSync(canonRoot);
@@ -170,7 +170,7 @@ export function commandStatus(
      * canons differ, which no content comparison can order.
      */
     direction: 'newer' | 'unknown';
-    /** This daoris's canon and the one the lock was written from (null for a lock from before the digest). */
+    /** This daoris's canon and the one the lock is written from (null for a lock from before the digest). */
     digest: { carried: string; locked: string | null };
     changed: string[];
     added: string[];
@@ -180,7 +180,7 @@ export function commandStatus(
   let notes: ReturnType<typeof notesBetween> = [];
 
   // What is switched off, from the LOCK — what is actually true here — with each pack's reason when
-  // the canon can supply it; and what a selected pack offers that nobody confirmed (D71). The owner-
+  // the canon can supply it; and what a selected pack offers that nobody confirmed. The owner-
   // facing half of "never silent": `check` names the rows, and this says why.
   const canon = canonAvailable ? readCanon(canonRoot) : null;
   // A summary reports a defect rather than dying of it: an unknown pack or a confirmation no pack
@@ -202,7 +202,7 @@ export function commandStatus(
   }));
   const offers = selection?.offers ?? [];
 
-  // The keeps (D230): each with whether the canon's file moved since it was judged, where this daoris's canon can say.
+  // The keeps: each with whether the canon's file moved since its judgement, where this daoris's canon can say.
   // A kept file is never an update or drift below, so it is named here alone, and again once its canon file moves.
   const keeps = canon && selection
     ? keepStates(manifest, canon, selection.files, (file) => holds(root, manifest.harnessDescriptor, was.target, file))
@@ -210,17 +210,17 @@ export function commandStatus(
   const kept = keeps?.kept ?? Object.entries(manifest.kept ?? {})
     .map(([target, keep]) => ({ target, ...keep, now: null, reopened: false, absentCore: false }));
 
-  // A lock a newer canon wrote is not an update: `sync` and `upstream` refuse it (WSSETUP4, D124 §1.4), so
+  // A lock a newer canon wrote is not an update: `sync` and `upstream` refuse it, so
   // this says so and names the tool at the lock's version, rather than sending the person to `sync`.
   const behind = canon && lock ? newerLock(lock, canon.version) : null;
 
-  // status may reach the canon; `check` deliberately may not (D8), which is why
+  // status may reach the canon; `check` deliberately may not, which is why
   // "a newer canon exists" is reported here and never gates a build.
   //
   // The sync's own plan runs whatever the versions say: the stamp stays at 0.0.1 through every 0.0.x
   // build, and gating on it hid every update from every adopter. Only the version orders two canons, so files are
   // behind only under an older lock; an equal version over another canon is a difference whose side cannot be told,
-  // and sync is never offered for it, since from an older daoris it would write the older text back (WSSETUP4).
+  // and sync is never offered for it, since from an older daoris it would write the older text back.
   if (canon && lock && !selectionProblem && !behind) {
     const newer = canon.version !== lock.canonVersion;
     const carried = canonDigest(canon);
@@ -247,11 +247,11 @@ export function commandStatus(
     }
   }
 
-  // For the agent operator (D37): the same facts, in a shape it can act on rather than parse.
+  // For the agent operator: the same facts, in a shape it can act on rather than parse.
   if (argv.includes('--json')) {
     write(JSON.stringify({
       harness: manifest.harnessDescriptor.name,
-      // The descriptor by its manifest name, its rooms, and how many mirror files it keeps (D117).
+      // The descriptor by its manifest name, its rooms, and how many mirror files it keeps.
       layout: manifest.harnessDescriptor.id,
       source: manifest.source,
       packs: ['core', ...manifest.packs],
@@ -267,7 +267,7 @@ export function commandStatus(
       drifted: inspection?.drifted ?? [],
       missing: inspection?.missing ?? [],
       stalePacks: inspection?.stalePacks ?? [],
-      // Everything `check` fails on, so "why is check red?" is answered here too (REV3 CLI F11).
+      // Everything `check` fails on, so "why is check red?" is answered here too.
       staleSwitches: inspection?.staleSwitches ?? [],
       index: inspection?.index ?? null,
       indexStale: inspection?.indexStale ?? false,
@@ -279,25 +279,25 @@ export function commandStatus(
       roomsWithoutInstructions: inspection?.roomsWithoutInstructions ?? [],
       roomPointersMissing: inspection?.roomPointersMissing ?? [],
       links: inspection?.links ?? [],
-      // The declared documents and their facts (D122 §2.7–§2.8).
+      // The declared documents and their facts.
       documents: manifest.documents,
       documentsMissing: inspection?.documentsMissing ?? [],
       documentLinks: inspection?.documentLinks ?? [],
       documentsStale: inspection?.documentsStale ?? false,
       switchedOff,
       offers,
-      // Each keep with the canon file's digest it was judged against and the canon's now (null where unread), and the
-      // keeps the canon no longer ships here, which are dropped (D230).
+      // Each keep with the canon file's digest it is judged against and the canon's now (null where unread), and the
+      // keeps the canon no longer ships here, which are dropped.
       kept,
       keepsDropped: keeps?.dropped ?? [],
       selectionProblem,
-      // The one disclosure control in the manifest (D47 §4) — "what is this repository sharing?" is
+      // The one disclosure control in the manifest — "what is this repository sharing?" is
       // exactly the question status exists to answer, and silence means local.
       remote: manifest.remote ?? null,
       local,
       canonSourceAvailable: canonAvailable,
       update: update ? { ...update, notes } : null,
-      // A lock a newer canon wrote, which `sync` and `upstream` refuse, and the tool to run instead (WSSETUP4).
+      // A lock a newer canon wrote, which `sync` and `upstream` refuse, and the tool to run instead.
       newerLock: behind,
     }, null, 2));
     return 0;
