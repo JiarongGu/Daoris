@@ -13,7 +13,7 @@ const ROOT = 'C:/somewhere/engine';
 const TREE = 'C:/somewhere/data/trees/aurora/engine/s-2394e5d9';
 
 const session = (over: Partial<Session> = {}): Session => ({
-  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', adapter: 'claude-code', state: 'working', kind: 'driven',
+  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', door: 'claude-code', state: 'working', kind: 'driven',
   created: '2026-10-02T09:00:00Z', updated: '2026-10-02T09:30:00Z', tree: ROOT, ...over,
 });
 

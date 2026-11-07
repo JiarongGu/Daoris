@@ -14,9 +14,9 @@ public sealed class ParticipantWorkHostTests(LocalHost host) : IClassFixture<Loc
     {
         var published = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title = "A quest with work", body = "Go on." });
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
-        var driven = await host.PostAsync("/api/sessions", new { quest, adapter = "stub", tree = host.RootOf("keeper-work-driven") });
-        var chat = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", tree = host.RootOf("keeper-work-chat") });
-        var help = await host.PostAsync("/api/sessions/help", new { adapter = "stub", room = Path.Combine(host.Repositories, "rooms", "foundation1c") });
+        var driven = await host.PostAsync("/api/sessions", new { quest, door = "stub", tree = host.RootOf("keeper-work-driven") });
+        var chat = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", door = "stub", tree = host.RootOf("keeper-work-chat") });
+        var help = await host.PostAsync("/api/sessions/help", new { door = "stub", room = Path.Combine(host.Repositories, "rooms", "foundation1c") });
 
         Assert.Equal((200, 200, 200), (driven.Status, chat.Status, help.Status));
         var ids = new[] { driven, chat, help }.Select(opened => opened.Json.GetProperty("session").GetProperty("id").GetString()!).ToArray();

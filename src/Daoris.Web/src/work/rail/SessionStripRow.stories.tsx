@@ -8,7 +8,7 @@ import { SessionStripRow } from './SessionRow';
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
 
 const SESSION: Session = {
-  id: 's1a2b3c4', quest: null, repository: 'engine', adapter: 'claude-code',
+  id: 's1a2b3c4', quest: null, repository: 'engine', door: 'claude-code',
   state: 'working', kind: 'chat', created: at(20), updated: at(1),
 };
 

@@ -8,7 +8,7 @@ namespace Daoris.Knowledge;
 /// A driven session always has one: it is what the driver planned from.
 /// </param>
 /// <param name="Repository">The repository it runs in — the quest's receiver, denormalized for listing.</param>
-/// <param name="Adapter">Which harness adapter spawned it. A name for the record, never a model (D24).</param>
+/// <param name="Door">Which door spawned it. A name for the record, never a model (D24).</param>
 /// <param name="State">Where it is.</param>
 /// <param name="Note">What the driver observed, when a state needs explaining.</param>
 /// <param name="Evidence">The outcome bundle the person reviews — gate results, landed commits.</param>
@@ -25,7 +25,7 @@ namespace Daoris.Knowledge;
 /// the same one-session-per-repository lock — which is the point: a conversation is a session, not a
 /// second kind of thing with its own rules to keep in step.
 /// </param>
-/// <param name="HarnessVersion">
+/// <param name="DoorVersion">
 /// The harness version observed at spawn (D49 §4) — "which tool produced this", answerable later. The
 /// same authorship instinct as version-stamping a release, applied to the tool that did the work. It
 /// travels: it is a fact about a tool, not about a machine.
@@ -50,7 +50,7 @@ public sealed record Session(
     string Id,
     string? Quest,
     string Repository,
-    string Adapter,
+    string Door,
     SessionState State,
     string? Note,
     string? Evidence,
@@ -59,7 +59,7 @@ public sealed record Session(
     DateTimeOffset Updated,
     string Workspace = Workspaces.Default,
     SessionKind Kind = SessionKind.Driven,
-    string? HarnessVersion = null,
+    string? DoorVersion = null,
     string? Profile = null,
     string? Tree = null,
     string? BaseCommit = null)

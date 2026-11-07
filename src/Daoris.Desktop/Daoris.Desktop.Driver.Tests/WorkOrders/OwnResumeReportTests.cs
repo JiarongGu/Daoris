@@ -36,7 +36,7 @@ public sealed class OwnResumeReportTests : IDisposable
                 ["id"] = "w-" + id, ["text"] = "go on", ["at"] = T0.AddMinutes(10).ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
             }),
         };
-        if (adapter is not null) record["adapter"] = adapter;
+        if (adapter is not null) record["door"] = adapter;
         if (asked is not null) record["asked"] = new JsonObject { ["agent"] = asked };
         return record;
     }

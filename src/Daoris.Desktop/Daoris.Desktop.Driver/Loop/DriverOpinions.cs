@@ -135,7 +135,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                         Product = family.Product,
                         Maker = family.Maker,
                         Account = selection.Profile,
-                        HarnessVersion = selection.Version,
+                        DoorVersion = selection.Version,
                     },
                     ct)
                 .ConfigureAwait(false);

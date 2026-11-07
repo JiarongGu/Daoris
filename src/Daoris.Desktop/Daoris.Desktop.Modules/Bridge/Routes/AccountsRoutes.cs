@@ -304,7 +304,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         return Counted(
             document.RootElement.EnumerateArray()
                 .Where(session => session.ValueKind == JsonValueKind.Object)
-                .Select(session => (Json.NonEmpty(session, "id"), Json.NonEmpty(session, "adapter"), Json.NonEmpty(session, "profile"), Json.NonEmpty(session, "state"))),
+                .Select(session => (Json.NonEmpty(session, "id"), Json.NonEmpty(session, "door"), Json.NonEmpty(session, "profile"), Json.NonEmpty(session, "state"))),
             ownerOf);
     }
 

@@ -20,10 +20,10 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
     /// <summary>A record as the service answers it to this machine: every field it answers, and the page's among them.</summary>
     private static JsonObject Record(string id, string workspace, string state = "completed", string repository = "engine") => new()
     {
-        ["id"] = id, ["quest"] = "q1", ["repository"] = repository, ["adapter"] = "claude-code", ["state"] = state,
+        ["id"] = id, ["quest"] = "q1", ["repository"] = repository, ["door"] = "claude-code", ["state"] = state,
         ["note"] = "it read the plan", ["evidence"] = "commit abc", ["transcript"] = $"X:/daoris/transcripts/{id}.jsonl",
         ["created"] = "2026-10-19T08:00:00+00:00", ["updated"] = "2026-10-19T09:00:00+00:00", ["workspace"] = workspace,
-        ["kind"] = "driven", ["harnessVersion"] = "2.1.4", ["profile"] = "work", ["tree"] = $"X:/daoris/trees/engine/{id}",
+        ["kind"] = "driven", ["doorVersion"] = "2.1.4", ["profile"] = "work", ["tree"] = $"X:/daoris/trees/engine/{id}",
         ["baseCommit"] = new string('a', 40), ["ask"] = null, ["took"] = false, ["interrupted"] = false,
         ["limit"] = false, ["deletable"] = true, ["said"] = new JsonArray(), ["noteParts"] = new JsonArray(new JsonObject { ["words"] = "done" }),
         ["opinion"] = null, ["serves"] = null, ["from"] = null, ["fromWhy"] = null, ["fromBy"] = null, ["entry"] = "local/engine",

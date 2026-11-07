@@ -95,33 +95,33 @@ public sealed class SessionLedger(
     /// <summary>Open an intake for an ask (D65 §1b); see <see cref="SessionOpening.OpenIntakeAsync"/>.</summary>
     public Task<SessionOpenOutcome> OpenIntakeAsync(
         string askId, string adapter, string room, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, CancellationToken ct = default, string? actor = null) =>
-        opening.OpenIntakeAsync(askId, adapter, room, now, harnessVersion, profile, ct, actor);
+        string? doorVersion = null, string? profile = null, CancellationToken ct = default, string? actor = null) =>
+        opening.OpenIntakeAsync(askId, adapter, room, now, doorVersion, profile, ct, actor);
 
     /// <summary>Open Ask Daoris's conversation (HELP1a, D89); see <see cref="SessionOpening.OpenHelpAsync"/>.</summary>
     public Task<SessionOpenOutcome> OpenHelpAsync(
         string adapter, string room, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, string? workspace = null, string? mode = null,
+        string? doorVersion = null, string? profile = null, string? workspace = null, string? mode = null,
         CancellationToken ct = default, string? actor = null) =>
-        opening.OpenHelpAsync(adapter, room, now, harnessVersion, profile, workspace, mode, ct, actor);
+        opening.OpenHelpAsync(adapter, room, now, doorVersion, profile, workspace, mode, ct, actor);
 
     /// <summary>Open a chat in a repository (D49 §3); see <see cref="SessionOpening.OpenChatAsync"/>.</summary>
     public Task<SessionOpenOutcome> OpenChatAsync(
         string repository, string adapter, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, string? tree = null,
+        string? doorVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
         string? from = null, string? fromWhy = null, string? fromBy = null, string? actor = null, string? opens = null,
         OpenMoves? moves = null) =>
-        opening.OpenChatAsync(repository, adapter, now, harnessVersion, profile, tree, baseCommit, ct, from, fromWhy, fromBy, actor, opens, moves);
+        opening.OpenChatAsync(repository, adapter, now, doorVersion, profile, tree, baseCommit, ct, from, fromWhy, fromBy, actor, opens, moves);
 
     /// <summary>Queue a session for an open quest; see <see cref="SessionOpening.OpenAsync"/>.</summary>
     public Task<SessionOpenOutcome> OpenAsync(
         string questId, string adapter, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, string? tree = null,
+        string? doorVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
         string? from = null, string? fromWhy = null, string? fromBy = null,
         IReadOnlyDictionary<string, string>? access = null, string? actor = null, string? opens = null, OpenMoves? moves = null) =>
-        opening.OpenAsync(questId, adapter, now, harnessVersion, profile, tree, baseCommit, ct, from, fromWhy, fromBy, access, actor, opens, moves);
+        opening.OpenAsync(questId, adapter, now, doorVersion, profile, tree, baseCommit, ct, from, fromWhy, fromBy, access, actor, opens, moves);
 
     /// <summary>Record the access mode an Ask Daoris conversation goes on under (HELPMODE1a2); see <see cref="SessionKeeps.KeepHelpModeAsync"/>.</summary>
     /// <exception cref="ArgumentException">A mode the ledger does not know.</exception>

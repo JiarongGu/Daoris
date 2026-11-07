@@ -33,7 +33,7 @@ import type { Consideration } from '../data/signals';
 import type { RuleProposal } from '../settings/repository/AgentRules';
 import type { PushedAttention } from '../work/attention/attention';
 
-const base = { adapter: 'claude-code', created: '2026-10-01T09:00:00Z', updated: '2026-10-01T09:30:00Z', workspace: 'default' };
+const base = { door: 'claude-code', created: '2026-10-01T09:00:00Z', updated: '2026-10-01T09:30:00Z', workspace: 'default' };
 
 const SESSIONS = [
   // Parked to ask the person: waiting on you.

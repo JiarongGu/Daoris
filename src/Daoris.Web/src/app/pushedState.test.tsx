@@ -117,7 +117,7 @@ const LINES_SNAPSHOT = {
 };
 
 const record = (id: string, extra: Record<string, unknown> = {}) => ({
-  id, repository: 'engine', adapter: 'claude-code', state: 'completed', created: '2026-10-19T08:00:00+00:00',
+  id, repository: 'engine', door: 'claude-code', state: 'completed', created: '2026-10-19T08:00:00+00:00',
   updated: '2026-10-19T09:00:00+00:00', workspace: 'default', ...extra,
 });
 

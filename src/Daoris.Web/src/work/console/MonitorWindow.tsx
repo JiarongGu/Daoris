@@ -219,7 +219,7 @@ function Tile({ session, quest, opening, taking, onDetach }: {
   // a tile of console alone said "Nothing said yet" over a kept conversation. A text door, or a
   // roster that has not answered, keeps the console, which claims least.
   const harnesses = useHarnesses();
-  const structured = harnesses.data?.harnesses?.find((row) => row.door === session.adapter)?.structured === true;
+  const structured = harnesses.data?.harnesses?.find((row) => row.door === session.door)?.structured === true;
   const body = useRef<HTMLDivElement>(null);
 
   return (
@@ -231,7 +231,7 @@ function Tile({ session, quest, opening, taking, onDetach }: {
             <div ref={body} className="min-h-0 flex-1 overflow-y-auto">
               <SessionConversation
                 session={session.id}
-                adapter={session.adapter}
+                adapter={session.door}
                 chat={session.kind === 'chat'}
                 tree={session.tree}
                 live

@@ -20,10 +20,10 @@ const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4',
   quest: '7a82cc',
   repository: 'engine',
-  adapter: 'claude-code',
+  door: 'claude-code',
   state: 'working',
   kind: 'driven',
-  harnessVersion: '2.1.4',
+  doorVersion: '2.1.4',
   profile: 'owner',
   created: '2026-09-21T09:46:00Z',
   updated: '2026-09-21T11:56:00Z',
@@ -344,7 +344,7 @@ describe('the attended session\'s head', () => {
    * title with a door to it; where the frame holds no such session, its id in mono with no door.
    */
   describe('the sessions it continues and helps', () => {
-    const earlier = session({ id: 'a1b2c3d4', quest: null, kind: 'chat', adapter: 'codex' });
+    const earlier = session({ id: 'a1b2c3d4', quest: null, kind: 'chat', door: 'codex' });
     const asker = session({ id: 'b2c3d4e5' });
 
     it('names the session it continues by its title, with a door to it', () => {

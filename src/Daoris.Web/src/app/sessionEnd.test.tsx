@@ -63,7 +63,7 @@ const world = {
 };
 
 const session = () => ({
-  id: SESSION, quest: 'q1', repository: 'engine', adapter: 'claude-code', kind: 'driven', state: world.state,
+  id: SESSION, quest: 'q1', repository: 'engine', door: 'claude-code', kind: 'driven', state: world.state,
   created: STARTED, updated: world.state === 'working' ? STARTED : ENDING, workspace: 'default',
   ...(world.state === 'completed' ? { note: 'Closed q1 done; landed by its rule.' } : {}),
 });

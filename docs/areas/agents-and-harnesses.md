@@ -443,14 +443,19 @@ Agents page, and `orient-index` and `code-map` once files move.
   every source spelling `adapter`, `harness`, `intakeAdapter`, `helperAdapter`, `harnessVersion`, `pipe` or `acp` as a stored name is one
   of the records below, by file). Renamed through the migration's `store-names` step (store step 22): a binding's door is
   `bindings.door`, and `role_staffing_projection` and `role_staffing_found`, which held `driver.json`'s old keys and which no code read,
-  are dropped. Kept, each with its end: `driver.json`'s `adapter`, `intakeAdapter` and `helperAdapter`, read only by the staffing import
-  nocompat1's `StaffingStep` runs and then takes out, deleted with that step when the next release's migration replaces nocompat1 (D232
-  point 2); **t-ii**, the `adapter` word: the session record's door (the service's `sessions.adapter` and `harness_version`, the sync's,
-  the contract's and the page's `adapter` and `harnessVersion`, the desktop's reads of the record) and every record that copies it (an
-  opinion's, a memory operation's author's `adapter` and `harness`, the machine log's fields, a note's part, a plugin's `session.ended`,
-  a brainstorm's and a meeting's files, `START_CHAT`'s press), kept because the record's one field runs across the service's store, the sync
-  between hosts and some hundred and twenty reads on the page, so it is renamed `door` in a chunk of its own, the service's schema step,
-  the contract and the page together; **t-iii**, the lineage's `harness` and `acp` signal, the service's `LineageFile`, which a plugin
+  are dropped. The session record names its door `door` and the version its spawn observed `doorVersion`: the service's
+  `sessions.door` and `sessions.door_version`, the sync's wire, the contract, the desktop's reads, the page and the tools that read a
+  record. A store whose table still spells `adapter` and `harness_version` has both renamed as it opens (`SessionColumnNames`): the service
+  moves its own store, as it adds its columns, because a shared host opens the same schema and runs no desktop migration. A remote whose
+  host runs an older build sends `adapter`, read here as the door `unknown`; no reader of the old field is kept. Kept, each with its end:
+  `driver.json`'s `adapter`, `intakeAdapter` and `helperAdapter`, read only by the staffing import nocompat1's `StaffingStep` runs and then
+  takes out, deleted with that step when the next release's migration replaces nocompat1 (D232 point 2); the session store's rename,
+  deleted with nocompat1's steps; a plugin's `session.ended` frame's `adapter`, which other repositories' published plugins read, renamed
+  with the work-event grammar's next version (`WorkEventGrammar.Version`, 3), never under a plugin reading this one; **t-ii**'s rest, the
+  records that copy the session's door, each renamed `door` with its own conversion: an opinion's reviewer (the service's opinions), a
+  memory operation's author's `adapter` and `harness` (the service's memory operations), the machine log's fields (and the usage and
+  orient reports that read them), a note's part (`resumed.*`'s `adapter` value, the why `adapter`, `unable`'s value and their catalogue
+  placeholders), a brainstorm's and a meeting's files, and `START_CHAT`'s press; **t-iii**, the lineage's `harness` and `acp` signal, the service's `LineageFile`, which a plugin
   may read, so its end waits on that contract (the page's catalogue keys `harness.wire.acp` and `harness.wire.pipe` keep their names).
   Done: the account presses (`AccountsReadPress`, `AccountUsePress`, `HarnessActionPress`, `HarnessInputPress`, `HarnessCancelPress`,
   `AgentSettingsPress`), the `HARNESSES` and `ACCOUNTS` answers, the `HARNESS_ENDED` news and the attention slice's account row name their

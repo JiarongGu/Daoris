@@ -109,7 +109,7 @@ internal sealed class MemoryMachine : IAsyncDisposable
 
     /// <summary>An operation <paramref name="session"/> stages at <paramref name="at"/>, as its connector does.</summary>
     public Task<MemoryOp> StageAsync(Session session, MemoryChange change, DateTimeOffset at) =>
-        Memory.StageAsync(session.Repository, change, new MemoryAuthor(session.Id, session.Workspace, session.Quest, session.Adapter, "2.1.0", "builder", "r3", at));
+        Memory.StageAsync(session.Repository, change, new MemoryAuthor(session.Id, session.Workspace, session.Quest, session.Door, "2.1.0", "builder", "r3", at));
 
     /// <summary>The finished tree's record of <see cref="Tree"/>, naming a landing or not.</summary>
     public static WorkRecordPost Post(bool landing, string folder = "s-1-20261031T100000000Z") =>

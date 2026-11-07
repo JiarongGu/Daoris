@@ -201,7 +201,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         var counted = CountTexts.GoOn(LineCountsRead.FactsOf(_context.Home, sessionId, json).Counts);
         var ask = new ResumeAsk(
             kept.Conversation, words,
-            woke is { } until ? LimitNotes.Resumed(until) : OpeningNote(words, adapter.Id.Value, selection.Version, record.HarnessVersion),
+            woke is { } until ? LimitNotes.Resumed(until) : OpeningNote(words, adapter.Id.Value, selection.Version, record.DoorVersion),
             Continuations.AfterWords(inSync, counted),
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
         {
@@ -295,7 +295,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             kept.Conversation, words,
             woke is { } until
                 ? LimitNotes.Resumed(until)
-                : Continuations.OpeningNoted(adapter.Id.Value, selection.Version, record.HarnessVersion, answer: false),
+                : Continuations.OpeningNoted(adapter.Id.Value, selection.Version, record.DoorVersion, answer: false),
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
         {
             // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first.

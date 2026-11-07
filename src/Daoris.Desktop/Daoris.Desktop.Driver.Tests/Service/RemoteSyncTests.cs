@@ -746,7 +746,7 @@ public sealed class RemoteSyncRunTests : IDisposable
                    "joined": true, "sharesKnowledge": true }]
                 """),
             _ when url.StartsWith($"{Local}/api/sessions") => Json("""
-                [{ "id": "ab12cd34", "quest": "abc123", "repository": "Shared", "adapter": "stub",
+                [{ "id": "ab12cd34", "quest": "abc123", "repository": "Shared", "door": "stub",
                    "state": "completed", "created": "2026-09-20T10:00:00+00:00", "updated": "2026-09-20T10:01:00+00:00" }]
                 """),
             _ when url.StartsWith($"{Local}/api/entries") => Json("[]"),

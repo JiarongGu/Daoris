@@ -201,7 +201,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
         Assert.Equal(
             (id, HandOverWhy.Resume, HandOverBy.Daoris, _root, "acp-stub"),
             (part["from"]?.GetValue<string>(), part["fromWhy"]?.GetValue<string>(), part["fromBy"]?.GetValue<string>(),
-             part["tree"]?.GetValue<string>(), part["adapter"]?.GetValue<string>()));
+             part["tree"]?.GetValue<string>(), part["door"]?.GetValue<string>()));
         Assert.Equal([(id, "w1", (string?)next)], ledger.TakenBy);
         Assert.Empty(ledger.Said(id));
         Assert.Null(new GoOnMarks(_home).Read(id));

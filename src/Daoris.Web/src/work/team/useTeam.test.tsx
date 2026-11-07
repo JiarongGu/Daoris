@@ -19,7 +19,7 @@ vi.mock('../../bridge/sessions/channelOutside', () => ({
 }));
 
 const session = (over: Partial<Session> = {}) => ({
-  id: 's1', adapter: 'claude-acp', repository: 'driver', state: 'working', tree: 'trees/s1', ...over,
+  id: 's1', door: 'claude-acp', repository: 'driver', state: 'working', tree: 'trees/s1', ...over,
 }) as Session;
 
 const teamOf = (attended: Session, open = vi.fn()) => {

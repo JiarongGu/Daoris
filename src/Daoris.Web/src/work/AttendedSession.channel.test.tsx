@@ -14,7 +14,7 @@ import { AttendedSession } from './AttendedSession';
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
 const SESSION: Session = {
-  id: 's1a2b3c4', quest: 'q1', repository: 'db', adapter: 'claude-code', state: 'working', kind: 'driven',
+  id: 's1a2b3c4', quest: 'q1', repository: 'db', door: 'claude-code', state: 'working', kind: 'driven',
   created: '2026-09-21T09:46:00Z', updated: '2026-09-21T11:56:00Z',
 };
 

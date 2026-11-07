@@ -15,7 +15,7 @@ public sealed class SessionOpensHostTests(LocalHost host) : IClassFixture<LocalH
         var left = await host.Composed.Sessions.CreateAsync(null, "Keeper", "stub", now, kind: SessionKind.Chat);
         await host.Composed.Sessions.SetStateAsync(left.Id, SessionState.Completed, null, null, null, now);
         var key = $"invalid/{Guid.NewGuid():N}";
-        var answer = await host.PostAsync("/api/sessions", new { quest = quest == "published" ? published.Id : quest, adapter, from = left.Id, opens = key });
+        var answer = await host.PostAsync("/api/sessions", new { quest = quest == "published" ? published.Id : quest, door = adapter, from = left.Id, opens = key });
         Assert.Equal(400, answer.Status);
         Assert.Equal(key, answer.Json.GetProperty("opens").GetString());
         Assert.Null(await host.Composed.Sessions.Opens.FindAsync(key));
@@ -40,7 +40,7 @@ public sealed class SessionOpensHostTests(LocalHost host) : IClassFixture<LocalH
         var left = await host.Composed.Sessions.CreateAsync(null, "Keeper", "stub", now, kind: SessionKind.Chat);
         await host.Composed.Sessions.SetStateAsync(left.Id, SessionState.Completed, null, null, null, now);
         await host.Composed.Sessions.KeepSaidAsync(left.Id, new SaidWord("waiting", "not moved", now, []));
-        var first = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", from = left.Id, opens = "host/key" });
+        var first = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", door = "stub", from = left.Id, opens = "host/key" });
         Assert.Equal(200, first.Status);
         Assert.Equal("host/key", first.Json.GetProperty("opens").GetString());
         Assert.Empty(first.Json.GetProperty("transfer").EnumerateArray());
@@ -66,7 +66,7 @@ public sealed class SessionOpensHostTests(LocalHost host) : IClassFixture<LocalH
         // A tree of its own, so another case's open conversation in Keeper's main tree holds nothing this open needs.
         var opened = await host.PostAsync("/api/sessions/chat", new
         {
-            repository = "Keeper", adapter = "stub", from = left.Id, opens = $"head/{Guid.NewGuid():N}", tree = $"trees/default/Keeper/s-{Guid.NewGuid():N}"[..36],
+            repository = "Keeper", door = "stub", from = left.Id, opens = $"head/{Guid.NewGuid():N}", tree = $"trees/default/Keeper/s-{Guid.NewGuid():N}"[..36],
         });
         Assert.Equal(200, opened.Status);
         var head = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
@@ -95,7 +95,7 @@ public sealed class SessionOpensHostTests(LocalHost host) : IClassFixture<LocalH
         var key = $"moves/{Guid.NewGuid():N}";
         var body = new
         {
-            repository = "Keeper", adapter = "stub", from = left.Id, opens = key, tree = $"trees/default/Keeper/s-{Guid.NewGuid():N}"[..36],
+            repository = "Keeper", door = "stub", from = left.Id, opens = key, tree = $"trees/default/Keeper/s-{Guid.NewGuid():N}"[..36],
             moves = new { from = left.Id, words = new[] { "a1b2c3d4" }, read = new[] { "a1b2c3d4" } },
         };
 
@@ -138,17 +138,17 @@ public sealed class SessionOpensHostTests(LocalHost host) : IClassFixture<LocalH
         // Each in a tree of its own, so an open this case's guard failed to refuse holds nothing another case's open needs.
         var unkeyed = await host.PostAsync("/api/sessions/chat", new
         {
-            repository = "Keeper", adapter = "stub", from = left.Id, tree = $"trees/default/Keeper/s-{Guid.NewGuid():N}"[..36],
+            repository = "Keeper", door = "stub", from = left.Id, tree = $"trees/default/Keeper/s-{Guid.NewGuid():N}"[..36],
             moves = new { from = left.Id, words = new[] { "a1b2c3d4" }, read = Array.Empty<string>() },
         });
         var elsewhere = await host.PostAsync("/api/sessions/chat", new
         {
-            repository = "Keeper", adapter = "stub", from = left.Id, opens = "moves/elsewhere", tree = $"trees/default/Keeper/s-{Guid.NewGuid():N}"[..36],
+            repository = "Keeper", door = "stub", from = left.Id, opens = "moves/elsewhere", tree = $"trees/default/Keeper/s-{Guid.NewGuid():N}"[..36],
             moves = new { from = "another", words = new[] { "a1b2c3d4" }, read = Array.Empty<string>() },
         });
         var unread = await host.PostAsync("/api/sessions", new
         {
-            quest = published.Id, adapter = "stub", from = left.Id, opens = "moves/unread", moves = new { from = left.Id, words = new[] { "a1b2c3d4" } },
+            quest = published.Id, door = "stub", from = left.Id, opens = "moves/unread", moves = new { from = left.Id, words = new[] { "a1b2c3d4" } },
         });
 
         Assert.Equal(400, unkeyed.Status);

@@ -40,7 +40,7 @@ internal sealed class SessionOpening(
     /// </remarks>
     public async Task<SessionOpenOutcome> OpenIntakeAsync(
         string askId, string adapter, string room, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, CancellationToken ct = default, string? actor = null)
+        string? doorVersion = null, string? profile = null, CancellationToken ct = default, string? actor = null)
     {
         var stored = asks is null ? null : await asks.FindAsync(askId, ct).ConfigureAwait(false);
         if (stored is null)
@@ -95,7 +95,7 @@ internal sealed class SessionOpening(
             var session = await sessions
                 .CreateAsync(
                     null, AskDesk.SenderOf(ask.Id), adapter, now, ask.Workspace, SessionKind.Chat,
-                    harnessVersion, profile, holding, baseCommit: null, inside, ask: ask.Id,
+                    doorVersion, profile, holding, baseCommit: null, inside, ask: ask.Id,
                     entryOrigin: SessionEntries.AskOrigin(ask.Id), entryPart: "intake", actor: actor)
                 .ConfigureAwait(false);
             await asks!.RecordIntakeAsync(ask.Id, session.Id, now, inside).ConfigureAwait(false);
@@ -131,7 +131,7 @@ internal sealed class SessionOpening(
     /// <exception cref="ArgumentException">No room, or a mode the ledger does not know.</exception>
     public async Task<SessionOpenOutcome> OpenHelpAsync(
         string adapter, string room, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, string? workspace = null, string? mode = null,
+        string? doorVersion = null, string? profile = null, string? workspace = null, string? mode = null,
         CancellationToken ct = default, string? actor = null)
     {
         var holding = Trees.Normalize(room)
@@ -173,7 +173,7 @@ internal sealed class SessionOpening(
             var session = await sessions
                 .CreateAsync(
                     null, SessionLedger.HelpRepository, adapter, now, circle, SessionKind.Chat,
-                    harnessVersion, profile, holding, baseCommit: null, inside, ownEntry: true, helpMode: running, actor: actor)
+                    doorVersion, profile, holding, baseCommit: null, inside, ownEntry: true, helpMode: running, actor: actor)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(
@@ -203,14 +203,14 @@ internal sealed class SessionOpening(
     /// <exception cref="ArgumentException"><paramref name="moves"/> without <paramref name="opens"/>, or moves that do not read; nothing is opened.</exception>
     public async Task<SessionOpenOutcome> OpenChatAsync(
         string repository, string adapter, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, string? tree = null,
+        string? doorVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
         string? from = null, string? fromWhy = null, string? fromBy = null, string? actor = null, string? opens = null,
         OpenMoves? moves = null)
     {
         if (opens is not null)
             return await KeyedOpenAsync(opens, from, moves, inside => OpenChatAsync(repository, adapter, now,
-                harnessVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, actor), ct).ConfigureAwait(false);
+                doorVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, actor), ct).ConfigureAwait(false);
         if (moves is not null) throw Unkeyed();
 
         if (string.IsNullOrWhiteSpace(repository)) throw new ArgumentException("repository is required");
@@ -254,7 +254,7 @@ internal sealed class SessionOpening(
             var session = await sessions
                 .CreateAsync(
                     null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat,
-                    harnessVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
+                    doorVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
                     entryOrigin: continuedOrigin, ownEntry: continuedOrigin is null, actor: actor)
                 .ConfigureAwait(false);
 
@@ -361,18 +361,18 @@ internal sealed class SessionOpening(
     /// </exception>
     public async Task<SessionOpenOutcome> OpenAsync(
         string questId, string adapter, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, string? tree = null,
+        string? doorVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
         string? from = null, string? fromWhy = null, string? fromBy = null,
         IReadOnlyDictionary<string, string>? access = null, string? actor = null, string? opens = null, OpenMoves? moves = null)
     {
         if (opens is not null)
             return await KeyedOpenAsync(opens, from, moves, inside => OpenAsync(questId, adapter, now,
-                harnessVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, access, actor), ct).ConfigureAwait(false);
+                doorVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, access, actor), ct).ConfigureAwait(false);
         if (moves is not null) throw Unkeyed();
 
         if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(adapter))
-            throw new ArgumentException("quest and adapter are required");
+            throw new ArgumentException("quest and door are required");
 
         // The caller's mistake is said before anything is read or held.
         var setup = SessionAccess.Judged(access);
@@ -463,7 +463,7 @@ internal sealed class SessionOpening(
             var session = await sessions
                 .CreateAsync(
                     quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
-                    harnessVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
+                    doorVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
                     entryOrigin: origin, access: setup, actor: actor)
                 .ConfigureAwait(false);
 

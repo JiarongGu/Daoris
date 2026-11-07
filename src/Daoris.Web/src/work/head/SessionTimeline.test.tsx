@@ -12,7 +12,7 @@ const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4',
   quest: '7a82cc',
   repository: 'engine',
-  adapter: 'claude-code',
+  door: 'claude-code',
   state: 'working',
   kind: 'driven',
   created: '2026-09-21T09:00:00Z',

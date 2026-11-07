@@ -362,7 +362,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     {
         using var ledger = Ledger();
         ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(
-            """[{"id":"done1","quest":"q4","repository":"engine","adapter":"claude-code","state":"completed","kind":"driven","created":"2026-10-02T09:50:00Z","updated":"2026-10-02T09:51:00Z","said":[{"id":"w1","text":"Also the readme.","at":"2026-10-02T10:00:00Z","files":[],"reopens":true}]}]"""));
+            """[{"id":"done1","quest":"q4","repository":"engine","door":"claude-code","state":"completed","kind":"driven","created":"2026-10-02T09:50:00Z","updated":"2026-10-02T09:51:00Z","said":[{"id":"w1","text":"Also the readme.","at":"2026-10-02T10:00:00Z","files":[],"reopens":true}]}]"""));
         var loop = await UpAsync(ledger);
         var until = new DateTimeOffset(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
         loop.Look.Record(
@@ -390,7 +390,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     {
         using var ledger = Ledger();
         ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(
-            """[{"id":"done1","quest":"q4","repository":"engine","adapter":"claude-code","profile":"work","state":"completed","kind":"driven","created":"2026-10-02T09:50:00Z","updated":"2026-10-02T09:51:00Z","said":[{"id":"w1","text":"Daoris: rebase.","at":"2026-10-02T10:00:00Z","files":[],"reopens":true,"from":"daoris","key":"rebase/done1/0123abc"}]}]"""));
+            """[{"id":"done1","quest":"q4","repository":"engine","door":"claude-code","profile":"work","state":"completed","kind":"driven","created":"2026-10-02T09:50:00Z","updated":"2026-10-02T09:51:00Z","said":[{"id":"w1","text":"Daoris: rebase.","at":"2026-10-02T10:00:00Z","files":[],"reopens":true,"from":"daoris","key":"rebase/done1/0123abc"}]}]"""));
         var loop = await UpAsync(ledger);
         var until = new DateTimeOffset(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
         const string reason = "Every account it may run on is at its limit: it goes on by itself once the `claude-code` account `home` is ready again at 12:00.";
@@ -1024,10 +1024,10 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     {
         var ledger = Ledger();
         string Chat(string id, string? at = null) =>
-            $$"""{"id":"{{id}}","repository":"engine","adapter":"claude-code","state":"completed","kind":"chat","deletable":true,{{(at is null ? "" : $"\"tree\":\"{at.Replace('\\', '/')}\",")}}"created":"2026-10-02T10:00:00Z","updated":"2026-10-02T10:05:00Z"}""";
+            $$"""{"id":"{{id}}","repository":"engine","door":"claude-code","state":"completed","kind":"chat","deletable":true,{{(at is null ? "" : $"\"tree\":\"{at.Replace('\\', '/')}\",")}}"created":"2026-10-02T10:00:00Z","updated":"2026-10-02T10:05:00Z"}""";
         var records = $"[{Chat("chat1")},{Chat("treed1", tree)},{Chat("landed1")},"
-                      + $$"""{"id":"laptop/chat9","repository":"engine","adapter":"claude-code","state":"completed","kind":"chat"},"""
-                      + """{"id":"done1","quest":"q4","repository":"engine","adapter":"claude-code","state":"completed","kind":"driven","created":"2026-10-02T09:50:00Z","updated":"2026-10-02T09:51:00Z"}]""";
+                      + $$"""{"id":"laptop/chat9","repository":"engine","door":"claude-code","state":"completed","kind":"chat"},"""
+                      + """{"id":"done1","quest":"q4","repository":"engine","door":"claude-code","state":"completed","kind":"driven","created":"2026-10-02T09:50:00Z","updated":"2026-10-02T09:51:00Z"}]""";
         ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(records));
         foreach (var (id, answer) in judged)
         {
@@ -1048,7 +1048,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var ledger = new LoopbackHost();
         static string Slashed(string path) => path.Replace('\\', '/');
         string Session(string id, string tree) =>
-            $$"""{"id":"{{id}}","quest":"q1","repository":"engine","adapter":"claude-code","state":"completed","kind":"driven","tree":"{{Slashed(tree)}}","created":"2026-10-02T09:00:00Z","updated":"2026-10-02T09:10:00Z"}""";
+            $$"""{"id":"{{id}}","quest":"q1","repository":"engine","door":"claude-code","state":"completed","kind":"driven","tree":"{{Slashed(tree)}}","created":"2026-10-02T09:00:00Z","updated":"2026-10-02T09:10:00Z"}""";
         foreach (var (id, tree) in new[] { ("own1", own), ("gone1", gone), ("root1", root), ("elsewhere1", elsewhere), ("machine-b/own1", own) })
             ledger.Serve("/api/sessions/" + Uri.EscapeDataString(id), System.Text.Encoding.UTF8.GetBytes(Session(id, tree)));
         foreach (var none in new[] { "/api/sessions?includeClosed=true", "/api/sessions", "/api/quests?includeClosed=true", "/api/quests" })
@@ -1070,7 +1070,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "SESSION_HAND_OVER", new { id = "s1" }));
         using var ledger = new LoopbackHost();
         static string Session(string id, string quest) =>
-            $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","adapter":"claude-code","profile":"account-1","state":"failed","kind":"driven","created":"2026-10-04T09:00:00Z","updated":"2026-10-04T09:05:00Z","said":[{"id":"w1","text":"Also log the port.","at":"2026-10-04T09:06:00Z","files":[],"reopens":true}]}""";
+            $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","door":"claude-code","profile":"account-1","state":"failed","kind":"driven","created":"2026-10-04T09:00:00Z","updated":"2026-10-04T09:05:00Z","said":[{"id":"w1","text":"Also log the port.","at":"2026-10-04T09:06:00Z","files":[],"reopens":true}]}""";
         static string Quest(string id, string status) =>
             $$"""{"id":"{{id}}","from":"game","to":"engine","title":"The work of #{{id}}","body":"A body.","status":"{{status}}"}""";
         ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes($"[{Session("s1", "q1")},{Session("s2", "q2")}]"));
@@ -1204,7 +1204,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var ledger = new LoopbackHost();
         var root =Path.Combine(Home, "checkouts", "engine").Replace('\\', '/');
         string Session(string id, string state, string quest, int minute, string? tree = null) =>
-            $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","adapter":"claude-code","state":"{{state}}","kind":"driven","created":"2026-10-02T09:{{minute:00}}:00Z","updated":"2026-10-02T09:{{minute + 1:00}}:00Z"{{(tree is null ? "" : $",\"tree\":\"{tree.Replace('\\', '/')}\"")}}}""";
+            $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","door":"claude-code","state":"{{state}}","kind":"driven","created":"2026-10-02T09:{{minute:00}}:00Z","updated":"2026-10-02T09:{{minute + 1:00}}:00Z"{{(tree is null ? "" : $",\"tree\":\"{tree.Replace('\\', '/')}\"")}}}""";
         var records = $"[{Session("failed1", "failed", "q1", 0)},{Session("failed2", "failed", "q1", 10)},{Session("failed3", "failed", "q1", 20)},"
                       + $"{Session("waiting1", "awaiting-person", "q2", 30)},{Session("running1", "working", "q3", 40)},{Session("done1", "completed", "q4", 50, doneTree)}]";
         string Quest(string id, string status) =>

@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// read the same, whichever piece and copy: the copy is named by its shape, never its path.
 /// </summary>
 /// <param name="Agent">The adapter's name.</param>
-/// <param name="HarnessVersion">The harness's version the account's walk resolved, or null where none was read (which no row holds).</param>
+/// <param name="DoorVersion">The harness's version the account's walk resolved, or null where none was read (which no row holds).</param>
 /// <param name="Posture">The posture handed, in the harness's own words: the adapter's, since a partner's start names no access setup.</param>
 /// <param name="WritableRoots">
 /// What the start hands it to write: <see cref="PartnerConfigurations.CopyAlone"/>, its working folder being its copy and nothing else
@@ -25,7 +25,7 @@ namespace Daoris.Driver;
 /// agent takes them), the classifier's hard denials and whether the tree guard holds it.
 /// </param>
 public sealed record PartnerConfiguration(
-    string Agent, string? HarnessVersion, string? Posture, string WritableRoots, string Network, string System, string SettingsDigest);
+    string Agent, string? DoorVersion, string? Posture, string WritableRoots, string Network, string System, string SettingsDigest);
 
 /// <summary>A partner's effective configuration, made from what its start hands (the co-agent design §3.3, §8.5).</summary>
 public static class PartnerConfigurations
@@ -45,9 +45,9 @@ public static class PartnerConfigurations
     /// <paramref name="hardDeny"/> as handed, which are empty where its agent takes no rules.
     /// </summary>
     public static PartnerConfiguration Of(
-        AgentDoor adapter, string? harnessVersion, string copy, RuleLists rules, IReadOnlyList<string> hardDeny, bool guarded,
+        AgentDoor adapter, string? doorVersion, string copy, RuleLists rules, IReadOnlyList<string> hardDeny, bool guarded,
         string system) =>
-        new(adapter.Id.Value, harnessVersion, adapter.Postures.Ordinary, CopyAlone, HarnessDefault, system,
+        new(adapter.Id.Value, doorVersion, adapter.Postures.Ordinary, CopyAlone, HarnessDefault, system,
             Digest(adapter.Postures.Ordinary, copy, adapter.Can.TakesSettings ? rules : RuleLists.Empty, adapter.Can.TakesSettings ? hardDeny : [], adapter.Can.TakesSettings && guarded));
 
     /// <summary>

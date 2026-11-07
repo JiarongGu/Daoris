@@ -220,7 +220,7 @@ export function sentence(error: unknown, language?: string): string {
  * is a session, and rendering it twice is how the two quietly stop agreeing.
  */
 export function sessionTool(
-  session: { adapter: string; harnessVersion?: string | null; profile?: string | null },
+  session: { door: string; doorVersion?: string | null; profile?: string | null },
   /**
    * The session's agent has accounts, so a record naming none ran on the tool's own sign-in, said so (D125 §3.7, TOOL4m's
    * rest with UX6e). Left out, nothing is said of an account the record does not name.
@@ -233,10 +233,10 @@ export function sessionTool(
   nameOf?: AccountNamer,
 ): string {
   return [
-    session.adapter,
-    session.harnessVersion || null,
+    session.door,
+    session.doorVersion || null,
     session.profile
-      ? i18n.t('quests.session.asProfile', { profile: nameOf ? nameOf(session.adapter, session.profile) : session.profile })
+      ? i18n.t('quests.session.asProfile', { profile: nameOf ? nameOf(session.door, session.profile) : session.profile })
       : ownSignIn ? i18n.t('quests.session.ownSignIn') : null,
   ].filter(Boolean).join(' · ');
 }

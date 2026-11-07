@@ -242,7 +242,7 @@ public sealed class ChannelParts(ChannelDesk desk, ChannelStore store, SessionLe
         var judged = await JudgeAsync(origin, ask, text, part is null ? to : null, re, ct).ConfigureAwait(false);
         if (judged.Refusal != ChannelRefusal.None) return new(judged.Refusal, null);
         var row = new ChannelMessage(
-            NewId(), ask?.Id ?? "", ask?.Workspace ?? session.Workspace, now, session.Id, session.Repository, session.Adapter, entry,
+            NewId(), ask?.Id ?? "", ask?.Workspace ?? session.Workspace, now, session.Id, session.Repository, session.Door, entry,
             judged.To, judged.Re, question, judged.Text!) { Urgent = urgent, Channel = origin, Part = part?.Id };
         return await Addressed.KeepAsync(row, ChannelBounds.MaxPerPart, ct).ConfigureAwait(false) is { } kept
             ? new(ChannelRefusal.None, kept)

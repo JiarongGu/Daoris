@@ -10,7 +10,7 @@ internal static class SessionRowCodec
         reader.GetString(reader.GetOrdinal("id")),
         reader.IsDBNull(reader.GetOrdinal("quest")) ? null : reader.GetString(reader.GetOrdinal("quest")),
         reader.GetString(reader.GetOrdinal("repository")),
-        reader.GetString(reader.GetOrdinal("adapter")),
+        reader.GetString(reader.GetOrdinal("door")),
         Enum.Parse<SessionState>(reader.GetString(reader.GetOrdinal("state"))),
         reader.IsDBNull(reader.GetOrdinal("note")) ? null : reader.GetString(reader.GetOrdinal("note")),
         reader.IsDBNull(reader.GetOrdinal("evidence")) ? null : reader.GetString(reader.GetOrdinal("evidence")),
@@ -24,8 +24,8 @@ internal static class SessionRowCodec
             // can act on it: the lifecycle is identical, and refusing to read a record would lose the
             // trace of work that actually happened.
             : SessionKind.Driven,
-        reader.IsDBNull(reader.GetOrdinal("harness_version"))
-            ? null : reader.GetString(reader.GetOrdinal("harness_version")),
+        reader.IsDBNull(reader.GetOrdinal("door_version"))
+            ? null : reader.GetString(reader.GetOrdinal("door_version")),
         reader.IsDBNull(reader.GetOrdinal("profile")) ? null : reader.GetString(reader.GetOrdinal("profile")),
         reader.IsDBNull(reader.GetOrdinal("tree")) ? null : reader.GetString(reader.GetOrdinal("tree")),
         reader.IsDBNull(reader.GetOrdinal("base_commit"))

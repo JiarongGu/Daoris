@@ -6,7 +6,7 @@ namespace Daoris.Knowledge;
 /// `driven` or `chat`. It travels because a teammate seeing a record deserves to know which it was —
 /// and because without it every mirrored conversation would arrive looking like planned work.
 /// </param>
-/// <param name="HarnessVersion">
+/// <param name="DoorVersion">
 /// Which tool produced this (D49 §4). It travels because it is a fact about a tool. The PROFILE NAME
 /// deliberately has no field here: which account a session ran as is machine-local, guarded like the
 /// transcript — and a field that does not exist cannot be filled in by accident.
@@ -20,9 +20,9 @@ namespace Daoris.Knowledge;
 /// as the note is before they leave the machine. Null is a record from before parts, or one whose note has none.
 /// </param>
 public sealed record FedSessionRecord(
-    string? Id, string? Quest, string? Repository, string? Adapter, string? State,
+    string? Id, string? Quest, string? Repository, string? Door, string? State,
     string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated,
-    string? Kind = null, string? HarnessVersion = null, bool Limit = false, string? NoteParts = null, string? Entry = null,
+    string? Kind = null, string? DoorVersion = null, bool Limit = false, string? NoteParts = null, string? Entry = null,
     string? TookQuest = null);
 
 /// <summary>Why a feed of records was not taken — or <see cref="None"/> when it was.</summary>
@@ -92,7 +92,7 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
         {
             Session.TryParse(record.State!, out var state);
             await sessions.MirrorAsync(new Session(
-                $"{origin}/{record.Id}", record.Quest, record.Repository!, record.Adapter ?? "unknown",
+                $"{origin}/{record.Id}", record.Quest, record.Repository!, record.Door ?? "unknown",
                 state, record.Note, record.Evidence, Transcript: null, record.Created, record.Updated,
                 workspaces.TryGetValue(record.Repository!, out var workspace)
                     ? workspace
@@ -102,7 +102,7 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
                 Enum.TryParse<SessionKind>(record.Kind, ignoreCase: true, out var kind)
                     ? kind
                     : SessionKind.Driven,
-                record.HarnessVersion,
+                record.DoorVersion,
                 // No profile and no tree, structurally: the fed record has no field for either, and
                 // the store's mirror writes literal NULLs. Two guards for one rule, the same doubling
                 // the transcript gets — because a name a person chose for themselves, or a path on

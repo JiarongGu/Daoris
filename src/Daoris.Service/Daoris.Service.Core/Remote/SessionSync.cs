@@ -56,11 +56,11 @@ public static class SessionSync
             foreach (var c in changed.Where(c => GoesUp(c.Session, joined)))
             {
                 feed.Add(new FedSessionRecord(
-                    c.Session.Id, c.Session.Quest, c.Session.Repository, c.Session.Adapter, c.Session.StateName,
+                    c.Session.Id, c.Session.Quest, c.Session.Repository, c.Session.Door, c.Session.StateName,
                     // Free text the driver wrote, cleaned of what is machine-local in it (REV3).
                     SessionNote.ForAnotherMachine(c.Session.Note, c.Session), c.Session.Evidence,
                     c.Session.Created, c.Session.Updated,
-                    c.Session.Kind.ToString(), c.Session.HarnessVersion,
+                    c.Session.Kind.ToString(), c.Session.DoorVersion,
                     // A limit names no account, so it goes up with the record (TOOL4c).
                     c.Session.Limit,
                     // The note's parts with it, every string cleaned as the note is (LANG1a).

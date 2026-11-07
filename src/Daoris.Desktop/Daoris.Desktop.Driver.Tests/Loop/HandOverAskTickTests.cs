@@ -66,7 +66,7 @@ public sealed class HandOverAskTickTests : IDisposable
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 
         var carried = service.Session("s2");
-        Assert.Equal("stub", carried["adapter"]!.GetValue<string>());
+        Assert.Equal("stub", carried["door"]!.GetValue<string>());
         Assert.Equal(("s1", "agent", "agent"),
             (carried["from"]?.GetValue<string>(), carried["fromWhy"]?.GetValue<string>(), carried["fromBy"]?.GetValue<string>()));
         var run = Runs(log).Single();

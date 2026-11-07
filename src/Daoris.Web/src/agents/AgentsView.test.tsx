@@ -1848,7 +1848,7 @@ describe('what it may do', () => {
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'HARNESSES' ? ROSTER : type === 'RULES' || type === 'RULE_PROPOSAL' ? proposed : WIRING));
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).startsWith('/api/sessions')
-      ? Response.json([{ id: 'c0ffee11', adapter: 'claude-code', created: '2026-09-24T09:00:00Z', workspace: 'default', quest: null, repository: 'engine', kind: 'chat', state: 'working', updated: '2026-09-24T10:00:00Z' }])
+      ? Response.json([{ id: 'c0ffee11', door: 'claude-code', created: '2026-09-24T09:00:00Z', workspace: 'default', quest: null, repository: 'engine', kind: 'chat', state: 'working', updated: '2026-09-24T10:00:00Z' }])
       : respond(String(input))));
     const say = vi.fn(async () => ({ sent: true }));
     const notify = vi.fn();

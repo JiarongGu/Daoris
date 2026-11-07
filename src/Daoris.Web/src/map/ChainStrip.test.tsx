@@ -11,7 +11,7 @@ const quest = (id: string, extra: Partial<Quest> = {}): Quest => aQuest({
 });
 
 const run = (id: string, questId: string, extra: Partial<Session> = {}): Session => ({
-  id, quest: questId, repository: 'engine', adapter: 'claude-code', state: 'completed',
+  id, quest: questId, repository: 'engine', door: 'claude-code', state: 'completed',
   created: '2026-09-23T01:00:00Z', updated: '2026-09-23T01:00:00Z', ...extra,
 });
 
@@ -36,8 +36,8 @@ describe('the chain strip', () => {
   /** D49 §4: which agent, version and account each attempt ran on — read from its record. */
   it('says on what each quest ran, attempt by attempt', () => {
     render(<ChainStrip chain={buildChain('a', QUESTS, [
-      run('s1', 'a', { state: 'failed', harnessVersion: '2.1.270', profile: 'work' }),
-      run('s2', 'a', { created: '2026-09-23T02:00:00Z', adapter: 'claude-code-acp' }),
+      run('s1', 'a', { state: 'failed', doorVersion: '2.1.270', profile: 'work' }),
+      run('s2', 'a', { created: '2026-09-23T02:00:00Z', door: 'claude-code-acp' }),
     ])} />);
 
     expect(screen.getByText('claude-code · 2.1.270 · as work')).toBeInTheDocument();
@@ -106,9 +106,9 @@ describe('the chain strip', () => {
    */
   it('says the agent once where every attempt ran on it, and each row its attempt and account', () => {
     render(<ChainStrip chain={buildChain('a', QUESTS, [
-      run('s1', 'a', { state: 'failed', harnessVersion: '0.84.0', profile: 'account-1', adapter: 'claude-code-acp' }),
-      run('s2', 'a', { state: 'failed', harnessVersion: '0.84.0', profile: 'account-1', adapter: 'claude-code-acp', created: '2026-09-23T02:00:00Z' }),
-      run('s3', 'a', { state: 'working', harnessVersion: '0.84.0', profile: 'account-2', adapter: 'claude-code-acp', created: '2026-09-23T03:00:00Z' }),
+      run('s1', 'a', { state: 'failed', doorVersion: '0.84.0', profile: 'account-1', door: 'claude-code-acp' }),
+      run('s2', 'a', { state: 'failed', doorVersion: '0.84.0', profile: 'account-1', door: 'claude-code-acp', created: '2026-09-23T02:00:00Z' }),
+      run('s3', 'a', { state: 'working', doorVersion: '0.84.0', profile: 'account-2', door: 'claude-code-acp', created: '2026-09-23T03:00:00Z' }),
     ])} />);
 
     expect(screen.getAllByText('claude-code-acp · 0.84.0')).toHaveLength(1);
@@ -131,7 +131,7 @@ describe('the chain strip', () => {
     unmount();
 
     // A quest whose attempts ran on different agents says each one's line, its account by name too.
-    render(<ChainStrip nameOf={nameOf} chain={buildChain('a', QUESTS, [run('s1', 'a', { profile: 'acct-3f9c1a2b', harnessVersion: '2.1.270' })])} />);
+    render(<ChainStrip nameOf={nameOf} chain={buildChain('a', QUESTS, [run('s1', 'a', { profile: 'acct-3f9c1a2b', doorVersion: '2.1.270' })])} />);
     expect(screen.getByText('claude-code · 2.1.270 · as work')).toBeInTheDocument();
   });
 

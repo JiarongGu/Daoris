@@ -21,7 +21,7 @@ const CONVERGENCE = [
   { method: 'Convergent', similarity: 0.8, repositories: ['engine', 'game'], entries: [], suggestion: '' },
 ];
 const SESSIONS = [
-  { id: 's1', repository: 'engine', adapter: 'stub', state: 'working', created: '', updated: '' },
+  { id: 's1', repository: 'engine', door: 'stub', state: 'working', created: '', updated: '' },
 ];
 
 // MAP3a: what `/api/code-map/{repository}` answers — the engine keeps a map, the game keeps none.
@@ -233,7 +233,7 @@ describe('the workspace map', () => {
       expect(line.querySelector('circle[stroke-dasharray]')!.getAttribute('class')).toContain('stroke-st-taken');
       expect(screen.getByRole('button', { name: '1 quest your asks became on game' }).querySelector('circle[stroke-dasharray]')).toBeNull();
     } finally {
-      SESSIONS[0] = { id: 's1', repository: 'engine', adapter: 'stub', state: 'working', created: '', updated: '' };
+      SESSIONS[0] = { id: 's1', repository: 'engine', door: 'stub', state: 'working', created: '', updated: '' };
     }
   });
 

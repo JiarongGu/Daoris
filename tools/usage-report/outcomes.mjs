@@ -106,7 +106,7 @@ function outcomeOf(quest, runs, facts) {
   const sessions = runs.map((run) => {
     const teammate = run.id.includes('/');
     return {
-      session: run.id, state: named(run.state) ?? '(unsaid)', ending: endingOf(run), adapter: named(run.adapter),
+      session: run.id, state: named(run.state) ?? '(unsaid)', ending: endingOf(run), adapter: named(run.door),
       account: teammate ? '(a teammate\'s)' : named(run.profile) ?? '(own sign-in)', teammate,
       created: isoOf(momentOf(run.created)),
       // The log is this machine's, and holds a session's parks only where the period holds its start.

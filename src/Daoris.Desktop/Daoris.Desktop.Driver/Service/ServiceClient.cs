@@ -291,35 +291,35 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public Task<bool> KnowsRemoteClosureAsync(CancellationToken ct = default) => Standing.KnowsRemoteClosureAsync(ct);
 
     public Task<(string? SessionId, string Message)> OpenSessionAsync(
-        string questId, string adapter, string? harnessVersion = null, string? profile = null,
+        string questId, string adapter, string? doorVersion = null, string? profile = null,
         string? tree = null, string? baseCommit = null, CancellationToken ct = default, bool setup = false,
         ContinuedFrom? from = null, IReadOnlyDictionary<string, string>? access = null) =>
-        Openings.SessionAsync(questId, adapter, harnessVersion, profile, tree, baseCommit, ct, setup, from, access);
+        Openings.SessionAsync(questId, adapter, doorVersion, profile, tree, baseCommit, ct, setup, from, access);
 
     public Task<DestinationOpen> OpenSessionMovingAsync(
-        string questId, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
+        string questId, string adapter, string? doorVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
         MoveWords? moves, CancellationToken ct = default, bool setup = false, IReadOnlyDictionary<string, string>? access = null,
         string? opens = null) =>
-        Openings.SessionMovingAsync(questId, adapter, harnessVersion, profile, tree, baseCommit, from, moves, ct, setup, access, opens);
+        Openings.SessionMovingAsync(questId, adapter, doorVersion, profile, tree, baseCommit, from, moves, ct, setup, access, opens);
 
     public Task<(string? SessionId, string Message)> OpenChatAsync(
-        string repository, string adapter, string? harnessVersion = null, string? profile = null,
+        string repository, string adapter, string? doorVersion = null, string? profile = null,
         string? tree = null, string? baseCommit = null, CancellationToken ct = default, ContinuedFrom? from = null) =>
-        Openings.ChatAsync(repository, adapter, harnessVersion, profile, tree, baseCommit, ct, from);
+        Openings.ChatAsync(repository, adapter, doorVersion, profile, tree, baseCommit, ct, from);
 
     public Task<DestinationOpen> OpenChatMovingAsync(
-        string repository, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
+        string repository, string adapter, string? doorVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
         MoveWords moves, string? workspace, CancellationToken ct = default) =>
-        Openings.ChatMovingAsync(repository, adapter, harnessVersion, profile, tree, baseCommit, from, moves, workspace, ct);
+        Openings.ChatMovingAsync(repository, adapter, doorVersion, profile, tree, baseCommit, from, moves, workspace, ct);
 
     public Task<(string? SessionId, string Message)> OpenIntakeAsync(
-        string ask, string adapter, string room, string? harnessVersion = null, string? profile = null, CancellationToken ct = default) =>
-        Openings.IntakeAsync(ask, adapter, room, harnessVersion, profile, ct);
+        string ask, string adapter, string room, string? doorVersion = null, string? profile = null, CancellationToken ct = default) =>
+        Openings.IntakeAsync(ask, adapter, room, doorVersion, profile, ct);
 
     public Task<(string? SessionId, string Message)> OpenHelpAsync(
-        string adapter, string room, string? harnessVersion = null, string? profile = null, string? workspace = null,
+        string adapter, string room, string? doorVersion = null, string? profile = null, string? workspace = null,
         string? mode = null, CancellationToken ct = default) =>
-        Openings.HelpAsync(adapter, room, harnessVersion, profile, workspace, mode, ct);
+        Openings.HelpAsync(adapter, room, doorVersion, profile, workspace, mode, ct);
 
     public Task KeepHelpModeAsync(string sessionId, string mode, CancellationToken ct = default) => Keeps.HelpModeAsync(sessionId, mode, ct);
 

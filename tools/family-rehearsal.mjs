@@ -522,14 +522,14 @@ check(
 );
 const waitOnNothing = await api('POST', `/api/quests/${needingId}/respond`, { body: { action: 'wait', reason: null } });
 check('…a wait that names no question is refused', waitOnNothing.status !== 200, waitOnNothing.text);
-const tooEarly = await api('POST', '/api/sessions', { body: { quest: needingId, adapter: 'stub' } });
+const tooEarly = await api('POST', '/api/sessions', { body: { quest: needingId, door: 'stub' } });
 check(
   '…no session opens on it while the question is open, and the refusal names the question',
   tooEarly.status === 409 && tooEarly.text.includes(questionId),
   tooEarly.text,
 );
 await api('POST', `/api/quests/${questionId}/respond`, { body: { action: 'done', reason: 'It shows 16, 32 and 64.' } });
-const resumption = await api('POST', '/api/sessions', { body: { quest: needingId, adapter: 'stub' } });
+const resumption = await api('POST', '/api/sessions', { body: { quest: needingId, door: 'stub' } });
 check('…and once game answers, a session opens on the taken quest — the resume', resumption.status === 200, resumption.text);
 // A record with no process behind it would hold engine for every phase after this one.
 await api('POST', `/api/sessions/${resumption.json?.session?.id}/state`, { body: { state: 'stopped' } });
@@ -542,17 +542,17 @@ const cutQuest = await api('POST', '/api/quests', {
   body: { from: 'game', to: 'engine', title: 'Profile the hydration path', body: 'Where does the frame go?' },
 });
 const cutQuestId = cutQuest.json?.quest?.id ?? '';
-const cutSession = await api('POST', '/api/sessions', { body: { quest: cutQuestId, adapter: 'stub' } });
+const cutSession = await api('POST', '/api/sessions', { body: { quest: cutQuestId, door: 'stub' } });
 const cutSessionId = cutSession.json?.session?.id ?? '';
 await api('POST', `/api/sessions/${cutSessionId}/state`, { body: { state: 'working' } });
 await api('POST', `/api/quests/${cutQuestId}/respond`, { body: { action: 'take', reason: null } });
 await api('POST', `/api/sessions/${cutSessionId}/state`, {
   body: { state: 'failed', note: 'timed out after 30 minutes and was killed.' },
 });
-const carriedOn = await api('POST', '/api/sessions', { body: { quest: cutQuestId, adapter: 'stub' } });
+const carriedOn = await api('POST', '/api/sessions', { body: { quest: cutQuestId, door: 'stub' } });
 check('a quest whose session was cut off after its take is carried on — a session opens on it', carriedOn.status === 200, carriedOn.text);
 await api('POST', `/api/sessions/${carriedOn.json?.session?.id}/state`, { body: { state: 'stood-down', note: 'rehearsal' } });
-const afterStandDown = await api('POST', '/api/sessions', { body: { quest: cutQuestId, adapter: 'stub' } });
+const afterStandDown = await api('POST', '/api/sessions', { body: { quest: cutQuestId, door: 'stub' } });
 check('…and once its last session stood down, the take is somebody else’s and nothing opens', afterStandDown.status === 409, afterStandDown.text);
 await api('POST', `/api/quests/${cutQuestId}/respond`, { body: { action: 'done', reason: 'Profiled.' } });
 
@@ -565,7 +565,7 @@ const askingQuest = await api('POST', '/api/quests', {
   body: { from: 'game', to: 'engine', title: 'Check the budget on the device', body: 'It needs a sign-in first.' },
 });
 const askingQuestId = askingQuest.json?.quest?.id ?? '';
-const asking = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
+const asking = await api('POST', '/api/sessions', { body: { quest: askingQuestId, door: 'stub' } });
 const askingId = asking.json?.session?.id ?? '';
 for (const state of ['starting', 'working']) {
   await api('POST', `/api/sessions/${askingId}/state`, { body: { state } });
@@ -591,7 +591,7 @@ check(
 );
 const answerRetired = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in.' } });
 check('…and the park’s own answer route is gone, its job the say door’s alone (ONEWAY1k)', answerRetired.status === 404, answerRetired.text);
-const whileParked = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
+const whileParked = await api('POST', '/api/sessions', { body: { quest: askingQuestId, door: 'stub' } });
 check('…and nothing new opens on its quest while the park holds it', whileParked.status === 409, whileParked.text);
 await api('POST', `/api/sessions/${askingId}/state`, {
   body: {
@@ -599,7 +599,7 @@ await api('POST', `/api/sessions/${askingId}/state`, {
     note: 'it needs a sign-in.\n\nAnswered: Signed in.\n\nAnswered: Signed in on the device.\n\nCarried on in a new session, because its tree is gone.',
   },
 });
-const afterAnswer = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
+const afterAnswer = await api('POST', '/api/sessions', { body: { quest: askingQuestId, door: 'stub' } });
 const endedPark = ((await api('GET', '/api/sessions?repository=engine&includeClosed=true')).json ?? [])
   .find((s) => s.id === askingId);
 check(
@@ -2603,7 +2603,7 @@ const ownRecords = await api('GET', '/api/sessions?repository=borealis&includeCl
 check(
   'machine b’s own record names the account it ran as, the tool that ran it, and the TREE it held',
   (ownRecords.json ?? []).some((s) => s.profile === 'mach-b-account'
-    && s.harnessVersion === 'stub-harness 1.0.0'
+    && s.doorVersion === 'stub-harness 1.0.0'
     // The tree is the unit of exclusion since D51, and the record says which one it was — answered
     // to the machine that ran the session, like the profile and the transcript beside it.
     && s.tree === borealis),
@@ -2611,7 +2611,7 @@ check(
 );
 check(
   '…and the fed record carries the tool version but never the account name or the tree',
-  fedRecords.some((s) => s.harnessVersion === 'stub-harness 1.0.0')
+  fedRecords.some((s) => s.doorVersion === 'stub-harness 1.0.0')
     && fedRecords.every((s) => !s.profile && !s.tree),
   remoteSessions.text,
 );
@@ -3485,8 +3485,8 @@ section('14. A conversation is a session (D49 §3)');
 // what is checked here is the lock over the service's own door.
 
 // The lock is the working tree, and it does not care which way in a session came.
-const firstChat = await api('POST', '/api/sessions/chat', { body: { repository: 'newcomer', adapter: 'stub' } });
-const secondChat = await api('POST', '/api/sessions/chat', { body: { repository: 'newcomer', adapter: 'stub' } });
+const firstChat = await api('POST', '/api/sessions/chat', { body: { repository: 'newcomer', door: 'stub' } });
+const secondChat = await api('POST', '/api/sessions/chat', { body: { repository: 'newcomer', door: 'stub' } });
 check('a chat opens through the ordinary door', firstChat.status === 200, firstChat.text);
 check(
   'a second conversation in the same TREE is refused, naming what holds it',
@@ -3509,7 +3509,7 @@ const rival = await api('POST', '/api/quests', {
   },
 });
 const chatBlocksDriven = await api('POST', '/api/sessions', {
-  body: { quest: rival.json?.quest?.id, adapter: 'stub' },
+  body: { quest: rival.json?.quest?.id, door: 'stub' },
 });
 check(
   '…and so is a DRIVEN session, with the refusal saying a chat has it',
@@ -3521,7 +3521,7 @@ check(
 // session in a second tree of the same repository is not the collision the rule exists to prevent.
 // Nothing creates a tree yet (that is SURF3) — this states one, which is what a driver will do.
 const besideIt = await api('POST', '/api/sessions/chat', {
-  body: { repository: 'newcomer', adapter: 'stub', tree: join(scratch, 'trees', 'newcomer-2') },
+  body: { repository: 'newcomer', door: 'stub', tree: join(scratch, 'trees', 'newcomer-2') },
 });
 check(
   'a second tree of the same repository is not blocked, and the record names it',
@@ -3533,7 +3533,7 @@ await api('POST', `/api/sessions/${besideIt.json?.session?.id}/state`, { body: {
 
 // Put the tree back: a queued record with no process would hold the repository forever.
 await api('POST', `/api/sessions/${firstChat.json?.session?.id}/state`, { body: { state: 'stopped' } });
-const freed = await api('POST', '/api/sessions/chat', { body: { repository: 'newcomer', adapter: 'stub' } });
+const freed = await api('POST', '/api/sessions/chat', { body: { repository: 'newcomer', door: 'stub' } });
 check(
   'a finished conversation frees the repository',
   freed.status === 200,
@@ -3541,7 +3541,7 @@ check(
 );
 await api('POST', `/api/sessions/${freed.json?.session?.id}/state`, { body: { state: 'stopped' } });
 
-const unknownChat = await api('POST', '/api/sessions/chat', { body: { repository: 'nobody', adapter: 'stub' } });
+const unknownChat = await api('POST', '/api/sessions/chat', { body: { repository: 'nobody', door: 'stub' } });
 check(
   'a conversation in a repository nobody registered is refused, and says how to register it',
   unknownChat.status === 404 && /connect/.test(unknownChat.text),
@@ -3595,7 +3595,7 @@ const profiled = ((await api('GET', '/api/sessions?repository=newcomer&includeCl
   .find((s) => s.quest === (underProfile.json?.quest?.id ?? ''));
 check(
   'the record names the account it ran as, and the version of the tool that ran it',
-  profiled?.profile === 'alpha' && profiled?.harnessVersion === 'stub-harness 1.0.0',
+  profiled?.profile === 'alpha' && profiled?.doorVersion === 'stub-harness 1.0.0',
   JSON.stringify(profiled),
 );
 // The record's word is not the evidence — the SESSION's own is. The environment seam is observable,
@@ -4502,7 +4502,7 @@ const acpSessions = await api('GET', '/api/sessions?repository=newcomer&includeC
 const acpRecord = (acpSessions.json ?? []).find((s) => s.quest === acpQuestId);
 check(
   'the record ends completed and names the adapter that held it',
-  acpRecord?.state === 'completed' && acpRecord?.adapter === 'acp-stub',
+  acpRecord?.state === 'completed' && acpRecord?.door === 'acp-stub',
   JSON.stringify(acpRecord),
 );
 
@@ -4574,7 +4574,7 @@ const portAsk = await api('POST', '/api/quests', {
   },
 });
 const portQuestId = portAsk.json?.quest?.id ?? '';
-const portCut = await api('POST', '/api/sessions', { body: { quest: portQuestId, adapter: 'acp-stub' } });
+const portCut = await api('POST', '/api/sessions', { body: { quest: portQuestId, door: 'acp-stub' } });
 const portCutId = portCut.json?.session?.id ?? '';
 for (const state of ['starting', 'working']) {
   await api('POST', `/api/sessions/${portCutId}/state`, { body: { state } });
@@ -4862,7 +4862,7 @@ check(
   'over the protocol door the same quest is driven to done by a session in the unadopted tree',
   acpDrove.code === 0
     && (unadoptedQuests.json ?? []).some((q) => q.id === unadoptedQuestId && q.status === 'Done')
-    && unadoptedRecord?.state === 'completed' && unadoptedRecord?.adapter === 'acp-stub',
+    && unadoptedRecord?.state === 'completed' && unadoptedRecord?.door === 'acp-stub',
   acpDrove.out + '\n' + JSON.stringify(unadoptedRecord ?? null),
 );
 
@@ -5020,7 +5020,7 @@ check(
   'the driver carries the set-up to done in a tree of its own — closed by its session, the commit on the record',
   setupRun.code === 0 && /completed/.test(setupRun.out)
     && (await atlasQuests()).some((q) => q.id === setupQuest?.id && q.status === 'Done')
-    && setupRecord?.state === 'completed' && setupRecord.adapter === 'acp-stub'
+    && setupRecord?.state === 'completed' && setupRecord.door === 'acp-stub'
     && setupTree.includes('trees') && !setupTree.includes(atlas)
     && /commits landed/.test(setupRecord.evidence ?? '') && /setup: take up the doctrine/.test(setupRecord.evidence ?? ''),
   `${setupRun.out}\n${JSON.stringify(setupRecord ?? null)}`,
@@ -5307,7 +5307,7 @@ check(
   'the loop asks only the pilot: the first in the plan\'s order is published and carried to done in a tree of its own, and the second is not asked',
   pilotRun.code === 0
     && pilotRun.out.includes(`setup  ${PLAN_WORKSPACE}: asked \`${firstPlanned}\` to set itself up, #${firstSetup?.id} (1 of 1 at once).`)
-    && firstSetup?.status === 'Done' && firstRecord?.state === 'completed' && firstRecord.adapter === 'acp-stub'
+    && firstSetup?.status === 'Done' && firstRecord?.state === 'completed' && firstRecord.door === 'acp-stub'
     && (firstRecord.tree ?? '').includes('trees') && !(firstRecord.tree ?? '').includes(plannedRoot(firstPlanned))
     && planAfterPilot?.published?.[firstPlanned] === firstSetup?.id && !(secondPlanned in (planAfterPilot?.published ?? {}))
     && (await questsTo(secondPlanned)).length === 0,
@@ -5927,7 +5927,7 @@ const gateRecord = ((await api('GET', '/api/sessions?repository=newcomer&include
   .find((s) => s.quest === gatePassId);
 check(
   'the record names the declared harness, and no plugin anywhere',
-  gateRecord?.state === 'completed' && gateRecord?.adapter === 'gate-agent'
+  gateRecord?.state === 'completed' && gateRecord?.door === 'gate-agent'
     && !/rehearsal\.agent|hold-by-title|"browser"/.test(JSON.stringify(gateRecord)),
   JSON.stringify(gateRecord),
 );
@@ -6058,7 +6058,7 @@ const standInDrives = {
     const closed = await standInQuestOf(quest);
     check(
       `${place.door.id}: a start, its quest run on the door to done and closed by the stand-in's program, one record naming the door`,
-      ran.code === 0 && records.length === 1 && records[0].state === 'completed' && records[0].adapter === place.door.id
+      ran.code === 0 && records.length === 1 && records[0].state === 'completed' && records[0].door === place.door.id
         && closed?.status === 'Done',
       `${ran.out}\n${JSON.stringify(records)}\n${JSON.stringify(closed)}`,
     );

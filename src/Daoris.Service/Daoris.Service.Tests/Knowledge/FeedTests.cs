@@ -777,7 +777,7 @@ public sealed class SessionFeedTests : IAsyncLifetime
         Assert.Single(System.Text.RegularExpressions.Regex.Matches(feed, "\"limit\""));
 
         var olderFeed = SessionWire.ReadFeed("""
-            { "records": [ { "id": "ab12cd34", "repository": "Joined", "adapter": "stub", "state": "failed",
+            { "records": [ { "id": "ab12cd34", "repository": "Joined", "door": "stub", "state": "failed",
                              "created": "2026-09-20T10:00:00Z", "updated": "2026-09-20T10:00:00Z" } ] }
             """)!;
         Assert.False(Assert.Single(olderFeed).Limit);
@@ -790,7 +790,7 @@ public sealed class SessionFeedTests : IAsyncLifetime
 
         var olderPage = SessionWire.ReadPage("""
             { "through": 3, "more": false,
-              "records": [ { "id": "a@one/ab12cd34", "origin": "a@one", "repository": "Joined", "adapter": "stub",
+              "records": [ { "id": "a@one/ab12cd34", "origin": "a@one", "repository": "Joined", "door": "stub",
                              "state": "failed", "created": "2026-09-20T10:00:00Z", "updated": "2026-09-20T10:00:00Z" } ] }
             """)!;
         Assert.False(Assert.Single(olderPage.Records).Limit);

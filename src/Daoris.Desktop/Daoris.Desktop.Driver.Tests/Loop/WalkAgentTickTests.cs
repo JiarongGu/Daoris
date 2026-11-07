@@ -116,7 +116,7 @@ public sealed class WalkAgentTickTests : IDisposable
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(("failed", "Taken"), (service.State("s1"), service.Status("q1")));
         Assert.Contains("\"limit\":true", service.Record("s1"), StringComparison.Ordinal);
-        Assert.Equal("acp-stub", JsonNode.Parse(service.Record("s1"))!["adapter"]!.GetValue<string>());
+        Assert.Equal("acp-stub", JsonNode.Parse(service.Record("s1"))!["door"]!.GetValue<string>());
     }
 
     /// <summary>
@@ -171,7 +171,7 @@ public sealed class WalkAgentTickTests : IDisposable
         var seen = Seeing(service, look);
         Assert.True(service.SessionCount == 2, seen);
         var moved = JsonNode.Parse(service.Record("s2"))!;
-        Assert.Equal(("acp-other", "account-x"), (moved["adapter"]!.GetValue<string>(), moved["profile"]!.GetValue<string>()));
+        Assert.Equal(("acp-other", "account-x"), (moved["door"]!.GetValue<string>(), moved["profile"]!.GetValue<string>()));
         Assert.True((service.State("s2"), service.Status("q1")) == ("completed", "Done"), seen);
 
         // The part before says once that it went on with the other agent, by the limit.

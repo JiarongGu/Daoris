@@ -19,7 +19,7 @@ internal sealed class SessionWrites(SessionStore store)
     public Task<Session> CreateAsync(
         string? quest, string repository, string adapter, DateTimeOffset now,
         string? workspace = null, SessionKind kind = SessionKind.Driven,
-        string? harnessVersion = null, string? profile = null, string? tree = null,
+        string? doorVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default, string? ask = null, string? opinion = null,
         string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
         string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null,
@@ -33,7 +33,7 @@ internal sealed class SessionWrites(SessionStore store)
             SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace), kind,
             // Written at creation and never again: these say what the spawn ran ON, AS and IN, and a
             // later state change is about how it ended, not about what it was.
-            Blank(harnessVersion), Blank(profile), Trees.Normalize(tree), Blank(baseCommit))
+            Blank(doorVersion), Blank(profile), Trees.Normalize(tree), Blank(baseCommit))
         {
             Ask = Blank(ask),
             Actor = Blank(actor),
@@ -55,8 +55,8 @@ internal sealed class SessionWrites(SessionStore store)
 
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, serves, piece, from_session, from_why, from_by, entry, help_mode, access, actor, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $piece, $from, $fromWhy, $fromBy, $entry, $helpMode, $access, $actor, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, door, state, note, evidence, transcript, created, updated, workspace, kind, door_version, profile, tree, base_commit, ask, opinion, serves, piece, from_session, from_why, from_by, entry, help_mode, access, actor, revision)
+            VALUES ($id, $quest, $repository, $door, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $doorVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $piece, $from, $fromWhy, $fromBy, $entry, $helpMode, $access, $actor, {NextRevision})
             """;
         command.Parameters.AddWithValue("$entry", (object?)session.Entry ?? DBNull.Value);
         command.Parameters.AddWithValue("$actor", (object?)session.Actor ?? DBNull.Value);
@@ -72,14 +72,14 @@ internal sealed class SessionWrites(SessionStore store)
         command.Parameters.AddWithValue("$opinion", (object?)session.Opinion ?? DBNull.Value);
         command.Parameters.AddWithValue("$workspace", session.Workspace);
         command.Parameters.AddWithValue("$kind", session.Kind.ToString());
-        command.Parameters.AddWithValue("$harnessVersion", (object?)session.HarnessVersion ?? DBNull.Value);
+        command.Parameters.AddWithValue("$doorVersion", (object?)session.DoorVersion ?? DBNull.Value);
         command.Parameters.AddWithValue("$profile", (object?)session.Profile ?? DBNull.Value);
         command.Parameters.AddWithValue("$tree", (object?)session.Tree ?? DBNull.Value);
         command.Parameters.AddWithValue("$baseCommit", (object?)session.BaseCommit ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", session.Id);
         command.Parameters.AddWithValue("$quest", (object?)session.Quest ?? DBNull.Value);
         command.Parameters.AddWithValue("$repository", session.Repository);
-        command.Parameters.AddWithValue("$adapter", session.Adapter);
+        command.Parameters.AddWithValue("$door", session.Door);
         command.Parameters.AddWithValue("$state", session.State.ToString());
         command.Parameters.AddWithValue("$created", Moments.Write(session.Created));
         command.Parameters.AddWithValue("$updated", Moments.Write(session.Updated));
@@ -157,12 +157,12 @@ internal sealed class SessionWrites(SessionStore store)
     {
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, note_parts, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, origin, limited, entry, took_quest, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, $note, $noteParts, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL, $origin, $limited, $entry, $tookQuest, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, door, state, note, note_parts, evidence, transcript, created, updated, workspace, kind, door_version, profile, tree, origin, limited, entry, took_quest, revision)
+            VALUES ($id, $quest, $repository, $door, $state, $note, $noteParts, $evidence, NULL, $created, $updated, $workspace, $kind, $doorVersion, NULL, NULL, $origin, $limited, $entry, $tookQuest, {NextRevision})
             ON CONFLICT (id) DO UPDATE SET
               took_quest = COALESCE($tookQuest, took_quest),
               state = $state, note = $note, note_parts = $noteParts, evidence = $evidence, updated = $updated, workspace = $workspace,
-              kind = $kind, harness_version = $harnessVersion, origin = $origin, limited = $limited,
+              kind = $kind, door_version = $doorVersion, origin = $origin, limited = $limited,
               entry = COALESCE($entry, entry),
               revision = {NextRevision}
             """;
@@ -184,11 +184,11 @@ internal sealed class SessionWrites(SessionStore store)
         // The version crosses; the PROFILE NAME and the TREE never do — machine-local, like the
         // transcript beside them (D47 §4, D51). Written as literal NULLs rather than from the record,
         // so a caller that filled either field cannot make it travel by accident.
-        command.Parameters.AddWithValue("$harnessVersion", (object?)record.HarnessVersion ?? DBNull.Value);
+        command.Parameters.AddWithValue("$doorVersion", (object?)record.DoorVersion ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", record.Id);
         command.Parameters.AddWithValue("$quest", (object?)record.Quest ?? DBNull.Value);
         command.Parameters.AddWithValue("$repository", record.Repository);
-        command.Parameters.AddWithValue("$adapter", record.Adapter);
+        command.Parameters.AddWithValue("$door", record.Door);
         command.Parameters.AddWithValue("$state", record.State.ToString());
         command.Parameters.AddWithValue("$note", (object?)record.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$evidence", (object?)record.Evidence ?? DBNull.Value);

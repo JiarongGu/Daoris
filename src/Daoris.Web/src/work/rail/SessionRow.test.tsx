@@ -19,7 +19,7 @@ const NOW = new Date('2026-09-21T12:00:00Z');
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4',
   repository: 'engine',
-  adapter: 'claude-code',
+  door: 'claude-code',
   state: 'working',
   kind: 'driven',
   created: '2026-09-21T09:46:00Z',

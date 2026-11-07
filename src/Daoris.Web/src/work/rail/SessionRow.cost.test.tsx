@@ -6,7 +6,7 @@ import { SessionRow } from './SessionRow';
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4',
   repository: 'engine',
-  adapter: 'stub',
+  door: 'stub',
   state: 'working',
   kind: 'chat',
   created: '2026-09-21T09:46:00Z',

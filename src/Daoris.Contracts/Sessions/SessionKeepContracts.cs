@@ -10,7 +10,7 @@ namespace Daoris.Contracts.Sessions;
 /// </summary>
 /// <param name="Room">Where the intake runs, the driver's to name.</param>
 public sealed record OpenIntake(
-    string? Ask, string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null, string? Actor = null)
+    string? Ask, string? Door, string? Room, string? DoorVersion = null, string? Profile = null, string? Actor = null)
     : IRoute<SessionActionResponse>
 {
     public static string Method => "POST";
@@ -23,7 +23,7 @@ public sealed record OpenIntake(
 /// <param name="Workspace">The one its window was on at the press, which the record keeps; none is <c>default</c>. One this machine does not hold is not found.</param>
 /// <param name="Mode">The access mode its start got, <c>restricted</c> or <c>full</c>; none is <c>restricted</c>. One the ledger does not know is the caller's mistake.</param>
 public sealed record OpenHelp(
-    string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null, string? Workspace = null,
+    string? Door, string? Room, string? DoorVersion = null, string? Profile = null, string? Workspace = null,
     string? Mode = null, string? Actor = null) : IRoute<SessionActionResponse>
 {
     public static string Method => "POST";

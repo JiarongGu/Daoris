@@ -249,10 +249,10 @@ export function handOverSaid(
  * passed. Null where it is ready, where the page does not know its agent, and where the answer lacks it.
  */
 export function coolingFor(
-  session: Pick<Session, 'adapter' | 'profile'>, doors: readonly ToolDoor[], answer: AccountsAnswer | null | undefined, now: Date,
+  session: Pick<Session, 'door' | 'profile'>, doors: readonly ToolDoor[], answer: AccountsAnswer | null | undefined, now: Date,
 ): string | null {
-  const door = doors.find((each) => each.door === session.adapter);
-  const agent = agentOf(answer, door ? toolOf(door) : session.adapter);
+  const door = doors.find((each) => each.door === session.door);
+  const agent = agentOf(answer, door ? toolOf(door) : session.door);
   if (!agent) return null;
   const accounts = Array.isArray(agent.accounts) ? agent.accounts : [];
   const cooling = session.profile

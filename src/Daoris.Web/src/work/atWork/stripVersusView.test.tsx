@@ -27,7 +27,7 @@ describe('the strip and the view over one entry', () => {
         attended: 'ap000003',
         parts: entry.parts.map((part) => {
           const record = EVIDENCE_SESSIONS.find((each) => each.id === part.session)!;
-          return { key: part.session, agent: record.adapter, state: record.state, children: { count: 0, working: 0 } };
+          return { key: part.session, agent: record.door, state: record.state, children: { count: 0, working: 0 } };
         }),
       },
     );

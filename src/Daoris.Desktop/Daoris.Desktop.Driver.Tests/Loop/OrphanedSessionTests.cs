@@ -440,7 +440,7 @@ public sealed class OrphanedSessionTests : IDisposable
                         {
                             ["id"] = $"h{_sessions.Count + 1}", ["repository"] = "daoris:help",
                             ["state"] = "starting", ["kind"] = "chat", ["tree"] = body["room"]!.GetValue<string>(),
-                            ["adapter"] = body["adapter"]!.GetValue<string>(),
+                            ["door"] = body["door"]!.GetValue<string>(),
                         };
                         _sessions.Add(session);
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());

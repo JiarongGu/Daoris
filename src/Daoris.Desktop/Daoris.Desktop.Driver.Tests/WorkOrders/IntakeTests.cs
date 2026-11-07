@@ -459,7 +459,7 @@ public sealed class IntakeTests : IDisposable
         var opened = Assert.Single(service.Intakes);
         Assert.Equal("a1b2c3", opened["ask"]!.GetValue<string>());
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Intake,"work"), opened["room"]!.GetValue<string>());
-        Assert.Equal("stub", opened["adapter"]!.GetValue<string>());
+        Assert.Equal("stub", opened["door"]!.GetValue<string>());
 
         // What the agent said, when it published nothing: this failed once in a loaded full run
         // (2026-09-25) and the transcript went with the test's home, so the next failure says why.
@@ -497,7 +497,7 @@ public sealed class IntakeTests : IDisposable
 
         await Driver(walked, service).RunOnceAsync();
 
-        Assert.Equal("stub", Assert.Single(service.Intakes)["adapter"]!.GetValue<string>());
+        Assert.Equal("stub", Assert.Single(service.Intakes)["door"]!.GetValue<string>());
 
         await using var none = StandInService.Start(Circle, Ask());
         var nothing = ActorChoices.With(Config(), "intake", [new ActorChoice("gone"), new ActorChoice("away")]);

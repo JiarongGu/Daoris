@@ -161,7 +161,7 @@ async function drivenRun() {
   }, 'driving');
 
   const sessions = (await ask('/api/sessions?includeClosed=true')) ?? [];
-  const session = sessions.find((s) => s.adapter === ADAPTER);
+  const session = sessions.find((s) => s.door === ADAPTER);
   check('one session ran on the protocol door', Boolean(session),
     session ? `${session.id} — ${session.state}` : 'no session with that adapter');
   if (!session) return;

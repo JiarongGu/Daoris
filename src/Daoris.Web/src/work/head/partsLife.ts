@@ -29,8 +29,8 @@ export function beganLine(t: Translate, part: EntryPart, parts: readonly EntryPa
   const at = part.after ? parts.findIndex((other) => other.session === part.after) : -1;
   const after = at >= 0 ? t('work.parts.number', { n: at + 1 }) : part.after ?? '';
   // The agent it left, where it is another than its own: a move on the same agent says nothing more by naming it.
-  const left = part.after ? rows?.[part.after]?.session.adapter || null : null;
-  const agent = left && left !== rows?.[part.session]?.session.adapter ? left : null;
+  const left = part.after ? rows?.[part.after]?.session.door || null : null;
+  const agent = left && left !== rows?.[part.session]?.session.door ? left : null;
   switch (part.began) {
     case 'retried': return t('work.parts.began.retried', { after });
     case 'resumed': return t('work.parts.began.resumed', { after });
@@ -147,7 +147,7 @@ export function partsFlow(
       current: part.session === attended,
       state: shown ? { word: t(shownKey(shown)), tone: SESSION_TONE[shown] } : { word: part.shown, tone: 'neutral' },
       ...(facts
-        ? { actor: t('work.parts.ranBy',{ agent: sessionTool({ adapter: facts.session.adapter }), when: ago(facts.session.created) }) }
+        ? { actor: t('work.parts.ranBy',{ agent: sessionTool({ door: facts.session.door }), when: ago(facts.session.created) }) }
         : {}),
     });
     const place = partPlace(t, facts);

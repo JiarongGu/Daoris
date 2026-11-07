@@ -448,7 +448,7 @@ export function useQuestsView({
           workspace: (registry.data ?? []).find((row) => row.repository === session.repository)?.workspace,
           doors: Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [],
           answer: accounts.data,
-          label: (account) => nameOf(session.adapter, account),
+          label: (account) => nameOf(session.door, account),
           now: new Date(),
         }) : null}
         busy={busy}

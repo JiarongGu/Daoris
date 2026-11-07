@@ -33,7 +33,7 @@ internal static class TraceLookups
     internal static TraceAgent AgentOf(TracedSession session) => new()
     {
         Adapter = session.Adapter,
-        Harness = session.HarnessVersion,
+        Harness = session.DoorVersion,
         Account = session.Teammate ? null : session.Profile,
         Teammate = session.Teammate,
     };

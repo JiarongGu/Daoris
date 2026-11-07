@@ -1369,7 +1369,7 @@ if (!done.ok) throw new Error(done.text);
     await sleep(500);
   }
   check('…and its record is `working`: a conversation, serving no quest, on the stub',
-    chatRecord?.state === 'working' && chatRecord.kind === 'chat' && chatRecord.adapter === 'acp-stub'
+    chatRecord?.state === 'working' && chatRecord.kind === 'chat' && chatRecord.door === 'acp-stub'
       && !chatRecord.quest,
     JSON.stringify(chatRecord));
 

@@ -127,14 +127,14 @@ export function useAttendedHead({
     ? chatLimitWaitSaid(t, {
       held: conversationHeld,
       wait: conversationWait,
-      label: (account) => nameOf(attended.adapter, account),
+      label: (account) => nameOf(attended.door, account),
       language,
       names: accountNames(roster),
       now: new Date(),
     })
     : null;
   const waitLines = limitWait && attended
-    ? limitWaitSaid(t, limitWait, (account) => nameOf(attended.adapter, account))
+    ? limitWaitSaid(t, limitWait, (account) => nameOf(attended.door, account))
     : conversationLines;
   const waitAccount = limitWait?.account ?? conversationWait?.account ?? attended?.profile ?? null;
   // The line, the same at the head and the foot (D206 §3.7): one element, its presses the same presses.
@@ -161,7 +161,7 @@ export function useAttendedHead({
       onTryNow={() => {
         setLimitRefusal(null);
         accountUse.mutate(
-          { door: attended.adapter, action: 'ready', ...(waitAccount ? { profile: waitAccount } : {}) },
+          { door: attended.door, action: 'ready', ...(waitAccount ? { profile: waitAccount } : {}) },
           { onError: (error) => setLimitRefusal({ session: attended.id, sentence: sentence(error) }) },
         );
       }}
@@ -232,12 +232,12 @@ export function useAttendedHead({
     session: attended,
     shown: attendedShown,
     grouping,
-    ownSignIn: roster.some((row) => row.door === attended.adapter),
+    ownSignIn: roster.some((row) => row.door === attended.door),
     branch,
     nameOf,
     // The agent it continues by the roster's name for it, as the hand-over's ask names agents (MIXAGENT3a-i).
     continuesAgent: continues
-      ? roster.find((row) => row.door === continues.session.adapter)?.product || continues.session.adapter
+      ? roster.find((row) => row.door === continues.session.door)?.product || continues.session.door
       : null,
     leadingAgent: leadingAgentOf(attendedEntry, sessions ?? [], roster, sheets),
     helping: helps?.title,
@@ -291,7 +291,7 @@ export function useAttendedHead({
       ) : handOverAsking === attended.id && headActs.includes('handOver') ? (
         <HandOverAsk
           key={attended.id}
-          from={attended.adapter}
+          from={attended.door}
           first={[...new Set(nextChoices(attended, roster, attendedActor).map((step) => step.door.door))]}
           working={SESSION_ACTIVE.has(attended.state)}
           roster={agentRoster}
@@ -306,7 +306,7 @@ export function useAttendedHead({
       ) : helperAsking === attended.id && headActs.includes('askHelper') ? (
         <AskHelper
           key={attended.id}
-          from={attended.adapter}
+          from={attended.door}
           roster={agentRoster}
           busy={actions.askingHelper}
           onAsk={(asked, answered) => actions.askHelperNow(attended, asked, answered)}

@@ -531,7 +531,7 @@ public sealed class WorkflowPortsTests
                 "/api/quests?includeClosed=true" =>
                     """[{"id":"q1","from":"daoris","to":"engine","title":"Quest q1","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"}]""",
                 "/api/sessions?includeClosed=true" => """
-                    [{"id":"s1","repository":"engine","state":"completed","quest":"q1","adapter":"claude-code","tree":"no-such-tree",
+                    [{"id":"s1","repository":"engine","state":"completed","quest":"q1","door":"claude-code","tree":"no-such-tree",
                       "created":"2026-10-09T09:00:00Z","updated":"2026-10-09T09:20:00Z","evidence":"commits landed:\nabc1234 the change"}]
                     """,
                 _ => "[]",

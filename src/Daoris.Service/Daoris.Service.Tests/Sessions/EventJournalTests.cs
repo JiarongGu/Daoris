@@ -390,7 +390,7 @@ public sealed class EventJournalTests : IAsyncLifetime
     {
         await ExecuteAsync(
             """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, revision)
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, door_version, profile, tree, base_commit, revision)
             VALUES ('older001', NULL, 'Owner', 'stub', 'Queued', NULL, NULL, NULL, 'c', 'u', 'default', 'Driven', NULL, NULL, NULL, NULL, 7)
             """);
         await ExecuteAsync("UPDATE sessions SET state = 'Working', note = 'n', evidence = NULL, transcript = NULL, updated = 'u2' WHERE id = 'older001'");

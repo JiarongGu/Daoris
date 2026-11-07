@@ -136,7 +136,7 @@ public sealed class HelpClearDoorTests : DriverModuleBridge
         var host = new LoopbackHost();
         var unit = """{"kind":"quest","id":"q1","workspace":"aurora","clearable":true,"quests":["q1"],"forgotten":[],"asks":[],"sessions":["s1"],"teammates":[],"kept":[]}""";
         host.Serve("/api/sessions?includeClosed=true", Bytes(
-            """[{"id":"s1","quest":"q1","repository":"engine","adapter":"claude-code","state":"completed","kind":"driven","workspace":"aurora","created":"2026-10-02T09:00:00Z","updated":"2026-10-02T09:10:00Z"}]"""));
+            """[{"id":"s1","quest":"q1","repository":"engine","door":"claude-code","state":"completed","kind":"driven","workspace":"aurora","created":"2026-10-02T09:00:00Z","updated":"2026-10-02T09:10:00Z"}]"""));
         host.Serve("/api/sessions", Bytes("[]"));
         host.Serve("/api/quests?includeClosed=true", Bytes(
             """[{"id":"q1","from":"game","to":"engine","title":"A title","body":"","status":"Done","workspace":"aurora"}]"""));

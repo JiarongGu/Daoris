@@ -16,7 +16,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
 {
     private static JsonObject Record(string id, string state = "completed", string repository = "daoris:help") => new()
     {
-        ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = "chat", ["adapter"] = "claude-code-acp",
+        ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = "chat", ["door"] = "claude-code-acp",
         ["created"] = "2026-10-05T09:00:00Z", ["updated"] = "2026-10-05T09:05:00Z", ["deletable"] = state is not "working",
         ["said"] = new JsonArray(),
     };

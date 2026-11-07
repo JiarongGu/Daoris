@@ -156,7 +156,7 @@ public sealed class HelpSessionDoorTests : DriverModuleBridge
         var ledger = new LoopbackHost();
         var root = Path.Combine(Home, "checkouts", "engine").Replace('\\', '/');
         static string Session(string id, string state, string quest, int minute) =>
-            $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","adapter":"claude-code","state":"{{state}}","kind":"driven","created":"2026-10-02T09:{{minute:00}}:00Z","updated":"2026-10-02T09:{{minute + 1:00}}:00Z"}""";
+            $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","door":"claude-code","state":"{{state}}","kind":"driven","created":"2026-10-02T09:{{minute:00}}:00Z","updated":"2026-10-02T09:{{minute + 1:00}}:00Z"}""";
         static string Quest(string id, string status) =>
             $$"""{"id":"{{id}}","from":"game","to":"engine","title":"The work of #{{id}}","body":"A body.","status":"{{status}}"}""";
         var records = $"[{Session("failed1", "failed", "q1", 0)},{Session("running1", "working", "q3", 40)},{Session("done1", "completed", "q4", 50)}]";

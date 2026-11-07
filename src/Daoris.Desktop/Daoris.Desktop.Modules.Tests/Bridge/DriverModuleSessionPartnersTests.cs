@@ -14,7 +14,7 @@ public sealed class DriverModuleSessionPartnersTests : DriverModuleBridge
     private const string Head = "3333333333333333333333333333333333333333";
 
     private static string Record(string id, string extra = "") =>
-        $$"""{"id":"{{id}}","repository":"engine","adapter":"claude-code","state":"working","kind":"driven","tree":"trees/work/engine/s-{{id}}","created":"2026-10-22T09:00:00Z","updated":"2026-10-22T09:05:00Z"{{extra}}}""";
+        $$"""{"id":"{{id}}","repository":"engine","door":"claude-code","state":"working","kind":"driven","tree":"trees/work/engine/s-{{id}}","created":"2026-10-22T09:00:00Z","updated":"2026-10-22T09:05:00Z"{{extra}}}""";
 
     /// <summary>The loop up over a ledger on this machine holding a driven session, a partner, a reviewer and an intake.</summary>
     private async Task<DriverLoop> UpAsync(LoopbackHost ledger)

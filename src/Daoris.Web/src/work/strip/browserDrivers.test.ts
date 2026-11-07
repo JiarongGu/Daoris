@@ -8,7 +8,7 @@ import { browserDrivers } from './browserDrivers';
  * what it is for — from the ids the driver answers and the records the page already holds.
  */
 const session = (over: Partial<Session>): Session => ({
-  id: 's1a2b3c4', repository: 'engine', adapter: 'claude-code', state: 'working',
+  id: 's1a2b3c4', repository: 'engine', door: 'claude-code', state: 'working',
   created: '2026-09-30T00:00:00Z', updated: '2026-09-30T00:01:00Z', ...over,
 });
 

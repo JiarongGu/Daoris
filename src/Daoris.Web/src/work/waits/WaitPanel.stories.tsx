@@ -20,7 +20,7 @@ const nothing = () => {};
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 const PARKED: Session = {
-  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', adapter: 'claude-code', state: 'awaiting-person', kind: 'driven',
+  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', door: 'claude-code', state: 'awaiting-person', kind: 'driven',
   created: '2026-10-22T08:46:00Z', updated: '2026-10-22T09:05:00Z',
 };
 

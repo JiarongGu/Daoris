@@ -561,7 +561,7 @@ test("a driven session's record reaches the quest's page (D46)", async ({ page, 
     },
   });
   const quest = (await published.json() as { quest: { id: string } }).quest;
-  const opened = await request.post('/api/sessions', { data: { quest: quest.id, adapter: 'stub' } });
+  const opened = await request.post('/api/sessions', { data: { quest: quest.id, door: 'stub' } });
   const session = (await opened.json() as { session: { id: string } }).session;
   await request.post(`/api/sessions/${session.id}/state`, { data: { state: 'starting' } });
   await request.post(`/api/sessions/${session.id}/state`, {
@@ -616,8 +616,8 @@ test('a session record names the tool version and the account it ran as (D49 §4
   // no binaries to look at (D46 §7) and records what it is told.
   const opened = await request.post('/api/sessions', {
     data: {
-      quest: quest.id, adapter: 'stub',
-      harnessVersion: 'stub-harness 9.9.9', profile: 'work',
+      quest: quest.id, door: 'stub',
+      doorVersion: 'stub-harness 9.9.9', profile: 'work',
     },
   });
   // Asserted before it is used: a refusal here is a sentence worth reading, and `undefined.id` is not.

@@ -193,7 +193,7 @@ public sealed class SessionOpenDoors
                 return new(id, message, echo, transfer)
                 {
                     Moves = moving && echo == key, Moved = moved,
-                    Recorded = (Text(record, "adapter"), Text(record, "repository"), Text(record, "workspace")),
+                    Recorded = (Text(record, "door"), Text(record, "repository"), Text(record, "workspace")),
                 };
             }
             catch (Exception error) when (error is HttpRequestException or IOException or OperationCanceledException or JsonException)

@@ -28,12 +28,12 @@ public sealed record OpinionAskBody(
     public string? Account { get; init; }
 
     /// <summary>The harness version the reviewer's account walk observed (D49 §4).</summary>
-    public string? HarnessVersion { get; init; }
+    public string? DoorVersion { get; init; }
 
     /// <summary>The ask as the door declares it.</summary>
     internal AskOpinion Route() => new(
         Occasion, Pass, Working, new OpinionCandidateWire(Candidate.Repository, Candidate.Base, Candidate.Tip, [.. Candidate.Commits]),
-        new OpinionReviewerWire(Adapter, Label, Product, Maker, Account), Posture, Minutes, Tree, Rechecks, [.. Families], HarnessVersion);
+        new OpinionReviewerWire(Adapter, Label, Product, Maker, Account), Posture, Minutes, Tree, Rechecks, [.. Families], DoorVersion);
 }
 
 /// <summary>What the host answered a pass's ask: the opinion and its reviewer's record, or why not, in its sentence.</summary>

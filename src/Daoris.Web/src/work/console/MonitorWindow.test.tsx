@@ -36,7 +36,7 @@ const QUESTS = [{
   status: 'Taken', filed: at(4000), updated: at(200),
 }];
 
-const base = { adapter: 'claude-code', kind: 'driven', created: at(120), updated: at(4) };
+const base = { door: 'claude-code', kind: 'driven', created: at(120), updated: at(4) };
 
 let SESSIONS: unknown[] = [];
 
@@ -290,7 +290,7 @@ describe('the monitor window', () => {
     });
     SESSIONS = [
       LIVE[0],
-      { ...(LIVE[1] as object), adapter: 'pipe-tool' },
+      { ...(LIVE[1] as object), door: 'pipe-tool' },
     ];
     show();
 

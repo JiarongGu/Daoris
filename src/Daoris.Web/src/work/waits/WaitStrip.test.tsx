@@ -13,7 +13,7 @@ import { WaitStrip } from './WaitStrip';
 // person reading the last message answers it there. Props only: the frame hands it what it hands the head.
 
 const session = (over: Partial<Session> = {}): Session => ({
-  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', adapter: 'claude-code', state: 'completed', kind: 'driven',
+  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', door: 'claude-code', state: 'completed', kind: 'driven',
   created: '2026-09-21T09:46:00Z', updated: '2026-09-21T11:56:00Z', ...over,
 });
 

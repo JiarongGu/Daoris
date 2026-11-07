@@ -745,7 +745,7 @@ describe('the attention band', () => {
    */
   it('says in a browser that what needs you is the app’s, listing and counting nothing', async () => {
     SESSIONS = [{
-      id: 'p4rk3d00', quest: null, repository: 'engine', adapter: 'stub', kind: 'chat',
+      id: 'p4rk3d00', quest: null, repository: 'engine', door: 'stub', kind: 'chat',
       state: 'awaiting-person', note: 'two ways forward.',
       created: '2026-09-21T09:00:00Z', updated: '2026-09-21T10:00:00Z',
     }];

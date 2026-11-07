@@ -14,7 +14,7 @@ import * as stories from './SessionPageHead.stories';
 // passing it. Which acts apply is the rule's (`acts.test.ts`); this holds how the header draws what it is handed.
 
 const session = (over: Partial<Session> = {}): Session => ({
-  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', adapter: 'claude-code', state: 'working', kind: 'driven',
+  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', door: 'claude-code', state: 'working', kind: 'driven',
   created: '2026-10-02T09:00:00Z', updated: '2026-10-02T09:30:00Z', ...over,
 });
 

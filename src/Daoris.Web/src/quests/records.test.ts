@@ -99,7 +99,7 @@ describe("Quests' groups", () => {
 
 describe('the session that marks a quest', () => {
   const session = (over: Partial<Session>): Session => ({
-    id: 's1', quest: 'abc123', repository: 'engine', adapter: 'stub', state: 'working',
+    id: 's1', quest: 'abc123', repository: 'engine', door: 'stub', state: 'working',
     created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z', ...over,
   });
 

@@ -8,7 +8,7 @@ public sealed class FailureDefinitionTests
     private const string Quiet = """[{ "code": "ended.quiet", "values": { "minutes": "10" } }]""";
 
     private static string Record(string id, string at, string state, string? notes = null, bool interrupted = false) =>
-        $$"""{ "id": "{{id}}", "quest": "q1", "adapter": "a", "state": "{{state}}", "created": "2026-11-06T{{at}}Z", "interrupted": {{(interrupted ? "true" : "false")}}{{(notes is null ? "" : $", \"noteParts\": {notes}")}} }""";
+        $$"""{ "id": "{{id}}", "quest": "q1", "door": "a", "state": "{{state}}", "created": "2026-11-06T{{at}}Z", "interrupted": {{(interrupted ? "true" : "false")}}{{(notes is null ? "" : $", \"noteParts\": {notes}")}} }""";
 
     private static string List(params string[] records) => "[" + string.Join(",", records) + "]";
 

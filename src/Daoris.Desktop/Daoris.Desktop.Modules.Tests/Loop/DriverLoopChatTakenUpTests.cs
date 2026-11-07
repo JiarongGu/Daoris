@@ -143,8 +143,8 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
             {
                 _sessions.Add(new JsonObject
                 {
-                    ["id"] = id, ["repository"] = "engine", ["state"] = "completed", ["kind"] = kind, ["adapter"] = "talk",
-                    ["harnessVersion"] = "1.0.0", ["tree"] = tree, ["created"] = "2026-10-03T08:00:00Z",
+                    ["id"] = id, ["repository"] = "engine", ["state"] = "completed", ["kind"] = kind, ["door"] = "talk",
+                    ["doorVersion"] = "1.0.0", ["tree"] = tree, ["created"] = "2026-10-03T08:00:00Z",
                     ["said"] = new JsonArray(new JsonObject
                     {
                         ["id"] = word.Id, ["text"] = word.Text, ["at"] = "2026-10-03T09:00:00Z", ["files"] = new JsonArray(), ["reopens"] = true,

@@ -37,7 +37,7 @@ const DONE = { ...OPEN, id: 'd0d0d0', title: 'An old one', status: 'Done' };
 
 /** A session that ended yesterday, its done note a whole verify report, as the install's side bar showed it. */
 const ENDED = {
-  id: 's1a2b3c4', quest: null, repository: 'engine', adapter: 'claude-code', kind: 'chat', state: 'completed',
+  id: 's1a2b3c4', quest: null, repository: 'engine', door: 'claude-code', kind: 'chat', state: 'completed',
   note: 'verify passed:\nwhole report line 2\nline 3\nline 4\nline 5\nline 6',
   created: '2026-10-03T00:00:00Z', updated: '2026-10-03T00:01:00Z', workspace: 'default',
 };

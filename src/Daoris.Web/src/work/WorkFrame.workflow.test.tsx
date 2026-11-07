@@ -27,7 +27,7 @@ const QUESTS = [{
   filed: '2026-10-09T08:00:00Z', updated: '2026-10-09T09:00:00Z',
 }];
 const DRIVEN = {
-  id: 's1', quest: 'q1', repository: 'engine', adapter: 'claude-code', state: 'working',
+  id: 's1', quest: 'q1', repository: 'engine', door: 'claude-code', state: 'working',
   kind: 'driven', created: '2026-10-09T09:00:00Z', updated: '2026-10-09T09:05:00Z',
 };
 

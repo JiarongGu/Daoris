@@ -712,7 +712,7 @@ public sealed class SessionLogTests : IDisposable
                 ? Answer(HttpStatusCode.NotFound, new { error = "no such door" })
                 : Answer(HttpStatusCode.OK, new
                 {
-                    session = new { id, repository, adapter = Field("adapter"), state = "queued", workspace = "work" },
+                    session = new { id, repository, door = Field("door"), state = "queued", workspace = "work" },
                     message = "queued",
                 });
         }

@@ -20,7 +20,7 @@ afterEach(async () => {
 
 const AT = '2026-09-21T11:00:00Z';
 const session = (over: Partial<Session> = {}): Session => ({
-  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', adapter: 'claude-code', state: 'awaiting-person', kind: 'driven',
+  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', door: 'claude-code', state: 'awaiting-person', kind: 'driven',
   created: '2026-09-21T09:46:00Z', updated: '2026-09-21T11:56:00Z', note: 'I need go-ahead 2 before I write to production.', ...over,
 });
 const goAhead = (number: number, state: GoAhead['state']): GoAhead => ({

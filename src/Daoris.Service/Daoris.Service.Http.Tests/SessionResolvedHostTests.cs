@@ -20,7 +20,7 @@ public sealed class SessionResolvedHostTests(LocalHost host) : IClassFixture<Loc
     {
         var published = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title, body = "Go on." });
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
-        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub", tree = host.RootOf(tree) });
+        var opened = await host.PostAsync("/api/sessions", new { quest, door = "stub", tree = host.RootOf(tree) });
         return opened.Json.GetProperty("session").GetProperty("id").GetString()!;
     }
 

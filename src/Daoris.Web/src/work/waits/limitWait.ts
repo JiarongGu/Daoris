@@ -53,15 +53,15 @@ export function limitedLine(session: Pick<Session, 'state' | 'limit' | 'kind' | 
  * the driver's next look, so it waits for nothing), where the answer holds no walk, and in a browser, which holds no accounts.
  */
 export function limitWaitOf({ session, workspace, doors, answer, now }: {
-  session: Pick<Session, 'adapter' | 'profile' | 'noteParts'>;
+  session: Pick<Session, 'door' | 'profile' | 'noteParts'>;
   /** The line's workspace, as the registry names it; the set's one scope where it names none (D197). */
   workspace?: string | null;
   doors: readonly ToolDoor[];
   answer: AccountsAnswer | null | undefined;
   now: Date;
 }): LimitWait | null {
-  const door = doors.find((each) => each.door === session.adapter);
-  const agent = agentOf(answer, door ? toolOf(door) : session.adapter);
+  const door = doors.find((each) => each.door === session.door);
+  const agent = agentOf(answer, door ? toolOf(door) : session.door);
   if (!agent) return null;
   const scope = (workspace ? workspaceScope(agent, workspace) : null) ?? machineScope(agent);
   if (scope.next?.reason !== 'waits') return null;
@@ -157,7 +157,7 @@ export function limitWaitSaid(t: Translate, wait: LimitWait, label: (account: st
  * page, which hold the same facts. Null where it is no limited line or the walk waits for nothing.
  */
 export function limitWaitLines(t: Translate, { session, questStatus, paused = false, workspace, doors, answer, label, now }: {
-  session: Pick<Session, 'state' | 'limit' | 'kind' | 'quest' | 'adapter' | 'profile' | 'noteParts'>;
+  session: Pick<Session, 'state' | 'limit' | 'kind' | 'quest' | 'door' | 'profile' | 'noteParts'>;
   questStatus?: string | null;
   paused?: boolean;
   workspace?: string | null;

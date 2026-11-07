@@ -291,7 +291,7 @@ public sealed class MemoryTools(
 
     /// <summary>Who makes a change, from the caller's record and the role its connector was started in (§1), at this instant.</summary>
     private MemoryAuthor Author(Session record) => new(
-        record.Id, record.Workspace, record.Quest, record.Adapter, record.HarnessVersion, intake?.Role, intake?.RoleRevision,
+        record.Id, record.Workspace, record.Quest, record.Door, record.DoorVersion, intake?.Role, intake?.RoleRevision,
         (time ?? TimeProvider.System).GetUtcNow());
 
     [McpServerTool(Name = "memory_propose")]

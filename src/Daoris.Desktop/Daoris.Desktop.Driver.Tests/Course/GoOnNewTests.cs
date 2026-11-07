@@ -36,7 +36,7 @@ public sealed class GoOnNewTests : IDisposable
         string repository = "engine", int minutes = 0, string? from = null, params string[] said) => new()
         {
             ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["quest"] = quest, ["ask"] = ask,
-            ["adapter"] = "claude-code", ["profile"] = "account-1", ["created"] = T0.AddMinutes(minutes).ToString("O"),
+            ["door"] = "claude-code", ["profile"] = "account-1", ["created"] = T0.AddMinutes(minutes).ToString("O"),
             ["updated"] = T0.AddMinutes(minutes + 5).ToString("O"), ["said"] = new JsonArray([.. said.Select(Word)]), ["from"] = from,
         };
 

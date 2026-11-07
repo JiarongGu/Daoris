@@ -15,7 +15,7 @@ const NOW = new Date('2026-10-02T12:00:00Z');
 const at = (minutesAgo: number) => new Date(NOW.getTime() - minutesAgo * 60_000).toISOString();
 
 const session = (over: Partial<Session> & { id: string; state: Session['state'] }): Session => ({
-  repository: 'engine', adapter: 'claude-code', kind: 'driven', created: at(90), updated: at(5), ...over,
+  repository: 'engine', door: 'claude-code', kind: 'driven', created: at(90), updated: at(5), ...over,
 });
 
 const placed = (over: Partial<SessionGrouping> & Pick<SessionGrouping, 'session' | 'group'>): SessionGrouping => ({

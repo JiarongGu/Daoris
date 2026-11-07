@@ -21,7 +21,7 @@ type Story = StoryObj<typeof SessionLifeFlow>;
 const light = [atWidths(), inLight];
 
 const session = (state: Session['state'], over: Partial<Session> = {}): Session => ({
-  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', adapter: 'claude-code', state, kind: 'driven',
+  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', door: 'claude-code', state, kind: 'driven',
   created: '2026-10-20T09:00:00Z', updated: '2026-10-20T11:00:00Z', ...over,
 });
 

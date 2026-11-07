@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
 {
     private static string Record(string id, string extra = "") =>
-        $$"""{"id":"{{id}}","repository":"engine","adapter":"claude-code","state":"working","kind":"chat","created":"2026-10-16T09:00:00Z","updated":"2026-10-16T09:05:00Z"{{extra}}}""";
+        $$"""{"id":"{{id}}","repository":"engine","door":"claude-code","state":"working","kind":"chat","created":"2026-10-16T09:00:00Z","updated":"2026-10-16T09:05:00Z"{{extra}}}""";
 
     /// <summary>The loop up over a ledger on this machine holding a conversation, a helper, a reviewer and an intake.</summary>
     private async Task<DriverLoop> UpAsync(LoopbackHost ledger)
@@ -85,7 +85,7 @@ public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
         var row = table["rows"]!.AsArray().Single(each => (string?)each!["name"] == name)!;
         var marks = row["marks"]!.AsObject().DeepClone().AsObject();
         marks["id"] = "s1";
-        marks["adapter"] = "claude-code";
+        marks["door"] = "claude-code";
         marks["state"] = "completed";
         marks["created"] = "2026-10-16T09:00:00Z";
         marks["updated"] = "2026-10-16T09:05:00Z";

@@ -122,7 +122,7 @@ public static class AccountsStateSlice
     /// <summary>The running count over records as the sessions slice holds them, by the route's own rule.</summary>
     public static IReadOnlyDictionary<string, int> RunningOn(IEnumerable<JsonObject> records, Func<string, string> ownerOf) =>
         AccountsRoutes.Counted(
-            records.Select(record => (Json.NonEmpty(record, "id"), Json.NonEmpty(record, "adapter"), Json.NonEmpty(record, "profile"), Json.NonEmpty(record, "state"))),
+            records.Select(record => (Json.NonEmpty(record, "id"), Json.NonEmpty(record, "door"), Json.NonEmpty(record, "profile"), Json.NonEmpty(record, "state"))),
             ownerOf);
 
     /// <summary>

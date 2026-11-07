@@ -68,7 +68,7 @@ internal static class SessionReads
                 Ask = session.Ask,
                 Tree = session.Tree,
                 Quest = session.Quest,
-                Adapter = session.Adapter is { Length: > 0 } adapter ? adapter : null,
+                Adapter = session.Door is { Length: > 0 } adapter ? adapter : null,
                 // Where its tree stood when it opened: what the sweep reads a lost done's evidence as changed from.
                 BaseCommit = session.BaseCommit is { Length: > 0 } baseCommit ? baseCommit : null,
                 // Its note's lines by code, handed on wherever the note is; null for a record from before parts.
@@ -144,7 +144,7 @@ internal static class SessionReads
             var state = session.State ?? "";
             if (state is "stood-down" or "" || IsNeutral(session)) continue;
             var asked = Wired<ActorAsked>(session.Asked);
-            runs.Add((quest, session.Created, IsFailure(session) ? "failed" : state, $"{session.Adapter}|{asked?.NamedModel}|{asked?.Effort.Value}"));
+            runs.Add((quest, session.Created, IsFailure(session) ? "failed" : state, $"{session.Door}|{asked?.NamedModel}|{asked?.Effort.Value}"));
         }
 
         var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -341,7 +341,7 @@ internal static class SessionReads
         var started = new List<SessionStarted>();
         foreach (var session in listed)
         {
-            if (IsTeams(session) || session.Adapter is not { Length: > 0 } adapter) continue;
+            if (IsTeams(session) || session.Door is not { Length: > 0 } adapter) continue;
             started.Add(new SessionStarted(adapter, session.Profile, MomentOf(session.Created), running.Contains(session.Id ?? ""))
             {
                 Id = session.Id,
@@ -368,8 +368,8 @@ internal static class SessionReads
             Limit = session.Limit,
             NotOffered = NotOffered(session),
             // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).
-            Adapter = session.Adapter,
-            HarnessVersion = session.HarnessVersion,
+            Adapter = session.Door,
+            DoorVersion = session.DoorVersion,
             BaseCommit = session.BaseCommit,
             // The person's words waiting on it (MSG1a): what goes on with it, parked or ended (MSG1b, D137 §2.2).
             Said = session.Said is { } said ? [.. said.Select(ReadWord).OfType<SaidWordView>()] : null,

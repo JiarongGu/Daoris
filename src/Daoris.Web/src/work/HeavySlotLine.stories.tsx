@@ -17,7 +17,7 @@ const AT = Date.now();
 const ago = (minutes: number) => new Date(AT - minutes * 60_000).toISOString();
 
 const HOLDER: Session = {
-  id: 's-fts', quest: 'fts1', repository: 'engine', adapter: 'claude-code', state: 'working', kind: 'driven',
+  id: 's-fts', quest: 'fts1', repository: 'engine', door: 'claude-code', state: 'working', kind: 'driven',
   created: ago(40), updated: ago(1),
 };
 const WAITER: Session = { ...HOLDER, id: 's-chan', quest: 'chan1', created: ago(20) };

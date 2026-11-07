@@ -81,7 +81,7 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
     public async Task A_partners_record_is_refused_at_the_press_the_plan_and_the_verb()
     {
         const string sessions = """
-            [{ "id": "pt1a2b3c", "repository": "engine", "state": "completed", "kind": "chat", "adapter": "codex-acp",
+            [{ "id": "pt1a2b3c", "repository": "engine", "state": "completed", "kind": "chat", "door": "codex-acp",
                "tree": "X:/daoris/trees/aurora/engine/p-pc000001", "serves": "s1a2b3c4", "piece": "pc000001", "said": [] }]
             """;
         var loop = Loop();

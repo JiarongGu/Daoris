@@ -10,7 +10,7 @@ import type { EntryPart, SessionEntry } from './entries';
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
 
 const record = (id: string, repository: string, state: Session['state'], over: Partial<Session> = {}): Session => ({
-  id, repository, state, adapter: 'claude-code', kind: 'driven', quest: null, created: at(300), updated: at(10), ...over,
+  id, repository, state, door: 'claude-code', kind: 'driven', quest: null, created: at(300), updated: at(10), ...over,
 });
 
 /** The ask `c98a7e` (an app and its database repository) and the ask `841c38` (the app alone): eleven records. */

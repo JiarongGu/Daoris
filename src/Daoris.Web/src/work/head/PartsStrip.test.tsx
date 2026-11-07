@@ -130,12 +130,12 @@ describe('the parts strip', () => {
     const line = { ...APP, parts };
     const [first, second, third] = EVIDENCE_SESSIONS;
     const moved = {
-      ap000001: { session: { ...first!, adapter: 'claude-code' }, spent: { turns: 1, reported: 0 } },
+      ap000001: { session: { ...first!, door: 'claude-code' }, spent: { turns: 1, reported: 0 } },
       ap000002: {
-        session: { ...second!, adapter: 'codex', from: 'ap000001', fromWhy: 'limit', fromBy: 'daoris' },
+        session: { ...second!, door: 'codex', from: 'ap000001', fromWhy: 'limit', fromBy: 'daoris' },
         spent: { turns: 3, reported: 3, input: 1200, output: 800, cacheRead: 40_000, cacheWrite: null },
       },
-      ap000003: { session: { ...third!, adapter: 'claude-code', from: 'ap000002', fromWhy: 'resume', fromBy: 'daoris' } },
+      ap000003: { session: { ...third!, door: 'claude-code', from: 'ap000002', fromWhy: 'resume', fromBy: 'daoris' } },
     };
     render(<PartsStrip entry={line} attended="ap000003" rows={moved} onShow={() => {}} />);
 

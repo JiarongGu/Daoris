@@ -19,10 +19,10 @@ const SESSION: Session = {
   id: 's1a2b3c4',
   quest: '7a82cc',
   repository: 'engine',
-  adapter: 'claude-code',
+  door: 'claude-code',
   state: 'working',
   kind: 'driven',
-  harnessVersion: '2.1.4',
+  doorVersion: '2.1.4',
   profile: 'owner',
   actor: 'build', choice: 'before',
   asked: { agent: 'claude-code', model: { source: 'account-default', carried: false }, effort: { source: 'account-default', carried: false } },
@@ -250,7 +250,7 @@ export const IntakeAsking: Story = {
       kind: 'chat',
       repository: 'ask #0fda18',
       ask: '0fda18',
-      adapter: 'claude-code-acp',
+      door: 'claude-code-acp',
       state: 'awaiting-person',
       tree: 'C:/somewhere/data/intake/default',
       created: at(14),
@@ -273,7 +273,7 @@ export const IntakeRunning: Story = {
       kind: 'chat',
       repository: 'ask #0fda18',
       ask: '0fda18',
-      adapter: 'claude-code-acp',
+      door: 'claude-code-acp',
       state: 'working',
       tree: 'C:/somewhere/data/intake/default',
       created: at(3),
@@ -502,7 +502,7 @@ export const FromAnotherMachine: Story = {
 
 /** A record older than the toolchain: no version, no account, and still a complete record. */
 export const BeforeTheToolchain: Story = {
-  args: { session: { ...SESSION, harnessVersion: null, profile: null, tree: null, actor: null, choice: null, asked: null, ran: null } },
+  args: { session: { ...SESSION, doorVersion: null, profile: null, tree: null, actor: null, choice: null, asked: null, ran: null } },
 };
 
 /** 中文 content beside English chrome — the i18n boundary, seen rather than described. */
@@ -521,7 +521,7 @@ const openDetails: Story['play'] = async ({ canvasElement }) => {
     .find((button) => /^(Details|详情)/.test(button.textContent ?? ''))?.click();
 };
 
-const EARLIER: Session = { ...SESSION, id: 'a1b2c3d4', quest: null, kind: 'chat', adapter: 'codex', state: 'completed' };
+const EARLIER: Session = { ...SESSION, id: 'a1b2c3d4', quest: null, kind: 'chat', door: 'codex', state: 'completed' };
 const HANDED: Session = {
   ...SESSION, quest: null, kind: 'chat', tree: null, from: 'a1b2c3d4', fromWhy: 'near', fromBy: 'daoris', created: at(9), updated: at(1),
 };

@@ -27,7 +27,7 @@ export const QUESTS = [{
   status: 'Open', filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
 }];
 export const SESSIONS = [{
-  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', adapter: 'claude-code', state: 'working',
+  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', door: 'claude-code', state: 'working',
   created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
 }];
 

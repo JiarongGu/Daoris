@@ -129,7 +129,7 @@ public sealed class PartnerProcessTests : IDisposable
 
         // The record the host opened: serves the lead, carries the piece, on codex-acp, in a clone under the home's trees.
         var opened = Assert.Single(service.Opened);
-        Assert.Equal(("s1", Piece, "codex-acp"), (opened["lead"]!.GetValue<string>(), opened["piece"]!.GetValue<string>(), opened["adapter"]!.GetValue<string>()));
+        Assert.Equal(("s1", Piece, "codex-acp"), (opened["lead"]!.GetValue<string>(), opened["piece"]!.GetValue<string>(), opened["door"]!.GetValue<string>()));
         Assert.Equal(_base, opened["baseCommit"]!.GetValue<string>());
         Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Trees), opened["tree"]!.GetValue<string>());
         Assert.Equal(["starting", "working", "completed"], service.States("pt1"));
@@ -380,7 +380,7 @@ public sealed class PartnerProcessTests : IDisposable
                         var lead = new JsonObject
                         {
                             ["id"] = "s1", ["quest"] = "q1", ["repository"] = "reports", ["state"] = "completed", ["kind"] = "driven",
-                            ["adapter"] = "claude-code-acp", ["tree"] = _root, ["said"] = new JsonArray([.. Words.Select(word => word.DeepClone())]),
+                            ["door"] = "claude-code-acp", ["tree"] = _root, ["said"] = new JsonArray([.. Words.Select(word => word.DeepClone())]),
                         };
                         var records = new JsonArray(lead);
                         if (_partner is not null)
@@ -400,7 +400,7 @@ public sealed class PartnerProcessTests : IDisposable
                         _states["pt1"] = [];
                         _partner = new JsonObject
                         {
-                            ["id"] = "pt1", ["repository"] = "reports", ["state"] = "queued", ["kind"] = "chat", ["adapter"] = body["adapter"]!.GetValue<string>(),
+                            ["id"] = "pt1", ["repository"] = "reports", ["state"] = "queued", ["kind"] = "chat", ["door"] = body["door"]!.GetValue<string>(),
                             ["serves"] = body["lead"]!.GetValue<string>(), ["piece"] = body["piece"]!.GetValue<string>(), ["tree"] = body["tree"]!.GetValue<string>(),
                         };
                         return (200, new JsonObject { ["message"] = "Session `pt1` writes the piece in a clone of its own.", ["session"] = _partner.DeepClone() }.ToJsonString());

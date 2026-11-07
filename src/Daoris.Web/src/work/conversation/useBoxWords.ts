@@ -67,7 +67,7 @@ export function useBoxWords({
     // PARKVIEW1 (the park's ask design §4): where its question waits beside go-aheads still open, the go-aheads come first, each
     // keeping the park for this answer, which then sends it on with them; the words stay in the box, said why.
     if (attended && answering && question && openGoAheads(goAheads).length > 0) return t('work.park.goAheadsFirst');
-    if (!attended || !tooLong(text, { door: doorOf(attended.adapter, roster), kind: attended.kind })) return null;
+    if (!attended || !tooLong(text, { door: doorOf(attended.door, roster), kind: attended.kind })) return null;
     return t('work.say.tooLong', { count: NATIVE_WORDS_LIMIT });
   };
   const accepts = (text: string) => {

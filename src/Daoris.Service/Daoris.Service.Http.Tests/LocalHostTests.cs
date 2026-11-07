@@ -467,7 +467,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     {
         var opened = await host.PostAsync("/api/sessions", new
         {
-            quest, adapter = "stub", tree = Path.Combine(host.Repositories, "trees", tree),
+            quest, door = "stub", tree = Path.Combine(host.Repositories, "trees", tree),
         });
         Assert.Equal(200, opened.Status);
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
@@ -1719,7 +1719,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     public async Task A_stop_the_driver_says_was_interrupted_is_kept_and_answered_back()
     {
         var quest = await PublishAsync("A quest whose session the driver's shutdown ended");
-        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub" });
+        var opened = await host.PostAsync("/api/sessions", new { quest, door = "stub" });
         Assert.Equal(200, opened.Status);
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
         foreach (var state in new[] { "starting", "working" })
@@ -1750,7 +1750,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     public async Task A_carry_on_over_a_take_made_after_its_session_ended_is_refused_409()
     {
         var quest = await PublishAsync("A quest whose session failed before it took it");
-        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub" });
+        var opened = await host.PostAsync("/api/sessions", new { quest, door = "stub" });
         Assert.Equal(200, opened.Status);
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
         foreach (var state in new[] { "starting", "working" })
@@ -1762,7 +1762,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
             $"/api/sessions/{id}/state", new { state = "failed", note = "the harness exited before its first turn." })).Status);
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
 
-        var refused = await host.PostAsync("/api/sessions", new { quest, adapter = "stub" });
+        var refused = await host.PostAsync("/api/sessions", new { quest, door = "stub" });
 
         Assert.Equal(409, refused.Status);
         Assert.Contains($"taken here after session `{id}` ended", refused.Error);
@@ -1777,7 +1777,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     public async Task A_note_s_parts_go_in_through_the_state_door_and_come_back_beside_it()
     {
         var quest = await PublishAsync("A quest whose session parked to ask, by code");
-        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub" });
+        var opened = await host.PostAsync("/api/sessions", new { quest, door = "stub" });
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
         foreach (var state in new[] { "starting", "working" })
         {
@@ -1825,7 +1825,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     public async Task A_park_is_answered_through_the_say_door_alone_its_answer_route_gone()
     {
         var quest = await PublishAsync("A quest whose session parked to ask which port");
-        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub" });
+        var opened = await host.PostAsync("/api/sessions", new { quest, door = "stub" });
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
         foreach (var state in new[] { "starting", "working" })
         {
@@ -2202,7 +2202,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     public async Task A_failure_the_driver_says_was_a_limit_is_kept_and_answered_to_any_caller()
     {
         var quest = await PublishAsync("A quest whose session an account's limit cut off");
-        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub", profile = "account-limited-here" });
+        var opened = await host.PostAsync("/api/sessions", new { quest, door = "stub", profile = "account-limited-here" });
         Assert.Equal(200, opened.Status);
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
         Assert.False(opened.Json.GetProperty("session").GetProperty("limit").GetBoolean());
@@ -2261,7 +2261,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     /// <summary>A chat in <c>Keeper</c>, in a tree of its own so it holds nothing another test opens, ended <c>completed</c>.</summary>
     private async Task<string> EndedChatAsync(string tree)
     {
-        var opened = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", tree = host.RootOf(tree) });
+        var opened = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", door = "stub", tree = host.RootOf(tree) });
         Assert.Equal(200, opened.Status);
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
         foreach (var state in new[] { "starting", "working", "completed" })
@@ -2308,7 +2308,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     public async Task A_session_that_served_a_quest_is_refused_with_409_its_word_and_the_ledgers_sentence()
     {
         var quest = await PublishAsync("A quest whose session is that work's record");
-        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub", tree = host.RootOf("keeper-served") });
+        var opened = await host.PostAsync("/api/sessions", new { quest, door = "stub", tree = host.RootOf("keeper-served") });
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
         Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "failed" })).Status);
         Assert.False((await ListedSessionAsync(id))!.Value.GetProperty("deletable").GetBoolean());

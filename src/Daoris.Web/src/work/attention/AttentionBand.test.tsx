@@ -37,7 +37,7 @@ import type { SessionGrouping } from '../groups';
 import { sessionTitle } from '../identity';
 import type { Session } from '../../data/api';
 
-const base = { adapter: 'claude-code', created: '2026-10-01T09:00:00Z', workspace: 'default' };
+const base = { door: 'claude-code', created: '2026-10-01T09:00:00Z', workspace: 'default' };
 
 /** Seven sessions ended with work in their trees, one an hour apart, and the quest the tick parked. */
 const ENDED = Array.from({ length: 7 }, (_, at) => ({
@@ -732,7 +732,7 @@ describe('What needs you settles what one press can', () => {
   /** Never a card saying all clear (§6.1): one line, and what is running, which is the next thing a person asks. */
   it('is one line when nothing needs you, saying what is working', async () => {
     const working = (id: string, state: string) => ({
-      id, quest: 'q1', repository: 'engine', adapter: 'stub', kind: 'driven', state, created: '2026-09-21T09:00:00Z', updated: '2026-09-21T09:00:00Z',
+      id, quest: 'q1', repository: 'engine', door: 'stub', kind: 'driven', state, created: '2026-09-21T09:00:00Z', updated: '2026-09-21T09:00:00Z',
     });
     settle([], { sessions: [working('w0rk1ng0', 'working'), working('w0rk1ng1', 'starting')] });
     const band = await screen.findByRole('region', { name: 'What needs you' });

@@ -213,7 +213,7 @@ public sealed class AtWorkWatchTests : IDisposable
         Assert.Equal(0, _woken);
 
         // An open quest is untaken whoever's record names it; the take that moves the row is the quest's own status.
-        _records["s3"] = new JsonObject { ["id"] = "s3", ["state"] = "working", ["quest"] = "q1", ["adapter"] = "claude-code" };
+        _records["s3"] = new JsonObject { ["id"] = "s3", ["state"] = "working", ["quest"] = "q1", ["door"] = "claude-code" };
         await _sessions.JudgeAsync();
         Assert.Equal(0, _woken);
 

@@ -24,14 +24,14 @@ const VERIFY: Quest = {
 };
 
 const session = (id: string, quest: string, minutesAgo: number, extra: Partial<Session> = {}): Session => ({
-  id, quest, repository: 'engine', adapter: 'claude-code', harnessVersion: '2.1.270', profile: 'account-2',
+  id, quest, repository: 'engine', door: 'claude-code', doorVersion: '2.1.270', profile: 'account-2',
   state: 'completed', kind: 'driven', created: at(minutesAgo), updated: at(minutesAgo - 5), ...extra,
 });
 
 const SESSIONS: Session[] = [
   session('s-first', '7a82cc', 290, { state: 'failed' }),
   session('s-second', '7a82cc', 200),
-  session('s-verify', '91be07', 25, { state: 'working', repository: 'game', adapter: 'claude-code-acp' }),
+  session('s-verify', '91be07', 25, { state: 'working', repository: 'game', door: 'claude-code-acp' }),
 ];
 
 const meta: Meta<typeof ChainStrip> = {

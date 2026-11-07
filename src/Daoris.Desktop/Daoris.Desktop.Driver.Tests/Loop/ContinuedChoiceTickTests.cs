@@ -98,7 +98,7 @@ public sealed class ContinuedChoiceTickTests : IDisposable
         // The first look: the stub's accounts cool, so Build's second choice takes the quest, and its turn fails with the quest taken.
         var first = Seeing(service, await driver.RunOnceAsync().WaitAsync(Poll.Patience));
         Assert.True((service.Session("s1")["state"]!.GetValue<string>(), service.Status("q1")) == ("failed", "Taken"), first);
-        Assert.Equal(("acp-other", "2"), (service.Session("s1")["adapter"]!.GetValue<string>(), service.Session("s1")["choice"]?.GetValue<string>()));
+        Assert.Equal(("acp-other", "2"), (service.Session("s1")["door"]!.GetValue<string>(), service.Session("s1")["choice"]?.GetValue<string>()));
 
         var seen = first;
         for (var look = 0; look < 3 && service.Status("q1") != "Done"; look++)
@@ -109,7 +109,7 @@ public sealed class ContinuedChoiceTickTests : IDisposable
         Assert.True(service.Status("q1") == "Done", seen);
         Assert.True(service.SessionCount == 2, seen);
         var carried = service.Session("s2");
-        Assert.Equal(("completed", "acp-other", "account-x"), (carried["state"]!.GetValue<string>(), carried["adapter"]!.GetValue<string>(), carried["profile"]!.GetValue<string>()));
+        Assert.Equal(("completed", "acp-other", "account-x"), (carried["state"]!.GetValue<string>(), carried["door"]!.GetValue<string>(), carried["profile"]!.GetValue<string>()));
         Assert.Equal(("2", "acp-other", "codex-mini"), (carried["choice"]?.GetValue<string>(), carried["asked"]?["agent"]?.GetValue<string>(), carried["asked"]?["model"]?["value"]?.GetValue<string>()));
         // On the second choice's own wire, its model and effort set for the carry-on; nothing ever reached the stub.
         var set = Heard().Where(line => line["session"]?.GetValue<string>() == "s2" && line["method"]!.GetValue<string>() == "session/set_config_option")

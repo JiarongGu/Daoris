@@ -173,12 +173,12 @@ public sealed class AccountRotationGoalTests : IDisposable
     public void The_records_say_each_session_s_adapter_account_opening_and_whether_it_runs_and_a_teammate_s_say_nothing()
     {
         var started = ServiceClient.ReadStarted("""
-            [{ "id": "s1", "adapter": "claude-code-acp", "profile": "account-1", "created": "2026-10-01T10:00:00Z", "state": "working" },
-             { "id": "s2", "adapter": "claude-code", "profile": "account-2", "created": "2026-10-01T11:00:00+05:45", "state": "completed" },
-             { "id": "s3", "adapter": "claude-code", "state": "working" },
+            [{ "id": "s1", "door": "claude-code-acp", "profile": "account-1", "created": "2026-10-01T10:00:00Z", "state": "working" },
+             { "id": "s2", "door": "claude-code", "profile": "account-2", "created": "2026-10-01T11:00:00+05:45", "state": "completed" },
+             { "id": "s3", "door": "claude-code", "state": "working" },
              { "id": "s4", "profile": "account-1", "created": "2026-10-01T10:00:00Z", "state": "working" },
-             { "id": "other-machine/s1", "adapter": "claude-code", "profile": "account-1", "created": "2026-10-01T10:00:00Z", "state": "working" },
-             { "id": "s5", "adapter": "claude-code-acp", "profile": "account-1", "created": "2026-10-01T12:00:00Z", "state": "failed",
+             { "id": "other-machine/s1", "door": "claude-code", "profile": "account-1", "created": "2026-10-01T10:00:00Z", "state": "working" },
+             { "id": "s5", "door": "claude-code-acp", "profile": "account-1", "created": "2026-10-01T12:00:00Z", "state": "failed",
                "noteParts": [{ "code": "ended.choice-not-offered", "values": { "agent": "claude-code-acp", "model": "opus" } }] }]
             """, [new SessionView("s1", "engine", "working"), new SessionView("s3", "engine", "working")]);
 

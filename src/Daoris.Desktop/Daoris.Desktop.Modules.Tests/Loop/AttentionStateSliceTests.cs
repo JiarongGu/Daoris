@@ -31,7 +31,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
     /// <summary>The session an intake opened for the ask above (D65 §1b): a chat, in the ask's name.</summary>
     private static JsonObject Intake(string over = "{}") => With(
-        Session("""{"id":"i9n8t7k6","repository":"ask #7c1e9a04b2d5","kind":"chat","adapter":"stub","ask":"7c1e9a04b2d5"}"""), over);
+        Session("""{"id":"i9n8t7k6","repository":"ask #7c1e9a04b2d5","kind":"chat","door":"stub","ask":"7c1e9a04b2d5"}"""), over);
 
     private static JsonObject Only(IReadOnlyList<JsonObject> rows, string kind) => Assert.Single(rows, row => row["kind"]!.GetValue<string>() == kind);
 

@@ -410,7 +410,7 @@ public sealed class AskAndWaitTickTests : IDisposable
                             ["profile"] = body["profile"]?.GetValue<string>(),
                             ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
                         };
-                        if (KeepsAdapter) session["adapter"] = body["adapter"]?.GetValue<string>();
+                        if (KeepsAdapter) session["door"] = body["door"]?.GetValue<string>();
                         if (KeepsBaseCommit) session["baseCommit"] = body["baseCommit"]?.GetValue<string>();
                         if (Entries.TryGetValue(body["quest"]!.GetValue<string>(), out var entry)) session["entry"] = entry;
                         // The session it continues, why and who asked (MIXAGENT1a-iii), as the service answers them on loopback.

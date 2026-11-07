@@ -632,8 +632,8 @@ public sealed class OpinionResumeTickTests : IDisposable
                         {
                             ["id"] = $"s{_sessions.Count + 1}", ["quest"] = body["quest"]!.GetValue<string>(),
                             ["repository"] = "engine", ["state"] = "queued", ["kind"] = "drive",
-                            ["adapter"] = body["adapter"]?.GetValue<string>(),
-                            ["harnessVersion"] = body["harnessVersion"]?.GetValue<string>(),
+                            ["door"] = body["door"]?.GetValue<string>(),
+                            ["doorVersion"] = body["doorVersion"]?.GetValue<string>(),
                             ["tree"] = body["tree"]?.GetValue<string>(),
                             ["baseCommit"] = body["baseCommit"]?.GetValue<string>(),
                             ["profile"] = body["profile"]?.GetValue<string>(),

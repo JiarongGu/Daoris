@@ -77,7 +77,7 @@ export function useTeam({ attended, here, nameOf, attend, open }: {
   // A helper, a reviewer, an intake or Ask Daoris brings in nobody; the doors judge the rest by their own rules.
   const leads = !attended.serves && !attended.opinion && !attended.ask;
   return {
-    lead: nameOf(attended.adapter),
+    lead: nameOf(attended.door),
     onPass: passOn(attended.id),
     passing: pass.isPending,
     choices: leads ? [

@@ -42,7 +42,7 @@ describe('a conversation its limit holds', () => {
     ...ROSTER,
     harnesses: [{ ...ROSTER.harnesses[0], profiles: [{ name: 'personal', home: 'x', login: 'in' }] }],
   };
-  const ENDED = { ...CHAT, adapter: 'claude-code', profile: 'personal', state: 'completed' };
+  const ENDED = { ...CHAT, door: 'claude-code', profile: 'personal', state: 'completed' };
   const at = '2026-10-24T09:00:00Z';
   const WAITING = [
     { seq: 1, at, kind: 'user', origin: 'person', text: 'Go on with the loader.' },

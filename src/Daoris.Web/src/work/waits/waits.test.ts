@@ -14,7 +14,7 @@ import { said } from '../../test/said';
 // cannot disagree. A wait is the person's to press; what waits on an agent, a workflow or nothing is not one.
 
 const session = (over: Partial<Session> = {}): Session => ({
-  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', adapter: 'claude-code', state: 'completed', kind: 'driven',
+  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', door: 'claude-code', state: 'completed', kind: 'driven',
   created: '2026-09-21T09:46:00Z', updated: '2026-09-21T11:56:00Z', ...over,
 });
 

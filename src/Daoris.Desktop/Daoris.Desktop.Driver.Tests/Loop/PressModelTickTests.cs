@@ -151,7 +151,7 @@ public sealed class PressModelTickTests : IDisposable
         Assert.True(service.Status("q1") == "Done", seen);
         Assert.True(service.SessionCount == 2, seen);
         var ran = Record(service, "s2");
-        Assert.Equal(("completed", "acp-other"), (ran["state"]!.GetValue<string>(), ran["adapter"]!.GetValue<string>()));
+        Assert.Equal(("completed", "acp-other"), (ran["state"]!.GetValue<string>(), ran["door"]!.GetValue<string>()));
         Assert.Equal("account-default", ran["asked"]?["model"]?["source"]?.GetValue<string>());
         Assert.Equal("acp-other", ran["asked"]?["agent"]?.GetValue<string>());
         Assert.Empty(OtherSet());
@@ -178,7 +178,7 @@ public sealed class PressModelTickTests : IDisposable
 
         Assert.True(service.Status("q1") == "Done", seen);
         var ran = Record(service, "s2");
-        Assert.Equal(("completed", "acp-other", "handed"), (ran["state"]!.GetValue<string>(), ran["adapter"]!.GetValue<string>(), ran["choice"]?.GetValue<string>()));
+        Assert.Equal(("completed", "acp-other", "handed"), (ran["state"]!.GetValue<string>(), ran["door"]!.GetValue<string>(), ran["choice"]?.GetValue<string>()));
         Assert.Equal("codex-mini", ran["asked"]?["model"]?["value"]?.GetValue<string>());
         var set = OtherSet();
         Assert.Contains(("model", "codex-mini"), set);
@@ -254,7 +254,7 @@ public sealed class PressModelTickTests : IDisposable
         service.Keep(new JsonObject
         {
             ["id"] = "s2", ["quest"] = "q1", ["repository"] = "engine", ["state"] = "failed", ["kind"] = "drive",
-            ["profile"] = "account-x", ["adapter"] = "acp-other", ["created"] = DateTimeOffset.UtcNow.AddMinutes(10).ToString("O"),
+            ["profile"] = "account-x", ["door"] = "acp-other", ["created"] = DateTimeOffset.UtcNow.AddMinutes(10).ToString("O"),
             ["choice"] = "handed", ["asked"] = service.Session("s1")["asked"]!.DeepClone(),
             ["noteParts"] = new JsonArray(new JsonObject
             {
@@ -272,7 +272,7 @@ public sealed class PressModelTickTests : IDisposable
 
         Assert.True(service.Status("q1") == "Done", seen);
         var ran = Record(service, "s3");
-        Assert.Equal(("completed", "acp-other"), (ran["state"]!.GetValue<string>(), ran["adapter"]!.GetValue<string>()));
+        Assert.Equal(("completed", "acp-other"), (ran["state"]!.GetValue<string>(), ran["door"]!.GetValue<string>()));
         Assert.Equal("account-default", ran["asked"]?["model"]?["source"]?.GetValue<string>());
         Assert.Empty(OtherSet());
     }

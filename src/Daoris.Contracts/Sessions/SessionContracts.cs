@@ -70,7 +70,7 @@ public sealed record OpenMovesRequest(string? From, List<string>? Words, List<st
 /// <param name="From">The session the new one continues, with <paramref name="FromWhy"/> and <paramref name="FromBy"/>.</param>
 /// <param name="Access">The access setup the driver resolved, each pause with its value; one that is no short map of words is the caller's mistake.</param>
 public sealed record OpenSession(
-    string? Quest, string? Adapter, string? HarnessVersion, string? Profile, string? Tree,
+    string? Quest, string? Door, string? DoorVersion, string? Profile, string? Tree,
     string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null,
     Dictionary<string, string>? Access = null, string? Actor = null, string? Opens = null, OpenMovesRequest? Moves = null)
     : IRoute<SessionOpenResponse>
@@ -81,7 +81,7 @@ public sealed record OpenSession(
 
 /// <summary>A chat: a session a person entered rather than the driver planned, same record and lock, no quest required.</summary>
 public sealed record OpenChat(
-    string? Repository, string? Adapter, string? HarnessVersion, string? Profile, string? Tree,
+    string? Repository, string? Door, string? DoorVersion, string? Profile, string? Tree,
     string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null, string? Actor = null, string? Opens = null,
     OpenMovesRequest? Moves = null) : IRoute<SessionOpenResponse>
 {

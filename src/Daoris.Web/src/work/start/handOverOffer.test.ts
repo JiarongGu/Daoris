@@ -32,7 +32,7 @@ const claude = (over: Partial<AgentAccounts> = {}) => agent('claude-code', over)
 const codex = (over: Partial<AgentAccounts> = {}) => agent('codex', { scopes: [scope({ next: next('team') })], ...over });
 const answer = (...agents: AgentAccounts[]): AccountsAnswer => ({ agents });
 const offer = (answered: AccountsAnswer, over: Partial<Parameters<typeof handOverOffer>[0]> = {}) =>
-  handOverOffer({ session: { adapter: 'claude-code', profile: 'personal' }, workspace: 'default', doors, answer: answered, now, ...over });
+  handOverOffer({ session: { door: 'claude-code', profile: 'personal' }, workspace: 'default', doors, answer: answered, now, ...over });
 
 describe('handOverOffer', () => {
   it('offers near by the scope’s own near, naming the next other agent and the account its walk would take', () => {
@@ -61,9 +61,9 @@ describe('handOverOffer', () => {
   it('reads a cut on the tool’s own sign-in, which is never near', () => {
     const own = claude({ own: { cooling }, scopes: [scope({ near: [nearPersonal] })] });
 
-    expect(offer(answer(own, codex()), { session: { adapter: 'claude-code', profile: null } }))
+    expect(offer(answer(own, codex()), { session: { door: 'claude-code', profile: null } }))
       .toEqual({ why: 'limit', until, agent: 'codex', account: 'team' });
-    expect(offer(answer(claude({ scopes: [scope({ near: [nearPersonal] })] }), codex()), { session: { adapter: 'claude-code', profile: null } }))
+    expect(offer(answer(claude({ scopes: [scope({ near: [nearPersonal] })] }), codex()), { session: { door: 'claude-code', profile: null } }))
       .toBeNull();
   });
 
@@ -111,7 +111,7 @@ describe('handOverOffer', () => {
     const claudeGmail = claude({
       accounts: [{ name: 'Gmail' }], scopes: [scope({ near: [gmailNear], next: next('Gmail', 'near') })],
     });
-    const onAcp = { session: { adapter: 'claude-code-acp', profile: 'Gmail' }, doors: acpDoors };
+    const onAcp = { session: { door: 'claude-code-acp', profile: 'Gmail' }, doors: acpDoors };
 
     it('never offers the session’s own tool through its other door', () => {
       expect(offer(answer(claudeGmail, codex()), onAcp)).toEqual({ why: 'near', until: null, agent: 'codex', account: 'team' });

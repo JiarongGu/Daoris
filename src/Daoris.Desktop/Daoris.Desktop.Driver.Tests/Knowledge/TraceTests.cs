@@ -70,10 +70,10 @@ public sealed class TraceTests : IDisposable
         string? harness = "2.1.4", string? tree = "C:/trees/dashboards-q1", string repository = "dashboards", string? ask = null,
         bool limit = false, string? note = null, string kind = "driven") => new()
     {
-        ["id"] = id, ["quest"] = quest, ["repository"] = repository, ["adapter"] = "claude-code", ["state"] = state,
+        ["id"] = id, ["quest"] = quest, ["repository"] = repository, ["door"] = "claude-code", ["state"] = state,
         ["note"] = note, ["evidence"] = evidence, ["created"] = At(9, 0).AddMinutes(opened).ToString("O"),
         ["updated"] = At(9, 0).AddMinutes(moved).ToString("O"), ["workspace"] = "work", ["kind"] = kind,
-        ["harnessVersion"] = harness, ["profile"] = profile, ["tree"] = tree, ["baseCommit"] = tree is null ? null : "abc1234def567890",
+        ["doorVersion"] = harness, ["profile"] = profile, ["tree"] = tree, ["baseCommit"] = tree is null ? null : "abc1234def567890",
         ["ask"] = ask, ["limit"] = limit,
     };
 

@@ -41,10 +41,10 @@ const REGISTRY = [
 // TWO records for the one quest, deliberately — a retry is its own record, and the view must show
 // where things stand now (the later one), not the failed first attempt.
 const SESSIONS = [{
-  id: 's0f1r2s3', quest: 'abc123', repository: 'engine', adapter: 'stub', state: 'failed',
+  id: 's0f1r2s3', quest: 'abc123', repository: 'engine', door: 'stub', state: 'failed',
   note: 'the first attempt died', created: '2026-09-01T22:00:00Z', updated: '2026-09-01T23:00:00Z',
 }, {
-  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', adapter: 'stub', state: 'working',
+  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', door: 'stub', state: 'working',
   note: 'the process is alive', evidence: 'commits landed:\nfff000 stub: answer quest abc123',
   created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
 }];
@@ -805,7 +805,7 @@ describe('QuestsView', () => {
     /** The page's intake line is a door into Sessions only where the view is handed one (INT4d). */
     it('an ask\'s intake session opens where Sessions exists', async () => {
       const INTAKE = {
-        id: 'i9n8t7k6a5b4', quest: null, repository: 'ask #7c1e9a04b2d5', adapter: 'stub', kind: 'chat',
+        id: 'i9n8t7k6a5b4', quest: null, repository: 'ask #7c1e9a04b2d5', door: 'stub', kind: 'chat',
         state: 'awaiting-person', ask: '7c1e9a04b2d5', note: 'published nothing.',
         created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
       };

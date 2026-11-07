@@ -38,7 +38,7 @@ const ENDED: Session = {
   id: 's1a2b3c4',
   quest: 'abc123',
   repository: 'portal-ui',
-  adapter: 'claude-code',
+  door: 'claude-code',
   state: 'completed',
   kind: 'driven',
   created: '2026-10-03T08:00:00Z',

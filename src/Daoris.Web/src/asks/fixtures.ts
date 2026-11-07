@@ -62,8 +62,8 @@ export const UNKNOWN_TIER: Ask = { ...PUBLISHED, id: 'f0e1d2c3b4a5', tier: 'inta
 
 /** The session an intake opened for an ask (D65 §1b): a chat in the ask's name, in its circle. */
 export const INTAKE_SESSION: Session = {
-  id: 'i9n8t7k6a5b4', repository: 'ask #3e4f5a6b7c8d', adapter: 'claude-code', kind: 'chat',
-  state: 'completed', ask: '3e4f5a6b7c8d', harnessVersion: '2.1.4', workspace: 'aurora',
+  id: 'i9n8t7k6a5b4', repository: 'ask #3e4f5a6b7c8d', door: 'claude-code', kind: 'chat',
+  state: 'completed', ask: '3e4f5a6b7c8d', doorVersion: '2.1.4', workspace: 'aurora',
   note: 'published onto ask `#3e4f5a6b7c8d` — it became #9a8b7c.',
   created: hoursAgo(2), updated: hoursAgo(1),
 };

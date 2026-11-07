@@ -50,29 +50,29 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         // Its own repository: a session of another test that holds no tree yet holds every tree of its repository (D51).
         var asker = await sessions.CreateAsync(null, "Opener", "stub", DateTimeOffset.UtcNow, workspace: "default", kind: Daoris.Knowledge.SessionKind.Chat, tree: "trees/default/Opener/s-aaaaaaaa");
 
-        var opened = await host.PostAsync("/api/helpers", new { asker = asker.Id, adapter = "codex-acp", tree = "trees/default/Opener/o-bbbbbbbb", account = "work", baseCommit = "ABCDEF1" });
+        var opened = await host.PostAsync("/api/helpers", new { asker = asker.Id, door = "codex-acp", tree = "trees/default/Opener/o-bbbbbbbb", account = "work", baseCommit = "ABCDEF1" });
 
         Assert.Equal(200, opened.Status);
         var session = opened.Json.GetProperty("session");
         Assert.Equal(asker.Id, session.GetProperty("serves").GetString());
-        Assert.Equal("codex-acp", session.GetProperty("adapter").GetString());
+        Assert.Equal("codex-acp", session.GetProperty("door").GetString());
         Assert.Equal("Opener", session.GetProperty("repository").GetString());
         Assert.Equal("chat", session.GetProperty("kind").GetString());
         Assert.False(session.TryGetProperty("quest", out var quest) && quest.ValueKind == JsonValueKind.String);
 
         var helperId = session.GetProperty("id").GetString()!;
-        var again = await host.PostAsync("/api/helpers", new { asker = helperId, adapter = "codex-acp", tree = "trees/default/Opener/o-cccccccc" });
+        var again = await host.PostAsync("/api/helpers", new { asker = helperId, door = "codex-acp", tree = "trees/default/Opener/o-cccccccc" });
         Assert.Equal(400, again.Status);
         Assert.Contains("a helper cannot ask for a helper", again.Error);
 
-        var unknown = await host.PostAsync("/api/helpers", new { asker = "nope0000", adapter = "codex-acp", tree = "trees/default/Keeper/o-dddddddd" });
+        var unknown = await host.PostAsync("/api/helpers", new { asker = "nope0000", door = "codex-acp", tree = "trees/default/Keeper/o-dddddddd" });
         Assert.Equal(404, unknown.Status);
 
-        var own = await host.PostAsync("/api/helpers", new { asker = asker.Id, adapter = "codex-acp", tree = "trees/default/Opener/s-aaaaaaaa" });
+        var own = await host.PostAsync("/api/helpers", new { asker = asker.Id, door = "codex-acp", tree = "trees/default/Opener/s-aaaaaaaa" });
         Assert.Equal(400, own.Status);
 
         var reviewer = await sessions.CreateAsync(null, "Opener", "stub", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat, opinion: "op000001");
-        Assert.Equal(400, (await host.PostAsync("/api/helpers", new { asker = reviewer.Id, adapter = "codex-acp", tree = "trees/default/Opener/o-eeeeeeee" })).Status);
+        Assert.Equal(400, (await host.PostAsync("/api/helpers", new { asker = reviewer.Id, door = "codex-acp", tree = "trees/default/Opener/o-eeeeeeee" })).Status);
     }
 
     /// <summary>

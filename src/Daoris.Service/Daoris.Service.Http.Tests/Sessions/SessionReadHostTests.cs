@@ -16,7 +16,7 @@ public sealed class SessionReadHostTests(LocalHost host) : IClassFixture<LocalHo
         var now = DateTimeOffset.UtcNow;
         var left = await host.Composed.Sessions.CreateAsync(null, "Keeper", "stub", now, kind: SessionKind.Chat, tree: host.RootOf("read-one-left"));
         await host.Composed.Sessions.SetStateAsync(left.Id, SessionState.Completed, "done", null, null, now);
-        var next = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", tree = host.RootOf("read-one-next"), from = left.Id });
+        var next = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", door = "stub", tree = host.RootOf("read-one-next"), from = left.Id });
         Assert.Equal(200, next.Status);
         var nextId = next.Json.GetProperty("session").GetProperty("id").GetString()!;
 

@@ -243,7 +243,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         Assert.NotNull(placed.SessionId);
         Assert.Equal("full-door", placed.Adapter!.Id.Value);
         Assert.Equal(new ActorEffective("full-door", "opus", null, "2"), placed.Chosen);
-        Assert.Equal("full-door", ledger.Record(placed.SessionId!)["adapter"]!.GetValue<string>());
+        Assert.Equal("full-door", ledger.Record(placed.SessionId!)["door"]!.GetValue<string>());
     }
 
     /// <summary>

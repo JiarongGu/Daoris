@@ -22,9 +22,9 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
 
     private static JsonObject Record(string id, string state, int opened, string? evidence = null, string? profile = "work") => new()
     {
-        ["id"] = id, ["quest"] = "q1", ["repository"] = "dashboards", ["adapter"] = "claude-code", ["state"] = state,
+        ["id"] = id, ["quest"] = "q1", ["repository"] = "dashboards", ["door"] = "claude-code", ["state"] = state,
         ["evidence"] = evidence, ["created"] = At(9, opened).ToString("O"), ["updated"] = At(10, opened).ToString("O"),
-        ["kind"] = "driven", ["harnessVersion"] = "2.1.4", ["profile"] = profile, ["tree"] = Tree, ["baseCommit"] = "abc1234",
+        ["kind"] = "driven", ["doorVersion"] = "2.1.4", ["profile"] = profile, ["tree"] = Tree, ["baseCommit"] = "abc1234",
     };
 
     private static JsonArray Sessions() =>

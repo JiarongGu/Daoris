@@ -6,7 +6,7 @@ import { byName, marked, readable } from './railSearch';
 // id — and by content over the bridge. Pure, so every query is an ordinary assertion.
 
 const session = (id: string, repository: string, over: Partial<Session> = {}): Session => ({
-  id, repository, adapter: 'claude-code', state: 'working', kind: 'chat',
+  id, repository, door: 'claude-code', state: 'working', kind: 'chat',
   created: '2026-09-26T09:00:00Z', updated: '2026-09-26T09:00:00Z', ...over,
 });
 
