@@ -307,10 +307,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   (`Landing*Tests`, `Delivery*Tests`, `Integration*Tests`, `PullRequest*Tests`, each landing through a run bound by `GraphLand`),
   `Setup/PlacePlanTests` and `PlaceApplyTests`; modules `DriverModuleWorkflow*Tests`,
   `DriverModulePlace*Tests`, `PipeCensusTests`, `OwnerSetCensusTests`; web `src/workflow/**/*.test.ts*` and
-  `src/agents/setup/*.test.tsx`; the family rehearsal's 17c set-up phase (`tools/setup-kit.mjs`).
+  `src/agents/setup/*.test.tsx`; the family rehearsal's 17c set-up phase (`tools/family-rehearsal.mjs`, with `tools/setup-kit.mjs`).
 - **The gates that bite:** `driver`, `driver-process-git` (landing and integration over real git), `modules`, `censuses` (a new
-  route), `web-unit`, `web-rules`, `universal` (the structure gate, the names and catalogue checks), `orient-index`, and in
-  `npm run verify` `transitional-markers` and `size-ratchet`.
+  route), `web-unit`, `web-rules`, `universal` (the structure gate, the names and catalogue checks, and `orient-index`), and in
+  `npm run verify` `size-ratchet`.
 
 ## Contradictions
 
@@ -326,7 +326,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - D88 (without `tidy` the tree stays; clean-up is the person's press) vs `BranchTidying.cs` (the look's own tidy): the code reads right.
 - D215 point 2 (the install's policy on a branch rule's `integrate`) vs `DriverConfig.LinePolicyOf` (`linePolicies` alone): D227's 1a note reads right.
 - D215 point 5 (no node added to any graph) vs `Workflows/Kinds/Integrate/IntegrateNode.cs` (`integrate` kind) and `land` method `integrate`: the code reads right.
-- D221's rejection of a place's choice changing through `PLACE_APPLY` vs `PlacePlan.cs:336` (Apply chooses the copy): D227 reads right.
+- D221's rejection of a place's choice changing through `PLACE_APPLY` vs `Setup/PlacePlan.cs` (Apply chooses the copy through `WORKFLOW_USE`'s own edit): D227 reads right.
 - D157 and D223 (no zoom, no minimap) vs D224 and `workflowViewport` in `workflow/chart/FlowChart.tsx` (zoom 80 to 200% edited, 50 to 200% shown): D224 reads right.
 - D186 point 3 (a flow placed left to right where it fits) vs D221/D223 (a workflow is read in sections, so never left to right, `design/flowLayout.ts`): both right, each for its flows.
 - `NodeContract.cs` (`NodeKinds.Check`: started by nothing) vs `Workflows/Kinds/Check/CheckNode.cs` (its door on the heavy executor): the code reads right.
@@ -334,10 +334,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 ## Open
 
 - **SETUPUX1x:** the installed sitting of the place page, and its fixes.
-- **The place page's opener** (SETUPUX1y, built): Setup is the Agents place's default and its tree of places is always drawn; the opener's `roleSection` names Appointed
+- **The place page's opener** (built): Setup is the Agents place's default and its tree of places is always drawn; the opener's `roleSection` names Appointed
   roles or All roles only. A door naming a repository's place says `placeOf`, which `placeOpening` resolves to the place's id.
-- **WORKFLOWCLEAN1j:** a saved workflow that runs a work cycle, only if a place with one is found.
-- **Place pages and the service's binds** (NOCOMPAT1b2, NOCOMPAT1b4, built): a workspace's page has three tabs
+- **Place pages and the service's binds** (built): a workspace's page has three tabs
   (Details, Branches, Workflow); its setup is its place's (defaults under Workflow, access and Reach under Sessions) and the remote's
   wiring a row of Details, so a door naming a section is sent there by the opener. The service has no door that binds a quest to a graph, none that names one for
   a take, and no take bind: the store's open drops `quest_take_binds` and `quest_owned_take_binds`, and the `took_bind` session column is
@@ -345,13 +344,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   `QuestStore.SeedBound` (`BoundSeed`). A start binds its own run (`WorkflowRunStart.AtStartAsync`) and the look only says what the starts bound
   (`WorkflowRunStart.Say`); the help room names no `workspace-setup` part.
 - **CHATFLOW1 (the rest):** the installed window.
-- **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's
-  installed proof. A `request` under `start: you` waits for the person's *Send*, the `send` act of the run's node door (`WORKFLOW_NODE`, `daoris
+- **INTEGRATE1 k, m:** the flip of this repository's integrator and a sibling repository's declared integration; h's installed proof
+  (i, the steward's acts, is parked with STEWARDROLE1d). A `request` under `start: you` waits for the person's *Send*, the `send` act of the run's node door (`WORKFLOW_NODE`, `daoris
   workflow send`), which keeps a mark on the record (`RunNodeWords.SendKey`) that the next pass reads as the start's say-so.
 - **FABRIC-SQUASHCHAIN1:** the monitor and the tidy are built, read and proved end to end (rule 31); nothing left but the owner's acceptance on an install.
 - **FABRIC-PERFORM1l:** the pull-request event keeps its fields; WORKFLOW1j and 1k on observed nodes.
 - **LANDNODE1j:** the installed window's proof.
 - **REVIEWFLOW1c and LINESTOGETHER1:** a session's steps as one flow, proven in the installed window.
-- **GITAPP1 part two:** keeping or reusing review answers across opens, proposed and not designed; not by a held reader, which the
-  counted starts do not earn (the git area's *Git's starts, counted*: a review asks two or three object questions of its 23).
-- **WORKSETUP1:** the work workspace set to a pull request after the owner's Accept, on the install.
+- **WORKSETUP1:** no pull request is made by default; a place that needs one composes it from `push` and `<plugin>/pull-request` steps in its
+  workflow, and the first such place is proved end to end on the install.
