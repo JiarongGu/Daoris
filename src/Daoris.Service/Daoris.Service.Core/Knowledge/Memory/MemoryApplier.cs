@@ -30,12 +30,12 @@ public static partial class MemoryEndToken
 }
 
 /// <summary>
-/// The service's half of the log (KNOWCENTRAL2c; the design §3): it alone marks <c>applying</c>, calls the engine and settles. Each row is
+/// The service's half of the log: it alone marks <c>applying</c>, calls the engine and settles. Each row is
 /// marked in its own transaction before the call and settled in another after it, so a kill between leaves it <c>applying</c>. Where the
-/// engine holds receipts (Lyntai's MC11, 2j's core) every call carries the row's id as its key, and the next start settles the row by
+/// engine holds receipts every call carries the row's id as its key, and the next start settles the row by
 /// that key's receipt, or applies it again where the key left none. Otherwise it reads the target observationally: an end by its token
-/// and the revision it read, a confirmation by its guard, an addition or a relation <c>held</c> for the person. A replacement is one call
-/// (Lyntai's MC12): its successor and every predecessor's end commit with its receipt or not at all, so it settles as an end does.
+/// and the revision it read, a confirmation by its guard, an addition or a relation <c>held</c> for the person. A replacement is one call:
+/// its successor and every predecessor's end commit with its receipt or not at all, so it settles as an end does.
 /// </summary>
 public sealed class MemoryApplier(MemoryOpStore ops, IMemoryEngines engines, TimeProvider? time = null)
 {

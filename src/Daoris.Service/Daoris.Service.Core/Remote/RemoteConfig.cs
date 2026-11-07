@@ -5,18 +5,18 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// Where a workspace's remote is and how this machine speaks to it — machine-local configuration,
-/// never per-repository (D47 §9, D48 §5): one file under the Daoris home, with the environment
+/// never per-repository: one file under the Daoris home, with the environment
 /// overriding.
 /// </summary>
 /// <remarks>
-/// <para>The file is the home's `remotes.json` (D63) — a MAP, `{ "aurora": { "url": "...", "key": "dk_..." } }` —
-/// because one shared deployment serves one workspace (D48 §5), and a machine may hold repositories
+/// <para>The file is the home's `remotes.json` — a MAP, `{ "aurora": { "url": "...", "key": "dk_..." } }` —
+/// because one shared deployment serves one workspace, and a machine may hold repositories
 /// from several circles. The workspace NAME keys the map; whether a given repository may feed at all
 /// stays its own manifest's `remote` declaration: the manifest says MAY, the machine says WHERE.</para>
 ///
 /// <para>It is not tracked by any repository, which is what `sensitive-info` requires of a credential;
-/// the OS secret store is held as D47's open question 3. `daoris remote list|add|remove` is the
-/// surface over it (D50) — and hand-editing keeps working, because the file is the truth.</para>
+/// the OS secret store is an open question. `daoris remote list|add|remove` is the
+/// surface over it — and hand-editing keeps working, because the file is the truth.</para>
 /// </remarks>
 public sealed record RemoteConfig(string Url, string Key)
 {
@@ -29,12 +29,12 @@ public sealed record RemoteConfig(string Url, string Key)
     public const string PathVariable = "DAORIS_REMOTE_CONFIG";
 
     /// <summary>
-    /// The map's conventional home — under the Daoris home (D63), and null where there is none: a
+    /// The map's conventional home — under the Daoris home, and null where there is none: a
     /// machine with no home has no remotes, which is the documented default anyway.
     /// </summary>
     public static string? DefaultPath => DaorisHome.File(HomeEntry.Remotes);
 
-    /// <summary>This machine's remotes, by workspace. Absence is the default and it is silent (D21).</summary>
+    /// <summary>This machine's remotes, by workspace. Absence is the default and it is silent.</summary>
     public static IReadOnlyDictionary<string, RemoteConfig> Load() => Load(
         Environment.GetEnvironmentVariable,
         Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath);

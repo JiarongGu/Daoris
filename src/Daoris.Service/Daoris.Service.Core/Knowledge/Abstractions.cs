@@ -26,14 +26,14 @@ public interface IKnowledgeSource
 /// a per-entry API invites a caller to write the loop that a store should own.
 ///
 /// Replacing a repository wholesale rather than diffing is deliberate: re-reading is cheap, an entry
-/// that was deleted upstream must not survive in the index, and a diff is a second thing that can be
+/// deleted upstream must not survive in the index, and a diff is a second thing that can be
 /// wrong about what changed.
 /// </remarks>
 public interface IKnowledgeStore
 {
     /// <summary>
     /// Replace everything held for a repository with exactly these entries, and its reading with <paramref name="reading"/>, in
-    /// one write (KNOWCENTRAL2a); <paramref name="alongside"/> runs inside it, so what it writes lands or fails with them.
+    /// one write; <paramref name="alongside"/> runs inside it, so what it writes lands or fails with them.
     /// </summary>
     /// <returns>False, with nothing written, where the reading expected a generation the store no longer holds.</returns>
     Task<bool> ReplaceRepositoryAsync(
@@ -66,30 +66,30 @@ public interface IKnowledgeStore
 
     /// <summary>
     /// The entries of one file of one repository, so a hit's standing reads the notes of its own decision and no other
-    /// (KNOWFRESH1a-ii). A store that answers it without reading every entry overrides this.
+    /// A store that answers it without reading every entry overrides this.
     /// </summary>
     async Task<IReadOnlyList<KnowledgeEntry>> OfFileAsync(string repository, string relativePath, CancellationToken ct = default) =>
         (await AllAsync(ct).ConfigureAwait(false))
             .Where(entry => entry.Repository == repository && entry.RelativePath == relativePath)
             .ToList();
 
-    /// <summary>How many entries each repository holds — a count, never a read of every body (REV3 C1).</summary>
+    /// <summary>How many entries each repository holds — a count, never a read of every body.</summary>
     Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default);
 
     /// <summary>
-    /// Why this store's index answers nothing, or null when it answers (KSCHEMA1): a newer Daoris wrote it, so each
+    /// Why this store's index answers nothing, or null when it answers: a newer Daoris wrote it, so each
     /// method above throws this refusal and the rest of the store works.
     /// </summary>
     NewerIndexException? Refusal => null;
 }
 
 /// <summary>
-/// A repository's reading as the index keeps it beside its entries (KNOWCENTRAL2a; the memory coordinator design's §5): the
-/// generation every write of the repository moves on, the commit and root signature it was read at, and whether a feed gave
+/// A repository's reading as the index keeps it beside its entries: the
+/// generation every write of the repository moves on, the commit and root signature of the reading, and whether a feed gave
 /// it. Every process over the store reads this one.
 /// </summary>
-/// <param name="Commit">The commit read or fed; null where none was named (a retirement, a folder that is no checkout).</param>
-/// <param name="Signature">The root's signature taken before it was read; null where none was taken.</param>
+/// <param name="Commit">The commit read or fed; null where none is named (a retirement, a folder that is no checkout).</param>
+/// <param name="Signature">The root's signature taken before reading; null where none is taken.</param>
 public sealed record IndexReading(
     string Repository, long Generation, string? Commit, RootSignature? Signature, bool Fed, DateTimeOffset At);
 
@@ -113,7 +113,7 @@ public sealed record HeldTogether(
     IReadOnlyDictionary<(string Repository, string Path), IReadOnlyList<KnowledgeEntry>> Files,
     IReadOnlyDictionary<string, IndexReading> Readings);
 
-/// <summary>The finished trees' records, searched and read (KEEPSIZE1c); machine-local, so only a local host is given one.</summary>
+/// <summary>The finished trees' records, searched and read; machine-local, so only a local host is given one.</summary>
 public interface IWorkRecordSearch
 {
     /// <summary>Records matching a query, best first; none where the query's kinds, provenance or workspace leave them out.</summary>
@@ -139,7 +139,7 @@ public interface IKnowledgeSearch
 }
 
 /// <summary>
-/// A search that can say which of its halves answered (TIER1). The hybrid is the one composition with
+/// A search that can say which of its halves answered. The hybrid is the one composition with
 /// two halves, and so the one that can lose one without the caller knowing.
 /// </summary>
 public interface IAnsweringSearch : IKnowledgeSearch
@@ -159,9 +159,8 @@ public interface IAnsweringSearch : IKnowledgeSearch
 /// <b>As built, no host passes one</b>: every index runs <see cref="DisclosurePolicy.LocalOnly"/>,
 /// which permits everything, so a refresh reports nothing withheld. Shared mode draws the boundary at
 /// the feed instead — a deployment takes a repository's knowledge only when its manifest joins and
-/// shares (D47 §4), refuses the rest at the door, and drops what a repository fed once it stops
-/// sharing. This seam is where a policy over the index itself would go (REV3 CLEAN1 corrected the
-/// claim that shared mode could not be built without it).
+/// shares, refuses the rest at the door, and drops what a repository fed once it stops
+/// sharing. This seam is where a policy over the index itself would go.
 /// </remarks>
 public interface IDisclosurePolicy
 {
@@ -170,28 +169,28 @@ public interface IDisclosurePolicy
 }
 
 /// <summary>What one refresh of the index did.</summary>
-/// <param name="Source">The source that was read.</param>
+/// <param name="Source">The source read.</param>
 /// <param name="Repositories">How many repositories it yielded.</param>
 /// <param name="Entries">How many entries were stored.</param>
 /// <param name="Withheld">How many the disclosure policy excluded.</param>
 /// <param name="SemanticError">
-/// Why semantic indexing did not happen, or null if it did (or was never configured). Carried rather
+/// Why semantic indexing did not happen, or null if it did (or is not configured). Carried rather
 /// than thrown: the lexical index is complete and usable either way, and taking a whole refresh down
 /// for the optional half would trade the feature that works for the one that does not.
 /// </param>
 /// <param name="Absent">
-/// Registered repositories whose checkout is no longer where the registry says it is (D48 §3). Named,
+/// Registered repositories whose checkout is no longer where the registry says it is. Named,
 /// never silently skipped: a repository that quietly stops contributing looks exactly like one with
 /// nothing to say, and the refresh would otherwise report a healthy count over a moved checkout — the
 /// ghost failure from the other direction. A registration that never named a path is not an absence:
 /// a teammate's mirrored row has no checkout here by construction.
 /// </param>
 /// <param name="Embedded">
-/// What the semantic half made of the entries (SEM3, D123), or null when it did not run: none is
+/// What the semantic half made of the entries, or null when it did not run: none is
 /// configured, or it failed and <paramref name="SemanticError"/> says why.
 /// </param>
 /// <param name="Read">
-/// When and from which commit each registered repository was read (KNOWCURRENT1), so a reader can tell how current the
+/// When and from which commit each registered repository is read, so a reader can tell how current the
 /// index is. Empty where the source reads no registered checkout (a fed host).
 /// </param>
 public sealed record IndexReport(
@@ -207,7 +206,7 @@ public sealed record IndexReport(
 }
 
 /// <summary>
-/// When the index read a repository and the commit its checkout was at (KNOWCURRENT1). The commit is null for a
+/// When the index read a repository and the commit its checkout stood at. The commit is null for a
 /// checkout that is no git repository or has no commit yet.
 /// </summary>
 public sealed record RepositoryReading(string Repository, DateTimeOffset ReadAt, string? Commit)
@@ -216,7 +215,7 @@ public sealed record RepositoryReading(string Repository, DateTimeOffset ReadAt,
     public string? ShortCommit => Commit is null ? null : Clipped.ShortCommit(Commit, 8);
 }
 
-/// <summary>A source that can read some of its roots alone, so a root that moved is read again and the others are not (KNOWCURRENT1).</summary>
+/// <summary>A source that can read some of its roots alone, so a root that moved is read again and the others are not.</summary>
 public interface IRootReadingSource : IKnowledgeSource
 {
     /// <summary>Read only these checkouts.</summary>
@@ -224,7 +223,7 @@ public interface IRootReadingSource : IKnowledgeSource
 }
 
 /// <summary>
-/// What one pass of the semantic half embedded (SEM3, D123): said, because a long entry split into
+/// What one pass of the semantic half embedded: said, because a long entry split into
 /// several vectors is something a reader of the index should be able to see rather than assume.
 /// </summary>
 /// <param name="Entries">How many entries were embedded.</param>

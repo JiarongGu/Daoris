@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Which point in a repository's history its fed knowledge came from (D48 §6).
+/// Which point in a repository's history its fed knowledge came from.
 /// </summary>
 /// <remarks>
 /// <para>Two checkouts of one repository are two points in its history, and the remote must decide
@@ -24,14 +24,14 @@ public sealed record FeedProvenance(
 
     /// <summary>
     /// The commit this deployment held when the feeding machine asked git whether <see cref="Commit"/>
-    /// descends from it (SYNC5a). Null where the machine could not order the two: nothing was held, the
+    /// descends from it. Null where the machine could not order the two: nothing is held, the
     /// histories diverged, or the client predates the rule — and then commit time decides.
     /// </summary>
     public string? Base { get; init; }
 
     /// <summary>
     /// What the fed content says, hashed by the deployment (<see cref="FeedDigest"/>) — how the same
-    /// commit fed twice is told from the same commit read two ways. Null on a row from before SYNC5a.
+    /// commit fed twice is told from the same commit read two ways. Null on a row from before digests.
     /// </summary>
     public string? Digest { get; init; }
 }

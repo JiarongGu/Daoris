@@ -40,11 +40,11 @@ public static class MemoryCitations
 }
 
 /// <summary>
-/// The service's sweep (KNOWCENTRAL2d; the memory coordinator design §3): each registered repository's entries Lyntai answers as due a
+/// The service's sweep: each registered repository's entries Lyntai answers as due a
 /// recheck, their citations rechecked through <see cref="KnowledgeService.RecheckAsync"/>. Every citation holding is written as a
 /// <c>ready</c> confirmation at the revision read, one failing as an <c>awaiting</c> end for the person; an amended or inconclusive one
 /// writes nothing and is read again at the next sweep. An entry whose row from an earlier sweep has not settled is not written again. A
-/// citation of another repository's entry is rechecked through that memory's view, within the citing repository's workspace (KNOWCENTRAL2g).
+/// citation of another repository's entry is rechecked through that memory's view, within the citing repository's workspace.
 /// </summary>
 public sealed class MemorySweep(MemoryOpStore ops, IMemoryEngines engines, KnowledgeService knowledge)
 {

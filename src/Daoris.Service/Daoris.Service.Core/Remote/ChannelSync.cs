@@ -8,7 +8,7 @@ namespace Daoris.Knowledge;
 public sealed record ChannelSyncReport(int Pushed, int Fetched, string? Problem);
 
 /// <summary>
-/// One pass of the ask channels for one workspace (SESSONE2d; D167 point 8; the co-working design §2.5), beside
+/// One pass of the ask channels for one workspace, beside
 /// <see cref="SessionSync"/> and in its shape: this machine's own messages up by the cursor of what it last pushed, the team's down by
 /// the remote's number, each keyed `origin/id` and read-only here.
 /// </summary>
@@ -50,7 +50,7 @@ public static class ChannelSync
 
             if (feed.Count > 0) await remote.PushChannelAsync(feed, ct).ConfigureAwait(false);
 
-            // Past everything examined, sent or not: a message of a repository that was not joined when it was written stays home.
+            // Past everything examined, sent or not: a message of a repository not joined when written stays home.
             if (changed.Count > 0) await store.AdvanceCursorAsync(circle, pushed: changed[^1].Seq, ct: ct).ConfigureAwait(false);
             pushed = feed.Count;
 

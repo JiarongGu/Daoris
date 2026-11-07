@@ -4,18 +4,18 @@ namespace Daoris.Knowledge;
 /// Runs two searches and fuses their rankings.
 /// </summary>
 /// <remarks>
-/// <para><b>Fused on rank, not on score.</b> BM25 returns an unbounded relevance figure and cosine
+/// <para><b>Fused on rank, not on score.</b> The lexical bm25 rank returns an unbounded relevance figure and cosine
 /// similarity returns a number in [-1, 1]; adding or averaging them compares quantities that mean
 /// different things, and whichever happens to have the larger range silently wins. Reciprocal rank
 /// fusion uses only each result's <em>position</em> in its own list, which is the one thing the two
 /// searches agree on the meaning of.</para>
 ///
-/// <para>This is the composition the <see cref="IKnowledgeSearch"/> seam was shaped for — hybrid is
+/// <para>This is the composition the <see cref="IKnowledgeSearch"/> seam is shaped for — hybrid is
 /// not a third implementation to keep in step with the other two.</para>
 ///
 /// <para>If either search is unavailable or fails, the other still answers. A knowledge index that
 /// returns nothing because an embedding endpoint is down is worse than one that returns the lexical
-/// half. 🔴 But the caller must be able to tell (TIER1, D24): <see cref="AnswerAsync"/> says which
+/// half. 🔴 But the caller must be able to tell: <see cref="AnswerAsync"/> says which
 /// halves answered and why one did not, where swallowing the failure let every door report the
 /// configured tier over an answer only one half had made.</para>
 /// </remarks>
@@ -36,7 +36,7 @@ public sealed class HybridKnowledgeSearch(IKnowledgeSearch lexical, IKnowledgeSe
     public async Task<SearchAnswer> AnswerAsync(KnowledgeQuery query, CancellationToken ct = default)
     {
         // Over-fetch from each side: a result ranked 15th lexically and 3rd semantically should be
-        // able to surface, and it cannot if each list was truncated to the final limit first.
+        // able to surface, and it cannot if each list were truncated to the final limit first.
         var wide = query with { Limit = Math.Max(query.Limit * 3, 30) };
 
         var (lexicalHits, lexicalFailure) = await SafeAsync(lexical, wide, ct).ConfigureAwait(false);
@@ -78,7 +78,7 @@ public sealed class HybridKnowledgeSearch(IKnowledgeSearch lexical, IKnowledgeSe
             if (fused.TryGetValue(hit.Entry.Id, out var existing))
             {
                 // Keep the excerpt that already showed a matched passage: the lexical side knows
-                // WHERE it matched and the semantic side does not. Its line goes with it (ORIENT2e).
+                // WHERE it matched and the semantic side does not. Its line goes with it.
                 fused[hit.Entry.Id] = (existing.Entry, existing.Score + contribution,
                     existing.Shown.Excerpt is null ? hit : existing.Shown);
             }
@@ -104,7 +104,7 @@ public sealed class HybridKnowledgeSearch(IKnowledgeSearch lexical, IKnowledgeSe
         catch (Exception error)
         {
             // One half being unavailable degrades the answer; it must not remove it — and it must
-            // not go unsaid either (TIER1).
+            // not go unsaid either.
             return ([], error.Message);
         }
     }

@@ -2,13 +2,13 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// Which lines of a markdown file a fenced code block holds, read a line at a time as CommonMark reads a fence
-/// (ORIENT2h3): its text is the fence's, never a heading, a table or a list.
+/// its text is the fence's, never a heading, a table or a list.
 /// </summary>
 /// <remarks>
 /// <para>A fence opens on a run of three or more backticks or tildes, and closes only on a run of the same character
-/// at least as long with nothing after it but spaces. 🔴 Every reader used to toggle on any line opening with three
-/// of either, so a four-backtick fence quoting a three-backtick example closed on the example's first fence, and the
-/// heading and the table inside the example became entries of their own. A backtick run with a backtick after it on
+/// at least as long with nothing after it but spaces. 🔴 A reader toggling on any line opening with three
+/// of either closes a four-backtick fence quoting a three-backtick example on the example's first fence, and the
+/// heading and the table inside the example become entries of their own. A backtick run with a backtick after it on
 /// its line is code inline, not a fence, as CommonMark has it. A fence never closed holds the rest of the file.</para>
 ///
 /// <para>After any indent, where CommonMark allows three spaces: a fence inside a list item is indented by it, and

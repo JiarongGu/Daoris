@@ -18,9 +18,9 @@ public sealed record KnowledgeQuery(string Text = "")
     public IReadOnlySet<string>? Repositories { get; init; }
 
     /// <summary>
-    /// The circle to answer from (D48). Null spans every workspace the store holds — which a caller
-    /// must then SAY, rather than present as one family's answer (design §4, the D24 shape: report the
-    /// scope that ran). Every door resolves an ambient default before it gets here.
+    /// The circle to answer from. Null spans every workspace the store holds — which a caller
+    /// must then SAY, rather than present as one family's answer: report the
+    /// scope that ran. Every door resolves an ambient default before it gets here.
     /// </summary>
     public string? Workspace { get; init; }
 
@@ -43,7 +43,7 @@ public sealed record KnowledgeQuery(string Text = "")
 
     /// <summary>
     /// A caller's comma-separated kind filter, as every door parses it — HERE, in Core, because "what
-    /// may a caller ask for" is query judgement (D36): a kind alias landing in one host and not the
+    /// may a caller ask for" is query judgement: a kind alias landing in one host and not the
     /// other would answer the same question differently through two doors.
     /// </summary>
     public static IReadOnlySet<EntryKind>? ParseKinds(string? value)
@@ -56,8 +56,8 @@ public sealed record KnowledgeQuery(string Text = "")
         {
             // "task" is friendlier than "taskoutcome", and a model will reach for the short form.
             var normalized = name.Equals("task", StringComparison.OrdinalIgnoreCase) ? "TaskOutcome" : name;
-            // 🔴 A name that is no kind is refused, never skipped (REV3): skipping left no kinds, and no
-            // kinds means every kind — so a typo widened the search it was meant to narrow.
+            // 🔴 A name that is no kind is refused, never skipped: skipping would leave no kinds, and no
+            // kinds means every kind — so a typo would widen the search it is meant to narrow.
             if (!Enum.TryParse<EntryKind>(normalized, ignoreCase: true, out var kind) || int.TryParse(normalized, out _))
             {
                 throw new ArgumentException(
@@ -87,17 +87,17 @@ public sealed record KnowledgeQuery(string Text = "")
 /// that cannot show its reasoning gets treated as an oracle, which is exactly what it is not.
 /// </param>
 /// <param name="ExcerptLine">
-/// The line of the entry's file its excerpt starts on (ORIENT2e); null where the entry names no lines.
+/// The line of the entry's file its excerpt starts on; null where the entry names no lines.
 /// </param>
 public sealed record KnowledgeHit(KnowledgeEntry Entry, double Score, string? Excerpt = null, int? ExcerptLine = null);
 
 /// <summary>
-/// A search's hits, and which halves ANSWERED it (TIER1, D24) — never which were configured. A half
+/// A search's hits, and which halves ANSWERED it — never which were configured. A half
 /// that threw did not answer, and nothing answering is not nothing matching.
 /// </summary>
 /// <param name="Failure">Why a half did not answer, in its own words; null when every half did.</param>
 /// <param name="MoreIndex">
-/// Whether more index entries matched than a search naming no kinds answers with (ORIENT2e), so a door can say
+/// Whether more index entries matched than a search naming no kinds answers with, so a door can say
 /// how to ask for them.
 /// </param>
 public sealed record SearchAnswer(

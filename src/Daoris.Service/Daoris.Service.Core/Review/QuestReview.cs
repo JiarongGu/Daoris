@@ -5,22 +5,22 @@ using static Daoris.Knowledge.JsonFields;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A chain's review choice (REVIEWENV1b, D154 point 3; the review environment design §1.4–§1.5): <c>off</c>, <c>on</c> (the
+/// A chain's review choice: <c>off</c>, <c>on</c> (the
 /// repository's default environment) or an environment's name, set at publish and inherited by each step. The person sets
 /// it, with any words they give; an intake sets it only by quoting them, and the exchange checks the quote as it checks a
-/// requirement's (DRIFT1c).
+/// requirement's.
 /// </summary>
 /// <param name="Choice">One of <see cref="Reviews.Off"/>, <see cref="Reviews.On"/>, or an environment's name.</param>
 /// <param name="Words">
-/// The person's words it was set on: given at their own door, or quoted from what they said on the ask by the intake that
+/// The person's words it is set on: given at their own door, or quoted from what they said on the ask by the intake that
 /// set it. Null where the person gave none.
 /// </param>
 public sealed record QuestReview(string Choice, string? Words = null);
 
 /// <summary>
-/// One set-up of a set-up step (REVIEWENV1b, D154 point 9; design §2.6, §3.5): where the work was shown, what it shows,
+/// One set-up of a set-up step: where the work is shown, what it shows,
 /// how to show it again, and the commit its tree held, which Daoris read and no session reports. Kept on the quest in a
-/// <see cref="QuestOperationKind.SetUp"/> operation, which travels like every verb (D68).
+/// <see cref="QuestOperationKind.SetUp"/> operation, which travels like every verb.
 /// </summary>
 /// <param name="Commit">The commit the set-up holds, by its full id: the step's tree <c>HEAD</c> as the driver read it.</param>
 public sealed record QuestSetUp(string Commit)
@@ -37,7 +37,7 @@ public sealed record QuestSetUp(string Commit)
     /// <summary>How to show it again by hand: the address and the clicks, at most <see cref="Reviews.AgainLimit"/> characters.</summary>
     public string? Again { get; init; }
 
-    /// <summary>The folder Daoris was asked to serve to the step's tab, as a path in the step's tree; null where none was.</summary>
+    /// <summary>The folder Daoris is asked to serve to the step's tab, as a path in the step's tree; null where none is.</summary>
     public string? Served { get; init; }
 
     /// <summary>A review run's command, quoted from the procedure; null where the work needed no process of its own.</summary>
@@ -46,10 +46,10 @@ public sealed record QuestSetUp(string Commit)
     /// <summary>The session that said it; null for the person's own set-up (<i>I set it up myself…</i>).</summary>
     public string? Session { get; init; }
 
-    /// <summary>Whether it was shown in a local environment: its tab is on the machine that made it.</summary>
+    /// <summary>Whether it is shown in a local environment: its tab is on the machine that made it.</summary>
     public bool Local { get; init; }
 
-    /// <summary>When it was said: the operation's time, set on the quest as the replay keeps it.</summary>
+    /// <summary>When it is said: the operation's time, set on the quest as the replay keeps it.</summary>
     public DateTimeOffset? At { get; init; }
 
     /// <summary>The machine that made it: the operation's, set on the quest as the replay keeps it.</summary>
@@ -86,7 +86,7 @@ public sealed record QuestSetUp(string Commit)
 }
 
 /// <summary>
-/// The person's verdict on a set-up step (REVIEWENV1b, D154 points 8–9; design §3.3–§3.6): <c>reviewed</c> or
+/// The person's verdict on a set-up step: <c>reviewed</c> or
 /// <c>not-yet</c> on its newest set-up, or <c>skipped</c> for this work. Kept on the quest in a
 /// <see cref="QuestOperationKind.Verdict"/> operation; only a local host's door makes one, since the verdict is the person's.
 /// </summary>
@@ -102,20 +102,20 @@ public sealed record QuestReviewVerdict(string Said)
     /// <summary>The person's words: a <c>not-yet</c>'s always, what the step's session acts on; null where they gave none.</summary>
     public string? Words { get; init; }
 
-    /// <summary>When it was given: the operation's time, set on the quest as the replay keeps it.</summary>
+    /// <summary>When it is given: the operation's time, set on the quest as the replay keeps it.</summary>
     public DateTimeOffset? At { get; init; }
 
-    /// <summary>The machine it was given on: the operation's, set on the quest as the replay keeps it.</summary>
+    /// <summary>The machine it is given on: the operation's, set on the quest as the replay keeps it.</summary>
     public string? Machine { get; init; }
 }
 
 /// <summary>
-/// Where a set-up step's review stands (REVIEWENV1b, D154 points 7–9; design §3.2, §3.5), read from its set-ups and verdicts:
+/// Where a set-up step's review stands, read from its set-ups and verdicts:
 /// one reading for the replay, the hold and every door.
 /// </summary>
 public static class QuestReviewing
 {
-    /// <summary>The newest set-up said on the quest, the one a verdict answers; null while none was said.</summary>
+    /// <summary>The newest set-up said on the quest, the one a verdict answers; null while none is said.</summary>
     public static QuestSetUp? Newest(Quest quest) => quest.SetUps.Count == 0 ? null : quest.SetUps[^1];
 
     /// <summary>Whether the person skipped the review of this work.</summary>
@@ -131,7 +131,7 @@ public static class QuestReviewing
 
     /// <summary>
     /// Whether a set-up step's done waits for the person's review: closed done, or submitted in a closure graph
-    /// (FABRIC-CLOSE1a, §E5), neither reviewed nor skipped.
+    /// neither reviewed nor skipped.
     /// </summary>
     public static bool Waits(Quest quest) =>
         quest is { SetUpIn: not null, Judged: true } && !Skipped(quest) && !Reviewed(quest);
@@ -153,7 +153,7 @@ public static class QuestReviewing
 }
 
 /// <summary>
-/// The shapes and bounds of a review on the record (REVIEWENV1b): a choice, an environment's name, a set-up and a verdict,
+/// The shapes and bounds of a review on the record: a choice, an environment's name, a set-up and a verdict,
 /// each judged here once for every door, the wire and the store's own column.
 /// </summary>
 public static class Reviews
@@ -176,10 +176,10 @@ public static class Reviews
     /// <summary>What a verdict may say.</summary>
     public static readonly IReadOnlyList<string> Verdicts = [Reviewed, NotYet, Skipped];
 
-    /// <summary>How a set-up was shown: in a local environment, or in a deployed one.</summary>
+    /// <summary>How a set-up is shown: in a local environment, or in a deployed one.</summary>
     public static readonly IReadOnlyList<string> Kinds = ["local", "deployed"];
 
-    /// <summary>The longest an environment's name may be, as the review rule's twins hold it (REVIEWENV1a).</summary>
+    /// <summary>The longest an environment's name may be, as the review rule's twins hold it.</summary>
     public const int NameLimit = 32;
 
     /// <summary>The longest what a set-up shows may be.</summary>
@@ -191,13 +191,13 @@ public static class Reviews
     /// <summary>The longest an intake's reason for a proposal may be.</summary>
     public const int ReasonLimit = 300;
 
-    /// <summary>The longest an address may be, a link's bound (D65 §2).</summary>
+    /// <summary>The longest an address may be, a link's bound.</summary>
     public const int LookLimit = 2048;
 
     /// <summary>The longest a review run's command may be.</summary>
     public const int RunLimit = 2000;
 
-    /// <summary>The longest the person's words on a choice or a verdict may be, as an answer's are (DRIFT1a, KNOWUSE1a).</summary>
+    /// <summary>The longest the person's words on a choice or a verdict may be, as an answer's are.</summary>
     public const int WordsLimit = 2000;
 
     private static readonly Regex NameShape = new(@"^[a-z0-9]+(?:-[a-z0-9]+)*\z", RegexOptions.CultureInvariant);
@@ -324,7 +324,7 @@ public static class Reviews
     {
         writer.WriteStartObject();
         writer.WriteString("commit", setUp.Commit);
-        // Its identity crosses whole, the local address it was made from included (REVIEWENV1b3); absent on one from before.
+        // Its identity crosses whole, the local address it is made from included; absent on an older one.
         if (setUp.Id is not null) writer.WriteString("id", setUp.Id);
         if (setUp.Look is not null && !(crossing && setUp.Local)) writer.WriteString("look", setUp.Look);
         if (setUp.Shows is not null) writer.WriteString("shows", setUp.Shows);
@@ -377,7 +377,7 @@ public static class Reviews
 
     /// <summary>
     /// A verdict's one shape in the log's payload and on the wire, and, <paramref name="standing"/>, in the quest's column,
-    /// which alone keeps when and where it was given.
+    /// which alone keeps when and where it is given.
     /// </summary>
     internal static void Write(Utf8JsonWriter writer, QuestReviewVerdict verdict, bool standing = false)
     {

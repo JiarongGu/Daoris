@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The service's memory work, run from its start (KNOWCENTRAL2d; the memory coordinator design §3): the applier's recovery and every
+/// The service's memory work, run from its start: the applier's recovery and every
 /// <c>ready</c> row at the start, then whatever a commit point releases, read at <see cref="Pace"/> since any process may record one;
 /// and, with the index, the sweep at <see cref="SweepPace"/>. A failed pass is told to <paramref name="failed"/> and the next tries again.
 /// </summary>

@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Why a decision through a memory row was refused.</summary>
+/// <summary>Why a decision through a memory row is refused.</summary>
 public enum MemoryDecisionRefusal
 {
     None,
@@ -10,12 +10,12 @@ public enum MemoryDecisionRefusal
     Running,
 }
 
-/// <summary>A decision's outcome: the row as decided, or why none was made; for a Keep or Drop, how many rows moved.</summary>
+/// <summary>A decision's outcome: the row as decided, or why none is made; for a Keep or Drop, how many rows moved.</summary>
 public sealed record MemoryDecisionOutcome(MemoryDecisionRefusal Refusal, string Message, MemoryOp? Op = null, int Moved = 0);
 
 /// <summary>
-/// What the person decides through a memory row (KNOWCENTRAL2d; the memory coordinator design §1, §3, §4): an awaiting end, approved or
-/// declined, kept on its row as a go-ahead is; an ended session's staged rows, kept or dropped. Until a second opinion may approve (MC8),
+/// What the person decides through a memory row: an awaiting end, approved or
+/// declined, kept on its row as a go-ahead is; an ended session's staged rows, kept or dropped. Until a second opinion may approve,
 /// the person is every end's approver, and a session of the proposer's lineage is refused by name.
 /// </summary>
 public sealed class MemoryDesk(MemoryOpStore ops)

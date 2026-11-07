@@ -115,7 +115,7 @@ internal sealed class MemoryOpReads(ConnectionGate db)
         }, ct);
 
     /// <summary>
-    /// Marks every read of the entry an applied row moved past the revision it was read at, and of each entry a replacement ended at or
+    /// Marks every read of the entry an applied row moved past the revision it is read at, and of each entry a replacement ended at or
     /// before the revision its approver read, in the settle's transaction.
     /// </summary>
     public async Task MovedAsync(string id, string? entry, long revision, CancellationToken inside)
