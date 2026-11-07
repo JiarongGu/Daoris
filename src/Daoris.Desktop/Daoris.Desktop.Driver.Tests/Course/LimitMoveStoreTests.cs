@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-ii part a (D212; the foundation design §3.3, §13.4 steps 1 to 4, §19.4): the live limit move keeps its move record. Decided
+/// FOUNDATION1f-ii part a (the foundation design §3.3, §13.4 steps 1 to 4, §19.4): the live limit move keeps its move record. Decided
 /// as the turns are held, under this run's claim; <c>old-ended</c> once the old part ends; <c>opening</c> under the key its keyed open is sent
 /// with; <c>opened</c> with every word the open moved, by its id on the destination; <c>delivering</c> and the prompt's mark before the hand;
 /// each handed word's <c>sent</c> as the turn's write returns, then the take, then <c>delivered</c>. A move of no word closes on its effect's
@@ -145,7 +145,7 @@ public sealed class LimitMoveStoreTests : IDisposable
     {
         /// <summary>
         /// The old part's end as its watch writes it, which no process here makes: its record ends once the new part's open is asked, as the
-        /// move's end of the old part leaves it before its open (D51).
+        /// move's end of the old part leaves it before its open.
         /// </summary>
         public void Ends(HttpRequestMessage request)
         {

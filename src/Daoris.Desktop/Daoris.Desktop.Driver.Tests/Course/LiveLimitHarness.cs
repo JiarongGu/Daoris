@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The live limit move, and the curve's (FOUNDATION1f-iii part b), across a killed shell (FOUNDATION1f-ii part b, D212; the foundation design
+/// The live limit move, and the curve's (FOUNDATION1f-iii part b), across a killed shell (FOUNDATION1f-ii part b; the foundation design
 /// §13.5's downgrade table, §19.3, §19.4): one
 /// home, one in-process ledger, and two kinds of shell over them. The <b>killed shell</b> runs the live move (<see cref="LimitMove.MoveAsync"/>)
 /// under a run of its own, its new part's door a stand-in that writes nothing but tells the case each write, and is stopped at a boundary of

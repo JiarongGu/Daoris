@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-ii part b (D212; the foundation design §13.5's downgrade table, §19.4, row f-ii's proof): the live limit move across a downgrade.
+/// FOUNDATION1f-ii part b (the foundation design §13.5's downgrade table, §19.4, row f-ii's proof): the live limit move across a downgrade.
 /// A shell is killed at each boundary of the move (<see cref="Cuts"/>), then an older build comes up on the home, then this build returns.
 /// Each moved word is delivered once, uncertain and said, or carried by its destination's go-on, never twice, whichever build acts, and this
 /// build's return acts once.

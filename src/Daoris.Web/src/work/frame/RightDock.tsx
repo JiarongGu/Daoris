@@ -69,9 +69,9 @@ export function NothingFollowed({ ended, onOpenSessions }: {
  * **Its geometry is the frame's** (`layout.ts`), handed in as a mode and a width:
  * - `docked` beside the session, resized by its left edge;
  * - `cramped` at its floor with the session already squeezed, where it asks to be closed rather than
- *   squeezing further;
+ * squeezing further;
  * - `full` over the whole frame — the SAME element drawn larger, so a surface switched in and out of it
- *   is never drawn anew and keeps what the person did in it;
+ * is never drawn anew and keeps what the person did in it;
  * - `closed`, a strip of its tabs, since nothing but the person opens it again.
  *
  * **What it holds is the person's**: the views standing in the right side bar, in the order

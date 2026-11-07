@@ -1,15 +1,13 @@
-// The smallest plugin that SPEAKS (D64 §4): a process the driver starts with its loop, asks before a
+// The smallest plugin that SPEAKS: a process the driver starts with its loop, asks before a
 // start costs anything, tells of every ending, and stops with the loop.
-//
 // The wire is JSON-RPC 2.0, one frame per line, on this process's stdin and stdout. Nothing else is
 // on stdout — a line that is not a frame is shown to the person under this plugin's name and then
 // ignored — and stderr is the plugin's own console, relayed the same way.
-//
 // Where this process is, and what it keeps, are TOLD rather than guessed:
-//   DAORIS_PLUGIN_ID      this plugin's id, as its manifest declares it
-//   DAORIS_PLUGIN_FOLDER  the install folder — replaced wholesale by an update, so never written to
-//   DAORIS_PLUGIN_DATA    the data folder beside it, which an update never touches
-//   DAORIS_HOME           the Daoris home the driver runs against
+//  DAORIS_PLUGIN_ID this plugin's id, as its manifest declares it
+//  DAORIS_PLUGIN_FOLDER the install folder — replaced wholesale by an update, so never written to
+//  DAORIS_PLUGIN_DATA the data folder beside it, which an update never touches
+//  DAORIS_HOME the Daoris home the driver runs against
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';

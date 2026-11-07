@@ -5,13 +5,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// How a scope's list is used (TOOL6a; D130 §2, §3.1, §4.6, §14, as §16.6 amends them; D165 point 2, SWITCH1a):
+/// How a scope's list is used (§3.1, §4.6, §14, as §16.6 amends them):
 /// <c>rotationUse</c> and <c>workspaceRotationUse</c> in <c>harnesses.json</c>, beside the lists — <i>use accounts</i>
 /// (<c>use</c>: <c>goal</c> or <c>order</c>), <i>keep for conversations</i> (<c>keep</c>) and when to switch
 /// (<c>switch</c>: <c>smart</c>, <c>curve</c> or <c>off</c>; and <c>curve</c>, the person's own points per window), read on
 /// from the old names <c>early</c> and <c>near</c> — and the rule binding a scope's default and kept account to its list.
 /// 🔴 Held, row for row, to the table <c>fixtures/rotation-use.json</c> among the driver's tests, which the page's curve rules read
-/// too; the CLI's <c>rotation.ts</c>, its twin, left with <c>daoris agent</c>'s TypeScript (PUSH1f2e), and the table moved here.
+/// too; the CLI's <c>rotation.ts</c>, its twin, left with <c>daoris agent</c>'s TypeScript, and the table moved here.
 /// </summary>
 /// <remarks>
 /// <para>A scope's settings are said in one word each, today's defaults left out, then <c>?name</c> for each value or
@@ -19,7 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>"curve": null</c> takes the curve out, a field absent is left as it was, and <c>null</c> clears the scope's
 /// settings. Nothing here counts accounts (§2 rule 6).</para>
 /// <para>These tables hold the file; how a start uses what it reads is <c>AccountRotationWalkTests</c>' and
-/// <c>AccountRotationGoalTests</c>' (TOOL6b), which read <see cref="RotationUse.Early"/> and <see cref="RotationUse.Near"/>
+/// <c>AccountRotationGoalTests</c>', which read <see cref="RotationUse.Early"/> and <see cref="RotationUse.Near"/>
 /// until SWITCH1b moves the walk to the curve.</para>
 /// </remarks>
 public sealed class RotationUseTwinTests : IDisposable
@@ -124,7 +124,7 @@ public sealed class RotationUseTwinTests : IDisposable
         Assert.Equal((50, 99), (RotationUse.NearLowest, RotationUse.NearHighest));
     }
 
-    // ——— Read and resolved (§2 rule 1, §14, §16.6; D165 §6): the scope a start reads, its list, where it begins, and its
+    // ——— Read and resolved: the scope a start reads, its list, where it begins, and its
     // settings, the old names read on.
 
     [Theory]
@@ -140,7 +140,7 @@ public sealed class RotationUseTwinTests : IDisposable
         Assert.True(use == Said(scope.Use, scope.Unknown), $"{why}: {Said(scope.Use, scope.Unknown)}");
     }
 
-    // ——— Written (D165 §6): the old names written as `switch` and `curve`, never again as themselves; a curve in one order.
+    // ——— Written: the old names written as `switch` and `curve`, never again as themselves; a curve in one order.
 
     [Theory]
     [MemberData(nameof(Writes))]
@@ -152,7 +152,7 @@ public sealed class RotationUseTwinTests : IDisposable
         Assert.True(JsonNode.Parse(after)!.ToJsonString() == written, $"{why}: {written}");
     }
 
-    // ——— Edited (§2, §16.6; D165 §6): a change merged into the scope's settings, each choice written as made, so a later
+    // ——— Edited: a change merged into the scope's settings, each choice written as made, so a later
     // default never overturns one; what this build does not know kept as written; null clears the scope's settings, and a
     // scope with none is dropped. The old names, which the doors still take, are mapped onto the switch and the curve.
 
@@ -191,7 +191,7 @@ public sealed class RotationUseTwinTests : IDisposable
         Assert.True(refused == said, $"{why}: {said}");
     }
 
-    // ——— A curve's rules (D165 point 2, the switch design §2): one to twelve whole-number points per window, elapsed from 0
+    // ——— A curve's rules: one to twelve whole-number points per window, elapsed from 0
     // to 100 and rising, used from 0 to 100 and never falling; the first problem said, which window, which point, which rule.
 
     [Theory]

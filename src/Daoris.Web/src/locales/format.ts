@@ -39,7 +39,7 @@ export function stamp(iso: string): string {
 }
 
 /**
- * A moment as a person reads a reset (TOOL4g, D125 §2.4): its month and day, its clock, and the zone named, in this
+ * A moment as a person reads a reset: its month and day, its clock, and the zone named, in this
  * machine's zone and written the way the reader's language writes them — `Oct 3, 16:02 GMT+5:45`, `10月3日 16:02 GMT+5:45`.
  * `language` is the page's unless a caller words in another, as {@link list}'s is.
  */
@@ -50,7 +50,7 @@ export function moment(iso: string, language?: string): string {
 }
 
 /**
- * When something was read, as a person scans a list of them (UX6e, D150 §5.3): its clock today, its day and clock before,
+ * When something was read, as a person scans a list of them: its clock today, its day and clock before,
  * in this machine's zone and the reader's language: `10:42`, `Oct 3, 10:42`, `10月3日 10:42`.
  */
 export function clockOf(iso: string, now: Date = new Date(), language?: string): string {
@@ -70,15 +70,15 @@ export function dayOf(iso: string, language?: string): string {
 }
 
 /**
- * Items joined the way the reader's language joins a list (LANG1b, the language design §4): `#a1, #b2, and #c3`,
+ * Items joined the way the reader's language joins a list: `#a1, #b2, and #c3`,
  * `#a1、#b2和#c3`. `language` is the page's unless a caller words in another (a story's or a test's fixed language).
- * `'or'` joins alternatives rather than a sum (FLOWCHART1b): `when it fails, or you stop it`, `当它失败或你停止它时`.
+ * `'or'` joins alternatives rather than a sum: `when it fails, or you stop it`, `当它失败或你停止它时`.
  */
 export function list(items: readonly string[], language?: string, joined: 'and' | 'or' = 'and'): string {
   return new Intl.ListFormat(locale(language), { type: joined === 'or' ? 'disjunction' : 'conjunction' }).format(items);
 }
 
-/** A file's size, in the unit a person reads it in: 812 B · 2.4 KB · 3.1 MB · 37.4 GB (KEEP1c: a disk's, which MB made 38,298 MB). */
+/** A file's size, in the unit a person reads it in: 812 B · 2.4 KB · 3.1 MB · 37.4 GB (a disk's, which MB made 38,298 MB). */
 export function size(bytes: number): string {
   if (bytes < 1024) return `${bytes.toLocaleString(locale())} B`;
   const kb = bytes / 1024;
@@ -110,7 +110,7 @@ export function sittingDays(iso: string): number {
  * How long something has been going — a SPAN, where `ago` is a point.
  *
  * @remarks
- * The fact the rail could not carry before (D55): "moved 4m ago" reads identically for a session
+ * The fact the rail could not carry before: "moved 4m ago" reads identically for a session
  * three minutes old and one three hours deep, and those are different situations. Measured to `to`
  * where one is given — a finished session has a lifetime, not an age — and to now while it runs.
  *
@@ -130,7 +130,7 @@ export function elapsed(from: string, to?: string | null): string {
 }
 
 /**
- * A short span in milliseconds — how long a turn took (CONV5), where `elapsed` measures a session.
+ * A short span in milliseconds — how long a turn took, where `elapsed` measures a session.
  * Tenths under ten seconds, whole seconds under a minute, then minutes and seconds; an hour and more
  * reads as `elapsed` says it. `language` is the page's unless a caller words in another, as {@link list}'s is.
  */
@@ -150,7 +150,7 @@ export function span(ms: number, language?: string): string {
 }
 
 /**
- * How long a phase has run (R2, SIGNIN1): whole seconds in the first minute, whole minutes after, then hours and minutes, so
+ * How long a phase has run (R2): whole seconds in the first minute, whole minutes after, then hours and minutes, so
  * a time that steps by its own clock steps each second and then each minute (`design/phases`' `Elapsed`). Where `span`
  * says a turn's length to the tenth, this says a wait's, which moves.
  */
@@ -164,7 +164,7 @@ export function phaseTime(ms: number): string {
 
 /**
  * A refusal whose sentence names something its record may not have, and the form to read where the shell sent it
- * empty (CHATTAKE1c, D126's CHATTAKE1 note): a chat that took a quest is refused as having served one, but no quest
+ * empty: a chat that took a quest is refused as having served one, but no quest
  * records which session took it, so the refusal names none, and the sentence that names one read `#`.
  */
 const FORM_WHEN_EMPTY: Readonly<Record<string, { parameter: string; context: string }>> = {
@@ -206,7 +206,7 @@ export function sentence(error: unknown, language?: string): string {
 }
 
 /**
- * What a session ran ON and AS (D49 §4): the harness, the version observed at spawn, and the named
+ * What a session ran ON and AS: the harness, the version observed at spawn, and the named
  * credential profile.
  *
  * @remarks
@@ -222,14 +222,14 @@ export function sentence(error: unknown, language?: string): string {
 export function sessionTool(
   session: { door: string; doorVersion?: string | null; profile?: string | null },
   /**
-   * The session's agent has accounts, so a record naming none ran on the tool's own sign-in, said so (D125 §3.7, TOOL4m's
-   * rest with UX6e). Left out, nothing is said of an account the record does not name.
-   */
+ * The session's agent has accounts, so a record naming none ran on the tool's own sign-in, said so (TOOL4m's
+ * rest with UX6e). Left out, nothing is said of an account the record does not name.
+ */
   ownSignIn = false,
   /**
-   * What a person calls an account (ACCTNAME1, D152 §4.2), from the roster: the record keeps the id, and the line says the
-   * name the person gave it, looked up as it is drawn. Left out, the id is said.
-   */
+ * What a person calls an account, from the roster: the record keeps the id, and the line says the
+ * name the person gave it, looked up as it is drawn. Left out, the id is said.
+ */
   nameOf?: AccountNamer,
 ): string {
   return [

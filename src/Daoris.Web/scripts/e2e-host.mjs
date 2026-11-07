@@ -28,7 +28,7 @@ rmSync(scratch, { recursive: true, force: true });
 mkdirSync(scratch, { recursive: true });
 
 // The host roots at a scratch COPY of the example family, not the tracked tree: the suite includes a
-// project being born mid-run (D44), and a newcomer must never dirty tracked examples.
+// project being born mid-run, and a newcomer must never dirty tracked examples.
 for (const name of ['engine', 'game']) {
   copyTree(join(repoRoot, 'examples', name), join(family, name));
 }
@@ -50,7 +50,7 @@ const host = spawn('dotnet', [dll], {
     ASPNETCORE_URLS: 'http://localhost:5196',
     // Hermetic like the family rehearsal (its own prelude states the argument): the developer's real
     // remotes map must never leak a deployment into a gate run — and the home itself points at
-    // scratch (D63), so nothing this host derives from it is the machine's either.
+    // scratch, so nothing this host derives from it is the machine's either.
     DAORIS_HOME: scratch,
     DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json'),
   },

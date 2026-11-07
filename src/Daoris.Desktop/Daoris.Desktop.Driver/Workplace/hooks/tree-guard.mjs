@@ -1,12 +1,9 @@
-// Daoris's tree guard (PERM3, D72; TREESHELL1): a PreToolUse hook that refuses a file write outside the
+// Daoris's tree guard: a PreToolUse hook that refuses a file write outside the
 // session's own tree. Shipped inside the driver and written under the Daoris home; the harness runs it as
-//
-//   node tree-guard.mjs <tree> [<target> ...]
-//
+//  node tree-guard.mjs <tree> [<target> ...]
 // with the call as JSON on stdin. Each <target> after the tree is a checkout the person declared this
-// session's repository may also write into (D107): a write there is let through as one in the tree is.
+// session's repository may also write into: a write there is let through as one in the tree is.
 // Zero dependencies — it runs inside every session.
-//
 // It judges the tools that name a file (Write, Edit, MultiEdit, NotebookEdit) by their path fields,
 // resolved through links, and a shell's call (Bash, PowerShell) by the write targets it can READ in the
 // command: a redirect (`>`, `>>`), `tee`, `cp`, `mv`, `rm`, and PowerShell's Set-Content, Add-Content,
@@ -14,7 +11,6 @@
 // in at that point (a `cd` moves it). A command it cannot read, a target a variable or a substitution
 // makes, and every write it has no form for are the harness's own working-directory boundary's, as before:
 // a command is never refused for being unread.
-//
 // 🔴 It refuses STRUCTURALLY: `permissionDecision: "deny"` on stdout, exit 0. The harness reads any exit
 // but 2 as a non-blocking error, so a guard that failed by exiting would let the write through. Inside
 // the tree it says NOTHING — never "allow", which would lift the harness's own asking.
@@ -52,7 +48,7 @@ export function judge({ tree, target, cwd = null, platform = process.platform, r
  *
  * 🔴 A link whose target does not exist YET fails to resolve exactly as a missing file does — and a
  * write through it lands wherever it points, creating the target. Climbing past it as though it were
- * a plain name judged such a write inside the tree (REV3). So a component that will not resolve is
+ * a plain name judged such a write inside the tree. So a component that will not resolve is
  * asked whether it is a link, and a link is followed. Too many links is a refusal, never a guess.
  */
 export function resolveThroughLinks(target, depth = 0) {
@@ -93,8 +89,7 @@ export function targets(tool, input) {
   return found.filter((one) => typeof one === 'string' && one.length > 0);
 }
 
-// ——— A shell's writes (TREESHELL1).
-//
+// ——— A shell's writes.
 // Reading a command is a lexer and a walk over its simple commands, not an interpreter: it knows quotes,
 // escapes, heredocs, comments, `;` `&&` `||` `|` and parentheses, and what it does not know it does not
 // guess. Whatever it cannot read yields NO target (never a refusal): an unclosed quote ends the reading
@@ -727,7 +722,7 @@ async function main() {
   }
 
   // The session's tree, as the driver named it — then the harness's own project directory. Each argument
-  // after it is a declared write target (D107).
+  // after it is a declared write target.
   const tree = process.argv[2] || process.env.CLAUDE_PROJECT_DIR;
   const declared = process.argv.slice(3).filter((one) => one.length > 0);
   const cwd = typeof call?.cwd === 'string' && call.cwd.length > 0 ? call.cwd : null;

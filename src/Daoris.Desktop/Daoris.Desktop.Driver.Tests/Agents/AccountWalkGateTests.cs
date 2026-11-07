@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PARALLEL1c (D181 point 3, D125's PARALLEL1c note): choosing an account no longer waits on another account's probe. A walk
+/// PARALLEL1c: choosing an account no longer waits on another account's probe. A walk
 /// asks its questions outside its gate, each under the account's own lock, and holds the gate only to read again what the
 /// questions left and to count the account it chose; a start whose account stays locked past its patience counts nothing and
 /// runs elsewhere, since a question in flight on it may be spending its single-use refresh token.
@@ -18,7 +18,7 @@ public sealed class AccountWalkGateTests : IDisposable
 {
     private static readonly DateTimeOffset Seen = new(2026, 10, 19, 12, 0, 0, TimeSpan.Zero);
 
-    /// <summary>The lock patience the roster is handed where a test does not set it: the product's input, not a wait of the test's (TESTPATIENCE2).</summary>
+    /// <summary>The lock patience the roster is handed where a test does not set it: the product's input, not a wait of the test's.</summary>
     private static readonly TimeSpan LockWait = TimeSpan.FromSeconds(10);
 
     /// <summary>A start's patience for its account's lock here, where the roster's own is thirty seconds.</summary>
@@ -137,7 +137,7 @@ public sealed class AccountWalkGateTests : IDisposable
             return Readings(0.10);
         });
 
-        // The list's walk reads each account's windows first (CODEXUSE1), and the first account's read never answers.
+        // The list's walk reads each account's windows first, and the first account's read never answers.
         var first = roster.SelectAsync("fake", Config, null, null);
         await _begun.Task.WaitAsync(Poll.Patience);
 
@@ -155,7 +155,7 @@ public sealed class AccountWalkGateTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The count's lock (TOOL6g): a start waits out a question in flight on the account it chose, and where that lock stays
+    /// 🔴 The count's lock: a start waits out a question in flight on the account it chose, and where that lock stays
     /// held past its patience, the start is not counted there and runs on the next account, never beside the question.
     /// </summary>
     [Fact]
@@ -170,7 +170,7 @@ public sealed class AccountWalkGateTests : IDisposable
             var selection = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Poll.Patience);
 
             Assert.Equal(("account-2", true), (selection.Profile, selection.Allowed));
-            // LOCKPASSED1: the start's line says the account was passed for its lock, never that the goal ranked another ahead of it.
+            // The start's line says the account was passed for its lock, never that the goal ranked another ahead of it.
             Assert.Equal(WalkStep.Locked, selection.Rotated!.Step);
             Assert.Equal(OpeningWhy.Locked, Assert.Single(selection.Steps!).Why);
             Assert.Contains("being asked about by another question", selection.Rotated.Why);
@@ -195,7 +195,7 @@ public sealed class AccountWalkGateTests : IDisposable
         Assert.False(selection.Allowed);
         Assert.Contains("`account-1`", selection.Refusal);
         Assert.Null(selection.Cooling);
-        // LOCKPASSED1: the hold is said by code, the accounts by id, so the page words it.
+        // The hold is said by code, the accounts by id, so the page words it.
         var part = Assert.Single(selection.RefusalNote!.Parts);
         Assert.Equal(HeldNoteCodes.HeldLocked.Code, part.Code);
         Assert.Equal(selection.Refusal, selection.RefusalNote.Note);
@@ -209,7 +209,7 @@ public sealed class AccountWalkGateTests : IDisposable
     }
 
     /// <summary>
-    /// The walk's own status question on an account read signed out (TOOL6g) could not have its lock: the account is unknown for
+    /// The walk's own status question on an account read signed out could not have its lock: the account is unknown for
     /// this walk, passed and never counted, and its lock is not waited for again to count it.
     /// </summary>
     [Fact]
@@ -233,7 +233,7 @@ public sealed class AccountWalkGateTests : IDisposable
 
         Assert.Equal(("account-2", true), (selection.Profile, selection.Allowed));
         // One wait for the lock, the question's: the account is not then chosen and waited for again to be counted. Counted by the
-        // takes asked, never by the clock, which a loaded machine stretched past two waits while the walk's other work ran (FLAKE1).
+        // takes asked, never by the clock, which a loaded machine stretched past two waits while the walk's other work ran.
         Assert.True(asked == 1, $"the walk asked {asked} takes of a lock it had already not had");
         Assert.False(roster.Busy("fake", "account-1"));
         // Nothing was asked, so nothing was kept: its last reading stands.
@@ -263,7 +263,7 @@ public sealed class AccountWalkGateTests : IDisposable
 
     /// <summary>
     /// Starts made together each see the others' counts: the goal spreads them over the list, none counted twice and none
-    /// missed (D130 §7: none runs more than ⌈K ÷ N⌉ of K while every account is ready).
+    /// missed (none runs more than ⌈K ÷ N⌉ of K while every account is ready).
     /// </summary>
     [Fact]
     public async Task Starts_made_at_once_spread_over_the_list_each_counted_once()

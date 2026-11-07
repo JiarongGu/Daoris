@@ -4,7 +4,7 @@ import { areas, catalogues, en, homeOf, languages, zh } from './index';
 import { languageName, pageLanguage } from './languages';
 
 /**
- * One file per area (MOD2): the build gate (`scripts/i18n-check.mjs`) holds these too, and this holds
+ * One file per area: the build gate (`scripts/i18n-check.mjs`) holds these too, and this holds
  * them for anyone running the tests without it.
  */
 describe('the catalogues by area', () => {
@@ -45,7 +45,7 @@ describe('the catalogues by area', () => {
   });
 });
 
-/** D222: the page's languages are the catalogue folders present, `en` the source; adding a language is adding a folder. */
+/** The page's languages are the catalogue folders present, `en` the source; adding a language is adding a folder. */
 describe('the languages the page offers', () => {
   it('are the catalogues present, English first, and are what i18next supports', () => {
     expect(languages[0]).toBe('en');
@@ -71,10 +71,10 @@ describe('the catalogs', () => {
   });
 
   /**
-   * One word for the scope (D75): the interface said *workspace* 41 times and *circle* 26, 工作区 27
-   * and 圈子 24, and once both in one tooltip. The CLI's word is the one both doors can share. A key or
-   * a placeholder may still be named `circle`, because nobody reads those.
-   */
+ * One word for the scope: the interface said *workspace* 41 times and *circle* 26, 工作区 27
+ * and 圈子 24, and once both in one tooltip. The CLI's word is the one both doors can share. A key or
+ * a placeholder may still be named `circle`, because nobody reads those.
+ */
   it('call the scope a workspace, never a circle, in both languages', () => {
     const said = (value: string) => value.replace(/\{\{[^}]*\}\}/g, '');
     expect(Object.entries(en).filter(([, value]) => /\bcircles?\b/i.test(said(value))).map(([key]) => key)).toEqual([]);
@@ -82,9 +82,9 @@ describe('the catalogs', () => {
   });
 
   /**
-   * The page's inline renderer draws `code`, never `**bold**`, so a value that says `**New**` shows its
-   * asterisks (PLUG8's kit card, seen on the window). Emphasis in a catalogue is left out, not marked up.
-   */
+ * The page's inline renderer draws `code`, never `**bold**`, so a value that says `**New**` shows its
+ * asterisks (PLUG8's kit card, seen on the window). Emphasis in a catalogue is left out, not marked up.
+ */
   it('carry no markdown bold, which the page would show as asterisks', () => {
     const bold = (catalogue: Record<string, string>) =>
       Object.entries(catalogue).filter(([, value]) => /\*\*[^*]+\*\*/.test(value)).map(([key]) => key);
@@ -92,39 +92,39 @@ describe('the catalogs', () => {
     expect(bold(zh)).toEqual([]);
   });
 
-  /** The same drift for an account: 账户 15 times and 账号 11, found building the menus (FRAME3). */
+  /** The same drift for an account: 账户 15 times and 账号 11, found building the menus. */
   it('call an account 账户 in 中文, one word as for the workspace', () => {
     expect(Object.entries(zh).filter(([, value]) => value.includes('账号')).map(([key]) => key)).toEqual([]);
   });
 
   /**
-   * And for a quest (POLISH4): 委托 43 times, and 任务 in about twenty strings the map, the chain
-   * strip, the monitor and the strikes setting grew later. 任务 is the family's word for a *task*, and
-   * the glossary keeps the two apart, so a string about a quest never says 任务.
-   */
+ * And for a quest: 委托 43 times, and 任务 in about twenty strings the map, the chain
+ * strip, the monitor and the strikes setting grew later. 任务 is the family's word for a *task*, and
+ * the glossary keeps the two apart, so a string about a quest never says 任务.
+ */
   it('call a quest 委托 in 中文, never 任务', () => {
     const aboutQuests = Object.entries(en).filter(([, value]) => /\bquests?\b/i.test(value)).map(([key]) => key);
     expect(aboutQuests.filter((key) => zh[key]!.includes('任务'))).toEqual([]);
   });
 
   /**
-   * A view is named by the name it has (UX5 U19). D66 made the Work frame the Sessions view, and two
-   * sentences still sent a person to Work: the status bar's sessions tip and a quest's *open in Work*.
-   * Nothing on the window is called that any more.
-   */
+ * A view is named by the name it has (UX5 U19). D66 made the Work frame the Sessions view, and two
+ * sentences still sent a person to Work: the status bar's sessions tip and a quest's *open in Work*.
+ * Nothing on the window is called that any more.
+ */
   it('name only views that exist: Work has been Sessions since D66', () => {
-    // Except the Roles mode's section of that name, one of the nine kinds of work (COMPANYVIEW1b), and its filter (COMPANYVIEW1d), which are no view,
-    // and the drawing's flag *Work done here* (SETUPUX1n) with the editor's press that sets it, *Work is done here* (FLOWCHART2b), the work a
-    // workflow does, and the dialog's *Work alongside*, a second request working beside the first (COWORKUX1f).
+    // Except the Roles mode's section of that name, one of the nine kinds of work, and its filter, which are no view,
+    // and the drawing's flag *Work done here* with the editor's press that sets it, *Work is done here*, the work a
+    // workflow does, and the dialog's *Work alongside*, a second request working beside the first.
     const work = ['nav.roles.work', 'agents.roles.filter.work', 'workflow.graph.end', 'workflow.edit.act.end', 'work.team.door.alongside'];
     expect(Object.entries(en).filter(([key, value]) => !work.includes(key) && /\bWork\b/.test(value)).map(([key]) => key)).toEqual([]);
     expect(Object.entries(zh).filter(([, value]) => /工作台|「工作」/.test(value)).map(([key]) => key)).toEqual([]);
   });
 
   /**
-   * A count is said in its number (UX5 U54): *1 session(s)* on the usage rows, where every other
-   * count in the catalogue has its `_other` form. English pluralises; the catalogue can say both.
-   */
+ * A count is said in its number (UX5 U54): *1 session(s)* on the usage rows, where every other
+ * count in the catalogue has its `_other` form. English pluralises; the catalogue can say both.
+ */
   it('say a count in its number, never with (s)', () => {
     expect(Object.entries(en).filter(([, value]) => /\w\(s\)/.test(value)).map(([key]) => key)).toEqual([]);
   });

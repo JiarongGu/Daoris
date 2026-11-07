@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CODEXCREDITS1 (D210, D206) through REAL ticks on the protocol door. Three driven Codex sessions ended on the ACP error
+/// CODEXCREDITS1 through REAL ticks on the protocol door. Three driven Codex sessions ended on the ACP error
 /// <c>Internal error: Your workspace is out of credits. Ask your workspace owner to refill in order to continue.</c>, which the door
 /// carries as <c>codex-acp</c> sends it: the message <c>Internal error</c> and the sentence in <c>data.message</c>. It is a limit whose
 /// reset the sentence does not name: the account cools on the default, the quest is never struck or parked, and the work goes to the next
@@ -82,7 +82,7 @@ public sealed class CodexCreditsTickTests : IDisposable
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var cut = service.Session("s1");
         Assert.Equal(("failed", "account-1", true), (cut["state"]!.GetValue<string>(), cut["profile"]!.GetValue<string>(), cut["limit"]!.GetValue<bool>()));
-        // The note travels, so it carries the facts and never the agent's sentence, which its transcript keeps (AGT3c).
+        // The note travels, so it carries the facts and never the agent's sentence, which its transcript keeps.
         Assert.DoesNotContain("out of credits", cut["note"]!.GetValue<string>());
         Assert.Contains("out of credits", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1.log")));
 

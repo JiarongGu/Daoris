@@ -4,14 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1c (D176 point 2, D53): the room measurement proven on stand-ins, with no model and no account. A stand-in agent on the protocol
+/// BRAINSTORM1c: the room measurement proven on stand-ins, with no model and no account. A stand-in agent on the protocol
 /// door is a real process in the pass's room, handed the probe's instruction as its prompt: one that keeps to its room and is refused every
 /// step, one that reads and writes wherever it is asked, and one that says nothing. The measurement judges each by what its run shows, keeps
 /// the evidence, and removes its probe; asked without spending, it starts nothing.
 /// </summary>
 /// <remarks>
 /// A real process on a real connector, so the class is in the real-process half and needs `Daoris.Service.Mcp` built, as
-/// <see cref="BrainstormProcessTests"/> does; it hands the driver an environment naming its own scratch (ENVSEAM1). No real Claude Code or Codex
+/// <see cref="BrainstormProcessTests"/> does; it hands the driver an environment naming its own scratch. No real Claude Code or Codex
 /// starts and no account is spent: the real run is the owner's, and this is what it was proven on.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6b (D130 §16.3, §7, §11) through a REAL tick: cap K over N stub accounts on the protocol door, the list's
+/// TOOL6b through a REAL tick: cap K over N stub accounts on the protocol door, the list's
 /// <c>use</c> left at its default, the goal. One look starts K sessions in K repositories, and no account runs more than
 /// ⌈K ÷ N⌉ of them; each record opens naming the step that chose its account. A weekly limit then refuses the sessions on
 /// one account, and cuts off only its own while the others work on; and the weekly reset that limit told puts that account
@@ -12,9 +12,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// <para>Real node processes in real git checkouts, against the in-process ledger (<see cref="StandInLedger"/>), as
-/// <c>SessionsOutliveTheirLookProcessTests</c> runs them. The protocol stub runs as the stub's accounts (TOOL4j): on stub
+/// <c>SessionsOutliveTheirLookProcessTests</c> runs them. The protocol stub runs as the stub's accounts: on stub
 /// account 1 its turn is refused with observation 4's weekly sentence; on any other it holds its turn until stopped.</para>
-/// <para>Written by TOOL6b and run by the parent at the merge (MOD8): it starts K processes at once.</para>
+/// <para>Written by TOOL6b and run by the parent at the merge: it starts K processes at once.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class AccountGoalTickTests : IDisposable
@@ -88,7 +88,7 @@ public sealed class AccountGoalTickTests : IDisposable
 
         // Each record opens naming the step that chose its account, and that no account has said what it has left. The look
         // returns once its starts' records are open, and each start keeps its opening note on its own path after that, so the
-        // read waits for the note rather than racing it (FLAKE1).
+        // read waits for the note rather than racing it.
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         foreach (var record in records)
         {
@@ -129,7 +129,7 @@ public sealed class AccountGoalTickTests : IDisposable
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 
         // In its next week's last day, with nothing running: the week the limit told is carried on, and says when it resets
-        // but not how much of it is unused, so it earns the account nothing (USAGERESET1: what would lapse is a reading's).
+        // but not how much of it is unused, so it earns the account nothing (what would lapse is a reading's).
         _now = Until.AddDays(6).AddHours(12);
         Assert.Equal(Until.AddDays(7), AccountWindows.WeekOf(_home, "stub", "account-1", _now, fixedWeek: true));
         var snapshot = await service.SnapshotAsync();
@@ -139,7 +139,7 @@ public sealed class AccountGoalTickTests : IDisposable
     }
 
     /// <summary>
-    /// The protocol door's stand-in (TOOL4j): it speaks the wire and nothing else on stdout. On stub account 1 a prompt is
+    /// The protocol door's stand-in: it speaks the wire and nothing else on stdout. On stub account 1 a prompt is
     /// refused with observation 4's weekly sentence, its zone the test's; on any other account the turn is held until the
     /// process is stopped. Each prompt writes down which stub account it ran as.
     /// </summary>

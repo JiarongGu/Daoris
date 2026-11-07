@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-vi part b (D212; the foundation design §13.5's downgrade table, §19.4, row f-vi's proof): the ended limit move across a
+/// FOUNDATION1f-vi part b (the foundation design §13.5's downgrade table, §19.4, row f-vi's proof): the ended limit move across a
 /// downgrade, as <c>LimitMoveDowngradeProcessTests</c> proves the live move's, and the box an older build writes imported once at the return. A
 /// shell is killed at each boundary of the move, an older build comes up on the home and writes its own box, then this build returns: its
 /// come-up ends the killed move by its phase, a later one imports the box into a record of its own and sets it aside, and a third finds nothing

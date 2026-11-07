@@ -1,5 +1,5 @@
 /**
- * The catalogues, one file per area (MOD2): `locales/<language>/<area>.json`, merged here at load, so
+ * The catalogues, one file per area: `locales/<language>/<area>.json`, merged here at load, so
  * i18next sees one flat catalogue per language, exactly the resources it saw when each language was a
  * single file.
  *
@@ -20,7 +20,7 @@ export type Catalogue = Record<string, string>;
 const files = import.meta.glob<Catalogue>('./*/*.json', { eager: true, import: 'default' });
 
 /**
- * Each language's areas by name, as the files hold them — what the parity tests read. A language is a folder (D222): the catalogues
+ * Each language's areas by name, as the files hold them — what the parity tests read. A language is a folder: the catalogues
  * present are the languages the page offers, so adding a language is adding a folder. An area's name is its file's name:
  * `./en/settings.rules.json` is the area `settings.rules` of `en`.
  */

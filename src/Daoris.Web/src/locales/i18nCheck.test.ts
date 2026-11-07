@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { checkLocales, languagesIn } from '../../scripts/i18n-check.mjs';
 
-// D222: the parity gate holds every catalogue present, `en` the source, so a language added as a folder is held the moment it exists.
+// The parity gate holds every catalogue present, `en` the source, so a language added as a folder is held the moment it exists.
 const ROOT = join(process.cwd(), '..', '..', '_fixtures', 'i18n-check', 'planted');
 
 function plant(files: Record<string, Record<string, string>>) {

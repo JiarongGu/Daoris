@@ -3,14 +3,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LIMITGOON1 (the limit-goes-on design §2; D197, D189 point 3) with real conversations: a conversation whose account answers a limit
+/// LIMITGOON1 with real conversations: a conversation whose account answers a limit
 /// sentence mid-conversation goes on, at that turn's end, in a new part of its line on the next account of the same agent, handed
 /// Daoris's brief and then the words the refused turn held, as the person's. The old part ends saying where it went on, the new one
 /// opens saying where it came from, each by its code, and the machine log says the move. For a repository's chat, in its tree with its
 /// record continuing the old by <c>limit</c>, asked by <c>daoris</c>; for Ask Daoris, in its room with its history naming the old.
 /// </summary>
 /// <remarks>
-/// The conversation runs on the <c>acp-stub</c> adapter (a node stand-in on the protocol door), whose accounts are the stub's (TOOL4j),
+/// The conversation runs on the <c>acp-stub</c> adapter (a node stand-in on the protocol door), whose accounts are the stub's,
 /// two in the set; the stand-in reads which one it runs as from the stub's variable, and on <c>account-1</c> answers every prompt with
 /// Claude Code's limit sentence, as the protocol door's JSON-RPC error carries it. No model, no account, no sign-in.
 /// </remarks>

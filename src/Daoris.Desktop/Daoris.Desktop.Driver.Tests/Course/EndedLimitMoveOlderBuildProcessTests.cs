@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-vi part b (D212; the foundation design §3.4 rule 4, §13.4 step 5, §19.1, §19.3, row f-vi's proof): the cases where an older
+/// FOUNDATION1f-vi part b (the foundation design §3.4 rule 4, §13.4 step 5, §19.1, §19.3, row f-vi's proof): the cases where an older
 /// build acts on a line beside the ended limit move, as <c>LimitMoveOlderBuildProcessTests</c> proves them beside the live move's: an older
 /// build opening a successor of the move's destination before it moved the destination's words; Codex's delayed older move, delivering its own
 /// copy after a newer move ended; an older shell's resume of the ended record beside the newer open, in both orders.

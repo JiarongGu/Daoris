@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The set-up presses of Settings → This Daoris (WIRING1e, the this-Daoris design §4): <c>AccountPath</c>, <c>AccountServiceAddress</c>
+/// The set-up presses of Settings → This Daoris: <c>AccountPath</c>, <c>AccountServiceAddress</c>
 /// and <c>WiringFolderPaths</c>. Each runs against <see cref="AccountStandIn"/>, so nothing here reads or changes the machine's
 /// account, its registry or its <c>PATH</c>; each refusal is data, with a code, and changes nothing.
 /// </summary>
@@ -24,7 +24,7 @@ public sealed class AccountSetupTests : IDisposable
         }
     }
 
-    /// <summary>An install's shape (D93): the marker at its root, the launchers under <c>app/bin</c>, its home <c>data/</c>.</summary>
+    /// <summary>An install's shape: the marker at its root, the launchers under <c>app/bin</c>, its home <c>data/</c>.</summary>
     private (string Install, string Bin, string Home) Install()
     {
         var install = Path.Combine(_root, "install");

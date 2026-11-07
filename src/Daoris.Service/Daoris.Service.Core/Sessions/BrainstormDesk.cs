@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Knowledge;
 
-/// <summary>One brainstorm as its records stand (BRAINSTORM1a3): its request, where it stands, its packet's digest and the person's send.</summary>
+/// <summary>One brainstorm as its records stand: its request, where it stands, its packet's digest and the person's send.</summary>
 /// <param name="State"><c>asked</c> before the driver's look froze its packet, then the driver's own: <c>frozen</c>, <c>running</c>, <c>ended</c>.</param>
 /// <param name="Packet">The frozen packet's digest; null before the look froze one.</param>
 /// <param name="Sent">The digest the person sent; null where they have not.</param>

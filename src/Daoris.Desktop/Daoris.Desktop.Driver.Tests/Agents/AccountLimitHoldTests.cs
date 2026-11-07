@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4d (D125 §2, §4, §5.2): a turn the door refused for an account's limit fails with <c>limit</c>, which is never a
+/// TOOL4d: a turn the door refused for an account's limit fails with <c>limit</c>, which is never a
 /// strike; the account cools until the reset the agent named; a start on it is held at spawn with no process and no
 /// record, the quest waiting rather than parked; and the wait is said once.
 /// </summary>
@@ -119,7 +119,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var cooling = roster.CoolingOf("acp-stub", null);
         Assert.Equal(("stub", (string?)null, Until, true, "s1"), (cooling!.Agent, cooling.Account, cooling.Until, cooling.Stated, cooling.Session));
         Assert.Equal("failed", conclusion.State);
-        // The lead-in, then the facts; the agent's sentence is the raw view's (AGT3c).
+        // The lead-in, then the facts; the agent's sentence is the raw view's.
         Assert.Equal($"the agent's turn failed with the quest still taken: {CoolingWords.Note(cooling, Zone)}", conclusion.Note);
 
         var line = Assert.Single(lines);
@@ -173,7 +173,7 @@ public sealed class AccountLimitHoldTests : IDisposable
             System.Globalization.DateTimeStyles.AssumeUniversal);
         Assert.Equal(new DateTimeOffset(2026, 10, 3, 15, 2, 0, TimeSpan.Zero), until);
         Assert.Equal(CoolingWhy.Stated, travelled[^1].Value("why"));
-        // AGT3d: which kind of limit and whose account travel as facts too, the window as the reset named it.
+        // Which kind of limit and whose account travel as facts too, the window as the reset named it.
         Assert.Equal(("weekly", "stub"), ((string?)travelled[^1].Value("window"), (string?)travelled[^1].Value("owner")));
         Assert.Equal(
             "the agent's turn failed with the quest still taken: The `stub` account it ran on hit its weekly limit and is cooling "
@@ -303,9 +303,9 @@ public sealed class AccountLimitHoldTests : IDisposable
     }
 
     /// <summary>
-    /// CONVNOTE1b (LANG1a; D125's TOOL4d note): a conversation's cooling note carries its line's code and values, as a session
+    /// CONVNOTE1b: a conversation's cooling note carries its line's code and values, as a session
     /// record's cooling note does, so the page words it in the reader's language rather than showing the driver's English.
-    /// Its English stays the conversation's own sentence, and neither names the account (D125 §3.6).
+    /// Its English stays the conversation's own sentence, and neither names the account.
     /// </summary>
     [Fact]
     public void A_conversation_s_cooling_note_carries_its_code_so_the_page_words_it_in_either_language()
@@ -319,7 +319,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var line = Assert.Single(said.Parts);
         Assert.Equal(("account.cooling-window", said.Note), (line.Code, line.Text));
         Assert.Equal(("2026-10-03T10:17:00Z", CoolingWhy.Stated), ((string?)line.Value("until"), (string?)line.Value("why")));
-        // AGT3d: whose account and the kind of limit, as the session record's line carries them.
+        // Whose account and the kind of limit, as the session record's line carries them.
         Assert.Equal(["until", "why", "owner", "window"], line.Values.Select(value => value.Key));
         Assert.Equal(("stub", "weekly"), ((string?)line.Value("owner"), (string?)line.Value("window")));
         Assert.DoesNotContain(line.Values, value => value.Value is string text && text.Contains("account-1", StringComparison.Ordinal));
@@ -340,7 +340,7 @@ public sealed class AccountLimitHoldTests : IDisposable
 
         var sitting = Assert.Single(look.Considerations);
         Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
-        // LIMITRESUME1b: a line a limit cut off says its own wait, the earliest reset and whose account.
+        // A line a limit cut off says its own wait, the earliest reset and whose account.
         Assert.Equal(LimitResume.Waits(roster.CoolingOf("acp-stub", null)!, Zone).Note, sitting.Reason);
         Assert.False(look.Progressed);
         Assert.Single(_ledger.Sessions);
@@ -490,7 +490,7 @@ public sealed class AccountLimitHoldTests : IDisposable
 
         service.AccountSaid(AccountLine.Limited("s1", "claude-code-acp", "account-1", seen, turn: 2, used: 370_104));
         service.AccountSaid(AccountLine.Waiting("claude-code-acp", null, "work", Until, quests: 3));
-        // TOOL6g: the accounts a wait passed not signed in, by name, and a wait on none cooling with no time.
+        // The accounts a wait passed not signed in, by name, and a wait on none cooling with no time.
         service.AccountSaid(AccountLine.Waiting("claude-code", "gmail", null, Until, quests: 2, signedOut: ["account-1", "not a name", "account-2"]));
         service.AccountSaid(AccountLine.Waiting("claude-code", null, null, until: null, quests: 1, signedOut: ["account-1"]));
 

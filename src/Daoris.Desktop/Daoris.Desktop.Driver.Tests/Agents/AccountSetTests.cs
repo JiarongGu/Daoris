@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An agent's accounts as one set (POOL1a, D197; <c>docs/2026-10-21-account-pool-design.md</c> §2, §6): the fold's table of shapes,
+/// An agent's accounts as one set (<c>docs/2026-10-21-account-pool-design.md</c> §2, §6): the fold's table of shapes,
 /// <see cref="HarnessSettings.Change"/> folding before every edit, the receipts said by id, the come-up a held lock refuses, and an
 /// older build's reading of a folded file.
 /// </summary>
@@ -199,7 +199,7 @@ public sealed class AccountSetTests : IDisposable
         Assert.Equal("2.0.0", twice.Versions[Agent]);
     }
 
-    /// <summary>A change makes no fold (NOCOMPAT1): a workspace's list the file still holds is the migration's, and the edit leaves it.</summary>
+    /// <summary>A change makes no fold: a workspace's list the file still holds is the migration's, and the edit leaves it.</summary>
     [Fact]
     public void A_change_folds_nothing_and_makes_the_order_whole()
     {
@@ -305,7 +305,7 @@ public sealed class AccountSetTests : IDisposable
         Assert.Contains(lines, line => line.Contains("\"accounts.pooled\"") && line.Contains("\"held\":true"));
     }
 
-    /// <summary>The folder the install held (POOLSTRAY1): a start whose path carried an unexpanded <c>$a</c> left it beside the agents.</summary>
+    /// <summary>The folder the install held: a start whose path carried an unexpanded <c>$a</c> left it beside the agents.</summary>
     private const string Stray = "claude-code$a";
 
     private void StrayFolder()

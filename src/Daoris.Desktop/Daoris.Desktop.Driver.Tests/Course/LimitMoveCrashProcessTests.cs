@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-ii part b (D212; the foundation design §3.3, §13.4 steps 1 to 5, §19.4, row f-ii's proof): the live limit move's record holds
+/// FOUNDATION1f-ii part b (the foundation design §3.3, §13.4 steps 1 to 5, §19.4, row f-ii's proof): the live limit move's record holds
 /// through a crash at every boundary. A shell is killed at each place the executor passes (<see cref="Cuts"/>: after the decision, after
 /// <c>old-ended</c>, after <c>opening</c> with and without the open made, after <c>opened</c>, after the mark and before the write, after the
 /// write and before <c>sent</c>, after <c>sent</c> and before the take, after the take and before <c>delivered</c>), and a shell that comes up

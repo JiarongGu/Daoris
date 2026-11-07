@@ -1,12 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { measureFlows } from './measure';
 
-// The roles' diagram, measured (COMPANYVIEW1f; the company-view design §4 and §7 row 6): each story of `RoleDiagram.stories.tsx` drawn
+// The roles' diagram, measured: each story of `RoleDiagram.stories.tsx` drawn
 // in a real browser at the main area's widths. At 80rem the diagram is across, its three 12rem columns and their gaps (42rem) beside
 // the chosen node's detail, and every edge, sampled along its length by the browser's own geometry, is clear of every node but its own
 // two ends, and no label lies over a node or another label. At 39 and 25rem it is its list, the same nodes with their edges in words,
 // the head saying so, and the detail below it. jsdom lays nothing out, so no unit test can hold this.
-//
 // `npm --prefix src/Daoris.Web run e2e:measured -- roles.spec`.
 
 /** Each story and the placement its width gives it. */
@@ -24,7 +23,7 @@ const TABLE: Record<string, 'across' | 'rail'> = {
   'roles/OneAgent': 'across',
   'roles/TooLarge': 'across',
   'roles/TooLargeChinese': 'across',
-  // At 39rem the region holds the canvas's 36rem floor, the label above the roles (CANVAS1c); at 25rem, the list.
+  // At 39rem the region holds the canvas's 36rem floor, the label above the roles; at 25rem, the list.
   'roles/Half': 'across',
   'roles/Narrow': 'rail',
   'roles/ChineseHalf': 'across',
@@ -38,7 +37,7 @@ const TABLE: Record<string, 'across' | 'rail'> = {
 };
 
 /**
- * The crossings each story's staffed edges make, the table of what the bands may cross; none above it (CANVAS1c). The fixture's ten
+ * The crossings each story's staffed edges make, the table of what the bands may cross; none above it. The fixture's ten
  * choices cross six times as its agents are ordered by the bands their roles stand in; a fixture with one agent or folded bands crosses none.
  */
 const CROSSINGS: Record<string, number> = {

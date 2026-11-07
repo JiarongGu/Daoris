@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6b (D130 §5.2, §16.3 step 4, §16.4): <c>windows.json</c> keeps the weekly reset a limit tells, per agent and
+/// TOOL6b (§16.3 step 4, §16.4): <c>windows.json</c> keeps the weekly reset a limit tells, per agent and
 /// account, and a start reads it carried forward a week at a time where the agent's maker fixes the weekly reset per
 /// account (Claude, C1), and dropped at its reset where that was not read. Written and read by the driver alone (§14).
 /// </summary>
@@ -116,7 +116,7 @@ public sealed class AccountWindowsTests : IDisposable
         Assert.Equal(Reset, AccountWindows.WeekOf(_home, "claude-code", "account-2", Seen, fixedWeek: true));
     }
 
-    // ——— What an agent said about its windows (TOOL6c, D130 §5.2): kept per window, the newest replacing the older, a
+    // ——— What an agent said about its windows: kept per window, the newest replacing the older, a
     // floor as of when it was said, and gone at its reset; the weekly window's reset is the account's week for step 4.
 
     private static readonly DateTimeOffset Said = new(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
@@ -250,7 +250,7 @@ public sealed class AccountWindowsTests : IDisposable
         Assert.Null(AccountWindows.SaidOf(_home, "codex", "account-1", Said));
     }
 
-    // ——— Told by a limit, through the roster's reader (D125 §2): only a weekly reset the agent named.
+    // ——— Told by a limit, through the roster's reader: only a weekly reset the agent named.
 
     private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Native);
 

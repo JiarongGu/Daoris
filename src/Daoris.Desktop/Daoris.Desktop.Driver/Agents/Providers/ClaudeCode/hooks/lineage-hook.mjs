@@ -1,19 +1,14 @@
-// Daoris's lineage hook (FABRIC-C1a, D173): what Claude Code says of the agent behind each call to Daoris's connector, and of
+// Daoris's lineage hook (FABRIC-C1a): what Claude Code says of the agent behind each call to Daoris's connector, and of
 // each subagent's start and stop, appended to the session's lineage file for the driver to bind its native children to the
 // part. Shipped inside the driver and written under the Daoris home; the harness runs it as
-//
-//   node lineage-hook.mjs <lineage file>
-//
+//  node lineage-hook.mjs <lineage file>
 // on `PreToolUse` for the connector's tools, `SubagentStart` and `SubagentStop`, with the hook's input as JSON on stdin.
 // Zero dependencies: it runs inside every session that is handed it.
-//
 // 🔴 Ids only. The input also names the working directory and transcript paths; none of them is read. A value is kept only
 // where it is shaped as an id (the connector's `CallLineage.Id`, the driver's `ChildBindings` twin), so no path reaches the
-// file (D46, D47).
-//
+// file.
 // 🔴 It decides nothing: nothing on stdout, exit 0, whatever happens. A hook that fails is a non-blocking error, and the call
 // goes on as the session's rules say. A line it cannot write is a lineage the driver says it does not know.
-//
 // The file is shared with the connector, which appends holding it alone: a write refused while the connector holds it is
 // tried again for about two seconds.
 
@@ -22,7 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/;
-// The token of the process the hook runs under (COWORKVIEW1a); the driver's `ChildMarks.LineageProcVariable`, spelt as its twin.
+// The token of the process the hook runs under; the driver's `ChildMarks.LineageProcVariable`, spelt as its twin.
 const PROC = 'DAORIS_LINEAGE_PROC';
 const EVENTS = { PreToolUse: 'call', SubagentStart: 'started', SubagentStop: 'stopped' };
 const HELD = new Set(['EBUSY', 'EPERM', 'EACCES']);
@@ -38,7 +33,7 @@ export function lineageLine(input, at = new Date(), proc = process.env[PROC]) {
     if (value !== undefined) line[name] = value;
   };
   put('agent', id(input.agent_id));
-  // Sent but not an id: kept as such, since a dropped agent reads as the root's call (FABRIC-C2a, D173's note, point 1).
+  // Sent but not an id: kept as such, since a dropped agent reads as the root's call (FABRIC-C2a, point 1).
   if (input.agent_id !== undefined && input.agent_id !== null && id(input.agent_id) === undefined) line.agentUnreadable = true;
   put('type', id(input.agent_type));
   if (event === 'call') {

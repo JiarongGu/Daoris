@@ -258,7 +258,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// <param name="asksKey">Whether the host is asked to read its person key on its input's first line (<see cref="PersonKeyOnInput"/>).</param>
     public static ProcessStartInfo StartInfo(HostLocation location, bool asksKey = false)
     {
-        // Not the tools' environment (TOOLS5): the host is Daoris's own program, found by its own locator (D60, D93),
+        // Not the tools' environment: the host is Daoris's own program, found by its own locator,
         // and it starts no process; the knowledge feed's git is the checkout's driver's.
         var start = new ProcessStartInfo
         {

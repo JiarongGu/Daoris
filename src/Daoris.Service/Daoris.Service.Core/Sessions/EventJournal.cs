@@ -11,16 +11,13 @@ namespace Daoris.Knowledge;
 /// word's id on either side of <c>said</c>), guarded on what changed, since <c>AFTER UPDATE OF</c> fires on a statement's list and the
 /// state move names <c>state</c>, <c>limited</c> and <c>said</c> every time. An attempt mark rewrites <c>said</c> at its length and journals
 /// nothing; a mirror's upsert (<c>origin</c> set) is another machine's record and journals nothing.</para>
-///
 /// <para><b>Never raising</b>: the triggers hold no <c>RAISE</c> and the inserts can violate no constraint (the three required columns are
 /// always given a value, and a list that is not a JSON array journals nothing), so no writer's statement fails through them. A storage
 /// failure fails the statement as it fails the record's write: capture is atomic with the write.</para>
-///
 /// <para><b>Bounded</b>: a row holds ids cut at 64 characters, codes at 32, and at most eight of a note's codes, never a word's text or key, a
 /// note, a path or an account, so a row is under a KiB. The statement that inserts also deletes the rows past the newest 50,000, so a
 /// writer built before the table, which never trims, still bounds it. A statement that adds or takes more than 64 words journals the first
 /// 64 and one <c>words-overflow</c> row with the count past them.</para>
-///
 /// <para><b>The moves.</b> A <c>state</c> row is a move of the state, carrying the limit flag on either side; a <c>limited</c> row is the flag
 /// moving where the state stays, so a move that also limits is one row.</para>
 ///

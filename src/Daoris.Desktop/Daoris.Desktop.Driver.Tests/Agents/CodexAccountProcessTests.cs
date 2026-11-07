@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// install (0.160.0, 2026-10-08): signed in where its home holds <c>auth.json</c>, which its <c>login</c> writes.
 /// </summary>
 /// <remarks>
-/// A real process, so the <c>Process</c> half (MOD8). The declaration, the words and the walk are <c>CodexAccountTests</c>.
+/// A real process, so the <c>Process</c> half. The declaration, the words and the walk are <c>CodexAccountTests</c>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class CodexAccountProcessTests : IDisposable
@@ -119,7 +119,7 @@ public sealed class CodexAccountProcessTests : IDisposable
 
     /// <summary>
     /// *Read again* on Agents → Codex reads each account by <c>codex login status</c>, under each account's <c>CODEX_HOME</c>,
-    /// and keeps each reading under <c>codex</c>. 🔴 It never asks the tool's own sign-in (POOL1a3, D197 point 3): no status
+    /// and keeps each reading under <c>codex</c>. 🔴 It never asks the tool's own sign-in: no status
     /// question runs with no <c>CODEX_HOME</c>, and the own sign-in stays *unknown · never read*.
     /// </summary>
     [Fact]
@@ -194,8 +194,7 @@ public sealed class CodexAccountProcessTests : IDisposable
     }
 
     /// <summary>
-    /// *Add an account…*'s sign-in by its device code: <c>codex login --device-auth</c> (CODEXACCT2, now asked for,
-    /// CODEXLOGIN1) into a new folder Daoris owns, with that folder as its <c>CODEX_HOME</c>, and the end's question reads it
+    /// *Add an account…*'s sign-in by its device code: <c>codex login --device-auth</c> (now asked for) into a new folder Daoris owns, with that folder as its <c>CODEX_HOME</c>, and the end's question reads it
     /// signed in. Never the tool's own home. SIGNIN1: the stand-in waits as Codex does, so the link and the code reach the
     /// relay as plain lines while it waits, and it ends once the code is entered.
     /// </summary>

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris chat</c> as built, holding a conversation end to end (RPC1g2, D238, the terminal-conversation design §5): the host's
+/// <c>daoris chat</c> as built, holding a conversation end to end: the host's
 /// process started as a person starts it, scripted on its standard input, against a stand-in of the running Daoris's pipe that names
 /// the conversation, forwards its lines and ends it. What the process says and how it ends are read out; nothing of it runs the
 /// conversation, which is the claim. It replaces the family rehearsal's headless step.

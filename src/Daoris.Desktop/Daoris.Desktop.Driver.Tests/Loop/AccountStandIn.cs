@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A stand-in for the person's account's variables (WIRING1e): a dictionary that notes what was written and can be made to fail, so
+/// A stand-in for the person's account's variables: a dictionary that notes what was written and can be made to fail, so
 /// no test of a set-up press reads or writes the machine's own account, registry or <c>PATH</c>.
 /// </summary>
 public sealed class AccountStandIn : IAccountEnvironment

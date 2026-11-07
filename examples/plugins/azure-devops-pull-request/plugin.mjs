@@ -1,21 +1,17 @@
-// Azure DevOps pull request (`azure-devops-pull-request`): a plugin that opens and reads a pull request through Azure DevOps' REST API
-// (D241 point 5).
-//
+// Azure DevOps pull request (`azure-devops-pull-request`): a plugin that opens and reads a pull request through Azure DevOps' REST API.
 // It runs no git and no CLI. Daoris pushed the branch before this step ran (a `push` node, through its own doors); this process is
 // handed the API token of the git identity serving origin, for this process alone, in DAORIS_HOST_TOKEN, and is not started where
 // no identity serves origin, the identity is read only, git access denies Write, or the identity has no API token.
-//
 // Two things it answers, both over JSON-RPC 2.0, one frame per line, on stdin and stdout (stdout is the wire; stderr is its console):
-//   - `work/perform` for its one step, `pull-request`: opens the pull request from the pushed branch, or finds the active one already
-//     open for it, once per idempotency key (the kit's work.mjs keeps that), and reports its address as evidence and as its
-//     `pullRequest` output. The branch and checkout come from the units `work/watch` tells it; the step's attempt names its unit
-//     by the tip it was made at.
-//   - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words, with
-//     the merge commit where it completed.
-//
-//   DAORIS_PLUGIN_DATA  the data folder (the kit's journal)
-//   DAORIS_HOST_TOKEN   the identity's personal access token: never logged, never written, sent only to the API as Basic's password
-//   DAORIS_HOST_API     the API's base address where it is not Azure DevOps' (a test's stand-in), put before the organization's name
+//  - `work/perform` for its one step, `pull-request`: opens the pull request from the pushed branch, or finds the active one already
+//  open for it, once per idempotency key (the kit's work.mjs keeps that), and reports its address as evidence and as its
+//  `pullRequest` output. The branch and checkout come from the units `work/watch` tells it; the step's attempt names its unit
+//  by the tip it was made at.
+//  - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words, with
+//  the merge commit where it completed.
+//  DAORIS_PLUGIN_DATA the data folder (the kit's journal)
+//  DAORIS_HOST_TOKEN the identity's personal access token: never logged, never written, sent only to the API as Basic's password
+//  DAORIS_HOST_API the API's base address where it is not Azure DevOps' (a test's stand-in), put before the organization's name
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -125,7 +121,7 @@ const HOW = { noFastForward: 'merge', squash: 'squash', rebase: 'rebase', rebase
 const STATE = { active: 'open', completed: 'completed', abandoned: 'abandoned' };
 
 /**
- * Which of the pull requests from a branch is the one asked about (PLUGHOOK1a, design §2.6): among those into the line where there are
+ * Which of the pull requests from a branch is the one asked about: among those into the line where there are
  * any, a completed one, else an active one, else the newest abandoned one.
  */
 function choose(found, line) {
@@ -166,7 +162,7 @@ async function pullRequest(attempt) {
     if (made.status === 201 || made.status === 200) {
       return reached(attempt, repo, made.json, `opened pull request ${made.json.pullRequestId} into \`${withoutHeads(target)}\`.`);
     }
-    // 409 (TF401179) says one is active for the branch already: a second attempt of this one, found rather than refused.
+    // 409 says one is active for the branch already: a second attempt of this one, found rather than refused.
     const again = made.status === 409 ? (await fromBranch(repo, unit.branch)).find((pr) => pr.status === 'active') : null;
     if (again) return reached(attempt, repo, again, `pull request ${again.pullRequestId} is already active from \`${unit.branch}\`.`);
     return failed('rejected', `Azure DevOps did not open the pull request (${made.status}): ${made.json?.message ?? 'no reason given'}`);
@@ -188,7 +184,7 @@ function failed(code, message) {
   return { state: 'failed', code, evidence: { message: message.slice(0, 300) } };
 }
 
-/** `work/state` (PLUGHOOK1a, D148): a landed branch's pull request, found by its address or its source branch, read and said in Daoris's words. */
+/** `work/state`: a landed branch's pull request, found by its address or its source branch, read and said in Daoris's words. */
 async function state(frame) {
   const repo = azureOf(frame.origin) ?? azureOf(originOf(frame.root));
   if (!repo) return { state: 'unknown', pullRequest: frame.pullRequest ?? null, message: 'origin names no Azure DevOps repository.' };

@@ -3,14 +3,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LIMITRESUME1c (D206 §3.4, §3.5) with real conversations: a conversation whose every account is at its limit waits, its words with it,
+/// LIMITRESUME1c with real conversations: a conversation whose every account is at its limit waits, its words with it,
 /// and the look's <c>limits</c> stage wakes it, its own account first, in its own conversation, with the refused turns' words, the words
 /// said while it waited and Daoris's word, each once; or, another account freeing first, moves there handed the brief and both kinds of
 /// words. A conversation it cannot resume because its conversation is lost goes on briefed, never <i>cannot go on</i>; a refusal that
 /// proves no loss waits for the person with no Daoris word left. The limit's move to a new part is delivered once across a shell's end.
 /// </summary>
 /// <remarks>
-/// The conversations run on the <c>acp-stub</c> adapter (a node stand-in on the protocol door), whose accounts are the stub's (TOOL4j);
+/// The conversations run on the <c>acp-stub</c> adapter (a node stand-in on the protocol door), whose accounts are the stub's;
 /// the stand-in reads which one it runs as from the stub's variable, answers a prompt with Claude Code's limit sentence while a gate file
 /// says its account is limited, and refuses a resume as the gate says. The roster's clock is the test's, held: the stage reads it, so a
 /// reset comes when the test moves it, never by the machine's clock. No model, no account, no sign-in.
@@ -286,8 +286,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// An ended chat whose person's words wait for its own cooling account (D137 point 7) never met a limit. LIMITSWITCH2 (D137's note of
-    /// 2026-10-25): with every account of its agent cooling, the wait is the earliest reset of any of them, and where that is its own
+    /// An ended chat whose person's words wait for its own cooling account never met a limit. LIMITSWITCH2: with every account of its agent cooling, the wait is the earliest reset of any of them, and where that is its own
     /// account's the stage goes on at the reset with its words in its own conversation, on that account, nothing moved.
     /// </summary>
     [Fact]
@@ -319,7 +318,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.Equal(1, ledger.Count);
     }
 
-    /// <summary>A model family's cool-off of <paramref name="account"/>, as the cooling store keeps it under the account (MODELROLE1k).</summary>
+    /// <summary>A model family's cool-off of <paramref name="account"/>, as the cooling store keeps it under the account.</summary>
     private void CoolingModel(string account, DateTimeOffset until, string model) =>
         AccountCooling.Cool(_home, new CoolingEntry("stub", account, until, Stated: true, "weekly", _now, null, Model: model), _now);
 
@@ -396,7 +395,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     private static bool IsHandedTo(string account, string line) => line.StartsWith($"prompt[{account}]", StringComparison.Ordinal);
 
     /// <summary>
-    /// 🔴 LIMITSWITCH2 (D137's note of 2026-10-25): an ended conversation the person writes to, its own account cooling for days while
+    /// 🔴 LIMITSWITCH2: an ended conversation the person writes to, its own account cooling for days while
     /// <c>account-2</c> is ready, goes on at once in one move on <c>account-2</c>: a new part continuing it, handed Daoris's brief and the
     /// words, which leave the old record once, named as taken by the new part. Its own conversation is never resumed on the cooling
     /// account, the words reach the agent once, the start is counted once, and the old record never says it waits.
@@ -739,7 +738,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH3 (D137's note of 2026-10-26): the same move carries Daoris's own words that state a fact, said as Daoris's and after the
+    /// 🔴 LIMITSWITCH3: the same move carries Daoris's own words that state a fact, said as Daoris's and after the
     /// person's, never as theirs: a rebase word goes in the new part's first message once and leaves the old record once; Daoris's resume
     /// word (a limit's) does not, since it asks for the old conversation. A session holding only a rebase word goes on too.
     /// </summary>
@@ -1147,7 +1146,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// *Stop waiting* (D206 §3.7, N27): an ended conversation held by its limit waits no more. Its waiting word is marked, its record says
+    /// *Stop waiting* (N27): an ended conversation held by its limit waits no more. Its waiting word is marked, its record says
     /// so, and at its account's reset the stage starts nothing; its word waits for the person's next.
     /// </summary>
     [Fact]

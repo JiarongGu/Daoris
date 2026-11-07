@@ -19,7 +19,7 @@ const FOLDED_KEY = 'daoris.timeline.states';
  * - **The record's state, not its path.** The hint says the record keeps where a session stands and not how it got there, so
  *   the drawing has no earlier state lit and no time.
  * - **The word on the lit node** is `shown`'s, the page's reading over the record (*idle*, *parked*, *awaiting reply*,
- *   *answered*, *going on*), where the caller holds it, and the record's own reading otherwise.
+ * *answered*, *going on*), where the caller holds it, and the record's own reading otherwise.
  */
 export function SessionFlow({ session, shown, className }: { session: SessionOfLife; shown?: ShownState; className?: string }) {
   const { t } = useTranslation();

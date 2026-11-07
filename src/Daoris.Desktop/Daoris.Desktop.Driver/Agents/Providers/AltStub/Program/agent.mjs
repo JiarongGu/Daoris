@@ -13,14 +13,14 @@
  *
  * - The probes first, whatever the case: `--version`, `--login-state` (signed in) and `--login`.
  * - `open`, on the native door: a start (a quest in its environment) says where it started, then takes and closes its quest through the
- *   service's door its environment names; a conversation (no quest) says back each line it hears.
+ * service's door its environment names; a conversation (no quest) says back each line it hears.
  * - `open`, on the protocol door: the spec's calls answered, a new conversation `s-1`, any conversation resumed, each prompt said back as
- *   `heard: ` and its first line, and a prompt with a quest taken and closed through the service's door before its turn ends.
+ * `heard: ` and its first line, and a prompt with a quest taken and closed through the service's door before its turn ends.
  * - `missing` and `elsewhere`: a resume refused, as gone (`Resource not found`) or held by another client (`thread_active_writer`).
  * - `transient`: the first prompt refused overloaded, the next answered. `access` (or `refused`): the credential refused. `signin`: a
- *   login needed. `fatal`: the turn failed. `limit`: a limit said, with its refill.
+ * login needed. `fatal`: the turn failed. `limit`: a limit said, with its refill.
  *
- * A failed call to the service is said, never thrown. It ends by its input closing, never by `process.exit` after a call (STUB1: Node 24
+ * A failed call to the service is said, never thrown. It ends by its input closing, never by `process.exit` after a call (Node 24
  * on Windows could end in a libuv assertion with a socket still open).
  */
 import { appendFileSync } from 'node:fs';

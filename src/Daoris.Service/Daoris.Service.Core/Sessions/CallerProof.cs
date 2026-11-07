@@ -25,7 +25,6 @@ public sealed record Caller(CallerKind Kind, string Reason);
 /// child signal: no parent, no spawn kind, a source of <c>user</c> or none. Codex's protocol door writes no source on a root's calls,
 /// so a missing one is not asked for; a spawned thread has its own id, so its calls never name the root's
 /// thread as theirs. A source other than <c>user</c> or <c>subagent</c> is unreadable.</para>
-///
 /// <para><b>Claude Code</b> writes only the call's id, so a root's call is one whose id joins a hook line naming no agent
 /// (<see cref="HookJoin"/>). The driver's <c>ChildBindings</c> fold reads the same lines the same way.</para>
 /// </remarks>

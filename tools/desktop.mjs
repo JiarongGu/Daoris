@@ -10,14 +10,14 @@
  * is not a gate and does not pretend to be one; it is the instrument a person or an agent uses to
  * START the thing and SEE it, which is the step that was being done by hand or not at all.
  *
- *   node tools/desktop.mjs doctor              what this machine has, and what a run would use
- *   node tools/desktop.mjs build               the platform bundle, the host, then the shell
- *   node tools/desktop.mjs run                 start it on a scratch machine, debug port attached
- *   node tools/desktop.mjs run --install <dir> start the DEPLOYED one there, on your real machine
- *   node tools/desktop.mjs shot overview       capture the window
- *   node tools/desktop.mjs eval "document.title"   (or --file <script.js>)
- *   node tools/desktop.mjs click "[data-nav=quests]"
- *   node tools/desktop.mjs kill | restart
+ * node tools/desktop.mjs doctor what this machine has, and what a run would use
+ * node tools/desktop.mjs build the platform bundle, the host, then the shell
+ * node tools/desktop.mjs run start it on a scratch machine, debug port attached
+ * node tools/desktop.mjs run --install <dir> start the DEPLOYED one there, on your real machine
+ * node tools/desktop.mjs shot overview capture the window
+ * node tools/desktop.mjs eval "document.title" (or --file <script.js>)
+ * node tools/desktop.mjs click "[data-nav=quests]"
+ * node tools/desktop.mjs kill | restart
  *
  * TWO RULES SHAPE ALL OF IT.
  *

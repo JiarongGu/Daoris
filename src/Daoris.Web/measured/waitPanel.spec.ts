@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The waiting panel, measured (WAITPANEL1): its top edge dragged in a real browser, the height kept for the viewer and the
+// The waiting panel, measured: its top edge dragged in a real browser, the height kept for the viewer and the
 // conversation's floor held; and the conversation's *To the top* and *Back to bottom* above the panel's edge, the topmost thing
 // at their own centres, in both languages and both themes. jsdom lays nothing out and stacks nothing, so `WaitPanel.test.tsx`
 // holds the arithmetic and the arrangement, and this the boxes. The stories are `work/waits/WaitPanel.stories.tsx`.

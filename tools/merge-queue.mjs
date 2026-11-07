@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The scoped run, the merge queue and the admission between the runners (CISCOPE1e, D207; design
+ * The scoped run, the merge queue and the admission between the runners (design
  * `docs/2026-10-24-ci-scope-design.md` §4 and §5.1, §8 row 5). The merge tool's queue verbs (`<branch> --preview`,
  * `<branch> --message <file>`, `--queue`, `--queue --recheck`) and its detached runner (`--queue-run`) read and write these
  * records; each is kept in the main checkout's ignored `local/`.
@@ -10,28 +10,28 @@
  * A merge used to block on the cheap checks alone, in the main checkout, and the CI beside gated main's tip after it. A merge now
  * waits on a scoped run of what it reaches, on a candidate commit in a tree of its own (`local/scope-tree`), so no dispatch waits
  * on the main checkout and main moves only by a fast-forward onto a candidate that passed. The full set stays the background
- * run's (CISCOPE1d), which the install waits for.
+ * run's, which the install waits for.
  *
  * ## The queue, `local/merge-queue.json`
  *
  * - **What the parent hands it.** A branch is previewed first (`--preview`: the merge made in the scope tree's spare index
- *   against main's tip, its diff and gates printed, nothing committed), after the records commit on the branch; then queued with
- *   its message file (`--message <file>`). The request is frozen at enqueue: the branch's tip and the message's bytes. A tip that
- *   differs from the branch's last preview, and a branch with no message, are refused (`enqueue`). Each enqueue has its own
- *   request id, retained through re-forms and outcomes, so a new wait never reads an older result for the same tip, and its place in
- *   the queue's sequence (`seq`), which orders requests given back (`inArrival`).
+ * against main's tip, its diff and gates printed, nothing committed), after the records commit on the branch; then queued with
+ * its message file (`--message <file>`). The request is frozen at enqueue: the branch's tip and the message's bytes. A tip that
+ * differs from the branch's last preview, and a branch with no message, are refused (`enqueue`). Each enqueue has its own
+ * request id, retained through re-forms and outcomes, so a new wait never reads an older result for the same tip, and its place in
+ * the queue's sequence (`seq`), which orders requests given back (`inArrival`).
  * - **The candidate.** The runner merges every queued branch, in arrival order, at most `CANDIDATE_MAX`, one merge commit each
- *   on main's tip; a branch whose merge the resolvers cannot make is set aside and handed back (`formCandidate`). One member at a
- *   time where `--one-at-a-time` asked it, or where an unresolved failure split a candidate. The requests it takes stand as
- *   `forming` until the candidate is written (QUEUEWAITEND1).
+ * on main's tip; a branch whose merge the resolvers cannot make is set aside and handed back (`formCandidate`). One member at a
+ * time where `--one-at-a-time` asked it, or where an unresolved failure split a candidate. The requests it takes stand as
+ * `forming` until the candidate is written.
  * - **Its outcomes.** Each request ends landed, contained or handed back (a drop's too, queued or forming), and its waiter reads
- *   which (`requestStanding`); a request in no record at all is told so, never waited for.
+ * which (`requestStanding`); a request in no record at all is told so, never waited for.
  * - **Its states.** `forming`, `running`, `bisecting`, `green`, `promoting`, `promoted`, `held` (on memory, on a checkout that is
- *   not clean), and the queue's `stopped`. A member handed back is `pinned`, `pinned with` or `unresolved`.
+ * not clean), and the queue's `stopped`. A member handed back is `pinned`, `pinned with` or `unresolved`.
  * - **Promotion.** Only onto a clean main checkout whose tip is still the candidate's base; otherwise held, or re-formed on the
- *   new tip, the re-form after a records-only move running the whole cheap tier and deferring `service` alone (`recordsOnly`). A
- *   candidate re-formed `HELD_REFORMS` times running is *held by direct commits*. After a crash, a candidate in `promoting` or
- *   `green` whose tip main already holds has landed (`resumeCandidate`).
+ * new tip, the re-form after a records-only move running the whole cheap tier and deferring `service` alone (`recordsOnly`). A
+ * candidate re-formed `HELD_REFORMS` times running is *held by direct commits*. After a crash, a candidate in `promoting` or
+ * `green` whose tip main already holds has landed (`resumeCandidate`).
  *
  * ## Judging a red candidate (§4.1 point 4)
  *
@@ -43,7 +43,7 @@
  * interacting; a prefix that cannot run, a second run that disagrees, or a whole candidate that does not fail again, leaves it
  * unresolved. `candidateOutcome` turns the judgements into what the queue does next.
  *
- * ## The confirm run (INTEGRATE1b, design §4.5, §5.3 step 3)
+ * ## The confirm run (design §4.5, §5.3 step 3)
  *
  * Before any base or prefix run, the queue's runner runs the failing gate once more as composed, on the candidate's tip, holding
  * the whole machine admission (`confirmStep` over `takeWhole`), once per failing gate, and reads each failure by it
@@ -68,7 +68,7 @@
  * answers; a read that fails keeps the whole charge. A background gate kept from its slot `BACKGROUND_SLOT_WAIT_MS` takes it
  * between scoped tiers.
  *
- * ## Containment (INTEGRATE1c, design §5.2 step 3, C4)
+ * ## Containment (design §5.2 step 3, C4)
  *
  * A member whose work the candidate holds already is **contained**, never set aside as a merge that could not be made. One the
  * line holds is settled at once (`queue.contained`, `containedIn: { line: true }`). One an earlier member of the same candidate holds is
@@ -164,7 +164,7 @@ export function enqueue(queue, { branch, tip, message, at, requeue = false }) {
     || queue.candidate?.members.some((each) => each.branch === branch && !each.handedBack) || queue.candidate?.contained?.some((each) => each.branch === branch)) {
     return { refused: `${branch} is queued already: --drop-batch ${branch} takes it off, then queue it again` };
   }
-  // INTEGRATE1c: each request's place in arrival, by a sequence the queue keeps (`sequence`, the last given); `at` has whole seconds.
+  // Each request's place in arrival, by a sequence the queue keeps (`sequence`, the last given); `at` has whole seconds.
   const seq = (queue.sequence ?? 0) + 1;
   const entry = { branch, tip, request: randomUUID(), seq, message: Buffer.from(message, 'utf8').toString('base64'), at, ...(requeue ? { requeue } : {}) };
   return { queue: { ...queue, sequence: seq, queued: [...queue.queued, entry] }, entry };
@@ -175,7 +175,7 @@ export const messageOf = (entry) => Buffer.from(entry.message ?? '', 'base64').t
 
 /**
  * Queued branches taken off the queue; a candidate's branches end it and are handed back (`--drop-batch`). Answers the queue, the
- * branches dropped and, when a candidate ended, `ended`: that candidate, whose runner (QUEUEDRAIN1) is the one to end its run.
+ * branches dropped and, when a candidate ended, `ended`: that candidate, whose runner is the one to end its run.
  *
  * QUEUEWAITEND1: every request a drop takes off is handed back as `dropped`, a queued one and one forming as a candidate's, so
  * its waiter reads an outcome; one taken off the queue with no record had a waiter that never ended. A drop of some of the requests
@@ -212,9 +212,9 @@ export function dropQueued(queue, branches, at = new Date().toISOString()) {
 }
 
 /**
- * QUEUEWAITEND1: where a request stands in the queue's record, for the invocation waiting on it: an outcome (`landed`, `contained`,
+ * Where a request stands in the queue's record, for the invocation waiting on it: an outcome (`landed`, `contained`,
  * `back`), in flight (`pending`: `queued`, `forming`, `candidate`, or `contained` on the candidate), or in no record at all (`gone`).
- * A request is its branch, its frozen tip and its own id, so another occurrence of the same tip is never this one (QUEUEWAIT1).
+ * A request is its branch, its frozen tip and its own id, so another occurrence of the same tip is never this one.
  */
 export function requestStanding(queue, { branch, tip, request }) {
   const same = (each) => each.branch === branch && each.tip === tip && each.request === request;
@@ -232,7 +232,7 @@ export function requestStanding(queue, { branch, tip, request }) {
 }
 
 /**
- * PROCLEAK1: whether the queue still names the process `pid` as its runner. A runner whose record another runner took, or that a
+ * Whether the queue still names the process `pid` as its runner. A runner whose record another runner took, or that a
  * reset or a hand edit cleared, is no runner of the queue's: it ends, never going on beside the one the queue names. Answers
  * `{ stands: true }`, or `{ stands: false, why }` saying what the record names.
  */
@@ -241,7 +241,7 @@ export function runnerStanding(queue, pid) {
   return { stands: false, why: queue.runner ? `the queue names pid ${queue.runner.pid} as its runner` : 'the queue names no runner' };
 }
 
-/** PROCLEAK1: the folders of this repository a process's command line names when it is one of the queue's, its candidates', its sessions' or its tests'. */
+/** The folders of this repository a process's command line names when it is one of the queue's, its candidates', its sessions' or its tests'. */
 export const CENSUS_TREES = Object.freeze(['local/scope-tree', 'local/gate-tree', '.claude/worktrees/', '_fixtures/']);
 
 /** The census's folders under `home`, each as an absolute path with forward slashes. */
@@ -250,7 +250,7 @@ export const censusTrees = (home) => CENSUS_TREES.map((tree) => `${String(home).
 const pathText = (text) => String(text ?? '').replaceAll('\\', '/').toLowerCase();
 
 /**
- * PROCLEAK1: the processes (`{ pid, ppid, command }`) whose command line names one of `trees` (as a folder: the name ends there or
+ * The processes (`{ pid, ppid, command }`) whose command line names one of `trees` (as a folder: the name ends there or
  * goes on with a separator) and whose parent is in none of `processes`, so no one holds them. `ignore` lists pids left out. The
  * machine's own list is the whole of it: a process whose parent ended is an orphan whatever its command, and one that names no
  * tree is not this repository's to say.
@@ -271,7 +271,7 @@ export function orphansUnder(processes, { trees, ignore = [] }) {
   return processes.filter((each) => !ignore.includes(each.pid) && !alive.has(each.ppid) && under(each.command));
 }
 
-/** PROCLEAK1: the queue log's line for a candidate's end: how many of those processes run on, and the first few. Stops none. */
+/** The queue log's line for a candidate's end: how many of those processes run on, and the first few. Stops none. */
 export function censusLine(orphans, { limit = 3, width = 140 } = {}) {
   const head = "census at the candidate's end:";
   if (!orphans.length) return `${head} no process under this repository's trees has lost its parent`;
@@ -282,9 +282,9 @@ export function censusLine(orphans, { limit = 3, width = 140 } = {}) {
 }
 
 /**
- * QUEUEDRAIN1: what the runner records once it has ended a dropped candidate's run, for the drop's answer to read: the candidate's
+ * What the runner records once it has ended a dropped candidate's run, for the drop's answer to read: the candidate's
  * tip, the gates it ended running and the ones it never started, the probe it ended (a failure probe's name), else null, and the pids of
- * what a test of an ended step had left running under the scope tree, which it ended too (QUEUEDROPLEAK1).
+ * what a test of an ended step had left running under the scope tree, which it ended too.
  */
 export const drainedRecord = (candidate, { ended = [], left = [], probe = null, strays = [] }, at = new Date().toISOString()) => ({ tip: candidate.tip, at, ended, left, probe, strays });
 
@@ -293,12 +293,12 @@ export function drainedLine(drained) {
   const gates = drained.ended.length ? `gates ${drained.ended.join(', ')}` : 'no gate running';
   const probe = drained.probe ? `, the probe ${drained.probe}` : '';
   const left = drained.left.length ? `; never started: ${drained.left.join(', ')}` : '';
-  // QUEUEDROPLEAK1: a record written before strays were kept has none.
+  // A record written before strays were kept has none.
   const strays = drained.strays?.length ? `, and ${drained.strays.length === 1 ? '1 process' : `${drained.strays.length} processes`} their tests had left running under the scope tree (pid ${drained.strays.join(', ')})` : '';
   return `ended ${gates}${probe}, each with everything it started${strays}${left}`;
 }
 
-/** Whether an awaited result still belongs to this frozen candidate, including each enqueue occurrence (QUEUEDROP1). */
+/** Whether an awaited result still belongs to this frozen candidate, including each enqueue occurrence. */
 export function sameCandidate(current, expected) {
   return Boolean(current && expected && current.base === expected.base && current.tip === expected.tip
     && Array.isArray(current.members) && Array.isArray(expected.members) && current.members.length === expected.members.length
@@ -324,7 +324,7 @@ export function nextMembers(queued, { max = CANDIDATE_MAX, oneAtATime = false } 
 }
 
 /**
- * What holds a contained member (INTEGRATE1c, C4), its `containedIn`: the line (`IN_THE_LINE`, `{ line: true }`), needing no earlier
+ * What holds a contained member (C4), its `containedIn`: the line (`IN_THE_LINE`, `{ line: true }`), needing no earlier
  * member to promote, or an earlier member (`{ branch, request }`). The two are fields apart, so no branch's name reads as the line:
  * the marker was once the word `line`, and a container whose branch was named `line` settled what it held as the line's.
  */
@@ -336,14 +336,14 @@ export const inTheLine = (containedIn) => containedIn?.line === true;
 /**
  * A candidate formed on `base` from `members`, each merged on the last by `merge(member, onto, formed)` (`formed` the members merged
  * so far), which answers `{ commit }` for its merge commit, `{ conflict: [paths] }` for a merge the resolvers could not make (aborted
- * by it), or `{ contained: in }` for a member whose work the candidate holds already (INTEGRATE1c, design §5.2 step 3, C4): `in` is
+ * by it), or `{ contained: in }` for a member whose work the candidate holds already (design §5.2 step 3, C4): `in` is
  * `IN_THE_LINE` where the base holds it, else `{ branch, request }`, the earlier member that does.
  *
  * - A conflicted member is set aside and handed back with its conflict named, and the rest go on (§4.1 point 1).
  * - A member the line holds is **contained** and settled at once: there is nothing to merge and nothing to gate.
  * - A member an earlier member holds is contained **provisionally**: it stays on the candidate (`contained`), outside `members`
- *   (the judge's prefixes are the merge commits), settled only when that member promotes with the candidate. A candidate that ends
- *   any other way gives it back as its own request (`requestsOf`), judged again.
+ * (the judge's prefixes are the merge commits), settled only when that member promotes with the candidate. A candidate that ends
+ * any other way gives it back as its own request (`requestsOf`), judged again.
  *
  * Answers the candidate, the set-aside and every member found contained (`containedIn` says in what).
  */
@@ -423,7 +423,7 @@ export function recordsOnly(paths, ruleOf) {
  * What the runner does with a candidate before anything is judged, after a start or a crash (§4.1, *Durable state*): `promoted`
  * when it was `promoting` or `green` and main holds its tip (`isAncestor(tip, mainTip)`); `reform` when main left its base;
  * `promote` when it is green on its base; `run` when its run's process is gone; else `wait`. A candidate held for a decide
- * (INTEGRATE1b, design §4.5's `hold`) waits: no decide door exists yet (§8), so a drop or a commit on main is what moves it.
+ * waits: no decide door exists yet (§8), so a drop or a commit on main is what moves it.
  */
 export function resumeCandidate(candidate, { mainTip, isAncestor, runAlive = () => false }) {
   if (!candidate) return 'none';
@@ -484,7 +484,7 @@ export function placeOnPrefixes(seq, signature) {
  * prefix that does not build, discover or host. `alone(failure, k)` runs it on the base with member `k` alone. `known` is the
  * open known red its signature matches (`{ finding, expired, lastSeen }`), or null; `baseCommit` the candidate's base.
  *
- * `confirm` (INTEGRATE1b, design §5.3 step 3) is the failure's reading by its gate's confirm run (`confirmReadings`), or a function
+ * `confirm` (design §5.3 step 3) is the failure's reading by its gate's confirm run (`confirmReadings`), or a function
  * answering it, asked only where the judgement reaches that step: after a known red inherited with no run, and after an expired
  * known red's base run, which stops the line where it fails there. `confirmed` judges on as today, the base run it already made
  * reused; `unconfirmed`, `inconclusive` (any reading it does not know) and `dropped` answer at once, with no base and no prefix
@@ -578,14 +578,14 @@ export function memoryStep(attempts, { afterHold = false, needGb = null } = {}) 
  * to be judged again (`retain`) or, where an unresolved failure left a candidate of several, its members one at a time (`split`).
  * A pass on an unresolved failure's re-run never makes the candidate green.
  *
- * The confirm run's readings (INTEGRATE1b, design §4.5), by `policy.unconfirmed` (`readIntegrationPolicy`; anything else is `split`):
+ * The confirm run's readings, by `policy.unconfirmed` (`readIntegrationPolicy`; anything else is `split`):
  * - `dropped`, before anything: the candidate's job ended, and nothing is handed back, filed or kept (`dropped`).
  * - `inconclusive` reads as an unresolved failure whatever the policy says, never `land`, and is listed apart (`inconclusive`).
  * - `unconfirmed` is a sighting (`sightings`, each `{ failure, confirm }`), never a flake and never a pass, so no candidate it
- *   touches is `green`. Under `split` it is an unresolved failure: several members run one at a time, one of one is handed back
- *   unresolved. Where nothing splits the candidate and a member was handed back, the rest are formed again and judged on their own
- *   tree. Otherwise, under `hold`, the candidate waits for a decide (`hold`, `on: 'decide'`); under `land`, the confirm run's pass
- *   is the gate's verdict on that tip alone (`land`, `passedOnConfirm` naming the gates), and the candidate goes on to promotion.
+ * touches is `green`. Under `split` it is an unresolved failure: several members run one at a time, one of one is handed back
+ * unresolved. Where nothing splits the candidate and a member was handed back, the rest are formed again and judged on their own
+ * tree. Otherwise, under `hold`, the candidate waits for a decide (`hold`, `on: 'decide'`); under `land`, the confirm run's pass
+ * is the gate's verdict on that tip alone (`land`, `passedOnConfirm` naming the gates), and the candidate goes on to promotion.
  */
 export function candidateOutcome(judgements, members, policy = {}) {
   const unconfirmedPolicy = UNCONFIRMED_POLICIES.includes(policy?.unconfirmed) ? policy.unconfirmed : 'split';
@@ -649,7 +649,7 @@ export function noteRecheck(stop, { at, passed, by }) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// The confirm run (INTEGRATE1b, design §4.5, §5.3 step 3): its pure pieces, which the queue's runner calls (`runCandidateWatched`)
+// The confirm run (design §4.5, §5.3 step 3): its pure pieces, which the queue's runner calls (`runCandidateWatched`)
 
 /** The integration policy, the tool's own switch file in the main checkout's ignored `local/` (§11 row b, F19). */
 export const INTEGRATION_POLICY = 'local/integration-policy.json';
@@ -993,7 +993,7 @@ export function queueLines(queue, { branchTip = () => null, now = Date.now() } =
   const candidate = queue.candidate;
   if (candidate) {
     const held = candidate.state === 'held' ? ` (held on ${candidate.held?.on}: ${candidate.held?.why})` : '';
-    // INTEGRATE1b: under the owner's `land`, a candidate whose gate passed only on its confirm run goes to promotion, and says so.
+    // Under the owner's `land`, a candidate whose gate passed only on its confirm run goes to promotion, and says so.
     const landing = candidate.landing?.onConfirm?.length ? `, landing on its confirm run alone (${candidate.landing.onConfirm.join(', ')})` : '';
     out.push(`candidate on ${String(candidate.base).slice(0, 7)}: ${candidate.state}${landing}${held}${candidate.reforms ? `, re-formed ${candidate.reforms} time${candidate.reforms === 1 ? '' : 's'}` : ''}${candidate.reforms >= HELD_REFORMS ? ', held by direct commits' : ''}`);
     candidate.members.forEach((member, i) => out.push(`  ${i + 1}. ${member.branch} at ${String(member.tip).slice(0, 7)}${member.commit ? ` → ${String(member.commit).slice(0, 7)}` : ''}`));

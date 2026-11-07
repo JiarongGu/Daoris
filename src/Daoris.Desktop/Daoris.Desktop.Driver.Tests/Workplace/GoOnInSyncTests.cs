@@ -5,8 +5,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// FABRIC-CLOSE1c5 (the fabric events design §E5, as CLOSE1c amends it): the person went on with a step whose source they reopened,
 /// and before its carried-on session starts, the step's tree is brought up to date with the source's new submission. Its own commits
-/// are replayed onto the submission's commit, as the tree sync replays a branch onto the line (WSR6, D88), its branch moved last and
-/// its record cut there; then the line, as any start's (LANDSYNC2). A conflict leaves the tree exactly as it was, tells the session what
+/// are replayed onto the submission's commit, as the tree sync replays a branch onto the line, its branch moved last and
+/// its record cut there; then the line, as any start's. A conflict leaves the tree exactly as it was, tells the session what
 /// conflicted and that the person must resolve it, and changes nothing else. A host that names no commit has the line alone synced.
 /// </summary>
 /// <remarks>🔴 <b>Nothing here reaches a network</b>: `origin` is a bare repository under the scratch folder.</remarks>
@@ -168,7 +168,7 @@ public sealed class GoOnInSyncTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// SYNCMERGE1b (D178 point 3): the step's take lost to the person's reopen of its source and its session stood down; the source submitted
+    /// SYNCMERGE1b: the step's take lost to the person's reopen of its source and its session stood down; the source submitted
     /// again (`p2`), and the person brought the step forward, its fresh take stamped with that submission. The planner brings the carry-on to
     /// that source, naming the source's current commit, and the stood-down session's tree holds it before the carry-on starts.
     /// </summary>
@@ -192,7 +192,7 @@ public sealed class GoOnInSyncTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// A take that lost is stopped mid-turn (D68 §5), so its tree may hold work it never committed: the bring-forward's carry-on leaves that
+    /// A take that lost is stopped mid-turn, so its tree may hold work it never committed: the bring-forward's carry-on leaves that
     /// tree exactly as it was, uncommitted work and all, and the session is told why and to build nothing on the source's new work yet.
     /// </summary>
     [Fact]

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6b (D130 §16.3, §16.4, §7): the walk toward the goal, as tables per step. Pure: a scope as the file holds it, what
+/// TOOL6b: the walk toward the goal, as tables per step. Pure: a scope as the file holds it, what
 /// Daoris knows of each account without the agent's word (its sessions running, when Daoris last started on it, the
 /// starts this look chose, and a weekly reset a limit told), and the order the start tries its accounts in. Then which
 /// step chose the account a start ran on: the log's <c>why</c> and the first line's clause.
@@ -11,14 +11,14 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// <para>A scope is written as its list, <c>@name</c> for its default, <c>keep=name</c>, and <c>order</c> for D125's
 /// walk, <c>switch=smart|curve|off</c> and a person's curve a window each, <c>curve=session=85</c> flat or
-/// <c>curve=weekly=0:10,100:60</c> as points (D165 point 2), and the old names <c>early=on|off</c> and <c>near=85</c>,
+/// <c>curve=weekly=0:10,100:60</c> as points, and the old names <c>early=on|off</c> and <c>near=85</c>,
 /// read on; it is read through the file's own reader (<see cref="HarnessSettings.Set"/>), so a default outside its
 /// list is read with the list winning, as a start reads it. What Daoris knows is <c>name:flags</c>, each flag one of
 /// <c>r&lt;n&gt;</c> sessions running, <c>s&lt;offset&gt;</c> last started that long from now and <c>c&lt;n&gt;</c> chosen
 /// by this look as its n-th start; what its agent said is <c>S</c>, <c>W</c>, <c>N</c>, <c>X</c> and <c>C</c> (step 2's
 /// table below).</para>
 /// <para>Steps 2, 4 and 5, over its curve, what would lapse at its week's reset and most room under its curve, read the
-/// agent's word (TOOL6c) against the scope's curve (SWITCH1b-ii, USAGERESET1). Nothing here counts accounts: rows with one
+/// agent's word against the scope's curve. Nothing here counts accounts: rows with one
 /// account and with six read by the same rules (§2 rule 6).</para>
 /// </remarks>
 public sealed class AccountRotationWalkTests
@@ -66,7 +66,7 @@ public sealed class AccountRotationWalkTests
                     _ => throw new ArgumentException($"no flag `{flag}`"),
                 };
 
-                // What its agent said (TOOL6c): the session window's use, the week's use and reset, a word, credits.
+                // What its agent said: the session window's use, the week's use and reset, a word, credits.
                 switch (flag[0])
                 {
                     case 'S':
@@ -235,7 +235,7 @@ public sealed class AccountRotationWalkTests
     }
 
     /// <summary>
-    /// The walk's ranking is a total preorder over any set of accounts (USAGERESET1): antisymmetric, and transitive in both
+    /// The walk's ranking is a total preorder over any set of accounts: antisymmetric, and transitive in both
     /// its order and its ties, so a sort over it is well defined whatever the list's order. Generated: every step's input,
     /// readings with and without numbers, words, credits, resets past, near and far, and readings older than the newest.
     /// </summary>
@@ -288,13 +288,12 @@ public sealed class AccountRotationWalkTests
         }
     }
 
-    // ——— Step 2, over its curve last (TOOL6c; §6, §16.3 as the evidence corrects them; D165 point 2, the switch design §3):
+    // ——— Step 2, over its curve last (§6, §16.3 as the evidence corrects them, the switch design §3):
     // an account near any window's limit — by its word that a limit was reached, by drawing on usage credits, or by a
-    // window's use over the scope's curve now (SWITCH1b-ii) — goes to the end: passed while another account is ready, run
+    // window's use over the scope's curve now — goes to the end: passed while another account is ready, run
     // when none is. `S<n>` is the session window's use in percent, resetting in three hours (two fifths of it gone, under the
     // smart curve's flat 90), `W<n>@<offset>` the week's and its reset (the smart curve its pace plus twenty), `N` its pace
-    // warning (`warned`), `X` its word that a limit was reached, `C` credits. The pace warning is never near alone
-    // (USAGEREAD3a, the account-switch design §1.3).
+    // warning (`warned`), `X` its word that a limit was reached, `C` credits. The pace warning is never near alone.
 
     [Theory]
     [InlineData("account-1 account-2 account-3", "account-1:S95", "account-2 account-3 account-1")]
@@ -302,7 +301,7 @@ public sealed class AccountRotationWalkTests
     // On its curve is not over it (`UsageCurves.Over`): the smart session's 90 passes nothing, 91 does.
     [InlineData("account-1 account-2 account-3", "account-1:S90", "account-1 account-2 account-3")]
     [InlineData("account-1 account-2 account-3", "account-1:S91", "account-2 account-3 account-1")]
-    // A person's curve: the session flat at 85 passes 88, and the old `near=85` reads on as that curve (D165's SWITCH1a note).
+    // A person's curve: the session flat at 85 passes 88, and the old `near=85` reads on as that curve.
     [InlineData("account-1 account-2 account-3 switch=curve curve=session=85", "account-1:S88", "account-2 account-3 account-1")]
     [InlineData("account-1 account-2 account-3 near=85", "account-1:S88", "account-2 account-3 account-1")]
     // The smart curve over the week: four days to its reset, three sevenths gone, the curve stands at 63%.
@@ -324,7 +323,7 @@ public sealed class AccountRotationWalkTests
     // Every account near: the steps after it order them, and a start still runs. A pass, never a wait.
     [InlineData("account-1 account-2", "account-1:S95 account-2:S96", "account-1 account-2")]
     [InlineData("account-1 account-2", "account-1:S95,r1 account-2:S95", "account-2 account-1")]
-    // ACCTWALK3, measured against the curve (SWITCH1b-ii): among near accounts the one least over its curve goes first,
+    // ACCTWALK3, measured against the curve: among near accounts the one least over its curve goes first,
     // before fewest running and the rest; equal room, or no number said, leaves the later steps as they were; credits
     // without a number rank after any number below 100%; an account whose limit its word says was reached stays last,
     // whatever room its number leaves.
@@ -364,9 +363,9 @@ public sealed class AccountRotationWalkTests
             Order("account-1 account-2 account-3 keep=account-2 order", "account-1:S95", StartKind.Conversation));
     }
 
-    // ——— Step 5, most room under its curve first (D165 point 2, the switch design §3): the points of room its tightest
+    // ——— Step 5, most room under its curve first: the points of room its tightest
     // window leaves under the scope's curve now, the most first; an account that said no number between those with room and
-    // those over (absent is never zero, D57), as one on its curve. With four days to its reset, three sevenths of a week are
+    // those over (absent is never zero), as one on its curve. With four days to its reset, three sevenths of a week are
     // gone and the smart curve stands at 63%.
 
     [Theory]
@@ -541,7 +540,7 @@ public sealed class AccountRotationWalkTests
         Assert.Equal(new WalkChoice(WalkStep.Locked), AccountRotation.Chose(read, StartKind.Driven, tried, 1, Facts(""), Now));
     }
 
-    // ——— What each account said, as a start's first line says it (TOOL6c, §16.4): one sentence in the list's order, each
+    // ——— What each account said, as a start's first line says it: one sentence in the list's order, each
     // account with its age and what it said; one that said nothing is unknown, said as such; none said is no sentence.
 
     [Fact]
@@ -573,7 +572,7 @@ public sealed class AccountRotationWalkTests
             RotationWords.Said(["account-1", "account-2"], facts, RotationUse.Default, Now));
     }
 
-    // ——— Steps 2 and 5 name the account they are about (TOOL6c): near names the account passed, and pace the one it was
+    // ——— Steps 2 and 5 name the account they are about: near names the account passed, and pace the one it was
     // weighed against, so the first line can say what that account said.
 
     public static TheoryData<string, string, string, string, WalkStep, string?, WalkStep?, string?> SaidChoices => new()
@@ -585,17 +584,17 @@ public sealed class AccountRotationWalkTests
         { "account-1 account-2 account-3", "account-1:W40@+4d account-2:W10@+4d", "", "account-2", WalkStep.Headroom, "account-1", null, null },
         { "account-1 account-2 account-3", "account-2:S95", "account-1=Cooling", "account-3", WalkStep.Cooling, null, WalkStep.Near, "account-2" },
         { "account-1 account-2 account-3 order", "account-1:S95", "", "account-2", WalkStep.Near, "account-1", null, null },
-        // Over its curve (SWITCH1b-ii): the smart one on its week and on its session, a person's, and the smart one under `off`.
+        // Over its curve: the smart one on its week and on its session, a person's, and the smart one under `off`.
         { "account-1 account-2 account-3", "account-1:S30,W70@+4d", "", "account-2", WalkStep.Near, "account-1", null, null },
         { "account-1 account-2 account-3", "account-1:S91", "", "account-2", WalkStep.Near, "account-1", null, null },
         { "account-1 account-2 account-3 switch=curve curve=weekly=0:10,100:60", "account-1:W50@+84h", "", "account-2", WalkStep.Near, "account-1", null, null },
         { "account-1 account-2 account-3 switch=off", "account-1:S95", "", "account-2", WalkStep.Near, "account-1", null, null },
         { "account-1 account-2 account-3 early=off", "account-1:S95", "", "account-2", WalkStep.Near, "account-1", null, null },
-        // ACCTWALK3: both near, the one least over its curve ran, naming the account it was weighed against; a limit reached
+        // Both near, the one least over its curve ran, naming the account it was weighed against; a limit reached
         // stays last, whatever room its number leaves.
         { "account-1 account-2", "account-1:S99 account-2:S92", "", "account-2", WalkStep.Room, "account-1", null, null },
         { "account-1 account-2", "account-1:W10@+4d,X account-2:S99", "", "account-2", WalkStep.Room, "account-1", null, null },
-        // The install (USAGEREAD3a): the account its pace warning had made near is not, so it ran ahead of the near one.
+        // The install: the account its pace warning had made near is not, so it ran ahead of the near one.
         { "gmail account-1 account-3", "gmail:W99@+4d account-1:W60@+4d,N account-3:X", "", "account-1", WalkStep.Near, "gmail", null, null },
         // Most room under its curve (step 5): where the list begins, ahead of the next by its room; ahead of one that said
         // nothing, which sits between; and under `off`, D130's pace.
@@ -603,7 +602,7 @@ public sealed class AccountRotationWalkTests
         { "account-1 account-2", "account-2:W10@+4d", "", "account-2", WalkStep.Headroom, "account-1", null, null },
         { "account-1 account-2 account-3", "account-1:W50@+4d account-3:W10@+4d", "", "account-3", WalkStep.Headroom, "account-1", null, null },        { "account-1 account-2 switch=off", "account-1:S70,W10@+4d account-2:W40@+4d", "", "account-1", WalkStep.Pace, "account-2", null, null },
         { "account-1 account-2 account-3 switch=off", "account-1:W50@+4d account-3:W10@+4d", "", "account-3", WalkStep.Pace, "account-1", null, null },
-        // A tie on what would lapse goes on to the tightest room (USAGERESET1): account-1's five-hour window leaves it 10 points.
+        // A tie on what would lapse goes on to the tightest room: account-1's five-hour window leaves it 10 points.
         { "account-1 account-2 account-3", "account-1:S80,W60@+8h account-2:W60@+8h", "", "account-2", WalkStep.Headroom, "account-1", null, null },
         // Over its curve while the account where the list begins cools: the step among the rest names it.
         { "account-1 account-2 account-3", "account-2:S30,W70@+4d", "account-1=Cooling", "account-3", WalkStep.Cooling, null, WalkStep.Near, "account-2" },

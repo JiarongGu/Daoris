@@ -75,7 +75,7 @@ public sealed class LineAccountTests : IDisposable
 
     /// <summary>
     /// Every case of the grid: each own state with the others' states that can change its answer, every trigger and every kind. Near is
-    /// never what the roster's judgement says, and no account is outside the set (POOL1a2, D197 point 1), so those two are the rule's alone.
+    /// never what the roster's judgement says, and no account is outside the set, so those two are the rule's alone.
     /// </summary>
     public static IEnumerable<Case> Grid()
     {
@@ -192,7 +192,7 @@ public sealed class LineAccountTests : IDisposable
             LineAnswer.Elsewhere { Switched: true } e => new(e.Why, true, e.Selection.Profile, "-", false, false, true, false, false),
             LineAnswer.Elsewhere e => new(e.Why, true, e.Selection.Profile, "-", NewSession(e.Why), limited, false, false, e.NotOffered),
             LineAnswer.Wait { Set: ResetSet.Switch } w => new(w.Why, false, null, CoolingOf(w.Earliest), false, false, false, true, false),
-            // A pick waits for its own account too (FOUNDATION1a-ii), whatever the trigger says.
+            // A pick waits for its own account too, whatever the trigger says.
             LineAnswer.Wait { Set: ResetSet.Walk, OwnFirst: true } w => new(w.Why, false, null, CoolingOf(w.Earliest), false, false, false, true, false),
             LineAnswer.Wait w => new(w.Why, false, null, CoolingOf(w.Earliest), NewSession(w.Why), limited, false, false, w.NotOffered),
             LineAnswer.Hold h => new(h.Why, false, null, h.Walked is null ? CoolingOf(h.Cooling) : "-", NewSession(h.Why), limited, false, false, h.NotOffered),
@@ -488,7 +488,7 @@ public sealed class LineAccountTests : IDisposable
         Assert.True(failures.Count == 0, $"{failures.Count} cases disagree:\n" + string.Join("\n", failures));
     }
 
-    // ——— The constraint axis, whole (FOUNDATION1a-ii): an account the person picked, over every case of the grid.
+    // ——— The constraint axis, whole: an account the person picked, over every case of the grid.
 
     /// <summary>
     /// A recorded account pick is the rule's constraint (the design §3.2 step 4): <b>every case of the grid</b>, run through the roster's resume
@@ -595,7 +595,7 @@ public sealed class LineAccountTests : IDisposable
     private static HarnessSelection Pick { get; } = new(Refusal: null, Profile: "account-2");
 
     /// <summary>
-    /// No account is outside the set in a roster (POOL1a2, D197 point 1) and none is near for a resume, so the roster never gives the rule
+    /// No account is outside the set in a roster and none is near for a resume, so the roster never gives the rule
     /// these two; the rule reads an outside one as it reads any that cannot carry the words, and a near one as a ready one.
     /// </summary>
     [Fact]

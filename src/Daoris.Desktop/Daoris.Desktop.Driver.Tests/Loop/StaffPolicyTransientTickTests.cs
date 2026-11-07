@@ -6,7 +6,7 @@ using static Daoris.Desktop.Driver.Tests.SessionMessagesTickTests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1e (D226; the staff policy design §4, §9 row e) through REAL ticks, the transient condition: a driven run on Build's first
+/// STAFFPOLICY1e (the staff policy design §4, §9 row e) through REAL ticks, the transient condition: a driven run on Build's first
 /// choice whose service never answers makes the role's <c>after</c> tries (two, three minutes of waits on the held clock,
 /// <c>.claude/knowledge/held-clocks.md</c>) and ends <c>ended.transient</c>; the next look's course moves the line, once, to the second
 /// choice in a new part that continues the first with the reason <c>transient</c>, the first choice's agent passed on the walk. A role with

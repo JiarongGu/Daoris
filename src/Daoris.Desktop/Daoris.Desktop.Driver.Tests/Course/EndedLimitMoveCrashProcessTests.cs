@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-vi part b (D212; the foundation design §3.3, §13.4 steps 1 to 5, §19.4, row f-vi's proof): the ended limit move's record holds
+/// FOUNDATION1f-vi part b (the foundation design §3.3, §13.4 steps 1 to 5, §19.4, row f-vi's proof): the ended limit move's record holds
 /// through a crash at every boundary it passes, as <c>LimitMoveCrashProcessTests</c> proves the live move's. A shell is killed at each place
 /// the ended move's executor passes, and a shell that comes up takes its move up and ends it by its phase; the word the open moved is then
 /// delivered once by the dead shell's write, held uncertain and said, or carried once by its destination's go-on, and never twice; the move is

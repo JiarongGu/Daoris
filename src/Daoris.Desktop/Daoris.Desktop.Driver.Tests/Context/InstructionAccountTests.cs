@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a session was handed, section by section (CONTEXT1, D143 point 1): the composer's account of each instruction it
+/// What a session was handed, section by section: the composer's account of each instruction it
 /// composes, each section's size, its source and what its bound left out. The words are the goldens' (<see
 /// cref="TargetPromptGoldenTests"/>); this holds the account beside them, and every bound's cut.
 /// </summary>
@@ -98,14 +98,14 @@ public sealed class InstructionAccountTests
         Assert.Contains("quest #abc123 asked by `console-api`", quest.Said);
         Assert.Equal("driver", Section(account, "closing").Source);
 
-        // CONTEXTONE1c: a start's standing block is the last section handed, after the boundary and before the ones not handed.
+        // A start's standing block is the last section handed, after the boundary and before the ones not handed.
         var blocked = TargetPrompt.Composed(TargetPromptGoldenTests.Bare with { Block = new StandingFacts { Repository = "console-ui" } }).Account;
         Assert.Equal(["boundary", "block", "requirements"], blocked.Sections.Select(section => section.Name).Skip(6).Take(3));
         Assert.Equal(("machine", "console-ui"), (Section(blocked, "block").Source, Section(blocked, "block").From));
     }
 
     /// <summary>
-    /// CONTEXTONE1c (D230 point 3): the census of what the standing block replaced. No instruction of any kind of start holds the map, the
+    /// CONTEXTONE1c: the census of what the standing block replaced. No instruction of any kind of start holds the map, the
     /// look, the indexes or the standing answer as a section of its own, nor says either of their old leads; and none says them absent.
     /// </summary>
     [Theory]
@@ -128,7 +128,7 @@ public sealed class InstructionAccountTests
 
         Assert.Equal(("ask", "a1b2c3", 3, 3), (Section(account, "words").Source, Section(account, "words").From, Section(account, "words").Shown, Section(account, "words").Of));
         Assert.Equal(("ask", "a1b2c3", 2, 2), (Section(account, "go-aheads").Source, Section(account, "go-aheads").From, Section(account, "go-aheads").Shown, Section(account, "go-aheads").Of));
-        // CONTEXTONE1c: the person's choices, the code map and the indexes are the standing block's, said in its one section.
+        // The person's choices, the code map and the indexes are the standing block's, said in its one section.
         var block = Section(account, "block");
         Assert.Equal(("machine", "reports", Asked.AddDays(-1)), (block.Source, block.From, block.At));
         Assert.Contains("the code map `docs/code-map.json`", block.Said);

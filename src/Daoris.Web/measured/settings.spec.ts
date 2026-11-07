@@ -1,12 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { measureSettingRows } from './settingRows';
 
-// The label track, measured (UIFIT1; the UI/UX design R1, §3.1's state table and §5's first trap): Settings' rows drawn in a
+// The label track, measured (the UI/UX design R1, §3.1's state table and §5's first trap): Settings' rows drawn in a
 // real browser at the three widths the frame gives (`storyWidths`), in English and 中文. At the wide and the half width
 // every value's box starts at its track's edge, one column a card; at the 400 px floor the track goes and every value sits
 // under its words. The track itself stays between its floor and its cap, and at most half the card. jsdom lays nothing
 // out, so no unit test can hold any of it; `ui.test.tsx` holds the structure.
-//
 // The run prints each story's label widths and the track each card chose: the measurements D185's UIFIT1 note set the
 // bounds from. `npm --prefix src/Daoris.Web run e2e:measured -- --grep settings`.
 
@@ -98,7 +97,7 @@ for (const [story, width] of Object.entries(TABLE)) {
   });
 }
 
-// A form laid by its own width (R1, UIFIT1d; §9's trap: the caps deleted and called responsive): each `FormGrid`'s rows
+// A form laid by its own width (R1; §9's trap: the caps deleted and called responsive): each `FormGrid`'s rows
 // keep their columns while the form holds them, the fields of a row on one line, and stack below the form's floor, each
 // field under the one before, the head row gone.
 const FORMS: Record<string, 'wide' | 'half' | 'narrow'> = { 'ui/FormGrids': 'wide', 'ui/FormGridsHalf': 'half', 'ui/FormGridsNarrow': 'narrow' };

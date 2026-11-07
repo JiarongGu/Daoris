@@ -8,14 +8,14 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 row p (D212's note of the row; the foundation design §3.4 rule 5, §19.2): the settlement end to end. The driver's own client and
+/// FOUNDATION1 row p: the settlement end to end. The driver's own client and
 /// dispatchers talk to the service's own host, started in a process of its own over a scratch home (<see cref="RealServiceHost"/>), so the
 /// service's say door, its desks and the trigger that writes the settlement are the real ones, and the client reads what they write on the wire.
 /// Codex's reused id through both real dispatchers: a word K kept on A and taken, a successor B the test's own statement makes holding another
 /// word whose id the test sets to K's, and K's retry kept through a fresh <see cref="ChatTurns"/> and, in another run, a fresh
 /// <see cref="DrivenInbox"/> of B answered settled: nothing queued, steered, attempted or taken, B's word waiting unattempted, and K's text never
 /// reaching the stand-in door's agent; the same retry from an older client keeping a second word under a new id, B's word untouched; a helper's and
-/// a partner's hand retried after its take, nothing kept; and (COMMS1b) the helper's look through the one door, across a hand-over and a restart.
+/// a partner's hand retried after its take, nothing kept; and the helper's look through the one door, across a hand-over and a restart.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class SettledServiceProcessTests : IAsyncLifetime

@@ -110,7 +110,6 @@ public sealed record NoteLine
 /// <remarks>
 /// <para><b>The note stays.</b> Each writer keeps composing its English exactly as before; the parts ride beside it, and a
 /// reader that knows nothing of them reads the note as it always did.</para>
-///
 /// <para><b>Adding to a note</b> reads the record's parts and adds after them; a record with a note and no parts is carried
 /// as one <c>before</c> part (<see cref="After"/>). <b>A move that writes a note without parts clears them</b>, the store's
 /// rule (<see cref="SessionStore.SetStateAsync"/>).</para>

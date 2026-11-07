@@ -3,8 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An account's limit, read from the agent's own words on the door that refused (TOOL4a, D125 §1.3, §1.5,
-/// §2.1). The reader is pure, so this table is the whole contract: which failures are a limit, what the
+/// An account's limit, read from the agent's own words on the door that refused. The reader is pure, so this table is the whole contract: which failures are a limit, what the
 /// reset they name reads as, and when the default stands in.
 /// </summary>
 /// <remarks>
@@ -111,7 +110,7 @@ public sealed class AccountLimitsTests
         Assert.False(limit.AssumedZone);
     }
 
-    /// <summary>No reset clause is Daoris's default, which a setting may replace (TOOL4e), and is not stated.</summary>
+    /// <summary>No reset clause is Daoris's default, which a setting may replace, and is not stated.</summary>
     [Fact]
     public void No_reset_clause_is_the_default()
     {
@@ -187,7 +186,7 @@ public sealed class AccountLimitsTests
     }
 
     /// <summary>
-    /// A weekday and a time (TOOL4k; the maker documents <i>resets Mon 12:00am</i>, limit-signals evidence §2) is the first
+    /// A weekday and a time (the maker documents <i>resets Mon 12:00am</i>, limit-signals evidence §2) is the first
     /// moment after the refusal on that weekday at that time, with no grace, as a time of day is: the agent names the day
     /// only once the date is dropped, and its refusal says the reset has not come, so one just past is next week's.
     /// 2 October 2026 is a Friday.
@@ -276,12 +275,12 @@ public sealed class AccountLimitsTests
         Assert.Null(AccountLimits.Read(Claude, null, seen, Machine));
     }
 
-    // ——— Codex's words (TOOL4k, limit-signals evidence §4): one sentence of sentences, its time the machine's, no zone.
+    // ——— Codex's words (limit-signals evidence §4): one sentence of sentences, its time the machine's, no zone.
 
     /// <summary>Codex's entry, read where its door reads it: `codex-acp`'s own (it has no `codex` adapter to own it).</summary>
     private static LimitWords Codex => ProviderRegistry.Built().AgentNamed("codex-acp")!.Tables.Limits!;
 
-    /// <summary>The refusal as the protocol door says it once it keeps the error's data (ACPDATA1).</summary>
+    /// <summary>The refusal as the protocol door says it once it keeps the error's data.</summary>
     private const string CodexDoor = "the ACP agent refused the call: Internal error: ";
 
     /// <summary>
@@ -404,8 +403,7 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// Every recorded sentence, in the zone this test chose, is recognised by its own entry and its reset
-    /// read as stated: the five of D125 §0.2 each named a time, and so does the weekday the maker documents
-    /// (TOOL4k), which its page prints with no zone, so the machine's stands in.
+    /// read as stated: the five of D125 §0.2 each named a time, and so does the weekday the maker documents, which its page prints with no zone, so the machine's stands in.
     /// </summary>
     [Fact]
     public void Every_recorded_sentence_is_recognised_and_its_reset_read()
@@ -454,7 +452,7 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// A recorded sentence carries the zone as a placeholder, at most once, and never a zone of its own. Codex prints
-    /// none (TOOL4k), and neither does the maker's page for the weekday; each of the five observations printed one.
+    /// none, and neither does the maker's page for the weekday; each of the five observations printed one.
     /// </summary>
     [Fact]
     public void A_recorded_sentence_carries_no_zone_of_its_own()
@@ -471,8 +469,8 @@ public sealed class AccountLimitsTests
     /// <summary>
     /// Only an agent whose limit's words are recorded declares an entry: Claude Code; the stub that mirrors its
     /// words as it mirrors <c>Refused</c>, so a rehearsal can gate a limit with no account; and Codex's door, whose
-    /// sentences TOOL4b read in Codex's source (TOOL4k), since no <c>codex</c> adapter exists to own them. A door onto
-    /// Claude Code reads its owner's (AGT7); dsh and a plugin have none, and read every failure as a failure.
+    /// sentences TOOL4b read in Codex's source, since no <c>codex</c> adapter exists to own them. A door onto
+    /// Claude Code reads its owner's; dsh and a plugin have none, and read every failure as a failure.
     /// </summary>
     [Fact]
     public void Only_an_agent_seen_hitting_a_limit_declares_an_entry()

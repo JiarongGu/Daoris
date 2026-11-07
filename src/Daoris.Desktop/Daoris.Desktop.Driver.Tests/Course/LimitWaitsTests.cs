@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// holds none of them. Against a mark-1 host the old record is read again and its words taken, as LIMITWORD1 made it.
 /// </summary>
 /// <remarks>
-/// The conversations run on the <c>acp-stub</c> adapter, a node stand-in on the protocol door whose accounts are the stub's (TOOL4j), which a
+/// The conversations run on the <c>acp-stub</c> adapter, a node stand-in on the protocol door whose accounts are the stub's, which a
 /// gate file makes refuse a prompt with the limit's sentence; no model, no account, no sign-in. Every case has its own scratch home under
 /// <c>_fixtures/</c>, and sets no variable of the process's environment.
 /// </remarks>
@@ -255,7 +255,7 @@ public sealed class LimitWaitsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Against a host whose keyed open moves nothing (its mark 1), the ended move reads the old record again at its go-on (LIMITWORD1), hands
+    /// 🔴 Against a host whose keyed open moves nothing (its mark 1), the ended move reads the old record again at its go-on, hands
     /// the late word with the rest, and takes them off the old record named as taken by the new part, as before.
     /// </summary>
     [Fact]

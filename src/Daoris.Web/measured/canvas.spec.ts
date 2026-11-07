@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { measureFlows } from './measure';
 
-// The canvas measured (CANVAS1a; D224, the canvas design §4.1, §5, traps 1, 2, 6, 9, 12 and 14): a flow standing in the viewport, drawn in
+// The canvas measured (the canvas design §4.1, §5, traps 1, 2, 6, 9, 12 and 14): a flow standing in the viewport, drawn in
 // a real browser. Its ink is the same in world units at five scales, re-measured at each; no edge runs through a box and no label or ＋
 // lies over one while zoomed; a focus walked off screen scrolls nothing and is revealed; a resize draws once; a rem is the root's at the
 // window's 50, 100 and 200%; the dense graph is drawn whole and pans at 80rem; and the frames of a scripted pan and zoom stay within the
@@ -294,7 +294,7 @@ const SIZES: Record<string, { nodes: number; target: number }> = {
   'canvas/Dense:whole': { nodes: 0, target: 16.7 },
 };
 
-// MEASUREDALONE1: a claim bound to the wall clock is a timed spec; the merge tool re-runs a timed spec that failed, alone, as a Process class is.
+// A claim bound to the wall clock is a timed spec; the merge tool re-runs a timed spec that failed, alone, as a Process class is.
 test.describe('timed', () => {
 test('a resize draws the edges once in the viewport (trap 14), and a gesture holds will-change only while it lasts (trap 9)', async ({ page }) => {
   await open(page, 'editor/Release');
@@ -356,7 +356,7 @@ for (const [story, { nodes, target }] of Object.entries(SIZES)) {
 }
 });
 
-// CANVAS1b (D224; the canvas design §2.3, §2.5, trap 8): a mark takes no room, and the connection line starts in its port's box.
+// CANVAS1b (the canvas design §2.3, §2.5, trap 8): a mark takes no room, and the connection line starts in its port's box.
 
 /** Every node's box in world units, by id. */
 const boxesOf = async (page: Page) => Object.fromEntries((await inkOf(page)).boxes);

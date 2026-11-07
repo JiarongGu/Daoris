@@ -1,5 +1,5 @@
 /**
- * Words a person or a plugin writes into configuration (D222): a string as written, or an object of language tags to text with at
+ * Words a person or a plugin writes into configuration: a string as written, or an object of language tags to text with at
  * least one entry. Nothing requires a language; a page shows the text in the viewer's language, else its base language
  * (`zh-TW` → `zh`), else as written (the string, or the first entry). The twin of the driver's `AuthoredText`.
  */

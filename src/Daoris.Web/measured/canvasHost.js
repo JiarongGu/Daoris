@@ -1,5 +1,5 @@
-// CANVAS1a's check in the installed window (D224; the canvas design §4.1, §5), for the steward:
-//   node tools/desktop.mjs eval --file src/Daoris.Web/measured/canvasHost.js
+// CANVAS1a's check in the installed window, for the steward:
+//  node tools/desktop.mjs eval --file src/Daoris.Web/measured/canvasHost.js
 // with a workflow's chart in its canvas on screen (a repository's Workflow, its editor at 80rem). It reads, in the host itself, what the
 // browser checks cannot: the reader's one stop and list, a Ctrl+wheel taken by the canvas and the window's zoom left where it was, a plain
 // wheel at the top edge left to the page, and a focus walked to the last step with every scroll at 0 and the step revealed. The host's own

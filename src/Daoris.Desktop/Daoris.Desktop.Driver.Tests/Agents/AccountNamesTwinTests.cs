@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An account's name and the account a person means (ACCT2, D125's ACCT2 note): <c>accounts.json</c> under the home holds the
+/// An account's name and the account a person means: <c>accounts.json</c> under the home holds the
 /// name a person gave each account, by agent and its stable id, the folder's name. The driver's half of a TWIN with the
 /// CLI's <c>accountnames.ts</c>, whose <c>accountnames.test.ts</c> holds the same tables, row for row and in the same order,
 /// and parses these theories to hold them to its own, cell for cell.
@@ -86,7 +86,7 @@ public sealed class AccountNamesTwinTests : IDisposable
         Assert.True(id == resolved, $"{why}: {resolved ?? "none"}");
     }
 
-    // ——— Naming one (ACCT2): the person's word, kept beside the account; its own id, or none, clears it. A name is one word
+    // ——— Naming one: the person's word, kept beside the account; its own id, or none, clears it. A name is one word
     // a terminal can type: no space, no backtick, no leading dash, at most 64 characters; never another account's id or
     // name, in any case. What has no field is kept, and an entry or an agent left with nothing goes.
 
@@ -158,7 +158,7 @@ public sealed class AccountNamesTwinTests : IDisposable
         Assert.True(wanted == File.ReadAllText(File_), $"{why}:\n{File.ReadAllText(File_)}");
     }
 
-    // ——— A sign-in into an account that is here (ACCT1): the one named, by its id or its name; none named is the machine's
+    // ——— A sign-in into an account that is here: the one named, by its id or its name; none named is the machine's
     // default; never one that is not here, and never a new one.
 
     [Theory]
@@ -182,9 +182,9 @@ public sealed class AccountNamesTwinTests : IDisposable
         Assert.True(reached == said, $"{why}: {said}");
     }
 
-    // ——— The name a sign-in's end offers (ACCOUNTID1): who signed in, where no other account has it; else who with the
+    // ——— The name a sign-in's end offers: who signed in, where no other account has it; else who with the
     // organisation beside it, else with the plan, each a name the rename takes (one word: an organisation's spaces are
-    // dashes); else none, and the person names it. Never written: the person's rename writes it (D66 §3).
+    // dashes); else none, and the person names it. Never written: the person's rename writes it.
 
     [Theory]
     [InlineData("who signed in is offered", """["acct-1","acct-2"]""", null, "acct-2", "person@example.invalid", "Org B", "max", "person@example.invalid")]
@@ -210,7 +210,7 @@ public sealed class AccountNamesTwinTests : IDisposable
         Assert.True(offered == said, $"{why}: {said ?? "(none)"}");
     }
 
-    // ——— What a sign-in's end says beside the email where another account already has it (ACCOUNTID1c): the organisation,
+    // ——— What a sign-in's end says beside the email where another account already has it: the organisation,
     // else the plan, by the test the offer uses; none where the email is no other account's id or name, or neither tells them apart.
 
     [Theory]
@@ -286,7 +286,7 @@ public sealed class AccountNamesTwinTests : IDisposable
         AccountNames.Rename(_home, "claude-code", HarnessSettings.Profiles(_home, "claude-code"), "account-1", "you@work.example");
 
         Assert.Equal(before, File.ReadAllText(wiring));
-        // Read as the set (POOL1b, D197): it held each scope's own list and where this account ran (`PlacesOf`) before, which left with
+        // Read as the set: it held each scope's own list and where this account ran (`PlacesOf`) before, which left with
         // the terminal's last callers.
         var settings = HarnessSettings.LoadSet(wiring);
         Assert.Equal("account-1", settings.FirstOf("claude-code"));
@@ -331,7 +331,7 @@ public sealed class AccountNamesTwinTests : IDisposable
         var taken = Assert.Throws<AccountNameException>(
             () => AccountNames.Rename(_home, "claude-code", ["account-1", "account-2"], "account-1", "work"));
         Assert.Contains("`work` already names `account-2`", taken.Message);
-        // ACCOUNTID1c: the way out of a taken name is said; an email's is the organisation beside it.
+        // The way out of a taken name is said; an email's is the organisation beside it.
         Assert.EndsWith(" and an id is one — give it a name of your own.", taken.Message);
         var email = Assert.Throws<AccountNameException>(
             () => AccountNames.Rename(_home, "claude-code", ["account-1", "person@example.invalid"], "account-1", "person@example.invalid"));
@@ -353,7 +353,7 @@ public sealed class AccountNamesTwinTests : IDisposable
     [Fact]
     public void A_name_is_never_a_reading_of_who_signed_in()
     {
-        // D66 §3: who signed in is written nowhere without the person. A name is written only by a rename, never by a read.
+        // Who signed in is written nowhere without the person. A name is written only by a rename, never by a read.
         Assert.False(File.Exists(File_));
         Assert.Null(AccountNames.NameOf(_home, "claude-code", "account-1"));
         Assert.False(File.Exists(File_));

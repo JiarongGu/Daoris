@@ -81,7 +81,7 @@ public sealed class LimitHeldTests
     private static SessionEvent Try(int number) => new() { Kind = SessionEventKind.Transient, Try = number };
 
     /// <summary>
-    /// 🔴 AGENTERRORS1b (D210, the agent-errors design §6.1, round 3's R2-C2 and R3-O6): a limit that ends a transient episode holds only the
+    /// 🔴 AGENTERRORS1b (the agent-errors design §6.1, round 3's R2-C2 and R3-O6): a limit that ends a transient episode holds only the
     /// words no try carried. The failed turn's own words went on the wire with the prompt the provider's failure answered, and so did the
     /// words each try carried; none is held to be sent again at the wake or the move, however the episode ended. The episode's quiet events
     /// part them from the words asked after.

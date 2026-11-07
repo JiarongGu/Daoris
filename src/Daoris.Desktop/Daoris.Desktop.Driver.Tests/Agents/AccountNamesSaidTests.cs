@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ACCT2b (D125's ACCT2 and ACCT2b notes): what a person reads names an account by the name they gave it, looked up when it is
+/// ACCT2b: what a person reads names an account by the name they gave it, looked up when it is
 /// said, and by its id where it has none. A held start's sentence, rotation's waits, a picked account's refusal, a refused
 /// credential's hold and a resume's wait each say the name, and the facts *What needs you* says them from carry it beside the
 /// id. A record keeps the id, which never moves: the record's opening line, a note's English, which travels, and the machine
@@ -24,7 +24,7 @@ public sealed class AccountNamesSaidTests : IDisposable
 
     private static readonly TimeSpan Bound = Poll.Patience;
 
-    /// <summary>A fresh id the person named (ACCT2), an old <c>account-N</c> they named, and a fresh one they never named.</summary>
+    /// <summary>A fresh id the person named, an old <c>account-N</c> they named, and a fresh one they never named.</summary>
     private const string Work = "acct-3f9c1a2b";
     private const string Personal = "account-2";
     private const string Spare = "acct-77aa00ff";
@@ -112,7 +112,7 @@ public sealed class AccountNamesSaidTests : IDisposable
         Assert.Equal(account, AccountNames.Said(null, account));
     }
 
-    // ——— A held start (D125 §4, TOOL6g): said where the person reads it, so by name.
+    // ——— A held start: said where the person reads it, so by name.
 
     [Fact]
     public async Task A_cooling_account_s_hold_names_it_by_its_name()
@@ -220,7 +220,7 @@ public sealed class AccountNamesSaidTests : IDisposable
         Assert.StartsWith($"the `claude-code` account `{Work}` is cooling until", ResumeWords.Waits(cooling, Zone));
     }
 
-    // ——— A record keeps the id (D125's ACCT2 note): what reproduces it never moves.
+    // ——— A record keeps the id: what reproduces it never moves.
 
     [Fact]
     public async Task A_rotated_start_s_record_opening_keeps_the_ids()
@@ -278,7 +278,7 @@ public sealed class AccountNamesSaidTests : IDisposable
         Assert.Equal(("account.signed-out", "stub"), (conclusion.Parts![^1].Code, (string?)conclusion.Parts[^1].Value("owner")));
     }
 
-    // ——— A look (TOOL4g): the wait carries the name beside the id, and the log keeps the id alone.
+    // ——— A look: the wait carries the name beside the id, and the log keeps the id alone.
 
     [Fact]
     public async Task A_wait_on_a_named_account_says_its_name_carries_it_beside_the_id_and_the_log_keeps_the_id()
@@ -302,7 +302,7 @@ public sealed class AccountNamesSaidTests : IDisposable
 
         var sitting = Assert.Single(look.Considerations);
         Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
-        // LIMITRESUME1b: a line a limit cut off says its own wait, the account by the name the person gave it.
+        // A line a limit cut off says its own wait, the account by the name the person gave it.
         Assert.StartsWith("Every account it may run on is at its limit: it goes on by itself once the `stub` account `work` is ready again at", sitting.Reason);
         var wait = Assert.Single(look.Waits);
         Assert.Equal(("account-1", "work"), (wait.Account, wait.Name));
@@ -310,7 +310,7 @@ public sealed class AccountNamesSaidTests : IDisposable
         Assert.Equal("account-1", line.Data.Single(field => field.Key == "account").Value);
     }
 
-    // ——— A command spells its ids for any shell (ACCTQUOTE1b, D125's ACCTQUOTE1 note): an id `profile add` was given may hold a
+    // ——— A command spells its ids for any shell: an id `profile add` was given may hold a
     // space, kept whole in double quotes, or a character no spelling keeps, named by its placeholder. The sentence around it
     // names the account as it is.
 

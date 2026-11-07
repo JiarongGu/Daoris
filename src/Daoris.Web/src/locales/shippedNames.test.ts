@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { areas } from '.';
 
 /**
- * The census of the shipped workflows' words (SETUPUX1a, D221): the driver's data holds one English name and purpose for each workflow and
+ * The census of the shipped workflows' words: the driver's data holds one English name and purpose for each workflow and
  * delivery and no per-language field, so the page words them from its own catalogue by the id, in every locale it ships. A workflow or a
  * delivery added to the data with no key here would be shown in English alone.
  */

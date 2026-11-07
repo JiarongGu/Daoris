@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6b (D130 §16.3, §16.4, §2, §3, §7) through <see cref="HarnessRoster.SelectAsync"/>: a start reads one scope; with
+/// TOOL6b through <see cref="HarnessRoster.SelectAsync"/>: a start reads one scope; with
 /// <c>use: goal</c>, the default, every listed account is used toward the goal, by what Daoris knows without the agent's
 /// word: its own sessions running (the last look's records and the starts chosen since), the account it started on least
 /// recently, and a weekly reset a limit told. With <c>use: order</c> it walks D125's order. Each start with a choice says
@@ -52,7 +52,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", Toolchain()),
-            // A door onto the fake agent's accounts (AGT7): its sessions are the fake agent's.
+            // A door onto the fake agent's accounts: its sessions are the fake agent's.
             ["fake-door"] = Adapter("fake-door", Toolchain(accountOf: "fake")),
             // An agent whose maker was not read fixing its weekly reset (Codex's standing, §0.3).
             ["loose"] = Adapter("loose", Toolchain(weekFixed: false)),
@@ -127,7 +127,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         roster.Look(
         [
             new SessionStarted("fake", "account-1", Seen.AddMinutes(-5), Running: true),
-            // A door's session runs on its owner's account (AGT7).
+            // A door's session runs on its owner's account.
             new SessionStarted("fake-door", "account-2", Seen.AddMinutes(-4), Running: true),
             // Another agent's account of the same name, and a session that ended, run nothing here.
             new SessionStarted("loose", "account-3", Seen.AddMinutes(-3), Running: true),
@@ -198,7 +198,7 @@ public sealed class AccountRotationGoalTests : IDisposable
     }
 
     /// <summary>
-    /// MODELROLE1c2 (D205 §4.1, round 4, R3-B1): a start's one count is given back by <c>Release</c>, both halves and idempotently: its
+    /// MODELROLE1c2 (round 4, R3-B1): a start's one count is given back by <c>Release</c>, both halves and idempotently: its
     /// number taken back with no look between, and, after a look captured its still-running record, that record made neither running nor
     /// the account's last start, so the refusing account is neither busy nor ranked as just used.
     /// </summary>
@@ -268,7 +268,7 @@ public sealed class AccountRotationGoalTests : IDisposable
 
     // ——— Its week lapsing (§16.3 step 4, as USAGERESET1 weighs it): what would lapse is known only from a reading of the
     // week's use. A weekly reset a limit told, and the same carried a week on where the maker fixes it, say when and not how
-    // much: neither earns the account anything (absent is never zero, D57).
+    // much: neither earns the account anything (absent is never zero).
 
     [Fact]
     public async Task A_weekly_reset_a_limit_told_with_no_reading_earns_nothing_in_its_last_day()
@@ -346,7 +346,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         Assert.Equal(("account-2", WalkStep.Cooling), (talkOnKept.Profile, talkOnKept.Choice!.Step));
     }
 
-    // ——— One set (POOL1a2, D197 points 1 and 2; the account-pool design §2.4): an older build's scopes read as one order.
+    // ——— One set: an older build's scopes read as one order.
 
     /// <summary>
     /// Rewritten by POOL1a2: a workspace's own list once began within it, never on the machine's default. Read as the set now, the
@@ -439,7 +439,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         Assert.Equal(("account-1", (AccountChoice?)null, (RotatedStart?)null), (selection.Profile, selection.Choice, selection.Rotated));
     }
 
-    /// <summary>OWNSPACE1a (D175 point 2): a scope that names no account runs on the agent's one Daoris account, chosen by no step.</summary>
+    /// <summary>OWNSPACE1a: a scope that names no account runs on the agent's one Daoris account, chosen by no step.</summary>
     [Fact]
     public async Task A_scope_that_names_no_account_runs_on_the_agent_s_one_Daoris_account()
     {
@@ -531,7 +531,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         Cool("account-2");
         var cooled = await roster.SelectAsync("fake", Config, null, null);
 
-        // POOL1c (D197; the account-pool design §4.3): the order's first, said as that, never as this machine's list.
+        // The order's first, said as that, never as this machine's list.
         Assert.Equal(("account-2", "it comes first in the order of Daoris's accounts"), (machine.Profile, machine.Choice?.Clause));
         // The workspace's start is the set's second, counted beside the first: it spreads as any start in the same look does, the walk
         // begun at the default and wrapping, so the next of the list after it.
@@ -543,7 +543,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         Assert.Equal("account-1", cooled.Profile);
     }
 
-    // ——— What the agents said (TOOL6c, D130 §5.2, §6, §16.3 steps 2 and 5, §16.4): read from `windows.json` as each door
+    // ——— What the agents said (§6, §16.3 steps 2 and 5, §16.4): read from `windows.json` as each door
     // kept it, a floor as of when it was said, gone at its reset.
 
     /// <summary>What an account's agent said, kept as a door keeps it: the session window, then the week where given.</summary>
@@ -596,7 +596,7 @@ public sealed class AccountRotationGoalTests : IDisposable
             ("account-2", "`account-1` has used 88% of its session limit, over its curve's 85%"),
             await Ran());
 
-        // Its pace warning passes nothing alone (USAGEREAD3a): the start stays where its list begins.
+        // Its pace warning passes nothing alone: the start stays where its list begins.
         Said("account-1", 0.10, standing: "warned");
         Assert.Equal("account-1", (await Ran()).Item1);
 
@@ -622,8 +622,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         Assert.True(both.Allowed, both.Refusal);
         Assert.Equal("account-1", both.Profile);
 
-        // `off` stops no session switching while it runs; a start still passes an account over the smart curve (the switch
-        // design §2–§3, SWITCH1b-ii), where D130's switch off passed nothing.
+        // `off` stops no session switching while it runs; a start still passes an account over the smart curve, where D130's switch off passed nothing.
         Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Switch: "off")));
         AccountWindows.Said(_home, "fake", "account-2", [new WindowReading("session", 0.1, _now.AddHours(2), "clear")], _now, "s0");
         var off = await Present().SelectAsync("fake", Config, null, null);
@@ -673,7 +672,7 @@ public sealed class AccountRotationGoalTests : IDisposable
     }
 
     /// <summary>
-    /// UX7d-1 (D152's UX7d-1 note): the walk hands the line's steps by code, so the record's first line carries its parts
+    /// UX7d-1: the walk hands the line's steps by code, so the record's first line carries its parts
     /// beside the same English: the account it opened on with the step's reason and values, then what each account said.
     /// </summary>
     [Fact]

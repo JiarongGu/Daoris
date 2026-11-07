@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>cooling.json</c> read and ended (TOOL4e, D125 §2.3, §2.4): the driver writes an account's cool-off when a limit is
+/// <c>cooling.json</c> read and ended: the driver writes an account's cool-off when a limit is
 /// read, and both twins read it and end one early, the screen's <i>Try now</i> and the terminal's
 /// <c>daoris agent account ready</c>. The driver's half of a TWIN with the CLI's <c>cooling.ts</c>, whose
 /// <c>cooling.test.ts</c> holds the same tables, row for row and in the same order, and parses these theories to hold

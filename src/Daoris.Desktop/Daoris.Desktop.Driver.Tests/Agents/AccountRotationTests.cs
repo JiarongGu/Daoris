@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4f (D125 §3): the next start runs on the next ready account of the person's order. The walk is
+/// TOOL4f: the next start runs on the next ready account of the person's order. The walk is
 /// <see cref="HarnessRoster.SelectAsync"/>'s: the account the scope begins at runs if it is ready; if not, the next ready
 /// account of its list runs; a pick, the tool's own home and an account outside the list never rotate; and when no account
-/// is ready the start waits for the first reset. TOOL6b (D130 §3.1, §16) reads one scope and, by default, the goal's walk,
+/// is ready the start waits for the first reset. TOOL6b reads one scope and, by default, the goal's walk,
 /// which on a fresh machine with nothing running starts where D125 did: <c>AccountRotationGoalTests</c> holds the rest.
 /// </summary>
 /// <remarks>
@@ -78,7 +78,7 @@ public sealed class AccountRotationTests : IDisposable
 
     private void Wire(Func<HarnessSettings, HarnessSettings> edit) => edit(new HarnessSettings()).Save(Settings);
 
-    // ——— The walk's order, by step and under `use: order`, is `AccountRotationWalkTests`' (TOOL6b): pure tables.
+    // ——— The walk's order, by step and under `use: order`, is `AccountRotationWalkTests`': pure tables.
 
     // ——— Which account (§3.3): the selection.
 
@@ -129,7 +129,7 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     /// <summary>
-    /// Rewritten by POOL1a2 (D197 points 1 and 2; the account-pool design §2.4, §6.1): a workspace's own order once carried its
+    /// Rewritten by POOL1a2: a workspace's own order once carried its
     /// starts on its accounts while another workspace waited on the machine's. An older build's file is read as the set now, one
     /// order (the machine's first and list, then the workspace's), so every workspace's start walks it alike.
     /// </summary>
@@ -259,7 +259,7 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     /// <summary>
-    /// OWNSPACE1a (D175 point 2, amending D125 point 5): where no default and no list name an account, the agent's Daoris accounts
+    /// OWNSPACE1a (amending D125 point 5): where no default and no list name an account, the agent's Daoris accounts
     /// carry the start, so the tool's own home cooling holds nothing.
     /// </summary>
     [Fact]
@@ -275,7 +275,7 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL6b (D130 §3.1): a scope with a list begins within it, at its first where it names no default, so the tool's own
+    /// TOOL6b: a scope with a list begins within it, at its first where it names no default, so the tool's own
     /// sign-in, cooling or not, never runs where a list names accounts.
     /// </summary>
     [Fact]
@@ -291,7 +291,7 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL6b (D130 §3.1): a default outside its scope's list, which both doors refuse and only a hand edit writes, is read
+    /// TOOL6b: a default outside its scope's list, which both doors refuse and only a hand edit writes, is read
     /// with the list winning: the start begins at the list's first and walks it. D125 held such a start on its default.
     /// </summary>
     [Fact]
@@ -308,7 +308,7 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     /// <summary>
-    /// Rewritten by POOL1a2 (D197 points 1 and 7; the account-pool design §6.1 rule 3): a machine that named one account and no list
+    /// Rewritten by POOL1a2: a machine that named one account and no list
     /// once ran on that account alone, so its cool-off held the start byte for byte as before TOOL4f. Read as the set now, that
     /// account is the order's first under <c>use: order</c>, and the start passes to the next account of the set.
     /// </summary>
@@ -477,7 +477,7 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(("refused (401).", (Noted?)null), (plain.Refusal, plain.RefusalNote));
     }
 
-    // ——— The wiring panel (MAP1b): it never shows an account a start would not take.
+    // ——— The wiring panel: it never shows an account a start would not take.
 
     [Fact]
     public async Task The_wiring_panel_shows_the_account_a_rotated_start_takes_and_the_one_its_default_named()
@@ -662,7 +662,7 @@ public sealed class AccountRotationTests : IDisposable
 
     // ——— The log (§5.4; D130 §13 as §16 amends it): `account.rotated`, by profile name and nothing else of an account, with
     // the step that moved the start, the scope whose list it was, whether any account had said what it has left, and what
-    // the two accounts said, by Daoris's word alone (TOOL6c).
+    // the two accounts said, by Daoris's word alone.
 
     [Fact]
     public void Account_rotated_carries_the_session_the_adapter_both_accounts_the_cut_off_session_and_the_step()
@@ -681,7 +681,7 @@ public sealed class AccountRotationTests : IDisposable
     [Theory]
     [InlineData("near", "clear", "near", "clear")]
     [InlineData("refused", null, "refused", null)]
-    // The agent's pace warning, warned and not near, is Daoris's fourth word (USAGEREAD3a).
+    // The agent's pace warning, warned and not near, is Daoris's fourth word.
     [InlineData("warned", "near", "warned", "near")]
     // Only Daoris's four words: never a number or the agent's own.
     [InlineData("88%", "allowed_warning", null, null)]

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LIMITRESUME1b (D206; the limit-resume design §3.3) through REAL ticks on the protocol door: a driven line an account's limit cut off
+/// LIMITRESUME1b through REAL ticks on the protocol door: a driven line an account's limit cut off
 /// resumes its own conversation once that account is ready again, decided inside the carry-on's own start, with Daoris's word kept on
 /// the ended record and taken off at its conclusion; where its own conversation is refused, it goes on in the same start, briefed; and
 /// a limited end is never a strike.

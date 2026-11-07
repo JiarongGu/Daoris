@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-vi part a (D212; the foundation design §3.3, §13.4, §13.5): the ended limit move keeps its move record and writes no
+/// FOUNDATION1f-vi part a: the ended limit move keeps its move record and writes no
 /// <c>&lt;s&gt;.limit-move.json</c> box beside it. Decided at <c>old-ended</c>, an ended record having no part to end, under this run's claim;
 /// <c>opening</c> under the key its keyed open is sent with; <c>opened</c> with every word the open moved; <c>delivering</c> and the prompt's
 /// mark before the hand; each handed word's <c>sent</c> as the turn's write returns, then the take, then <c>delivered</c>. Against a host

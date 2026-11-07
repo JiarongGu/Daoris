@@ -80,7 +80,6 @@ public enum GoAheadMatch
 /// and release asked six. Each named a kind of act (a write, a release, a sign-in, a push, a run against a system's data),
 /// where it lands (production, every time), and what it touches (the configuration, the display, the menu entries). The
 /// kind and the place are read from their usual names; what it touches is read by its words.</para>
-///
 /// <para><b>A later request joins when it names every word of the earlier act</b>, which it may make more precise: "menu
 /// entry" is joined by "the comparison report's menu entries". The reverse is not joined: a request naming only some of
 /// an earlier act's words may be a part of it or another act, and the person's yes to the one they read must not stretch
