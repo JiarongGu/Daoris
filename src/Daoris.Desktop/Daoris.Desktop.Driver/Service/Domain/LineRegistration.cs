@@ -22,12 +22,11 @@ public sealed record ComposedRegistration(JsonObject? Body, bool Declares, strin
 /// <c>connect</c> would send from that manifest, so the registry follows the line with no <c>connect</c> run.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>A TWIN of the CLI's <c>connect.ts</c></b> (<c>.claude/knowledge/twins.md</c>): its <c>registration()</c>
-/// and what <c>connect</c> runs first, <c>readManifest</c>, <c>isDeclared</c> and <c>readLanes</c> (<c>lanes.ts</c>).
-/// They share no code; <c>LineRegistrationTests</c> here and <c>connect-twin.test.ts</c> there hold the same table, row
-/// for row. The body: the packs; the domain as written with <c>uses</c> by its rule, and only when it names something;
-/// <c>join</c> and <c>shareKnowledge</c> as explicit booleans; the lanes' words as a list, <c>[]</c> for none; and the
-/// root, to a service on this machine only. Adoption is said by sending no <c>adopted: false</c> (D70), and no workspace
+/// <para>This is the one way a registration is composed: the driver's <c>repository connect</c> (<c>RegistryOperations</c>)
+/// and the registry's follow of a line (<c>RegistrationFollow</c>) both call it, and the CLI has no counterpart;
+/// <c>LineRegistrationTests</c> holds its table. The body: the packs; the domain as written with <c>uses</c> by its
+/// rule, and only when it names something; <c>join</c> and <c>shareKnowledge</c> as explicit booleans; the lanes' words
+/// as a list, <c>[]</c> for none; and the root, to a service on this machine only. Adoption is said by sending no <c>adopted: false</c> (D70), and no workspace
 /// is sent, since silence preserves the wiring (D48).</para>
 ///
 /// <para><b>What is read is what the registration sends.</b> A manifest is refused as <c>connect</c> refuses it where
