@@ -82,7 +82,7 @@ public static class WorkingTree
     /// </remarks>
     public static async Task<string?> DefaultBranchAsync(string root, CancellationToken ct = default)
     {
-        var (code, stdout, _) = await GitAsync(root, OriginHeadAsk, ct).ConfigureAwait(false);
+        var (code, stdout) = OriginHeadFile(root) ?? await OriginHeadGitAsync(root, ct).ConfigureAwait(false);
         if (ReviewChoices.Guess(code, stdout, null, null) is { } pointed) return pointed;
 
         // The order is ReviewChoices.Guess's, which Review's graph asks all three together and chooses by.
@@ -97,6 +97,39 @@ public static class WorkingTree
         }
 
         return null;
+    }
+
+    private static async Task<(int Code, string Stdout)> OriginHeadGitAsync(string root, CancellationToken ct)
+    {
+        var (code, stdout, _) = await GitAsync(root, OriginHeadAsk, ct).ConfigureAwait(false);
+        return (code, stdout);
+    }
+
+    /// <summary>
+    /// <c>symbolic-ref --short refs/remotes/origin/HEAD</c> as git's own files answer it, no process: <c>origin/main</c> where the ref is a
+    /// symbolic one, git's failure where the repository holds no such ref; null where the files cannot say (a reftable repository, a ref
+    /// that is no symbolic one), and git is asked.
+    /// </summary>
+    private static (int Code, string Stdout)? OriginHeadFile(string root)
+    {
+        const string Remotes = "refs/remotes/";
+        const string Symbolic = "ref: " + Remotes;
+        if (RefFiles.CommonDirOf(root) is not { } common) return null;
+        try
+        {
+            var file = Path.Combine(common, "refs", "remotes", "origin", "HEAD");
+            if (File.Exists(file))
+            {
+                var text = File.ReadAllText(file).Trim();
+                return text.StartsWith(Symbolic, StringComparison.Ordinal) ? (0, text[Symbolic.Length..] + "\n") : null;
+            }
+
+            return RefFiles.Absent(common, "refs/remotes/origin/HEAD") ? (128, "") : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
     }
 
     /// <summary>
