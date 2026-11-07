@@ -665,9 +665,11 @@ turns a no-output end into output (O-6).
 
 ## 6. The end: done with output, done without output
 
-At a run's end (`Driver.cs:2902-2910`; the conversation's end in the chat runner), once its processes and their job have ended
-(`Platform/ProcessJob.cs:6-32`), the end claims the slot (`end`), reads it (§5.2 steps 3 to 6), writes `line_ends` with the tip, the read
-moment and the names of its scratch outside the list, puts the free lock back, and the record says one of the three below.
+At a run's end (the run's conclusion; the conversation's end in the chat runner), once its launcher's own job is empty
+(`Agents/SessionProcesses.cs:514-519`; D201) *(R4-F14)*, the end claims the slot (`end`), reads it (§5.2 steps 3 to 6), writes `line_ends`
+with the tip, the read moment, the slot and the names of the line's own ignored paths (§11), puts the free lock back, and the record says one
+of the three below. Where an agent was not contained (`Platform/AgentJobs.cs`' reasons), that read of the slot is the only guard against a
+process still writing, and the end says so.
 
 **Who runs the end** *(O1-F10)*. The run's own end, and, idempotently, **the look**, for every slot that no holder holds (§7), that is under
 no claim, and that has no `line_ends` row since its `since`: a park ended in another process, a dead `end` claim, or a session of a build that
@@ -675,10 +677,11 @@ does not know the pool, which left the slot under that build's rules. The look's
 its `GrownBranch.Now`), moved or not, it records that tip, the line's own work; anywhere else, or with work no ref holds, it records `held`
 and says why, for the person.
 
-- **Done with output** (`ended.output`): commits on its branch, nothing uncommitted. The slot stays at the line's path on its branch, locked
-  `daoris kept tree`, free but for what §7 names, a due landing among them. Ready to land: Accept lands from it, or from a slot brought back.
-- **Done without output** (`ended.no-output`): no commit and nothing uncommitted. The slot is free and stays at the line's path on its empty
-  branch, where words to the line still find it, as a conversation's place does today, until a take moves it away (§5.1 choice 3); then the
+- **Done with output** (`ended.output`): commits on its branch, nothing uncommitted. The slot stays on the line's branch, locked
+  `daoris kept tree`, free but for what §7 names, a due `land` node among them *(R4-F10)*. Ready to land: its run's `land` node lands from it,
+  or from a slot switched to the line.
+- **Done without output** (`ended.no-output`): no commit and nothing uncommitted. The slot is free and stays on the line's empty branch, where
+  words to the line still find it, as a conversation's place does today, until a take switches it (§5.1 choice 4) *(R4)*; then the
   empty branch, with no tree, is the tidy's as an empty branch is today (`TreeSetAside.cs:27-30`), and `line_ends` saying `no-output` is the one
   licence to grow it again at the line's tip, under its own name, when its record goes on (O §1.3), so a conversation that ended with nothing
   can still be spoken to. No other line ever takes the name.
