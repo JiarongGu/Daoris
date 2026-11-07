@@ -34,7 +34,6 @@ public sealed class ReviewGraphTodayTests : LandedFixture
 
         string chain;
         GitLaunched[] chainStarts;
-        // Each read starts cold: the first one's kept listing would answer the second's.
         BranchesByDate.Forget();
         using (var count = GitLaunch.Count())
         {
