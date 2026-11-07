@@ -22,7 +22,9 @@ unit is a feature a person can see working; the rows it covers become one block 
   committed after `git add -A`, since its gates read the tree as `git add -A` would stage it.
 - **The CI runs on its own cycle**: `--ci <main>` in the background after merges land, never wrapped in `timeout`; its
   reds come back as small fixes on main. The install is staged only from a green run (`--stage --from-gated <commit>`).
-- **Clean up as you go**: `--prune` removes each worktree and branch main holds. Lock a worktree you make by hand, or
+- **Clean up as you go**: `--prune` removes each worktree and branch main holds. Remove a worktree by hand only with
+  `node tools/worktree-remove.mjs <path>`, never `git worktree remove --force`: a junction under a worktree to the
+  main checkout's `node_modules` is followed by git and empties the target. Lock a worktree you make by hand, or
   the next prune takes it as merged.
 
 ## The briefs

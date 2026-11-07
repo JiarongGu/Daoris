@@ -29,6 +29,7 @@ finishes first and the whole set runs once.
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
 | The gates' declaration | `daoris.gates.json` | each component gate, its command and what may run unasked |
 | The merge tool | `tools/merge-branch.mjs` | merges a branch, runs the gates its paths reach, runs the CI (`--ci`) and stages the install |
+| Worktree removal | `tools/worktree-remove.mjs` | every removal of a worktree (the prune, the gate tree, by hand) removes the links under it as links first, stops if one stays, then runs `git worktree remove` and checks the main checkout lost no tracked file |
 | The tests' wall time | `local/scratch/ci-<sha>/status.json`, each Process gate's `.trx`; `DriverTree.cs`, `GridRun.cs`; the web's `vite.config.ts` | measured per gate and per class, then cut (OPTIMIZE1d); the figures are in the rule below |
 | The dispatch skill and agents | `.claude/skills/dispatch-subagent/`, `.claude/agents/branch-worker.md`, `branch-scout.md` | how a parent briefs and merges a builder, and the builder's half |
 | The measurement tools | `tools/subagent-usage.mjs`, `tools/subagent-time.mjs` | a builder's tokens and clock, judged against `docs/2026-11-04-consolidation-plan.md`'s targets |
