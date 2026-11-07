@@ -31,7 +31,7 @@ public sealed class TreeLinksTests : IDisposable
     {
         Write(Path.Combine("node_modules", "kept", "index.js"));
         var link = Path.Combine(Tree, "node_modules", "@fixture", "web");
-        TreeDependencies.Link(link, Outside);
+        DependencyLinks.Link(link, Outside);
 
         Assert.Null(TreeLinks.Unlinked(Tree));
 
@@ -44,7 +44,7 @@ public sealed class TreeLinksTests : IDisposable
     public void A_link_is_never_walked_into_nor_what_it_holds_counted()
     {
         foreach (var name in new[] { "a", "b", "c" }) File.WriteAllText(Path.Combine(Outside, $"{name}.md"), Persons);
-        TreeDependencies.Link(Path.Combine(Tree, "linked"), Outside);
+        DependencyLinks.Link(Path.Combine(Tree, "linked"), Outside);
 
         Assert.Null(TreeLinks.Unlinked(Tree, limit: 1));
 
@@ -54,9 +54,9 @@ public sealed class TreeLinksTests : IDisposable
     [Fact]
     public void A_tree_whose_own_folder_is_a_link_stays_and_nothing_through_it_is_touched()
     {
-        TreeDependencies.Link(Path.Combine(Outside, "inner"), Path.Combine(_scratch, "tree"));
+        DependencyLinks.Link(Path.Combine(Outside, "inner"), Path.Combine(_scratch, "tree"));
         var linked = Path.Combine(_scratch, "linked-tree");
-        TreeDependencies.Link(linked, Outside);
+        DependencyLinks.Link(linked, Outside);
 
         Assert.Equal("its tree's folder is itself a link, which git's removal would reach through", TreeLinks.Unlinked(linked));
 

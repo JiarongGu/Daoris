@@ -231,6 +231,15 @@ internal sealed class RunState : IDisposable, IAsyncDisposable
         set => _setUp.Set(value);
     }
 
+    /// <summary>What the files stage did in the session's tree: none where the session runs outside Daoris's trees.</summary>
+    public TreeFilesOutcome Files
+    {
+        get => _files.Get(nameof(Files), "files");
+        set => _files.Set(value);
+    }
+
+    private Slot<TreeFilesOutcome> _files;
+
     /// <summary>The model a continuation's record carries to its agent: the entry it moved to's, else the one its record asked.</summary>
     public string? CarriedModel(PriorSession? record) => MovedTo is { } moved ? moved.Model : record?.Asked?.NamedModel;
 
