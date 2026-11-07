@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The old caps as the supervisor's rules (D232; RULESCONVERT1): on a home whose rules were never written, the machine's rules at the numbers
+/// The old caps as the supervisor's rules: on a home whose rules were never written, the machine's rules at the numbers
 /// the caps held (answers alone 2 in a row, the failed sessions <c>driver.json</c>'s <c>strikes</c> said, five transient tries, three moves a
 /// day), and <c>strikes</c> taken out of the file.
 /// </summary>

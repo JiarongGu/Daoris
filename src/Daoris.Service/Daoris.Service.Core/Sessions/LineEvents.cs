@@ -5,20 +5,20 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A session's line read back from this machine's event files (SESSCTX1f, D189's SESSCTX1f note; the session-context design §3.5): the
+/// A session's line read back from this machine's event files: the
 /// parts a session continues, followed back by each record's <c>from</c>, and each part's <c>&lt;id&gt;.events.jsonl</c> under the home's
 /// <c>sessions</c> folder, read as the entries a reader reads and paged within a bound. The connector's <c>line_read</c> answers with
 /// it, so what a brief's bound left out is one call away.
 /// </summary>
 /// <remarks>
-/// <para><b>Transcript-class, never over HTTP</b> (D76 §2): what a session said and did can carry machine paths and a repository's
+/// <para><b>Transcript-class, never over HTTP</b>: what a session said and did can carry machine paths and a repository's
 /// code, so only the stdio connector of a session on this machine reads it, for the parts of that session's own line, and no host route
 /// is handed it.</para>
 ///
 /// <para><b>The driver's file, read with code of its own.</b> The driver's <c>SessionEvents</c> writes the file and this shares no code
-/// with it, since the connector references the service alone (D183's HELPMODE1c2a note); each side's tests hold the same text
-/// (<c>LineEventsShapeTests</c>, the driver's <c>LineEventFilesTests</c>), as the helpers' box and files are held (D163's MIXAGENT2a-ii
-/// note). The line is followed as the driver's <c>ContextBriefs.LineOf</c> follows it, and an id names a file only where the driver's
+/// with it, since the connector references the service alone; each side's tests hold the same text
+/// (<c>LineEventsShapeTests</c>, the driver's <c>LineEventFilesTests</c>), as the helpers' box and files are held.
+/// The line is followed as the driver's <c>ContextBriefs.LineOf</c> follows it, and an id names a file only where the driver's
 /// <c>SessionEventText.IsLocalId</c> says it does.</para>
 /// </remarks>
 /// <param name="home">The home the event files are under, or null when there is none: every reading is then refused.</param>
@@ -28,8 +28,8 @@ public sealed class LineEvents(string? home)
     public const string Suffix = ".events.jsonl";
 
     /// <summary>
-    /// The most one answer weighs: the brief's own provisional bound (the design §3.2), a Han character weighing
-    /// <see cref="HanWeight"/>, so a page is never heavier than the brief it reads behind. Both move with SESSCTX1a's counts.
+    /// The most one answer weighs: the brief's own provisional bound, a Han character weighing
+    /// <see cref="HanWeight"/>, so a page is never heavier than the brief it reads behind. Both move with the brief's counts.
     /// </summary>
     public const int Bound = 40_000;
 
@@ -64,7 +64,7 @@ public sealed class LineEvents(string? home)
 
     public string? Home { get; } = home;
 
-    /// <summary>The home the driver names on the connector it offers, else the account's (D63): where the event files are.</summary>
+    /// <summary>The home the driver names on the connector it offers, else the account's: where the event files are.</summary>
     public static LineEvents FromEnvironment() => new(RuleProposalBox.FromEnvironment().Home);
 
     /// <summary>Where one part's events are: <c>&lt;home&gt;/sessions/&lt;id&gt;.events.jsonl</c>, the home's <see cref="HomeEntry.Sessions"/>.</summary>
@@ -194,7 +194,7 @@ public sealed class LineEvents(string? home)
     }
 
     /// <summary>
-    /// A part's events as a reader reads them, oldest first: each word where it was taken, each run of the agent's chunks joined into one
+    /// A part's events as a reader reads them, oldest first: each word where it is taken, each run of the agent's chunks joined into one
     /// message (broken, as the page breaks it, by anything but a usage reading), each tool call with its updates at its first number, the
     /// plan, a turn's end and Daoris's notes. A thought, a usage reading, a word shown while it waited, a receipt and an unknown frame are
     /// no entry, and a blank, torn or foreign line costs itself.
@@ -341,12 +341,11 @@ public sealed class LineEvents(string? home)
     }
 
     /// <summary>
-    /// Whose an entry is, by the marks the record keeps, never by its words. A word with no <c>origin</c>, from a record kept before
-    /// it was written, is the person's, as the driver's brief reads it.
+    /// Whose an entry is, by the marks the record keeps, never by its words. A word with no <c>origin</c> is the person's, as the driver's brief reads it.
     /// </summary>
     internal static string Who(LineEntry entry) => entry.Kind switch
     {
-        // SUPERVISOR1a-i (D208, the supervisor design §6.1): read from the event's own mark, never as the person's nor Daoris's.
+        // Read from the event's own mark, never as the person's nor Daoris's.
         "user" when entry.Mark == "supervisor" => "the supervisor, on the owner's behalf",
         "user" when entry.Origin is null or "person" => entry.Mark == "channel" ? "the person, on the ask's channel" : "the person",
         "user" => entry.Mark switch
@@ -511,7 +510,7 @@ public sealed class LineEvents(string? home)
 }
 
 /// <summary>
-/// One entry of a part's record as a reader reads it (SESSCTX1f): <c>user</c>, <c>message</c>, <c>tool</c>, <c>plan</c>, <c>turn</c> or
+/// One entry of a part's record as a reader reads it: <c>user</c>, <c>message</c>, <c>tool</c>, <c>plan</c>, <c>turn</c> or
 /// <c>note</c>, at the number of its first event, with only the fields <c>line_read</c> shows.
 /// </summary>
 /// <param name="Seq">The number of its first event in the part's record.</param>

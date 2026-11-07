@@ -10,8 +10,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FABRIC-C1a: the connector reads every call's <c>_meta</c> before its tool runs, and writes what its harness said of the call's
-/// lineage to the session's lineage file. FABRIC-C2a (D173's FABRIC-C2a note): for a connector that names a session, a child's
+/// The connector reads every call's <c>_meta</c> before its tool runs, and writes what its harness said of the call's
+/// lineage to the session's lineage file. For a connector that names a session, a child's
 /// call, or one whose lineage cannot be read, is refused every tool but the reads and a plain quest. A server over in-memory
 /// streams, as <see cref="DiscoverProbeTests"/> runs one, with the lineage filter the host composes and a stand-in for every
 /// tool the host registers.
@@ -43,7 +43,7 @@ public sealed class CallLineageFilterTests : IDisposable
 
     private static JsonObject Claude(string toolUse) => new() { ["claudecode/toolUseId"] = toolUse };
 
-    /// <summary>Codex's turn metadata as its protocol door writes it: a thread and its root, and no source (D173's 2026-10-31 note).</summary>
+    /// <summary>Codex's turn metadata as its protocol door writes it: a thread and its root, and no source.</summary>
     private static JsonObject Codex(string thread, string root = "t-root") =>
         new() { ["x-codex-turn-metadata"] = new JsonObject { ["session_id"] = root, ["thread_id"] = thread }.ToJsonString() };
 
@@ -79,7 +79,7 @@ public sealed class CallLineageFilterTests : IDisposable
 
     /// <summary>
     /// The row's proof and canary 3: a stand-in harness's child, on either harness, is served each read and refused every other
-    /// tool, a tool no class names among them; the refusal is an error that says nothing was done and that the reads remain.
+    /// tool, a tool no class names among them; the refusal is an error that says nothing is done and that the reads remain.
     /// </summary>
     [Fact]
     public async Task A_stand_in_child_is_served_each_read_and_refused_each_restricted_tool()
@@ -140,7 +140,7 @@ public sealed class CallLineageFilterTests : IDisposable
 
     /// <summary>
     /// The row's proof: a proven root calls every tool as before. A Claude root by its hook line naming no agent; a Codex root by
-    /// its protocol door's shape, which answered its quests and helpers in the 128 calls measured (D173's 2026-10-31 note).
+    /// its protocol door's shape, which answered its quests and helpers in the 128 calls measured.
     /// </summary>
     [Fact]
     public async Task The_root_s_calls_are_unchanged()

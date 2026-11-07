@@ -1,16 +1,16 @@
 namespace Daoris.Knowledge;
 
-/// <summary>What the person said to a session, kept on the ask its work is for (DRIFT1a, D133 §1).</summary>
+/// <summary>What the person said to a session, kept on the ask its work is for.</summary>
 internal sealed class SessionAskWords(QuestStore quests, SessionStore sessions, AskStore? asks)
 {
     /// <summary>
-    /// Keep what the person said to a session on the ask its work is for (DRIFT1a, D133 §1): verbatim, with
-    /// when, the session it was said to and the quest that session works. Beside the say door,
+    /// Keep what the person said to a session on the ask its work is for: verbatim, with
+    /// when, the session it is said to and the quest that session works. Beside the say door,
     /// never inside it: the say door calls both, and what an answer does to a parked session is not this
     /// method's to decide.
     /// </summary>
     /// <remarks>
-    /// <para><b>The ask is derived, never passed.</b> An intake names its ask; a driven session's quest was
+    /// <para><b>The ask is derived, never passed.</b> An intake names its ask; a driven session's quest is
     /// asked by one when its sender is <c>ask #id</c>, a chain step included. A quest one repository asked
     /// of another, and a conversation on no quest, are on no ask, and the answer says so rather than filing
     /// the words under an ask they were not given on.</para>

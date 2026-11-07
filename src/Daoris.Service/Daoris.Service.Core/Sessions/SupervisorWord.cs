@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The words a session is handed for the supervisor's answer (SUPERVISOR1a-i, D208; the supervisor design §4.5): composed from the
+/// The words a session is handed for the supervisor's answer: composed from the
 /// decision's chosen label alone, never from a word's text, by the service at the release and by the driver at the hand. The driver
 /// keeps a twin (<c>SupervisorHanded</c>), held to this one by a test on each side.
 /// </summary>

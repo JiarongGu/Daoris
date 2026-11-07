@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The desktop store's names as this build reads them (D232; AGENTPROVIDER1t): the store's own step that renames them is run here, a copy
+/// The desktop store's names as this build reads them: the store's own step that renames them is run here, a copy
 /// of the store kept first, so a binding's door is <c>bindings.door</c> and the staffing's projection of <c>driver.json</c>'s old keys is
 /// gone. A home with no store, or one already past the step, is left as it is.
 /// </summary>

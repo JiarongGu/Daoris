@@ -4,13 +4,13 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FABRIC-C1a (D173, its FABRIC-C0 note; <c>docs/2026-10-16-fabric-contract-audit.md</c> §2): the lineage a call's <c>_meta</c>
+/// The lineage a call's <c>_meta</c>
 /// carries, as each harness wrote it, read by the connector on every call. Claude Code names the call (<c>claudecode/toolUseId</c>),
 /// which its hook joins to the agent that made it; Codex names the thread, its parent and the spawn kind
 /// (<c>x-codex-turn-metadata</c>, as JSON text or an object). Only ids are kept: the workspace's path Codex sends beside them,
 /// and any value shaped like a path, never.
 /// </summary>
-/// <remarks>The rows are the C0 audit's and FABRIC-PROBE1's receipts, shaped as the harnesses wrote them.</remarks>
+/// <remarks>The rows are receipts from each harness, shaped as the harnesses wrote them.</remarks>
 public sealed class CallLineageTests
 {
     /// <summary>Spelled in pieces, as a test's example path is (the merge's universal gate refuses a literal one).</summary>
@@ -93,7 +93,7 @@ public sealed class CallLineageTests
     }
 
     /// <summary>
-    /// FABRIC-C2a (D173's note, point 1): a value the harness sent that is not an id is kept as malformed, never dropped to look
+    /// A value the harness sent that is not an id is kept as malformed, never dropped to look
     /// absent, since an absent parent is what a root has.
     /// </summary>
     [Fact]
@@ -143,7 +143,7 @@ public sealed class CallLineageTests
     }
 
     /// <summary>
-    /// AGENTPROVIDER1 row r (the agent-provider design §3.3, §6, O1-F17): the call keys are one file per agent read by one ordered list,
+    /// The call keys are one file per agent read by one ordered list,
     /// which the twin fixture the driver's census reads holds key for key, in order.
     /// </summary>
     [Fact]

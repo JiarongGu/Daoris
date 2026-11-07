@@ -17,13 +17,13 @@ public enum CallerKind
 public sealed record Caller(CallerKind Kind, string Reason);
 
 /// <summary>
-/// Tells a root's call from a child's by the lineage its harness wrote on it, failing closed (FABRIC-C2a, D173's FABRIC-C2a note,
-/// point 1): only a caller proven a root is one, and missing, malformed, conflicting or unjoined lineage never is.
+/// Tells a root's call from a child's by the lineage its harness wrote on it, failing closed:
+/// only a caller proven a root is one, and missing, malformed, conflicting or unjoined lineage never is.
 /// </summary>
 /// <remarks>
 /// <para><b>Codex.</b> A root's call names a thread that is its session's root (<c>thread_id</c> equal to <c>session_id</c>) and no
-/// child signal: no parent, no spawn kind, a source of <c>user</c> or none. Codex's protocol door writes no source on a root's calls
-/// (D173's 2026-10-31 note), so a missing one is not asked for; a spawned thread has its own id, so its calls never name the root's
+/// child signal: no parent, no spawn kind, a source of <c>user</c> or none. Codex's protocol door writes no source on a root's calls,
+/// so a missing one is not asked for; a spawned thread has its own id, so its calls never name the root's
 /// thread as theirs. A source other than <c>user</c> or <c>subagent</c> is unreadable.</para>
 ///
 /// <para><b>Claude Code</b> writes only the call's id, so a root's call is one whose id joins a hook line naming no agent

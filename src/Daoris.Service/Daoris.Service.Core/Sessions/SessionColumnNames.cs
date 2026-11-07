@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The session record's columns under the names this build reads (D232): a table that still spells its door <c>adapter</c> and the
+/// The session record's columns under the names this build reads: a table that still spells its door <c>adapter</c> and the
 /// version its spawn observed <c>harness_version</c> has both renamed as the store opens, before a column is added or a row read. The
 /// store moves itself, as it adds its columns, because a shared host opens it through this schema and runs no desktop migration.
 /// </summary>

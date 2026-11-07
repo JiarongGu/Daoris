@@ -3,14 +3,14 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A session's note as it may leave this machine (D47 §4, D49 §4, D51): the sentence, without what is
+/// A session's note as it may leave this machine: the sentence, without what is
 /// machine-local in it.
 /// </summary>
 /// <remarks>
 /// <para>The wire has no FIELD for a tree, a transcript or a profile — and the note is free text the
 /// driver writes: "opened a session tree at &lt;path&gt;", "its provider refused the `claude-code`
 /// account `&lt;profile&gt;`", an exception's own words naming a file under the home. A field that does
-/// not exist cannot be filled by accident; a sentence can, so it is cleaned wherever it crosses (REV3).</para>
+/// not exist cannot be filled by accident; a sentence can, so it is cleaned wherever it crosses.</para>
 ///
 /// <para>The record's own tree, transcript and profile go by name, whatever spelling of slashes the
 /// sentence used; any other absolute path goes by shape. What remains is what a teammate needs: what
@@ -18,12 +18,12 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public static partial class SessionNote
 {
-    /// <summary>What stands in for a machine-local fact that was cut.</summary>
+    /// <summary>What stands in for a machine-local fact that is cut.</summary>
     public const string Elided = "…";
 
     /// <summary>
     /// <paramref name="session"/> is the record the words belong to, whose own tree, transcript and profile go by name; null (a channel
-    /// message of the person's, SESSONE2d) has none, and every absolute path still goes by shape.
+    /// message of the person's) has none, and every absolute path still goes by shape.
     /// </summary>
     public static string? ForAnotherMachine(string? note, Session? session)
     {

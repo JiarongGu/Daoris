@@ -24,7 +24,7 @@ public enum SessionState
     /// <summary>Exited; its quest reached Declined, with the reason on the quest.</summary>
     Declined,
 
-    /// <summary>Exited without working: the quest was already taken or closed by someone else.</summary>
+    /// <summary>Exited without working: the quest is already taken or closed by someone else.</summary>
     StoodDown,
 
     /// <summary>The process died, or exited with the quest unexplained.</summary>
@@ -32,7 +32,7 @@ public enum SessionState
 
     /// <summary>
     /// The person cancelled it — or, where the record says <see cref="Session.Interrupted"/>, the orphan
-    /// sweep or the driver's shutdown ended it (D104).
+    /// sweep or the driver's shutdown ended it.
     /// </summary>
     Stopped,
 }

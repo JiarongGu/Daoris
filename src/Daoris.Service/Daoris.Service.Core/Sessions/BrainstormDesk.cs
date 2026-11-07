@@ -8,7 +8,7 @@ namespace Daoris.Knowledge;
 /// <param name="State"><c>asked</c> before the driver's look froze its packet, then the driver's own: <c>frozen</c>, <c>running</c>, <c>ended</c>.</param>
 /// <param name="Packet">The frozen packet's digest; null before the look froze one.</param>
 /// <param name="Sent">The digest the person sent; null where they have not.</param>
-/// <param name="Kind"><c>brainstorm</c>, or <c>meeting</c> (ONEWAY1t), whose <paramref name="Round"/> is the one the state is of.</param>
+/// <param name="Kind"><c>brainstorm</c>, or <c>meeting</c>, whose <paramref name="Round"/> is the one the state is of.</param>
 public sealed record BrainstormStanding(
     string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At, string State, string? Code,
     string? Packet, string? Sent, string Kind = BrainstormDesk.BrainstormKind, int? Round = null);
@@ -16,7 +16,7 @@ public sealed record BrainstormStanding(
 /// <summary>A brainstorm shown: where it stands, the packet as frozen (null before the look froze one) and the document's Markdown.</summary>
 public sealed record BrainstormShown(BrainstormStanding Brainstorm, JsonElement? Frozen, string? Document);
 
-/// <summary>Why a door to a brainstorm did not do what it was asked; <see cref="None"/> where it did.</summary>
+/// <summary>Why a door to a brainstorm did not do what the caller asked; <see cref="None"/> where it did.</summary>
 public enum BrainstormRefusal
 {
     None,
@@ -41,7 +41,7 @@ public enum BrainstormRefusal
 public sealed record BrainstormOutcome(BrainstormRefusal Refusal, string Message, BrainstormStanding? Brainstorm = null);
 
 /// <summary>
-/// The local host's brainstorm desk (BRAINSTORM1a3; D176 points 1, 2 and 8): the one writer of a brainstorm's request (ONEWAY1t),
+/// The local host's brainstorm desk: the one writer of a brainstorm's request,
 /// which a terminal's verbs reach. It writes the request the driver's look takes, the person's send and stop, and the clear; it
 /// reads where each brainstorm stands. A meeting is a kind of brainstorm, asked of <see cref="MeetingDesk"/>. It runs no pass and
 /// spawns nothing: the passes are the driver's, in whichever process holds the loop.
@@ -52,7 +52,7 @@ public sealed record BrainstormOutcome(BrainstormRefusal Refusal, string Message
 /// <c>packet.json</c> and the document are the driver's alone; <c>sent.json</c> is the person's press, by either door. Both readers
 /// are held, row for row, to one table, the driver suite's <c>fixtures/brainstorm-files.json</c>; a change here is a change there.</para>
 ///
-/// <para><b>This machine's alone</b> (D176 point 8): the host maps the door in local mode only and answers it to a caller on this
+/// <para><b>This machine's alone</b>: the host maps the door in local mode only and answers it to a caller on this
 /// machine only; a shared host keeps no brainstorm, and nothing here is a quest operation or synced.</para>
 /// </remarks>
 /// <param name="home">The home the records are under, or null when there is none: every door then says so.</param>
@@ -80,18 +80,18 @@ public sealed class BrainstormDesk(string? home)
 
     public const string Ended = "ended";
 
-    /// <summary>One id shape for a brainstorm and a meeting (ONEWAY1t): the stricter of the two writers' before, so it is a folder's name and nothing more.</summary>
+    /// <summary>One id shape for a brainstorm and a meeting: the stricter of the two writers' before, so it is a folder's name and nothing more.</summary>
     internal static readonly Regex PlainName = new("^[A-Za-z0-9][A-Za-z0-9-]{0,31}$", RegexOptions.CultureInvariant);
 
     public string? Home { get; } = home;
 
-    /// <summary>The home this host was started on (D63), or none.</summary>
+    /// <summary>The home this host is started on, or none.</summary>
     public static BrainstormDesk FromEnvironment() => new(DaorisHome.Resolve());
 
     /// <summary>
     /// The person's question, written as a request the driver's look freezes into a packet: the words trimmed, a blank repository
     /// none, the agents named in order without blanks. Refused, with nothing written, out of the driver verb's bounds. The caller's own
-    /// <paramref name="own"/> id (D176 point 6) makes it idempotent: asked again in the same words it is the same brainstorm, in other
+    /// <paramref name="own"/> id makes it idempotent: asked again in the same words it is the same brainstorm, in other
     /// words it is refused. A named agent is judged by the look, which resolves it at the pass's start and says the refusal in the
     /// brainstorm's state; this desk reads no adapter.
     /// </summary>
@@ -207,7 +207,7 @@ public sealed class BrainstormDesk(string? home)
     }
 
     /// <summary>
-    /// The person's stop (D176 point 6), a file of its own the driver looks for while the brainstorm runs, and at its next look before
+    /// The person's stop, a file of its own the driver looks for while the brainstorm runs, and at its next look before
     /// it does: every pass ends, what answered is kept, and nothing runs again by itself. An ended brainstorm has nothing to stop.
     /// </summary>
     public BrainstormOutcome Stop(string id, DateTimeOffset at)
@@ -249,7 +249,7 @@ public sealed class BrainstormDesk(string? home)
             state.Item2 is { } s ? Text(s, "code") : null, state.Item2 is { } p ? Text(p, "packet") : null, sent);
     }
 
-    /// <summary>One brainstorm, with the packet as frozen once the look froze one, and the document's Markdown once it was kept.</summary>
+    /// <summary>One brainstorm, with the packet as frozen once the look froze one, and the document's Markdown once it is kept.</summary>
     public BrainstormShown? Show(string id)
     {
         if (Find(id) is not { } brainstorm) return null;
@@ -258,7 +258,7 @@ public sealed class BrainstormDesk(string? home)
     }
 
     /// <summary>
-    /// The person's send (D176 point 2): the frozen packet's digest written as the one that goes, as the driver's verb writes it.
+    /// The person's send: the frozen packet's digest written as the one that goes, as the driver's verb writes it.
     /// Nothing to send before the look froze a packet; sent again, it is the same brainstorm, never a second spend.
     /// </summary>
     public BrainstormOutcome Send(string id, DateTimeOffset at)
@@ -289,7 +289,7 @@ public sealed class BrainstormDesk(string? home)
             $"Brainstorm `{id}` sent, packet `{digest}`: its passes start at Daoris's next look.", Find(id));
     }
 
-    /// <summary>The brainstorm cleared (D176 point 8): its records, its packet and its rooms; never while it runs.</summary>
+    /// <summary>The brainstorm cleared: its records, its packet and its rooms; never while it runs.</summary>
     public BrainstormOutcome Clear(string id)
     {
         if (Home is null || !PlainName.IsMatch(id) || Reserved(id)) return NotFound(id);
@@ -310,7 +310,7 @@ public sealed class BrainstormDesk(string? home)
     }
 
     /// <summary>
-    /// The folder that holds every meeting is no brainstorm's id (AGENTROOM1a; BRAINSTORM-RESERVED1): the driver's
+    /// The folder that holds every meeting is no brainstorm's id: the driver's
     /// <c>BrainstormFiles.Reserved</c>, duplicated deliberately (twins.md). Every door checks it before the disk, so a clear can
     /// never take the meetings' records.
     /// </summary>

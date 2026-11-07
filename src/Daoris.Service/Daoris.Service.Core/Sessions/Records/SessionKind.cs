@@ -1,9 +1,9 @@
 namespace Daoris.Knowledge;
 
-/// <summary>How a session was entered — the one thing that differs between them (D49 §3).</summary>
+/// <summary>How a session is entered — the one thing that differs between them.</summary>
 public enum SessionKind
 {
-    /// <summary>Planned from a quest by the driver: the loop D46 built.</summary>
+    /// <summary>Planned from a quest by the driver.</summary>
     Driven,
 
     /// <summary>

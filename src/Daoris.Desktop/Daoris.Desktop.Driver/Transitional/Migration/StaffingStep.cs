@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The roles' staffing into the store alone (D232; ONEWAY1b's conversion, run once): the file's staffing imported where the store holds none,
+/// The roles' staffing into the store alone: the file's staffing imported where the store holds none,
 /// each of the five roles with no order of its own written the order it ran by its single-agent key, at account default, and Intake or Ask
 /// Daoris with no key written off; an entry that does not read is kept as it is. Then <c>driver.json</c>'s four staffing keys taken out.
 /// Second opinion, Partner and Helper stay by their caller's rule, so nothing is written for them.

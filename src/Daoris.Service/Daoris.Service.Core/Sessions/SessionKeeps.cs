@@ -3,14 +3,14 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The facts about a record's run that never travel and never move it (HELPMODE1a2, AUTONOMY1b2, D205, KEEP1b): the access mode,
-/// the access setup, the actor's provenance and the downloaded versions a start was handed. Each is machine-local, kept without a state
+/// The facts about a record's run that never travel and never move it: the access mode,
+/// the access setup, the actor's provenance and the downloaded versions a start gets. Each is machine-local, kept without a state
 /// move or a sync revision.
 /// </summary>
 internal sealed class SessionKeeps(SessionStore sessions)
 {
     /// <summary>
-    /// Record the access mode an Ask Daoris conversation of this machine's goes on under (HELPMODE1a2, D183 point 3): a conversation
+    /// Record the access mode an Ask Daoris conversation of this machine's goes on under: a conversation
     /// going on after the person's mode changed runs under the new one, and its record says so. The mode is a fact about its run,
     /// and it never travels.
     /// </summary>
@@ -22,7 +22,7 @@ internal sealed class SessionKeeps(SessionStore sessions)
             : null;
 
     /// <summary>
-    /// Record the access setup a resumed driven session of this machine's now runs under (AUTONOMY1b2, D184 point 1), where the setup
+    /// Record the access setup a resumed driven session of this machine's now runs under, where the setup
     /// changed since it started: the setup is a fact about its run, and it never travels.
     /// </summary>
     /// <returns>The record as it now reads; null where no driven record of this machine's has that id.</returns>
@@ -37,7 +37,7 @@ internal sealed class SessionKeeps(SessionStore sessions)
     }
 
     /// <summary>
-    /// D205's later provenance door. Machine-local, without a state move or sync revision; omitted members keep their value.
+    /// The actor's provenance door. Machine-local, without a state move or sync revision; omitted members keep their value.
     /// </summary>
     /// <returns>The record as it now reads; null where no record of this machine's has that id.</returns>
     /// <exception cref="ArgumentException">
@@ -64,7 +64,7 @@ internal sealed class SessionKeeps(SessionStore sessions)
             ? await sessions.FindAsync(id, ct).ConfigureAwait(false) : null;
     }
 
-    /// <summary>Record the downloaded versions a start was handed (KEEP1b, D195 point 6), added to its earlier starts without a move or revision.</summary>
+    /// <summary>Record the downloaded versions a start gets, added to its earlier starts without a move or revision.</summary>
     public async Task<Session?> KeepResolvedAsync(string id, IReadOnlyList<string> versions, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(versions);

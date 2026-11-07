@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The levels a word on a record names in its <see cref="SaidWord.Level"/> (COWORK1c, D188 point 1): when its sender asked it to reach
+/// The levels a word on a record names in its <see cref="SaidWord.Level"/>: when its sender asked it to reach
 /// a working session. No level stops a turn.
 /// </summary>
 public static class SaidLevel

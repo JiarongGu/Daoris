@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The lineage one MCP call carried in its <c>_meta</c>, as its harness wrote it (FABRIC-C1a, D173; the C0 audit §2).
+/// The lineage one MCP call carried in its <c>_meta</c>, as its harness wrote it.
 /// </summary>
 /// <remarks>
 /// <para><b>Why <c>_meta</c>, and never the environment or the arguments.</b> A native child calls with its parent's
@@ -17,7 +17,7 @@ namespace Daoris.Knowledge;
 /// first key a call carries is the one read, so a call carrying both is read as the first agent's. A harness that writes none
 /// has no lineage here, which is said as none, never guessed (canary 9).</para>
 ///
-/// <para>🔴 <b>Ids only.</b> A value that is not shaped as an id (a path, a blank, a sentence) is not kept (D46, D47), only named
+/// <para>🔴 <b>Ids only.</b> A value that is not shaped as an id (a path, a blank, a sentence) is not kept, only named
 /// in <see cref="Malformed"/>.</para>
 /// </remarks>
 /// <param name="Door">The agent whose key the call carried, one of <see cref="Readers"/>' <see cref="ICallKeys.Door"/>.</param>
@@ -61,7 +61,7 @@ public sealed record CallLineage(string Door)
 
     /// <summary>
     /// The fields the harness sent that are not ids, comma-joined, or null. Kept as malformed, never dropped to look absent: an
-    /// absent parent is what a root has (FABRIC-C2a, D173's note, point 1).
+    /// absent parent is what a root has.
     /// </summary>
     public string? Malformed { get; init; }
 

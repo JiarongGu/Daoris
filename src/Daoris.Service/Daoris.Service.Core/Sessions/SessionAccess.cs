@@ -3,12 +3,12 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The access setup a driven session started under, as its record keeps it (AUTONOMY1a, D184 point 1): each pause with its value, as
-/// the driver resolved it. The ledger judges none of the values (D46 §7): the driver's <c>AccessRules</c> owns which pauses and values
+/// The access setup a driven session started under, as its record keeps it: each pause with its value, as
+/// the driver resolved it. The ledger judges none of the values: the driver's <c>AccessRules</c> owns which pauses and values
 /// there are, so a pause added there needs nothing here. It keeps only a short map of words, which is all a setup is.
 /// </summary>
 /// <remarks>
-/// <b>This machine's own</b> (D47 §4): no feed carries it, and the host answers it on loopback only. Kept as compact JSON in the
+/// <b>This machine's own</b>: no feed carries it, and the host answers it on loopback only. Kept as compact JSON in the
 /// record's <c>access</c> column; a record from before the column, or one told none, reads none.
 /// </remarks>
 public static class SessionAccess
@@ -20,7 +20,7 @@ public static class SessionAccess
     public const int Longest = 40;
 
     /// <summary>
-    /// The setup a door was told, judged as a short map of words (letters, digits and <c>-</c>): none for none or an empty one.
+    /// The setup a door is told, judged as a short map of words (letters, digits and <c>-</c>): none for none or an empty one.
     /// </summary>
     /// <exception cref="ArgumentException">A setup that is not a short map of words: the caller's mistake, and nothing is kept.</exception>
     public static IReadOnlyDictionary<string, string>? Judged(IReadOnlyDictionary<string, string>? access)

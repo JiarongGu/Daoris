@@ -5,7 +5,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// Codex's call key: its turn metadata names the thread, its parent, the spawn kind and the root's session, as JSON text or an object.
-/// Measured on Codex 0.160.0. It also names the workspace's absolute path and commit: neither is read (D46, D47).
+/// Measured on Codex 0.160.0. It also names the workspace's absolute path and commit: neither is read.
 /// </summary>
 public sealed class CodexCallKeys : ICallKeys
 {
