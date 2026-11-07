@@ -23,7 +23,7 @@
   "work.memory.proposal.stale": "stale: the entry moved before the owner decided",
   "work.memory.proposal.dropped": "dropped: its quest is gone",
   "work.memory.proposal.other": "{{state}}",
-  "work.memory.by": "proposed by {{session}} · {{adapter}} · {{models}}",
+  "work.memory.by": "proposed by {{session}} · {{door}} · {{models}}",
   "work.memory.recheck": "Daoris's recheck",
   "work.memory.unknown": "model unknown",
   "work.memory.approve": "Approve the end",

@@ -143,7 +143,7 @@ public sealed class MemoryOpsTests : IAsyncLifetime
 
         var kept = await _machine.Memory.FindAsync(write.Id);
         Assert.Equal((MemoryOpState.Ready, "model-a"), (kept!.State, kept.Models));
-        Assert.Equal((chat.Id, "builder", "r3", "2.1.0", T0.AddMinutes(5)), (kept.By!.Session, kept.By.Role, kept.By.RoleRevision, kept.By.Harness, kept.By.At));
+        Assert.Equal((chat.Id, "builder", "r3", "2.1.0", T0.AddMinutes(5)), (kept.By!.Session, kept.By.Role, kept.By.RoleRevision, kept.By.DoorVersion, kept.By.At));
     }
 
     private async Task<string?> ModelsOfAsync(int minute, MemoryTurns turns)

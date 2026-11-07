@@ -55,7 +55,7 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DesktopStoreException or SqliteException)
         {
             using var log = new MachineLog(home, "driver");
-            log.Warn("conversation.unkept", ("session", session), ("adapter", adapter), ("error", error.GetType().Name));
+            log.Warn("conversation.unkept", ("session", session), ("door", adapter), ("error", error.GetType().Name));
         }
     }
 

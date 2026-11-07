@@ -51,7 +51,7 @@ public sealed record MemoryChangeResponse(
 
 /// <summary>Who made an operation, from the caller's record at the call, and the call's instant.</summary>
 public sealed record MemoryAuthorResponse(
-    string Session, string Workspace, string? Quest, string Adapter, string? Harness, string? Role, string? RoleRevision, DateTimeOffset At);
+    string Session, string Workspace, string? Quest, string Door, string? DoorVersion, string? Role, string? RoleRevision, DateTimeOffset At);
 
 /// <summary>
 /// One row of a repository's memory log. <c>By</c> is absent on a row the service's sweep wrote; <c>Models</c> names the models of the turn

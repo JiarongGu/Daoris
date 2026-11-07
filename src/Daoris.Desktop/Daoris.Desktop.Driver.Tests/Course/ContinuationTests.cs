@@ -134,7 +134,7 @@ public sealed class ContinuationTests : IDisposable
     {
         var why = Continuations.Judge(Park(adapter: "claude-code"), "claude-code-acp", doorResumes: true, profile: "account-1", Kept);
 
-        Assert.Equal(ContinueWhy.Adapter, why?.Code);
+        Assert.Equal(ContinueWhy.Door, why?.Code);
         Assert.Equal("it ran on `claude-code`, and starts here now run on `claude-code-acp`", why?.Sentence);
     }
 
@@ -248,7 +248,7 @@ public sealed class ContinuationTests : IDisposable
             Assert.False(ContinueWhy.Of(code).Holds, code);
         }
 
-        Assert.False(ContinueWhy.AdapterChanged("claude-code", "codex-acp").Holds);
+        Assert.False(ContinueWhy.DoorChanged("claude-code", "codex-acp").Holds);
         Assert.False(ContinueWhy.CannotResume("claude-code").Holds);
     }
 
@@ -276,7 +276,7 @@ public sealed class ContinuationTests : IDisposable
             Assert.False(ContinueWhy.Of(code).Lost, code);
         }
 
-        Assert.False(ContinueWhy.AdapterChanged("claude-code", "codex-acp").Lost);
+        Assert.False(ContinueWhy.DoorChanged("claude-code", "codex-acp").Lost);
     }
 
     /// <summary>
@@ -472,7 +472,7 @@ public sealed class ContinuationTests : IDisposable
     {
         Assert.False(ContinueWhy.Of(ContinueWhy.Account).Never);
         Assert.False(ContinueWhy.Of(ContinueWhy.Elsewhere).Never);
-        Assert.False(ContinueWhy.AdapterChanged("a", "b").Never);
+        Assert.False(ContinueWhy.DoorChanged("a", "b").Never);
     }
 
     /// <summary>

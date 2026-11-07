@@ -84,7 +84,7 @@ export const traceAnswerOf = (session: string, branch: TraceBranch | null, missi
     links: [{
       kind: 'session',
       session: {
-        id: session, source: 'sessions', kind: 'driven', state: { state: 'completed' }, agent: { adapter: 'claude-code' },
+        id: session, source: 'sessions', kind: 'driven', state: { state: 'completed' }, agent: { door: 'claude-code' },
         landing: { source: 'landings', missing, branches: branch ? [branch] : [] },
       },
     }],

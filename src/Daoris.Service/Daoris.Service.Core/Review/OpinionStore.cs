@@ -53,6 +53,7 @@ public sealed class OpinionStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         // CHATFLOW1e: the record findings were first handed to, once they were handed again after a hand-over.
         await SchemaColumns.EnsureAsync(_db, "opinions", "handed_from", "handed_from TEXT NULL", ct).ConfigureAwait(false);
+        await OpinionReviewerNames.RenameAsync(_db, ct).ConfigureAwait(false);
     }
 
     /// <summary>Keep a new pass, as asked: nothing given, handed or answered yet.</summary>

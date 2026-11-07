@@ -46,7 +46,7 @@ internal sealed class ChatConclusion(IExecutorWiring wiring)
         var note = Context.Processes.StopReason(session) ?? ChatEnded.EndedNote(stopped, notKept: false);
         if (!watched.Keeps || Context.Conversations.Read(session) is not null || !Spoken(session)) return note;
         using var log = new MachineLog(Context.Home, "driver");
-        log.Warn("conversation.unkept", ("session", session), ("adapter", watched.Adapter), ("error", "MissingId"));
+        log.Warn("conversation.unkept", ("session", session), ("door", watched.Adapter), ("error", "MissingId"));
         return note.Then(" ", Noted.Of(ChatNoteCodes.ChatNotKept, ChatEnded.NotKept));
     }
 

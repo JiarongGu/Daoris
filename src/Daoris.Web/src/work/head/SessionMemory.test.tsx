@@ -10,7 +10,7 @@ const row = (over: Partial<MemoryRow> & { id: string; kind: string }): MemoryRow
   const { kind, ...rest } = over;
   return {
     repository: 'Owner', state: 'staged', at: '2026-10-31T09:00:00Z', models: null, carried: null, answer: null,
-    by: { session: 's1', adapter: 'claude-code' },
+    by: { session: 's1', door: 'claude-code' },
     change: { kind, text: 'The map is drawn in vectors now.', target: 'm1', revision: 1, relation: null },
     ...rest,
   };

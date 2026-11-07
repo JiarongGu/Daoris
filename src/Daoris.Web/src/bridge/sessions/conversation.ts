@@ -387,14 +387,14 @@ export const useStartChat = () => {
     // press the driver answers once however often it arrives. Its answer is *Start a conversation with these words*'s shape
     // (`StartedFrom`); an empty start carries no `sent`, read as false.
     mutationFn: async (start: {
-      repository: string; profile?: string; adapter?: string; ownTree?: boolean;
+      repository: string; profile?: string; door?: string; ownTree?: boolean;
       text?: string; files?: File[]; requestId?: string;
     }): Promise<StartedFrom> => {
       const files = start.files?.length ? await Promise.all(start.files.map(toUpload)) : [];
       return startedOf(await call('START_CHAT', {
         repository: start.repository,
         ...(start.profile ? { profile: start.profile } : {}),
-        ...(start.adapter ? { adapter: start.adapter } : {}),
+        ...(start.door ? { door: start.door } : {}),
         ...(start.ownTree !== undefined ? { ownTree: start.ownTree } : {}),
         ...(start.text ? { text: start.text } : {}),
         ...(files.length > 0 ? { files } : {}),

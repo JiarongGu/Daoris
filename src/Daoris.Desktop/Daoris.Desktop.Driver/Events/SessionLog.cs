@@ -254,7 +254,7 @@ public sealed class SessionLog : IDisposable
 
         List<(string Key, object? Value)> data =
         [
-            ("session", opened.Session), ("kind", opened.Kind), ("adapter", opened.Adapter), ("repository", opened.Repository),
+            ("session", opened.Session), ("kind", opened.Kind), ("door", opened.Adapter), ("repository", opened.Repository),
             ("workspace", opened.Workspace),
         ];
         // Said only of a set-up's session (WSSETUP11), so every other start reads as it always has.
@@ -340,7 +340,7 @@ public sealed class SessionLog : IDisposable
                 case SessionEventKind.User:
                     if (!watched.Asked && watched.Opened is { } opened)
                     {
-                        lines.Add(("session.opened", [("session", session), ("adapter", watched.Adapter), ("openMs", Ms(at - opened))]));
+                        lines.Add(("session.opened", [("session", session), ("door", watched.Adapter), ("openMs", Ms(at - opened))]));
                     }
 
                     watched.Asked = true;
@@ -417,7 +417,7 @@ public sealed class SessionLog : IDisposable
         var kind = e.ToolKind ?? (e.Id is { } known && watched.Kinds.TryGetValue(known, out var first) ? first : null);
         return ("permission.refused",
         [
-            ("session", session), ("adapter", watched.Adapter), ("tool", Name(e.ToolName)), ("kind", Name(kind)),
+            ("session", session), ("door", watched.Adapter), ("tool", Name(e.ToolName)), ("kind", Name(kind)),
             ("by", Name(e.RefusedBy)),
         ]);
     }

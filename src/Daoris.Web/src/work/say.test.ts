@@ -178,10 +178,10 @@ describe('reasonOf', () => {
   });
 
   it('words a reason that names an agent only where the page knows which', () => {
-    expect(reasonOf(t, 'adapter', { from: 'claude-code', to: 'claude-code-acp' }))
+    expect(reasonOf(t, 'door', { from: 'claude-code', to: 'claude-code-acp' }))
       .toBe('it ran on claude-code, and starts here now run on claude-code-acp');
-    expect(reasonOf(t, 'adapter', { from: 'claude-code' })).toBeNull();
-    expect(reasonOf(t, 'unable', { adapter: 'stub' })).toBe('stub cannot continue a conversation');
+    expect(reasonOf(t, 'door', { from: 'claude-code' })).toBeNull();
+    expect(reasonOf(t, 'unable', { door: 'stub' })).toBe('stub cannot continue a conversation');
     expect(reasonOf(t, 'unable', {})).toBeNull();
     expect(reasonOf(t, 'elsewhere', { agent: 'Codex' })).toBe('its conversation is open in another client of Codex');
     expect(reasonOf(t, 'elsewhere', {})).toBeNull();

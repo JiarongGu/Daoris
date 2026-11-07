@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 public static class ContinueCodes
 {
     public const string Account = "account";
-    public const string Adapter = "adapter";
+    public const string Door = "door";
     public const string Unkept = "unkept";
     public const string Tree = "tree";
     public const string Unable = "unable";

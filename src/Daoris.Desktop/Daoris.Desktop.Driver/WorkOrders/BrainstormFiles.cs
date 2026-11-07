@@ -155,7 +155,7 @@ public sealed class BrainstormFiles(string home)
                     : [];
                 var turns = element.TryGetProperty("turns", out var counted) && counted.ValueKind == JsonValueKind.Number && counted.TryGetInt32(out var count) ? count : 1;
                 passes.Add(new BrainstormPassRecord(
-                    new BrainstormBy(pass, Text(element, "maker") ?? "", Text(element, "adapter") ?? "", Text(element, "account")), role, state, codes, turns)
+                    new BrainstormBy(pass, Text(element, "maker") ?? "", Text(element, "door") ?? "", Text(element, "account")), role, state, codes, turns)
                 {
                     Actor = Text(element, "actor"), Choice = Text(element, "choice"),
                     Asked = SessionReads.ActorRead<ActorAsked>(element, "asked"),
@@ -179,7 +179,7 @@ public sealed class BrainstormFiles(string home)
             writer.WriteString("role", pass.Role);
             BrainstormDocuments.Provenance(writer, pass);
             writer.WriteString("maker", pass.By.Maker);
-            writer.WriteString("adapter", pass.By.Adapter);
+            writer.WriteString("door", pass.By.Adapter);
             if (pass.By.Account is null) writer.WriteNull("account");
             else writer.WriteString("account", pass.By.Account);
             writer.WriteNull("model");

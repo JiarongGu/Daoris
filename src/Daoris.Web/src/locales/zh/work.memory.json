@@ -23,7 +23,7 @@
   "work.memory.proposal.stale": "已过时：所有者决定前条目已变",
   "work.memory.proposal.dropped": "已丢弃：其委托已不在",
   "work.memory.proposal.other": "{{state}}",
-  "work.memory.by": "由 {{session}} 提出 · {{adapter}} · {{models}}",
+  "work.memory.by": "由 {{session}} 提出 · {{door}} · {{models}}",
   "work.memory.recheck": "Daoris 的复查",
   "work.memory.unknown": "模型未知",
   "work.memory.approve": "批准这项结束",

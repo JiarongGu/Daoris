@@ -601,10 +601,10 @@ internal static class TraceWords
         _ => state.State,
     };
 
-    /// <summary>What ran it, as its record names it: the adapter, the harness's version, the account; each said missing where unsaid.</summary>
+    /// <summary>What ran it, as its record names it: the door, its version, the account; each said missing where unsaid.</summary>
     private static string Agent(TraceAgent agent)
     {
-        var said = $"agent {agent.Adapter ?? "not recorded"} · {(agent.Harness is { } version ? $"harness {version}" : "harness not recorded")}";
+        var said = $"agent {agent.Door ?? "not recorded"} · {(agent.DoorVersion is { } version ? $"harness {version}" : "harness not recorded")}";
         if (agent.Teammate) return said;
         return said + (agent.Account is { } account ? $" · account {account}" : " · account none named: the tool's own sign-in");
     }

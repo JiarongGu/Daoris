@@ -146,7 +146,7 @@ public static class OpinionToPerson
         // COWORK1e: the person's *Not now* to findings the answers-alone bound held for them.
         GoOnMarks.NotNow => "you kept them rather than let a third answer in a row go on with nobody between",
         // A reason whose line names an adapter is said by its code here: the session's own note says it whole.
-        ContinueWhy.Adapter or ContinueWhy.Unable => $"its session could not go on ({code})",
+        ContinueWhy.Door or ContinueWhy.Unable => $"its session could not go on ({code})",
         _ => Fixed(code),
     };
 

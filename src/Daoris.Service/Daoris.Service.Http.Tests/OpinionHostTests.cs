@@ -39,7 +39,7 @@ public sealed class OpinionHostTests(LocalHost host) : IClassFixture<LocalHost>
         occasion, pass = "first", working, posture = "copy-alone", minutes,
         tree = Path.Combine(host.Repositories, "clones", clone),
         candidate = new { repository = "Keeper", @base = Base, tip = Tip, commits = new[] { Tip } },
-        reviewer = new { adapter = "codex-acp", label = "another-maker", product = "Codex", maker = "OpenAI", account = "work" },
+        reviewer = new { door = "codex-acp", label = "another-maker", product = "Codex", maker = "OpenAI", account = "work" },
         families = new[] { "claude-code" },
     };
 

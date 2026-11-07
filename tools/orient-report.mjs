@@ -538,7 +538,7 @@ export function readHome(home, { repository = null, since = null } = {}) {
     else if (line.data.setup === true) left.setups += 1;
     else {
       sessions.push({
-        session, repository: name, workspace: named(line.data.workspace) ?? '(unnamed)', adapter: named(line.data.adapter) ?? '(unnamed)',
+        session, repository: name, workspace: named(line.data.workspace) ?? '(unnamed)', adapter: named(line.data.door) ?? named(line.data.adapter) ?? '(unnamed)',
         started: line.stamp, parked: 0, summary: null,
       });
     }

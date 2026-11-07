@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { NO_MODEL, TURN_COUNTS, countOf, counted, median, modelsOf, sumOf, weekOf } from './figures.mjs';
-import { named } from './reading.mjs';
+import { doorOf, named } from './reading.mjs';
 
 /** The most driven sessions the text lists (the rest are counted), and the columns a line of it may take. */
 export const DRIVEN_LISTED = 10;
@@ -51,7 +51,7 @@ export function drivenOf(lines) {
     known.add(session);
     if (line.data.kind !== 'driven' || line.data.setup === true) continue;
     sessions.set(session, {
-      session, time: line.time, started: line.stamp, adapter: named(line.data.adapter) ?? '(unnamed)',
+      session, time: line.time, started: line.stamp, adapter: doorOf(line.data) ?? '(unnamed)',
       repository: named(line.data.repository) ?? '(unnamed)', workspace: named(line.data.workspace) ?? '(unnamed)',
       models: new Set(), turns: [],
     });

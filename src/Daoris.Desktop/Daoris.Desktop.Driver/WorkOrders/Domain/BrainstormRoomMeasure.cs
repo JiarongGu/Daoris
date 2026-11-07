@@ -191,7 +191,7 @@ public static partial class BrainstormRoomProbe
         {
             writer.WriteStartObject();
             writer.WriteNumber("measure", 1);
-            writer.WriteString("adapter", measure.Adapter);
+            writer.WriteString("door", measure.Adapter);
             if (measure.Account is null) writer.WriteNull("account");
             else writer.WriteString("account", measure.Account);
             writer.WriteString("verdict", measure.Verdict);

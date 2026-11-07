@@ -11,7 +11,7 @@ public static class OpinionAnswers
         return new(
             opinion.Id, opinion.Occasion, opinion.Pass, opinion.Working, opinion.Session, opinion.Rechecks,
             new OpinionCandidateWire(opinion.Candidate.Repository, opinion.Candidate.Base, opinion.Candidate.Tip, [.. opinion.Candidate.Commits]),
-            new OpinionReviewerWire(opinion.Reviewer.Adapter, opinion.Reviewer.Label, opinion.Reviewer.Product, opinion.Reviewer.Maker, opinion.Reviewer.Account),
+            new OpinionReviewerWire(opinion.Reviewer.Door, opinion.Reviewer.Label, opinion.Reviewer.Product, opinion.Reviewer.Maker, opinion.Reviewer.Account),
             opinion.Families, opinion.Posture, opinion.Minutes, opinion.Tier, opinion.Asked, opinion.Due, standing.State, standing.Why,
             opinion.Given is { } given
                 ? new OpinionGivenResponse(

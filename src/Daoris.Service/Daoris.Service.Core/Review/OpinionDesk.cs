@@ -132,7 +132,7 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
 
             var id = NewId();
             var reviewer = await sessions.CreateAsync(
-                    quest: null, repository, ask.Reviewer.Adapter.Trim(), now, working.Workspace, SessionKind.Chat,
+                    quest: null, repository, ask.Reviewer.Door.Trim(), now, working.Workspace, SessionKind.Chat,
                     doorVersion: ask.DoorVersion, profile: ask.Reviewer.Account, tree: tree, baseCommit: ask.Candidate.Tip.ToLowerInvariant(),
                     ct: inside, opinion: id, ownEntry: true, actor: "opinion", serves: working.Id)
                 .ConfigureAwait(false);
@@ -141,7 +141,7 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
                 new OpinionCandidate(
                     repository, ask.Candidate.Base.ToLowerInvariant(), ask.Candidate.Tip.ToLowerInvariant(),
                     [.. ask.Candidate.Commits.Select(commit => commit.ToLowerInvariant())]),
-                new OpinionReviewer(ask.Reviewer.Adapter.Trim(), ask.Reviewer.Label)
+                new OpinionReviewer(ask.Reviewer.Door.Trim(), ask.Reviewer.Label)
                 {
                     Product = Blank(ask.Reviewer.Product), Maker = Blank(ask.Reviewer.Maker), Account = Blank(ask.Reviewer.Account),
                 },
@@ -612,7 +612,7 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
 
     /// <summary>Who read it, as an opinion names its reviewer: its product, else its adapter, and its maker where declared.</summary>
     private static string Who(Opinion opinion) =>
-        (opinion.Reviewer.Product ?? opinion.Reviewer.Adapter) + (opinion.Reviewer.Maker is { } maker ? $" ({maker})" : "");
+        (opinion.Reviewer.Product ?? opinion.Reviewer.Door) + (opinion.Reviewer.Maker is { } maker ? $" ({maker})" : "");
 
     private static string Weighed(IReadOnlyList<OpinionFinding> findings) =>
         string.Join(", ", Opinions.Weights

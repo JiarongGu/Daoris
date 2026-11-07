@@ -77,7 +77,7 @@ export function useNewStart({ t, notify, attended, selected, onSelect, compose, 
   const onStart = (start: NewStart) => {
     setStartRefusal(null);
     const key = JSON.stringify([
-      start.repository, start.text, start.adapter ?? '', start.profile ?? '', start.ownTree ?? null,
+      start.repository, start.text, start.door ?? '', start.profile ?? '', start.ownTree ?? null,
       start.files.map((file) => [file.name, file.size, file.lastModified]),
     ]);
     if (pressed.current?.key !== key) pressed.current = { key, id: crypto.randomUUID() };

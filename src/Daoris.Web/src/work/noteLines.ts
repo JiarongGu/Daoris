@@ -253,7 +253,7 @@ export const NOTE_VALUES: Readonly<
   unused: 'percent',
   // A window's use projected to now, as a window's use is (USAGEPROBE1).
   projected: 'percent',
-  adapter: 'text', now: 'text', then: 'text',
+  now: 'text', then: 'text',
   // The working role a design-weighted quest started on (FOUNDATION1x), said as its name.
   role: 'text',
   // An account id is worded by the name the person gave it where the page knows it (NOTENAME1); `owner` is the agent.
@@ -409,7 +409,7 @@ function said(
       if (code.why === 'partner') return PARTNER_REASONS[why] ? t(PARTNER_REASONS[why].key) : null;
       if (code.why === 'handover') return HAND_OVER_ASK_REASONS[why] ? t(HAND_OVER_ASK_REASONS[why].key) : null;
       return reasonOf(t, why, {
-        from: text(values.from), to: text(values.to), adapter: text(values.adapter), agent: text(values.agent),
+        from: text(values.from), to: text(values.to), door: text(values.door), agent: text(values.agent),
       });
     }
     case 'window': {

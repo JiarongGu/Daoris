@@ -59,8 +59,8 @@ public static class ContinueWhy
     /// </summary>
     public const string Account = ContinueCodes.Account;
 
-    /// <summary>The person changed the adapter since.</summary>
-    public const string Adapter = ContinueCodes.Adapter;
+    /// <summary>The person changed the door since.</summary>
+    public const string Door = ContinueCodes.Door;
 
     /// <summary>No conversation id was kept: a park from before this build, or a wire that never said one.</summary>
     public const string Unkept = ContinueCodes.Unkept;
@@ -127,7 +127,7 @@ public static class ContinueWhy
     /// </summary>
     public const string Resumed = ContinueCodes.Resumed;
 
-    /// <summary>A reason whose line is fixed: every code but <see cref="Adapter"/> and <see cref="Unable"/>, which name adapters.</summary>
+    /// <summary>A reason whose line is fixed: every code but <see cref="Door"/> and <see cref="Unable"/>, which name doors.</summary>
     public static ContinueReason Of(string code) => new(code, code switch
     {
         Account => "its conversation stays with the account it ran on, and this start runs on another",
@@ -149,13 +149,13 @@ public static class ContinueWhy
         _ => throw new ArgumentOutOfRangeException(nameof(code), code, "a reason whose line names an adapter is made by its own method"),
     });
 
-    /// <summary>The adapter changed between the park and the answer.</summary>
-    public static ContinueReason AdapterChanged(string ranOn, string startsOn) =>
-        new(Adapter, $"it ran on `{ranOn}`, and starts here now run on `{startsOn}`") { Values = [("from", ranOn), ("to", startsOn)] };
+    /// <summary>The door changed between the park and the answer.</summary>
+    public static ContinueReason DoorChanged(string ranOn, string startsOn) =>
+        new(Door, $"it ran on `{ranOn}`, and starts here now run on `{startsOn}`") { Values = [("from", ranOn), ("to", startsOn)] };
 
     /// <summary>The adapter's door has no resume.</summary>
     public static ContinueReason CannotResume(string adapter) =>
-        new(Unable, $"`{adapter}` cannot resume a conversation") { Values = [("adapter", adapter)] };
+        new(Unable, $"`{adapter}` cannot resume a conversation") { Values = [("door", adapter)] };
 
     /// <summary>
     /// <see cref="Account"/>, where the resume asked for the record's own account and it could not carry the words (MSG1g, D137

@@ -348,7 +348,7 @@ public sealed class SessionWatch
     private void Write(QuietStep step)
     {
         Log?.Info(
-            "session.quiet", ("session", step.Session), ("adapter", step.Adapter), ("kind", step.Kind), ("state", step.State),
+            "session.quiet", ("session", step.Session), ("door", step.Adapter), ("kind", step.Kind), ("state", step.State),
             ("minutes", step.Minutes), ("step", step.Step), ("outcome", step.Outcome), ("episode", step.Episode));
         var noted = step switch
         {

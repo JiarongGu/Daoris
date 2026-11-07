@@ -1,4 +1,4 @@
-import { DAY_MS, named } from './reading.mjs';
+import { DAY_MS, doorOf, named } from './reading.mjs';
 import { asksOf, counted, failures, kindOf, proposalsOf, setupsOf, shortVersion, timing } from './figures.mjs';
 import { drivenOf, parksOf } from './driven.mjs';
 import { outcomesOf } from './outcomes.mjs';
@@ -56,7 +56,7 @@ export function summarise(lines, { from, to, skipped = 0, proposals = [], record
     sessions: {
       started: of('session.started').length,
       byKind: counted(field('session.started', 'kind')),
-      byAdapter: counted(field('session.started', 'adapter')),
+      byAdapter: counted(of('session.started').map((line) => doorOf(line.data)).filter(Boolean)),
       opened: timing(of('session.opened'), 'openMs'),
       answered: timing(of('turn.answered'), 'firstAnswerMs'),
       turns: {
@@ -94,7 +94,7 @@ export function summarise(lines, { from, to, skipped = 0, proposals = [], record
 function harnessActionsOf(lines) {
   const rows = new Map();
   const rowOf = (line) => {
-    const harness = named(line.data.harness) ?? '(unnamed)';
+    const harness = doorOf(line.data, 'harness') ?? '(unnamed)';
     const action = named(line.data.action) ?? '(unnamed)';
     const id = `${harness}\u0000${action}`;
     if (!rows.has(id)) rows.set(id, { harness, action, started: [], prompted: [], ended: [] });

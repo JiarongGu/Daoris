@@ -1,4 +1,4 @@
-import { SAMPLE, named } from './reading.mjs';
+import { SAMPLE, doorOf, named } from './reading.mjs';
 
 /** The middle value, or the mean of the two middles; null for none. */
 export function median(values) {
@@ -136,7 +136,7 @@ export function asksOf(lines) {
     const session = named(line.data.session);
     if (session) {
       sessions.set(session, {
-        adapter: named(line.data.adapter) ?? '(unnamed)', repository: named(line.data.repository) ?? '(unnamed)', asks: 0,
+        adapter: doorOf(line.data) ?? '(unnamed)', repository: named(line.data.repository) ?? '(unnamed)', asks: 0,
       });
     }
   }

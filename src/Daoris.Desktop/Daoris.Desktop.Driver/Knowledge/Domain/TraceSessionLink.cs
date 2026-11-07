@@ -82,10 +82,10 @@ public sealed record TraceState(string State)
 /// <summary>What ran a session, as its record names it; each null where unsaid.</summary>
 public sealed record TraceAgent
 {
-    public string? Adapter { get; init; }
+    public string? Door { get; init; }
 
     /// <summary>The tool's version the record opened on (D49 §4).</summary>
-    public string? Harness { get; init; }
+    public string? DoorVersion { get; init; }
 
     /// <summary>The account it ran as; null on this machine's record is the tool's own sign-in, and unsaid on a teammate's.</summary>
     public string? Account { get; init; }

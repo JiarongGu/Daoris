@@ -116,7 +116,7 @@ describe('noteLines', () => {
     const fell = coded('started.fell-back', 'A new session, because its tree is gone.', { why: 'tree' });
     expect(noteLines(zh, { parts: [fell] }, 'zh')).toEqual([{ kind: 'said', text: '改为新会话，因为它的工作树已不在。' }]);
 
-    const adapter = coded('went.new-session', 'Your words went to a new session, because …', { why: 'adapter', from: 'claude-code', to: 'codex-acp' });
+    const adapter = coded('went.new-session', 'Your words went to a new session, because …', { why: 'door', from: 'claude-code', to: 'codex-acp' });
     expect(noteLines(t, { parts: [adapter] }, 'en')).toEqual([
       { kind: 'said', text: 'Your words went to a new session, because it ran on claude-code, and starts here now run on codex-acp.' },
     ]);
@@ -129,7 +129,7 @@ describe('noteLines', () => {
     const unknown = coded('went.carried-on', 'Carried on in a new session, because of a newer reason.', { why: 'newer' });
     expect(noteLines(zh, { parts: [unknown] }, 'zh'))
       .toEqual([{ kind: 'recorded', text: 'Carried on in a new session, because of a newer reason.' }]);
-    const unnamed = coded('went.carried-on', 'Carried on in a new session, because …', { why: 'adapter', from: 'claude-code' });
+    const unnamed = coded('went.carried-on', 'Carried on in a new session, because …', { why: 'door', from: 'claude-code' });
     expect(noteLines(zh, { parts: [unnamed] }, 'zh')[0].kind).toBe('recorded');
   });
 
@@ -425,7 +425,7 @@ describe('noteLines', () => {
   });
 
   describe('a resumed conversation’s first line', () => {
-    const lead = (why: string) => coded('resumed.opening', '— … resumed on `claude-code`', { adapter: 'claude-code', why });
+    const lead = (why: string) => coded('resumed.opening', '— … resumed on `claude-code`', { door: 'claude-code', why });
     const moved = coded('resumed.moved', '2.1.300; it opened on 2.1.281', { now: '2.1.300', then: '2.1.281' });
 
     it('is the English it has always been, and the Chinese beside it', () => {
@@ -439,7 +439,7 @@ describe('noteLines', () => {
         '—— 另一个智能体的发现是其自身对话的下一轮，已在 `claude-code` 上恢复。',
         '现为版本 2.1.300；开始时为 2.1.281。',
       ]);
-      expect(noteLines(zh, { parts: [coded('resumed.native', '…', { adapter: 'claude-code' })] }, 'zh')[0].text)
+      expect(noteLines(zh, { parts: [coded('resumed.native', '…', { door: 'claude-code' })] }, 'zh')[0].text)
         .toBe('—— 你在它工作时说的话是其自身对话的下一轮，已在 `claude-code` 上恢复。');
     });
 

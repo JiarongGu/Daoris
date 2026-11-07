@@ -65,8 +65,11 @@ public static class MeetingPackets
     public static string DigestOf(MeetingPacket packet) =>
         "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Write(packet, withDigest: false)));
 
-    /// <summary>A packet read back from its file; null where it is not a meeting's, or its digest is not its content's.</summary>
-    public static MeetingPacket? Read(byte[] bytes)
+    /// <summary>
+    /// A packet read back from its file; null where it is not a meeting's, or its digest is not its content's. The migration reads a packet
+    /// whose names it has just converted with <paramref name="digestHeld"/> false, to write it again under the digest of what it now holds.
+    /// </summary>
+    public static MeetingPacket? Read(byte[] bytes, bool digestHeld = true)
     {
         try
         {
@@ -81,13 +84,13 @@ public static class MeetingPackets
 
             var (sources, left) = BrainstormPackets.ReadSources(root);
             var participants = BrainstormPackets.Items(root, "participants")
-                .Select(each => new MeetingParticipant(Json.Text(each, "id") ?? "", Json.Text(each, "maker") ?? "", Json.Text(each, "adapter") ?? ""))
+                .Select(each => new MeetingParticipant(Json.Text(each, "id") ?? "", Json.Text(each, "maker") ?? "", Json.Text(each, "door") ?? ""))
                 .ToList();
             var transcript = BrainstormPackets.Items(root, "transcript").Select(Message).ToList();
             var packet = new MeetingPacket(
                 Json.Text(root, "question") ?? "", Json.Text(root, "repository"), Json.Text(root, "tier"), sources, left, participants,
                 round.GetInt32(), transcript);
-            return Json.Text(root, "digest") == packet.Digest ? packet : null;
+            return !digestHeld || Json.Text(root, "digest") == packet.Digest ? packet : null;
         }
         catch (Exception error) when (error is JsonException or InvalidOperationException or KeyNotFoundException or IndexOutOfRangeException
                                           or FormatException)
@@ -99,7 +102,7 @@ public static class MeetingPackets
     /// <summary>One message read back, as the packet and the meeting's transcript each hold it.</summary>
     internal static MeetingMessage Message(JsonElement each) =>
         new(each.GetProperty("round").GetInt32(), Json.Text(each, "participant") ?? "", Json.Text(each, "maker") ?? "",
-            Json.Text(each, "adapter") ?? "", Json.Text(each, "text") ?? "", Json.Text(each, "packet") ?? "");
+            Json.Text(each, "door") ?? "", Json.Text(each, "text") ?? "", Json.Text(each, "packet") ?? "");
 
     /// <summary>One message written, as the packet and the meeting's transcript each hold it.</summary>
     internal static void Write(Utf8JsonWriter writer, MeetingMessage message)
@@ -108,7 +111,7 @@ public static class MeetingPackets
         writer.WriteNumber("round", message.Round);
         writer.WriteString("participant", message.Participant);
         writer.WriteString("maker", message.Maker);
-        writer.WriteString("adapter", message.Adapter);
+        writer.WriteString("door", message.Adapter);
         writer.WriteString("text", message.Text);
         writer.WriteString("packet", message.Packet);
         writer.WriteEndObject();
@@ -136,7 +139,7 @@ public static class MeetingPackets
                 writer.WriteStartObject();
                 writer.WriteString("id", participant.Id);
                 writer.WriteString("maker", participant.Maker);
-                writer.WriteString("adapter", participant.Adapter);
+                writer.WriteString("door", participant.Adapter);
                 writer.WriteEndObject();
             }
 

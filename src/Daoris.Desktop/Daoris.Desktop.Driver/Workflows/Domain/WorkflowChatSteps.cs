@@ -57,7 +57,7 @@ internal static class WorkflowChatSteps
     internal static WorkflowRunStep ChatWork(WorkflowStep cell, WorkflowRunFacts facts, ChatRunFacts chat, ChatLanded? landed)
     {
         if (facts.Sessions.LastOrDefault() is not { } newest) return new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
-        var on = new WorkflowRunStep(cell, "", "") { Session = newest.Id, Agent = newest.Adapter };
+        var on = new WorkflowRunStep(cell, "", "") { Session = newest.Id, Agent = newest.Door };
         if (landed is not null) return on with { State = WorkflowRunStates.Done, Detail = WorkflowRunDetails.Landed, Session = landed.Session, At = landed.At };
         var live = Live(newest);
         if (live && !chat.Between) return on with { State = WorkflowRunStates.Working, Detail = WorkflowRunDetails.Agent, At = newest.Created };

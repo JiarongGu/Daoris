@@ -10,7 +10,7 @@ export type MemoryRow = {
   models?: string | null;
   carried?: string | null;
   answer?: string | null;
-  by?: { session: string; adapter?: string | null } | null;
+  by?: { session: string; door?: string | null } | null;
   change: { kind: string; text?: string | null; target?: string | null; revision?: number | null; relation?: string | null };
 };
 
@@ -23,7 +23,7 @@ const ENDS = ['end', 'supersede'];
 
 /**
  * A session's memory changes (KNOWCENTRAL2e; the memory coordinator design §1, §4), each its own decision: a write and the entry it
- * disputes or amends, an end with who proposed it, its adapter and models and the revision it read, and a proposal with its standing on
+ * disputes or amends, an end with who proposed it, its door and models and the revision it read, and a proposal with its standing on
  * the owner's quest. An end awaiting its approver is the person's to approve or decline; an ended session's staged changes are theirs to
  * keep or drop. Nothing to say, and nothing is drawn.
  */
@@ -77,7 +77,7 @@ export function SessionMemory({ rows, ended, busy = false, said, onDecide, onKee
             {row.change.text && <span className="[overflow-wrap:anywhere]">{row.change.text}</span>}
             {ENDS.includes(row.change.kind) && (
               <span className="text-meta text-ink-faint">
-                {t('work.memory.by', { session: row.by?.session ?? t('work.memory.recheck'), adapter: row.by?.adapter ?? '?', models: row.models ?? t('work.memory.unknown') })}
+                {t('work.memory.by', { session: row.by?.session ?? t('work.memory.recheck'), door: row.by?.door ?? '?', models: row.models ?? t('work.memory.unknown') })}
               </span>
             )}
             {ENDS.includes(row.change.kind) && row.state === 'awaiting' && (

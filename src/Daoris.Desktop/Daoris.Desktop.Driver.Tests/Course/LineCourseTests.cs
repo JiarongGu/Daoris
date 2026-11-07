@@ -258,7 +258,7 @@ public sealed class LineCourseTests
         // ——— A: the driven go-on.
         ["A-01"] = new(T.WordsKept, Ended(Driven("Taken", P()), Resumes)),
         ["A-02"] = new(T.WordsKept, Ended(Driven("Taken", P()) with { Judged = ContinueWhy.Account }, Goes("account-2"))),
-        ["A-03"] = new(T.WordsKept, Ended(Driven("Taken", P()) with { Judged = ContinueWhy.Adapter }, Resumes)),
+        ["A-03"] = new(T.WordsKept, Ended(Driven("Taken", P()) with { Judged = ContinueWhy.Door }, Resumes)),
         ["A-04"] = new(T.WordsKept, Ended(Driven("Taken", P()) with { Judged = ContinueWhy.Tree }, Resumes)),
         ["A-05"] = new(T.WordsKept, Ended(Driven("Taken", P()) with { Judged = ContinueWhy.Unkept }, Resumes)),
         ["A-06"] = new(T.WordsKept, Ended(Driven("Taken", P()) with { Judged = ContinueWhy.Unable }, Resumes)),

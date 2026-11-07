@@ -23,7 +23,7 @@ export type NewStart = {
   repository: string;
   text: string;
   files: File[];
-  adapter?: string;
+  door?: string;
   profile?: string;
   /** Absent is the driver's choice; false the checkout, whatever the repository's opt-in; true a tree of its own. */
   ownTree?: boolean;
@@ -262,7 +262,7 @@ export function NewConversation({
       repository,
       text: words,
       files: carry.files,
-      ...(adapter ? { adapter } : {}),
+      ...(adapter ? { door: adapter } : {}),
       ...(profile ? { profile } : {}),
       ...(tree === 'own' ? { ownTree: true } : tree === 'checkout' ? { ownTree: false } : {}),
     });

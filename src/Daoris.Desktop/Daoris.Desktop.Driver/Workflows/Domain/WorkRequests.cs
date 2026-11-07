@@ -34,7 +34,7 @@ public static class WorkRequests
             Words = quest.Note is { Length: > 0 } note ? note : null,
             At = quest.Updated,
         }).ToList();
-        drawn.AddRange(helpers.Select(helper => new WorkflowRunRequest(WorkflowRunRequestKinds.Agent, helper.Id, helper.Adapter ?? "", HelperState(helper.State))
+        drawn.AddRange(helpers.Select(helper => new WorkflowRunRequest(WorkflowRunRequestKinds.Agent, helper.Id, helper.Door ?? "", HelperState(helper.State))
         {
             Session = helper.Serves,
             Words = helper.Note is { Length: > 0 } note ? note : null,

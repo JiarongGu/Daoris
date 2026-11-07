@@ -972,7 +972,7 @@ public sealed class OpinionDeliveryTests : IDisposable
         var view = (await host.Client().Opinions.ReadAsync("op1"))!;
 
         Assert.Equal(("op1", "landing", "s1", "r-op1", OpinionStandIn.Tip, "codex-acp", "Codex (OpenAI)"),
-            (view.Id, view.Occasion, view.Working, view.Session, view.Tip, view.Adapter, view.Who));
+            (view.Id, view.Occasion, view.Working, view.Session, view.Tip, view.Door, view.Who));
         Assert.True(view.First && view.Given);
         Assert.Equal(["must", "note"], view.Findings!.Select(finding => finding.Weight));
         Assert.Equal("withdrawn", view.Rechecked[2]);

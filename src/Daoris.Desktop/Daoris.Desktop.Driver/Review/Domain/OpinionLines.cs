@@ -8,11 +8,11 @@ namespace Daoris.Driver;
 /// </summary>
 public static class OpinionLines
 {
-    /// <summary>A pass asked: the opinion, the working session, its occasion, the reviewer's label and adapter, and the pass.</summary>
-    public static LandingLine Asked(string opinion, string session, string occasion, string? label, string? adapter, string pass) =>
+    /// <summary>A pass asked: the opinion, the working session, its occasion, the reviewer's label and door, and the pass.</summary>
+    public static LandingLine Asked(string opinion, string session, string occasion, string? label, string? door, string pass) =>
         new("opinion.asked",
         [
-            ("opinion", opinion), ("session", session), ("occasion", occasion), ("label", label), ("adapter", adapter), ("pass", pass),
+            ("opinion", opinion), ("session", session), ("occasion", occasion), ("label", label), ("door", door), ("pass", pass),
         ]);
 
     /// <summary>A pass given: its findings by weight, the seconds from its ask, and its tier.</summary>

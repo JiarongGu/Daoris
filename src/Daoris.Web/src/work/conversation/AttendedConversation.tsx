@@ -129,7 +129,7 @@ export function AttendedConversation({
             reasons={{
               from: attended.door,
               to: harnesses.data?.adapter,
-              adapter: harnesses.data?.adapter,
+              door: harnesses.data?.adapter,
               agent: roster.find((row) => row.door === attended.door)?.product || attended.door,
             }}
           />
