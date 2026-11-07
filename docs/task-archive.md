@@ -23365,3 +23365,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **COAGENT1 — a partner of another maker in a line's work** (driver, web; D199): **COAGENT1b2** (the person's *Discard…* and *Hand over what it left* on a piece, a handed piece read taken in, every landing door refusing a piece's record, the partner's real-process case, the verdict at the landing where the lead's tree is gone, and a quest's session's hand-over waiting for what its outgoing part left running are built, BL75) its rest, retention through tidy, clear and sync, proven once the design's clearing of a closed quest's pieces (D153) is read against no tidy, clear or sync moving a piece's ref; COAGENT1e is AGENTPROVIDER1r. → `docs/2026-10-22-coagent-design.md`
 
   **Outcome** 2026-11-07: b2 is whole: a piece's ref and box stand through a tidy, a sync and a clear (D199 point 3 read over the design's D153 line), and a clear waits, `needs-you` naming the lead, while a piece is not yet taken in, discarded or refused (`HistoryPieces`, the `Piece*RetentionTests`); COAGENT1e goes on as AGENTPROVIDER1r.
+
+## MODELROLE1k (2026-11-07)
+
+- [x] **MODELROLE1k — cool-offs scoped to a model** (driver; D205 §14's filed row k). The walk and cooling read `seven_day_opus` and `seven_day_sonnet`, already in the usage history (`ClaudeUsage.cs:78`, `:106`), and cool a model's limit as account plus model; SWITCHMODEL1 measures first whether the agent reports them. Now that Build leads with `sonnet` (D205's note of 2026-10-25), an account whose Opus week is spent can still run Sonnet, so this row decides how much of the accounts' allowance Build can use.
+
+  **Outcome** 2026-11-07: a model family's limit cools account plus model in `cooling.json` (its `models` key, ended at that window's reset); the walk passes it over only for that family's starts (`ModelLimits`), an account-wide limit still cools every start; the rest of the readers are MODELROLE1k2.
