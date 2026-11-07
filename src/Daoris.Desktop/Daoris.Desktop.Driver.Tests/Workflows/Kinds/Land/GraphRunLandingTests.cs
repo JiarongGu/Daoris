@@ -243,6 +243,38 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
             string.Join(", ", steps.Select(node => $"{node} {Status(node).State}")));
     }
 
+    /// <summary>
+    /// A run whose work was merged into the line outside its `land`, before the land started, and whose tree and branch were tidied after: its
+    /// branch's tip no longer reads, and its steps bind the commit its session branch records the line holding, so the landing and the line read
+    /// reached and the run ends, rather than holding on a branch nothing can read.
+    /// </summary>
+    [Fact]
+    public async Task A_run_merged_by_hand_before_its_land_started_reads_its_landing_and_line_reached_once_its_tree_is_tidied()
+    {
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
+        var root = await RepositoryAsync("engine");
+        await CopyAsync("merge-automatic");
+        var tree = await NamedDoneAsync(root, "s1", "q1");
+        var branch = Assert.Single(new SessionBranches(_home).All()).Branch;
+        var commit = await HeadAsync(tree);
+        await GitAsync(root, "merge", "--no-ff", "-m", "merged by hand", branch);
+        await new SessionTrees(_home).KeepEndsAsync(root, "engine", "aurora");
+        await GitAsync(root, "worktree", "remove", "--force", tree);
+        await GitAsync(root, "branch", "-D", branch);
+
+        // The plan of a tree gone names the line its branch grew from, never an empty one.
+        var plan = await new SessionTrees(_home).PlanAsync(tree, Work);
+        Assert.Equal((LandingForm.Merge, "main", (string?)null), (plan.Form, plan.Target, plan.Problem));
+
+        await InventoryPassAsync(root);
+        await InventoryPassAsync(root);
+
+        Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
+        string[] steps = ["work", "requests", "holds", "content", "landing", "line"];
+        Assert.Equal(string.Join(", ", steps.Select(node => $"{node} {NodeStates.Reached}")),
+            string.Join(", ", steps.Select(node => $"{node} {Status(node).State}")));
+    }
+
     /// <summary>A graph holding the person's review before a <c>land</c> by <paramref name="options"/>.</summary>
     private static string ReviewedLand(string options) => $$"""
         {"schemaVersion":2,"entries":["claimed"],"end":"landing",

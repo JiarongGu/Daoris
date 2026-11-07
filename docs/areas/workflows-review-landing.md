@@ -152,7 +152,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 28. For a graph run the runtime is the one performer of `land`. The pass that finds it active at its tip starts it once on the
     landing door, off the pass, under the tree's hold and the delivery key, so a press and a pass land one delivery. A `land` whose
-    subject moved while it was active runs again at the new tip once every delivery at the old one reads certain by phase. (from D227)
+    subject moved while it was active runs again at the new tip once every delivery at the old one reads certain by phase. Where the
+    branch's tip no longer reads (its tree tidied), a step bound there keeps its binding's revision and one not bound yet takes the commit
+    its session branch records the line holding, so work merged outside the run reads its holds, landing and line reached and the run
+    ends. The plan of a merge whose tree is gone names the line the settings set, else the one its session branch grew from, else says it
+    names none. (from D227)
 29. A `land`'s open options are resolved once at the bind and kept: the pattern `feature/{quest}-{slug}` and the default key where the
     pattern says `{ticket}`. A `land` names no plugin. A written option stands; no landing rule
     is read. The plan carries `squash` for the branch form, and a session or a conversation in a tree of its own is told once, after
