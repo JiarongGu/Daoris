@@ -3829,8 +3829,8 @@ test('the release rehearsal stages nothing a desktop test reads: they read the C
   const staged = [...(/const STAGED = \[([^\]]+)\]/.exec(stager)?.[1] ?? '').matchAll(/'([^']+)'/g)].map((match) => match[1]!);
   assert.deepEqual(staged, ['canon', 'LICENSE', 'README.md', 'CHANGELOG.md'], 'the stager has stopped saying what it stages: read it again');
   assert.match(stager, /\[\.\.\.STAGED, 'dist'\]/, 'the stager no longer cleans dist/ with them: read it again');
-  // `bin` is the CLI's own entry, tracked: no pack stages or removes it (the one reader runs beside no pack, above).
-  const unwritten = new Set(['src', 'test', 'bin']);
+  // `bin` (read beside no pack, above) and `tool-test` are tracked: no pack stages or removes them.
+  const unwritten = new Set(['src', 'test', 'bin', 'tool-test']);
   for (const folder of [...staged, 'dist']) assert.ok(!unwritten.has(folder), `a pack writes the CLI's ${folder}/`);
   const sources = trackedFiles().filter((path) => path.startsWith('src/Daoris.Desktop/') && path.endsWith('.cs'));
   assert.ok(sources.length >= 100, 'the desktop sources left src/Daoris.Desktop');
