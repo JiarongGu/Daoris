@@ -470,6 +470,9 @@ export { BASELINE, BLOCKING, PATH_CHECKS, ruleFor, selectGates, pathsReaching, s
 export { REACH } from './merge-branch/reach-table.mjs';
 export { globToRegExp, laneMatcher } from './merge-branch/lanes-file.mjs';
 
+// test-map: strings name paths as data — the records, tools and commands this file names are what it writes and runs; what it
+// reads is its imports
+
 export const MAIN = 'main';
 const SCRATCH = 'local/scratch';
 const STATE = `${SCRATCH}/merge-batch.json`;
