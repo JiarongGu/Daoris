@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>One count of a line with the state it is known in (the context-counters design §2.1, §2.4).</summary>
+/// <summary>One count of a line with the state it is known in.</summary>
 /// <param name="Count">The count's code (<see cref="LineCounts"/>'s constants).</param>
 /// <param name="Of">Whose it is: <c>line</c> or <c>quest</c>.</param>
 /// <param name="Line">The line's key (<see cref="LineKeys.Of"/>).</param>
@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <param name="From">Its one source.</param>
 public sealed record LineCount(string Count, string Of, string Line, string Window, int? N, string Known, string? Why, string From);
 
-/// <summary>A session's events as one log read them, and whether the log's start is gone (D195's retention).</summary>
+/// <summary>A session's events as one log read them, and whether the log's start is gone (the log's retention).</summary>
 public sealed record PartEvents(IReadOnlyList<SessionEvent> Events, bool Trimmed);
 
 /// <summary>The line's moves in 24 hours as the store answered them: <see cref="Read"/>, <see cref="BeforeStep"/> or <see cref="Unreadable"/>.</summary>
@@ -34,7 +34,7 @@ public sealed record MovesAnswer(int N, string State)
 /// <param name="FailedRuns">Its failures in a row on one choice by quest.</param>
 /// <param name="Forgiven">The failures each quest's <i>Try again</i> marked forgiven.</param>
 /// <param name="Moves">The line's moves, as the store answered for its key.</param>
-/// <param name="Alone">The line's answers-alone count as its admission keeps it (COMMS1g); null where none is kept, so the events count it.</param>
+/// <param name="Alone">The line's answers-alone count as its admission keeps it; null where none is kept, so the events count it.</param>
 public sealed record LineEvidence(
     IReadOnlyDictionary<string, PriorSession>? Records,
     IReadOnlyDictionary<string, PartEvents?> Events,
@@ -45,7 +45,7 @@ public sealed record LineEvidence(
     AloneCount? Alone = null);
 
 /// <summary>
-/// Every count of a line, from what was read once (CONTEXTDRIVE1a, the context-counters design §2.2): pure, and nothing stored beside the
+/// Every count of a line, from what is read once: pure, and nothing stored beside the
 /// record each count comes from. A count is <i>exact</i>, <i>at least</i> where history before a point is missing (a trimmed log, a walk
 /// cut by a cycle or the bound, a store before its step) and <i>unknown</i> where its source does not answer. A count a line does not have is
 /// absent: a conversation has no quest to fail. A teammate's record is on no line here, so it has no counts.
@@ -73,7 +73,7 @@ public static class LineCounts
     public const string StoreUnreadable = "store-unreadable";
     public const string NoRecord = "no-record";
 
-    /// <summary>The reasons a part was handed on by another agent's name; a carry-on, a resume, a retry and a policy's move are not hand-overs.</summary>
+    /// <summary>The reasons a part is handed on by another agent's name; a carry-on, a resume, a retry and a policy's move are not hand-overs.</summary>
     private static readonly string[] HandedWhy = [HandOverWhy.Press, HandOverWhy.Near, HandOverWhy.Limit, HandOverWhy.Agent, HandOverWhy.Curve];
 
     /// <summary>Every count of the line <paramref name="session"/> is on.</summary>
@@ -159,14 +159,14 @@ public static class LineCounts
         _ => new LineCount(Moves, "line", key.Key, "24-hours", null, Unknown, StoreUnreadable, "role_moves"),
     };
 
-    /// <summary>The most go-ons the supervisor's print names (the context-counters design §5): the line's last ten.</summary>
+    /// <summary>The most go-ons the supervisor's print names: the line's last ten.</summary>
     public const int GoOnsShown = 10;
 
     /// <summary>
-    /// The counts as facts below the course (CONTEXTDRIVE1b, CONTEXTDRIVE1i), each with the number Daoris acts on it at today: its lowest
+    /// The counts as facts below the course, each with the number Daoris acts on it at today: its lowest
     /// effective rule with its place, none where no rule watches it.
     /// </summary>
-    /// <param name="ruled">The line's effective rules (CONTEXTDRIVE1e); null where they did not read, which watches nothing.</param>
+    /// <param name="ruled">The line's effective rules; null where they do not read, which watches nothing.</param>
     public static IReadOnlyList<CountFact> Facts(
         IReadOnlyList<LineCount> counts, IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>>? ruled = null) =>
     [
@@ -187,7 +187,7 @@ public static class LineCounts
     }
 
     /// <summary>
-    /// The line's last <see cref="GoOnsShown"/> go-ons, oldest first, as its events show them (the context-counters design §5): each prompt
+    /// The line's last <see cref="GoOnsShown"/> go-ons, oldest first, as its events show them: each prompt
     /// its agent acted on by answers alone, or beside a word, and each word of the person's or Daoris's, with who answered.
     /// </summary>
     public static IReadOnlyList<GoOnFact> GoOns(string session, LineEvidence evidence)

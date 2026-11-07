@@ -1,22 +1,21 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words a keyed open moved onto the part it opened, as that part's delivery reads them (FOUNDATION1d-ii part 4; the foundation design
-/// §3.4 rule 3, O6-F13): read from the destination by their ids in the transfer's order, never from the record they left, which holds them no
-/// more. Each word's files are copied from that record's folder into the destination's before it is handed (O6-F8); each is marked attempted
-/// on the destination as the hand is made (<see cref="AttemptedAsync"/>), so a shell cut off under the hand never sends it again by itself
-/// (rule 5), and one the mark does not name stays there for the destination's own go-on; each is shown by its own <c>User</c> event under its id, with its author and files, as a
-/// go-on's words are (<see cref="ResumeAsk.Opening"/>, O6-F2), the display's and never delivery's evidence; and once delivered they leave the
+/// The words a keyed open moved onto the part it opened, as that part's delivery reads them: read from the destination by their ids in the transfer's order, never from the record they left, which holds them no
+/// more. Each word's files are copied from that record's folder into the destination's before it is handed; each is marked attempted
+/// on the destination as the hand is made (<see cref="AttemptedAsync"/>), so a shell cut off under the hand never sends it again by itself,
+/// and one the mark does not name stays there for the destination's own go-on; each is shown by its own <c>User</c> event under its id, with its author and files, as a
+/// go-on's words are (<see cref="ResumeAsk.Opening"/>), the display's and never delivery's evidence; and once delivered they leave the
 /// destination by those ids, judged by what it holds after the take, never the take's answer.
 /// </summary>
 /// <remarks>
 /// <para><b>Only where the open moved them.</b> A host whose <c>opens</c> mark is below 2, or that keeps no marks, moves nothing: its site reads,
-/// delivers and takes the old record's words as before (<see cref="Moving(ChatStart)"/> false).</para>
-/// <para><b>The moved words are the destination's</b> from the open on: the record they left is no longer its line's head, so its go-on refuses
+/// delivers and takes the old record's words (<see cref="Moving(ChatStart)"/> false).</para>
+/// <para><b>The moved words are the destination's</b> from the open on: the record they left is not its line's head any more, so its go-on refuses
 /// them, and the destination's go-on carries any that wait there still, after its first turn.</para>
-/// <para><b>Part 5's sites</b> read them the same way: the driven carry-on reads them off its new part (the driver's <c>HandedOnAsync</c>) and
-/// takes them once the door has written the prompt that carries them (FOUNDATION1f-iv part b; a carry-on that keeps no move record takes them
-/// before its instruction is composed, as it did), and the replacement of a start refused at the open hands each to its turns as
+/// <para><b>The other sites</b> read them the same way: the driven carry-on reads them off its new part (the driver's <c>HandedOnAsync</c>) and
+/// takes them once the door has written the prompt that carries them (a carry-on that keeps no move record takes them
+/// before its instruction is composed), and the replacement of a start refused at the open hands each to its turns as
 /// that record's own word (<see cref="ChatTurns.TakeMoved"/>).</para>
 /// </remarks>
 internal sealed class MovedWords
@@ -35,18 +34,18 @@ internal sealed class MovedWords
     }
 
     /// <summary>
-    /// Whether the start's open moved the words (FOUNDATION1d-ii part 4): its host was asked and echoed the key, or it answered a transfer, which
+    /// Whether the start's open moved the words: its host is asked and echoes the key, or it answered a transfer, which
     /// a host below the mark replaying a newer host's receipt does. The delivery is then the destination's moved words.
     /// </summary>
     public static bool Moving(ChatStart started) => started.Moves || started.Moved.Count > 0;
 
     /// <summary>
-    /// <see cref="Moving(ChatStart)"/> of a driven record's keyed open (FOUNDATION1d-ii part 5): false for none, an open through the unkeyed door.
+    /// <see cref="Moving(ChatStart)"/> of a driven record's keyed open: false for none, an open through the unkeyed door.
     /// </summary>
     public static bool Moving(DestinationOpen? opened) => opened is not null && (opened.Moves || opened.Moved.Count > 0);
 
     /// <summary>
-    /// What a keyed open is asked to move (FOUNDATION1d-ii part 3's <see cref="MoveWords"/>): from <paramref name="from"/>, the words the site
+    /// What a keyed open is asked to move (<see cref="MoveWords"/>): from <paramref name="from"/>, the words the site
     /// named, and every id it saw waiting there when it read, so a word of the person's kept since moves too.
     /// </summary>
     public static MoveWords Asked(string from, IEnumerable<string?> named, IEnumerable<string?> read) =>
@@ -75,7 +74,7 @@ internal sealed class MovedWords
 
     /// <summary>
     /// What the destination's conversation shows of them: one <c>User</c> event per word under its id, the person's or Daoris's or another
-    /// agent's by its mark, with its files' names (O6-F2), as a go-on's opening shows its words.
+    /// agent's by its mark, with its files' names, as a go-on's opening shows its words.
     /// </summary>
     public IReadOnlyList<SessionEvent> Shown => [.. Words.Select(Of)];
 
@@ -95,7 +94,7 @@ internal sealed class MovedWords
 
     /// <summary>
     /// The words the open moved to <paramref name="to"/> as it holds them now, their files copied from <paramref name="from"/>'s folder; null where
-    /// the destination's record could not be read, so nothing is handed and the words wait there. A moved word no longer waiting (taken back
+    /// the destination's record could not be read, so nothing is handed and the words wait there. A moved word that waits no more (taken back
     /// since) is not handed.
     /// </summary>
     public static async Task<MovedWords?> OnAsync(
@@ -123,7 +122,7 @@ internal sealed class MovedWords
     }
 
     /// <summary>
-    /// The words marked attempted on the destination, before they are handed (row p, the design §3.4 rule 5): those the mark named, so a shell
+    /// The words marked attempted on the destination, before they are handed: those the mark named, so a shell
     /// cut off under the hand never sends them again by itself and the come-up settles them uncertain; one it did not name is not handed and
     /// waits there for the destination's own go-on. Asked only where the hand is made: a part nothing here holds is handed nothing.
     /// </summary>

@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A conversation goes on with another agent (MIXAGENT1a-i, D163, the mixed-agents design §2 and §5): conversations live in the
-/// shell's chat runner, so the ask, the box and the take are here, over the runner's context (PART10g, D166).
+/// A conversation goes on with another agent: conversations live in the
+/// shell's chat runner, so the ask, the box and the take are here, over the runner's context.
 /// <see cref="HandOver"/> judges and keeps the box; <see cref="HandOverTake"/> runs the sequence with the runner's own end, start
 /// and say.
 /// </summary>
@@ -15,14 +15,14 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     /// <summary>How long the old conversation's end is waited for before the new one starts: a stop, not a wind-up.</summary>
     private static readonly TimeSpan HandOverEnd = TimeSpan.FromSeconds(15);
 
-    /// <summary>How long a take waits, once its prompt was handed to a turned door, for the door to say it wrote before it tells its end (TAKEWAITS1).</summary>
+    /// <summary>How long a take waits, once its prompt is handed to a turned door, for the door to say it wrote before it tells its end.</summary>
     internal static readonly TimeSpan WireBound = TimeSpan.FromSeconds(15);
 
     /// <summary>This hand-over's <see cref="WireBound"/>, which its limit move waits too: a test that stopped its door mid-write, so it never says it wrote, shortens it.</summary>
     internal TimeSpan WireWait { get; init; } = WireBound;
 
     /// <summary>
-    /// The most the closing note's one turn is waited for (SESSCTX1c part B, §2.2): a move never waits more than that turn, and a turn
+    /// The most the closing note's one turn is waited for: a move never waits more than that turn, and a turn
     /// that hangs past this is the conversation's end's to stop; its note is then said absent.
     /// </summary>
     internal static TimeSpan ClosingBound { get; set; } = TimeSpan.FromMinutes(5);
@@ -35,30 +35,30 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     private IChatRunning _runner => wiring;
 
     /// <summary>
-    /// The conversations' move record the hand-over is decided in and taken from (FOUNDATION1f-v part a; the foundation design §3.3), over the
+    /// The conversations' move record the hand-over is decided in and taken from, over the
     /// home's one store file the limit move and the curve share: a hand-over keeps its move there and writes no box. A test hands one of its
     /// own run; the runner hands every move the one holder it comes up through.
     /// </summary>
     internal ConversationMoves Moves { get; set; } = new(wiring.Context.Home, wiring.Context.Service, wiring.Context.Events, wiring.Context.Output);
 
     /// <summary>
-    /// A move's take is over, however it came out, its move ended in the store (HANDWORDS1, TAKEWAITS1): the person's words held while it was
+    /// A move's take is over, however it came out, its move ended in the store: the person's words held while it is
     /// taken go on now, to the conversation that continues it where one opened. Told on the take's own thread, after its end, by the
     /// hand-over, the curve's move and the limit move alike.
     /// </summary>
     public event Action<string>? TakeEnded;
 
-    /// <summary>What the course answered each hand-over of a conversation, by session (FOUNDATION1h branch 3): a test hears it; no person reads it.</summary>
+    /// <summary>What the course answered each hand-over of a conversation, by session: a test hears it; no person reads it.</summary>
     internal event Action<string, LineCourse>? Decided;
 
     /// <summary>
-    /// Whether a hand-over holds the record from every go-on, sweep and take-up (FOUNDATION1f-v part a, §13.5): a box an older build left for
+    /// Whether a hand-over holds the record from every go-on, sweep and take-up: a box an older build left for
     /// a conversation and not yet imported, or imported and waiting behind a standing move, or a move the store carries that waits to be taken.
     /// </summary>
     public bool Holds(string sessionId) => new HandOverBox(_context.Home).Read(sessionId) is not null || Moves.HandOverStanding(sessionId) is not null;
 
     /// <summary>
-    /// *Hand a conversation over* (MIXAGENT1a-i): <see cref="HandOver.AskAsync"/> judges and decides the move in the store; a conversation
+    /// *Hand a conversation over*: <see cref="HandOver.AskAsync"/> judges and decides the move in the store; a conversation
     /// that is not talking is taken at once, and one that is talking keeps the move, at <c>quiescing</c>, until its turn ends
     /// (<see cref="Due"/>), or the shell comes up (<see cref="ChatRunner.TakeUpAsync"/>).
     /// </summary>
@@ -66,8 +66,8 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     /// <param name="askedBy">One of <see cref="HandOverBy"/>.</param>
     /// <param name="onEnded">Told when the new conversation ends, as a start's is.</param>
     /// <param name="model">
-    /// The model and effort of the choice the offer named (STAFFPOLICY1d): the new conversation starts that choice as approved, revalidated
-    /// against the role's choices when it starts and never picked again; null takes the agent's own entry as before.
+    /// The model and effort of the choice the offer named: the new conversation starts that choice as approved, revalidated
+    /// against the role's choices when it starts and never picked again; null takes the agent's own entry.
     /// </param>
     public async Task<HandedOver> HandOverAsync(
         string sessionId, string agent, string? account, string why, string askedBy, DriverConfig config,
@@ -75,7 +75,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     {
         if (_context.Closing) return new HandedOver(null, false, null, "the application is closing, so no conversation is handed over now.");
 
-        // FOUNDATION1h branch 3 (the foundation design §3.1): this is the course's adapter for a conversation's hand-over. The boundary is the
+        // This is the course's adapter for a conversation's hand-over. The boundary is the
         // runner's turn; the hand-over rule's consent is the door's, which calls the runner only for an ask it let go (`go`), so an agent's ask
         // reaches the course admitted and the person's press needs none. The course decides inside the ask, and what the executor alone
         // knows, a conversation another Daoris process runs, is refused once the course has allowed the move, before it is kept.
@@ -93,7 +93,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
             .ConfigureAwait(false);
         if (asked is not { Move: { } move, Request: { } request }) return new HandedOver(null, false, asked.Answer.Why, asked.Answer.Message);
 
-        // Talking, it goes on with its turn and is taken at that turn's end: the move waits for the old part's own turn (§3.3).
+        // Talking, it goes on with its turn and is taken at that turn's end: the move waits for the old part's own turn.
         if (_runner.Taking(sessionId))
         {
             move.Quiescing();
@@ -104,7 +104,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// The hand-over of a conversation whose turn just ended is taken (MIXAGENT1a-i): told as the turns move, and read only where a turn
+    /// The hand-over of a conversation whose turn just ended is taken: told as the turns move, and read only where a turn
     /// is neither in flight nor waiting. A hand-over left from before is taken as the shell comes up.
     /// </summary>
     public void Due(string sessionId, ChatQueue queue, DriverConfig config, Func<string, string, Task>? onEnded)
@@ -125,9 +125,9 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// Every hand-over this run holds that waits to be taken is taken (MIXAGENT1a-i), as the shell comes up and at each look: an ask decided while
+    /// Every hand-over this run holds that waits to be taken is taken, as the shell comes up and at each look: an ask decided while
     /// no runner heard it, or while its conversation talked and the shell closed, a dead run's the take-up left standing, or an older build's box
-    /// the come-up imported (FOUNDATION1f-v part a). Each is judged again as it is taken; one whose conversation is talking or being taken is
+    /// the come-up imported. Each is judged again as it is taken; one whose conversation is talking or being taken is
     /// left for its turn's end.
     /// </summary>
     /// <param name="onEnded">Told as each new conversation ends: the runner's own announcement, since no route started it.</param>
@@ -165,7 +165,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// The curve's move taken (FOUNDATION1f-iii part a, the foundation design §3.3, §3.4 rule 5, §13.4): handed the request its decision made,
+    /// The curve's move taken: handed the request its decision made,
     /// since its move is in the store and no box is written. The sequence is <see cref="HandOverTake"/>'s, shared with the person's and the
     /// agent's hand-overs, whose move waits for the turn's end (<c>keeps</c>); the move's phases are written around it: <c>old-ended</c> as
     /// the old part ends, then <c>opening</c> under the key the open is sent with, the answer, <c>opened</c>, <c>delivering</c> with the prompt
@@ -174,7 +174,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     /// the move before the effect it fences.
     /// </summary>
     /// <param name="ask">The curve's decision, as a hand-over's ask: the conversation's own agent, the account it named, <c>curve</c>, <c>daoris</c>.</param>
-    /// <param name="moved">What the usage curve's decision said, for the two lines the take writes.</param>
+    /// <param name="moved">What the usage curve's decision says, for the two lines the take writes.</param>
     /// <param name="record">The move's record, decided under this run's claim by the caller.</param>
     internal Task<HandedOver> TakeAsync(
         string sessionId, HandOverRequest ask, SwitchChoice.MoveTo moved, ConversationMove record, DriverConfig config,
@@ -182,7 +182,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
         TakeCoreAsync(sessionId, ask, config, onEnded, moved, record, keeps: false, ct);
 
     /// <summary>
-    /// A move the supervisor's rules made taken (CONTEXTDRIVE1n, <see cref="TransientMove"/>): handed the request its decision made, the curve's
+    /// A move the supervisor's rules made taken (<see cref="TransientMove"/>): handed the request its decision made, the curve's
     /// sequence with no curve's lines; a word that started a turn meanwhile closes it <c>superseded</c>.
     /// </summary>
     internal Task<HandedOver> TakeRuledAsync(
@@ -190,7 +190,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
         TakeCoreAsync(sessionId, ask, config, onEnded, moved: null, record, keeps: false, ct);
 
     /// <param name="keeps">
-    /// A hand-over's move (FOUNDATION1f-v part a) stands where the take cannot begin, the conversation being taken or talking, and goes on at
+    /// A hand-over's move stands where the take cannot begin, the conversation being taken or talking, and goes on at
     /// its turn's end; the curve's is closed <c>superseded</c> and judged again at the next turn's end.
     /// </param>
     private async Task<HandedOver> TakeCoreAsync(
@@ -206,7 +206,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
 
         IChatTurns? held = null;
         // The move's own ends: the key its open is sent with, a write the store refused (which stops the move before what it fences), and
-        // whether its prompt's write returned and was recorded, so the move is ended by its phase in the finally where it did not; a move
+        // whether its prompt's write returned and is recorded, so the move is ended by its phase in the finally where it did not; a move
         // kept for the turn's end is not ended at all.
         var key = MoveWords.ChatKey();
         string? unasked = null;
@@ -218,11 +218,11 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
         try
         {
             ClosingNote? closing = null;
-            // Never mid-turn (SWITCH1c-ii, the switch design §4): its turns are held while it is taken, so a word said as the take
-            // begins either started its turn first, and the move waits for that turn's end (Due), or takes nothing.
+            // Never mid-turn: its turns are held while it is taken, so a word said as the take
+            // begins either starts its turn first, and the move waits for that turn's end (Due), or takes nothing.
             if (_context.Turned.TryGetValue(sessionId, out var chat))
             {
-                // FOUNDATION1o: where the host's open moves the old part's words, one said while held is kept on the record for that open.
+                // Where the host's open moves the old part's words, one said while held is kept on the record for that open.
                 if (!chat.Turns.Hold(await _context.Service.Opens.KeepsAsync(ct).ConfigureAwait(false)))
                 {
                     if (keeps) waits = true;
@@ -232,32 +232,32 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
 
                 held = chat.Turns;
 
-                // 🔴 SESSCTX1c part B (D189's amendment, the session-context design §2.2): the person's press, or a change of agent its own
+                // 🔴 The person's press, or a change of agent its own
                 // agent asked for and left no note with, asks the outgoing agent for one closing note in one turn of Daoris's, before the
                 // conversation ends; a move the account forces asks none. Asked once, under the hold, so no word of the person's goes first.
                 var own = ask.AskedBy == HandOverBy.Agent ? new HandOverAskFiles(_context.Home).Ask(sessionId)?.Note : null;
                 if (HandOverNote.Asks(ask, own)) closing = await AskClosingAsync(sessionId, chat.Turns, ask.Agent).ConfigureAwait(false);
             }
 
-            // A move by the usage curve says which accounts it moved between: its decision, which the caller holds (SWITCH1c-ii). A hand-over
+            // A move by the usage curve says which accounts it moved between: its decision, which the caller holds. A hand-over
             // taken without it (an older build's box imported, or a shell come up since) says the hand-over's lines, its reason curve.
             return await HandOverTake.RunAsync(
                 _context.Service, _context.Home, _context.Events, _context.Output, sessionId, ask, AccountsOf,
                 async old =>
                 {
                     await EndForHandOverAsync(old).ConfigureAwait(false);
-                    // FOUNDATION1f-iii part a (§13.4 steps 1 and 3): the old part's end, then the open asked under the key it is sent with,
+                    // The old part's end, then the open asked under the key it is sent with,
                     // each before what it fences; a write the store refuses opens nothing, and the line stays on the old record.
                     unasked = record.OldEnded() ?? record.Opening(key);
                 },
-                // The person's press with an account named is their pick of it, which the new conversation waits for (FOUNDATION1a-ii); an
-                // agent's ask or the curve's move names an account that keeps today's reading. The keyed open (FOUNDATION1d-ii part 4) moves
+                // The person's press with an account named is their pick of it, which the new conversation waits for; an
+                // agent's ask or the curve's move names an account that is not a pick. The keyed open moves
                 // every word of the person's kept on the old part meanwhile, none named (HandOverTake asks it under the move's key).
                 async (prior, request, from, keyed, token) =>
                 {
                     if (unasked is not null) return new ChatStart(null, unasked);
 
-                    // STAFFPOLICY1d: the choice approved is the one started, held to the role's choices as they stand now and never picked again.
+                    // The choice approved is the one started, held to the role's choices as they stand now and never picked again.
                     var approved = HandedChoice(sessionId, prior, request, config, out var gone);
                     if (gone is not null) return new ChatStart(null, gone);
 
@@ -267,7 +267,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
                         .ConfigureAwait(false);
                     if (started.SessionId is not { } to) return started;
 
-                    // §13.4 steps 2 and 3: the open's answer, then `delivering` and the prompt's mark, before any hand is made. Where the
+                    // The open's answer, then `delivering` and the prompt's mark, before any hand is made. Where the
                     // line's head has gone on past the new part (an older build), nothing is handed there.
                     record.Answered();
                     fenced = record.Opened(to, started.Moved);
@@ -279,7 +279,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
                 {
                     if (fenced is not null) return false;
 
-                    // §3.4 rule 5: the prompt's outcome as the door's write returns, before the take; the message carries no word id, so no
+                    // The prompt's outcome as the door's write returns, before the take; the message carries no word id, so no
                     // word's `sent`. A text door writes as it is handed and tells no message that it wrote: its return is the write's.
                     var turned = _context.Turned.ContainsKey(id);
                     var taken = await SayHandedOver(id, message with { Delivered = Wire }).ConfigureAwait(false);
@@ -294,7 +294,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
             // A move that went no further than its hand is ended by its phase, its prompt known unwritten; one kept for the turn's end stands.
             if (!wired && !waits) await record.EndAsync().ConfigureAwait(false);
 
-            // The move's own reading ends it in the store before the take is told over (TAKEWAITS1), so a word the person said meanwhile and
+            // The move's own reading ends it in the store before the take is told over, so a word the person said meanwhile and
             // held waits no longer. A turned door tells that it wrote as its turn does, which a door that never writes does not: bounded.
             if (wired && await Task.WhenAny(wrote.Task, Task.Delay(WireWait)).ConfigureAwait(false) == wrote.Task) await (await wrote.Task).ConfigureAwait(false);
 
@@ -314,7 +314,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// The outgoing agent's one closing turn (SESSCTX1c part B, the session-context design §2.2), under the take's hold: Daoris's ask,
+    /// The outgoing agent's one closing turn, under the take's hold: Daoris's ask,
     /// then its last message of that turn as its note, read from the events the turn added. The record keeps the ask as Daoris's and the
     /// reply as the agent's; the brief is composed from the events before the ask, so the note is told once, in its own section.
     /// </summary>
@@ -350,9 +350,9 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
         HandOverAccounts.Of(_context.Harnesses.Adapters, _context.Harnesses.Home, agent);
 
     /// <summary>
-    /// The choice a hand-over was approved on (STAFFPOLICY1d, the staff policy design §11 point 4): its agent, model and effort as one entry
+    /// The choice a hand-over is approved on: its agent, model and effort as one entry
     /// the start takes as handed, after holding that the role the conversation is bound to still lists it. Null where the ask named no model or
-    /// effort (the agent's own entry, as before); <paramref name="gone"/> says it where the choice is no longer the role's, and the start waits
+    /// effort (the agent's own entry); <paramref name="gone"/> says it where the choice is not the role's any more, and the start waits
     /// for the person rather than start another.
     /// </summary>
     private IReadOnlyList<ActorEffective>? HandedChoice(string sessionId, PriorSession prior, HandOverRequest request, DriverConfig config, out string? gone)
@@ -377,7 +377,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     /// The old conversation ends by the runner's own end: its process is stopped and its record says so, returning once its watch
     /// has written it, or after <see cref="HandOverEnd"/>. One that already ended has nothing to stop. A limit's move ends the old part
     /// the same way (<see cref="LimitMove"/>). What the part left running in its tree is ended and waited for before this returns, so the
-    /// next part never starts beside it, and the old record says so where there was any (COAGENT1g, <see cref="PartLeftovers"/>).
+    /// next part never starts beside it, and the old record says so where any is left (<see cref="PartLeftovers"/>).
     /// </summary>
     internal async Task EndForHandOverAsync(string sessionId)
     {
@@ -399,13 +399,13 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// The new conversation's first message (MIXAGENT1a-i): Daoris's briefing, with the browser's line after it where it was handed
+    /// The new conversation's first message: Daoris's briefing, with the browser's line after it where it is handed
     /// one, and recorded as the note of where it came from (<see cref="ChatMessage.TakenOver"/>). A hand-over's carries none of the
-    /// person's words; a part that goes on from a lost conversation carries those that waited there after the brief (SESSCTX1c part B,
-    /// <see cref="BriefedMove"/>).
+    /// person's words; a part that goes on from a lost conversation carries those that waited there after the brief
+    /// (<see cref="BriefedMove"/>).
     /// </summary>
     /// <param name="shown">
-    /// The words a keyed open moved to the part (FOUNDATION1d-ii part 4, <see cref="MovedWords.Shown"/>): each recorded by its own event under its
+    /// The words a keyed open moved to the part (<see cref="MovedWords.Shown"/>): each recorded by its own event under its
     /// id, before the write, in place of the message's one joined event; null for every other message.
     /// </param>
     internal async Task<bool> SayHandedOver(string sessionId, ChatMessage message, IReadOnlyList<SessionEvent>? shown = null)
@@ -413,7 +413,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
         if (!_context.Turned.ContainsKey(sessionId) && !_context.Talking.ContainsKey(sessionId)) return false;
 
         message = _runner.WithProcess(sessionId, message);
-        // The browser's line after Daoris's brief (SESSCTX1b keeps the brief a field of its own, so the line is the briefing's alone).
+        // The browser's line after Daoris's brief (the brief is a field of its own, so the line is the briefing's alone).
         if (_context.Browsers.TryRemove(sessionId, out var browser))
         {
             message = message with { Briefing = message.Briefing is { Length: > 0 } told ? $"{told}\n\n{browser}" : browser };
@@ -429,7 +429,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
 
         // A text door has no turns to record it as they are sent: the note is kept here, with what is sent, so no path says nothing.
         // Its process is tracked a moment after the start returns, and a send before that reaches nothing: tried again, bounded.
-        // FOUNDATION1d-ii part 4: moved words are recorded before the write, as the turned doors record them, the agent having gone said after.
+        // Moved words are recorded before the write, as the turned doors record them, the agent having gone said after.
         if (shown is not null)
         {
             foreach (var recorded in ChatRecorded.Recorded(message, shown)) _context.Record(sessionId, recorded);

@@ -1,17 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A loop's half of the requests (SESSUX1g, D126 §7.1): every loop on the home watches <c>&lt;home&gt;/sessions/requests/</c>,
+/// A loop's half of the requests: every loop on the home watches <c>&lt;home&gt;/sessions/requests/</c>,
 /// and acts on a request for a session its own registry runs as its own route does, recording the person's move as the
 /// person's, then removes it. A request for a session another loop runs is that loop's, and is left.
 /// </summary>
 /// <remarks>
 /// <para><b>As the routes do.</b> A stop is <see cref="SessionProcesses.Stop"/>, which <c>STOP_SESSION</c> makes: the
-/// driver concludes the record <c>stopped</c> as the person's, and holds its quest (SESSUX1b). A parked session's stop, a
+/// driver concludes the record <c>stopped</c> as the person's, and holds its quest. A parked session's stop, a
 /// finish and a decline are <c>RESOLVE_SESSION</c>'s: the process goes first, then the ledger moves the record with the
 /// person's words (<see cref="SessionMoves.ResolveAsync"/>); one is taken only once this loop's service answers.</para>
 ///
-/// <para><b>Looked at when the folder says a request arrived</b> (FABRIC-EVENT2, the design §A4.1), on the
+/// <para><b>Looked at when the folder says a request arrived</b>, on the
 /// <see cref="ChangeWatch"/>: within its quiet window, not at a tick, since the asking door waits ten seconds for the record to
 /// move and a tick may be a minute apart. A listing every <see cref="Listing"/> stays behind it, inside the door's ten seconds,
 /// for whatever the watcher missed. The folder hears a request or a press arriving, never what a look writes there itself (a
@@ -21,17 +21,17 @@ namespace Daoris.Driver;
 /// share. A terminal's <c>daoris chat</c> runs none: a stop asked of its session is withdrawn after the wait, and
 /// it stops with its own Ctrl+C.</para>
 ///
-/// <para><b>A terminal's words</b> (MSG1e, D137 §5.2) are a say, handed to <see cref="Say"/> and answered beside the request. A
+/// <para><b>A terminal's words</b> are a say, handed to <see cref="Say"/> and answered beside the request. A
 /// say for a session this registry runs is this loop's; one for a session nothing on this machine runs is any loop's whose
 /// service answers, which keeps the words on the record, once, since a say is taken once; one another process here runs is
 /// left for that process's loop.</para>
 ///
-/// <para><b>And what a terminal pressed</b> (STATEHUB1e, D169 point 8): a <c>trees</c> verb tells its press in the same folder
+/// <para><b>And what a terminal pressed</b>: a <c>trees</c> verb tells its press in the same folder
 /// (<see cref="PressesTold"/>), and the loop that hears them, the shell's, publishes it to its windows at the same look.</para>
 ///
-/// <para><b>Each session's on its own</b> (PARALLEL1h, D181 point 3). A look claims each session it has a request for and honours
-/// that session's requests beside the others, in the order they were asked; a session already claimed keeps its claim, and the
-/// requests a later look found for it are honoured by that claim after the ones it holds. So a say that takes its time (a
+/// <para><b>Each session's on its own</b>. A look claims each session it has a request for and honours
+/// that session's requests beside the others, in the order they are asked; a session already claimed keeps its claim, and the
+/// requests a later look finds for it are honoured by that claim after the ones it holds. So a say that takes its time (a
 /// conversation's door, the ledger) holds only its own session's next request, never another session's nor a terminal's press.
 /// The folder's look returns once it has begun them, and what it began is waited for, cancelled, when the watch closes.</para>
 /// </remarks>
@@ -44,12 +44,12 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     private readonly Func<ServiceClient?> _service;
     private readonly Func<DateTimeOffset> _clock;
 
-    // A say's two questions (MSG1e): whether this registry hears the session's words, a driven session's inbox among them,
+    // A say's two questions: whether this registry hears the session's words, a driven session's inbox among them,
     // and whether a process for it lives anywhere on this machine. The seams answer both by what runs here.
     private readonly Func<string, bool> _hears;
     private readonly Func<string, bool> _aliveHere;
 
-    // PARALLEL1h: the sessions being honoured now, each its claim's end, and those a look found more for while claimed. Held only to
+    // The sessions being honoured now, each its claim's end, and those a look found more for while claimed. Held only to
     // read and change these, never across a say, a stop or the ledger.
     private readonly object _gate = new();
     private readonly Dictionary<string, Task> _claimed = new(StringComparer.OrdinalIgnoreCase);
@@ -59,7 +59,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     private readonly CancellationTokenSource _closing = new();
 
     /// <summary>
-    /// The listing behind the change watch (FABRIC-EVENT2): the longest a request waits when the watcher missed it, a third of
+    /// The listing behind the change watch: the longest a request waits when the watcher missed it, a third of
     /// the asking door's ten seconds (<see cref="SessionsWorld.Wait"/>), so a missed one is still taken in time.
     /// </summary>
     public static readonly TimeSpan Listing = TimeSpan.FromSeconds(3);
@@ -68,14 +68,14 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     internal ChangeWatch? Changes { get; }
 
     /// <summary>
-    /// The chain on the folder's watch (FABRIC-CHAIN2, the design §C6), or null on the test seams: the folder is link 7's, its wake
+    /// The chain on the folder's watch, or null on the test seams: the folder is link 7's, its wake
     /// a <c>home</c> event and its listing the topic's <c>timer</c>, and its reader the only row bound here.
     /// </summary>
     internal Chain? Chain { get; }
 
     /// <summary>
     /// Where a look the folder woke is written with its ms (<c>change.judged</c>), and one that took something as the chain's
-    /// (<c>chain.fired</c>); and each chosen setting's outcome (<c>help.setting</c>, HELPMODE1c3); none by default.
+    /// (<c>chain.fired</c>); and each chosen setting's outcome (<c>help.setting</c>); none by default.
     /// </summary>
     public MachineLog? Log
     {
@@ -91,41 +91,41 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     private readonly MachineLog? _log;
 
     /// <summary>
-    /// A loop's half of a terminal's words (MSG1e, D137 §5.2): what it does with a say it takes, answered beside the request.
+    /// A loop's half of a terminal's words: what it does with a say it takes, answered beside the request.
     /// A loop on a registry has <see cref="LoopWords"/>'s by default; a shell hands its own screen's judge. Null takes no say.
     /// </summary>
     public Func<SessionRequest, CancellationToken, Task<WordsHeld>>? Say { get; init; }
 
     /// <summary>
-    /// A loop's half of a terminal's <c>sessions take-back</c> (SAIDBACK1c, D137 §2.4), answered beside the request in the say's
-    /// shape: <see cref="WordsHeld.Sent"/> is that the word was taken back, a refusal's code is <see cref="WordsHeld.Why"/>. A
+    /// A loop's half of a terminal's <c>sessions take-back</c>, answered beside the request in the say's
+    /// shape: <see cref="WordsHeld.Sent"/> is that the word is taken back, a refusal's code is <see cref="WordsHeld.Why"/>. A
     /// loop on a registry has <see cref="LoopWords"/>'s by default, which keeps no note; the host hands one that does. Null takes none.
     /// </summary>
     public Func<SessionRequest, CancellationToken, Task<WordsHeld>>? TakeBack { get; init; }
 
     /// <summary>
-    /// A loop's half of Ask Daoris's housekeeping tools (HELPMODE1c2a, D183's note): what it does with a housekeeping request for a
+    /// A loop's half of Ask Daoris's housekeeping tools: what it does with a housekeeping request for a
     /// conversation its registry runs, answered beside the request. A loop on a registry has <see cref="HelpHousekeeping"/>'s by
     /// default, which judges each call and calls the cleanup's own judges; null takes none.
     /// </summary>
     public Func<SessionRequest, CancellationToken, Task<HousekeepingAnswer>>? Housekeep { get; init; }
 
     /// <summary>
-    /// A loop's half of Ask Daoris's chosen settings (HELPMODE1c3, D183's note): what it does with a setting request for a conversation
+    /// A loop's half of Ask Daoris's chosen settings: what it does with a setting request for a conversation
     /// its registry runs, answered beside the request, and its outcome kept in <see cref="Log"/>. A loop on a registry has
     /// <see cref="HelpSettings"/>'s by default, which judges each call and changes the setting through its own door's edit; null takes none.
     /// </summary>
     public Func<SessionRequest, CancellationToken, Task<SettingAnswer>>? Set { get; init; }
 
     /// <summary>
-    /// A loop's half of Ask Daoris's checkout reads (HELPMODE1c4, D183's note): what it does with a read of a checkout for a conversation
-    /// its registry runs, answered beside the request with what was read. A loop on a registry has <see cref="HelpCheckouts"/>'s by
+    /// A loop's half of Ask Daoris's checkout reads: what it does with a read of a checkout for a conversation
+    /// its registry runs, answered beside the request with what is read. A loop on a registry has <see cref="HelpCheckouts"/>'s by
     /// default, which judges each call; null takes none.
     /// </summary>
     public Func<SessionRequest, CancellationToken, Task<CheckoutAnswer>>? Checkout { get; init; }
 
     /// <summary>
-    /// What a loop does with a press a terminal told (STATEHUB1e, D169 point 8): the shell's publishes it to its windows as the
+    /// What a loop does with a press a terminal told: the shell's publishes it to its windows as the
     /// window's press of that route is published. Null takes none: a headless loop has no window, so it leaves each for a loop that
     /// hears them, and drops only what nobody took in time (<see cref="PressesTold"/>).
     /// </summary>
@@ -154,7 +154,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         Housekeep = CourseHelp.Current.Housekeeping(home, service);
         Set = CourseHelp.Current.Settings(home, service);
         Checkout = new HelpCheckouts(home, service).AnswerAsync;
-        // FABRIC-EVENT2c: made before the watch starts, so its watcher opens at once and the first request after an install is
+        // Made before the watch starts, so its watcher opens at once and the first request after an install is
         // heard, not found at the listing. Both loops (the desktop's and the headless host's) build their watch here.
         Directory.CreateDirectory(_requests.Folder);
         Changes = new ChangeWatch(source);
@@ -164,7 +164,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         Changes.Start();
     }
 
-    /// <summary>The machine resumed, as its shell heard (FABRIC-EVENT2d): the folder's watcher is reopened and the requests judged now.</summary>
+    /// <summary>The machine resumed, as its shell heard: the folder's watcher is reopened and the requests judged now.</summary>
     public void Resumed() => Changes?.Resumed();
 
     /// <summary>
@@ -178,8 +178,8 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// The test seam that also hears the note a stop carries: a pause's words for the record (PAUSE1b), which the registry's
-    /// stop writes on it as the person's, with their codes (LANG1a).
+    /// The test seam that also hears the note a stop carries: a pause's words for the record, which the registry's
+    /// stop writes on it as the person's, with their codes.
     /// </summary>
     public SessionRequestWatch(
         string home, Func<string, bool> runsHere, Func<string, Noted?, bool> stop, Func<ServiceClient?> service, Func<DateTimeOffset>? clock = null)
@@ -195,7 +195,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// What the folder hears (FABRIC-EVENT2): a request (<c>.json</c>) or a press (<see cref="PressesTold.Suffix"/>) arriving under
+    /// What the folder hears: a request (<c>.json</c>) or a press (<see cref="PressesTold.Suffix"/>) arriving under
     /// its final name. Never a deletion, a temporary, a take's or a withdrawal's name, or a say's answer: those are what a look
     /// and the asking door write themselves, and a look they woke would wake the next.
     /// </summary>
@@ -207,7 +207,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
 
     /// <summary>
     /// One look: each request for a session this loop runs, taken and acted on, a session's in the order they were asked and each
-    /// session beside the others (PARALLEL1h). What this look honoured comes back, in the order asked. A session another look is
+    /// session beside the others. What this look honours comes back, in the order asked. A session another look is
     /// honouring is waited for, and what it honours is that look's. A move the ledger refused is not retried: the asking door sees
     /// the record unmoved and says so.
     /// </summary>
@@ -220,7 +220,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// Claim each session with a request this loop would act on, and begin honouring it beside the others (PARALLEL1h): the runs
+    /// Claim each session with a request this loop would act on, and begin honouring it beside the others: the runs
     /// begun, each its session's honoured; the claims other looks hold that this one found more for, which honour those after
     /// their own; and how many requests the runs begun with.
     /// </summary>
@@ -254,7 +254,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// One session's claim (PARALLEL1h): its requests honoured in the order asked, then those a later look found for it meanwhile,
+    /// One session's claim: its requests honoured in the order asked, then those a later look finds for it meanwhile,
     /// read from the folder again, until a look has found none more; then the claim is let go.
     /// </summary>
     private async Task<IReadOnlyList<SessionRequest>> HonourSessionAsync(
@@ -310,17 +310,17 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     {
         SessionMove.Say => Say is not null && SaysHere(pending.Session),
         SessionMove.TakeBack => TakeBack is not null && SaysHere(pending.Session),
-        // HELPMODE1c2a: only the loop running the conversation, whose tool is waiting on it now.
+        // Only the loop running the conversation, whose tool is waiting on it now.
         SessionMove.Housekeep => Housekeep is not null && _runsHere(pending.Session),
-        // HELPMODE1c3: the same for a chosen setting.
+        // The same for a chosen setting.
         SessionMove.Set => Set is not null && _runsHere(pending.Session),
-        // HELPMODE1c4: and for a checkout read.
+        // And for a checkout read.
         SessionMove.Read => Checkout is not null && _runsHere(pending.Session),
         _ => _runsHere(pending.Session) && (!Resolves(pending) || _service() is not null),
     };
 
     /// <summary>
-    /// Whether a say for the session is this registry's (MSG1e): one it hears, or one nothing on this machine runs while this loop's
+    /// Whether a say for the session is this registry's: one it hears, or one nothing on this machine runs while this loop's
     /// service answers. Not where another process here runs it, which its own loop answers, nor where the record's half waits for a service.
     /// </summary>
     private bool SaysHere(string session) => _hears(session) || (!_aliveHere(session) && _service() is not null);
@@ -345,8 +345,8 @@ public sealed class SessionRequestWatch : IAsyncDisposable
 
         try
         {
-            // A stop's note is a pause's words for the record (PAUSE1b), or none for the plain stop: the driver's line,
-            // with its codes, or carried whole where an older door wrote none (LANG1a).
+            // A stop's note is a pause's words for the record, or none for the plain stop: the driver's line,
+            // with its codes, or carried whole where a door writes none.
             var line = request.Note is null ? null : Noted.From(request.Note, request.NoteParts);
             if (!resolves) _stop(request.Session, line);
             else if (request.Move == SessionMove.Stop && line is not null)
@@ -369,14 +369,14 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         }
         catch (Exception error) when (error is DriverException or HttpRequestException)
         {
-            // The ledger refused, or did not answer: the record did not move, and the door that asked says so.
+            // The ledger refuses, or does not answer: the record does not move, and the door that asked says so.
             return null;
         }
     }
 
     /// <summary>
-    /// One look at the presses a terminal told (STATEHUB1e): each taken once and handed to <see cref="Told"/>, oldest first, and what
-    /// was heard comes back. A loop with no <see cref="Told"/> takes none, and drops only what nobody took in time.
+    /// One look at the presses a terminal told: each taken once and handed to <see cref="Told"/>, oldest first, and what
+    /// is heard comes back. A loop with no <see cref="Told"/> takes none, and drops only what nobody took in time.
     /// </summary>
     public IReadOnlyList<PressTold> Hear()
     {
@@ -393,7 +393,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// A say (MSG1e), taken where it is this loop's and handed to <see cref="Say"/>; what became of the words is written beside
+    /// A say, taken where it is this loop's and handed to <see cref="Say"/>; what became of the words is written beside
     /// it for the door that asked, a failure included, so the asker is never left to wait out its time for an answer that will
     /// not come. Null where it is not this loop's, or another loop took it first.
     /// </summary>
@@ -428,7 +428,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// A housekeeping request (HELPMODE1c2a), taken where this loop runs its conversation and handed to <see cref="Housekeep"/>; what
+    /// A housekeeping request, taken where this loop runs its conversation and handed to <see cref="Housekeep"/>; what
     /// became of it is written beside it, a failure included, so the tool is never left to wait out its time. Held in the session's
     /// claim, so one conversation's requests are judged one after another, never two clean-ups of one repository at once from it.
     /// Null where it is not this loop's, or another loop took it first.
@@ -448,7 +448,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
             error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or UnauthorizedAccessException
             || (error is TaskCanceledException && !ct.IsCancellationRequested))
         {
-            // Never "nothing was done": a clean-up that failed on its third branch removed the first two.
+            // Never "nothing is done": a clean-up that fails on its third branch has removed the first two.
             answer = new HousekeepingAnswer(operation, false, HousekeepingAnswer.Failed,
                 $"Daoris could not finish it ({error.Message.TrimEnd('.')}). Look with `housekeeping_inspect` to see what stands now.");
         }
@@ -466,9 +466,9 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// A setting request (HELPMODE1c3), taken where this loop runs its conversation and handed to <see cref="Set"/>, as a housekeeping
+    /// A setting request, taken where this loop runs its conversation and handed to <see cref="Set"/>, as a housekeeping
     /// request is; what became of it is written beside it, a failure included, and kept as its outcome in the machine log: the setting,
-    /// its value, where it was set and whether it changed, never the words. Null where it is not this loop's, or another loop took it.
+    /// its value, where it is set and whether it changed, never the words. Null where it is not this loop's, or another loop took it.
     /// </summary>
     private async Task<SessionRequest?> SetAsync(SessionRequest pending, CancellationToken ct)
     {
@@ -485,7 +485,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
             error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or UnauthorizedAccessException
             || (error is TaskCanceledException && !ct.IsCancellationRequested))
         {
-            // Never "nothing was changed": a write that failed at its rename may or may not have landed.
+            // Never "nothing is changed": a write that fails at its rename may or may not have landed.
             answer = new SettingAnswer(setting, false, SettingAnswer.Failed,
                 $"Daoris could not finish it ({error.Message.TrimEnd('.')}). Ask the person to look in Settings to see what stands now.");
         }
@@ -506,8 +506,8 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// A checkout read (HELPMODE1c4), taken where this loop runs its conversation and handed to <see cref="Checkout"/>, as a setting
-    /// request is; what was read, or why not, is written beside it, a failure included, so the tool is never left to wait out its time.
+    /// A checkout read, taken where this loop runs its conversation and handed to <see cref="Checkout"/>, as a setting
+    /// request is; what is read, or why not, is written beside it, a failure included, so the tool is never left to wait out its time.
     /// Null where it is not this loop's, or another loop took it.
     /// </summary>
     private async Task<SessionRequest?> ReadCheckoutAsync(SessionRequest pending, CancellationToken ct)
@@ -539,11 +539,11 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         return request;
     }
 
-    /// <summary>Link 7 on the requests folder (FABRIC-CHAIN2): its wake or its deadline reads the folder, and emits nothing into the chain.</summary>
+    /// <summary>Link 7 on the requests folder: its wake or its deadline reads the folder, and emits nothing into the chain.</summary>
     private Task<ChainFired> ReadAsync(IReadOnlyList<ChainEvent> heard, CancellationToken ct) => Task.FromResult(new ChainFired(Look(), []));
 
     /// <summary>
-    /// One look the change watch asked for: each session's requests begun beside the others (PARALLEL1h), and what a terminal pressed,
+    /// One look the change watch asked for: each session's requests begun beside the others, and what a terminal pressed,
     /// heard now rather than after a slow say; how many of both. It waits for none of what it began, so the folder's next word is heard
     /// while a say takes its time.
     /// </summary>
@@ -563,7 +563,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
 
         try
         {
-            // STATEHUB1e: and what a terminal pressed, in the same folder at the same look.
+            // And what a terminal pressed, in the same folder at the same look.
             return begun + Hear().Count;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -591,7 +591,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         if (Changes is not null) await Changes.DisposeAsync().ConfigureAwait(false);
 
-        // PARALLEL1h: what the looks began is cancelled and waited for, so no say or stop outlives the watch.
+        // What the looks began is cancelled and waited for, so no say or stop outlives the watch.
         await _closing.CancelAsync().ConfigureAwait(false);
         Task[] begun;
         lock (_gate) begun = [.. _claimed.Values];

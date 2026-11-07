@@ -5,14 +5,14 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris settings handover</c> (MIXAGENT1c; FOUNDATION1 mod-iii): the course's own verb, the settings' port
+/// <c>daoris settings handover</c>: the course's own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rule it edits (<see cref="HandOverRules"/>).
 /// </summary>
 public sealed class HandOverVerb : ChoiceVerb
 {
     public override string Word => "handover";
 
-    /// <summary><c>handover</c> (MIXAGENT1c): what an agent's ask to hand its session over does here now.</summary>
+    /// <summary><c>handover</c>: what an agent's ask to hand its session over does here.</summary>
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
         var path = world.ConfigPath;

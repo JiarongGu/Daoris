@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The person's moves on a session, as the screen's routes make them (<c>STOP_SESSION</c>, <c>RESOLVE_SESSION</c>) and a
-/// loop makes them for a terminal's request (SESSUX1g, D126 §7.1): one implementation, whichever door asked.
+/// loop makes them for a terminal's request: one implementation, whichever door asked.
 /// </summary>
 public static class SessionMoves
 {
@@ -12,7 +12,7 @@ public static class SessionMoves
     /// </summary>
     /// <param name="service">The loop's service, or null before it answers: an orphan cannot be ended then.</param>
     /// <param name="note">
-    /// What the record of a process stopped here says in place of the plain stop: a pause's names the pause (PAUSE1b). An
+    /// What the record of a process stopped here says in place of the plain stop: a pause's names the pause. An
     /// orphan's record says nothing ran it, which is the fact.
     /// </param>
     public static async Task<StopAnswer> StopAsync(
@@ -30,9 +30,9 @@ public static class SessionMoves
     public static readonly TimeSpan OwnerWait = TimeSpan.FromSeconds(5);
 
     /// <summary>
-    /// A stop of a session another Daoris process of this machine runs, asked of that process through the request folder (SESSUX1g)
+    /// A stop of a session another Daoris process of this machine runs, asked of that process through the request folder
     /// and waited for until it takes it. True once the owner took it, which stops the session as its own Ctrl+C at rest does; false
-    /// once nothing took it in time, when the request is withdrawn so no process acts on it after the person was told.
+    /// once nothing took it in time, when the request is withdrawn so no process acts on it after the person is told.
     /// </summary>
     public static async Task<bool> StopThroughOwnerAsync(
         string home, string id, TimeSpan wait, TimeSpan poll, Func<DateTimeOffset> clock, CancellationToken ct = default)
@@ -51,17 +51,17 @@ public static class SessionMoves
     }
 
     /// <summary>
-    /// A parked session finished, declined or stopped (design §4): the process goes first, then the record moves, with the
+    /// A parked session finished, declined or stopped: the process goes first, then the record moves, with the
     /// person's words or the sentence that says the person did it. A refusal is the ledger's, in its words.
     /// </summary>
     /// <param name="stop">How this door ends the process: its registry's stop. False is the common case, since a parked session usually has no process here.</param>
     /// <exception cref="DriverException">The ledger refused the move.</exception>
-    /// <param name="note">The person's own words, a part of their own (LANG1a); null writes the sentence that says they moved it.</param>
+    /// <param name="note">The person's own words, a part of their own; null writes the sentence that says they moved it.</param>
     public static Task<string> ResolveAsync(
         Func<string, bool> stop, ServiceClient service, string id, string state, string? note, CancellationToken ct = default) =>
         ResolveAsync(stop, service, id, state, noted: note is null ? null : Noted.Said(note, NoteBy.Person), ct);
 
-    /// <summary>The same move with the driver's own line for the record: a pause's or an abandon's (PAUSE1b, PAUSE1d).</summary>
+    /// <summary>The same move with the driver's own line for the record: a pause's or an abandon's.</summary>
     /// <param name="noted">The record's note with its parts; null writes the sentence that says the person moved it.</param>
     public static async Task<string> ResolveAsync(
         Func<string, bool> stop, ServiceClient service, string id, string state, Noted? noted, CancellationToken ct = default)
@@ -76,7 +76,7 @@ public static class SessionMoves
     /// </summary>
     public static string ByThePerson(string state) => ByThePersonNoted(state).Note;
 
-    /// <summary><see cref="ByThePerson"/> with its code (LANG1a, the language design §4 rows 56–58).</summary>
+    /// <summary><see cref="ByThePerson"/> with its code.</summary>
     public static Noted ByThePersonNoted(string state) => state switch
     {
         "completed" => Noted.Of(EndNoteCodes.StoppedCheckpointFinished, "The person finished this at a checkpoint."),
@@ -85,7 +85,7 @@ public static class SessionMoves
     };
 
     /// <summary>
-    /// What the record says when the steward moved a parked session (STEWARDROLE1b, D209 §5.1): its own code, a behavioural sibling of
+    /// What the record says when the steward moves a parked session: its own code, a behavioural sibling of
     /// the person's, so every reader of the person's reads the steward's and none says the person did it.
     /// </summary>
     public static Noted ByTheStewardNoted(string state) => state switch
@@ -95,16 +95,16 @@ public static class SessionMoves
     };
 
     /// <summary>
-    /// A parked session finished by the steward (STEWARDROLE1b, D209 §3.1 row 7, D201's finish): never through the request folder and
+    /// A parked session finished by the steward: never through the request folder and
     /// with no process ended, moved by the ledger only from <c>awaiting-person</c> in its own step, the record saying the steward did it.
-    /// It neither accepts nor closes its quest: an open or taken quest stays so for the owner's done (finding 14).
+    /// It neither accepts nor closes its quest: an open or taken quest stays so for the owner's done.
     /// </summary>
     /// <exception cref="DriverException">The ledger refused the move: the record is no longer waiting on the person.</exception>
     public static Task<string> FinishByStewardAsync(ServiceClient service, string id, CancellationToken ct = default) =>
         service.AdvanceAsync(id, "completed", ByTheStewardNoted("completed"), ct: ct, expected: "awaiting-person");
 
     /// <summary>
-    /// A parked session stopped by the steward (STEWARDROLE1b, D209 §3.1 row 6): moved by the ledger only from <c>awaiting-person</c>,
+    /// A parked session stopped by the steward: moved by the ledger only from <c>awaiting-person</c>,
     /// with the steward's own note; a process of it this registry runs is let go first.
     /// </summary>
     /// <exception cref="DriverException">The ledger refused the move.</exception>
