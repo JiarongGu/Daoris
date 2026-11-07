@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1e: the rules decide where each executor read its number or its policy's move. Today's numbers seeded; a policy's moves read
+/// The rules decide where each executor read its number or its policy's move. Today's numbers seeded; a policy's moves read
 /// back as rules and the rules read back as the course's moves; the old doors refused on a reached home; the save writing no `strikes` the
 /// file did not hold.
 /// </summary>
@@ -162,7 +162,7 @@ public sealed class SupervisorRuleBookTests : IDisposable
         Assert.False(SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes));
     }
 
-    /// <summary>CONTEXTDRIVE1t: a fresh home and a migrated one hold one machine set, its moves rule among it, so a first move rule stands.</summary>
+    /// <summary>A fresh home and a migrated one hold one machine set, its moves rule among it, so a first move rule stands.</summary>
     [Fact]
     public void CONTEXTDRIVE1t_one_seed_holds_the_moves_rule_and_a_first_move_rule_stands()
     {

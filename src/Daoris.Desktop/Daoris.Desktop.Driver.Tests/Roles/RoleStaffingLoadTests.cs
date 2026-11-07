@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1w-s part 3 (the design §19.15, "the home, and what reads it"): a load of the home's own <c>driver.json</c> fills the staffing's
+/// A load of the home's own <c>driver.json</c> fills the staffing's
 /// five fields from the store once the root wired the port and the store holds the import; a save of any other key writes the file's
 /// staffing paths back as found. A file nobody wired reads as it always did.
 /// </summary>

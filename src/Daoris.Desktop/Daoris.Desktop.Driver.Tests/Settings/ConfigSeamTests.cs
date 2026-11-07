@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONFIGSEAM1: the driver's config is resolved once, by <see cref="DriverConfig"/>, for every door. Since ONEWAY1c-i the one file is
-/// the home's <c>driver.json</c>: the variable that once named another file is read nowhere, so a run that wants other choices runs on a
+/// The driver's config is resolved once, by <see cref="DriverConfig"/>, for every door. The one file is
+/// the home's <c>driver.json</c>: no variable names another file, so a run that wants other choices runs on a
 /// home of its own.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
@@ -14,7 +14,7 @@ public sealed partial class ConfigSeamTests
     private static Func<string, string?> Env(params (string Name, string? Value)[] pairs) =>
         name => pairs.FirstOrDefault(p => p.Name == name).Value;
 
-    /// <summary>The variable ONEWAY1c-i retired, spelled here alone so a test can name it to the resolution.</summary>
+    /// <summary>The retired variable, spelled here alone so a test can name it to the resolution.</summary>
     private const string Retired = "DAORIS_DRIVER_CONFIG";
 
     /// <summary>A home that need not exist: the resolution is a question about paths, never about the disk.</summary>
@@ -28,7 +28,7 @@ public sealed partial class ConfigSeamTests
         Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.ResolvePath(Home));
     }
 
-    /// <summary>🔴 ONEWAY1c-i: the retired variable names nothing the resolution reads, with a home or without one.</summary>
+    /// <summary>The retired variable names nothing the resolution reads, with a home or without one.</summary>
     [Fact]
     public void ONEWAY1c_i_the_retired_variable_is_read_nowhere()
     {
@@ -49,7 +49,7 @@ public sealed partial class ConfigSeamTests
     }
 
     /// <summary>
-    /// 🔴 LEASEHOME2 (the terminal RPC design §5): the home a verb takes the lease in is the home the loop drives, the folder the machine's
+    /// The home a verb takes the lease in is the home the loop drives, the folder the machine's
     /// file is in, found without reading or making anything.
     /// </summary>
     [Fact]
@@ -75,8 +75,8 @@ public sealed partial class ConfigSeamTests
     /// <summary>
     /// The seam held by a scan, as the spawn sites' are (<see cref="NoConsoleWindowTests"/>): the property is one every reader must
     /// carry, and the next reader written will not know to. Outside <c>DriverConfig.cs</c> no source names the file or the default
-    /// path, so a reader can only come through the one resolution; and no source at all spells the retired variable (ONEWAY1c-i). The
-    /// home's table (<c>DaorisHome.cs</c>, HOMELAYOUT2) names the file as its <c>driver</c> entry's place, which only DriverConfig asks for.
+    /// path, so a reader can only come through the one resolution; and no source at all spells the retired variable. The
+    /// home's table (<c>DaorisHome.cs</c>) names the file as its <c>driver</c> entry's place, which only DriverConfig asks for.
     /// </summary>
     [Fact]
     public void Every_reader_of_the_drivers_config_resolves_it_through_the_one_function()
@@ -85,7 +85,7 @@ public sealed partial class ConfigSeamTests
         var scanned = 0;
         var bypasses = new List<string>();
         string? owner = null;
-        // The owner found by name, wherever the driver keeps it (STRUCT1, D166).
+        // The owner found by name, wherever the driver keeps it.
         var owning = Path.GetFullPath(SourceFiles.Driver("DriverConfig.cs"));
 
         foreach (var project in Projects)
@@ -109,7 +109,7 @@ public sealed partial class ConfigSeamTests
                     continue;
                 }
 
-                // The home's table, the driver's one copy of D172's (HOMELAYOUT2), names the file as an entry's place.
+                // The home's table names the file as an entry's place.
                 if (project == "Daoris.Desktop.Driver" && Path.GetFileName(file) == "DaorisHome.cs") continue;
 
                 foreach (Match bypass in Bypass().Matches(source))
@@ -128,7 +128,7 @@ public sealed partial class ConfigSeamTests
         Assert.DoesNotContain(Retired, owner!, StringComparison.Ordinal);
     }
 
-    /// <summary>Every project that can reach the config: the launcher references nothing but the staged build's one file (D93).</summary>
+    /// <summary>Every project that can reach the config: the launcher references nothing but the staged build's one file.</summary>
     private static readonly string[] Projects =
         ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];
 

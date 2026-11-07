@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>quietMinutes</c>, the one quiet setting (D200, the session-watch design §3), at its file and its terminal door: read only in its
+/// <c>quietMinutes</c>, the one quiet setting, at its file and its terminal door: read only in its
 /// bounds, written only when set, said by <c>list</c> with its default, set by <c>daoris settings quiet</c> and refused out of bounds.
 /// </summary>
 public sealed class QuietSettingTests : IDisposable

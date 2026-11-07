@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LAYOUT7 (D117 §6.1–§6.3, as D124 §2.1 and §2.4 amend them): the set-up press. What it finds is said, each refusal
+/// The set-up press. What it finds is said, each refusal
 /// with its door; a press publishes one ask to one repository, as the person's, and adds the rule its session needs,
 /// in exact verbs; <c>--plan</c> prints all of it and publishes nothing. Fast: the world the press reads is a stand-in.
 /// </summary>
@@ -26,7 +26,7 @@ public sealed class SetupPressTests : IDisposable
         .WithDrivable("reports", true).WithTrees("reports", true)
         .WithDrivable("billing", true).WithTrees("billing", true);
 
-    /// <summary>🔴 D124 §2.4: exact verbs, never a runner, never `upstream`, `connect` or any management verb.</summary>
+    /// <summary>Exact verbs, never a runner, never `upstream`, `connect` or any management verb.</summary>
     [Fact]
     public void The_rule_is_the_doctrine_tools_exact_verbs()
     {
@@ -56,7 +56,7 @@ public sealed class SetupPressTests : IDisposable
         Assert.Contains("It prints `0.0.1`.", plan.Body);
     }
 
-    /// <summary>D124 §2.1: an adopted repository that declares nothing is not refused; it is asked the knowledge alone.</summary>
+    /// <summary>An adopted repository that declares nothing is not refused; it is asked the knowledge alone.</summary>
     [Fact]
     public async Task An_adopter_declaring_nothing_is_asked_the_knowledge_alone_and_one_on_the_older_layout_to_move()
     {
@@ -80,7 +80,7 @@ public sealed class SetupPressTests : IDisposable
     }
 
     /// <summary>
-    /// ORIENT2c (D151 point 5): a repository set up and naming no index is asked its index alone, the generator named from
+    /// A repository set up and naming no index is asked its index alone, the generator named from
     /// what it is built with, and the rule the press would add is the doctrine tool's few verbs and the generator's two.
     /// </summary>
     [Fact]
@@ -103,7 +103,7 @@ public sealed class SetupPressTests : IDisposable
     }
 
     /// <summary>
-    /// D230: a reconcile is a case of the press, asked of a repository the registry marks adopted. The plan holds what the doctrine tool's
+    /// A reconcile is a case of the press, asked of a repository the registry marks adopted. The plan holds what the doctrine tool's
     /// <c>status --json</c> said of its checkout, which the body says (one that finds nothing still closes done). Its quest carries the
     /// standing answer's lines among its items, its rule is the set-up's verbs with <c>reconcile</c> and <c>upstream --all</c>, and a press
     /// publishes it.
@@ -138,7 +138,7 @@ public sealed class SetupPressTests : IDisposable
         Assert.Contains("Run the whole test suite before every commit.", sentence);
     }
 
-    /// <summary>D230: one open reconcile per repository, and none beside an open set-up; one the registry does not mark adopted is refused.</summary>
+    /// <summary>One open reconcile per repository, and none beside an open set-up; one the registry does not mark adopted is refused.</summary>
     [Fact]
     public async Task A_reconcile_is_refused_beside_an_open_one_and_for_a_repository_not_adopted()
     {
@@ -153,7 +153,7 @@ public sealed class SetupPressTests : IDisposable
     }
 
     /// <summary>
-    /// D230, WSSETUP4: a lock a newer canon wrote is never reconciled back, and a status the tool could not read is said; where no tool runs,
+    /// A lock a newer canon wrote is never reconciled back, and a status the tool could not read is said; where no tool runs,
     /// the status is not asked. Each is refused before a quest is composed.
     /// </summary>
     [Fact]
@@ -176,7 +176,7 @@ public sealed class SetupPressTests : IDisposable
         Assert.Null(none.Doctrine);
     }
 
-    /// <summary>ORIENT2c: each stack the press knows has one form, the first the reading names.</summary>
+    /// <summary>Each stack the press knows has one form, the first the reading names.</summary>
     [Theory]
     [InlineData(".NET", "tools/index.cs", "dotnet run tools/index.cs", "dotnet run tools/index.cs -- --check")]
     [InlineData("Python", "tools/index.py", "python tools/index.py", "python tools/index.py --check")]
@@ -191,7 +191,7 @@ public sealed class SetupPressTests : IDisposable
         Assert.Equal(check, form.Check);
     }
 
-    /// <summary>ORIENT2c (the design §2.3): a name already on the line is never named over.</summary>
+    /// <summary>A name already on the line is never named over.</summary>
     [Fact]
     public async Task A_generator_name_already_on_the_line_is_passed_over_and_both_taken_refuse()
     {
@@ -206,7 +206,7 @@ public sealed class SetupPressTests : IDisposable
         Assert.Null(both.Title);
     }
 
-    /// <summary>ORIENT2c (the design §2.2): a stack the press does not know gets no quest, and the press says so.</summary>
+    /// <summary>A stack the press does not know gets no quest, and the press says so.</summary>
     [Fact]
     public async Task A_stack_the_press_does_not_know_is_refused_naming_the_ask_by_hand()
     {
@@ -220,7 +220,7 @@ public sealed class SetupPressTests : IDisposable
         Assert.Null(go.Title);
     }
 
-    /// <summary>ORIENT2c: the press grants the index quest's commands, exactly, as it grants a set-up's verbs.</summary>
+    /// <summary>The press grants the index quest's commands, exactly, as it grants a set-up's verbs.</summary>
     [Fact]
     public async Task Pressing_an_index_quest_adds_its_own_rule_and_publishes_it()
     {
@@ -258,7 +258,7 @@ public sealed class SetupPressTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 AGENTSPLACE1b: a repository not driven here is pressed all the same, its quest admitted alone by its id in the driver's
+    /// A repository not driven here is pressed all the same, its quest admitted alone by its id in the driver's
     /// file, so its session starts while nothing else of the repository does; one driven here is admitted by its driving, as before.
     /// </summary>
     [Fact]
@@ -315,7 +315,7 @@ public sealed class SetupPressTests : IDisposable
     }
 
     /// <summary>
-    /// An unadopted repository is carried only by a session on the protocol door (D70), driven or not; an adopter rides either.
+    /// An unadopted repository is carried only by a session on the protocol door, driven or not; an adopter rides either.
     /// </summary>
     [Fact]
     public async Task An_unadopted_repository_on_the_pipe_door_is_refused_and_an_adopter_is_not()
@@ -336,7 +336,7 @@ public sealed class SetupPressTests : IDisposable
         var plan = await PlanAsync(new World(), config: Driven.WithTrees("reports", false));
 
         Refused(plan, SetupRefusals.NoOwnTree, "`daoris place trees reports on`");
-        // HELPSETUP1: a tree per session is on the repository's Setup (UX6f).
+        // A tree per session is on the repository's Setup.
         Assert.Contains("Repositories → the repository's page → Setup → Driving", Find(plan, SetupRefusals.NoOwnTree).Sentence);
     }
 
@@ -407,7 +407,7 @@ public sealed class SetupPressTests : IDisposable
         Assert.False(plan.Pressable);
     }
 
-    /// <summary>D124 §2.2: the index's entries for it, the workspace's other names, and its README, all from the world the press reads.</summary>
+    /// <summary>The index's entries for it, the workspace's other names, and its README, all from the world the press reads.</summary>
     [Fact]
     public async Task The_quest_carries_the_index_the_neighbours_and_the_readme()
     {
@@ -577,7 +577,7 @@ public sealed class SetupPressTests : IDisposable
         public DoctrineReading Doctrine { get; init; } =
             new(new DoctrineStatus { Synced = true, Update = DoctrineUpdates.Differs, Carried = "0.0.1", Locked = "0.0.1", Added = 1 }, null);
 
-        /// <summary>Each repository whose status was asked.</summary>
+        /// <summary>Each repository whose status got asked.</summary>
         public List<string> Statused { get; } = [];
 
         public Task<DoctrineReading> StatusAsync(RepoView repository, CancellationToken ct)

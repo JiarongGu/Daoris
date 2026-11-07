@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-i (D212; the foundation design §13.4's <c>store_runs</c>, §19.1): the process's run of the desktop store, drawn once and owned
+/// The process's run of the desktop store (<c>store_runs</c>), drawn once and owned
 /// below every family's store, so the bindings and the move record write under one run per process and a move's claim names the run its
 /// executor's process is. Its kind is a verb until a composition root names the process a shell or a host.
 /// </summary>

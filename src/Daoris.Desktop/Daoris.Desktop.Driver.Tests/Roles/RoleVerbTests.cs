@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1y-i (the foundation design §2.7): <c>daoris role</c>, the terminal's door into the role catalogue. It lists the roles,
+/// <c>daoris role</c>, the terminal's door into the role catalogue. It lists the roles,
 /// adds, changes and removes a working role through the role door, and answers the judge's refusal before anything is written.
 /// </summary>
 public sealed class RoleVerbTests : IDisposable
@@ -58,7 +58,7 @@ public sealed class RoleVerbTests : IDisposable
         Assert.DoesNotContain(Catalogue().Slots, slot => slot.Id == "designer");
     }
 
-    /// <summary>I18NOPEN1 (D222): <c>--name</c> takes one text with no other language, <c>--name-in</c> adds any language, and <c>--zh</c> stays as <c>--name-in zh=…</c>.</summary>
+    /// <summary><c>--name</c> takes one text with no other language, <c>--name-in</c> adds any language, and <c>--zh</c> stays as <c>--name-in zh=…</c>.</summary>
     [Fact]
     public async Task A_role_is_named_by_one_text_with_any_other_languages_added_by_tag()
     {
@@ -90,7 +90,7 @@ public sealed class RoleVerbTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1a (the oneway design §2 S1): the role door is a seeded role's one door at the terminal too. `set` writes Build's and Intake's
+    /// The role door is a seeded role's one door at the terminal too. `set` writes Build's and Intake's
     /// orders, `off` turns Intake off where the retired `driver intake off` did, and Build is refused off by the same judge.
     /// </summary>
     [Fact]
@@ -110,8 +110,8 @@ public sealed class RoleVerbTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1a: `default` gives a seeded role its default staffing too, what the window's *Clear order* became (*Use the default*):
-    /// a stored order goes back to the role's default, which until ONEWAY1b is its key's as before.
+    /// `default` gives a seeded role its default staffing too, as the window's *Use the default* does:
+    /// a stored order goes back to the role's default.
     /// </summary>
     [Fact]
     public async Task ONEWAY1a_default_gives_a_seeded_role_its_default_staffing_back()
@@ -121,12 +121,12 @@ public sealed class RoleVerbTests : IDisposable
 
         Assert.Equal(0, await Run("default", "build"));
 
-        // ONEWAY1b: the default is the seed's written order, never as before.
+        // The default is the seed's written order.
         Assert.Equal([new ActorChoice("claude-code")], DriverConfig.Load(File_).Actors["build"]);
         Assert.Equal("claude-code", ActorChoices.FirstAgent("build", DriverConfig.Load(File_)));
     }
 
-    /// <summary>STAFFPOLICY1b (the staff policy design §6.4): the terminal's twin of the editor, under the same judge and the same door.</summary>
+    /// <summary>The terminal's twin of the editor, under the same judge and the same door.</summary>
     [Fact]
     public async Task Policy_sets_a_spread_reads_it_back_with_the_next_start_and_a_preset_or_a_clear_returns_the_order()
     {
@@ -173,7 +173,7 @@ public sealed class RoleVerbTests : IDisposable
     }
 
     /// <summary>
-    /// STAFFPOLICY1g (D205 point 9): in full access Ask Daoris has a shell, and the policy verb it runs there is a session's terminal, not the
+    /// In full access Ask Daoris has a shell, and the policy verb it runs there is a session's terminal, not the
     /// person's: with no window to press it in, it is refused with the way to the person's Apply and writes nothing.
     /// </summary>
     [Fact]
@@ -253,7 +253,7 @@ public sealed class RoleVerbTests : IDisposable
         new SupervisorRule("m-t", "tries", "episode", 5, "hold", null, "machine", null),
     ], "test", new SupervisorRuleWorld(["build", "chat"])).Revision);
 
-    /// <summary>CONTEXTDRIVE1d (the context counters design §7.6): the terminal's twin of the supervisor's rules, through the role door.</summary>
+    /// <summary>The terminal's twin of the supervisor's rules, through the role door.</summary>
     [Fact]
     public async Task CONTEXTDRIVE1d_role_rules_writes_a_place_s_rules_whole_and_role_supervisor_says_them_with_the_wider_place_s()
     {
@@ -291,7 +291,7 @@ public sealed class RoleVerbTests : IDisposable
         Assert.Equal(0, Rules.Of("repository:daoris").Revision);
     }
 
-    /// <summary>CONTEXTDRIVE1q: every executor acts on one rule per count, so a ladder is refused at the verb and at the judge.</summary>
+    /// <summary>Every executor acts on one rule per count, so a ladder is refused at the verb and at the judge.</summary>
     [Fact]
     public async Task CONTEXTDRIVE1q_a_ladder_is_refused_at_the_terminal_and_by_the_judge()
     {
@@ -303,7 +303,7 @@ public sealed class RoleVerbTests : IDisposable
         Assert.Contains("(ladder)", _error.ToString());
     }
 
-    /// <summary>CONTEXTDRIVE1k: a card's twin is one command that writes the press's rules whole as the judge accepted them, roles per rule.</summary>
+    /// <summary>A card's twin is one command that writes the press's rules whole as the judge accepted them, roles per rule.</summary>
     [Fact]
     public async Task CONTEXTDRIVE1k_the_card_s_twin_is_one_judged_write_of_the_same_rules()
     {
@@ -329,7 +329,7 @@ public sealed class RoleVerbTests : IDisposable
         Assert.Equal(Said(press.Rules), Said(written));
     }
 
-    /// <summary>CONTEXTDRIVE1d (D205 point 9): a rule is a staffing-class press, so a session's terminal under full access is refused it.</summary>
+    /// <summary>A rule is a staffing-class press, so a session's terminal under full access is refused it.</summary>
     [Fact]
     public async Task CONTEXTDRIVE1d_role_rules_run_from_a_session_s_terminal_is_refused_to_the_person_s_apply_and_writes_nothing()
     {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The records the service client returns, now the service's (FOUNDATION1 mod-iv): each reads what it read, and the words the higher
+/// The records the service client returns, the service's own: each reads what it read, and the words the higher
 /// subdomains spell (an author's mark, a session's kind, a pressed answer) are the service's own spellings, which theirs answer through.
 /// </summary>
 public sealed class ServiceRecordsTests

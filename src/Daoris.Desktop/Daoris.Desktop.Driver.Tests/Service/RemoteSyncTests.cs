@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The pure half of the sync (D47 §4/§9): these payloads ARE the disclosure boundary in practice, so
+/// The pure half of the sync: these payloads ARE the disclosure boundary in practice, so
 /// the tests hold the strip where it lives — a root or a transcript in a door's answer must not exist
 /// in anything built for the wire, and only joined repositories may be spoken of at all.
 /// </summary>
@@ -46,7 +46,7 @@ public sealed class RemoteSyncTests
 
     /// <summary>
     /// A joined repository in ANOTHER circle is a declaration addressed to a different deployment
-    /// (D48 §5) — it is fully joined, fully sharing, and this remote must never hear of it. That is
+    /// — it is fully joined, fully sharing, and this remote must never hear of it. That is
     /// the boundary in its most dangerous form: everything about the row says "feed me" except the one
     /// field that decides where.
     /// </summary>
@@ -79,7 +79,7 @@ public sealed class RemoteSyncTests
     /// nothing about it may feed UP from here. Without this, the next tick after a mirror would feed
     /// the teammate's repository from a machine that cannot see it — and an empty entries feed is a
     /// replacement, so their shared knowledge on the remote would be wiped by a machine that never had
-    /// it. The root is the checkout, and the checkout is the authority (D47 §5).
+    /// it. The root is the checkout, and the checkout is the authority.
     /// </summary>
     [Fact]
     public void A_mirrored_down_row_never_feeds_back_up()
@@ -91,7 +91,7 @@ public sealed class RemoteSyncTests
 
     /// <summary>
     /// The registry answer CARRIES roots (a loopback caller sees them); the registration payload must
-    /// not — the strip is at parse, so no later step could forward a machine path (D47 §4).
+    /// not — the strip is at parse, so no later step could forward a machine path.
     /// </summary>
     [Fact]
     public void A_registration_payload_carries_the_declaration_and_never_the_root()
@@ -104,7 +104,7 @@ public sealed class RemoteSyncTests
         using var document = JsonDocument.Parse(payload);
         var root = document.RootElement;
         Assert.False(root.TryGetProperty("root", out _));
-        // Nor a workspace (D48, WSP1's rule, unchanged by the map): a feed that could name its own
+        // Nor a workspace: a feed that could name its own
         // circle could write itself into one the receiving deployment never joined. WHERE it lands is
         // the receiver's wiring — for a shared host, the one circle it serves.
         Assert.False(root.TryGetProperty("workspace", out _));
@@ -116,7 +116,7 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
-    /// D91: what a joined repository says it uses travels with its declaration — and a declaration of
+    /// What a joined repository says it uses travels with its declaration — and a declaration of
     /// none goes on the wire exactly as it did before the field existed, so no deployment reads a
     /// changed declaration where nothing changed.
     /// </summary>
@@ -136,7 +136,7 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
-    /// D115 §2.2 (DEV4): a joined repository's lanes travel with its declaration as their words, and
+    /// A joined repository's lanes travel with its declaration as their words, and
     /// always as a list. The deployment keeps a row's lanes when a registration says nothing of them,
     /// so only an explicit empty list takes away lanes the repository stopped declaring.
     /// </summary>
@@ -190,7 +190,7 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
-    /// A quest pass, as a person hears it (D69): each move of this machine's that lost, each quest the
+    /// A quest pass, as a person hears it: each move of this machine's that lost, each quest the
     /// remote would not keep — in its own words — and a circle still moving after every round.
     /// </summary>
     [Fact]
@@ -214,9 +214,9 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
-    /// A refusal is said as what it refused (WAITCLAIM4): what this machine pushed for the quest, which may be a publish, a
+    /// A refusal is said as what it refused: what this machine pushed for the quest, which may be a publish, a
     /// move or a wait, never a take the remote declined. The remote's reason follows whole as its own sentence, so a lost
-    /// take's words (WAITCLAIM3) read as the reason, read from the answer's shape every host sends.
+    /// take's words read as the reason, read from the answer's shape every host sends.
     /// </summary>
     [Fact]
     public void A_refused_push_is_said_as_what_this_machine_pushed_with_the_remotes_reason_after_it()
@@ -244,7 +244,7 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
-    /// The remote's registry comes down as the TEAM's rows only (D47 §5): a teammate's repository
+    /// The remote's registry comes down as the TEAM's rows only: a teammate's repository
     /// becomes addressable here, while anything this machine holds keeps its own registration — the
     /// machine with the checkout is the authority, and its root must survive the sync untouched.
     /// </summary>
@@ -272,7 +272,7 @@ public sealed class RemoteSyncTests
         Assert.False(payload.GetProperty("shareKnowledge").GetBoolean());
         Assert.Equal("Theirs.", payload.GetProperty("domain").GetProperty("summary").GetString());
         // A row that came from this circle's deployment belongs to this circle on this machine — THIS
-        // machine's wiring deciding, not the feed naming itself (D48 §5).
+        // machine's wiring deciding, not the feed naming itself.
         Assert.Equal("default", payload.GetProperty("workspace").GetString());
     }
 
@@ -308,7 +308,7 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
-    /// SYNC0b: a teammate's row came down once and was never touched again. It is written when its
+    /// A teammate's row came down once and stayed untouched. It is written when its
     /// declaration changed and left alone when it did not, and a copy of this circle's that the circle
     /// no longer lists is retired here — the deployment said it is gone, and it is not this machine's.
     /// </summary>
@@ -367,7 +367,7 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
-    /// A registration names the commit its manifest stands on and the held one it descends from (SYNC5b),
+    /// A registration names the commit its manifest stands on and the held one it descends from,
     /// exactly as a feed does; one that can name none carries no commit at all, never half of one.
     /// </summary>
     [Fact]
@@ -387,7 +387,7 @@ public sealed class RemoteSyncTests
         Assert.False(unnamed.RootElement.TryGetProperty("base", out _));
     }
 
-    // ——— Where a circle stands (SYNC6a), as `daoris remote sync status` prints it.
+    // ——— Where a circle stands, as `daoris remote sync status` prints it.
 
     /// <summary>
     /// Ahead, behind and conflicts in one line, the quests named beneath it, and a wall said as the last
@@ -505,7 +505,7 @@ public sealed class RemoteSyncTests
         "aaaa1111bbbb2222", DateTimeOffset.Parse("2026-09-20T09:00:00Z"), "main");
 
     /// <summary>
-    /// The feed carries the point in the history it speaks for (D48 §6) — without it the receiving
+    /// The feed carries the point in the history it speaks for — without it the receiving
     /// deployment cannot order a wholesale replacement against what it already holds, which is how two
     /// machines feeding one repository become a flapping generator.
     /// </summary>
@@ -539,8 +539,8 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
-    /// The canonical line rides the registration, because the deployment cannot ask git (D48 §6) — and
-    /// omission preserves what was declared, so a checkout that cannot answer never erases it.
+    /// The canonical line rides the registration, because the deployment cannot ask git — and
+    /// omission preserves what is declared, so a checkout that cannot answer never erases it.
     /// </summary>
     [Fact]
     public void A_registration_carries_the_canonical_line_when_the_checkout_knows_it()
@@ -577,7 +577,7 @@ public sealed class RemoteSyncTests
         }
     }
 
-    // ——— Ancestry (SYNC5a): git on this machine says how its commit stands to the one held, and the
+    // ——— Ancestry: git on this machine says how its commit stands to the one held, and the
     // feed carries the held commit it checked against, so the deployment can take it as a fast-forward.
 
     [Fact]
@@ -590,14 +590,14 @@ public sealed class RemoteSyncTests
         Assert.False(unbased.RootElement.TryGetProperty("base", out _));
     }
 
-    /// <summary>What this machine's host answered for its code map (MAP3a's door).</summary>
+    /// <summary>What this machine's host answered for its code map.</summary>
     private const string LocalMap = """
         { "repository": "Shared", "file": "docs/code-map.json", "problem": null,
           "modules": [{ "id": "core", "path": "src/Core", "summary": "the heart" }, { "id": "web", "path": "src/Web", "summary": "the face" }],
           "dependencies": [{ "from": "web", "to": "core", "kind": "project" }] }
         """;
 
-    /// <summary>The map travels as the file it was read from, in the file's own shape, so the deployment judges it as the reader does.</summary>
+    /// <summary>The map travels as the file it came from, in the file's own shape, so the deployment judges it as the reader does.</summary>
     [Fact]
     public void A_code_map_feeds_as_the_file_it_was_read_from()
     {
@@ -690,9 +690,9 @@ public sealed class RemoteSyncTests
 
 /// <summary>
 /// The orchestration half, over a stub transport: the ORDER is a contract (registrations go first, so
-/// the remote knows who is joined before their records arrive — D47 §9), and a wall is reported and
+/// the remote knows who is joined before their records arrive), and a wall is reported and
 /// never thrown (records sync eventually; a dead tick would take the driver's whole look with it). Its one process is git,
-/// over a real checkout; the transport is in process, and no case waits on a clock, so it runs four at once (PROC1g).
+/// over a real checkout; the transport is in process, and no case waits on a clock, so it runs four at once.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -702,10 +702,9 @@ public sealed class RemoteSyncRunTests : IDisposable
     private const string Remote = "https://remote.example.com";
 
     /// <summary>
-    /// A REAL checkout, because knowledge feeds only from a named commit (D48 §6): a fixture root git
+    /// A REAL checkout, because knowledge feeds only from a named commit: a fixture root git
     /// cannot answer for feeds nothing at all, and the order this class exists to assert would then be
-    /// an order over a step that never happened. The first version of this test kept its invented path
-    /// and quietly stopped covering the entries feed the moment provenance landed.
+    /// an order over a step that never happened.
     /// </summary>
     private readonly GitTree _tree = new("remotesync-run");
 
@@ -773,16 +772,16 @@ public sealed class RemoteSyncRunTests : IDisposable
         int At(string fragment) => order.FindIndex(call => call.Contains(fragment));
         Assert.True(At($"POST {Remote}/api/registry") >= 0, string.Join("\n", order));
         Assert.True(At($"POST {Remote}/api/registry") < At($"POST {Remote}/api/feed/entries"));
-        // The code map rides beside the knowledge (MAP3b): a checkout with none still says so.
+        // The code map rides beside the knowledge: a checkout with none still says so.
         Assert.True(At($"POST {Remote}/api/feed/entries") < At($"POST {Remote}/api/feed/code-map"));
-        // Session records ride the host's pass (SYNC4): the driver never feeds them itself.
+        // Session records ride the host's pass: the driver never feeds them itself.
         Assert.DoesNotContain(order, call => call.Contains("/api/feed/sessions"));
         Assert.True(At($"POST {Remote}/api/feed/entries") < At($"GET {Remote}/api/registry"));
         Assert.True(At($"GET {Remote}/api/registry") < At($"POST {Local}/api/sync?workspace=default"));
     }
 
     /// <summary>
-    /// 🔴 The quest pass is the HOST's (D69): the driver asks for it and reads what it says, and never
+    /// The quest pass is the HOST's: the driver asks for it and reads what it says, and never
     /// speaks to the remote's quest doors itself — one implementation of the sync, shared with the take
     /// that claims by push, rather than two that drift.
     /// </summary>
@@ -874,7 +873,7 @@ public sealed class RemoteSyncRunTests : IDisposable
     }
 
     /// <summary>
-    /// The declaration is the manifest (SYNC5b): while the manifest itself is committed, the registration
+    /// The declaration is the manifest: while the manifest itself is committed, the registration
     /// speaks for the commit, whatever else is in flight; once the manifest is modified, it names none.
     /// </summary>
     [Fact]
@@ -950,7 +949,7 @@ public sealed class RemoteSyncRunTests : IDisposable
         Assert.Contains(report.Notes, n => n.Contains("canonical line is `main`"));
     }
 
-    // ——— The travelling retire and the team's rows (SYNC5b).
+    // ——— The travelling retire and the team's rows.
 
     private Func<HttpRequestMessage, HttpResponseMessage> Answering(
         string localRegistry, string retired, string remoteRegistry) => request =>
@@ -1031,7 +1030,7 @@ public sealed class RemoteSyncRunTests : IDisposable
     }
 
     /// <summary>
-    /// SYNC0b end to end: a teammate's copy is rewritten when the circle's declaration changed, and a
+    /// End to end: a teammate's copy is rewritten when the circle's declaration changed, and a
     /// copy the circle no longer lists is retired here through the host's own door.
     /// </summary>
     [Fact]
@@ -1154,8 +1153,8 @@ public sealed class RemoteSyncRunTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A wall in the feed does not stop the host's pass (SYNC6b). The host's pass is where a try is
-    /// RECORDED, so when the feed's first call hit a remote that was down and returned early, the
+    /// A wall in the feed does not stop the host's pass. The host's pass is where a try is
+    /// RECORDED, so when the feed's first call hit a down remote and returned early, the
     /// standing kept saying "synced" while *Sync now* had just failed (seen on the real window).
     /// The wall is still the pass's problem, named once.
     /// </summary>
@@ -1219,7 +1218,7 @@ public sealed class RemoteSyncRunTests : IDisposable
 }
 
 /// <summary>
-/// One machine, many circles: a sync per workspace with a remote (D48 §5). Each feeds only its own
+/// One machine, many circles: a sync per workspace with a remote. Each feeds only its own
 /// rows, and one circle's wall does not take another's pass with it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -1241,7 +1240,7 @@ public sealed class RemoteSyncSetTests
         """;
 
     /// <summary>Records the BODY as well as the call: which rows went where is the whole question.</summary>
-    /// <remarks>PARALLEL1b: the circles' passes run at once, so the record is kept under a lock.</remarks>
+    /// <remarks>The circles' passes run at once, so the record is kept under a lock.</remarks>
     private sealed class RecordingTransport : HttpMessageHandler
     {
         private readonly List<(string Call, string Body)> _calls = [];
@@ -1290,7 +1289,7 @@ public sealed class RemoteSyncSetTests
     ]);
 
     /// <summary>
-    /// `daoris remote sync --workspace` and *Sync now* run ONE circle's pass (SYNC6a): the other circle's
+    /// `daoris remote sync --workspace` and *Sync now* run ONE circle's pass: the other circle's
     /// remote hears nothing, and a circle this machine has no remote for is not a pass at all.
     /// </summary>
     [Fact]
@@ -1326,7 +1325,7 @@ public sealed class RemoteSyncSetTests
     }
 
     /// <summary>
-    /// PARALLEL1b (D181 point 3): the circles' passes run at once, so one remote that is slow to answer holds its own circle's pass
+    /// The circles' passes run at once, so one remote that is slow to answer holds its own circle's pass
     /// and not the other's. Here the first circle's remote answers only once the second's has been asked: one after another, it
     /// never would.
     /// </summary>
@@ -1382,7 +1381,7 @@ public sealed class RemoteSyncSetTests
         Assert.Contains(transport.Calls, c => c.Call == $"POST {Aurora}/api/registry");
     }
 
-    // ——— SYNC0d: the map is re-read on every pass, so wiring a remote needs no restart.
+    // ——— The map is re-read on every pass, so wiring a remote needs no restart.
 
     /// <summary>Which key each call to a host carried — the header is what a rotated key changes.</summary>
     private sealed class KeyedTransport : HttpMessageHandler
@@ -1397,8 +1396,8 @@ public sealed class RemoteSyncSetTests
     }
 
     /// <summary>
-    /// 🔴 The set was built once when the loop started, so a remote wired afterwards synced nothing
-    /// until a restart — though the remotes editor says the loop re-reads the map on its next pass.
+    /// A remote wired after the loop starts syncs without a restart, as the remotes editor says:
+    /// the loop re-reads the map on its next pass.
     /// </summary>
     [Fact]
     public async Task A_remote_wired_after_the_loop_started_syncs_on_the_next_pass()

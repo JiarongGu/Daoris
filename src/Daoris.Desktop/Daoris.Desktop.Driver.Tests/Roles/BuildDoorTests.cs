@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 s-i: the machine's door is one answer. The loop reads where any entry of Build's order rides the protocol, and the
-/// window, the terminal's two and set-up read that same answer, where the window and set-up read Build's first agent alone before.
+/// The machine's door is one answer. The loop reads where any entry of Build's order rides the protocol, and the
+/// window, the terminal's two and set-up read that same answer.
 /// </summary>
 public sealed class BuildDoorTests : IDisposable
 {

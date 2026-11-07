@@ -20,9 +20,9 @@ public sealed class SessionOpenDoorsTests
         public string? RawAnswer { get; set; }
         public string? RawCandidates { get; set; }
         public string? AnswerRun { get; set; } = "first";
-        /// <summary>The <c>head</c> mark the protocol answers (FOUNDATION1d-ii); none where null, as a d-i host answers.</summary>
+        /// <summary>The <c>head</c> mark the protocol answers; none where null, as an older host answers.</summary>
         public int? HeadMark { get; set; }
-        /// <summary>The <c>answers</c> mark the protocol answers (COMMS1b); none where null, as a host before the row answers.</summary>
+        /// <summary>The <c>answers</c> mark the protocol answers; none where null, as an older host answers.</summary>
         public int? AnswersMark { get; set; }
         /// <summary>The protocol's answer as it comes, where set: a host whose marks do not read.</summary>
         public string? RawProtocol { get; set; }
@@ -191,7 +191,7 @@ public sealed class SessionOpenDoorsTests
     }
 
     /// <summary>
-    /// FOUNDATION1d-ii part 1 (§19.12): the <c>head</c> mark is kept beside <c>opens</c> by the host's run: read once while answers name that run,
+    /// The <c>head</c> mark is kept beside <c>opens</c> by the host's run: read once while answers name that run,
     /// and read again before the next step that depends on it once an answer names another run or none. A host with no mark keeps none.
     /// </summary>
     [Fact]
@@ -236,13 +236,13 @@ public sealed class SessionOpenDoorsTests
         Assert.Equal(0, await client.Opens.HeadAsync());
     }
 
-    // ---- FOUNDATION1d-ii part 3 (§3.4 rule 3, §19.12): the open moves the words, asked only of a host whose `opens` is 2 ----
+    // ---- The open moves the words, asked only of a host whose `opens` is 2 ----
 
     private static readonly MoveWords Moves = new("left", ["w1"], ["w1", "w0"]);
 
     /// <summary>
-    /// 🔴 A host whose open moves words (<c>opens</c> 2) is sent the request's <c>moves</c> beside its key, and the answer says it was asked; a
-    /// d-i host (<c>opens</c> 1) and an unmarked one are sent none, whatever the caller's body carries, so the executor moves the words itself.
+    /// A host whose open moves words (<c>opens</c> 2) is sent the request's <c>moves</c> beside its key, and the answer says so; an
+    /// older host (<c>opens</c> 1) and an unmarked one are sent none, whatever the caller's body carries, so the executor moves the words itself.
     /// </summary>
     [Theory]
     [InlineData(2, true)]

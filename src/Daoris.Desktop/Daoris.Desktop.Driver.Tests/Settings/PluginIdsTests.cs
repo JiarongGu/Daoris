@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin's id as the settings and the catalogue read it (FOUNDATION1 mod-iii): the settings' own shape, which the catalogue's
+/// A plugin's id as the settings and the catalogue read it: the settings' own shape, which the catalogue's
 /// <c>IsId</c> answers through.
 /// </summary>
 public sealed class PluginIdsTests

@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 w, the start proof (Part B's row w, O2-6): the catalogue's own answer for a start beside today's start plan, which it is not
-/// wired to (row x does that). A catalogue with one added role reproduces the eight seeded roles' starts wherever the added role does not
+/// The start proof: the catalogue's own answer for a start beside today's start plan, which it is not
+/// wired to. A catalogue with one added role reproduces the eight seeded roles' starts wherever the added role does not
 /// reach, and each role's staffing is read from <c>role_staffing</c> through the store's own five fields.
 /// </summary>
 public sealed class RoleCatalogStartTests : IDisposable

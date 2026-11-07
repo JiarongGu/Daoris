@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 w (the foundation design §2.7, the judge's census): <c>RoleCatalog.Judge</c> refuses alike for every door with one closed set
+/// <c>RoleCatalog.Judge</c> refuses alike for every door with one closed set
 /// of codes, an appointed record before anything else, and the catalogue's one write keeps absent, set, removed and unreadable apart.
 /// </summary>
 public sealed class RoleCatalogJudgeTests : IDisposable
@@ -32,7 +32,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
     private static RoleRecord Supervisor(string id, RoleScope? scope = null, string? holder = RoleHolders.Terminal, int window = RoleHold.DefaultWindow) =>
         new(id, AuthoredText.Of("Supervisor"), RoleRecord.Appointed, [], scope ?? Workspace(), new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, holder, window));
 
-    /// <summary>D233 point 2: the supervisor and the steward are seeded catalogue roles, judged by the one judge as every role is.</summary>
+    /// <summary>The supervisor and the steward are seeded catalogue roles, judged by the one judge as every role is.</summary>
     [Fact]
     public void The_supervisor_and_the_steward_are_seeded_appointed_roles_judged_by_the_one_judge()
     {

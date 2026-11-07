@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The answers-alone rule's <c>refer</c> (CONTEXTDRIVE1j; the context counters design §4.6 point 3, §5): at its count's point the line is
+/// The answers-alone rule's <c>refer</c>: at its count's point the line is
 /// held as the rule's hold holds it, and the agent supervisor, where a terminal holds it for the line's repository, decides its course: a
 /// go-on held for the role's window and then released through the count's own door between turns, or the point left to the person. With
 /// no holder the point waits for the person and says so.

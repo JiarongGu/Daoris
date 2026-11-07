@@ -8,12 +8,12 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The service's own HTTP host (<c>daoris-knowledge-http</c>), built by this suite on first use and started in a process of its own, over a home
-/// and a store under a scratch folder: what a driver test reaches the real doors through (KEEPSIZE1b2). Every variable of this machine's
+/// and a store under a scratch folder: what a driver test reaches the real doors through. Every variable of this machine's
 /// Daoris is taken off its environment and the host is handed its own, so it never reaches the home of an install running here; this
 /// process's environment is read and never set.
 /// </summary>
 /// <remarks>
-/// The port is free when it is drawn and not when the host binds it (REALHOSTPORT1's lesson), so an answer is taken for the host's own only
+/// The port is free when it is drawn and not when the host binds it, so an answer is taken for the host's own only
 /// where it names the home minted for it before it started. The host is started without a window, a console or an agent: it is the
 /// service, which opens records and keeps no process of the driver's.
 /// </remarks>
@@ -31,7 +31,7 @@ internal sealed class RealServiceHost : IDisposable
 
     public string Url { get; }
 
-    /// <summary>The home the host runs over, under the scratch folder it was given.</summary>
+    /// <summary>The home the host runs over, under the scratch folder it is given.</summary>
     public string Home { get; }
 
     private static readonly SemaphoreSlim Building = new(1, 1);

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1w-s part 2 (D212's note, the design §19.15, C8-1.2 and "its bound against an older writer, both orders") across two
+/// The fence across two
 /// processes: the other writer is a Node holding the CLI's own lock (<c>keeplock.ts</c>) as its keeping write did, an older writer that
 /// takes a lock a minute old as stale and renames with no second look. The in-process half is <see cref="DriverConfigFenceTests"/>.
 /// </summary>

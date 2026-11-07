@@ -78,7 +78,7 @@ public sealed class ActorRunTests : IDisposable
         var line = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs), "*.jsonl").SelectMany(File.ReadAllLines).Single();
         Assert.Contains("actor.ran", line);
         Assert.Contains("build", line);
-        // LOGCOLLECTION1: the models the run reported are names in an array, not the collection's type.
+        // The models the run reported are names in an array, not the collection's type.
         Assert.Contains("\"models\":[\"reported\"]", line);
         Assert.DoesNotContain("System.", line);
     }
@@ -113,7 +113,7 @@ public sealed class ActorRunTests : IDisposable
     ];
 
     /// <summary>
-    /// MODELROLE1d (D205 §4.2, design §13's records row): the composer's override kept as value ids and reconciled from the returned
+    /// The composer's override kept as value ids and reconciled from the returned
     /// configuration, never merged blindly: an effort-only change keeps the model, a model change whose answer resets the effort clears
     /// it, two values with one display name stay apart, and a change the agent returned no list for keeps nothing new.
     /// </summary>
@@ -135,7 +135,7 @@ public sealed class ActorRunTests : IDisposable
     }
 
     /// <summary>
-    /// MODELROLE1d (D205 §4.2): a resume applies the asked choice overlaid by the override, whose model drops the asked effort unless it
+    /// A resume applies the asked choice overlaid by the override, whose model drops the asked effort unless it
     /// names one; the record's override as the service keeps it reads back, and each value it names is carried on both doors.
     /// </summary>
     [Fact]

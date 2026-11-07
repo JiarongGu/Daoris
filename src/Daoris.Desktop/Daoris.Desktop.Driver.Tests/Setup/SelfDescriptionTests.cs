@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a repository that declared nothing says about ITSELF (D77): read from its own committed
-/// files — never written — so an intake can decide a workspace nobody adopted. The first real one was
+/// What a repository that declared nothing says about ITSELF: read from its own committed
+/// files — never written — so an intake can decide a workspace nobody adopted. The first real one held
 /// twenty-nine repositories and not one declaration, and every ask parked.
 /// </summary>
 public sealed class SelfDescriptionTests : IDisposable
@@ -219,7 +219,7 @@ public sealed class SelfDescriptionTests : IDisposable
         Assert.Null(SelfDescriptionFiles.Read(Path.Combine(_root, "no-such-folder")));
     }
 
-    /// <summary>It reads; it never writes (D32) — the folder is exactly as it was.</summary>
+    /// <summary>It reads; it never writes — the folder is left exactly as found.</summary>
     [Fact]
     public void Reading_writes_nothing()
     {
@@ -232,7 +232,7 @@ public sealed class SelfDescriptionTests : IDisposable
     }
 
     /// <summary>
-    /// The rules are the Domain's, pure (STRUCT3e): a folder's top comes in as three questions, which a folder on the disk
+    /// The rules are the Domain's, pure: a folder's top comes in as three questions, which a folder on the disk
     /// answers and so does a folder held in memory, asked in the order a reading asks them.
     /// </summary>
     [Fact]

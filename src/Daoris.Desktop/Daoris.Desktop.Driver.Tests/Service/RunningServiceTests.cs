@@ -8,16 +8,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 FINDDAORIS1 (D171 point 1): the owner ran <c>daoris setup &lt;repository&gt; --plan</c> in a PowerShell of their
+/// The owner ran <c>daoris setup &lt;repository&gt; --plan</c> in a PowerShell of their
 /// own and met <i>no DAORIS_SERVICE_URL</i>, with Daoris running. A program the install carries now finds the service in this
 /// order: the variable; else the address the running desktop left in the home, trusted only while the process it names lives
 /// and the address answers as this home's Daoris host on this machine; else the refusal, which says Daoris is not running and
 /// how to start it. A workspace build reads no address file, so a gate, a rehearsal or a test never reaches a live install.
 /// </summary>
 /// <remarks>
-/// 🔴 HOMEID1 (D171, the terminal RPC design §3.2): the status was asked with redirects followed and taken where it named a
-/// <c>tier</c>, so another install's service, an older host, or a process id the system gave to another process since passed.
-/// It is now taken only where it answers this home's id (<see cref="HomeIdentity"/>), with redirects off.
+/// The status is taken only where it answers this home's id (<see cref="HomeIdentity"/>), with redirects off: a <c>tier</c> alone
+/// would take another install's service, an older host, or a process id the system gave to another process since passed.
 /// </remarks>
 public sealed class RunningServiceTests : IDisposable
 {
@@ -36,7 +35,7 @@ public sealed class RunningServiceTests : IDisposable
     private static Func<string, string?> Env(params (string Name, string? Value)[] pairs) =>
         name => pairs.FirstOrDefault(p => p.Name == name).Value;
 
-    /// <summary>A status door answering as a Daoris host on <paramref name="home"/>, whose id it answers (HOMEID1).</summary>
+    /// <summary>A status door answering as a Daoris host on <paramref name="home"/>, whose id it answers.</summary>
     private Func<string, ServiceStatus?> Answering(string home) => Answering(new ServiceStatus("lexical only", HomeIdentity.Ensure(home)));
 
     /// <summary>A status door answering as the test says: null is nothing answering as a Daoris host.</summary>
@@ -121,7 +120,7 @@ public sealed class RunningServiceTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HOMEID1: a process id the system gave to another process since. Its start is not the one the file names, so it is
+    /// A process id the system gave to another process since. Its start is not the one the file names, so it is
     /// not taken and nothing is asked; and where it could not be told (the CLI's case), its status would answer another id.
     /// </summary>
     [Fact]
@@ -148,8 +147,8 @@ public sealed class RunningServiceTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SERVICESTALL1: a service busy past the status door's bound is asked a second time after a short wait, and is found where
-    /// the second try answers; one that answers neither is said as what was seen (the address, the bound, that it was asked twice),
+    /// A service busy past the status door's bound is asked a second time after a short wait, and is found where
+    /// the second try answers; one that answers neither is said as what it saw (the address, the bound, that it got asked twice),
     /// never as a missing variable.
     /// </summary>
     [Fact]
@@ -185,7 +184,7 @@ public sealed class RunningServiceTests : IDisposable
         Assert.Single(waited);
     }
 
-    /// <summary>SERVICEPROBE1: a service whose process runs but answers only after seconds is waited for, one line said, and found.</summary>
+    /// <summary>A service whose process runs but answers only after seconds is waited for, one line said, and found.</summary>
     [Fact]
     public void A_slow_service_whose_process_runs_is_waited_for_and_found()
     {
@@ -205,7 +204,7 @@ public sealed class RunningServiceTests : IDisposable
         Assert.Single(waited);
     }
 
-    /// <summary>SERVICEPROBE1: a lease whose process is gone still refuses at once, the service never asked and no waiting said.</summary>
+    /// <summary>A lease whose process is gone still refuses at once, the service never asked and no waiting said.</summary>
     [Fact]
     public void A_gone_process_refuses_at_once_without_waiting()
     {
@@ -221,7 +220,7 @@ public sealed class RunningServiceTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HOMEID1: another install's service at the address this home's file names (the port was this home's once, and another
+    /// Another install's service at the address this home's file names (the port belonged to this home once, and another
     /// install's host holds it now) answers as a Daoris host, and is not this home's: it is not taken.
     /// </summary>
     [Fact]
@@ -237,7 +236,7 @@ public sealed class RunningServiceTests : IDisposable
         Assert.Equal(["http://localhost:5181"], _asked);
     }
 
-    /// <summary>🔴 HOMEID1: a host that answers no home (one from before HOMEID1, or a shared host) is not taken either.</summary>
+    /// <summary>A host that answers no home (one from an older build, or a shared host) is not taken either.</summary>
     [Fact]
     public void An_address_whose_service_answers_no_home_is_not_taken()
     {
@@ -262,7 +261,7 @@ public sealed class RunningServiceTests : IDisposable
         Assert.False(File.Exists(HomeIdentity.PathIn(Data)), "discovery writes nothing");
     }
 
-    /// <summary>Only this machine's own service is taken from a file: a terminal's verbs send machine paths (D46).</summary>
+    /// <summary>Only this machine's own service is taken from a file: a terminal's verbs send machine paths.</summary>
     [Fact]
     public void An_address_on_another_machine_is_not_trusted_and_not_asked()
     {
@@ -276,8 +275,8 @@ public sealed class RunningServiceTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A workspace build reads no address file: the account's <c>DAORIS_HOME</c> names a live install's home on a developer's
-    /// machine, and a gate's verb must never reach that install. Its refusal is the one it always was.
+    /// A workspace build reads no address file: the account's <c>DAORIS_HOME</c> names a live install's home on a developer's
+    /// machine, and a gate's verb must never reach that install. Its refusal is the usual one.
     /// </summary>
     [Fact]
     public void A_workspace_build_reads_no_address_file()
@@ -317,17 +316,17 @@ public sealed class RunningServiceTests : IDisposable
         Assert.Null(RunningService.Status("http://localhost:5181", new Host(_ => throw new HttpRequestException("refused"))));
 
     /// <summary>
-    /// 🔴 HOMEID1: a redirect is no answer. The address names this machine; where it sends the asker could be another host's, so
+    /// A redirect is no answer. The address names this machine; where it sends the asker could be another host's, so
     /// the status is asked with redirects off. Two real listeners on the loopback: the first redirects to the second, which would
     /// answer as this home's host, and is never asked.
     /// </summary>
     [Fact]
     public async Task A_redirect_is_no_answer()
     {
-        // 🔴 TESTWAIT3: Status holds its own two-second bound, which a loaded machine can spend before the loopback listener
-        // has even been asked (the answer then fails to be sent, and the old single try failed "not asked"). A try the listener
-        // was never asked in proves nothing about redirects, so it is run again, up to three times, with fresh listeners; a try
-        // that was asked is held to both assertions.
+        // Status holds its own two-second bound, which a loaded machine can spend before the loopback listener
+        // has even been asked (the answer then fails to be sent, and a single try fails "not asked"). A try in which the listener
+        // went unasked proves nothing about redirects, so it is run again, up to three times, with fresh listeners; a try
+        // in which it is asked is held to both assertions.
         var id = HomeIdentity.Ensure(Data);
         for (var attempt = 1; ; attempt++)
         {

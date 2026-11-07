@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The context-one design §3 A (D230 point 2): the doctrine tool's <c>status --json</c>, read by the desktop for an adopted repository, its
+/// The doctrine tool's <c>status --json</c>, read by the desktop for an adopted repository, its
 /// verdicts taken field by field (the update's direction and lists, the keeps it reopened, a newer lock) and never judged again here.
 /// The answers are the shapes the tool prints over a fixture adopter.
 /// </summary>
@@ -78,7 +78,7 @@ public sealed class DoctrineStatusTests
         Assert.False(status.Offers);
     }
 
-    /// <summary>WSSETUP4: a lock a newer canon wrote is never rolled back, so nothing is offered, and its version is said.</summary>
+    /// <summary>A lock a newer canon wrote is never rolled back, so nothing is offered, and its version is said.</summary>
     [Fact]
     public void A_lock_a_newer_canon_wrote_offers_nothing_and_names_its_version()
     {

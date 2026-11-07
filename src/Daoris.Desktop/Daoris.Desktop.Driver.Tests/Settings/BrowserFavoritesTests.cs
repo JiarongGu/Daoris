@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRW5: the in-app browser's favorites, kept in <c>&lt;home&gt;/browser/favorites.json</c>, the
-/// person's and never a session's, and the one address rule (ONEWAY1u). 🔴 A TWIN file while the CLI's <c>browser.ts</c> lasts: it reads
+/// The in-app browser's favorites, kept in <c>&lt;home&gt;/browser/favorites.json</c>, the
+/// person's and never a session's, and the one address rule. A TWIN file while the CLI's <c>browser.ts</c> lasts: it reads
 /// and edits it too, and its <c>browser.test.ts</c> carries the same tables. A case changed here is changed there, in the same commit.
 /// </summary>
 public sealed class BrowserFavoritesTests : TestHome

@@ -40,7 +40,7 @@ public sealed class PlacePlanTests
         Assert.False(string.IsNullOrWhiteSpace(solo.Suggested.Why.Said));
         Assert.Equal(new SetupMatch(SetupPresets.NotDriven, []), solo.Before.Match);
         Assert.Equal(new SetupMatch(SetupPresets.Merge, []), solo.After.Match);
-        // WORKFLOWCLEAN1 1a: the delivery is a saved copy of the shipped workflow, saved and chosen; no landing rule is written.
+        // The delivery is a saved copy of the shipped workflow, saved and chosen; no landing rule is written.
         Assert.Equal(["SET_TREES", "WORKFLOW_SAVE", "WORKFLOW_USE", "SET_DRIVABLE"], solo.Changes.Select(change => change.Key));
         Assert.Equal([new PlaceSave("merge-after-accept", "merge-after-accept", false, false)], plan.Saves);
         Assert.True(plan.Applies);
@@ -73,7 +73,7 @@ public sealed class PlacePlanTests
         var plan = await PlanAsync(new World(), Ask(SetupPresets.PullRequest, "web"));
 
         var web = Assert.Single(plan.Repositories);
-        // G8, D240 point 5: a plugin serving the platform suggests nothing; the pull request is the person's choice.
+        // A plugin serving the platform suggests nothing; the pull request is the person's choice.
         Assert.Equal((SetupPresets.Merge, SuggestionWhy.Default), (web.Suggested.Preset, web.Suggested.Why.Code));
         Assert.Equal("`pull-request`", web.Changes.Single(change => change.Key == "WORKFLOW_USE").After);
         Assert.Equal("pull-request", web.After.Land!.Method);
@@ -161,7 +161,7 @@ public sealed class PlacePlanTests
     }
 
     /// <summary>
-    /// 🔴 AGENTSPLACE1b: adoption without driving applies, and the plan says its set-up quest starts alone while general driving stays off,
+    /// Adoption without driving applies, and the plan says its set-up quest starts alone while general driving stays off,
     /// with no queued work released; driven in the same plan, it says nothing of the kind and lists what driving releases. Either is
     /// judged by the press's own rules over the configuration the plan leaves, which still refuse it with no tree of its own.
     /// </summary>

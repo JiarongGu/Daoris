@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 z-i (D212, the design §13.4's GitDoor, §19.10): the store opened read-only. It makes no file, writes none, never waits on a
+/// The store opened read-only. It makes no file, writes none, never waits on a
 /// writer under write-ahead logging, and reads a store a writer holds open mid-transaction and one a checkpoint is moving: the cases the
 /// git door's start is measured over (<c>GitDoorStartTests</c>), held here for what they must answer.
 /// </summary>

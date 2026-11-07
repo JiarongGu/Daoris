@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SUPERVISOR1a-ii (D208 §2.2; the supervisor design §11 row 1a-ii): the holder key leaves every Daoris process at its entry and every
+/// The holder key leaves every Daoris process at its entry and every
 /// start Daoris builds, so an agent of a Daoris started with the variable set holds no key and presents no proof. Each entry is found by
 /// searching for the hosts' entries, never listed by hand, and must remove the variable as its first statement.
 /// </summary>
@@ -49,7 +49,7 @@ public sealed partial class HolderKeyStripTests
     }
 
     /// <summary>
-    /// EVENTHOOK1g (the event hook design §6.3): every entry removes both messaging variables, by the shared strip or by name, and a start
+    /// Every entry removes both messaging variables, by the shared strip or by name, and a start
     /// a parent's session handed them gets neither.
     /// </summary>
     [Fact]
@@ -69,7 +69,7 @@ public sealed partial class HolderKeyStripTests
         Assert.All(ChildMarks.MessagingVariables, name => Assert.False(started.Environment.ContainsKey(name), name));
     }
 
-    /// <summary>Every start's seams drop a key a start inherited or was handed, and the holder's terminal alone adds it back.</summary>
+    /// <summary>Every start's seams drop a key a start inherited or a parent handed it, and the holder's terminal alone adds it back.</summary>
     [Fact]
     public void Every_start_s_hand_drops_the_key()
     {

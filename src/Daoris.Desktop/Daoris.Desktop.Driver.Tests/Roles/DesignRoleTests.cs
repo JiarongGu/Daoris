@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MODELROLE1l: Design is a seeded working role taking design work on Claude Code · opus · high, so a quest its publisher or the intake marks
+/// Design is a seeded working role taking design work on Claude Code · opus · high, so a quest its publisher or the intake marks
 /// as design work starts on it with no model named; with it removed the work falls to the role that takes build.
 /// </summary>
 public sealed class DesignRoleTests

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Registration follows the line (WSSETUP5, D124 §3): each repository with a checkout here registered from what its line
+/// Registration follows the line: each repository with a checkout here registered from what its line
 /// declares, sent only where the row holds something else, and every refusal said, against a world held in memory. The
 /// git half is <see cref="LineDeclarationReader"/>'s, held in the Process half.
 /// </summary>
@@ -137,7 +137,7 @@ public sealed class RegistrationFollowTests
         Assert.Equal(RegistryOutcome.NoLine, followed.Outcome);
         Assert.Contains("none is set, and git names none", followed.Said);
         Assert.Contains("`daoris place line game <branch>`", followed.Said);
-        // HELPSETUP1: a repository's line is set on its Setup since UX6f.
+        // A repository's line is set on its Setup.
         Assert.Contains("on Repositories → the repository's page → Setup → Line and landing.", followed.Said);
         Assert.DoesNotContain("Settings → Workspace", followed.Said);
         Assert.Null(followed.Line);

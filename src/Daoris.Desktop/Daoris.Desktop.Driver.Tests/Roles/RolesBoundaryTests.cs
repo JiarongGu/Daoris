@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xi, Roles' cuts: the seams they add. The one-turn re-ask and the supervisor's quarantine read their owners' choice and
+/// Roles' cuts: the seams they add. The one-turn re-ask and the supervisor's quarantine read their owners' choice and
 /// snapshot through facets Roles declares, the park's question is read by Roles' own parser, and the supervisor's print reads the question
 /// file and the ask's words through the operations Work orders installs. The behaviour itself is the moved classes' own.
 /// </summary>

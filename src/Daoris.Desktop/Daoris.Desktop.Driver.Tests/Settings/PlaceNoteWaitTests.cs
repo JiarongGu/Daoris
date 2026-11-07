@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CHANNELJOIN1c: a press that waits for the window says, beside its request id, why the pipe could not place the terminal where its
+/// A press that waits for the window says, beside its request id, why the pipe could not place the terminal where its
 /// <c>CONFIRMING</c> carries a code, and a code this build does not know says the plain wait.
 /// </summary>
 public sealed class PlaceNoteWaitTests

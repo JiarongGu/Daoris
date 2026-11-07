@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The two records registration following keeps under the home (WSSETUP5, D124 §3): the lines Daoris moved, and what
-/// following each repository last came to. A line is due when Daoris moved it after it was last followed.
+/// The two records registration following keeps under the home: the lines Daoris moved, and what
+/// following each repository last came to. A line is due when Daoris moved it after its last follow.
 /// </summary>
 public sealed class RegistryFollowingTests : IDisposable
 {
@@ -73,9 +73,9 @@ public sealed class RegistryFollowingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SETUPSTATE1 (the owner's report, 2026-10-23): a set-up landed on a branch for review, its pull request merged on the remote and
+    /// A set-up landed on a branch for review, its pull request merged on the remote and
     /// the checkout pulled outside Daoris, so its line moved with no Daoris landing to say so, and the follow never registered it: the
-    /// repository read not adopted until the next start. The ref watch now hears the line stand where it was not followed at.
+    /// repository read not adopted until the next start. The ref watch hears the line stand at a commit not yet followed.
     /// </summary>
     [Fact]
     public void A_line_heard_at_another_commit_than_it_was_followed_at_is_due()

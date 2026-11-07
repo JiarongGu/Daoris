@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>An ask's intake's kind proposals, read as the service answers them (WORKFLOW1i-b; the workflow design §4.3).</summary>
+/// <summary>An ask's intake's kind proposals, read as the service answers them.</summary>
 public sealed class ServiceClientWorkflowProposalTests
 {
     [Fact]

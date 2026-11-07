@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITISOLATE1: a test's git reaches its fixture and no repository above it. The ceiling is a variable on the start, never the
+/// A test's git reaches its fixture and no repository above it. The ceiling is a variable on the start, never the
 /// process's: no git runs here but the one class below.
 /// </summary>
 public sealed class TestGitCeilingTests
@@ -75,7 +75,7 @@ public sealed class TestGitCeilingTests
     }
 }
 
-/// <summary>GITISOLATE1's proof against a real git: a command that would climb out of its fixture is refused.</summary>
+/// <summary>The proof against a real git: a command that would climb out of its fixture is refused.</summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TestGitCeilingProcessTests : IDisposable

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris steward …</c> (STEWARDROLE1b, D209 §3.3): each act's words make its route's exact form and nothing else; a verb with
+/// <c>daoris steward …</c>: each act's words make its route's exact form and nothing else; a verb with
 /// no role's key sends nothing; and with no Daoris running the role does not exist, so every form answers <c>no-instance</c>, exit 2, and
 /// nothing acts alone. The proof over a served pipe is the modules' <c>RoleActTests</c>; no test here starts a window or an agent.
 /// </summary>
@@ -79,7 +79,7 @@ public sealed class StewardCommandTests : IDisposable
         Assert.Contains($"({StewardCommand.NoInstance})", output.ToString(), StringComparison.Ordinal);
     }
 
-    // ——— The desk (STEWARDROLE1c, D209 §6.2).
+    // ——— The desk.
 
     [Theory]
     [InlineData("request|drive|engine|the next row is for engine", "request", """{"act":"drive","target":"engine","why":"the next row is for engine"}""")]
@@ -109,7 +109,7 @@ public sealed class StewardCommandTests : IDisposable
     public void Words_the_desk_does_not_take_are_no_verb(string words) => Assert.Null(StewardCommand.Read(words.Split('|')));
 
     /// <summary>
-    /// The fenced print (D208 §4.4): each open request's act, target and why between fence lines carrying the print's nonce, labelled as
+    /// The fenced print: each open request's act, target and why between fence lines carrying the print's nonce, labelled as
     /// its caller's claims, a line of its that begins <c>&lt;&lt;&lt;</c> printed with a leading space so it cannot close the fence; a
     /// closed request on a line of its own with none of its caller's words.
     /// </summary>

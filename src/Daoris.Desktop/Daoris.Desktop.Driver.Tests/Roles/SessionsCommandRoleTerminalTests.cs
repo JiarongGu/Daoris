@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STEWARDROLE1a-i (D209 §3.3, the steward design §10 row 1a-i's <c>SessionsCommandTests</c>): a role's terminal never acts as the owner
+/// A role's terminal never acts as the owner
 /// nor alone. Through the real entry-to-dispatch path, <see cref="HolderKey.Take"/> then the verb, with the variable set to a key and to
 /// a text that is no key: a press verb is refused <c>role-terminal</c> at the entry, an allowed read's alone path is refused instead of
 /// acting alone, and nothing is written; with the variable absent the same verbs run as today.

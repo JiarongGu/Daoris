@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LAYOUT7 (D117 §6.2, §6.5): what a repository's line holds, read as git objects, for the set-up quest. Fast: the
+/// What a repository's line holds, read as git objects, for the set-up quest. Fast: the
 /// reader is handed the listing and the texts git would answer, which the scratch repositories below stand for. The
 /// git half is <c>SetupLineProcessTests</c>'s, in the Process half.
 /// </summary>

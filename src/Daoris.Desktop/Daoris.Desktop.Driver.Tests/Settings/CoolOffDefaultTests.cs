@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>The hour a limit naming no time cools for (FOUNDATION1 mod-iii): the settings' default, which the account limits answer through.</summary>
+/// <summary>The hour a limit naming no time cools for: the settings' default, which the account limits answer through.</summary>
 public sealed class CoolOffDefaultTests
 {
     [Fact]

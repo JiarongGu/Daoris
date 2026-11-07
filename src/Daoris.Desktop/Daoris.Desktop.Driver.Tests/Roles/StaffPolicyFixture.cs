@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1a's one table, <c>fixtures/staff-policy.json</c>: a policy and its facts in, the arrangement, the picks, the action and the
+/// The one table, <c>fixtures/staff-policy.json</c>: a policy and its facts in, the arrangement, the picks, the action and the
 /// judge's answer out. A policy's choice written as <c>{ "choice": n }</c> is choice n of the table's <c>choices</c>.
 /// </summary>
 internal static class StaffPolicyFixture

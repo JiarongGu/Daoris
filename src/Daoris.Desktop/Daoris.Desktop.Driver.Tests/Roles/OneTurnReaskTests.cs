@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MODELROLE1e (D205 §3.5(f)): a one-turn owner's refusal at the open is handled inside its own call. The owner's walk is asked again with
+/// A one-turn owner's refusal at the open is handled inside its own call. The owner's walk is asked again with
 /// the refused (entry, account) passed: a later entry of the same agent on the same account is set on the open session, anything else ends
 /// the refused record and the walk's answer opens next, and nothing left is the walk's own "no reviewer could run" with the pass reasons.
 /// Nothing here starts a process or asks the machine's accounts: the owner's walk is a table.
@@ -114,7 +114,7 @@ public sealed class OneTurnReaskTests
     }
 
     /// <summary>
-    /// FOUNDATION1j: the one re-ask comparison every re-ask reads (the quest's, the intake's and this one's): the walk asked again moves the
+    /// The one re-ask comparison every re-ask reads (the quest's, the intake's and this one's): the walk asked again moves the
     /// open session only to another entry of the refused one's agent, on the account it refused on, whatever their case.
     /// </summary>
     [Fact]

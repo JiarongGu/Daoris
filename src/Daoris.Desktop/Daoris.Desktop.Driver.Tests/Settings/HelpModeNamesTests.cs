@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's access mode as <c>driver.json</c>'s <c>helpMode</c> names it (FOUNDATION1 mod-iii): the settings' own reading, which
+/// Ask Daoris's access mode as <c>driver.json</c>'s <c>helpMode</c> names it: the settings' own reading, which
 /// Help's <c>HelpModes</c> answers through, so the key is read alike wherever a mode is named.
 /// </summary>
 public sealed class HelpModeNamesTests

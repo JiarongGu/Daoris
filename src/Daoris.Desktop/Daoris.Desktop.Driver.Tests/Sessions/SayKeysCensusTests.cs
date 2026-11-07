@@ -3,12 +3,12 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1b's census (D212's note of 2026-10-25, the foundation design §10; X4-1.2): every say to the service's say door outside
+/// The census: every say to the service's say door outside
 /// the tests passes the producer's key, or is named here as a legacy case with why it has none. A producer's retry is kept as one
 /// word only where the word carries a key, so a new keyless caller is a second word waiting to happen.
 /// </summary>
 /// <remarks>
-/// Read from the sources of the driver, its host and the modules, by name wherever they lie (STRUCT5a). A call is the door's when its
+/// Read from the sources of the driver, its host and the modules, by name wherever they lie. A call is the door's when its
 /// receiver is a service client by the name the code gives it; one reached under another name is not seen, which the floor on the
 /// calls seen holds against a scan that stopped reading.
 /// </remarks>
@@ -67,9 +67,9 @@ public sealed partial class SayKeysCensusTests
         var source = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.Modules", "SessionWords.cs"))
             + File.ReadAllText(SourceFiles.Find("Daoris.Desktop.Modules", "HeldWordsQueue.cs"));
 
-        // FOUNDATION1o: asking `ending` where the host's marks keep the moving open and the head.
+        // Asking `ending` where the host's marks keep the moving open and the head.
         Assert.Equal(2, Regex.Matches(source, Regex.Escape("service.SayAsync(id, word.Text, word.Files, ct, key: word.Key, ending: keeps, question: word.Question)")).Count);
-        // FOUNDATION1d-ii: with the walk to the line's head it is on, which a forward after `continued` carries; COMMS1e: and the press's question.
+        // With the walk to the line's head it is on, which a forward after `continued` carries; and the press's question.
         Assert.Contains(
             "SayAsync(next, word.Text, Uploads(id, word.Files), preface: null, word.Door, ct, word.Level, word.Key, word.Choice, word.Question, walk ?? new HeadWalk(next))",
             source);

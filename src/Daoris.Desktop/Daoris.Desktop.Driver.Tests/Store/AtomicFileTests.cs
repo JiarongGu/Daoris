@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one writer every file the driver keeps goes through (REV3 driver F11, C1). Writers each used a
-/// fixed beside-name, so two writing one file at once collided — and the throw failed a finished session.
+/// The one writer every file the driver keeps goes through. Each write takes a
+/// beside-name of its own, so two writing one file at once do not collide, and no throw fails a finished session.
 /// </summary>
 public sealed class AtomicFileTests : IDisposable
 {
@@ -77,7 +77,7 @@ public sealed class AtomicFileTests : IDisposable
         Assert.False(Directory.Exists(from));
     }
 
-    /// <summary>BINDRACE1: a file is read whole while the move that landed it still holds it (<see cref="MoveHold"/>), which refuses a plain read.</summary>
+    /// <summary>A file is read whole while the move that landed it still holds it (<see cref="MoveHold"/>), which refuses a plain read.</summary>
     [Fact]
     public void A_file_is_read_whole_while_its_move_into_place_still_holds_it()
     {
@@ -94,7 +94,7 @@ public sealed class AtomicFileTests : IDisposable
         Assert.Throws<FileNotFoundException>(() => AtomicFile.ReadText(Path.Combine(_folder, "q2.json")));
     }
 
-    /// <summary>READSHARE1: a file's bytes are read whole while the move that landed it still holds it.</summary>
+    /// <summary>A file's bytes are read whole while the move that landed it still holds it.</summary>
     [Fact]
     public void A_file_s_bytes_are_read_whole_while_its_move_into_place_still_holds_it()
     {

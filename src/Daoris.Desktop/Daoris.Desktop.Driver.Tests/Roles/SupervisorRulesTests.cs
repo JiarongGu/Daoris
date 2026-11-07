@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1c (the context counters design §4.1, §4.4, §4.5): the rule supervisor's pure half over
+/// The rule supervisor's pure half over
 /// <c>fixtures/supervisor-rules.json</c>. Every refusal code (a ladder among them: one rule per count for a line's roles at a place), a line's
 /// effective rules by place, by role and by <c>off</c>, and the two bounds judged on a narrower place's effective set after a wider place's write.
 /// </summary>

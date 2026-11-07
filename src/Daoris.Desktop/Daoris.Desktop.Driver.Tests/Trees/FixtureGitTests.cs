@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The git fixtures' own git (PROCSPEED1b), over real git: the plain repository most git classes copy is the one its build made; a
+/// The git fixtures' own git, over real git: the plain repository most git classes copy is the one its build made; a
 /// seed's git starts no second git behind a commit or a push, on either side (<see cref="GitSeed.NoMaintenanceAsync"/>); and the
 /// platform's moves on a bare origin (<see cref="LandedFixture"/>'s squash and its commit) leave it as a clone that committed and pushed
 /// would, with no clone. <see cref="GitSeedTests"/> holds what a copy keeps and mends with no git. Git's own trace counts the starts,

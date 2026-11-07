@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1b (D226; the staff policy design §2.1, §6, §11 points 2, 3 and 6): the role door carries a role's policy. It is judged once
-/// with the record, the staffing and the revision it was read at, and published with them in one store transaction; the staffing's writers
+/// The role door carries a role's policy. It is judged once
+/// with the record, the staffing and the revision read, and published with them in one store transaction; the staffing's writers
 /// re-key it in their own; every other writer leaves it stale; a field this build does not enforce is refused; <c>ROLES</c>' next new start
 /// is a probe.
 /// </summary>
@@ -226,7 +226,7 @@ public sealed class StaffPolicyDoorTests : IDisposable
 
         RoleDoor.Apply(Staffing, RoleChange.Set(night), [Sonnet, Opus], null, new RolePolicyPress(policy));
 
-        // A conversation reads its limit's wait and ask and its moves' bound from the rules (CONTEXTDRIVE1n); the policy holds none.
+        // A conversation reads its limit's wait and ask and its moves' bound from the rules; the policy holds none.
         Assert.Equal(StaffPolicyRead.Set, Staffing.Policy("night").State);
         Assert.DoesNotContain("moves", Staffing.Policy("night").Policy!.Write());
     }

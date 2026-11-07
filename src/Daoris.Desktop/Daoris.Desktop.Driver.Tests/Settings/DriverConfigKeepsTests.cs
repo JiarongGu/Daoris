@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-GRAPH1's review, finding 1 (FIX-LOG 2026-10-17): a door that edits <c>driver.json</c> (Setup, Ask Daoris's proposals, the
+/// A door that edits <c>driver.json</c> (Setup, Ask Daoris's proposals, the
 /// terminal) keeps every key the writer does not own, in its place, and changes only what it edits. One table both twins read,
-/// <c>fixtures/driver-config-keeps.json</c>, row for row (the CLI's <c>configkeeps.test.ts</c> read it until PUSH1f2b): an existing file in the writer's
-/// layout with keys neither twin knows at each level, one door's edit, and the bytes both write. The re-check (findings 1 and 3) adds
+/// <c>fixtures/driver-config-keeps.json</c>, row for row: an existing file in the writer's
+/// layout with keys neither twin knows at each level, one door's edit, and the bytes both write. The re-check adds
 /// another writer's change made between this one's read and its write, a file in CRLF, a file that no longer reads, and a key written twice.
 /// </summary>
 public sealed class DriverConfigKeepsTests
@@ -22,7 +22,7 @@ public sealed class DriverConfigKeepsTests
         try
         {
             Directory.CreateDirectory(folder);
-            // The second re-check's finding 2: a row `missing` is read where no file was.
+            // A row `missing` is read where no file exists.
             if (!missing) System.IO.File.WriteAllText(path, start);
             var config = DriverConfig.Load(path);
             // The re-check's finding 1: another writer's change, made after this one read the file and before it writes.
@@ -39,7 +39,7 @@ public sealed class DriverConfigKeepsTests
     }
 
     /// <summary>
-    /// CONFIGMERGE1 (D173's CONFIG1 note): which arrays are sets, merged by their names, is one table both twins carry, the CLI's
+    /// Which arrays are sets, merged by their names, is one table both twins carry, the CLI's
     /// <c>DRIVER_SETS</c>; every other array is a value, written whole.
     /// </summary>
     [Fact]
@@ -47,7 +47,7 @@ public sealed class DriverConfigKeepsTests
         Assert.Equal(Table.RootElement.GetProperty("sets").EnumerateArray().Select(set => set.GetString()!), DriverConfig.Sets);
 
     /// <summary>
-    /// CASEMAP1 (D173's CONFIG1 note): every per-name map reads a name written twice in any case where first readable, its first
+    /// Every per-name map reads a name written twice in any case where first readable, its first
     /// spelling and value, row for row (the table's <c>names</c>).
     /// </summary>
     [Theory]
@@ -129,33 +129,33 @@ public sealed class DriverConfigKeepsTests
             "drivable" => config.WithDrivable(Text("repository"), edit.GetProperty("on").GetBoolean()),
             "hold" => config.WithHold(Text("repository"), edit.GetProperty("on").GetBoolean()),
             "trees" => config.WithTrees(Text("repository"), edit.GetProperty("on").GetBoolean()),
-            // CONFIGMERGE1: a target declared or taken back, through the door the terminal's `write-across` goes through.
+            // A target declared or taken back, through the door the terminal's `write-across` goes through.
             "write-across" => config.WithWriteAcross(Text("repository"), Text("to"), edit.GetProperty("on").GetBoolean()),
             "line" => config.WithLine(Text("repository"), Text("branch")),
             "help-mode" => config.WithHelpMode(Text("mode")),
-            // AUTONOMY1a: the level the row names, through the access edit the route and the terminal make.
+            // The level the row names, through the access edit the route and the terminal make.
             "access" => config.WithAccess(Access(edit, new AccessEdit { Repository = Text("repository") })),
             "machine-access" => config.WithAccess(Access(edit, new AccessEdit { Machine = true })),
             // HEAVYRUN1b2a: a repository's heavy gates on this machine, through the door the terminal's `heavy` goes through.
             "heavy" => config.WithHeavyGates(Text("repository"), Gates(edit.GetProperty("gates"))),
-            // FABRIC-PIPELINE1b: a repository's sessions' checks, through the door the terminal's `checks` and Setup go through.
+            // A repository's sessions' checks, through the door the terminal's `checks` and Setup go through.
             "session-checks" => config.WithSessionChecks(Text("repository"), edit.GetProperty("checks").GetString()),
-            // INTEGRATE1d: a repository's integration accepted by its blob, or cleared, through the setter the Accept door calls.
+            // A repository's integration accepted by its blob, or cleared, through the setter the Accept door calls.
             "integration-gates" => config.WithIntegrationGates(Text("repository"), edit.GetProperty("blob").GetString()),
-            // MIXAGENT1c: a repository's hand-over rule, through the edit the route and the terminal make.
+            // A repository's hand-over rule, through the edit the route and the terminal make.
             "hand-over" => HandOverRules.Apply(
                 config, new HandOverEdit { Repository = Text("repository"), Set = new HandOverSet { Mode = Text("mode"), ModeGiven = true } }),
             "notify" => config.WithNotify(edit.GetProperty("on").GetBoolean()),
             // AGENTERRORS1a2: Try again's transient release, through the act RETRY_QUEST and the terminal's `retry` write.
             "transient-release" => config.WithTransientReleased(Text("quest"), Text("session"), DateTimeOffset.Parse(Text("ended"), System.Globalization.CultureInfo.InvariantCulture)),
-            // KEEP1d: one kind's keep rule, through the judgement SET_KEEP, the terminal's `keep` and Ask Daoris's door make.
+            // One kind's keep rule, through the judgement SET_KEEP, the terminal's `keep` and Ask Daoris's door make.
             "keep" => config.WithKeep(new KeepSet(
                 Text("kind"),
                 Days: edit.TryGetProperty("days", out var days) ? days.GetInt32() : null,
                 Never: edit.TryGetProperty("never", out var never) && never.GetBoolean(),
                 Whole: edit.TryGetProperty("whole", out var whole) ? whole.GetBoolean() : null,
                 Default: edit.TryGetProperty("default", out var back) && back.GetBoolean(),
-                // KEEP1f: the floor's size, share or `off`.
+                // The floor's size, share or `off`.
                 Gb: edit.TryGetProperty("gb", out var gb) ? gb.GetInt32() : null,
                 Percent: edit.TryGetProperty("percent", out var percent) ? percent.GetInt32() : null,
                 Off: edit.TryGetProperty("off", out var off) && off.GetBoolean())),
@@ -226,7 +226,7 @@ public sealed class DriverConfigKeepsTests
     }
 
     /// <summary>
-    /// The second re-check's finding 2, its plain side: a config read where no file was, saved where there still is none, writes the edit's
+    /// Its plain side: a config read where no file exists, saved where there still is none, writes the edit's
     /// changed keys alone (the defaults it never changed stay unwritten, as the reader reads them), and carries the path and <c>{}</c>.
     /// </summary>
     [Fact]

@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The machine's remotes are a MAP — workspace → { url, key } — in one file under the profile, with
-/// the environment overriding (D48 §5); absence is the default, silently (D21), so a machine with no
+/// the environment overriding; absence is the default, silently, so a machine with no
 /// remote never has to opt out of one.
 /// </summary>
 /// <remarks>
@@ -41,7 +41,7 @@ public sealed class RemoteTargetTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1l: the map a bind at the take reads is the one sync reads, the file <c>DAORIS_REMOTE_CONFIG</c> names before the home's,
+    /// The map a bind at the take reads is the one sync reads, the file <c>DAORIS_REMOTE_CONFIG</c> names before the home's,
     /// and the environment's pair before both; a circle synced through a remote named there is never bound.
     /// </summary>
     [Fact]
@@ -133,7 +133,7 @@ public sealed class RemoteTargetTests : IDisposable
         Assert.Empty(RemoteTarget.Load(Env(), ConfigPath));
     }
 
-    /// <summary>The pre-workspace flat shape names no remote — rebuilt, never migrated (D48 §5).</summary>
+    /// <summary>The pre-workspace flat shape names no remote — rebuilt, never migrated.</summary>
     [Fact]
     public void The_pre_workspace_flat_shape_names_no_remote()
     {
@@ -144,7 +144,7 @@ public sealed class RemoteTargetTests : IDisposable
 
     /// <summary>
     /// What the shell's settings surface writes, read back by the loaders — the file IS the contract
-    /// between them (D50), so a write the readers cannot read is the one failure that would look fine
+    /// between them, so a write the readers cannot read is the one failure that would look fine
     /// from both sides of the screen.
     /// </summary>
     [Fact]
@@ -162,14 +162,14 @@ public sealed class RemoteTargetTests : IDisposable
         Assert.Equal("https://aurora.example.com", reread["aurora"].Url);
         Assert.Equal("dk_toolskey0000", reread["tools"].Key);
         // Sorted and newline-terminated: this file is edited by hand as often as by a surface, and a
-        // rewrite that reshuffled it would make every edit look like a bigger change than it was.
+        // rewrite that reshuffled it would make every edit look like a bigger change than it is.
         var text = File.ReadAllText(ConfigPath);
         Assert.True(text.IndexOf("aurora", StringComparison.Ordinal) < text.IndexOf("tools", StringComparison.Ordinal));
         Assert.EndsWith("\n", text);
     }
 
     /// <summary>
-    /// CASEFOLD1d: a workspace is one in another case only as <c>OrdinalIgnoreCase</c> finds it, each letter to its one
+    /// A workspace is one in another case only as <c>OrdinalIgnoreCase</c> finds it, each letter to its one
     /// capital, as the CLI's <c>remotemap.ts</c> finds it through <c>casefold.ts</c> (<c>remotes.test.ts</c> names this
     /// behaviour): a name full case mapping would widen or lower to the same letters is another workspace with its own row,
     /// and the map is written back sorted ordinally, as the CLI writes it.
@@ -218,7 +218,7 @@ public sealed class RemoteTargetTests : IDisposable
 
     /// <summary>
     /// A redaction that leaks a short key is worse than printing it, because it reads as safe. The
-    /// prefix shown is the deployment's own audit handle — non-secret by design (D47 §7).
+    /// prefix shown is the deployment's own audit handle — non-secret by design.
     /// </summary>
     [Fact]
     public void A_redacted_key_shows_the_audit_prefix_and_nothing_else()

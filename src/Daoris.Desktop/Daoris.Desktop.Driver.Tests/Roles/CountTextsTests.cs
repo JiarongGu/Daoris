@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1i (D229 point 6; the context-counters design §5): the agent supervisor's reading. Its print gains the line's course, every
+/// The agent supervisor's reading. Its print gains the line's course, every
 /// count with how it is known and its source, cited as a reason names it, what Daoris does on each and whose that is, the line's parts and
 /// its last go-ons with who answered; and a reason's <c>count:</c> source names a count only where it is one of those handed.
 /// </summary>
@@ -97,7 +97,7 @@ public sealed class CountTextsTests
     [Fact]
     public void A_part_handed_over_near_says_its_account_was_near_its_limit_never_its_context_s_end()
     {
-        // HandOverWhy.Near is the account near its limit (D163's note), not the conversation near its context's end.
+        // HandOverWhy.Near is the account near its limit, not the conversation near its context's end.
         var print = CountTexts.Print(new LineFacts([], [new LinePartFact("s1", null), new LinePartFact("s2", HandOverWhy.Near)], []));
         Assert.Contains("- session s2: handed over as its account was near its limit", print, StringComparison.Ordinal);
         Assert.DoesNotContain("context", print, StringComparison.Ordinal);

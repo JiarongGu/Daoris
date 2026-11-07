@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row u (the agent-provider design §11 row u, D212 §2.4): the plan's walk reads each choice's provider's <c>Reach</c> before
+/// The plan's walk reads each choice's provider's <c>Reach</c> before
 /// any account is asked, so a provider stated <c>Opened</c> is passed <c>not-opened</c> at a place not opened to it and Build's later choice
 /// runs; the start holds only where it is the only choice. A brainstorm voice reads its workspace, Ask Daoris's room the machine's, and a
 /// meeting, outside the plan, refuses the participant.

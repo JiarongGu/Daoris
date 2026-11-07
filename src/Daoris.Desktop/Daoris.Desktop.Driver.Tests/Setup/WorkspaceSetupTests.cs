@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSSETUP6 (D124 §4.1–§4.3): a workspace is set up by a plan of single set-ups, which the driver's tick works. The order
+/// A workspace is set up by a plan of single set-ups, which the driver's tick works. The order
 /// is what other work touches first; one is open at a time by default and never the cap's last slot; the plan pauses itself
 /// once its pilot has closed; the person pauses, resumes and stops it; a repository the press refuses at its turn is skipped
 /// with its reason and never judged again in a loop; a declined, deleted or parked set-up is never asked again, and no
@@ -30,7 +30,7 @@ public sealed class WorkspaceSetupTests : IDisposable
     // ---------------------------------------------------------------- the order (§4.2)
 
     /// <summary>
-    /// D124 §4.2: quests addressed to it first, then reads into its checkout by other repositories' sessions, then sessions
+    /// Quests addressed to it first, then reads into its checkout by other repositories' sessions, then sessions
     /// run in it, then by name. Its own quests and the set-ups are not work other work asked of it.
     /// </summary>
     [Fact]
@@ -62,7 +62,7 @@ public sealed class WorkspaceSetupTests : IDisposable
     }
 
     /// <summary>
-    /// A read is a call another repository's session made into this checkout (D76): each call once however many files it
+    /// A read is a call another repository's session made into this checkout: each call once however many files it
     /// touched there, separators and case as Windows sees them, the deepest root owning a path, and a path that is not rooted
     /// or only shares a prefix counted nowhere.
     /// </summary>
@@ -88,7 +88,7 @@ public sealed class WorkspaceSetupTests : IDisposable
     }
 
     /// <summary>
-    /// The files a session touched are read from its conversation record (D76): each tool call's locations, a call's later
+    /// The files a session touched are read from its conversation record: each tool call's locations, a call's later
     /// updates the same call, a call with no id its own, a line that does not read skipped, and words that name locations
     /// never taken for a call.
     /// </summary>
@@ -124,7 +124,7 @@ public sealed class WorkspaceSetupTests : IDisposable
     // ---------------------------------------------------------------- the press (§4.1, §4.3)
 
     /// <summary>
-    /// D124 §4.1, §4.3: the press writes the plan under the home, in order, one at a time and a pilot of two by default, and
+    /// The press writes the plan under the home, in order, one at a time and a pilot of two by default, and
     /// adds the doctrine tool's verbs once, at the workspace's scope, never a rule per repository. It publishes nothing: the
     /// tick does.
     /// </summary>
@@ -168,7 +168,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.True(replaced.Pressable);
     }
 
-    /// <summary>D124 §4.1: never more than <c>cap − 1</c> at once, so other work keeps a slot; at a cap of one, one.</summary>
+    /// <summary>Never more than <c>cap − 1</c> at once, so other work keeps a slot; at a cap of one, one.</summary>
     [Theory]
     [InlineData(3, 2, true)]
     [InlineData(3, 3, false)]
@@ -237,7 +237,7 @@ public sealed class WorkspaceSetupTests : IDisposable
 
         var preview = await PreviewAsync(world, Driven(3).WithTrees("billing", false));
 
-        // ORIENT2c: a repository set up is still to go for its index until the plan has asked it.
+        // A repository set up is still to go for its index until the plan has asked it.
         var docs = preview.Rows.Single(row => row.Repository == "docs").Standing;
         Assert.Equal(SetupState.ToGo, docs.State);
         Assert.Equal("set up: What docs owns. Its index is to go.", docs.Said);
@@ -249,7 +249,7 @@ public sealed class WorkspaceSetupTests : IDisposable
 
     // ---------------------------------------------------------------- the tick (§4.1)
 
-    /// <summary>D124 §4.1: while fewer than <c>atOnce</c> are open, the next to go is published, as the single press publishes it.</summary>
+    /// <summary>While fewer than <c>atOnce</c> are open, the next to go is published, as the single press publishes it.</summary>
     [Fact]
     public async Task The_tick_publishes_the_next_to_go_only_while_fewer_than_at_once_are_open()
     {
@@ -271,7 +271,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Equal([("workspace", "work"), ("repository", "atlas"), ("quest", atlas.Id)], published.Data);
     }
 
-    /// <summary>🔴 D124 §4.1: a plan file asking for more is held to <c>cap − 1</c> at every tick, and to one at a cap of one.</summary>
+    /// <summary>A plan file asking for more is held to <c>cap − 1</c> at every tick, and to one at a cap of one.</summary>
     [Theory]
     [InlineData(4, 3)]
     [InlineData(3, 2)]
@@ -289,7 +289,7 @@ public sealed class WorkspaceSetupTests : IDisposable
     }
 
     /// <summary>
-    /// D124 §4.1: two go first; nothing more is asked until both have closed, and then the plan pauses itself, says so once,
+    /// Two go first; nothing more is asked until both have closed, and then the plan pauses itself, says so once,
     /// and waits for the person. Resumed, it carries on and never pauses for the pilot again.
     /// </summary>
     [Fact]
@@ -328,7 +328,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Contains(world.Logged, line => line.Event == "setup.resumed");
     }
 
-    /// <summary>ACCTQUOTE1b: the pilot's pause names the resume in a command a person can paste, its workspace spelled for any shell.</summary>
+    /// <summary>The pilot's pause names the resume in a command a person can paste, its workspace spelled for any shell.</summary>
     [Fact]
     public async Task The_pilot_s_pause_spells_its_workspace_in_the_resume_for_any_shell()
     {
@@ -368,7 +368,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Single(world.Logged, line => line.Event == "setup.paused" && line.Data.Contains(("by", "person")));
     }
 
-    /// <summary>D124 §4.5: stop ends the plan. A quest it already published stays.</summary>
+    /// <summary>Stop ends the plan. A quest it already published stays.</summary>
     [Fact]
     public async Task A_stopped_plan_publishes_nothing_more_and_what_it_published_stays()
     {
@@ -392,7 +392,7 @@ public sealed class WorkspaceSetupTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 D124 §4.1: a repository the press refuses at its turn is skipped, the plan says why, and the next is asked in the same
+    /// A repository the press refuses at its turn is skipped, the plan says why, and the next is asked in the same
     /// tick. It is never judged again by a later tick: no loop of refusals.
     /// </summary>
     [Fact]
@@ -424,7 +424,7 @@ public sealed class WorkspaceSetupTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 AGENTSPLACE1b: a repository not driven here is asked at its turn like the rest, and the set-up published to it is admitted alone
+    /// A repository not driven here is asked at its turn like the rest, and the set-up published to it is admitted alone
     /// in the driver's file, by its quest; one driven here is admitted by its driving, and nothing is written for it.
     /// </summary>
     [Fact]
@@ -459,7 +459,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Empty(Plan().Published);
     }
 
-    /// <summary>D124 §4.1: a declined set-up is never published again by the plan; the person presses for it alone.</summary>
+    /// <summary>A declined set-up is never published again by the plan; the person presses for it alone.</summary>
     [Fact]
     public async Task A_declined_set_up_is_never_asked_again()
     {
@@ -501,7 +501,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Equal(SetupState.Waiting, (await StandAsync(world, config)).Single(standing => standing.Repository == "atlas").State);
     }
 
-    /// <summary>A set-up its failed sessions parked (DRV6) holds no session and needs the person: it frees the slot and is not asked again.</summary>
+    /// <summary>A set-up its failed sessions parked holds no session and needs the person: it frees the slot and is not asked again.</summary>
     /// <summary>A set-up parks at its line's failures rule, as the planner parks a quest: here the machine's rule, at 2.</summary>
     [Fact]
     public async Task A_parked_set_up_frees_its_slot_and_is_never_asked_again()
@@ -520,7 +520,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Equal(SetupState.Parked, (await StandAsync(world, config)).Single(standing => standing.Repository == "atlas").State);
     }
 
-    /// <summary>A set-up the person deleted (D95) is not asked again by the plan.</summary>
+    /// <summary>A set-up the person deleted is not asked again by the plan.</summary>
     [Fact]
     public async Task A_deleted_set_up_is_never_asked_again()
     {
@@ -559,7 +559,7 @@ public sealed class WorkspaceSetupTests : IDisposable
     }
 
     /// <summary>
-    /// ORIENT2c (D151 point 5): a repository set up is asked its index next, paced with the set-ups (one open at a time by
+    /// A repository set up is asked its index next, paced with the set-ups (one open at a time by
     /// default), its commands granted in its own scope as the single press grants them; once that closes, the next set-up goes.
     /// </summary>
     [Fact]
@@ -594,7 +594,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Equal($"set up: What atlas owns. Its index #{index.Id} is done, for your review.", done.Said);
     }
 
-    /// <summary>ORIENT2c: one that names its index already is set up, judged once and said nowhere; a declined index is never asked again.</summary>
+    /// <summary>One that names its index already is set up, judged once and said nowhere; a declined index is never asked again.</summary>
     [Fact]
     public async Task A_repository_naming_its_index_is_set_up_quietly_and_a_declined_index_is_not_asked_again()
     {
@@ -712,7 +712,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Equal("setting up", WorkspaceSetupRules.Word(SetupState.Open));
     }
 
-    /// <summary>The head line, in the design's own words (D124 §4.4).</summary>
+    /// <summary>The head line, in the design's own words.</summary>
     [Fact]
     public void The_head_line_says_each_state_in_the_designs_words()
     {
@@ -808,7 +808,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Equal([new("s1", "atlas"), new("s2", "billing"), new SessionRun("s4", "atlas")], runs);
     }
 
-    /// <summary>Answers each path with what it was given, whatever the query — the doors' own JSON.</summary>
+    /// <summary>Answers each path with what it is given, whatever the query — the doors' own JSON.</summary>
     private sealed class Canned(Dictionary<string, string> answers) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>

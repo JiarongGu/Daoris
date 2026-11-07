@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1c (D226; the staff policy design §3, §9 row c): the start plan arranges the role's own order by its set policy, reserves the
+/// The start plan arranges the role's own order by its set policy, reserves the
 /// top pick beside the account's count, gives it back with that count, and writes the start down at its open. The agents are present by a
 /// file look and nothing spawns, as <c>StartPlanTests</c>' are; the store is the home's own, with its staffing imported and its policy
 /// saved through the role door.
@@ -138,7 +138,7 @@ public sealed class StartPlanStaffTests : IDisposable
         var first = await Plan().ResolveAsync(CancellationToken.None);
         Assert.Equal("1", first.Chosen!.From);
 
-        // The open was refused: the roster gives the count back, and the reservation goes with it, so the next start is choice 1 again.
+        // A refused open gives the count back to the roster, and the reservation goes with it, so the next start is choice 1 again.
         _roster.Release(first.Selection.Number);
         var again = await Plan().ResolveAsync(CancellationToken.None);
         Assert.Equal("1", again.Chosen!.From);
@@ -239,7 +239,7 @@ public sealed class StartPlanStaffTests : IDisposable
         Policy("order");
         for (var i = 0; i < 3; i++) Assert.Equal("1", (await StartAsync($"f{i}")).Choice);
 
-        // The line gains its rule and its why only under a set policy; with none it is the line it always was.
+        // The line gains its rule and its why only under a set policy; with none the line is unchanged.
         Assert.Equal(["", "order|first", "order|first", "order|first"], ChoseLines());
     }
 

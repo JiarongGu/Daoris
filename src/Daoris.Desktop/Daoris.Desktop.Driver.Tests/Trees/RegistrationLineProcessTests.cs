@@ -7,12 +7,12 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSSETUP5's Process-half case (D124 §8): registration follows the line against real git. A scratch repository's line
+/// The Process-half case: registration follows the line against real git. A scratch repository's line
 /// gains a manifest and a lanes file by a <c>merge</c> landing; the checkout then moves to another branch, where the
 /// working files say something else. The look after the landing registers what the LINE declares, adopted and declared,
 /// for the checkout's root, through the registry door, and asks for the refresh once.
 /// </summary>
-// subject: src/Daoris.Desktop/Daoris.Desktop.Driver/Service — registration follows the line (CISCOPE1c's census, D207)
+// subject: src/Daoris.Desktop/Daoris.Desktop.Driver/Service — registration follows the line
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class RegistrationLineProcessTests : IDisposable
@@ -74,7 +74,7 @@ public sealed class RegistrationLineProcessTests : IDisposable
         Assert.Equal(RegistryOutcome.Registered, RegistryFollowing.Read(Home)["engine"].Outcome);
     }
 
-    /// <summary>The registry door, standing in: one unadopted row at the checkout's root, and what was sent to it.</summary>
+    /// <summary>The registry door, standing in: one unadopted row at the checkout's root, and what it is sent.</summary>
     private sealed class StandInRegistry(string root) : HttpMessageHandler
     {
         public List<JsonObject> Sent { get; } = [];
