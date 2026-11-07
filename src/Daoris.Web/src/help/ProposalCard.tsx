@@ -5,6 +5,7 @@ import { Button, Inline } from '../design/ui';
 import { SessionHelperFacts } from './proposal/SessionHelperFacts';
 import { sessionHelperDoor } from './proposal/sessionHelperDoor';
 import { type HelpRulesShown, RulesChange } from './proposal/RulesChange';
+import { type HelpSupervisorShown, SupervisorChange } from './proposal/SupervisorChange';
 import type { StarterDoor } from './starters';
 
 /**
@@ -55,6 +56,8 @@ export type HelpProposal = {
   grant?: HelpGrantShown | null;
   /** A place's supervisor rules, before and after (`role`); the card words them from the catalogue. */
   rules?: HelpRulesShown | null;
+  /** A supervisor set (`role`): its kinds, acts, holder and window, before and after; the card words them from the catalogue. */
+  supervisor?: HelpSupervisorShown | null;
   /** Bringing up to date: whether the person has looked, and every row the look listed. */
   sync?: HelpSyncShown | null;
   /** A workflow version (`workflow`): drawn as the design's card. */
@@ -460,6 +463,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
       {workflow
         ? composing ? <DraftChange workflow={workflow} /> : <WorkflowChange workflow={workflow} />
         : proposal.rules ? <RulesChange rules={proposal.rules} />
+        : proposal.supervisor ? <SupervisorChange supervisor={proposal.supervisor} />
         : <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>}
       {plugin && <PluginRuns plugin={plugin} />}
       {grant && <GrantTools grant={grant} />}

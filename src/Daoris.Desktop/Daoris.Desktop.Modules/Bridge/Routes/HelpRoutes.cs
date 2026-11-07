@@ -247,6 +247,10 @@ public sealed class HelpRoutes(DriverContext context)
             Rules = plan.Rules is { } rules
                 ? new { rules.Place, Before = RuleShown(rules.Before), After = RuleShown(rules.After) }
                 : null,
+            // A supervisor's kinds, acts, holder and window after the change and before it, for the page to word.
+            Supervisor = plan.Supervisor is { } supervisor
+                ? new { supervisor.Id, supervisor.Names, Scope = new { supervisor.Scope.Kind, supervisor.Scope.Id }, Hold = HoldShown(supervisor.Hold), Before = supervisor.Before is { } before ? HoldShown(before) : null }
+                : null,
             Sync = SyncShown(plan.Sync),
             // A workflow's version, as the card shows it, never the steps or the choice Apply carries.
             Workflow = WorkflowShown(plan.Workflow),
@@ -263,6 +267,8 @@ public sealed class HelpRoutes(DriverContext context)
                 }
                 : null,
         };
+
+    private static object HoldShown(RoleHold hold) => new { hold.Kind, hold.Acts, hold.Holder, hold.Window, hold.Decides };
 
     private static object[] RuleShown(IReadOnlyList<SupervisorRule> rules) =>
         [.. rules.Select(rule => new { rule.Count, rule.At, rule.Do, rule.UpTo, rule.Roles })];

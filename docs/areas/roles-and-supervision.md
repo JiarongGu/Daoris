@@ -198,7 +198,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 **The supervisor and the steward**
 
 41. They are staffed through the role door like every role (`SET_ROLE`, `driver role set --decides --acts --holder --window`,
-    `role_propose`). The act judge reads the catalogue at each act, answer and admission. One resolver
+    `role_propose`). Ask Daoris proposes a supervisor of kinds or a generic one (`HelpSupervisorProposals`): the press names
+    `kind: supervisor` beside `decides` (`[]` is the generic one), `authority`, `holder` (`rules` or `terminal`) and `window`; a field it
+    leaves out keeps the role's own, and a new supervisor names `decides`, is held by the person's rules and is granted nothing. The
+    plan is refused `not-converted` until the home's `supervisor-kinds` step is recorded, the role door's judge refuses the rest (an
+    unknown kind or act, an act of a kind not decided, an agent holder, two of a kind in one scope, a staffing of choices, work), and
+    the card says the supervisor's kinds, holder, acts and window before and after in the catalogue's words, applied by the person's
+    press through the one door. The act judge reads the catalogue at each act, answer and admission. One resolver
     (`SupervisorResolution.Find`, `RoleCatalog.Supervising`) names who decides a decision of a kind at a place, kind first: the
     repository's, the workspace's, then the machine's supervisor deciding the kind, else the repository's, the workspace's, then
     the machine's generic one, the repository placed in the workspace `repository_workspaces` keeps. An unreadable appointed
