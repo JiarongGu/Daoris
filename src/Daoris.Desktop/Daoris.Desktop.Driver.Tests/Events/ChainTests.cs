@@ -100,9 +100,10 @@ public sealed class ChainTests : IDisposable
             [ChainKind.Fact, ChainKind.Effect, ChainKind.Reader, ChainKind.Reader, ChainKind.Reader, ChainKind.Reader],
             table.Links.Select(link => link.Kind));
 
-        // The evaluation runtime hears what the plan hears, the look's deadline, a plugin's step and its own wakes, and emits nothing.
+        // The evaluation runtime hears the look's deadline, a plugin's step and its own wakes, and emits nothing. A ledger change is no
+        // pass of its own: a wake's pass reads the units as the last look read them, so it would find nothing the change moved.
         var nodes = Assert.Single(table.Links, link => link.Rank == ChainRanks.Nodes);
-        Assert.Equal([ChainEvents.Ledger, ChainEvents.PluginStep, ChainEvents.Nodes, ChainEvents.TimerOf(ChangeTopics.Look)], nodes.On);
+        Assert.Equal([ChainEvents.PluginStep, ChainEvents.Nodes, ChainEvents.TimerOf(ChangeTopics.Look)], nodes.On);
         Assert.Empty(nodes.Emits);
 
         // FABRIC-RUN1d: a plugin's step and the runtime's own wakes run link 8 alone, never the local plan.
