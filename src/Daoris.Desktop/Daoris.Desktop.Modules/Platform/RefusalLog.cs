@@ -48,10 +48,7 @@ public static class RefusalLog
         log.Write(Ours.Contains(code) ? "info" : "warn", "refused", Said(request, code, PipeDoor.Now));
     }
 
-    /// <summary>
-    /// The fields of a refused request's line, each named once: a line is one object, and a field said twice reads as its
-    /// last, so the harness agent's id has a name of its own beside the door the request came in by.
-    /// </summary>
+    /// <summary>A refused request's line fields, each named once: a line is one object, and a field said twice reads as its last.</summary>
     public static IReadOnlyList<(string Key, object? Value)> Said(IpcRequest request, string code, string? door)
     {
         List<(string, object?)> said = [("code", code), ("request", $"{request.Module}.{request.Type}")];

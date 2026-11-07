@@ -164,10 +164,6 @@ public sealed class RefusalLogTests : Bridge
             lines.Select(line => line.GetProperty("data").GetRawText()));
     }
 
-    /// <summary>
-    /// A line is one object, so a field said twice is read as the last: a terminal's refused harness action names its
-    /// agent apart from the terminal's door, and the agent's id is not lost.
-    /// </summary>
     [Fact]
     public void A_terminals_refused_harness_action_says_its_agent_and_its_door_under_names_of_their_own()
     {

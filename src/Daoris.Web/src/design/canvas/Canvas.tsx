@@ -274,7 +274,7 @@ export function Canvas({
   };
   useEffect(() => () => window.clearTimeout(settle.current), []);
 
-  // The drawing is told where the view stands (what it culls by); the viewer's place is kept once the view has held still.
+  // The drawing is told where the view stands (what it culls by); the viewer's place is kept once the view has held still, or as they leave.
   const viewport0 = viewport(view.k);
   useEffect(() => {
     if (on) onView?.(view, viewport0);
@@ -293,7 +293,6 @@ export function Canvas({
     const timer = window.setTimeout(keep, 400);
     return () => window.clearTimeout(timer);
   }, [on, view.x, view.y, view.k, remember?.identity, remember?.selected]);
-  // A viewer who leaves before the view has held still keeps the place they left at, not the one before it.
   useEffect(() => () => keeping.current?.(), []);
   const [mapOn, setMapOn] = useState(minimapWanted);
 
