@@ -145,23 +145,6 @@ describe("Setup's Driving", () => {
     expect(within(section('Driving')).getByText('This machine drives on a direct agent.')).toBeInTheDocument();
   });
 
-  /** TERMTRUST1a (the terminal-trust design §6.2): a hold a terminal made under the standing confirmation says so beside the hold. */
-  it('says a hold made from a terminal under the standing confirmation, beside the hold, and nothing once it is released', async () => {
-    const held = { ...SETUP_DEFAULTS.driving!, held: true, heldStanding: true };
-    const { rerender } = draw({ ...SETUP_DEFAULTS, driving: held });
-    await userEvent.click(head('Driving'));
-    expect(within(section('Driving')).getByText('held from a terminal, under your standing confirmation')).toBeInTheDocument();
-
-    rerender(<Tooltip.Provider><RepositorySetup {...SETUP_DEFAULTS} driving={{ ...held, held: false }} /></Tooltip.Provider>);
-    expect(within(section('Driving')).queryByText(/standing confirmation/)).toBeNull();
-    rerender(<Tooltip.Provider><RepositorySetup {...SETUP_DEFAULTS} driving={{ ...held, heldStanding: false }} /></Tooltip.Provider>);
-    expect(within(section('Driving')).queryByText(/standing confirmation/)).toBeNull();
-
-    await i18n.changeLanguage('zh');
-    rerender(<Tooltip.Provider><RepositorySetup {...SETUP_DEFAULTS} driving={held} /></Tooltip.Provider>);
-    expect(screen.getByText('由终端按长期确认暂停')).toBeInTheDocument();
-  });
-
   /** STEWARDROLE1b (D209 §5.1): a driving choice the steward set, from this run's memory, says so in the section. */
   it('says a setting the steward set, at its time, and nothing where none stands', async () => {
     const at = '2026-10-25T10:02:00Z';

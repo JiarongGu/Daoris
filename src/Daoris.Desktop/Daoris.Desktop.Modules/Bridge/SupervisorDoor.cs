@@ -153,7 +153,7 @@ public static class SupervisorDoor
             if (wrote is not false)
             {
                 // §5.4's service doors mark by the record: a person's write on the quest this run makes it theirs, as a mark does.
-                if (wrote is true) judge.MarkOwner(new OwnerResolved([quest], [], false), standing: false);
+                if (wrote is true) judge.MarkOwner(new OwnerResolved([quest], [], false));
                 judge.ActDone(id);
                 return Acted(false, wrote is true ? RoleWhy.OwnerSet : RoleWhy.Unread, judged.Roles);
             }

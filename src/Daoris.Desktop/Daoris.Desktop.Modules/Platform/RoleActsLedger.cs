@@ -39,10 +39,9 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
     /// <summary>
     /// The owner's mark (STEWARDROLE1a-ii, D209 §5.4), set inside the gates of every scope it resolved to: each repository and quest
     /// marked <c>owner-set</c> for the run, every admitted act, pending stage and binding on it cancelled in this one step; an owner's
-    /// target that could not be resolved holds every quest. A repository marked by anything but the standing confirmation's covered
-    /// press forgets the hold that confirmation remembered (D201's <c>Forget</c>, moved into the mark), so its covered resume asks.
+    /// target that could not be resolved holds every quest.
     /// </summary>
-    public void MarkOwner(OwnerResolved resolved, bool standing)
+    public void MarkOwner(OwnerResolved resolved)
     {
         if (resolved.Marks.Count == 0 && !resolved.Unresolved) return;
         var cancelled = 0;
@@ -52,7 +51,6 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
             {
                 state.OwnerSet.Add(scope.Key);
                 cancelled += state.Acts.CancelTarget(scope.Kind, scope.Name);
-                if (scope.Kind == OwnerKinds.Repository && !standing) state.Held.Remove(scope.Name);
             }
 
             if (resolved.Unresolved)

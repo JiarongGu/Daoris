@@ -240,10 +240,6 @@ internal sealed class LoopRun(
             // EV-F: a press no terminal waits on, told at `work/event` as it settles, after its record says how.
             served.Confirmations.Settled = SettledTelling.Of(() => shared.Hooks, () => DateTimeOffset.UtcNow);
             served.Grounds = new LoopGrounds(loop, served);
-            // A finish runs here where this machine's registry says so, and a resume is of a hold the file holds now.
-            served.StandingConfirmation.RunsHere = loop.Processes.AliveOnThisMachine;
-            served.StandingConfirmation.HeldNow = repository =>
-                DriverConfig.Load(loop.ConfigPath).Holds.Contains(repository, StringComparer.OrdinalIgnoreCase);
             // A restart forgets every steward's release, so what an earlier run left in the file is withdrawn before the first look;
             // the owner's own releases are kept whole.
             RoleStarts.Sweep(served.StandingConfirmation, loop.ConfigPath);

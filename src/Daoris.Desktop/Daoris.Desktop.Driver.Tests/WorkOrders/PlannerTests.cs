@@ -1437,22 +1437,6 @@ public sealed class PlannerTests
         Assert.Null(only.Resumes);
     }
 
-    /// <summary>
-    /// TERMTRUST1a (D201 point 7, §8 case 11): a stop under the standing confirmation is the person's stop, its note only gaining a part
-    /// after its own, so its quest is held the same way, by its state, until Try again.
-    /// </summary>
-    [Fact]
-    public void A_take_stopped_under_the_standing_confirmation_is_held_as_the_persons_stop()
-    {
-        var standing = PersonStop with { Note = SessionMoves.Standing(Observation.Stopped).Note };
-
-        var only = Assert.Single(Planner.Plan(Ran([Quest(status: "Taken")], ("q1", standing)), Config()));
-
-        Assert.True(standing.PersonStopped);
-        Assert.Equal(StartVerdict.Stopped, only.Verdict);
-        Assert.Equal("you stopped session `s1`; Try again carries it on — `daoris quest retry q1 --session s1`.", only.Reason);
-    }
-
     // ── the steward's stop: held the same way, said as the steward's, released by its Try again only through memory (STEWARDROLE1b) ──
 
     private static readonly PriorSession StewardStop = PersonStop with
