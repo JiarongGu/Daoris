@@ -1,6 +1,6 @@
 import { cpSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
-import { builtInto } from '../service-publish.mjs';
+import { builtInto, STAMPED } from '../service-publish.mjs';
 import { INSTALL_RID } from './names.mjs';
 import { refusal } from './staging.mjs';
 import { CLI_BIN, DRIVER_PROJECT } from './launchers.mjs';
@@ -10,7 +10,7 @@ import { CLI_BIN, DRIVER_PROJECT } from './launchers.mjs';
  * builds go into `artifacts` when one is given ({@link artifactsOf}).
  */
 export function driverPublishCommand(folder, rid = INSTALL_RID, artifacts = null) {
-  return builtInto(`dotnet publish "${DRIVER_PROJECT}" -c Release -r ${rid} --self-contained false -p:DebugType=none -o "${folder}"`, artifacts);
+  return builtInto(`dotnet publish "${DRIVER_PROJECT}" -c Release -r ${rid} --self-contained false -p:DebugType=none ${STAMPED} -o "${folder}"`, artifacts);
 }
 
 /** The launcher at an install's root (D93) and the application under `app/`, the two projects the shell's publish makes. */
@@ -21,13 +21,13 @@ export const APP_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.App';
 export function launcherPublishCommand(folder, artifacts = null) {
   return builtInto(`dotnet publish "${LAUNCHER_PROJECT}" -c Release -r ${INSTALL_RID} --self-contained false `
     + '-p:PublishSingleFile=true -p:DebugType=none '
-    + `-p:AllowedReferenceRelatedFileExtensions=none -o "${folder}" --nologo`, artifacts);
+    + `-p:AllowedReferenceRelatedFileExtensions=none ${STAMPED} -o "${folder}" --nologo`, artifacts);
 }
 
 /** The application's publish into `folder` (D92, D93; the publish's own comments say why each option), its builds into `artifacts` when given. */
 export function appPublishCommand(folder, artifacts = null) {
   return builtInto(`dotnet publish "${APP_PROJECT}" -c Release -r ${INSTALL_RID} --self-contained false `
-    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${folder}" --nologo`, artifacts);
+    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none ${STAMPED} -o "${folder}" --nologo`, artifacts);
 }
 
 /**
@@ -67,7 +67,7 @@ export const GIT_DOORS = Object.freeze(['daoris-git-ssh.exe', 'git-remote-daoris
 /** The doors' publish into `folder`: framework-dependent, the shape the launcher and the driver have; its builds into `artifacts` when given. */
 export function gitDoorPublishCommand(folder, artifacts = null) {
   return builtInto(`dotnet publish "${GIT_DOOR_PROJECT}" -c Release -r ${INSTALL_RID} --self-contained false `
-    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${folder}" --nologo`, artifacts);
+    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none ${STAMPED} -o "${folder}" --nologo`, artifacts);
 }
 
 /**
@@ -94,7 +94,7 @@ export const PIECE_START = 'daoris-piece-start.exe';
 /** The launcher's publish into `folder`, in the git doors' shape; its builds into `artifacts` when given. */
 export function pieceStartPublishCommand(folder, artifacts = null) {
   return builtInto(`dotnet publish "${PIECE_START_PROJECT}" -c Release -r ${INSTALL_RID} --self-contained false `
-    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${folder}" --nologo`, artifacts);
+    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none ${STAMPED} -o "${folder}" --nologo`, artifacts);
 }
 
 /** Lay the launcher's publish in `published` out in `<install>/app/bin/`, after {@link layCli}. Throws naming what the publish did not make. */

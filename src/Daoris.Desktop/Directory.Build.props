@@ -1,5 +1,7 @@
 <Project>
 
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Directory.Build.props" />
+
   <!--
     Shared build settings for the desktop tree. Mirrors the service tree's so anyone moving between
     them meets the same setup.

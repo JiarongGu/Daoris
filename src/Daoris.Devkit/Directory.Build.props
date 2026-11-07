@@ -1,5 +1,7 @@
 <Project>
 
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Directory.Build.props" />
+
   <!--
     Shared build settings for the devkit tree. Mirrors the service's, so anyone moving between the
     two meets the same setup.

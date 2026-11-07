@@ -106,6 +106,10 @@
     {
       "what": "Build settings every desktop project shares, the driver's and the modules' alike.",
       "paths": ["src/Daoris.Desktop/Directory.Build.props"]
+    },
+    {
+      "what": "Build settings every .NET project of the repository builds with, each tree's importing them: the commit stamped only where a publish builds.",
+      "paths": ["Directory.Build.props"]
     }
   ]
 }

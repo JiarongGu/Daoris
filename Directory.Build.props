@@ -1,0 +1,18 @@
+<Project>
+
+  <!--
+    Build settings every .NET project of this repository builds with: found by a project with none of its own, imported by each
+    tree's.
+
+    The commit is stamped only where a publish or a stage builds. On the SDK's defaults the commit git reports goes into every
+    assembly's informational version and source-link file, both inputs of its compile, so every switch between commits recompiled
+    every project, the unchanged ones too. A development build reads no git and carries the fixed `+dev`; the publishes pass
+    -p:DaorisStamp=true and carry `<version>+<commit>`, which an installed build, its stage's build.json and the rollback read.
+  -->
+  <PropertyGroup Condition="'$(DaorisStamp)' != 'true'">
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+    <EnableSourceLink>false</EnableSourceLink>
+    <SourceRevisionId>dev</SourceRevisionId>
+  </PropertyGroup>
+
+</Project>
