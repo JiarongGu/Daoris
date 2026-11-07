@@ -60,7 +60,6 @@ public static class HomeMigration
         var record = DaorisHome.Entry(home, HomeEntry.Migration);
         if (Done(record) is { } done && steps.All(step => done.Contains(step.Name))) return new(Name, [], []);
 
-        // The swap lets go only after this application confirms, which follows this run: waiting for it only times out.
         using var lease = HomeLease.TryAcquire(home, LeaseKind.Migration, out var holder, "migration")
             ?? (holder is { Kind: LeaseKind.Swap } ? null : HomeLease.Await(home, LeaseKind.Migration, "migration", leaseWait ?? HomeLease.Wait, out holder));
         if (lease is null && holder is not { Kind: LeaseKind.Swap })
