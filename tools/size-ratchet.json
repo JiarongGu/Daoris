@@ -3,7 +3,7 @@
   "src/Daoris.Cli/test/dogfood.test.ts": 44293,
   "src/Daoris.Cli/test/usage-report.test.ts": 89069,
   "src/Daoris.Cli/tool-test/desktop-publish.test.ts": 78804,
-  "src/Daoris.Cli/tool-test/merge-branch.test.ts": 561632,
+  "src/Daoris.Cli/tool-test/merge-branch.test.ts": 561593,
   "src/Daoris.Cli/tool-test/merge-queue.test.ts": 239239,
   "src/Daoris.Cli/tool-test/setup-kit.test.ts": 55678,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountRotationGoalTests.cs": 43367,

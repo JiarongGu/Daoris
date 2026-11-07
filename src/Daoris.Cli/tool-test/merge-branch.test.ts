@@ -3842,8 +3842,7 @@ test('the release rehearsal stages nothing a desktop test reads: they read the C
   let read = 0;
   for (const path of sources) {
     const text = readFileSync(join(repoRoot, path), 'utf8');
-    // The install's own CLI (`app/cli/node_modules/daoris`) is no package of this checkout. The one test that runs this checkout's bin is a
-    // modules Process test, which never runs beside a pack (the rehearsals run beside the git half alone).
+    // The install's own CLI is no package of this checkout; the one test running this checkout's bin is a modules Process test, never beside a pack.
     assert.ok(path.endsWith('Bridge/ReconcileStatusProcessTests.cs') || !/Daoris\.Cli"[^;]*daoris\.mjs/.test(text), `${path} names the CLI's bin, which prefers a staged dist/`);
     for (const match of text.matchAll(/Daoris\.Cli"\s*,\s*"([^"]+)"|Daoris\.Cli[\\/]+([^\\/\s"`'<]+)/g)) {
       const folder = match[1] ?? match[2]!;
@@ -4474,7 +4473,7 @@ test('MEASUREDALONE1: one gate in turn runs the timed spec alone after the last 
   fx.cleanup();
 });
 
-// The end of the 2026-11-03 CI's tool-tests log: a git child that exited 4294967295 beside builders, and a test the run's own clock ended.
+// A tool-tests log's end: a git child that exited 4294967295 beside builders, and a test the run's own clock ended.
 const NODE_TITLE_A = "INTEGRATE1j: a tree the caller hands is the run's tree: the runner makes none, takes no lock and copies no private file; one at another commit is refused";
 const NODE_TITLE_B = 'INTEGRATE1b: a gate that fails once beside a held load and passes quiet holding the whole admission is a sighting; under split, the default with no policy written, the candidate splits (a+b) [x]';
 const nodeLog = (failures: [string, string][], fail = failures.length) => [
@@ -5623,8 +5622,7 @@ test('a run given a named commit is never superseded: no commit to watch, no tip
   assert.equal(tool.watchTip('aaaaaaa1', () => 'aaaaaaa1').check(), false);
 });
 
-// A superseded run ends only before its next gate unless its running gates are ended too, so a gate on an old tip (a Process half, a rehearsal) runs
-// to its end, up to an hour of the machine's time beside five workers, for a verdict nobody would use
+// A superseded run's running gates end too, or a gate on an old tip runs up to an hour for a verdict nobody would use
 
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
@@ -6003,7 +6001,7 @@ function age(worktree: string, minutes: number): void {
 // Every gate appends its name to local/ran.txt and prints a thousand lines, so a test can read the order
 // the gates ran in and whether a log kept the whole output. Given `once`, it exits with its code the first
 // time only, as a rehearsal that died under load and passes run again.
-// Given GATE_HOLD, it waits (ten minutes at most, well past any test's own wait: load can make a minute too short) until that file is written, as a long gate runs while a test acts beside it.
+// Given GATE_HOLD, it waits until that file is written (ten minutes at most: load makes a minute too short), as a long gate runs beside a test.
 const GATE = [
   "import { appendFileSync, existsSync, writeFileSync } from 'node:fs';",
   "const [name, code = '0', once] = process.argv.slice(2);",
@@ -8067,7 +8065,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
 
 // A builder's worktree sets GIT_DIR; the fixtures' git must still be the fixture's own, and the real repository registers
 // no worktree of the fixture's. Outside the concurrent suite: the variables are the process's, and every test beside would read them.
-// The real repository's own worktrees move while this runs (other sessions commit and add theirs), so only the fixture's are looked for.
+// The real repository's worktrees move while this runs, so only the fixture's are looked for.
 test('a fixture repository ignores the variables that locate the real one: its git and the tool it runs change its worktrees alone', async () => {
   const realDir = git(process.cwd(), 'rev-parse', '--git-dir');
   const listed = (cwd: string) => spawnSync('git', ['worktree', 'list', '--porcelain'], { cwd, encoding: 'utf8', windowsHide: true }).stdout;
