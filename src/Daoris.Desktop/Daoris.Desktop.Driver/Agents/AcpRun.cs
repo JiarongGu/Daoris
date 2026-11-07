@@ -72,6 +72,8 @@ internal sealed class AcpRun(ITurnRunWiring wiring, AcpPrompting prompting, AcpS
             // held is prompted now, and a turn stopped to send it ends `cancelled` before it goes.
             while (true)
             {
+                if (wiring.Stages.Of<AcpLimitTurn>().Ended(wiring.LimitSaid) is { } limited) throw limited;
+
                 // A turn that ended while the session's own background work runs, where its quest would park it on the person, waits for
                 // that work and goes on with a turn that says it ended. Words held for the turn's end go first; words that go at once
                 // still go while it waits.

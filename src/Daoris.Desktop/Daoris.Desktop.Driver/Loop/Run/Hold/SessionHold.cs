@@ -299,7 +299,12 @@ internal sealed class SessionHold(IRunWiring wiring)
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, log, choice, notCarried, ct: CancellationToken.None),
                 modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
-                typedFailures: context.Adapters.AgentNamed(adapter.Id.Value)?.Tables.ErrorWords?.TypedFailures == true, handedBack: words => acpLeft = words),
+                typedFailures: context.Adapters.AgentNamed(adapter.Id.Value)?.Tables.ErrorWords?.TypedFailures == true, handedBack: words => acpLeft = words,
+                limitSaid: TurnEndLimits.For(
+                    context.Adapters, adapter, context.Harnesses.Clock, context.Harnesses.Zone,
+                    read => log?.Write("info", "agent.error", [
+                        ("session", sessionId), ("door", adapter.Id.Value), ("account", prior?.Profile), ("kind", read.Spelled), ("by", read.By),
+                    ]))),
         });
 
         // What is asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first

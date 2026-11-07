@@ -62,7 +62,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
         AcpEnding? ending, Func<string, string, string>? unoffered, Func<bool>? setupChanged, ActorAsked? asked,
         Action<ActorAsked>? carried, IChoiceReask? modelRefused, Action<IReadOnlyList<AcpConfigOption>>? offerRead,
         TransientRetry? retry, Func<CancellationToken, Task<TurnCarry>>? carriesOn, Action? written, bool typedFailures,
-        Action<IReadOnlyList<ChatMessage>> handedBack)
+        Action<IReadOnlyList<ChatMessage>> handedBack, Func<string, bool>? limitSaid = null)
     {
         var context = wiring.Context;
 
@@ -94,6 +94,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
                 session.Unoffered = unoffered;
                 session.Permissions = HeldPermissions.Of(context.Events).For(sessionId); // held only under asking's mark
                 session.SetupChanged = setupChanged;
+                session.LimitSaid = limitSaid;
                 session.CarriesOn = carriesOn; // a done quest's uncommitted tree carries the session on before it ends
                 session.BackgroundLook = wiring.BackgroundLook; // its quest read again while it waits on its own background work
                 session.Carry = asked; // its actor's model and effort, set before the first prompt
