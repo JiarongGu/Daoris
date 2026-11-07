@@ -16,7 +16,6 @@
  *    digits) or a history note (the words for what the code once did). The commit or the decision holds those. A comment is
  *    added where its trimmed text stands on the new side more often than on the old, so a moved or untouched comment is not.
  *
- * `--all` holds every file to the second rule, for each comment it has. The census marker `Not the tools' environment (TOOLS5):` is no naming.
  * A comment on a code line counts for the second rule, not the first. Strings, templates, regular expressions and C#'s
  * verbatim and raw strings are not comments. A tool's or a standard's name that is capitals and digits (`UTF8`, `SHA256`) is no id.
  */
@@ -33,8 +32,7 @@ const ROW = /\b[A-Z]{2,}\d+[a-z]?\b/g;
 const KNOWN = /^(?:UTF|SHA|MD|HTTP|HS|RS|ES|PS|AES|X|ISO|RFC|TLS|SSL|CRC|BASE|GB|PBKDF|SSH|IPV|WIN|MP|H|OS)\d+$/;
 const DECISION = /\bD\d{1,4}\b/g;
 const HISTORY = /\b(?:was|used to|formerly|previously)\b/gi;
-/** The marker the modules' census of child environments reads, its row id part of the text it matches. */
-const EXEMPT = "Not the tools' environment (TOOLS5):";
+const EXEMPT = "Not the tools' environment (TOOLS5):"; // the census marker the modules read: no naming
 
 /**
  * The comments of `src`, one entry per line that carries one: `{ line, text, whole, ranges }`, `text` the comment's words on that
