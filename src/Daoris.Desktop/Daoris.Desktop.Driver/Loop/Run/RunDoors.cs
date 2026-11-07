@@ -67,8 +67,8 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
 
     (string Role, long Revision)? IRunWiring.RoleTaken(Consideration start, string? named) => driver.Walk.RoleTaken(start, named);
 
-    (ProcessStartInfo Info, string? Notice) IRunWiring.Prepare(AgentDoor adapter, SessionTarget target, HarnessSelection selection) =>
-        driver.Prepare(adapter, target, selection);
+    (ProcessStartInfo Info, string? Notice) IRunWiring.Prepare(AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared) =>
+        driver.Prepare(adapter, target, selection, prepared);
 
     (string? File, object? Meta, HandedSection Handed) IRunWiring.HandRules(
         AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository, string tree, string? kept,
@@ -81,8 +81,11 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
         EntryParts entry, string? joinedIn, string? entryTree, TreeOpened? opened, string repository, CancellationToken ct) =>
         PartsHanded.ReadAsync(Context, entry, joinedIn, entryTree, opened, repository, ct);
 
-    void IRunWiring.SayMoved(PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief) =>
-        MovedParts.Say(Context, prior, sessionId, agent, account, why, brief);
+    void IRunWiring.SayMoved(PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief, string? notCarried) =>
+        MovedParts.Say(Context, prior, sessionId, agent, account, why, brief, notCarried);
+
+    void IRunWiring.SayCarried(PriorSession prior, string sessionId, string agent, string? account, string why, CarryPlan.Carried carried) =>
+        MovedParts.SayCarried(Context, prior, sessionId, agent, account, why, carried);
 
     Task<(ActorAsked Asked, string Choice)?> IRunWiring.ReaskAsync(
         Consideration start, IReadOnlyList<RepoView> registry, ActorEffective refused, HarnessSelection selection, CancellationToken ct, string? role) =>

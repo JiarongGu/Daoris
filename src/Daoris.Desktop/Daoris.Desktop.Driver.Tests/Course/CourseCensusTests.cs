@@ -218,13 +218,15 @@ public sealed class CourseCensusTests
     }
 
     /// <summary>
-    /// Path M, the carry, has no code: the census reserves it, and fails the day a source writes a carried move, so the path is
-    /// placed at its site then.
+    /// Path M, the carry, is a move's how, never a decision: its lines are coded in the start's note codes alone, so a second place
+    /// writing a carried move fails here and is placed beside the first.
     /// </summary>
     [Fact]
-    public void The_carry_has_no_code_yet()
+    public void The_carry_is_coded_in_one_place()
     {
         var carried = ProductionFiles().Where(path => Regex.IsMatch(WithoutComments(File.ReadAllText(path)), @"moved\.carried")).Select(Relative).ToList();
-        Assert.True(carried.Count == 0, "the carry is written in: " + string.Join(", ", carried) + "; place path M");
+        Assert.True(
+            carried.SequenceEqual(["Daoris.Desktop.Driver/Events/StartNoteCodes.cs"]),
+            "the carry is written in: " + string.Join(", ", carried) + "; place path M");
     }
 }

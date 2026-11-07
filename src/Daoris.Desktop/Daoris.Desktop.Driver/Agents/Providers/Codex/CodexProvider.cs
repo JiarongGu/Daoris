@@ -61,7 +61,7 @@ internal static class CodexProvider
             Known<LentPart>.Declared(new LentPart(pool, TablesPart.None, UsagePart.None), Evidence),
             Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Declared(CodexChildVocabulary.Vocabulary, Evidence),
             Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent,
-            Known<IConversationHome>.Absent,
+            Known<IConversationHome>.Declared(CodexConversationHome.Home, Evidence),
             Reach.Everywhere,
             Known<VocabularyPart>.Declared(vocabulary, Evidence));
     }

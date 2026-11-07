@@ -72,6 +72,13 @@ public static class StartNoteCodes
     public static readonly NoteCode MovedOn = new("moved.on", ["session", "agent", "account", "why", "tokens", "count"]) { Why = NoteCodes.Handed };
     public static readonly NoteCode MovedFrom = new("moved.from", ["session", "agent", "account", "why", "tokens", "count"]) { Why = NoteCodes.Handed };
 
+    // A limit's move whose own conversation goes on on the new account: the part it left, the new part carrying it whole or compacted
+    // past the bound its agent carries whole (`bound`), and a new part handed the brief instead, the carry's code its `reason`.
+    public static readonly NoteCode MovedCarriedOn = new("moved.carried-on", ["session", "agent", "account", "why", "tokens"]) { Why = NoteCodes.Handed };
+    public static readonly NoteCode MovedCarriedFrom = new("moved.carried-from", ["session", "agent", "account", "why", "tokens"]) { Why = NoteCodes.Handed };
+    public static readonly NoteCode MovedCompactedFrom = new("moved.compacted-from", ["session", "agent", "account", "why", "tokens", "bound"]) { Why = NoteCodes.Handed };
+    public static readonly NoteCode MovedNotCarried = new("moved.not-carried", ["reason"]);
+
     // ——— Where the person's words went, after the record's earlier parts.
     public static readonly NoteCode WentCannot = new("went.cannot", ["why"], Key: "work.say.cannot") { Why = NoteCodes.Continue };
     public static readonly NoteCode WentNewSession = new("went.new-session", ["why"]) { Why = NoteCodes.Continue };

@@ -88,8 +88,9 @@ of everything it handed, section by section.
 
 **Two contexts**
 
-6. The agent's own conversation is the working context. It lives in the account's home, and Daoris never reads, copies or
-   writes it. Daoris's record is the portable context. (from D189, D175)
+6. The agent's own conversation is the working context. It lives in the account's home, and Daoris never reads or writes it;
+   a driven line's limit move copies its files whole to the next account's home of the same agent (rule 24). Daoris's record is
+   the portable context. (from D189, D175, D206)
 7. Same agent, account and tree, a kept id and a door that resumes: the same part goes on. Otherwise a new part of the entry
    opens in the same tree. The old part ends at its turn's end before the new one opens. (from D189, D131)
 8. A conversation that was left is never resumed again. Going back to its agent or account opens another new part.
@@ -143,7 +144,9 @@ of everything it handed, section by section.
 23. The wake is the look's `limits` stage, with no timer. Own account ready and conversation resumable: a full resume,
     Daoris's `limit.reset` word, then the held words, never a brief. Else a briefed part elsewhere. Else it waits. (from D206)
 24. A driven line at a limit resumes the same way, inside its carry-on's start. It walks its role's choices only where its
-    own account is not ready. (from D206)
+    own account is not ready. On another account of the same agent its new part carries the conversation there and resumes it
+    with no brief, compacted first past its provider's bound, and is briefed only where the door cannot carry it or the copy
+    fails, saying why (agents and harnesses, rule 38). A conversation's limit move (rule 20) is briefed. (from D206)
 25. The curve moves a conversation at its turn's end, with nothing running or queued, to another account of the same agent
     in its scope with room. Never mid-turn or across agents. Never Ask Daoris or the tool's own home. Not again within 30
     minutes. (from D165)
@@ -273,8 +276,10 @@ of everything it handed, section by section.
 ## Open
 
 - **SWITCHCTX1a onward: the account carry.** A move keeps the agent's own conversation by carrying it to the other
-  account's home. Proposed (`docs/2026-10-24-switch-context-design.md`, its round 5 read and another round owed), with no backlog row; nothing is built. `Course/MoveRecords.cs` reserves the `carry`
-  kind and the `copied` and `verified` phases.
+  account's home. Proposed (`docs/2026-10-24-switch-context-design.md`, its round 5 read and another round owed), with no backlog row. A driven line's
+  limit move carries through the providers' `IConversationCarry` (`Loop/Run/Hand/LimitCarried.cs`); a conversation's limit move, the curve's move and the
+  hand-over carry nothing, and a carried resume the agent refuses after the copy is not briefed in the same start.
+  `Course/MoveRecords.cs` reserves the `carry` kind and the `copied` and `verified` phases.
 - **SESSCTX1a:** resume and a fresh part measured on each door. No brief has been counted on a harness.
 - **SESSCTX1e (ONEWAY1j):** *Go on fresh*, Daoris's compaction on the person's press, re-cut as a hand-over to the same
   agent and account, after SESSCTX1a is measured.
