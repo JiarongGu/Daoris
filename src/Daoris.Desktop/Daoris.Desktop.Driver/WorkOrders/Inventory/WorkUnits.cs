@@ -42,8 +42,8 @@ public static class WorkUnits
     }
 
     /// <summary>
-    /// Every unit this home and its service name. Without the service, or where it does not answer, the branch units alone, and
-    /// <paramref name="unread"/> says so: never read as there being no quests (D57).
+    /// Every unit this home and its service name, a branch executed by the sessions whose records name its tree. Without the service, or
+    /// where it does not answer, the branch units alone, and <paramref name="unread"/> says so: never read as there being no quests.
     /// </summary>
     /// <param name="roots">Each repository's checkout, for the recovery refs (<see cref="WorkInventories.GatherAsync"/>).</param>
     /// <param name="inUse">The trees a session still running or waiting holds.</param>
@@ -55,12 +55,15 @@ public static class WorkUnits
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ServiceClient? service, ICollection<string> unread,
         CancellationToken ct = default, ICollection<string>? unlinked = null)
     {
-        var branches = WorkInventory.Units(await WorkInventories.GatherAsync(home, roots, inUse, unread, ct).ConfigureAwait(false));
+        async Task<IReadOnlyList<WorkUnit>> BranchesAsync(IReadOnlyList<SessionRecord>? sessions) => WorkInventory.Units(await WorkInventories.GatherAsync(
+            home, roots, inUse, unread, ct, recorded: sessions is null ? null : WorkInventories.RecordedOf(sessions)).ConfigureAwait(false));
+
         if (service is null)
         {
+            var alone = await BranchesAsync(null).ConfigureAwait(false);
             unread.Add("without the service, no quest or ask is read: only this machine's branch work is");
             unlinked?.Add("without the service, no quest or ask is read");
-            return branches;
+            return alone;
         }
 
         IReadOnlyList<QuestView> quests;
@@ -78,11 +81,13 @@ public static class WorkUnits
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
             || (error is TaskCanceledException && !ct.IsCancellationRequested))
         {
+            var alone = await BranchesAsync(null).ConfigureAwait(false);
             unread.Add($"the service did not answer, so its quests and asks were not read: {error.Message}");
             unlinked?.Add($"the service did not answer: {error.Message}");
-            return branches;
+            return alone;
         }
 
+        var branches = await BranchesAsync(sessions).ConfigureAwait(false);
         // FABRIC-PERFORM1d: a quest's or an ask's receipts and attempts are its own, as a branch unit's are (WorkInventory's facts).
         var owed = WorkObligations.Read(home, DateTimeOffset.UtcNow);
         return Linked(branches, WorkObligations.Attach(QuestUnits.Read(quests, sessions), owed), WorkObligations.Attach(AskUnits.Read(asks), owed), sessions);

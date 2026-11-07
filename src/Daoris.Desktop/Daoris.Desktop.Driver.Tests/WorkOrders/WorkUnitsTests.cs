@@ -290,12 +290,28 @@ public sealed class WorkUnitsTests : IDisposable
         Assert.Contains(none, said => said.Contains("without the service", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task A_branch_with_no_landing_is_executed_by_the_session_that_recorded_its_tree()
+    {
+        new SessionBranches(_home).Record(Grown());
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s1");
+        Directory.CreateDirectory(tree);
+
+        var units = await WorkUnits.ReadAsync(_home, new Dictionary<string, string>(), new HashSet<string>(), new ReadingLedger { SessionTree = tree }.Client(), []);
+
+        var branch = units.Single(unit => unit.Id == "unit-a");
+        Assert.Equal(["s1"], branch.Executors);
+        Assert.Contains(new WorkLink(WorkRelation.ProducedBy, "quest:q1"), branch.Links);
+    }
+
     /// <summary>The service's three reads, standing in: one quest, one ask, one session in the unit's tree; every request is kept.</summary>
     private sealed class ReadingLedger : HttpMessageHandler
     {
         public List<string> Asked { get; } = [];
 
         public bool Down { get; init; }
+
+        public string SessionTree { get; init; } = Tree().Path;
 
         public ServiceClient Client() => new("http://units.test", null, new HttpClient(new SessionChanges(this), disposeHandler: false));
 
@@ -316,7 +332,7 @@ public sealed class WorkUnitsTests : IDisposable
                 "/api/sessions" => new JsonArray(new JsonObject
                 {
                     ["id"] = "s1", ["quest"] = "q1", ["repository"] = "engine", ["state"] = "working", ["kind"] = "driven",
-                    ["tree"] = Tree().Path, ["created"] = Then.ToString("O"),
+                    ["tree"] = SessionTree, ["created"] = Then.ToString("O"),
                 }),
                 _ => null,
             };

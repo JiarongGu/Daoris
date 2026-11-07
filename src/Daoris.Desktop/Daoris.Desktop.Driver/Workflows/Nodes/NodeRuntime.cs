@@ -491,6 +491,10 @@ public sealed class NodeRuntime(
                 Integrating.IntegratedNow(governed, before, evaluated.Statuses, said);
                 await Keeping.BackToWorkAsync(governed, before, evaluated, said, ct).ConfigureAwait(false);
             }
+            else if (evaluated.Held.Count > 0)
+            {
+                done.AddRange(_performer.Keep(before, evaluated));
+            }
 
             // Each node whose wires fired starts as its kind says (D247). A start that dropped what this pass governs (a fence that found the
             // unit moved) ends its judgement here: the next pass reads it again, and no further round reads git only to find the same revision.

@@ -56,6 +56,8 @@ public sealed record NodeStatus(string Unit, string Node, string State)
     /// <summary>When the newest attempt started, as the move that started it was clocked; null on a node never started, or started unclocked.</summary>
     public DateTimeOffset? Since { get; init; }
 
+    public string? Holds { get; init; }
+
     /// <summary>The acceptance that counts now: only a reached node's. An invalidated one's is history, never current evidence.</summary>
     public NodeAcceptance? Current => State == NodeStates.Reached ? Acceptance : null;
 }
@@ -343,7 +345,7 @@ public static class NodeLifecycle
         if (rows.Count == 0) return Refuse(NodeRefusal.NotInTable);
         if (!rows.Any(row => row.By == move.By)) return Refuse(NodeRefusal.NotCause);
 
-        var next = status with { State = move.To };
+        var next = status with { State = move.To, Holds = null };
         switch (move.To)
         {
             case NodeStates.Reached or NodeStates.Failed when move.By == NodeCause.Person:

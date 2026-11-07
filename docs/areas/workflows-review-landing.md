@@ -157,7 +157,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     subject moved while it was active runs again at the new tip once every delivery at the old one reads certain by phase. A run's
     branch-side steps bind the tip of the branch its work stands on: the one its tree's agent moved onto, where the look learned it
     (TREEFOLLOW1, the session branch's `now`), else its session branch; the end keeper judges that branch's tip, so a moved tree's
-    `content.holds` reads the tree at its bound commit and its merge is the one `landing` and `line` read. Where the
+    `content.holds` reads the tree at its bound commit and its merge is the one `landing` and `line` read. The holds and the gates
+    read the tree of the branch's newest executor, a session whose record names that tree, as the runtime's units join them
+    (`WorkUnits.ReadAsync`); a hold that keeps its step active keeps its reading's reason on the node's record (`NodeStatus.Holds`,
+    cleared by every move), and `tree land --plan`, `workflow run` and the run's view say it ("Holds the work: …"). Where the
     branch's tip no longer reads (its tree tidied), a step bound there keeps its binding's revision and one not bound yet takes the commit
     its session branch records the line holding, so work merged outside the run reads its holds, landing and line reached and the run
     ends. Its `work` (`claimed`) is reached at the first whole look that reads its quest done, whichever session said it: the one that

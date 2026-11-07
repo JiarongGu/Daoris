@@ -209,6 +209,7 @@
   "workflow.run.graph.said.requests": "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to pass over.",
   "workflow.run.graph.said.requestDeclined": "The repository it asked declined the quest: ask again, or go on without it with your words.",
   "workflow.run.graph.said.requestsDeclined": "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on.",
+  "workflow.run.graph.said.holds": "Holds the work: {{why}}.",
   "workflow.run.requests.title": "Requests the work made",
   "workflow.run.integration.queued": "Queued for {{line}}",
   "workflow.run.integration.in-candidate": "Being tried for {{line}}",
