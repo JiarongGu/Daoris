@@ -23,10 +23,7 @@ public static class ReviewLevels
     /// <summary>Row 6: the workspace's rule.</summary>
     public const string Workspace = "workspace";
 
-    /// <summary>
-    /// Rows 5 and 6 under a named workflow: the run's bound version's look step, in an
-    /// environment the rule declares, or none where the version has no look.
-    /// </summary>
+    /// <summary>Rows 5 and 6 under a named workflow: the bound version's look step, in an environment the rule declares, or none.</summary>
     public const string Workflow = "workflow";
 
     /// <summary>Row 7: nothing set anywhere, so no review.</summary>
@@ -66,9 +63,7 @@ public static class ReviewStates
     /// <summary>Whether it waits could not be read: the service did not answer.</summary>
     public const string Unread = "unread";
 
-    /// <summary>
-    /// The run's named workflow asks for a look its repository does not declare the environment of: it sits saying why, until the environment is declared or the person skips the review.
-    /// </summary>
+    /// <summary>The named workflow asks for a look its repository declares no environment for: it sits saying why until one is declared or the review is skipped.</summary>
     public const string CannotStart = "cannot-start";
 }
 
@@ -121,10 +116,7 @@ public sealed record ReviewDecision(string Level, string? Environment)
 
     public string? SkippedOn { get; init; }
 
-    /// <summary>
-    /// The chat run whose work this is, where no quest is: no look can be set up for it, and the
-    /// person's way past it is a skip of the look node of the graph it is bound to. Null for a quest's work.
-    /// </summary>
+    /// <summary>The chat run whose work this is where no quest is: no look can be set up for it, and a skip of its graph's look node is the way past. Null for a quest's work.</summary>
     public string? ChatRun { get; init; }
 
     /// <summary>The look node of a chat run's graph, which the person's skip names; null where the run is bound to no graph.</summary>
