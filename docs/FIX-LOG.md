@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-08 - The driver's Process half still read the door as `adapter` (CI 12, SCOPEVERIFY1)
+
+- **Symptom:** CI run 12's full set on bb912f3537: twelve driver Process tests (thirteen cases) failed, and failed again alone. Eight
+  cases with a NullReferenceException (`BrainstormProcessTests`, `BrainstormRoomMeasureProcessTests`, three `ReviewTreeTests` facts and
+  its theory's two, `OpinionResumeTickTests` on the native door), `HeldChatProcessTests` with a missing key, `OpinionResumeTickTests` on the protocol
+  door with no findings in the session's events, `StaffPolicyTransientTickTests` twice with no `"adapter":` in the record, and
+  `SettledServiceProcessTests` with *table sessions has no column named adapter*.
+- **Root cause:** 6b73851be6 (AGENTPROVIDER1t-ii) renamed the door's key to `door` in a brainstorm's document and room measure, the
+  START_CHAT press and an opinion's reviewer; aa18f4bc74 (AGENTPROVIDER1t-ii) renamed the session record's field and the store's column.
+  Each updated the fast half's fixtures and none of these Process classes, which a worktree does not run. The tests read the old key, and
+  the review stand-ins built the reviewer and its session from `adapter`, so the driver saw no reviewer's door and delivered nothing. The
+  product was right; only the tests were behind it.
+- **Fix:** the tests read and write `door` (3cb0e2a77d), and `HeldChatTests`' assertion that an unnamed agent sends no door names `door`.
+- **Verify:** the seven classes together (38 green), each of the twelve alone twice, the driver's censuses and `comment-gate`.
+
 ## 2026-11-08 - An installed update did not convert the home; the next start had to (HOMEMIGRATE1)
 
 - **Symptom:** on the owner's install every update since 2026-11-07 logged `home.migration-held` (the launcher's update of the
