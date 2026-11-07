@@ -13,9 +13,9 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 const READ: SupervisorRulesRead = {
   counts: [
     { count: 'answers-alone', window: 'in-a-row', actions: ['hold', 'refer', 'off'], least: 1, most: 20 },
-    { count: 'failures', window: 'since-try-again', actions: ['hold', 'refer', 'off'], least: 1, most: 20 },
-    { count: 'tries', window: 'episode', actions: ['hold', 'ask', 'next', 'weighted', 'refer'], least: 1, most: 5 },
-    { count: 'moves', window: '24-hours', actions: ['ask', 'refer', 'off'], least: 1, most: 8 },
+    { count: 'failures', window: 'since-try-again', actions: ['hold', 'off'], least: 1, most: 20 },
+    { count: 'tries', window: 'episode', actions: ['hold', 'ask', 'next', 'weighted'], least: 1, most: 5 },
+    { count: 'moves', window: '24-hours', actions: ['ask', 'off'], least: 1, most: 8 },
   ],
   sets: [
     { place: 'machine', revision: 3, rules: [

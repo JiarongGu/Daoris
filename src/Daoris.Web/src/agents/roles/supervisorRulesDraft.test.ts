@@ -7,8 +7,8 @@ import { blankRule, chainOf, draftOf, inheritedFrom, nextCount, pressOf, readabl
 const READ: SupervisorRulesRead = {
   counts: [
     { count: 'answers-alone', window: 'in-a-row', actions: ['hold', 'refer', 'off'], least: 1, most: 20 },
-    { count: 'failures', window: 'since-try-again', actions: ['hold', 'refer', 'off'], least: 1, most: 20 },
-    { count: 'limits', window: 'this-end', actions: ['ask', 'wait', 'next', 'weighted', 'refer', 'off'], least: 1, most: 1 },
+    { count: 'failures', window: 'since-try-again', actions: ['hold', 'off'], least: 1, most: 20 },
+    { count: 'limits', window: 'this-end', actions: ['ask', 'wait', 'next', 'weighted', 'off'], least: 1, most: 1 },
   ],
   sets: [
     { place: 'machine', revision: 3, rules: [{ id: 'r-1', count: 'answers-alone', window: 'in-a-row', at: 2, do: 'hold' }, { id: 'r-2', count: 'failures', window: 'since-try-again', at: 3, do: 'hold' }] },
