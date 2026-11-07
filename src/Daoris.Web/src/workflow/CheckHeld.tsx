@@ -5,11 +5,11 @@ import { Button } from '../design/ui';
 import type { CheckHeldAnswer, CheckHeldAsk, RunStep } from './run';
 
 /**
- * **A check held unknown for the person** (FABRIC-PIPELINE1d, the pipeline design §4.1, §4.5): under its node, *Run again* (a new attempt at
+ * **A check held unknown for the person**: under its node, *Run again* (a new attempt at
  * the same tip) and *Not now* (nothing more is asked of it), the words the driver offers on the held attempt (`held.words`). No person's word
  * settles a check's verdict, so these are the only two. A word given and not applied yet is drawn by the node's own words instead.
  *
- * A molecule: the step and the press arrive as props; the driver's refusal is said where it was pressed.
+ * A molecule: the step and the press arrive as props; the driver's refusal is said where it is pressed.
  */
 export function CheckHeld({ step, onHeld }: {
   step: RunStep;

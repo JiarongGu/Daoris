@@ -9,7 +9,7 @@ import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from './layout';
 import { LIST_DOOR, LIST_ROW } from './listKeys';
 import { ListMore, ListPane } from './ListPane';
 
-// D118 §3a, §5: one list pane for every view that has a list, Sessions' rail first. A molecule: every
+// One list pane for every view that has a list, Sessions' rail first. A molecule: every
 // state is reached by its props, and a press goes out.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -73,7 +73,7 @@ describe('the list pane, open', () => {
     expect(screen.queryByRole('button', { name: 'Chat · engine · working' })).toBeNull();
   });
 
-  /** PUSHUX1: a pushed list read again whole holds its last rows at reduced opacity, never a skeleton nor its empty state. */
+  /** A pushed list read again whole holds its last rows at reduced opacity, never a skeleton nor its empty state. */
   it('holds its rows, dimmed and busy, while its slice is read again', () => {
     pane(OPEN, { resyncing: true, empty: undefined });
 
@@ -98,7 +98,7 @@ describe('the list pane, open', () => {
   });
 
   /**
-   * UX6i (D150 §2.2): what heads a list sits under its header and above its rows, outside their scroll, so it stays in
+   * What heads a list sits under its header and above its rows, outside their scroll, so it stays in
    * reach as they scroll: Knowledge's two-way choice. The arrows that move between rows are not its.
    */
   it('holds what heads the list under its header and outside its rows\' scroll', () => {
@@ -131,7 +131,7 @@ describe('the list pane, closed to its strip', () => {
     expect(onMake).toHaveBeenCalled();
   });
 
-  /** D118 §3a, amending FRAME6: a strip the window drew has an open too, which lays the list over. */
+  /** A strip the window drew has an open too, which lays the list over. */
   it('offers the open on a strip the window drew as well', async () => {
     const { onOpen } = pane(DRAWN);
     const open = screen.getByRole('button', { name: 'Show the session list' });
@@ -154,13 +154,13 @@ describe('the list pane, laid over the main area', () => {
     expect(within(over).getByRole('button', { name: 'first' })).toBeInTheDocument();
     expect(over).toHaveFocus();
     expect(over).toHaveStyle({ width: '280px' });
-    // The strip stays, so nothing hides behind a hamburger (platform language §2).
+    // The strip stays, so nothing hides behind a hamburger.
     expect(screen.getByRole('button', { name: 'Chat · engine · working' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Show the session list' })).toHaveAttribute('aria-expanded', 'true');
   });
 
   /**
-   * ENTRY1g (D161's ENTRY1b note): a go lays the list over and its list focuses the group's heading as it mounts, which is
+   * A go lays the list over and its list focuses the group's heading as it mounts, which is
    * before the pane's own effect runs; the pane takes the focus only where nothing in it has it.
    */
   it('leaves the focus where something in it took it as it was laid over', () => {
@@ -262,7 +262,7 @@ describe('the list pane\'s states', () => {
     expect(onMake).toHaveBeenCalled();
   });
 
-  /** PLUGUI1b (D119 §3.1): where the ＋ makes two kinds, an empty list offers each by its own name, its primary first. */
+  /** Where the ＋ makes two kinds, an empty list offers each by its own name, its primary first. */
   it('says it is empty with each of the ＋\'s kinds, where it makes two', async () => {
     const onMake = vi.fn();
     pane(OPEN, {
@@ -290,7 +290,7 @@ describe('the list pane\'s ⋯', () => {
     expect(onChoose).toHaveBeenCalledWith('try');
   });
 
-  /** FRAME1d (D118 §2): a list's filters sit in its ⋯, one value among several and a toggle, each ticked as it stands. */
+  /** A list's filters sit in its ⋯, one value among several and a toggle, each ticked as it stands. */
   it('holds the list\'s filters, each ticked as it stands, and says which was chosen', async () => {
     const onChoose = vi.fn();
     const onPick = vi.fn();
@@ -324,7 +324,7 @@ describe('the list pane\'s ⋯', () => {
     expect(onChoose).toHaveBeenCalledWith('closed');
   });
 
-  /** SESSUX1e, D126 §4.1: a rule sets an act apart from the filters above it (*Archive what ended…* below *Show archived*). */
+  /** A rule sets an act apart from the filters above it (*Archive what ended…* below *Show archived*). */
   it('sets an item apart from those above it by a rule, where it asks for one', async () => {
     pane(OPEN, {
       more: (
@@ -346,7 +346,7 @@ describe('the list pane\'s ⋯', () => {
 });
 
 describe('the list pane, named', () => {
-  /** FRAME1d: the list is a landmark named for the view, so a reader, and a test, finds it by its name. */
+  /** The list is a landmark named for the view, so a reader, and a test, finds it by its name. */
   it('is a region of the window named by its list\'s name, open or as a strip', () => {
     const { unmount } = pane(OPEN);
     expect(screen.getByRole('complementary', { name: 'Sessions' })).toBeInTheDocument();

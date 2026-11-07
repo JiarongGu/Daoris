@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Session } from '../../data/api';
 import { byName, marked, readable } from './railSearch';
 
-// Searching the rail (RAIL1): by name at once, on the page — the derived title, the repository and the
+// Searching the rail: by name at once, on the page — the derived title, the repository and the
 // id — and by content over the bridge. Pure, so every query is an ordinary assertion.
 
 const session = (id: string, repository: string, over: Partial<Session> = {}): Session => ({
@@ -36,7 +36,7 @@ describe('searching by name', () => {
 });
 
 /**
- * Seen on the window (RAIL1): an agent writes Markdown, and a snippet showed `**heliotrope**` and its
+ * An agent writes Markdown, and a snippet must not show `**heliotrope**` and its
  * backticks as written. A snippet is read as a line, so the marks that only style it go; an underscore
  * stays, since `__init__` is a name and not emphasis.
  */

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { HandOverOfferLine } from './HandOverOfferLine';
 
-// MIXAGENT1b-ii (D163 point 3) and MODELROLE1e (D205 §3.5(e)): Daoris's offer to hand a session over says why, and where the session's
+// Daoris's offer to hand a session over says why, and where the session's
 // actor has an order of its own, which of its choices it would go on with and the model that choice asks.
 const props = { agentName: 'Codex', accountName: 'team', onGoOn: vi.fn(), onChoose: vi.fn(), onDismiss: vi.fn() };
 const base = { why: 'limit' as const, until: '2026-10-12T21:30:00Z', agent: 'codex-acp', account: 'team' };

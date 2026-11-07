@@ -4,7 +4,7 @@ import { shellWord } from '../lib/shellWord';
 
 /**
  * One open quest as the driver judged it on its last tick: whether it starts, and if not, why — the
- * driver's own sentence (D46 §3: "sitting must always say why"). Shape of the tick's `considered`.
+ * driver's own sentence ("sitting must always say why"). Shape of the tick's `considered`.
  */
 export interface Consideration {
   quest: string;
@@ -12,123 +12,122 @@ export interface Consideration {
   verdict: string;
   reason: string;
   /**
-   * For a quest the person's stop holds (verdict `Stopped`, SESSUX1b): the session they stopped, which *Try again*
-   * releases and the sentence names (SESSUX1d). Absent for every other verdict.
+   * For a quest the person's stop holds (verdict `Stopped`): the session they stopped, which *Try again*
+   * releases and the sentence names. Absent for every other verdict.
    */
   heldBy?: string;
   /**
-   * For a quest parked on its failed sessions (verdict `Exhausted`, SESSUX1i): how many failed, as the planner counted to
+   * For a quest parked on its failed sessions (verdict `Exhausted`): how many failed, as the planner counted to
    * park it, which the sentence names. Absent for every other verdict and a park the shell has not read yet.
    */
   strikes?: number;
-  /** The number of failed sessions its line's failures rule parks it at (CONTEXTDRIVE1g), which the sentence names with the count. */
+  /** The number of failed sessions its line's failures rule parks it at, which the sentence names with the count. */
   parksAt?: number | null;
   /**
-   * And when its last session ended (SESSUX1i): what *What needs you* counts its wait from. Absent as `strikes` is.
+   * And when its last session ended: what *What needs you* counts its wait from. Absent as `strikes` is.
    */
   since?: string;
   /**
-   * For a quest held at spawn because every account its start may use is cooling (TOOL4g, D125 §4): whose account, which
+   * For a quest held at spawn because every account its start may use is cooling: whose account, which
    * (null for the tool's own sign-in), until when, and whether the agent named the time. It waits for an account: not
    * parked, no Retry, and it starts by itself at the reset. Absent for every other hold.
    */
   waitsFor?: {
     agent: string; account?: string | null;
-    /** The name the person gave the account (ACCT2b), read as the look said it; null where none, left out where there is none. */
+    /** The name the person gave the account, read as the look said it; null where none, left out where there is none. */
     name?: string | null;
     until: string; stated: boolean;
   };
   /**
-   * For a start held at spawn that passed accounts not signed in (TOOL6g): whose, and which, so the page names each with
+   * For a start held at spawn that passed accounts not signed in: whose, and which, so the page names each with
    * its sign-in, beside a wait on a cooling account or with none cooling. Absent where it passed none.
-   * `names` (ACCT2b) is the name the person gave each, in the same order, null where one has none; left out where there is none.
-   * `noAccount` (OWNSPACE1b-B, D175) is true where the hold is the one for no Daoris account signed in: the page says it from
+   * `names` is the name the person gave each, in the same order, null where one has none; left out where there is none.
+   * `noAccount` is true where the hold is the one for no Daoris account signed in: the page says it from
    * this fact, never from `accounts` being empty.
    */
   signedOut?: { agent: string; accounts: string[]; names?: (string | null)[] | null; noAccount?: boolean } | null;
   /**
-   * For a quest a pause holds (verdict `Paused`, PAUSE1b): whose pause, an ask's or a quest's, which the sentence names and
-   * whose *Resume* moves it (D132 §2.3). Absent for every other verdict.
+   * For a quest a pause holds (verdict `Paused`): whose pause, an ask's or a quest's, which the sentence names and
+   * whose *Resume* moves it. Absent for every other verdict.
    */
   pausedBy?: { scope: 'ask' | 'quest'; id: string } | null;
   /**
-   * For a quest an update's drain holds (verdict `Blocked`, UPDATE1, D139 §2): true, so the sentence is said from the fact.
+   * For a quest an update's drain holds (verdict `Blocked`): true, so the sentence is said from the fact.
    * Absent for every other hold.
    */
   forUpdate?: boolean | null;
   /**
-   * For a quest whose take is not this machine's (verdict `TakenElsewhere`, CARRY2b): whose it is (CARRY2c), the machine that
-   * took it and its session where a teammate's record named them, else null; `here` where it was taken on this machine after
+   * For a quest whose take is not this machine's (verdict `TakenElsewhere`): whose it is, the machine that
+   * took it and its session where a teammate's record names them, else null; `here` where it is taken on this machine after
    * its session ended, by a chat or by work outside Daoris; and `last`, the session here not carried on over it. Absent for
    * every other verdict.
    */
   takenBy?: { machine?: string | null; session?: string | null; here?: boolean; reopened?: boolean; last: string } | null;
   /**
-   * For a set-up step the planner cannot show (verdict `CannotShow`, CANNOTSHOW1a): why, as a code (`unnamed`: no review rule
+   * For a set-up step the planner cannot show (verdict `CannotShow`): why, as a code (`unnamed`: no review rule
    * here names the environment; `no-address`: a local environment declares no address; `no-window`: a local environment and no
    * window to show it in), the environment's name and its address where it has one. Null or absent otherwise.
    */
   cannotShow?: { code: string; environment: string; address: string | null } | null;
   /**
-   * For the verdicts the page had no words for (`AtCapacity`, `RepositoryBusy`, `Waiting`, `WaitsForOpinion`, `NotAdopted`,
-   * `SourceReopened`, OVERVIEWNOISE1c): which of the planner's sentences `reason` is, as a code, with the facts its words are said
-   * from — the cap as a number, the session, the other quest (one queued ahead, the question waited on, the step before, the
-   * reopened source), the repository a question was asked of, a review's environment and the second opinion's state (null where
+   * For the verdicts the page has no words for (`AtCapacity`, `RepositoryBusy`, `Waiting`, `WaitsForOpinion`, `NotAdopted`,
+   * `SourceReopened`): which of the planner's sentences `reason` is, as a code, with the facts its words are said
+   * from — the cap as a number, the session, the other quest (one queued ahead, the question waits on, the step before, the
+   * reopened source), the repository a question is asked of, a review's environment and the second opinion's state (null where
    * it is not judged yet). Each fact is null where the code names none. Null or absent otherwise.
    */
   said?: {
     code: string; cap?: number | null; session?: string | null; quest?: string | null; repository?: string | null;
     environment?: string | null; state?: string | null;
-    /** INTEGRATE1l: its declared paths that meet the earlier quest's work, under `overlaps`. Left out where there is none. */
+    /** Its declared paths that meet the earlier quest's work, under `overlaps`. Left out where there is none. */
     paths?: readonly string[] | null;
   } | null;
 }
 
 /**
- * Starts the look held because every account they may use is cooling (TOOL4d, D125 §4), one per account, as the tick hands
- * them to the page (UX6d, D150 §6.2); then the starts it held on signed-out accounts with none cooling, one per agent, with
- * no time and no account (UX6d1). Shape of the tick's `waits`, read defensively: the bridge leaves a null out.
+ * Starts the look held because every account they may use is cooling, one per account, as the tick hands
+ * them to the page; then the starts it held on signed-out accounts with none cooling, one per agent, with
+ * no time and no account. Shape of the tick's `waits`, read defensively: the bridge leaves a null out.
  *
  * @remarks
- * A consideration names a quest alone; this names an ask's intake too, which waited on its accounts with nothing on the page
+ * A consideration names a quest alone; this names an ask's intake too, which waits on its accounts with nothing on the page
  * saying so. Facts only, the driver's sentence left with the driver: the page says them in the reader's language. **A wait
- * with no `until` is no cool-off** (UX6d2): it waits for a sign-in, its accounts its `signedOut`, and its null account is no
+ * with no `until` is no cool-off**: it waits for a sign-in, its accounts its `signedOut`, and its null account is no
  * account at all, never the tool's own sign-in.
  */
 export interface AccountWaitTick {
-  /** Whose accounts: the owner a door runs as (AGT7). */
+  /** Whose accounts: the owner a door runs as. */
   agent: string;
   /**
-   * The account whose cool-off ends first, or null for the tool's own sign-in; null too, and no account, where no `until` is
-   * (UX6d1).
+   * The account whose cool-off ends first, or null for the tool's own sign-in; null too, and no account, where no `until` is.
    */
   account?: string | null;
-  /** The name the person gave it (ACCT2b), null where none. */
+  /** The name the person gave it, null where none. */
   name?: string | null;
   /** The workspace the held starts belong to, where they share one. */
   workspace?: string | null;
-  /** When that account is offered again; absent or null where none cools and a sign-in is the wait (UX6d1). */
+  /** When that account is offered again; absent or null where none cools and a sign-in is the wait. */
   until?: string | null;
   /** Whether the agent named that time; false where there is none. */
   stated: boolean;
   /** The quests held. */
   quests?: string[];
-  /** The asks whose intakes were held. */
+  /** The asks whose intakes are held. */
   asks?: string[];
-  /** The accounts the held starts passed signed out (TOOL6g), in the order the walk tried them. */
+  /** The accounts the held starts passed signed out, in the order the walk tried them. */
   signedOut?: string[];
-  /** The starts were held because no Daoris account of the agent's is signed in (OWNSPACE1b-B, D175): a fact, never an empty `signedOut`. */
+  /** The starts are held because no Daoris account of the agent's is signed in: a fact, never an empty `signedOut`. */
   noAccount?: boolean;
 }
 
-/** Whether a quest waits for an account (TOOL4g, D125 §4): held at spawn on a cooling account, never parked. */
+/** Whether a quest waits for an account: held at spawn on a cooling account, never parked. */
 export function waitsForAccount(sitting: Consideration | null | undefined): boolean {
   return sitting?.verdict === 'Blocked' && Boolean(sitting.waitsFor);
 }
 
 /**
- * A start the driver held because the agent has not been trusted where it would run (D73) — the
- * folder, the agent's own file that said so, and what it held. Shape of the tick's `untrusted`.
+ * A start the driver held because the agent has not been trusted where it would run — the
+ * folder, the agent's own file that says so, and what it held. Shape of the tick's `untrusted`.
  *
  * @remarks
  * Machine-local paths, so they arrive over the shell's bridge only; a browser never has one. The
@@ -140,7 +139,7 @@ export interface TrustHold {
   quest?: string;
   ask?: string;
   /**
-   * Its file is the person's own sign-in's (POOL1a3, D197 point 3): a conversation that began there goes on there. Daoris writes
+   * Its file is the person's own sign-in's: a conversation that began there goes on there. Daoris writes
    * nothing in it, so the question offers no grant and `TRUST_FOLDER` refuses one as `TRUST_OWN_HOME`. Sent only where true.
    */
   own?: boolean;
@@ -151,10 +150,10 @@ export interface TrustHold {
  * said nothing about it.
  *
  * @remarks
- * 🔴 **Found on the deployed application** (D62). The driver has said this every tick since D46 and
- * the shell forwarded it in every tick; the page read the tick's `events` and dropped the rest. So
- * the Overview led with *"is anything sitting"* and never once said why, while the reason sat in the
- * payload it had just handled — and the one surface that DID say it was a toast, gone in seconds.
+ * 🔴 The driver says this every tick and the shell forwards it in every tick; a page that reads only
+ * the tick's `events` drops the rest, so the Overview would lead with *"is anything sitting"* and never
+ * once say why, while the reason sits in the payload it had just handled — and the one surface that DID
+ * say it would be a toast, gone in seconds.
  * A `Start` verdict is not sitting, and saying "starting" under a quest would be noise.
  */
 export function sittingBecause(considered: readonly Consideration[], quest: string): Consideration | null {
@@ -163,23 +162,23 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
 }
 
 /**
- * Why a quest is sitting, in the reader's language (UX5 U27).
+ * Why a quest is sitting, in the reader's language.
  *
  * @remarks
- * The driver's sentence is Daoris's own voice, so it is chrome, and chrome translates. In 中文 every
- * outstanding row said *搁置 —* over the driver's English. **It translates by the VERDICT**, the
+ * The driver's sentence is Daoris's own voice, so it is chrome, and chrome translates. In 中文 a row
+ * would otherwise say *搁置 —* over the driver's English. **It translates by the VERDICT**, the
  * driver's typed half, and never by matching the English, which would turn a rewording into a silent
- * change (D48 §6). Only the verdicts whose words need nothing the page lacks have a translation
- * (`NotDrivable`, `Held`, `NoRoot`), `Stopped`, whose session the tick names as a fact (`heldBy`,
- * SESSUX1d), `Exhausted`, whose number of failed sessions it names (`strikes`, SESSUX1i), `Paused`, whose ask or
- * quest it names (`pausedBy`, PAUSE1e), a `Blocked` hold that is an update's drain (`forUpdate`, UPDATE1),
- * `TakenElsewhere`, whose take it names (`takenBy`, CARRY2c), and `CannotShow` (REVIEWENV1c2), a set-up step with nowhere to
- * show its work here, said from the environment and the reason the tick names (`cannotShow`, CANNOTSHOW1b). The rest
+ * change. Only the verdicts whose words need nothing the page lacks have a translation
+ * (`NotDrivable`, `Held`, `NoRoot`), `Stopped`, whose session the tick names as a fact (`heldBy`),
+ * `Exhausted`, whose number of failed sessions it names (`strikes`), `Paused`, whose ask or
+ * quest it names (`pausedBy`), a `Blocked` hold that is an update's drain (`forUpdate`),
+ * `TakenElsewhere`, whose take it names (`takenBy`), and `CannotShow`, a set-up step with nowhere to
+ * show its work here, said from the environment and the reason the tick names (`cannotShow`). The rest
  * keep the driver's words, since their sentences name a session or a cap the tick does not carry, and
  * so does a verdict the page has not heard of, and a stop, a park or a take on a shell that names no session,
- * number or machine. English passes the driver's sentence through as its only copy, as the rules' defaults do
- * (POLISH2). Since OVERVIEWNOISE1c the six verdicts that kept the driver's words — `AtCapacity`, `RepositoryBusy`, `Waiting`,
- * `WaitsForOpinion`, `NotAdopted` and `SourceReopened` — are worded by the code the tick names beside them (`said`), in English
+ * number or machine. English passes the driver's sentence through as its only copy, as the rules' defaults do.
+ * The six verdicts `AtCapacity`, `RepositoryBusy`, `Waiting`,
+ * `WaitsForOpinion`, `NotAdopted` and `SourceReopened` are worded by the code the tick names beside them (`said`), in English
  * as well, as `CannotShow`'s are; with no code, or one the page has not heard of, the driver's words.
  */
 export function sittingSentence(sitting: Consideration): string {
@@ -187,12 +186,12 @@ export function sittingSentence(sitting: Consideration): string {
   if (coded) return coded;
   if (sitting.verdict === 'Stopped' && !sitting.heldBy) return sitting.reason;
   if (sitting.verdict === 'Exhausted' && sitting.strikes == null) return sitting.reason;
-  // CONTEXTDRIVE1g: the park is the person's failures rule's, said with its number beside the count that reached it.
+  // The park is the person's failures rule's, said with its number beside the count that reached it.
   if (sitting.verdict === 'Exhausted' && sitting.parksAt != null) {
     return i18n.t('work.sitting.ExhaustedRule', { quest: sitting.quest, failed: sitting.strikes, at: sitting.parksAt });
   }
-  // A take that is not this machine's (CARRY2c) is said from whose it is: a teammate's machine and session where a record
-  // named both, another machine where none did, or a take made here; with no facts, the driver's words.
+  // A take that is not this machine's is said from whose it is: a teammate's machine and session where a record
+  // names both, another machine where none does, or a take made here; with no facts, the driver's words.
   if (sitting.verdict === 'TakenElsewhere') {
     const taken = sitting.takenBy;
     if (!taken?.last) return sitting.reason;
@@ -202,7 +201,7 @@ export function sittingSentence(sitting: Consideration): string {
       context: taken.reopened ? 'reopened' : taken.here ? 'here' : named ? undefined : 'another', defaultValue: sitting.reason,
     });
   }
-  // A set-up step with nowhere to show its work (CANNOTSHOW1b, D154) is said from the fact the tick carries: which of the three
+  // A set-up step with nowhere to show its work is said from the fact the tick carries: which of the three
   // reasons, the environment and its address; with no fact, or a code the page has not heard of, the driver's words.
   if (sitting.verdict === 'CannotShow') {
     const fact = sitting.cannotShow;
@@ -212,7 +211,7 @@ export function sittingSentence(sitting: Consideration): string {
       why: sitting.reason, environment: fact.environment, address: fact.address ?? '', context, defaultValue: sitting.reason,
     });
   }
-  // A pause (PAUSE1e, D132 §2.3) is said from whose it is, an ask's or a quest's own; with none named, the driver's words.
+  // A pause is said from whose it is, an ask's or a quest's own; with none named, the driver's words.
   if (sitting.verdict === 'Paused') {
     if (!sitting.pausedBy) return sitting.reason;
     return i18n.t('work.sitting.Paused', {
@@ -220,24 +219,24 @@ export function sittingSentence(sitting: Consideration): string {
       context: sitting.pausedBy.scope === 'quest' ? 'quest' : undefined, defaultValue: sitting.reason,
     });
   }
-  // An update's drain (UPDATE1) is a `Blocked` hold the tick marks, so it is said from that fact.
+  // An update's drain is a `Blocked` hold the tick marks, so it is said from that fact.
   if (sitting.verdict === 'Blocked' && sitting.forUpdate) {
     return i18n.t('work.sitting.forUpdate', { why: sitting.reason, defaultValue: sitting.reason });
   }
-  // A wait for an account (TOOL4g) is a `Blocked` hold the tick names the account of, so it is said from those facts, with
-  // the accounts it passed not signed in and each one's sign-in (TOOL6g); a hold on accounts not signed in with none cooling
+  // A wait for an account is a `Blocked` hold the tick names the account of, so it is said from those facts, with
+  // the accounts it passed not signed in and each one's sign-in; a hold on accounts not signed in with none cooling
   // is said from those alone. Any other `Blocked` hold keeps the driver's words, since its sentence names what the tick does
   // not carry.
-  // Each account by the name the person gave it, which the tick carries beside its id (ACCT2b), else by its id; a sign-in
+  // Each account by the name the person gave it, which the tick carries beside its id, else by its id; a sign-in
   // keeps the id, which a terminal takes whatever the account is called by then.
-  // No Daoris account signed in (OWNSPACE1b-B, D175) is a fact the tick carries, said apart from accounts that were passed.
+  // No Daoris account signed in is a fact the tick carries, said apart from accounts that are passed.
   if (sitting.verdict === 'Blocked' && sitting.signedOut?.noAccount) {
     return i18n.t('work.sitting.noAccount', { why: sitting.reason, agent: sitting.signedOut.agent, defaultValue: sitting.reason });
   }
   const signedOut = sitting.verdict === 'Blocked' && sitting.signedOut?.accounts?.length ? sitting.signedOut : null;
   const signIn = signedOut ? {
     accounts: signedOut.accounts.map((id, at) => signedOut.names?.[at]?.trim() || id).join(i18n.t('work.sitting.signedOutJoin')),
-    // Each a command a person pastes, so the id is spelled for a shell (ACCTQUOTE1).
+    // Each a command a person pastes, so the id is spelled for a shell.
     logins: signedOut.accounts.map((name) => `\`daoris agent login ${signedOut.agent} --profile ${shellWord(name, '<account>')}\``)
       .join(i18n.t('work.sitting.signedOutJoin')),
   } : null;
@@ -258,28 +257,28 @@ export function sittingSentence(sitting: Consideration): string {
   });
 }
 
-/** The codes the page words for each verdict that names one (OVERVIEWNOISE1c), as the planner's `SittingFact` spells them. */
+/** The codes the page words for each verdict that names one, as the planner's `SittingFact` spells them. */
 const SAID: Record<string, readonly string[]> = {
   AtCapacity: ['cap'],
-  // INTEGRATE1l: `overlaps`, a start held under `overlap: wait` until the earlier quest's work is integrated.
+  // `overlaps`: a start held under `overlap: wait` until the earlier quest's work is integrated.
   RepositoryBusy: ['serving', 'opening', 'tree', 'treeOpening', 'treeThisLook', 'repository', 'queued', 'repositoryOpening', 'overlaps'],
   Waiting: ['asked', 'unreadRunning', 'unread', 'unreadAtCommit', 'missing', 'unreviewed', 'departed'],
   NotAdopted: ['unregistered', 'noRoot', 'noConnector'],
   WaitsForOpinion: ['landing', 'steps'],
   SourceReopened: ['withdrawn', 'held'],
-  // AGENTERRORS1a (D210 §5.1, §8's `held.transient`): its last session's provider kept failing past its bound.
+  // Its last session's provider kept failing past its bound (`held.transient`).
   TransientHeld: ['transient'],
-  // STAFFPOLICY1e (D226 §11 point 7): its role's policy asks before it moves the quest to another choice, or the line made its bound of moves.
+  // Its role's policy asks before it moves the quest to another choice, or the line has made its bound of moves.
   PolicyHeld: ['policy-ask', 'moves-bound'],
-  // STEWARDROLE1b (D209 §5.1): the steward's stop, held for a Try again by the steward or the owner; never said as the person's.
+  // The steward's stop, held for a Try again by the steward or the owner; never said as the person's.
   Stopped: ['steward'],
-  // STEWARDROLE1b (D209 §3.1a): a start held because its earlier work is in the owner's checkout (`held.checkout`).
+  // A start held because its earlier work is in the owner's checkout (`held.checkout`).
   Blocked: ['checkout'],
 };
 
 /**
- * A verdict's sentence worded from the code and facts the tick carries (OVERVIEWNOISE1c), or null where it names none the page
- * knows, so the caller says what it said before. A review waited for in an environment, and an opinion not judged yet, are their
+ * A verdict's sentence worded from the code and facts the tick carries, or null where it names none the page
+ * knows, so the caller says the driver's words. A review waited for in an environment, and an opinion not judged yet, are their
  * code's other wording; the opinion's state is said in the gate's own words.
  */
 function saidSentence(sitting: Consideration): string | null {
@@ -302,8 +301,8 @@ function saidSentence(sitting: Consideration): string | null {
 /**
  * How many notices may be on screen at once.
  *
- * 🔴 A viewport that grows without limit is its own defect: the four stacked toasts had reached the
- * repositories card and were climbing. A cap means the newest are always readable, which is the
+ * 🔴 A viewport that grows without limit is its own defect: stacked toasts would reach the
+ * repositories card and keep climbing. A cap means the newest are always readable, which is the
  * only thing a corner of the screen can promise.
  */
 export const TOAST_LIMIT = 3;
@@ -315,13 +314,13 @@ export function capped<T>(items: readonly T[], limit = TOAST_LIMIT): T[] {
 
 /**
  * The notices on screen with one more: added, THEN capped, so the one just added counts toward the
- * limit. Both windows capped first and added after, and the corner held four (REV3).
+ * limit. Capping first and adding after would let the corner hold one more than the limit.
  */
 export function withNotice<T>(
   items: readonly T[], item: T, limit = TOAST_LIMIT, same?: (shown: T, added: T) => boolean,
 ): T[] {
-  // A sentence already on screen is said once (UX5 U30): with the service stopped, the page's own
-  // request and the driver's tick said the same thing in the same moment, and it showed twice.
+  // A sentence already on screen is said once: with the service stopped, the page's own
+  // request and the driver's tick say the same thing in the same moment, and it would show twice.
   const kept = same ? items.filter((shown) => !same(shown, item)) : items;
   return capped([...kept, item], limit);
 }

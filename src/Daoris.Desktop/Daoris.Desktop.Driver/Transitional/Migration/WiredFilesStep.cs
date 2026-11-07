@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's wired files in the shape this build reads (D232; AGENTPROVIDER1t): each receipt's <c>harness</c>, the door it ran on, is
+/// Ask Daoris's wired files in the shape this build reads: each receipt's <c>harness</c>, the door it ran on, is
 /// <c>door</c>, and its <c>door</c>, <c>pipe</c> or <c>acp</c>, is <c>transport</c>, <c>native</c> or <c>protocol</c>. A receipt that
 /// already names a transport is one this build wrote and is left as it is.
 /// </summary>

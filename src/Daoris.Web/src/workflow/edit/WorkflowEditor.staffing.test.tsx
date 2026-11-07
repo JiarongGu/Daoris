@@ -9,9 +9,9 @@ import { MERGE_GRAPH } from '../graphFixtures';
 import type { WorkflowSaveAnswer } from './answers';
 import { HOLDS, LIST, PALETTE } from './editFixtures';
 
-// SETUPUX1t (D221 §2.4; the Setup design's §3 flow 7): a step's *Taken by* offers the roles that take its work and cover this place, each
+// A step's *Taken by* offers the roles that take its work and cover this place, each
 // named with its place, and *Give engine its own role for …* opens the one role editor beside the step: it saves the role over `SET_ROLE`
-// at once, returns to the draft as it was, and the step then names the new role. A refused save keeps both forms.
+// at once, returns to the draft unchanged, and the step then names the new role. A refused save keeps both forms.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn(async (..._: unknown[]): Promise<unknown> => null) }));
 
@@ -171,7 +171,7 @@ describe('a step\'s Taken by', () => {
 
     expect(await screen.findByText('The role door refused it.')).toBeInTheDocument();
     expect(screen.getByRole('form', { name: 'A new role' })).toBeInTheDocument();
-    // The step still shows its own choice, and the draft is as it was.
+    // The step still shows its own choice, and the draft is unchanged.
     expect(screen.getByRole('combobox', { name: 'Taken by' })).toHaveTextContent('Its work\'s own role');
     expect(screen.getByRole('button', { name: 'Undo', hidden: true })).toBeDisabled();
 

@@ -7,7 +7,7 @@ import {
   canon, closureOf, decide, type Decided, type DraftProposal, everyNamed, leftWith, staleOf, take, UNDECIDED, unionOf,
 } from './proposalTake';
 
-// FLOWCHART2f (D223 §4, §8.6): Ask Daoris's proposal taken into the open draft as a transaction. Over every pair of shipped workflows, the
+// Ask Daoris's proposal taken into the open draft as a transaction. Over every pair of shipped workflows, the
 // driver's changes (mirrored in `proposalFixtures.ts`, held here to the driver's own answer) taken whole, and one by one, give the proposed
 // graph exactly; each change brings what it needs: a way its steps, a removed step its ways and a replaced end, a landing's method its tail,
 // a group its ways. A change the draft no longer holds the base of is refused by name, and the rest stay takeable.

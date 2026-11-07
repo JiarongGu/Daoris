@@ -6,7 +6,7 @@ import { answerOf, GO_AHEAD_REFUSAL, IN_REVIEW, LANDED } from './runFixtures';
 import { WorkflowChart } from './WorkflowChart';
 import { WorkflowRunView } from './WorkflowRunView';
 
-// A workflow and its run drawn as flowcharts (FLOWCHART1d; the flowchart design §2.4, §2.5, §4.4, §5.1), at the frame's widths:
+// A workflow and its run drawn as flowcharts, at the frame's widths:
 // 300 px, the side bar's floor, where a step's 19rem does not fit and the rail is drawn; 400 and 544 top to bottom, a step a
 // rank; 1200 the same, never left to right, since the steps are read under *Before it lands* and *After it lands*. A failure path
 // is a rank of two, so it draws only at 1200. The measured-box check draws these stories in a rendered browser and measures every

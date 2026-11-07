@@ -52,13 +52,13 @@ export const Drivable: Story = { args: { drivable: true, busy: true } };
 /** Held by the person: the standing choice is suspended, so the header stops claiming it. */
 export const Held: Story = { args: { drivable: true, held: true } };
 
-/** A second tree, because D51 made the tree the unit of exclusion and this is where you see it. */
+/** A second tree, because the tree is the unit of exclusion and this is where you see it. */
 export const BusyInItsOwnTree: Story = { args: { drivable: true, busy: 'streaming-budget' } };
 
-/** Sessions run; quests cannot be addressed here until the repository adopts (D48 §4). */
+/** Sessions run; quests cannot be addressed here until the repository adopts. */
 export const NotAdopted: Story = { args: { repository: 'sandbox', adopted: false, count: 1, children: <SessionRow session={{ ...SESSION, repository: 'sandbox' }} /> } };
 
-/** A teammate's registration, mirrored: there is a record here and no working tree (D48 §3). */
+/** A teammate's registration, mirrored: there is a record here and no working tree. */
 export const NoCheckoutHere: Story = {
   args: {
     hasCheckout: false,

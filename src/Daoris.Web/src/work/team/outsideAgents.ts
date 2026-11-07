@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import { clockOf } from '../../locales/format';
 
 /**
- * An agent outside Daoris on a line's channel (CHANNELJOIN1c, the event-channel design §5.8): the agent it claimed, the repository it
+ * An agent outside Daoris on a line's channel: the agent it claimed, the repository it
  * claimed, when it joined and when it last read or posted. Shown as itself, never as the person or a session.
  */
 export type OutsideAgent = { id: string; agent: string; repository: string | null; joined: string; seen: string | null };

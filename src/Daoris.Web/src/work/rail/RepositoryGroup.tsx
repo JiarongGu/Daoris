@@ -6,16 +6,16 @@ import { Pill } from '../../design/ui';
  * The rail's group header — one repository, and the sessions running in it.
  *
  * @remarks
- * **Grouping is by repository because that is the axis a person switches on** (design §3), and
+ * **Grouping is by repository because that is the axis a person switches on**, and
  * two-level grouping is what survives contact with many running things — the one thing JetBrains's
- * Services window has that the agent consoles mostly do not (IDE study §2).
+ * Services window has that the agent consoles mostly do not.
  *
  * **The header is where the REPOSITORY's facts live**, so a row never repeats them: whether the
  * driver works here, whether the person is holding it, and which tree is busy — which is a
- * question a repository can have more than one answer to since D51.
+ * question a repository can have more than one answer to.
  *
  * **Unknown is not false.** Every fact is optional and an absent one asserts nothing: the driver
- * answers only where a shell is attached (D46 §6), and a header that read silence as "not adopted"
+ * answers only where a shell is attached, and a header that read silence as "not adopted"
  * would be inventing news out of a query that had not returned.
  */
 export function RepositoryGroup({
@@ -26,7 +26,7 @@ export function RepositoryGroup({
   label?: string;
   /** How many session rows sit under this header. */
   count: number;
-  /** The machine's standing choice: the driver may start work here (D46 §6). */
+  /** The machine's standing choice: the driver may start work here. */
   drivable?: boolean;
   /** The person has stopped it starting anything new. Outranks `drivable`, which it suspends. */
   held?: boolean;
@@ -34,7 +34,7 @@ export function RepositoryGroup({
   busy?: string | true | null;
   /** Whether doctrine is installed here. `false` is a fact; absent is an unanswered question. */
   adopted?: boolean;
-  /** Whether there is a checkout on this machine at all (D48 §3) — same rule as `adopted`. */
+  /** Whether there is a checkout on this machine at all — same rule as `adopted`. */
   hasCheckout?: boolean;
   children: ReactNode;
 }) {
@@ -42,8 +42,8 @@ export function RepositoryGroup({
 
   const marks = [
     held ? <Pill key="held" tone="declined">{t('work.group.held')}</Pill> : null,
-    // A fact about the TREE — it is held — so it is words, as *drives here* is. It wore the live
-    // mark a working session wears, and a group whose one chat was idle or parked read live (UX5 U60).
+    // A fact about the TREE — it is held — so it is words, as *drives here* is, never the live
+    // mark a working session wears: a group whose one chat is idle or parked does not read live.
     busy
       ? (
         <span key="busy" className="text-meta text-ink-soft">

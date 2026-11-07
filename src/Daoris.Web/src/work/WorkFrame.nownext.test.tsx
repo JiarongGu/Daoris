@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// REVIEWFLOW1b: the session's head says where the work stands and what comes next, from the driver's facts, on the page.
+// The session's head says where the work stands and what comes next, from the driver's facts, on the page.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
 import i18n from '../locales/i18n';

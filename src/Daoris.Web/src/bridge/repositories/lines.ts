@@ -18,42 +18,42 @@ import { call, lookBound, pressBound } from '../call';
 import { type DriverState, readSlice, useDriverChange } from '../driver';
 import { pushedOf, readPushed, type SliceSpec } from '../state/slices';
 
-// Whether a look or a press ended because the page stopped waiting (WSR7): the section says so where it was asked.
+// Whether a look or a press ended because the page stopped waiting: the section says so where it asked.
 export { stoppedWaiting } from '../call';
 
 // Each repository's line, how work lands in it, the clean-up of the branches sessions left, and bringing it up
-// to date after a pull request merged (MOD3): the Workspace domain's machine half (WSR1, WSR2, WSR3, WSR6).
+// to date after a pull request merged: the Workspace domain's machine half.
 
 /**
- * Every repository's line here and what said so (WSR2). Desktop-only: the guess is read off a
+ * Every repository's line here and what said so. Desktop-only: the guess is read off a
  * checkout, and only this machine holds one.
  */
 export type LinesAnswer = {
   lines: RepositoryLine[]; languages?: RepositoryLanguage[];
-  // Where each repository's work is reviewed before it lands, as the driver resolves it (REVIEWENV1a).
+  // Where each repository's work is reviewed before it lands, as the driver resolves it.
   reviews?: RepositoryReview[];
-  // Which other agent reads each one's work before it lands, as the driver resolves it (XAGENT1a).
+  // Which other agent reads each one's work before it lands, as the driver resolves it.
   opinions?: RepositoryOpinion[];
-  // How each one's work is committed and what a helper its agent asks for does, as the driver resolves them (DOORS1b): each
+  // How each one's work is committed and what a helper its agent asks for does, as the driver resolves them: each
   // never null, `default` where nothing is set.
   commits?: RepositoryCommits[];
   helpers?: RepositoryHelpers[];
-  // What an agent's ask to hand its session over does, as the driver resolves it (MIXAGENT1c): never null, `default` where
+  // What an agent's ask to hand its session over does, as the driver resolves it: never null, `default` where
   // nothing is set.
   handOver?: RepositoryHandOver[];
-  // The access setup each one's sessions start under, every pause with its value and where it was set (AUTONOMY1a, D184 point 1):
+  // The access setup each one's sessions start under, every pause with its value and where it is set:
   // never null, `default` where nothing is set.
   access?: RepositoryAccess[];
-  // What each one's sessions may do on a git remote, each class with its value and where it was set (GITAUTH1f, the git-auth design
-  // §6.2); never null, `default` where nothing is set (Write then `as-today`).
+  // What each one's sessions may do on a git remote, each class with its value and where it is set;
+  // never null, `default` where nothing is set (Write then `as-today`).
   gitAccess?: RepositoryGitAccess[];
 };
 
-// The shell's `LinesStateSlice.Fields`, in its order: a field left out here is pushed and never composed (AUTONOMY1d).
+// The shell's `LinesStateSlice.Fields`, in its order: a field left out here is pushed and never composed.
 const LINES_FIELDS = ['lines', 'languages', 'reviews', 'opinions', 'helpers', 'handOver', 'commits', 'access', 'gitAccess'] as const;
 
 /**
- * The lines as the shell pushes them (PUSH1b2, D182): a partition per repository, named by it, each holding that repository's rows
+ * The lines as the shell pushes them: a partition per repository, named by it, each holding that repository's rows
  * of what `LINES` answers, composed into the one entry the pull answers, repositories in name order. A repository not judged yet
  * is a partition whose line row says `notReadYet`; one the registry dropped is gone and leaves with its rows. Nothing judged yet
  * composes nothing, which is waited for until the first push.
@@ -81,7 +81,7 @@ const NO_CHECKOUT = '<no checkout>';
 const HELD = '<held>';
 
 /**
- * The work as the shell pushes it (PUSH1c2b, D182): a partition per repository with a checkout here, then `<no checkout>`, each
+ * The work as the shell pushes it: a partition per repository with a checkout here, then `<no checkout>`, each
  * `{units, recovery, unread}`, and `<held>`, `{held, ends}`, apart. Composed into the one entry `WORK_STATE` answers, repositories in name
  * order with `<no checkout>` last (a name sorts after `<`, so it is placed, not sorted). Not composed until the owner has judged every
  * part, which is waited for; a part of another shape is too.
@@ -99,11 +99,11 @@ export const workSlice: SliceSpec = {
     const held = partitions.get(HELD);
     if (!parts.every(object) || (held !== undefined && !object(held))) return undefined;
     const rows = (field: string) => parts.flatMap((part) => (Array.isArray(part[field]) ? part[field] as unknown[] : []));
-    // FABRIC-CLOSE1j: the closure graphs' ends ride in `<held>` too.
+    // The closure graphs' ends ride in `<held>` too.
     return readWorkState({
       units: rows('units'), recovery: rows('recovery'), unread: rows('unread'),
       held: held && Array.isArray(held.held) ? held.held : [], ends: held && Array.isArray(held.ends) ? held.ends : [],
-      // FABRIC-PERFORM1j: the node records that do not read, pushed beside the held attempts.
+      // The node records that do not read, pushed beside the held attempts.
       unreadable: held && Array.isArray(held.unreadable) ? held.unreadable : [],
     });
   },
@@ -112,7 +112,7 @@ export const workSlice: SliceSpec = {
 export const useLines = () => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
-  // Pushed (PUSH1b2): read from memory, written by the pushes, so neither a tick nor a focus asks the shell again.
+  // Pushed: read from memory, written by the pushes, so neither a tick nor a focus asks the shell again.
   return useQuery({
     queryKey: keys.lines,
     queryFn: () => readPushed<LinesAnswer>(client, linesSlice.name),
@@ -122,11 +122,11 @@ export const useLines = () => {
   });
 };
 
-/** What `SWEEP_PLAN` answers: the session branches, and the landings' branches from a shell since WSR5. */
+/** What `SWEEP_PLAN` answers: the session branches, and the landings' branches. */
 export type SweepAnswer = { branches: SweepBranch[]; landed?: LandedBranch[] };
 
 /**
- * The clean-up's list as the shell pushes it (PUSH1c4b, D182's PUSH1c4a note): a partition per repository with a checkout here, each
+ * The clean-up's list as the shell pushes it: a partition per repository with a checkout here, each
  * `{branches, landed}` as `SWEEP_PLAN`'s own builder writes it, composed into the one entry the pull answers, repositories in name order
  * by UTF-16 unit, as the door orders its checkouts (`Ordinal`). Nothing composed until the owner judged the list whole, which is
  * waited for; a part of another shape is too. A list judged with no repository is empty.
@@ -146,11 +146,11 @@ export const sweepSlice: SliceSpec = {
 };
 
 /**
- * Every session branch here with what it holds (WSR3, D88) — the clean-up's list — and every branch a
- * landing made, judged against the line (WSR5). Desktop-only: it is read off this machine's checkouts.
+ * Every session branch here with what it holds — the clean-up's list — and every branch a
+ * landing made, judged against the line. Desktop-only: it is read off this machine's checkouts.
  *
- * As the shell pushes it (PUSH1c4b): read from memory, written by the pushes, so neither a tick, a focus nor a declared change reads
- * `SWEEP_PLAN`, each of whose reads asks the pull-request plugin (D148 point 2); the person's *Look* does (`useSweepLook`).
+ * As the shell pushes it: read from memory, written by the pushes, so neither a tick, a focus nor a declared change reads
+ * `SWEEP_PLAN`, each of whose reads asks the pull-request plugin; the person's *Look* does (`useSweepLook`).
  */
 export const useSweepPlan = () => {
   const { isAvailable } = useShenora();
@@ -165,7 +165,7 @@ export const useSweepPlan = () => {
 };
 
 /**
- * The clean-up's *Look* (PUSH1c4b): the person's press of `SWEEP_PLAN`, the occasion its pull-request asks are made at (D148 point 2),
+ * The clean-up's *Look*: the person's press of `SWEEP_PLAN`, the occasion its pull-request asks are made at,
  * and never a read the page makes on its own. Where the pushes compose the list, its answer is not written: the shell judges again
  * each repository whose kept answers the look moved (`SweepStateSlice.Asked`), and its push brings them. Where the owner has not
  * judged the list yet, the answer is the list, written where it is read.
@@ -181,14 +181,14 @@ export const useSweepLook = () => {
 };
 
 /**
- * Each unit of work's milestone (FABRIC-MILESTONE1b, the fabric events design §D0): whether its end was reached, the result kept, its
+ * Each unit of work's milestone: whether its end is reached, the result kept, its
  * cleanup pending or completed and the recovery retained, as `daoris work state` says it. With `unit`, the units that name
  * picks (its id, its session or its branch). A read of this machine's records and git: shell-only, and stored nowhere.
  */
 export const useWorkState = (unit: string | null = null, enabled = true) => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
-  // Pushed (PUSH1c2b): the widest entry is read from memory and a unit's variant selected from it, so neither a tick nor a focus
+  // Pushed: the widest entry is read from memory and a unit's variant selected from it, so neither a tick nor a focus
   // asks the shell again.
   const select = useCallback((all: WorkState) => workOf(all, unit), [unit]);
   return useQuery({
@@ -200,8 +200,8 @@ export const useWorkState = (unit: string | null = null, enabled = true) => {
 
 /**
  * The clean-up's press: only the branches the list showed to go, each judged again by the driver. What it moved (the list, the
- * sessions, the reviews kept until something moves their tree (REVIEW4), and which repositories hold Daoris's branches, D112)
- * the state hub asks again, as the route declares it (STATEHUB1b, D169), and the hook nothing itself (STATEHUB1f).
+ * sessions, the reviews kept until something moves their tree, and which repositories hold Daoris's branches)
+ * the state hub asks again, as the route declares it, and the hook nothing itself.
  */
 export const useSweep = () =>
   useMutation({
@@ -214,11 +214,10 @@ export const useSweep = () =>
   });
 
 /**
- * Discard a failed or superseded attempt's session branch, its commits with it and its tree where it is still here (LAND3b,
- * D102's LAND3 note): the screen's half of `daoris tree remove <branch> --repository <name> --force`. Always
+ * Discard a failed or superseded attempt's session branch, its commits with it and its tree where it is still here: the screen's half of `daoris tree remove <branch> --repository <name> --force`. Always
  * forced, since the page asks once, naming the branch and its commits, before it sends; a branch the driver kept is an
  * answer with its sentence. What it moved is asked again either way, since a branch gone already is a list out of date: the
- * state hub's, as the route declares it, as after the clean-up (STATEHUB1b, D169), and never the hook's own (STATEHUB1f).
+ * state hub's, as the route declares it, as after the clean-up, and never the hook's own.
  */
 export const useDiscardSessionBranch = () =>
   useMutation({
@@ -227,10 +226,10 @@ export const useDiscardSessionBranch = () =>
   });
 
 /**
- * Withdraw a branch a landing made whose work the line will never hold (LANDRETIRE1, D102's note): the screen's half of
+ * Withdraw a branch a landing made whose work the line will never hold: the screen's half of
  * `daoris tree remove <branch> --repository <name> --why "…"`. The reason is the person's, kept with the record; the commits stay
  * on a recovery ref, which the answer names. A branch the driver kept is an answer with its sentence, never an error. What it moved is
- * asked again by the state hub, as the route declares it (STATEHUB1b, D169), and never the hook's own (STATEHUB1f).
+ * asked again by the state hub, as the route declares it, and never the hook's own.
  */
 export const useWithdrawLandingBranch = () =>
   useMutation({
@@ -239,9 +238,9 @@ export const useWithdrawLandingBranch = () =>
   });
 
 /**
- * The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the screen's half of `daoris work
+ * The person's word on a plugin step's attempt held for them: the screen's half of `daoris work
  * held <unit> <node> <attempt> <word>`. The driver records it only where it holds the home, and applies it at its next look; a refusal
- * is an answer with the driver's sentence. What it moved the state hub asks again, as the route declares it (STATEHUB1f).
+ * is an answer with the driver's sentence. What it moved the state hub asks again, as the route declares it.
  */
 export const useResolveHeld = () =>
   useMutation({
@@ -250,7 +249,7 @@ export const useResolveHeld = () =>
   });
 
 /**
- * Open the folder the units' node records are kept in (FABRIC-PERFORM1j), where the person mends one that does not read: the shell names
+ * Open the folder the units' node records are kept in, where the person mends one that does not read: the shell names
  * the folder, never the page, and answers only whether it opened; with no record kept, the driver's refusal.
  */
 export const useOpenWorkRecords = () =>
@@ -267,10 +266,10 @@ type RecoveryDropAnswer = {
 };
 
 /**
- * The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D102's CLEANUP1 note): the screen's half of `daoris
+ * The person's delete of the recovery refs nothing holds: the screen's half of `daoris
  * work recovery drop`. One call per repository, in turn, each naming the refs with the commits the page showed, which the driver
  * verifies in the delete itself; a ref a holder keeps or that moved is skipped and its reason is the answer's. What it moved is asked
- * again by the state hub, as the route declares it, and never by this hook (STATEHUB1f).
+ * again by the state hub, as the route declares it, and never by this hook.
  */
 export const useDropRecoveries = () =>
   useMutation({
@@ -288,21 +287,21 @@ export const useDropRecoveries = () =>
   });
 
 /**
- * Where the last look at bringing repositories up to date is kept (WSR6): one per workspace, so a workspace's page never
- * shows another's look (BRSCOPE1, WSP5's rule that a query's scope rides its cache key). Null is the machine's.
+ * Where the last look at bringing repositories up to date is kept: one per workspace, so a workspace's page never
+ * shows another's look (a query's scope rides its cache key). Null is the machine's.
  */
 const treesSyncKey = (workspace: string | null) => ['driver', 'trees-sync', workspace] as const;
 
-/** What the last look was asked to take beyond the repositories holding Daoris's branches (WSR7, D112), per workspace. */
+/** What the last look took beyond the repositories holding Daoris's branches, per workspace. */
 const treesSyncAskedKey = (workspace: string | null) => ['driver', 'trees-sync-asked', workspace] as const;
 
 /**
- * Which repositories hold Daoris's branches, and which have a checkout and hold none (D112): the machine's reading, each
+ * Which repositories hold Daoris's branches, and which have a checkout and hold none: the machine's reading, each
  * row naming its workspace, which a workspace's page filters to its own and Ask Daoris's sync card counts whole.
  */
 export const treesSyncScopeKey = ['driver', 'trees-sync-scope'] as const;
 
-/** What a look was asked to take beyond the repositories holding Daoris's branches, and how many it takes in all where known. */
+/** What a look is asked to take beyond the repositories holding Daoris's branches, and how many it takes in all where known. */
 export type SyncAsked = { include: SyncInclude; count: number | null };
 
 /** How many repositories a look's bound allows for when the machine's reading of how many it takes is not in yet. */
@@ -313,8 +312,8 @@ const inWorkspace = (row: { workspace: string }, workspace: string | null) =>
   workspace === null || row.workspace.toLowerCase() === workspace.toLowerCase();
 
 /**
- * How many repositories a look takes (D112): those holding Daoris's branches and those `include` names, `workspace`'s
- * alone where one is named (BRSCOPE1), from the machine's last reading; null where that reading is not in yet.
+ * How many repositories a look takes: those holding Daoris's branches and those `include` names, `workspace`'s
+ * alone where one is named, from the machine's last reading; null where that reading is not in yet.
  */
 const lookCount = (client: QueryClient, include: SyncInclude, workspace: string | null = null): number | null => {
   const scope = client.getQueryData<{ repositories?: SyncRepository[] }>(treesSyncScopeKey)?.repositories;
@@ -325,15 +324,15 @@ const lookCount = (client: QueryClient, include: SyncInclude, workspace: string 
 };
 
 /**
- * How long a look may take (WSR7): a few repositories at a time, each within a fetch's bound, for as many as it takes —
+ * How long a look may take: a few repositories at a time, each within a fetch's bound, for as many as it takes —
  * Ask Daoris's sync card's look as well as the screen's (`bridge/help.ts`).
  */
 export const syncLookBound = (client: QueryClient, include: SyncInclude = []) =>
   lookBound(lookCount(client, include) ?? UNKNOWN_COUNT);
 
 /**
- * The payload that asks a look to take `include` beside the default (D112), every one or the ones named, and that names
- * the workspace it is asked for, whose checkouts alone it then takes (BRSCOPE1).
+ * The payload that asks a look to take `include` beside the default, every one or the ones named, and that names
+ * the workspace it is asked for, whose checkouts alone it then takes.
  */
 const scopePayload = (include: SyncInclude, workspace: string | null): Record<string, unknown> | undefined => {
   const payload = {
@@ -344,10 +343,10 @@ const scopePayload = (include: SyncInclude, workspace: string | null): Record<st
 };
 
 /**
- * Every repository with a checkout here, and whether it holds a branch of Daoris's (WSR7, D112): what a look takes by
+ * Every repository with a checkout here, and whether it holds a branch of Daoris's: what a look takes by
  * default, and the rest, listed apart for the person to include. Read on the machine, never fetched, so it is asked
  * when the section shows. Desktop-only, like every look at this machine's checkouts. **The machine's whole, each row
- * naming its workspace**: a workspace's page counts its own rows (BRSCOPE1).
+ * naming its workspace**: a workspace's page counts its own rows.
  */
 export const useTreesSyncScope = () => {
   const { isAvailable } = useShenora();
@@ -361,20 +360,20 @@ export const useTreesSyncScope = () => {
 };
 
 /**
- * Bringing repositories up to date after a pull request merged (WSR6): the driver fetches each line, then says what a
- * press would do. It takes the repositories holding Daoris's branches, and those `look` is told to include (D112).
+ * Bringing repositories up to date after a pull request merged: the driver fetches each line, then says what a
+ * press would do. It takes the repositories holding Daoris's branches, and those `look` is told to include.
  * Asked for, never on its own — looking reaches the network, as the person — so it waits for `look`, which the
  * section's *Look for updates* is.
  *
  * @remarks
- * What the look was asked to take is kept beside its answer, so looking again keeps what the person included, and a
+ * What the look asks to take is kept beside its answer, so looking again keeps what the person included, and a
  * section drawn again mid-look still says how many repositories it is looking at.
  *
- * **It waits as long as the host may fetch** (WSR7): a few repositories at a time, each within a fetch's bound. The
- * bridge's default 30 seconds gave up on a look that ran for minutes, and the host's answer reached nobody. Where the
+ * **It waits as long as the host may fetch**: a few repositories at a time, each within a fetch's bound. The
+ * bridge's default 30 seconds would give up on a look that runs for minutes, and the host's answer would reach nobody. Where the
  * machine's reading of how many it takes is not in yet, the bound is a workspace's worth.
  *
- * **A workspace's page asks for its own** (BRSCOPE1, WSP5): with `workspace`, the driver fetches that workspace's
+ * **A workspace's page asks for its own**: with `workspace`, the driver fetches that workspace's
  * checkouts alone and leaves apart only its own, and the look is kept under its name. With none, the machine's.
  */
 export const useTreesSyncPlan = (workspace?: string) => {
@@ -413,10 +412,10 @@ export const useTreesSyncPlan = (workspace?: string) => {
 
 /**
  * The press: only the rows the list showed, each judged again by the driver, which does not fetch again. The
- * branches it moved or deleted change the clean-up's list, the sessions' trees, what a kept review reads (REVIEW4), every
+ * branches it moved or deleted change the clean-up's list, the sessions' trees, what a kept review reads, every
  * plan judged against a line, and which repositories hold Daoris's branches, so the state hub asks those again, as the
- * route declares them (STATEHUB1b, D169). It waits for each row's replay, one after another (WSR7). Asked for a workspace,
- * the driver judges that workspace's checkouts alone (BRSCOPE1), as its look did.
+ * route declares them. It waits for each row's replay, one after another. Asked for a workspace,
+ * the driver judges that workspace's checkouts alone, as its look does.
  */
 export const useTreesSync = (workspace?: string) =>
   useMutation({
@@ -431,69 +430,69 @@ export const useTreesSync = (workspace?: string) =>
 
 // The standing choices over a repository's or a workspace's rules are the driver's own shape (`useDriverChange`): the answer is
 // the driver's state, written where it is read; what each repository resolves to, and every plan and gate that reads it, move
-// with it, which the route publishes and the state hub asks again in every window (STATEHUB1h, D169). A rule edit's nested object
+// with it, which the route publishes and the state hub asks again in every window. A rule edit's nested object
 // is the shared table's to judge, so its generated payload leaves it unknown; each hook takes the page's own shape of the edit.
 
 type Change<T> = UseMutationResult<DriverState, Error, T>;
 
-/** Set a repository's line or a workspace's, or clear it with no branch — the file `daoris place line` edits (D50). */
+/** Set a repository's line or a workspace's, or clear it with no branch — the file `daoris place line` edits. */
 export const useSetLine = () => useDriverChange('SET_LINE') as Change<LineChange>;
 
 /**
- * Set the language a repository's sessions write to the person in, or a workspace's, or clear it with no language (LANG1c) —
- * the file `daoris place language` edits (D50). A code the driver's table does not hold is its refusal, its sentence verbatim.
+ * Set the language a repository's sessions write to the person in, or a workspace's, or clear it with no language —
+ * the file `daoris place language` edits. A code the driver's table does not hold is its refusal, its sentence verbatim.
  */
 export const useSetLanguage = () => useDriverChange('SET_LANGUAGE');
 
 /**
- * Change where a repository's work is reviewed before it lands, or a workspace's (REVIEWENV1a, D154 point 2): the twins' edit,
- * over the file `daoris place review` edits (D50). An environment put has its procedure looked for in the checkouts it
- * reaches, and the answer's `reviewed` says what was found. A refusal is the driver's sentence, verbatim. The landing's gate
- * reads the rule since REVIEWENV1c.
+ * Change where a repository's work is reviewed before it lands, or a workspace's: the twins' edit,
+ * over the file `daoris place review` edits. An environment put has its procedure looked for in the checkouts it
+ * reaches, and the answer's `reviewed` says what it found. A refusal is the driver's sentence, verbatim. The landing's gate
+ * reads the rule.
  */
 export const useSetReview = () => useDriverChange('SET_REVIEW') as Change<ReviewChange>;
 
 /**
- * Change which other agent reads a repository's work before it lands, or a workspace's (XAGENT1a, D155 point 3): the twins'
- * edit, over the file `daoris place opinion` edits (D50). A refusal is the driver's sentence, verbatim.
+ * Change which other agent reads a repository's work before it lands, or a workspace's: the twins'
+ * edit, over the file `daoris place opinion` edits. A refusal is the driver's sentence, verbatim.
  */
 export const useSetOpinion = () => useDriverChange('SET_OPINION') as Change<OpinionChange>;
 
 /**
- * Change how a repository's work is committed, or a workspace's (DOORS1b, D164's amendment points 1 and 3): the twins' edit, over
- * the file `daoris place commits` edits (D50). A refusal is the driver's sentence, verbatim. Driven sessions and conversations
- * are told the rule at their start (PROCESS1d).
+ * Change how a repository's work is committed, or a workspace's: the twins' edit, over
+ * the file `daoris place commits` edits. A refusal is the driver's sentence, verbatim. Driven sessions and conversations
+ * are told the rule at their start.
  */
 export const useSetCommits = () => useDriverChange('SET_COMMITS') as Change<CommitChange>;
 
 /**
- * Change what a helper a repository's agent asks for does, or a workspace's (DOORS1b, D163 point 3): the twins' edit, over the
- * file `daoris place helpers` edits (D50). A refusal is the driver's sentence, verbatim.
+ * Change what a helper a repository's agent asks for does, or a workspace's: the twins' edit, over the
+ * file `daoris place helpers` edits. A refusal is the driver's sentence, verbatim.
  */
 export const useSetHelpers = () => useDriverChange('SET_HELPERS') as Change<HelperChange>;
 
 /**
- * Change what an agent's ask to hand its session over does in a repository, or a workspace (MIXAGENT1c, D163 point 3): the twins'
- * edit, over the file `daoris settings handover` edits (D50). A refusal is the driver's sentence, verbatim.
+ * Change what an agent's ask to hand its session over does in a repository, or a workspace: the twins'
+ * edit, over the file `daoris settings handover` edits. A refusal is the driver's sentence, verbatim.
  */
 export const useSetHandOver = () => useDriverChange('SET_HAND_OVER') as Change<HandOverChange>;
 
 /**
- * Change the access setup a repository's sessions start under, a workspace's or this machine's (AUTONOMY1d, D184 points 1-3): full
- * access, a pause set or taken back to the level above, or the level cleared, over the file `daoris place access` edits (D50). A
- * refusal is the driver's sentence, verbatim. Full access is the person's press alone: no proposal names it (D184's rejected list).
+ * Change the access setup a repository's sessions start under, a workspace's or this machine's: full
+ * access, a pause set or taken back to the level above, or the level cleared, over the file `daoris place access` edits. A
+ * refusal is the driver's sentence, verbatim. Full access is the person's press alone: no proposal names it.
  */
 export const useSetAccess = () => useDriverChange('SET_ACCESS') as Change<AccessChange>;
 
 /**
- * Change git access for a repository, a workspace or this machine (GITAUTH1f, D198 points 8, 10 and 12): the classes it sets (a null
+ * Change git access for a repository, a workspace or this machine: the classes it sets (a null
  * taking one back to the level above), one value for Read and Write, or the level cleared, over the file `daoris git access`
  * edits. A separate route from `SET_ACCESS`. A refusal is the driver's sentence, verbatim; a widening is confirmed by the page first.
  */
 export const useSetGitAccess = () => useDriverChange('SET_GIT_ACCESS') as Change<GitAccessChange>;
 
 /**
- * Tighten what one running session holds of git access (D241 point 7): the classes to narrow, each to a value tighter than it holds,
+ * Tighten what one running session holds of git access: the classes to narrow, each to a value tighter than it holds,
  * over the record `daoris git access --session` edits. It only narrows, so nothing is confirmed; a refusal is the driver's sentence.
  */
 export const useTightenSessionGitAccess = () => useDriverChange('TIGHTEN_SESSION_GIT_ACCESS') as Change<{ id: string; access: Record<string, string> }>;

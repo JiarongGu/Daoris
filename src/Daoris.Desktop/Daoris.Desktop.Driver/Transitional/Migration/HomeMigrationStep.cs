@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One part of a release's migration (D232 point 2): it converts its own records of the home to the shape this build reads, and only
+/// One part of a release's migration: it converts its own records of the home to the shape this build reads, and only
 /// those. Run again over what it converted, it changes nothing, so a start that stopped mid-way runs it whole once more.
 /// </summary>
 public interface IHomeMigrationStep
@@ -17,7 +17,7 @@ public interface IHomeMigrationStep
 }
 
 /// <summary>
-/// What a step converts through (D232 point 2): the home, and the one way a file is changed, a copy taken into the salvage folder before
+/// What a step converts through: the home, and the one way a file is changed, a copy taken into the salvage folder before
 /// the first write so the copy is always the file as the older build left it.
 /// </summary>
 public sealed class HomeMigrationRun(string home, string migration)

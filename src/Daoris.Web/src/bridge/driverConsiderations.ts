@@ -9,9 +9,9 @@ import { readSlice } from './driver';
 export const CONSIDERATIONS_SLICE = 'considerations';
 
 /**
- * What the driver's last look said and the page draws as standing facts (FOUNDATION1s, D182): why each open quest is sitting
- * (D46 §3), the starts held for the agent's trust (D73), and the starts held on cooling accounts, an ask's intake among them (UX6d)
- * and on signed-out accounts with none cooling (UX6d1).
+ * What the driver's last look said and the page draws as standing facts: why each open quest is sitting,
+ * the starts held for the agent's trust, and the starts held on cooling accounts, an ask's intake among them,
+ * and on signed-out accounts with none cooling.
  */
 export type Considerations = { considered: Consideration[]; untrusted: TrustHold[]; waits: AccountWaitTick[] };
 
@@ -56,21 +56,21 @@ function useConsiderations<T>(select: (all: Considerations) => T) {
 const consideredOf = (all: Considerations) => all.considered;
 const untrustedOf = (all: Considerations) => all.untrusted;
 
-/** Why every open quest is sitting, in the driver's own words, as of its last look (D46 §3). */
+/** Why every open quest is sitting, in the driver's own words, as of its last look. */
 export const useConsidered = () => useConsiderations(consideredOf);
 
-/** The starts the driver held because the agent has not been trusted where they would run (D73), as of its last look. */
+/** The starts the driver held because the agent has not been trusted where they would run, as of its last look. */
 export const useUntrusted = () => useConsiderations(untrustedOf);
 
 /** What a grant answered: the key it wrote, whether it wrote, whether a re-read says yes, and why. */
 export type TrustGranted = { folder: string; key: string; changed: boolean; verified: boolean; message: string };
 
 /**
- * The person's grant of a folder the driver is holding (D73) — the screen's half of
+ * The person's grant of a folder the driver is holding — the screen's half of
  * `daoris agent trust … --yes`. The shell writes it only for a hold its last tick produced, in the
  * file that tick read, and the driver looks again at once. Its route publishes the driver's state, which the state hub asks
- * again in every window (STATEHUB1h, D169). A grant it verified takes the hold off the considerations' slice as it answers, and
- * the push shows that in every window at once (FOUNDATION1s): the page writes nothing of its own.
+ * again in every window. A grant it verified takes the hold off the considerations' slice as it answers, and
+ * the push shows that in every window at once: the page writes nothing of its own.
  */
 export const useTrustFolder = () => useMutation({
   mutationFn: (hold: Pick<TrustHold, 'folder' | 'trustFile'>) =>

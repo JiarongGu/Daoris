@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import i18n from '../../locales/i18n';
 import { AnsweredPark } from './AnsweredPark';
 
-// ANSWER1c (D131, answer-continues design §5): a park the person answered stays parked until the driver's next look,
+// A park the person answered stays parked until the driver's next look,
 // and the same session goes on then with the answer. Props-only, like every molecule here.
 
 describe('a park the person answered', () => {

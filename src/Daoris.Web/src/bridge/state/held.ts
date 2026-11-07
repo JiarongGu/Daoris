@@ -2,7 +2,7 @@ import { hashKey, type QueryClient, type QueryKey } from '@tanstack/react-query'
 import type { DriverRoute } from '../generated/routes';
 import { call, type NoPayloadRoute, type Payload, type TypedRoute } from '../call';
 
-// The page's half of the reads the shell answers from what it holds (NOBLOCK1, D56's NOBLOCK1 note): the route answers at once,
+// The page's half of the reads the shell answers from what it holds: the route answers at once,
 // its work runs on a .NET task of its own, and what the work answers comes back as `DAORIS.ANSWERED`, naming the query it is for.
 
 /** `DAORIS.ANSWERED` on the wire: the query the ask named (its key's hash), and the work's answer, or that it failed. */
@@ -40,7 +40,7 @@ export async function askHeld<T>(
   return kept === undefined ? read(answer) : kept;
 }
 
-// A numbered read's own handling of its events (COWORKVIEW1a), by the query's hash: every other held read keeps the handling below.
+// A numbered read's own handling of its events, by the query's hash: every other held read keeps the handling below.
 const numbered = new Map<string, (answer: unknown) => void>();
 
 /** Hand a numbered read's events for the query hashed `held` to `handle`, which applies its number rule. */

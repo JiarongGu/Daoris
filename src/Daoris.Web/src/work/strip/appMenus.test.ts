@@ -5,7 +5,7 @@ import { type CommandState, commandTable, MENUS } from '../../menus/commands';
 import { load, measure } from '../../../scripts/names-check.mjs';
 import { menuRows } from './appMenus';
 
-// The menu bar's rows (UX7a, D152 §2), built from the one table: as data, so a desktop's menus and a browser's are
+// The menu bar's rows, built from the one table: as data, so a desktop's menus and a browser's are
 // asserted without mounting the application over a mocked bridge.
 
 const state = (over: Partial<CommandState> = {}): CommandState => ({
@@ -22,12 +22,12 @@ describe('the menus, row by row', () => {
   it('holds 70 items with the install\'s two workspaces, every place but Settings under Go (the design §6.2)', () => {
     const all = entries();
     const rows = MENUS.flatMap((menu) => menuRows(all, menu.id));
-    // The 66th, View's Workflow (WORKFLOW1c); the 67th, View's Notifications (NOTIFY2b); the 68th to the 70th, View's zoom (ZOOM1).
+    // The 66th, View's Workflow; the 67th, View's Notifications; the 68th to the 70th, View's zoom.
     expect(rows).toHaveLength(70);
     expect(rows.filter((row) => row.shortcut)).toHaveLength(33);
   });
 
-  /** ZOOM1 (the UI/UX design §3.11): the zoom is View's, ruled off as its own group, each row with its key; at 100% no reset. */
+  /** The zoom is View's, ruled off as its own group, each row with its key; at 100% no reset. */
   it("draws View's zoom as its own group, each with its key, its reset off at 100%", () => {
     const zoom = (level: number) => menuRows(entries({ zoom: level }), 'view').filter((row) => row.id.startsWith('view.zoom'));
     expect(zoom(100).map((row) => [row.label, row.shortcut, Boolean(row.disabled)])).toEqual([
@@ -39,7 +39,7 @@ describe('the menus, row by row', () => {
 
   it('rules off each group, and names Run\'s two record groups with the tip that says what to open', () => {
     const run = menuRows(entries(), 'run');
-    // A new conversation is Workspace's new thing since NEW1b, so Run opens on This session.
+    // A new conversation is Workspace's new thing, so Run opens on This session.
     expect(labels(run)).toEqual([
       'Answer…', 'Try again', 'Review', 'Stop…', 'Open in its own window',
       'Take', 'Mark done…', 'Try again', 'Pause…', 'Resume', 'Decline…', 'Archive what ended…',
@@ -74,7 +74,7 @@ describe('the menus, row by row', () => {
     ]);
   });
 
-  /** UXFIX1: a row carries what its tick means from the table, so the menu can say it: a toggle, a choice, or none. */
+  /** A row carries what its tick means from the table, so the menu can say it: a toggle, a choice, or none. */
   it('carries what each tick means: a region a toggle, a place and a workspace a choice, a door none', () => {
     const view = menuRows(entries(), 'view');
     for (const [id, shown] of [['view.list', true], ['view.panel', true], ['view.side', false]] as const) {

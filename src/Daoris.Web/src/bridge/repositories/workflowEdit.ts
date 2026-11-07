@@ -18,8 +18,8 @@ import { useActors, useRoles, useRoleStructureChain, useSetRole } from '../drive
 import { askHeld, isPending } from '../state/held';
 import { askWorkflowSave, askWorkflowUse } from './workflow';
 
-// The step editor's reads (WORKFLOWEDIT1a): the saved workflows with the places that choose them and the presets built in, one
-// version as saved, and what a step graph may hold; and its presses (WORKFLOWEDIT1b): a version judged as it is drawn, saved and used
+// The step editor's reads: the saved workflows with the places that choose them and the presets built in, one
+// version as saved, and what a step graph may hold; and its presses: a version judged as it is drawn, saved and used
 // for a place. The driver composes each from its own tables; the page lists and types them and derives nothing. The answers' types
 // are the editor's own (`workflow/edit/answers.ts`), a twin of the driver's (.claude/knowledge/twins.md).
 
@@ -79,9 +79,9 @@ export const useWorkflowPalette = ({ enabled = true }: { enabled?: boolean } = {
 export type EditorPlace = { repository: string; workspace?: string | null } | { workspace: string };
 
 /**
- * **The step editor's bridge** (WORKFLOWEDIT1b): its three reads, the working roles a step may name from the roles' structure at the
+ * **The step editor's bridge**: its three reads, the working roles a step may name from the roles' structure at the
  * place it opened from, a planned save judging each change (the newest asked is the one answered), the save, and *Use here*. Every read
- * is asked only while the editor shows; a save and a choice ask the reads again. `onPlan` (SETUPUX1p) reads the plan of a choice and
+ * is asked only while the editor shows; a save and a choice ask the reads again. `onPlan` reads the plan of a choice and
  * writes nothing; *Change…* sends it only where `WORKFLOW_LIST` announces it.
  */
 export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enabled?: boolean } = {}): WorkflowEditorBridge & WorkflowPlanBridge => {
@@ -94,7 +94,7 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
   const shown = useWorkflowShown(shownAsk.id, shownAsk.version, { enabled: live });
   const chain = 'repository' in place ? { repository: place.repository, ...(place.workspace ? { workspace: place.workspace } : {}) } : { workspace: place.workspace };
   const structure = useRoleStructureChain(chain, undefined, { enabled: live });
-  // The newest judgement is of one draft, by its fingerprint (FLOWCHART2c): the editor reads it only while the draft it holds is that one.
+  // The newest judgement is of one draft, by its fingerprint: the editor reads it only while the draft it holds is that one.
   const [judge, setJudge] = useState<{ answer: WorkflowSaveAnswer | null; of: string | null; failed: string | null; judging: boolean }>({
     answer: null, of: null, failed: null, judging: false,
   });
@@ -112,7 +112,7 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
       id: role.id, name: role.name ?? null, takes: role.takes, scope: { kind: role.scopeKind ?? 'machine', id: role.scopeId ?? null }, revision: role.revision,
       covers: covers(role.scopeKind, role.scopeId),
     }));
-  // The one role editor beside a step (SETUPUX1t): its reads are asked only while the editor shows, its press is `SET_ROLE`.
+  // The one role editor beside a step: its reads are asked only while the editor shows, its press is `SET_ROLE`.
   const { t } = useTranslation();
   const roster = useHarnesses({ enabled: live });
   const catalogue = useRoles({ enabled: live });
@@ -138,7 +138,7 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
       onError: (error) => answered.refused(sentence(error)),
     }),
   };
-  // FLOWCHART2f: Ask Daoris's newest proposal against a draft of this place, and the presses that settle it, Ask Daoris's own.
+  // Ask Daoris's newest proposal against a draft of this place, and the presses that settle it, Ask Daoris's own.
   const drafts = useDraftProposals('repository' in place ? place.repository : place.workspace, live);
   const settle = useSettleHelp();
   const newest = drafts.at(-1);

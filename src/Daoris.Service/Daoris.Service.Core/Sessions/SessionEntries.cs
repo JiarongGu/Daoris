@@ -1,15 +1,15 @@
 namespace Daoris.Knowledge;
 
-/// <summary>What the entry's rule reads: a quest and a session by their ids, whatever holds them (SESSONE1a).</summary>
+/// <summary>What the entry's rule reads: a quest and a session by their ids, whatever holds them.</summary>
 public interface ISessionEntryFacts
 {
-    /// <summary>The quest with this id, or null when none is held — a quest a clear forgot (HIST1b) is none.</summary>
+    /// <summary>The quest with this id, or null when none is held — a quest a clear forgot is none.</summary>
     Task<Quest?> QuestAsync(string id, CancellationToken ct = default);
 
     /// <summary>The session record with this id, this machine's or a teammate's mirror; null when none is held.</summary>
     Task<Session?> SessionAsync(string id, CancellationToken ct = default);
 
-    /// <summary>The conversation that took this quest (CHATTAKE1), or null when none recorded it — every chat from before the field.</summary>
+    /// <summary>The conversation that took this quest, or null when none recorded it — every chat from before the field.</summary>
     Task<Session?> ChatTookAsync(string questId, CancellationToken ct = default);
 }
 
@@ -24,7 +24,7 @@ public sealed class StoreEntryFacts(QuestStore quests, SessionStore sessions) : 
 }
 
 /// <summary>
-/// The session entry's key, <c>&lt;origin&gt;/&lt;repository&gt;</c> (SESSONE1a, D167 points 2 and 3, the co-working design §1.2): the line of
+/// The session entry's key, <c>&lt;origin&gt;/&lt;repository&gt;</c>: the line of
 /// work a record belongs to, so the records that continue it read as one session. The rule lives here and nowhere else; the ledger
 /// writes its answer when a session opens, every read answers it for a record that holds none, and the driver groups by what it is
 /// answered (no twin of the rule).
@@ -32,7 +32,7 @@ public sealed class StoreEntryFacts(QuestStore quests, SessionStore sessions) : 
 /// <remarks>
 /// <para><b>The origin of a quest</b>, the first that applies: the ask that asked it (its sender is <c>ask #id</c>, a chain step's too);
 /// else the origin of the session that published it, read from that session's record; else its chain parent's; else the quest itself,
-/// <c>quest:&lt;id&gt;</c>. A conversation that took the quest (rule 2, CHATTAKE1) comes right after the ask. <b>Of a session</b>: an intake is the ask's, <c>ask:&lt;id&gt;/intake</c>; a helper or a reviewer is its own;
+/// <c>quest:&lt;id&gt;</c>. A conversation that took the quest (rule 2) comes right after the ask. <b>Of a session</b>: an intake is the ask's, <c>ask:&lt;id&gt;/intake</c>; a helper or a reviewer is its own;
 /// a session on a quest takes the quest's; a conversation handed over, or started from another's words, takes the one it continues; and
 /// any other conversation is its own, <c>session:&lt;id&gt;</c>.</para>
 ///
@@ -99,7 +99,7 @@ public static class SessionEntries
         var itself = $"quest:{quest.Id}";
         if (!seen.Add($"q:{quest.Id}")) return itself;
 
-        // Rule 2 (CHATTAKE1): a quest a conversation took joins that conversation's line, so its later parts stay in it.
+        // Rule 2: a quest a conversation took joins that conversation's line, so its later parts stay in it.
         if (await facts.ChatTookAsync(quest.Id, ct).ConfigureAwait(false) is { } chat && !seen.Contains($"s:{chat.Id}"))
         {
             return await OriginAsync(chat, facts, seen, ct).ConfigureAwait(false);

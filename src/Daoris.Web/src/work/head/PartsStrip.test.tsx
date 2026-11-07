@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from '../entries.fixtures';
 import { PartsStrip } from './PartsStrip';
 
-// SESSONE1c (D167 point 5): a session's page lists its entry's parts, oldest first: each with its word, how it began and which
+// A session's page lists its entry's parts, oldest first: each with its word, how it began and which
 // tree or branch it held; a press shows that part, and every act stays the part shown's.
 
 afterEach(async () => {
@@ -94,8 +94,8 @@ describe('the parts strip', () => {
   });
 
   /**
-   * SESSCTX1b (the session-context design §7): every continuation names its link, so the strip says how a part began by its why:
-   * carried on, retried, or moved on from a part whose own conversation was lost, in both languages.
+   * Every continuation names its link, so the strip says how a part began by its why:
+   * carried on, retried, or moved on from a part whose own conversation is lost, in both languages.
    */
   it('says a part moved on from one whose conversation was lost, and a carry-on and a fallback by their own words', async () => {
     const parts = [
@@ -117,7 +117,7 @@ describe('the parts strip', () => {
   });
 
   /**
-   * SESSCTX1d (the session-context design §7): a moved session reads as one. A move and a hand-over say from which agent and
+   * A moved session reads as one. A move and a hand-over say from which agent and
    * why, where the page holds the earlier part's record; each part says what it spent on its own row, its turns' tokens, or
    * that its turns said none; in both languages.
    */

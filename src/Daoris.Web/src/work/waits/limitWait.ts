@@ -7,24 +7,24 @@ import type { SessionEvent } from '../conversation/conversation';
 import { noteText } from '../noteLines';
 import type { AccountNames } from '../accountNames';
 
-// What a line an account's limit cut off says while it waits (LIMITRESUME1d, D206 §3.7): one sentence, the same in the session's
+// What a line an account's limit cut off says while it waits: one sentence, the same in the session's
 // head, its foot, its row and its quest's page, read from facts the page already holds. Pure, so every surface reads one rule.
 
 /**
- * A limited line's wait (D206 §3.2): the earliest moment an account it may run on is ready again, whose account that is, and so which
- * resume comes. Computed, never stored, as the driver computes it: the walk of the line's agent (`scope.next`) found no account ready,
+ * A limited line's wait: the earliest moment an account it may run on is ready again, whose account that is, and so which
+ * resume comes. Computed, never stored, as the driver computes it: the walk of the line's agent (`scope.next`) finds no account ready,
  * and the earliest of those it passed cooling is the one it waits for.
  */
 export type LimitWait = {
-  /** The margin-added moment that account is ready again (§3.2): *ready again at*, never *reset at*. */
+  /** The margin-added moment that account is ready again: *ready again at*, never *reset at*. */
   until: string;
   /** That account; null for the agent's own sign-in. */
   account: string | null;
-  /** Whether that account is the one the line's last part ran on, so it goes on in its own conversation (§3.3 step 1). */
+  /** Whether that account is the one the line's last part ran on, so it goes on in its own conversation. */
   own: boolean;
-  /** Whether the agent said that reset; false is Daoris's default standing in (*no reset was said*). */
+  /** Whether the agent says that reset; false is Daoris's default standing in (*no reset is said*). */
   stated: boolean;
-  /** The kind of limit its last reset did not lift (`limit.not-lifted`'s `hit`), where its record says so (§3.3's bound). */
+  /** The kind of limit its last reset did not lift (`limit.not-lifted`'s `hit`), where its record says so. */
   notLifted: string | null;
 };
 
@@ -39,8 +39,8 @@ export function notLiftedOf(parts: readonly NotePart[] | null | undefined): stri
 }
 
 /**
- * Whether a record is a driven line an account's limit cut off and that goes on by itself (D206 §3.1, §3.3): `failed` with the
- * ledger's `limit` flag, its quest still open or taken, and nothing of the person's holding it (a pause holds it, §3.7).
+ * Whether a record is a driven line an account's limit cut off and that goes on by itself: `failed` with the
+ * ledger's `limit` flag, its quest still open or taken, and nothing of the person's holding it (a pause holds it).
  */
 export function limitedLine(session: Pick<Session, 'state' | 'limit' | 'kind' | 'quest'>, questStatus?: string | null, paused = false) {
   return session.state === 'failed' && Boolean(session.limit) && session.kind !== 'chat' && Boolean(session.quest)
@@ -48,13 +48,13 @@ export function limitedLine(session: Pick<Session, 'state' | 'limit' | 'kind' | 
 }
 
 /**
- * The line's wait (D206 §3.2, §3.7): where the walk of its agent's accounts found none ready (`next.reason` is `waits`), the earliest
+ * The line's wait: where the walk of its agent's accounts finds none ready (`next.reason` is `waits`), the earliest
  * of those it passed cooling; its own where that is the account the record ran on. Null where an account is ready (the line goes on at
  * the driver's next look, so it waits for nothing), where the answer holds no walk, and in a browser, which holds no accounts.
  */
 export function limitWaitOf({ session, workspace, doors, answer, now }: {
   session: Pick<Session, 'door' | 'profile' | 'noteParts'>;
-  /** The line's workspace, as the registry names it; the set's one scope where it names none (D197). */
+  /** The line's workspace, as the registry names it; the set's one scope where it names none. */
   workspace?: string | null;
   doors: readonly ToolDoor[];
   answer: AccountsAnswer | null | undefined;
@@ -96,14 +96,14 @@ export function limitWaitOf({ session, workspace, doors, answer, now }: {
 }
 
 /**
- * A conversation's wait as its events hold it (LIMITRESUME1d2, D206 §3.5, §3.7): the `chat.limit-waits` line the driver says where no
- * account of its agent had room, and when the first is ready again. Never drawn from the accounts alone, which would claim a resume
+ * A conversation's wait as its events hold it: the `chat.limit-waits` line the driver says where no
+ * account of its agent has room, and when the first is ready again. Never drawn from the accounts alone, which would claim a resume
  * for a conversation no limit holds.
  */
 export type ChatLimitHeld = {
   /** The note's part, so a page that holds no walk says the driver's own line in the reader's language. */
   part: NotePart;
-  /** The margin-added moment the first account of its agent is ready again (§3.2). */
+  /** The margin-added moment the first account of its agent is ready again. */
   until: string;
   /** Whether the agent said that reset (`stated`, `assumed`); otherwise Daoris's default stands in. */
   stated: boolean;
@@ -114,7 +114,7 @@ export type ChatLimitHeld = {
 const LEAVES_THE_WAIT = new Set(['chat.limit-stopped-waiting', 'limit.resumed', 'limit.resume-refused', 'moved.on']);
 
 /**
- * Whether a conversation still waits for its limit, read from its events (D206 §3.5): its last `chat.limit-waits` line, with no turn
+ * Whether a conversation still waits for its limit, read from its events: its last `chat.limit-waits` line, with no turn
  * since (it went on), no line that ends the wait, and no refusal that waits for the person (a note naming its `why`). Null otherwise.
  */
 export function chatLimitHeldOf(events: readonly SessionEvent[]): ChatLimitHeld | null {
@@ -137,7 +137,7 @@ export function chatLimitHeldOf(events: readonly SessionEvent[]): ChatLimitHeld 
 }
 
 /**
- * The wait in words (D206 §3.7): when it resumes by itself and on which account (or, no reset said, when it tries again), then which
+ * The wait in words: when it resumes by itself and on which account (or, no reset said, when it tries again), then which
  * resume comes, then the reset that did not lift it where one did not. `label` names an account as the roster names it, the own
  * sign-in by its own name.
  */
@@ -153,7 +153,7 @@ export function limitWaitSaid(t: Translate, wait: LimitWait, label: (account: st
 }
 
 /**
- * A driven line's wait in words where it waits (LIMITRESUME1d2, D206 §3.7): the head's sentence, for the session's row and its quest's
+ * A driven line's wait in words where it waits: the head's sentence, for the session's row and its quest's
  * page, which hold the same facts. Null where it is no limited line or the walk waits for nothing.
  */
 export function limitWaitLines(t: Translate, { session, questStatus, paused = false, workspace, doors, answer, label, now }: {
@@ -172,7 +172,7 @@ export function limitWaitLines(t: Translate, { session, questStatus, paused = fa
 }
 
 /**
- * A conversation's wait in words (LIMITRESUME1d2, D206 §3.7): the walk's sentence where the page holds the accounts and the walk
+ * A conversation's wait in words: the walk's sentence where the page holds the accounts and the walk
  * waits, else the driver's own `chat.limit-waits` line in the reader's language (a browser, or a walk not read yet). Null once that
  * line's moment has passed and no walk says more: the look wakes it then, and a line saying a time gone by would claim a wait.
  */

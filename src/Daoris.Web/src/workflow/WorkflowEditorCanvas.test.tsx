@@ -9,10 +9,10 @@ import { openDraftNow } from '../help/openDraft';
 import i18n from '../locales/i18n';
 import { LIST, PALETTE } from './edit/editFixtures';
 
-// CANVAS1a (D224; the canvas design §9 row a): the editor's chart standing in the canvas's viewport, which its pane of 900 px offers. The
+// The editor's chart standing in the canvas's viewport, which its pane of 900 px offers. The
 // release workflow is composed from the Merge workflow by keyboard alone and by pointer as it is on the rail (WorkflowEditor.test.tsx);
 // `+` on a step still adds a step after it, Ctrl+= and a Ctrl+wheel stay the window's zoom's to hear, and a pan, a zoom and a selection
-// leave the draft as it was. jsdom lays nothing out, so the pane's width is stood in for; the ink and its ＋s are the measured spec's.
+// leave the draft unchanged. jsdom lays nothing out, so the pane's width is stood in for; the ink and its ＋s are the measured spec's.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn(async (..._: unknown[]): Promise<unknown> => null) }));
 
@@ -154,7 +154,7 @@ describe('the editor\'s chart in the viewport', () => {
 
     await tabTo(screen.getByRole('textbox', { name: 'Its name' }));
     await user.keyboard('Release for engine');
-    // The save is reviewed first (SETUPUX1s): the review takes the focus, and the save is its next stop.
+    // The save is reviewed first: the review takes the focus, and the save is its next stop.
     await waitFor(() => expect(screen.getByRole('button', { name: 'Review and save' })).toBeEnabled());
     await tabTo(screen.getByRole('button', { name: 'Review and save' }));
     await user.keyboard('{Enter}');
@@ -236,7 +236,7 @@ describe('the editor\'s chart in the viewport', () => {
   });
 });
 
-// CANVAS1b (D224; the canvas design §2.4, §3.1): many steps are chosen for Copy alone, and the inspector stands beside the chart where the
+// Many steps are chosen for Copy alone, and the inspector stands beside the chart where the
 // editor's region holds both, read in the root's rem.
 describe('choosing more than one step', () => {
   it('outlines each step chosen with Ctrl or Shift, copies them all and pastes them all, while every other act takes the first', async () => {

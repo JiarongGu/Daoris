@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The session binding files into the desktop store (D232; AGENTPROVIDER1t): each <c>&lt;session&gt;.harness.json</c>, keyed <c>adapter</c>,
+/// The session binding files into the desktop store: each <c>&lt;session&gt;.harness.json</c>, keyed <c>adapter</c>,
 /// is read into the store's <c>bindings</c> under an import receipt, its conversation replacing the row's since a file is the later
 /// evidence, a copy of the file kept first. The file and the <c>.imported</c> set-aside an earlier build left are taken out, so nothing
 /// reads a file after. A file that does not read as a conversation is kept in the copies and holds no binding.
@@ -51,7 +51,7 @@ public sealed class BindingFilesStep : IHomeMigrationStep
         var sha = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
         var receipt = Path.GetRelativePath(run.Home, path).Replace('\\', '/');
 
-        // A file whose very content an import already holds was imported before a crash stopped short of taking it out: the store may have
+        // A file whose very content an import already holds has been imported before a crash stopped short of taking it out: the store may have
         // kept a later conversation since, which this stale one must not replace.
         if (store.LastImport(BindingStore.Family, receipt) is { } last && last.Import.Sha256 == sha) return;
         var outcome = store.Import(

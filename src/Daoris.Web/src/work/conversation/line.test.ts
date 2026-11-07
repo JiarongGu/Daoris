@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ancestryOf, drawnOf, EARLIER_AT_MOST } from './line';
 
-// SWITCHCTX1c-i (the switch-context design §2.7): a session's page draws the parts the attended one continues by `from`, and
+// A session's page draws the parts the attended one continues by `from`, and
 // only those; the nearest three, a press for up to three more. Pure, so every line a person could have is an argument.
 
 const row = (id: string, from?: string | null) => ({ id, from });

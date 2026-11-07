@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// ACCEPTALL1g (D167's 2026-10-15 amendment point 2, D145 §3): where Accept moves on a branch that already stands (an entry's or a
+// Where Accept moves on a branch that already stands (an entry's or a
 // chain's, which an earlier landing made), the review says so, from the plan's `stands`, instead of promising a new branch.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
@@ -94,7 +94,7 @@ describe.each(['en', 'zh'] as const)('where the review says Accept puts the work
   });
 
   /**
-   * STANDSREFUSE1 (D167's ACCEPTALL1g note): a standing branch the press would refuse (one Daoris did not make, one moved since,
+   * A standing branch the press would refuse (one Daoris did not make, one moved since,
    * one checked out elsewhere) is said by the plan before the press, in the press's words, and *Accept*, which could only be
    * refused, is not offered as a press.
    */
@@ -109,7 +109,7 @@ describe.each(['en', 'zh'] as const)('where the review says Accept puts the work
     expect(screen.getByRole('button', { name: language === 'en' ? 'Accept' : '采纳' })).toBeDisabled();
   });
 
-  /** TREEFOLLOWWEB1 (D164's TREEFOLLOW1 note): a tree its agent moved onto a branch of its own lands that branch as it stands. */
+  /** A tree its agent moved onto a branch of its own lands that branch as it stands. */
   it('says the session’s own branch lands as it stands, and promises no new branch', async () => {
     await i18n.changeLanguage(language);
     answer({ ...PLAN, target: 'feature/x', own: true });

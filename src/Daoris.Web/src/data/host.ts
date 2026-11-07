@@ -1,7 +1,7 @@
 import { isShenoraAvailable } from '@shenora/react';
 
 /**
- * Where the page reaches its host (D92).
+ * Where the page reaches its host.
  *
  * @remarks
  * **On the Chromium the desktop ships, the page lives on its engine's app origin**

@@ -3,7 +3,7 @@ import { MERGE_GRAPH } from '../graphFixtures';
 import { draftOf, duplicateStep, removeStep, setOption } from './graphDraft';
 import { changesBetween, consentKey } from './saveChanges';
 
-// SETUPUX1s: what a save changes against the version it starts from, and the key an append's consent is bound to.
+// What a save changes against the version it starts from, and the key an append's consent is bound to.
 
 describe('changesBetween', () => {
   const base = draftOf(MERGE_GRAPH);

@@ -11,13 +11,13 @@ type State = (typeof STATES)[number];
 const stateOf = (state: string | null): State | 'asked' => (STATES.includes(state as State) ? (state as State) : 'asked');
 
 /**
- * A request drawn whole once, at the call that asked it (COMMS1h, the comms design §7): who was asked and as what, when, where it
+ * A request drawn whole once, at the call that asked it: who is asked and as what, when, where it
  * stands, the question as written, and where its answer goes. Its answer folds in once the page holds the turn that took it, a claim
  * to check and never the person's words; *Open its conversation* opens the helper's session once it has one.
  */
 export function ExchangeCardView({ card, revealed, onOpen }: {
   card: ExchangeCard;
-  /** The page was brought here from the turn that took its answer: the card takes the focus, so the keyboard goes on from it. */
+  /** The page is brought here from the turn that took its answer: the card takes the focus, so the keyboard goes on from it. */
   revealed?: boolean;
   onOpen?: (session: string) => void;
 }) {
@@ -85,7 +85,7 @@ export function ExchangeCardView({ card, revealed, onOpen }: {
 }
 
 /**
- * The turn that took a card's answer (COMMS1h): one line that opens the card, where the answer is drawn, rather than the answer
+ * The turn that took a card's answer: one line that opens the card, where the answer is drawn, rather than the answer
  * drawn a second time.
  */
 export function TakenLine({ card, onShow }: { card: ExchangeCard; onShow?: (call: string) => void }) {

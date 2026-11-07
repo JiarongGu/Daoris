@@ -16,14 +16,14 @@ type Began = (typeof PART_BEGAN)[number];
 const isBegan = (word: string): word is Began => (PART_BEGAN as readonly string[]).includes(word);
 
 /**
- * How a part began, in the reader's words (D167, SESSONE1b's `began`): started, retried after another part, resumed or carried
- * on from one, handed over from one, moved on from one whose own conversation was lost (SESSCTX1b), or asked by a repository. The
+ * How a part began, in the reader's words (`began`): started, retried after another part, resumed or carried
+ * on from one, handed over from one, moved on from one whose own conversation is lost, or asked by a repository. The
  * earlier part is named by its number in the strip, and by its id where the strip does not hold it. A word a newer host adds reads
  * as a start rather than as nothing.
  *
- * **A move says from which agent, and why** (SESSCTX1d; the session-context design §7): where the page holds both parts'
+ * **A move says from which agent, and why**: where the page holds both parts'
  * records and they ran on different agents, a move and a hand-over name the one it left, and a hand-over its why by its own
- * link (`fromWhy`, the hand-over's words); without those records the line is as before, never a guess.
+ * link (`fromWhy`, the hand-over's words); without those records the line names no agent, never a guess.
  */
 export function beganLine(t: Translate, part: EntryPart, parts: readonly EntryPart[], rows?: PartsFacts): string {
   const at = part.after ? parts.findIndex((other) => other.session === part.after) : -1;
@@ -59,7 +59,7 @@ export function partPlace(t: Translate, facts: PartFacts | undefined): string | 
 }
 
 /**
- * What a part spent, on its own row (SESSCTX1d; the session-context design §7): its tokens, the four counts its turns' doors said,
+ * What a part spent, on its own row: its tokens, the four counts its turns' doors said,
  * over how many turns; a part whose turns said no count says so rather than zero. Null where the page holds no answer, or it
  * ended no turn.
  */
@@ -87,7 +87,7 @@ const START = 'start';
 const LANDING = 'landing';
 
 /**
- * **A line of work's parts as a flow** (FLOWCHART1b; the flowchart design §2.3): each part a node oldest first, hung by what it
+ * **A line of work's parts as a flow**: each part a node oldest first, hung by what it
  * followed (`EntryPart.After`) and labelled by how it began, an asked part from a faint node for the repository that asked it,
  * and the plan where Accept would land them as a prospective node, dashed.
  *

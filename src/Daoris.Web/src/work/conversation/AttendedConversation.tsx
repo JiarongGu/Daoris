@@ -20,16 +20,16 @@ import type { useAttendedBox } from './useAttendedBox';
 import type { useWords } from './useWords';
 
 /**
- * The conversation (D76): below the record, in the same scroll, so the head is read once and the words are what the region follows.
- * Only where the session ran: a teammate's record came without its transcript, which stays on their machine (D47 §4). The parts it
- * continues stand above it, read-only (SWITCHCTX1c-i).
+ * The conversation: below the record, in the same scroll, so the head is read once and the words are what the region follows.
+ * Only where the session ran: a teammate's record came without its transcript, which stays on their machine. The parts it
+ * continues stand above it, read-only.
  */
 export function AttendedConversation({
   t, session, boxState, words, waitsState, headState, grouping, coolsUntil, roster, rootOf, openPreview, centre, partRows, partBox, attend,
   channel,
 }: {
   t: TFunction;
-  /** The home of the channel messages its turns took (COMMS1h): who posted each, and the door that opens its channel's panel. */
+  /** The home of the channel messages its turns took: who posted each, and the door that opens its channel's panel. */
   channel?: ComponentProps<typeof SessionConversation>['channel'];
   session: ReturnType<typeof useAttendedSession>;
   boxState: ReturnType<typeof useAttendedBox>;
@@ -68,9 +68,9 @@ export function AttendedConversation({
 
   return (
     <div className="mt-2 min-w-0">
-      {/* A file a tool card names opens in the side bar's preview (PREVIEW1, D111). */}
+      {/* A file a tool card names opens in the side bar's preview. */}
       <FileOpener.Provider value={openPreview}>
-        {/* The parts it continues, above it and read-only (SWITCHCTX1c-i); keyed by the part, so attending another starts the count again. */}
+        {/* The parts it continues, above it and read-only; keyed by the part, so attending another starts the count again. */}
         {line.length > 0 && <EarlierParts key={attended.id} line={line} scroller={centre} />}
         <div ref={partBox} data-part={attended.id} data-attended className="min-w-0 scroll-mt-12">
           <SessionConversation
@@ -81,20 +81,20 @@ export function AttendedConversation({
             tree={attended.tree}
             live={live}
             // A conversation the driver answers for is working while a turn is in flight, and not
-            // under words its agent said after the turn ended (found looking at CONSOLE2).
+            // under words its agent said after the turn ended.
             turnRunning={talking && chatTurns[attended.id] ? turns.taking : undefined}
             // The driver's word that its call waits for the person's answer (AUTONOMY1b3e).
             callMark={grouping?.calling ?? undefined}
             scroller={centre}
-            // *Back to bottom* is the waiting panel's to draw, above it (WAITPANEL1), not the transcript's foot.
+            // *Back to bottom* is the waiting panel's to draw, above it, not the transcript's foot.
             onTail={setTail}
             onUsage={onUsage}
             onWaiting={onWaiting}
-            // Its limit's wait, read from its events (LIMITRESUME1d2): the head and the foot say it.
+            // Its limit's wait, read from its events: the head and the foot say it.
             onLimitWait={(id, held) => setChatHeld((was) => (held
               ? { session: id, held }
               : was?.session === id ? null : was))}
-            // Each wait's raising event, and the way between them (WAITFOOT1c, D168 point 4).
+            // Each wait's raising event, and the way between them.
             waits={waits ? {
               waits: standing, goAheads: waits.goAheads, opinion: opinionAsked(waits.landing)?.opinion ?? null,
               proposals: rulesAsked(waits.rules?.proposals, attended.id),
@@ -102,23 +102,23 @@ export function AttendedConversation({
               permissions: waits.permissions?.waits,
             } : undefined}
             onAnchors={(id, state) => setAnchored({ session: id, ...state })}
-            // COMMS1h: each helper its agent asked for, a card at its call, the answer folded in, the helper's door on it.
+            // Each helper its agent asked for, a card at its call, the answer folded in, the helper's door on it.
             helpersAsked={helperWaits ? { asks: helperWaits.asks, nameOf: helperWaits.nameOf, onOpen: helperWaits.onOpen } : undefined}
-            // COMMS1h: a channel message it took is a sender chip naming its poster, with the door to the channel where it is whole.
+            // A channel message it took is a sender chip naming its poster, with the door to the channel where it is whole.
             channel={channel}
             onToWait={(wait) => {
               const anchor = anchorOf(wait);
               if (anchor) goToWait(anchor);
             }}
             // Where the person's words went, a door to that session; and words that cannot go on here, one press
-            // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).
+            // that starts a conversation with them, where a chat can start here.
             onSession={(id) => attend(id)}
             onStartFrom={rootOf(attended.repository) ? onStartFrom : undefined}
-            // SESSCTX1c part B: and beside it, the same session going on in a new part handed Daoris's brief.
+            // And beside it, the same session going on in a new part handed Daoris's brief.
             onGoOnBrief={rootOf(attended.repository) ? onGoOnBrief : undefined}
-            // *Say it again* (COWORK1c): the person's own words that may have reached the agent before a restart, said anew.
+            // *Say it again*: the person's own words that may have reached the agent before a restart, said anew.
             onSayAgain={onSayAgain}
-            // Words its cooling account holds, and *Go on in a new session* with what it came to (MSG1g2, D137 §2.2).
+            // Words its cooling account holds, and *Go on in a new session* with what it came to.
             cooling={coolsUntil ? {
               until: coolsUntil,
               quest: attended.quest,

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { NothingFollowed, RightDock } from './RightDock';
 
-// The dock in each of its modes (FRAME6, components plan §3a): beside the session, at its floor asking
+// The dock in each of its modes: beside the session, at its floor asking
 // to be closed, over the whole frame, and closed to the strip that opens it again. The frame decides
 // which from the window and the person's choices (`layout.ts`); here each is passed.
 
@@ -48,8 +48,8 @@ export const FullInANarrowWindow: Story = { args: { mode: 'full', autoFull: true
 export const Closed: Story = { args: { mode: 'closed', width: 32 } };
 
 /**
- * Holding what the person moved in (DOCK1b): Ask Daoris beside the session's two, and the console from
- * the panel, at the end. At the floor the unselected tabs are their icons alone (TABS1), and the list at
+ * Holding what the person moved in: Ask Daoris beside the session's two, and the console from
+ * the panel, at the end. At the floor the unselected tabs are their icons alone, and the list at
  * the row's end names every one.
  */
 export const HoldingMovedViews: Story = {
@@ -57,9 +57,9 @@ export const HoldingMovedViews: Story = {
 };
 
 /**
- * The side bar the installed window showed (TABS1): 430px holding the timeline, the review, Ask Daoris
- * and a file's preview, which in 中文 needed 367 of its 349px. Each unselected tab was cut to one character
- * and an ellipsis; now each is its icon, its name in its tip, and the shown preview keeps its name. Widened
+ * The side bar the installed window showed: 430px holding the timeline, the review, Ask Daoris
+ * and a file's preview, which in 中文 needs 367 of its 349px. Each unselected tab is its icon, its name
+ * in its tip, never cut to one character and an ellipsis, and the shown preview keeps its name. Widened
  * past what the names need, every name is whole again. Storybook lays it out, so the measure is real
  * here; the smoke render in vitest has no layout and draws the names.
  */
@@ -80,7 +80,7 @@ export const Emptied: Story = { args: { views: [], onReset: () => {} } };
 
 const PREVIEW = { name: 'chunk.rs', path: 'src/world/streaming/chunk.rs', onClose: () => {} };
 
-/** A file's preview (PREVIEW1): a tab after the views, named for the file, with its own ×. */
+/** A file's preview: a tab after the views, named for the file, with its own ×. */
 export const WithAPreview: Story = { args: { tab: 'preview', preview: PREVIEW } };
 
 /**
@@ -95,8 +95,8 @@ export const APreviewAtTheFloor: Story = {
 export const ClosedWithAPreview: Story = { args: { mode: 'closed', width: 32, preview: PREVIEW } };
 
 /**
- * Off Sessions with no session followed (UX6b, design §2.5): the side bar opens on Ask Daoris. On the install it kept an
- * ended session from the day before, its whole done note running past the window's foot.
+ * Off Sessions with no session followed: the side bar opens on Ask Daoris, not on an
+ * ended session, whose whole done note would run past the window's foot.
  */
 export const OffSessionsOnAskDaoris: Story = {
   args: {
@@ -110,7 +110,7 @@ export const OffSessionsTheAttendedSessionEnded: Story = {
   args: { views: ['timeline', 'review', 'ask'], tab: 'timeline', children: <NothingFollowed ended onOpenSessions={() => {}} /> },
 };
 
-/** And with nothing attended at all, as before: no session list is named on a view that has none (audit SE11). */
+/** And with nothing attended at all: no session list is named on a view that has none. */
 export const OffSessionsNothingAttended: Story = {
   args: { views: ['timeline', 'review', 'ask'], tab: 'timeline', children: <NothingFollowed ended={false} onOpenSessions={() => {}} /> },
 };

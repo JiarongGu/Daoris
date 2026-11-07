@@ -7,7 +7,7 @@ import { bindingProblemSaid } from './place/effective';
 import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { MERGED, WORKING } from './runFixtures';
 
-// WORKFLOW1c5 (D157's WORKFLOW1c5 note, `.claude/knowledge/twins.md`): the English a run says is one table with the driver, its
+// The English a run says is one table with the driver (`.claude/knowledge/twins.md`), its
 // tests' `fixtures/workflow-run-said.json`, which `WorkflowRunSaidTwinTests` holds `WorkflowRunWords` to. Each row is said here
 // through the real English catalogue, word for word, so a sentence changed on one side alone fails the other's suite.
 
@@ -42,7 +42,7 @@ const stepOf = (row: Row): RunStep => ({
   on: row.on as string | undefined,
 } as RunStep);
 
-/** A graph run's own part as the table's `graph` rows give it (FABRIC-CUTOVER1e). */
+/** A graph run's own part as the table's `graph` rows give it. */
 const graphOf = (row: TABLE_GRAPH): GraphRun => ({
   run: 'q2', entries: ['claimed'], end: 'handed', wires: [],
   quest: row.quest ?? null, branch: row.branch ?? null, judged: row.judged ?? false, unread: row.unread ?? false, ended: row.ended ?? null,
@@ -57,12 +57,12 @@ describe("a run's English, as the driver's table holds it", () => {
     },
   );
 
-  // FABRIC-CUTOVER1e: what a graph run says above its nodes, line for line, as the driver's `WorkflowRunWords.GraphSaid` says it.
+  // What a graph run says above its nodes, line for line, as the driver's `WorkflowRunWords.GraphSaid` says it.
   it.each(TABLE.graph.map((row, index) => [index, row] as const))('says graph row %s in the table’s words', (_index, row) => {
     expect(graphSaid(t, graphOf(row))).toEqual(row.said);
   });
 
-  // CHATFLOW1c (the chat-flow design §4.4): a chat run's checks, not yet enforced for a conversation, as the driver's `ChatChecks` says them.
+  // A chat run's checks, not yet enforced for a conversation, as the driver's `ChatChecks` says them.
   it("says a chat run's checks not yet enforced in the table's words, and in Chinese", () => {
     const chat = { ...WORKING, chat: { run: 'chat-c1', checks: TABLE.chatChecks.checks, enforced: false } };
     expect(chatChecksSaid(t, chat)).toBe(TABLE.chatChecks.said);
@@ -82,7 +82,7 @@ describe("a run's English, as the driver's table holds it", () => {
     expect(runSaid(zh, stepOf(handed))).toBe('在 `daoris/q2-work` 的 `11111111` 上观察中。');
   });
 
-  // CHATFLOW1b (the chat-flow design §10): each code a read that names no run answers, in the en catalogue's words, which the driver's
+  // Each code a read that names no run answers, in the en catalogue's words, which the driver's
   // `WorkflowNoRun.Said` says on the terminal; and each has its zh words.
   it.each(TABLE.none.map((row) => [row.code, row] as const))('words the no-run code %s in the table’s words', (_code, row) => {
     const answer = { runs: [], problem: 'the driver’s sentence', code: row.code, id: row.id ?? null, workflow: row.workflow ?? null };
@@ -98,14 +98,14 @@ describe("a run's English, as the driver's table holds it", () => {
     expect(addedSaid(t, stepOf({ kind: 'look', detail: '', said: null }))).toBeNull();
   });
 
-  // D245: a chain composed through the tidy ends there, and only a merged request starts it, so a run finished at its tidy is a merged one.
+  // A chain composed through the tidy ends there, and only a merged request starts it, so a run finished at its tidy is a merged one.
   it('says a run finished at its tidy as merged, as one finished at the pull request is', () => {
     const finished = (kind: string) => ({ ...MERGED, steps: MERGED.steps.map((step) => (step.step.kind === 'pull-request' ? { ...step, step: { ...step.step, kind } } : step)) });
     for (const kind of ['pull-request', 'tidy']) expect(runShort(t, finished(kind))).toBe(runShort(t, MERGED));
     expect(runShort(t, finished('push'))).not.toBe(runShort(t, MERGED));
   });
 
-  // FABRIC-WORKFLOW2d: a reopened submission waits on its agent, which the head says as the reopen, never as another repository's answer.
+  // A reopened submission waits on its agent, which the head says as the reopen, never as another repository's answer.
   it('says a reopened submission in a few words, in English and Chinese', () => {
     const reopened = { ...WORKING, steps: [{ ...WORKING.steps[0], state: 'waiting-on-agent', detail: 'reopened' }, ...WORKING.steps.slice(1)] };
     expect(runShort(t, reopened)).toBe('reopened, waits for its agent');

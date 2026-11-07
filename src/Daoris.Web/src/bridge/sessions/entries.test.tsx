@@ -3,8 +3,8 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// A line of work's one Accept and its ask's (ACCEPTALL1, D167's 2026-10-15 amendment), as hooks: each plan read only once its ask
-// is open, and each press one route of DAORIS.DRIVER, which the page names only here (MOD3, MOD5).
+// A line of work's one Accept and its ask's, as hooks: each plan read only once its ask
+// is open, and each press one route of DAORIS.DRIVER, which the page names only here.
 
 const { invoke, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),

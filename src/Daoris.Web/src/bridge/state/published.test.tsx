@@ -3,8 +3,8 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// What the driver publishes is no longer read on a clock (FABRIC-EVENT5, D169 point 4): a window that hears the driver's
-// `STATE_CHANGED` waits for it, and a window with no bus keeps the interval it always had.
+// What the driver publishes is not read on a clock: a window that hears the driver's
+// `STATE_CHANGED` waits for it, and a window with no bus keeps its interval.
 
 const { invoke, shell } = vi.hoisted(() => ({ invoke: vi.fn(), shell: { available: true } }));
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// How each agent's accounts are used, as the shell pushes it (PUSH1e, D182): a partition per agent, each its answer of `ACCOUNTS`
+// How each agent's accounts are used, as the shell pushes it: a partition per agent, each its answer of `ACCOUNTS`
 // whole with the verdicts .NET judges beside each reading, composed into the route's answer in its order.
 
 vi.mock('@shenora/react', () => ({

@@ -4,7 +4,7 @@ import type { Quest, Session } from '../../data/api';
 import { browserDrivers } from './browserDrivers';
 
 /**
- * BRW8: who is driving Daoris's browser, named the way the rail names a session — its repository and
+ * Who is driving Daoris's browser, named the way the rail names a session — its repository and
  * what it is for — from the ids the driver answers and the records the page already holds.
  */
 const session = (over: Partial<Session>): Session => ({

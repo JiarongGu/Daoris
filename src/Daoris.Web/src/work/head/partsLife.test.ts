@@ -8,7 +8,7 @@ import type { EntryPart, SessionEntry } from '../entries';
 import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { PART_BEGAN, partsFlow } from './partsLife';
 
-// FLOWCHART1b (the flowchart design §2.3, §7 traps 10 and 19): a line of work's parts drawn as lineage. A part keeps no start,
+// A line of work's parts drawn as lineage. A part keeps no start,
 // no end and no agent, and its order is the ledger's, so the drawing hangs each part by `after` and says nothing of when a part ran
 // or whether two ran at once; the landing plan is where Accept *would* land them, a prospective node, never a join drawn as done.
 
@@ -54,7 +54,7 @@ describe('the parts, hung by what each follows (§2.3)', () => {
       ['ap000001>ap000002', 'retried', 'retried after part 1'],
       ['asked:db>ap000003', 'asked', 'asked by db'],
     ]);
-    // An asked part hangs from a faint node outside the entry, which does not claim it was never reached.
+    // An asked part hangs from a faint node outside the entry, which does not claim it is never reached.
     const asked = flow.nodes.find((node) => node.id === 'asked:db')!;
     expect(asked.faint).toBe(true);
     expect(asked.reached).toBeUndefined();
@@ -62,7 +62,7 @@ describe('the parts, hung by what each follows (§2.3)', () => {
 
   it('says every way a part began, held to the driver\'s words in both languages', () => {
     // The driver's `PartBegan`, read from its source (`.claude/knowledge/twins.md`): the page's list is a copy no test would hold else.
-    // By its name (`driverSource`), so the merge tool's page-reads scan sees the one file and its row reaches this gate (MOD9e).
+    // By its name (`driverSource`), so the merge tool's page-reads scan sees the one file and its row reaches this gate.
     const source = driverSource('SessionEntries.cs');
     expect(source).toMatch(/static class PartBegan\b/);
     const block = /static class PartBegan\s*\{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '';

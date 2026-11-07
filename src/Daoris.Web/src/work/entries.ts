@@ -1,12 +1,12 @@
 import type { Session } from '../data/api';
 import type { SessionGroupName } from './groups';
 
-// The session list by entry (SESSONE1c, D167 point 5, the co-working design §1.6): one row per line of work in one
+// The session list by entry: one row per line of work in one
 // repository, however many records (parts) it holds. The driver's one reader places each entry (`SESSION_GROUPS`'
-// `entries`, SESSONE1b); these helpers only draw from its answer, so the page and the terminal never group by a rule of
+// `entries`); these helpers only draw from its answer, so the page and the terminal never group by a rule of
 // their own. Pure, so every list a person could have is an argument.
 
-/** How a part began, as the driver's reader says it (D167, SESSONE1b). A word a newer host adds is read as `opened`. */
+/** How a part began, as the driver's reader says it. A word a newer host adds is read as `opened`. */
 export type PartBegan = 'opened' | 'retried' | 'resumed' | 'carried-on' | 'handed-over' | 'moved' | 'asked';
 
 /** One record of an entry, as `SESSION_GROUPS` answers it: oldest first within its entry. */
@@ -25,7 +25,7 @@ export type EntryPart = {
 };
 
 /**
- * What one part spent, as `SESSION_SPENT` answers it from this machine's record (SESSCTX1d; the driver's `SessionSpent`): its
+ * What one part spent, as `SESSION_SPENT` answers it from this machine's record (the driver's `SessionSpent`): its
  * turns, those whose door said what they consumed, and each count summed over those, null where none said it, never zero.
  */
 export type PartSpent = {
@@ -66,7 +66,7 @@ export function besideHead(entry: Pick<SessionEntry, 'head' | 'parts'>): string[
 }
 
 /**
- * Where a part stands against its line's head (LINESTOGETHER1b): its number in the entry, and whether it is the head, beside
+ * Where a part stands against its line's head: its number in the entry, and whether it is the head, beside
  * it, or earlier in its line. Null where the entry names no head or does not hold the part.
  */
 export function placeOf(
@@ -82,12 +82,12 @@ export function askOfEntry(entry: Pick<SessionEntry, 'origin'>): string | null {
   return entry.origin.startsWith('ask:') ? entry.origin.slice('ask:'.length) : null;
 }
 
-/** Whether an entry is an ask's intake (D167): its repository is the word `intake`. */
+/** Whether an entry is an ask's intake: its repository is the word `intake`. */
 export const isIntakeEntry = (entry: Pick<SessionEntry, 'repository'>) => entry.repository === 'intake';
 
 /**
- * The sessions the list draws, one record per entry: the leading part. Where no host answered entries, every record, as the
- * list was before. A record in no entry (an ended intake whose ask became quests belongs to its ask's page) is not listed
+ * The sessions the list draws, one record per entry: the leading part. Where no host answered entries, every record.
+ * A record in no entry (an ended intake whose ask became quests belongs to its ask's page) is not listed
  * once entries are answered, and a part that does not lead is shown by its strip, not its own row.
  */
 export function listedSessions(sessions: readonly Session[], entries: readonly SessionEntry[] | undefined): Session[] {
@@ -109,7 +109,7 @@ export function partIds(entries: readonly SessionEntry[] | undefined, id: string
 }
 
 /**
- * An entry's name where it is not its leading record's own (design §1.6): the ask's, for a line of work an ask began, named as
+ * An entry's name where it is not its leading record's own: the ask's, for a line of work an ask began, named as
  * the ask's page names it. Null for an intake, whose record's own name already names its ask, and for an entry whose ask this
  * page does not hold (a teammate's), which then keeps its record's name.
  */
@@ -129,7 +129,7 @@ export function entryFacts(entries: readonly SessionEntry[] | undefined): Map<st
   ]));
 }
 
-/** One line of an ask's page (design §1.6): a repository's line of work for the ask, its parts counted, its leading part's word. */
+/** One line of an ask's page: a repository's line of work for the ask, its parts counted, its leading part's word. */
 export type AskLine = { entry: string; repository: string; parts: number; leading: string; opens: string; shown: string };
 
 /**
@@ -154,7 +154,7 @@ export function askLines(entries: readonly SessionEntry[] | undefined, ask: stri
 export type AskGroup = { ask: string | null; sessions: Session[] };
 
 /**
- * The list by ask (D167 point 5, design §1.6): each ask its entries, in the order the reader placed them (so the ask with
+ * The list by ask: each ask its entries, in the order the reader placed them (so the ask with
  * what needs you leads), and under *Not on an ask* the conversations and the lines rooted in a quest alone, last. Archived
  * entries are hidden unless shown; the attended one is never taken out from under its reader.
  */

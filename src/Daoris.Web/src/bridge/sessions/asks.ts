@@ -11,9 +11,9 @@ import {
 import { call } from '../call';
 import { askHeld } from '../state/held';
 
-// An ask's own doors (SESSONE2c, D167 points 6 to 8; the co-working design §2.4): its channel, where its sessions and the person
+// An ask's own doors: its channel, where its sessions and the person
 // talk, read, posted to and marked read. The driver's `AsksRoutes` answers all three over the service's doors, which
-// `daoris ask channel` reads the same way (D50). Shell-only: a browser has no driver, and no channel is asked there.
+// `daoris ask channel` reads the same way. Shell-only: a browser has no driver, and no channel is asked there.
 
 /** The shapes the routes answer live with the screen's own rule (`work/channel.ts`), since a molecule may read a shape and never a bridge domain. */
 export type { Channel, ChannelForwarded, ChannelItem, ChannelPost, ChannelPosted, ChannelReceipt, ElsewhereAsk } from '../../work/channel';
@@ -52,7 +52,7 @@ export const useChannel = (ask: string | null, { enabled = true }: { enabled?: b
  * has no entry; nothing is asked in a browser.
  *
  * @remarks
- * **Pushed once live** (NOTIFY2g, the notification design §2.5): where the `notices` slice is live with its `messages` partition,
+ * **Pushed once live**: where the `notices` slice is live with its `messages` partition,
  * each ask's count is the partition's, the service's own for the person's mark, and no channel is read for it; an ask the partition
  * does not hold (a closed one a rail names) is still pulled. A channel is still pulled where it is read whole (`useChannel`).
  */
@@ -88,8 +88,8 @@ export const useChannelUnreads = (asks: readonly string[], { enabled = true }: {
 export const elsewhereKey = [...keys.allAsks, 'elsewhere'] as const;
 
 /**
- * The asks the mirrored messages name that this machine does not hold (`ASKS_ELSEWHERE`, SESSONE2h): a teammate's ask has no
- * record here, and its page is its channel. None in a browser, which has no driver, and none from a shell from before the route.
+ * The asks the mirrored messages name that this machine does not hold (`ASKS_ELSEWHERE`): a teammate's ask has no
+ * record here, and its page is its channel. None in a browser, which has no driver, and none from a shell without the route.
  */
 export const useElsewhereAsks = ({ enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
@@ -103,7 +103,7 @@ export const useElsewhereAsks = ({ enabled = true }: { enabled?: boolean } = {})
 };
 
 /**
- * The channel of the line `session` is a part of, where that line is on no ask held here (`CHANNEL_LINE`, COMMS1k): a chat's, a quest
+ * The channel of the line `session` is a part of, where that line is on no ask held here (`CHANNEL_LINE`): a chat's, a quest
  * session's, a teammate's ask's. Told by event, and under the asks' key, so a tick asks it again with each channel. Null while it is
  * read, where the line has none of its own, and in a browser.
  */
@@ -123,7 +123,7 @@ export const useLineChannel = (session: string | null, { enabled = true }: { ena
 /**
  * *Send* (`CHANNEL_POST`): the person's words, to one repository or everyone, answering a message or not. A refusal is an
  * answer with the service's code, which the section words, so it resolves rather than rejects. Its route publishes the asks,
- * whose key holds each channel, and the state hub asks them again in every window (STATEHUB1h, D169).
+ * whose key holds each channel, and the state hub asks them again in every window.
  */
 export const usePostChannel = () =>
   useMutation({
@@ -134,7 +134,7 @@ export const usePostChannel = () =>
   });
 
 /**
- * The person's words on a line's own channel (`CHANNEL_LINE_POST`, COMMS1k): to everyone on it or one repository, from *At work*. A
+ * The person's words on a line's own channel (`CHANNEL_LINE_POST`): to everyone on it or one repository, from *At work*. A
  * refusal is an answer with the service's code, so it resolves rather than rejects. Its route publishes the asks, whose key holds each
  * line's channel, so the words show at once in every window.
  */
@@ -147,7 +147,7 @@ export const usePostLineChannel = () =>
   });
 
 /**
- * *Send to its session* (`CHANNEL_FORWARD`, COWORK1d; the message-urgency design §4.2): a message of the ask's channel sent on to the
+ * *Send to its session* (`CHANNEL_FORWARD`): a message of the ask's channel sent on to the
  * newest session here of the line of work in `repository`, as the agent's claim passed on by the person. A refusal is an answer with
  * its code, which the section words, so it resolves rather than rejects. Its route publishes the asks, whose key holds each channel,
  * so its receipts move in every window.
@@ -161,7 +161,7 @@ export const useForwardChannel = () =>
 /**
  * The person's mark moved (`CHANNEL_MARK`) through the newest item they were shown. The answer is the channel as it then
  * reads, so the unread count falls at once, in the section and in the rows, without asking again; its route publishes the
- * asks, so every other window's count falls too (STATEHUB1h, D169).
+ * asks, so every other window's count falls too.
  */
 export const useMarkChannel = () => {
   const client = useQueryClient();

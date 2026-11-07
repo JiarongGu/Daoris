@@ -13,7 +13,7 @@ import { DETAIL, GATES } from '../work/gates/opinionFixtures';
 import { WorkflowLine } from './WorkflowLine';
 import { WorkflowRunView } from './WorkflowRunView';
 
-// The session's Workflow view (WORKFLOW1c; D157 point 12, the workflow design §5.2, §7), a run at each stage a person meets it,
+// The session's Workflow view, a run at each stage a person meets it,
 // drawn from props: working, waiting on you, in review, held for an opinion, landed, its pull request open and merged, failed;
 // an ask's two runs; the answer on its way, refused and none; 中文 and dark; and the side bar at its 300 px floor.
 
@@ -21,8 +21,8 @@ const nothing = () => {};
 const doors = { session: nothing, quest: nothing, ask: nothing, review: nothing };
 
 /**
- * The side bar at a width: 360 px as it opens beside a session, 300 px, its floor, where the flowchart is its rail (FLOWCHART1d),
- * and 696 px, 45% of the install's 1546 px window (the UI/UX design R6).
+ * The side bar at a width: 360 px as it opens beside a session, 300 px, its floor, where the flowchart is its rail,
+ * and 696 px, 45% of the install's 1546 px window.
  */
 const sideAt = (width: number): Decorator => (Story) => (
   <div className="border border-line bg-page p-3" style={{ width }}><Story /></div>
@@ -51,7 +51,7 @@ export const BoundVersion: Story = { args: { here: 'write', answer: answerOf({ .
   } })),
 }) } };
 
-/** FABRIC-PIPELINE1a: the run heads with the route that chose its workflow, the workspace's for Documentation. */
+/** The run heads with the route that chose its workflow, the workspace's for Documentation. */
 export const ChosenByItsRoute: Story = { args: { answer: answerOf({ ...IN_REVIEW,
   workflow: { ...IN_REVIEW.workflow, id: 'docs-to-pr', boundVersion: 2, route: { level: 'workspace-kind', kind: 'docs', label: 'Documentation' } } }) } };
 export const ChosenByItsRouteChinese: Story = { ...ChosenByItsRoute, decorators: [chinese] };
@@ -81,7 +81,7 @@ export const InReview: Story = {
 };
 
 /**
- * **Held for an opinion**: XAGENT1f's gate at `with-session`, Codex's three findings with the working session, which answers them;
+ * **Held for an opinion**: the gate at `with-session`, Codex's three findings with the working session, which answers them;
  * the run stands at the opinion, and the landing is not reached until the gate settles.
  */
 export const HeldForAnOpinion: Story = { args: { answer: answerOf(HELD_FOR_OPINION) } };
@@ -94,7 +94,7 @@ export const OpinionDisputed: Story = { args: { answer: answerOf(OPINION_DISPUTE
 
 /**
  * **A dispute waits on you**, in the attended session's own run: the second opinion's own gate drawn under its step, *Go on
- * anyway…* among its presses (XAGENT1g, WORKFLOW1c3's remainder).
+ * anyway…* among its presses.
  */
 export const OpinionDisputedWithItsGate: Story = {
   args: {
@@ -131,7 +131,7 @@ export const Merged: Story = { args: { answer: answerOf(MERGED) } };
 /** **Failed**: its last session failed, red there only, with the door to the session. */
 export const Failed: Story = { args: { answer: answerOf(FAILED) } };
 
-/** **An ask's work in two repositories**: two runs, each at its own step, each named by its repository (design §3.8). */
+/** **An ask's work in two repositories**: two runs, each at its own step, each named by its repository. */
 export const SeveralRuns: Story = { args: { answer: SEVERAL, here: null } };
 
 /** The answer on its way: its words, and static rows in its place. */
@@ -142,8 +142,8 @@ export const Refused: Story = { args: { answer: undefined, refusal: 'the driver 
 
 /** No run from a driver before its codes: the driver's sentence, whole. */
 /**
- * CHATFLOW1c (the chat-flow design §4.2, §4.4): a chat's run, its conversation between turns with two commits beyond the line, its second
- * opinion passed over before CHATFLOW1d, and its checks marked not yet enforced for a conversation.
+ * A chat's run, its conversation between turns with two commits beyond the line, its second
+ * opinion passed over, and its checks marked not yet enforced for a conversation.
  */
 export const ChatRun: Story = { args: { answer: answerOf(CHAT_RUN), here: 'work' } };
 
@@ -152,7 +152,7 @@ export const ChatRunChinese: Story = { ...ChatRun, decorators: [chinese] };
 
 export const NoRun: Story = { args: { answer: { runs: [], problem: 'session `c1` serves no quest, so no workflow runs for it.' }, here: null } };
 
-// CHATFLOW1b (the chat-flow design §10): no run, by its code, in the reader's language; the driver's English beside it is never shown.
+// No run, by its code, in the reader's language; the driver's English beside it is never shown.
 const noRun = (code: string, values: { id?: string; workflow?: string } = {}): Story => ({
   args: { answer: { runs: [], problem: 'the driver’s English, not shown', code, id: values.id ?? null, workflow: values.workflow ?? null }, here: null, onRetry: nothing },
 });
@@ -221,7 +221,7 @@ export const AtHalfTheWindowChineseDark: Story = { ...HeldForAnOpinion, decorato
 export const LandedAtHalfTheWindow: Story = { ...Landed, decorators: [sideAt(696)] };
 
 /**
- * **Passed over, and a go-ahead's refusal** (FLOWCHART1d): a named version's run, its second opinion passed over where nothing asked
+ * **Passed over, and a go-ahead's refusal**: a named version's run, its second opinion passed over where nothing asked
  * for one and its look skipped by the person, each said as its record names who; the go-ahead's refusal waits for you, on a dashed
  * failure path once the outcome fits beside the end.
  */
@@ -234,7 +234,7 @@ export const PassedOverAtHalfTheWindow: Story = { ...PassedOver, decorators: [si
 export const PassedOverAtTheFloorChinese: Story = { ...PassedOver, decorators: [sideAt(300), chinese] };
 
 /**
- * **A run bound to a graph version** (FABRIC-CUTOVER1e), drawn from its record: what its graph observes, that its branches are its
+ * **A run bound to a graph version**, drawn from its record: what its graph observes, that its branches are its
  * graph's and that every landing door still holds it, above its nodes; the claim reached on its quest, a fork of a build observed on the
  * run's branch and a lint reached there, joined before the second opinion, which this build does not begin on a graph run.
  */
@@ -249,7 +249,7 @@ export const GraphRunAtHalfTheWindowChineseDark: Story = { ...GraphRun, decorato
 /** A graph run at the side bar's floor, in 中文: the rail, each node in its graph's order. */
 export const GraphRunAtTheFloorChinese: Story = { ...GraphRun, decorators: [sideAt(300), chinese] };
 
-/** A graph run whose go-ahead waits on you, with a look the chain's choice added beside its graph (D190 point 7). */
+/** A graph run whose go-ahead waits on you, with a look the chain's choice added beside its graph. */
 export const GraphRunWithAnAddedLook: Story = { args: { answer: answerOf(GRAPH_RUN_ADDED_LOOK), here: null } };
 
 /** The same at 45% of the window, in 中文: the added look an entry of its own, joined to nothing in the graph. */
@@ -262,7 +262,7 @@ export const GraphRunNotJudgedYet: Story = { args: { answer: answerOf(GRAPH_RUN_
 const kept = async (ask: NodeWordAsk) => ({ run: ask.run, node: ask.node, act: ask.act, done: true });
 
 /**
- * **A go-ahead nobody raised** (FABRIC-CUTOVER1f; the cutover design §5.2): its node offers the person's *Pass over…* and *Stop…*, the one
+ * **A go-ahead nobody raised**: its node offers the person's *Pass over…* and *Stop…*, the one
  * table's acts where it stands; the landing behind it, not reached, offers neither. Each asks once in the page, a skip with its words.
  */
 export const GraphRunPassOverAGoAhead: Story = { args: { answer: answerOf(GRAPH_RUN_GO_AHEAD), here: null, onNodeWord: kept } };
@@ -277,7 +277,7 @@ export const GraphRunWordKept: Story = { args: { answer: answerOf(GRAPH_RUN_GO_A
 const rem = (width: number) => sideAt(width * 16);
 
 /**
- * **A decision's routes** (DECIDE1c): the plugin's find came to `none`, so its `when release` route is not taken and the run stands
+ * **A decision's routes**: the plugin's find came to `none`, so its `when release` route is not taken and the run stands
  * nowhere; the review's way back to the work is drawn as a return. At 80, 39 and 25rem, in English and 中文, light and dark.
  */
 export const GraphRunDecided: Story = { args: { answer: answerOf(GRAPH_RUN_DECIDED), here: null }, decorators: [rem(80)] };
@@ -288,7 +288,7 @@ export const GraphRunDecidedAt25rem: Story = { ...GraphRunDecided, decorators: [
 export const GraphRunDecidedAt25remChineseDark: Story = { ...GraphRunDecided, decorators: [rem(25), chinese, dark] };
 
 /**
- * **A review's changes** (DECIDE1c): the review waiting on your Accept offers *Ask for changes…* beside its stop, which asks for your words
+ * **A review's changes**: the review waiting on your Accept offers *Ask for changes…* beside its stop, which asks for your words
  * and sends them to the work in place of your Accept. At 80, 39 and 25rem, in English and 中文, light and dark.
  */
 export const GraphRunReviewChanges: Story = { args: { answer: answerOf(GRAPH_RUN_REVIEW), here: null, onNodeWord: kept }, decorators: [rem(80)] };
@@ -298,10 +298,10 @@ export const GraphRunReviewChangesAt39remDark: Story = { ...GraphRunReviewChange
 export const GraphRunReviewChangesAt25rem: Story = { ...GraphRunReviewChanges, decorators: [rem(25)] };
 export const GraphRunReviewChangesAt25remChineseDark: Story = { ...GraphRunReviewChanges, decorators: [rem(25), chinese, dark] };
 
-// INTEGRATE1o part o2: the work's requests drawn inside its node, a decline holding the work's requests waiting on you, with Pass over….
+// The work's requests drawn inside its node, a decline holding the work's requests waiting on you, with Pass over….
 export const GraphRunDeclinedRequest: Story = { args: { answer: answerOf(GRAPH_RUN_REQUESTS), here: null, doors, onNodeWord: kept } };
 
-// FABRIC-PIPELINE1d part 5 (the pipeline design §4.4): a check's verdict in its status word, each in English and in 中文.
+// A check's verdict in its status word, each in English and in 中文.
 const answered = async () => ({ done: true });
 
 /** *verified*: every gate passed at the commit. */

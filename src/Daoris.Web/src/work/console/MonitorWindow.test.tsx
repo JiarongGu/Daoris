@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// The monitor window (SURF8). An ORGANISM, so this is the layer a mocked bridge is for (components
-// plan §2) — and the bridge is mocked as PRESENT, because a secondary window exists only where a
+// The monitor window. An ORGANISM, so this is the layer a mocked bridge is for
+// — and the bridge is mocked as PRESENT, because a secondary window exists only where a
 // shell does.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
@@ -43,9 +43,9 @@ let SESSIONS: unknown[] = [];
 const LIVE = [
   { ...base, id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', state: 'working' },
   { ...base, id: 'b2c3d4e5', quest: null, kind: 'chat', repository: 'engine', state: 'awaiting-person', created: at(30) },
-  // Finished: the monitor is the present tense, and reviewing is a surface of its own (SURF6).
+  // Finished: the monitor is the present tense, and reviewing is a surface of its own.
   { ...base, id: 'd4e5f6a7', quest: null, repository: 'engine', state: 'completed', created: at(300) },
-  // Another machine's: the record travelled here and the console did not (D47 §4).
+  // Another machine's: the record travelled here and the console did not.
   { ...base, id: 'laptop/e5f6a7b8', quest: null, repository: 'engine', state: 'working', created: at(20) },
 ];
 
@@ -56,7 +56,7 @@ function respond(url: string): Response {
   throw new Error(`unstubbed request: ${url}`);
 }
 
-/** The monitor; `scoped`, under a scope it opens windows from, as the page's root gives it (MAINWINDOWS3). */
+/** The monitor; `scoped`, under a scope it opens windows from, as the page's root gives it. */
 function show(scoped = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const monitor = <Tooltip.Provider><MonitorWindow notify={() => {}} /></Tooltip.Provider>;
@@ -112,9 +112,8 @@ describe('the monitor window', () => {
   });
 
   /**
-   * UX5 U70, seen on the window: the monitor's rail listed what had ended, beneath the running, and
-   * a press on one scrolled to a tile that is not there. The monitor is the present tense, rail and
-   * tiles alike. U69: and its rail is the main rail's width, where the search's words were cut.
+   * The monitor's rail lists only what is running, so a press on one scrolls to a tile that is there. The monitor is
+   * the present tense, rail and tiles alike. Its rail is the main rail's width, so the search's words are not cut.
    */
   it('lists only what is running in its rail too, at the main rail’s width', async () => {
     show();
@@ -122,13 +121,12 @@ describe('the monitor window', () => {
 
     await waitFor(() => expect(within(rail).getAllByRole('listitem').length).toBeGreaterThan(0));
     expect(within(rail).queryByRole('region', { name: 'Ended' })).toBeNull();
-    // The main rail's own bounds (FRAME1h): 280 px to start, as Sessions' list.
+    // The main rail's own bounds: 280 px to start, as Sessions' list.
     expect(rail.closest('aside')!.style.width).toBe('280px');
   });
 
   /**
-   * FRAME1h, audit MO2: below 1024 px the rail was hidden with no way back, and the running sessions it
-   * scrolls to were out of reach. It is a list pane now: a strip where the tiles leave it no room, which
+   * Below 1024 px the rail stays reachable: it is a list pane, a strip where the tiles leave it no room, which
    * keeps each running session's mark and an open that lays the rail over the tiles.
    */
   it('keeps its rail as a strip where there is no room, never hidden, and lays it over the tiles from there', async () => {
@@ -149,7 +147,7 @@ describe('the monitor window', () => {
     expect(railPane()).toHaveAttribute('data-list-mode', 'strip');
   });
 
-  /** The monitor remembers its own rail (D118 §4, §3f): the main window's is another list. */
+  /** The monitor remembers its own rail: the main window's is another list. */
   it('remembers its rail\'s closing and width for the monitor, apart from the main window\'s', async () => {
     widen(1400);
     show();
@@ -176,7 +174,7 @@ describe('the monitor window', () => {
     expect(railPane()).toHaveAttribute('data-list-mode', 'strip');
   });
 
-  /** Each window answers the key of the region it has (D118 §4): the monitor's is its list, on Ctrl+B. */
+  /** Each window answers the key of the region it has: the monitor's is its list, on Ctrl+B. */
   it('toggles its rail on Ctrl+B, and has no panel for Ctrl+J to toggle', async () => {
     widen(1400);
     show();
@@ -191,7 +189,7 @@ describe('the monitor window', () => {
     expect(railPane()).toHaveAttribute('data-list-mode', 'open');
   });
 
-  /** Audit MO11: its title wore `text-h3`, which no token defines, and was drawn at the body's size. */
+  /** Its title is drawn at a heading step a token defines. */
   it('titles itself on the one heading step a view has', async () => {
     show();
 
@@ -208,8 +206,8 @@ describe('the monitor window', () => {
   });
 
   /**
-   * 🔴 The claim SURF8 rests on: **a second reader on the console pump** (D55 §b — SES1's bounded
-   * buffer was written for one). Here it is two readers in one window; the driver's own tests hold
+   * 🔴 The claim a detached window rests on: **a second reader on the console pump**. The bounded
+   * buffer is written for one. Here it is two readers in one window; the driver's own tests hold
    * the other half, that the buffer keeps no cursor and so cannot be consumed.
    */
   it('streams every session this machine is running, each its own', async () => {
@@ -220,7 +218,7 @@ describe('the monitor window', () => {
   });
 
   /**
-   * 🔴 The disclosure boundary (D47 §4). A session mirrored from another machine has no console
+   * 🔴 The disclosure boundary. A session mirrored from another machine has no console
    * here and never will, so the tile says where it runs — an empty well would read as silence.
    */
   it('never asks for a console this machine does not hold', async () => {
@@ -244,7 +242,7 @@ describe('the monitor window', () => {
       'DAORIS.WINDOWS', 'OPEN', { payload: { name: 'session:b2c3d4e5' } });
   });
 
-  // MAINWINDOWS3: a session detached from the monitor is held in its own workspace where it names one.
+  // A session detached from the monitor is held in its own workspace where it names one.
   it('opens a session naming its workspace into that workspace', async () => {
     SESSIONS = LIVE.map((row) => (row.id === 'b2c3d4e5' ? { ...row, workspace: 'studio' } : row));
     show(true);
@@ -267,9 +265,8 @@ describe('the monitor window', () => {
   });
 
   /**
-   * UX5 U2: every tile was the console, and D76 made the console the raw view of a conversation. A
-   * tile over a kept conversation said *Nothing said yet*. Where the door keeps one, the tile shows
-   * what was said; a text door, or a roster that has not answered, keeps the console.
+   * The console is the raw view of a conversation. Where the door keeps one, the tile shows
+   * what is said; a text door, or a roster that has not answered, keeps the console.
    */
   it('shows the conversation where the door keeps one, and the console where it does not', async () => {
     invoke.mockImplementation(async (_module: string, type: string, request?: unknown) => {

@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { HelperAskRow } from '../waits/HelperAsks';
 
-/** Where a member's answer went (COWORKUX1d, the co-worker design §6.2, §6.4): to the lead, to the person, or passed by them. */
+/** Where a member's answer went: to the lead, to the person, or passed by them. */
 export type Went = 'lead' | 'person' | 'passed';
 
 /** Where an answered ask's answer went, from the ask's own facts; null while it has none. */
@@ -11,7 +11,7 @@ export function wentOf(row: Pick<HelperAskRow, 'state' | 'to' | 'kept' | 'passed
   return row.to === 'person' || row.kept ? 'person' : 'lead';
 }
 
-/** The state word of a member's row (§6.2): a status, never a sentence. */
+/** The state word of a member's row: a status, never a sentence. */
 export function memberState(t: TFunction, row: Pick<HelperAskRow, 'askedBy' | 'state' | 'code'>): string {
   switch (row.state) {
     case 'started': return t('work.team.state.working');
@@ -47,7 +47,7 @@ export function memberRows(t: TFunction, asks: readonly HelperAskRow[], nameOf: 
 export const askOfMember = (asks: readonly HelperAskRow[] | undefined, member: string): HelperAskRow | null =>
   asks?.find((ask) => ask.helper === member) ?? null;
 
-/** The codes *Ask again…* and *Pass to the lead* answer by that the team words (COWORKUX1d); any other is said in the driver's sentence. */
+/** The codes *Ask again…* and *Pass to the lead* answer by that the team words; any other is said in the driver's sentence. */
 const TEAM_REFUSALS = new Set(['after', 'unanswered', 'lead']);
 
 /** A refusal of *Ask again…* or *Pass to the lead* in the catalogue's words where it has them, else the driver's own. */

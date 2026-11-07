@@ -2,8 +2,7 @@ import type { Quest } from '../../data/api';
 import type { Consideration } from '../../data/signals';
 import type { Answered } from '../InlineConfirm';
 
-// Pausing and abandoning an ask's work or a quest's on the screen (PAUSE1e, D132, `docs/2026-10-02-pause-and-clean-up-design.md`
-// §2.6, §3.1, §3.2, §4.2, §7.1): the shapes the driver answers (`bridge/sessions/work.ts` asks them) and what each says, as catalogue
+// Pausing and abandoning an ask's work or a quest's on the screen: the shapes the driver answers (`bridge/sessions/work.ts` asks them) and what each says, as catalogue
 // lines. Pure, so the ask's page, the quest's page and a session's header read one rule, a molecule may read it, and every
 // plan the driver could answer is a test's argument.
 
@@ -13,16 +12,16 @@ export type WorkScopeName = 'ask' | 'quest';
 /** What a pause, a resume or an abandon names: exactly one ask or one quest. */
 export type WorkTarget = { scope: WorkScopeName; id: string };
 
-/** Whose pause holds a quest (D132 point 3): the tick's `pausedBy`, `SESSION_GROUPS`' and `WORK_PLAN`'s. */
+/** Whose pause holds a quest: the tick's `pausedBy`, `SESSION_GROUPS`' and `WORK_PLAN`'s. */
 export type PausedByFact = { scope: WorkScopeName; id: string };
 
-/** What a pause does with one piece (design §2.1), the driver's word for it (`PauseAct`). */
+/** What a pause does with one piece, the driver's word for it (`PauseAct`). */
 export type PauseAct = 'paused' | 'closed' | 'elsewhere' | 'stopped' | 'parked' | 'intake' | 'teammate' | 'ended';
 
-/** What an abandon does with one piece (design §3.2), the driver's word for it (`AbandonAct`). */
+/** What an abandon does with one piece, the driver's word for it (`AbandonAct`). */
 export type AbandonAct = 'decline' | 'stop' | 'end' | 'archive' | 'discard' | 'delete' | 'close' | 'keep' | 'none';
 
-/** Why an abandon keeps a piece (design §3.2), the driver's word for it (`AbandonWhy`). */
+/** Why an abandon keeps a piece, the driver's word for it (`AbandonWhy`). */
 export type AbandonWhy =
   | 'taken-elsewhere' | 'source-reopened' | 'taken-outside' | 'done' | 'teammate' | 'review' | 'landed' | 'elsewhere' | 'checked-out'
   | 'unknown' | 'in-use' | 'unreached' | 'refused' | 'gone';
@@ -30,7 +29,7 @@ export type AbandonWhy =
 /** One quest of the work, and what a pause and an abandon would do with it. */
 export type WorkPlanQuest = {
   quest: string; title: string; to: string; status: Quest['status'];
-  /** How it joined the work (design §1): asked by the ask, the quest named, or published by a session of the work. */
+  /** How it joined the work: asked by the ask, the quest named, or published by a session of the work. */
   joined: 'asked' | 'named' | 'published';
   /** For a quest a session published, that session. */
   by?: string | null;
@@ -40,7 +39,7 @@ export type WorkPlanQuest = {
   abandon: AbandonAct;
   kept?: AbandonWhy | null;
   machine?: string | null;
-  /** Whether its decline applies only while it is open (PAUSE1c). */
+  /** Whether its decline applies only while it is open. */
   whileOpen?: boolean;
 };
 
@@ -57,7 +56,7 @@ export type WorkPlanSession = {
   machine?: string | null;
 };
 
-/** One tree of the work, or its branch alone: its repository and branch, never its path (platform language §4). */
+/** One tree of the work, or its branch alone: its repository and branch, never its path. */
 export type WorkPlanTree = {
   repository: string; branch: string; sessions: string[]; key: string;
   abandon: AbandonAct;
@@ -84,10 +83,10 @@ export type AbandonKeep = {
   piece: string; why: AbandonWhy; machine?: string | null; where?: string | null; changed?: boolean | null; detail?: string | null;
 };
 
-/** What the remote made of a shared decline (design §5.2). */
+/** What the remote made of a shared decline. */
 export type DeclineAnswer = { quest: string; answer: 'confirmed' | 'lost' | 'unconfirmed' };
 
-/** This machine's record of one abandon (`abandoned.json`, design §4.2): fixed words, never a path. */
+/** This machine's record of one abandon (`abandoned.json`): fixed words, never a path. */
 export type AbandonEntry = {
   at: string; door: string; reason: string; declined: string[]; closed: boolean; trees: AbandonedTree[];
   stopped: string[]; archived: string[]; stayed: AbandonKeep[]; declines: DeclineAnswer[];
@@ -122,9 +121,9 @@ export type PauseAnswer = {
 };
 
 /**
- * One quest a resume leaves held (design §2.4): the planner's verdict and the driver's sentence, and the facts the page says
- * it from (CARRY2d), by the tick's own names: the stop's session (`heldBy`), whose pause (`pausedBy`), how many failed
- * (`strikes`), whose take (`takenBy`) and which sentence by code (`said`, OVERVIEWNOISE1c), so `sittingSentence` words a hold
+ * One quest a resume leaves held: the planner's verdict and the driver's sentence, and the facts the page says
+ * it from, by the tick's own names: the stop's session (`heldBy`), whose pause (`pausedBy`), how many failed
+ * (`strikes`), whose take (`takenBy`) and which sentence by code (`said`), so `sittingSentence` words a hold
  * as it words a sitting quest. Each is absent for every verdict but its own, and where the answer lacks it, where the
  * driver's sentence stands.
  */
@@ -152,13 +151,13 @@ export type AbandonAnswer = {
 };
 
 /**
- * What a page is handed of this machine's driver for its ask or its quest (PAUSE1e, design §7.1): the plan, and the three
+ * What a page is handed of this machine's driver for its ask or its quest: the plan, and the three
  * presses. Absent in a browser, which has no driver: the page offers none of the three and names the terminal's commands.
  */
 export type WorkDoor = {
   /** The plan as the driver answered it; null while it is asked, when the acts wait rather than guess. */
   plan: WorkPlan | null;
-  /** Whether its workspace syncs with a remote, so that another machine may take an open quest of it (design §5.1). */
+  /** Whether its workspace syncs with a remote, so that another machine may take an open quest of it. */
   wired: boolean;
   /** A press on its way: the acts wait for it. */
   busy: boolean;
@@ -187,7 +186,7 @@ export const scopeName = (t: Translate, target: WorkTarget) => t(`work.scope.${t
 export const say = (t: Translate, line: Line, target: WorkTarget) => t(line.key, { ...line.values, what: scopeName(t, target) });
 
 /**
- * Whether a workspace syncs with a remote on this machine, so another machine may take an open quest of it (design §5.1): the
+ * Whether a workspace syncs with a remote on this machine, so another machine may take an open quest of it: the
  * machine's wiring names it, or the environment names the machine's remote whole. A workspace unstated is the default, as
  * the driver compares it (`RemoteTarget.Workspace`). No wiring read is none.
  */
@@ -200,17 +199,17 @@ export function wiredFor(
   return (wiring.remotes ?? []).some((remote) => (remote.workspace.trim() || 'default') === named);
 }
 
-/** The sender the service writes for a quest an ask asked (`AskDesk.SenderOf`, D65 §4). */
+/** The sender the service writes for a quest an ask asked (`AskDesk.SenderOf`). */
 const ASKED_BY = /^ask #(\S+)$/;
 
-/** The ask a quest was asked by, from its sender; null for a quest a repository asked. */
+/** The ask that sent a quest, from its sender; null for a quest a repository sent. */
 export function askOf(quest: Pick<Quest, 'from'> | null | undefined): string | null {
   return quest ? ASKED_BY.exec(quest.from)?.[1] ?? null : null;
 }
 
 /**
- * What an ask's or a quest's header offers (design §7.1), each where it applies and absent where it does not, never
- * disabled (D119 §3.2): *Pause…* while a pause would hold something and it is not paused here, *Resume* while it is,
+ * What an ask's or a quest's header offers, each where it applies and absent where it does not, never
+ * disabled: *Pause…* while a pause would hold something and it is not paused here, *Resume* while it is,
  * *Abandon…* while the reader would take anything. No answer offers nothing: an act is never guessed.
  */
 export function workOffers(plan: WorkPlan | null | undefined) {
@@ -220,7 +219,7 @@ export function workOffers(plan: WorkPlan | null | undefined) {
 }
 
 /**
- * What a pause asks before it ends work in flight (design §2.6): how many running sessions it stops, then, where they
+ * What a pause asks before it ends work in flight: how many running sessions it stops, then, where they
  * apply, that another machine may still take an open quest (a wired workspace's) and that a running intake keeps reading.
  * Null where it stops nothing: such a pause applies at once, with a notice, since nothing is lost.
  */
@@ -261,7 +260,7 @@ export function pieceName(piece: string): Line {
   return { key: 'work.abandon.piece.raw', values: { piece } };
 }
 
-/** Why a piece stays, in the words of design §3.2; a piece kept because it changed since the list says so. */
+/** Why a piece stays; a piece kept because it changed since the list says so. */
 function whyLine(keep: Pick<AbandonKeep, 'why' | 'machine' | 'where' | 'detail' | 'changed'>): Line {
   const changed = keep.changed === true;
   switch (keep.why) {
@@ -289,12 +288,12 @@ function whyLine(keep: Pick<AbandonKeep, 'why' | 'machine' | 'where' | 'detail' 
   }
 }
 
-/** Up to five files, and an ellipsis where the tree holds more (design §3.2). */
+/** Up to five files, and an ellipsis where the tree holds more. */
 const filesOf = (files: readonly string[] | undefined, count: number) =>
   (files ?? []).join(', ') + (count > (files ?? []).length ? ', …' : '');
 
 /**
- * What the abandon's first press lists (design §3.1, §3.2): every piece it takes, in the order its second press takes
+ * What the abandon's first press lists: every piece it takes, in the order its second press takes
  * them, with what it does, and every piece it keeps, with why. A discarded tree says how many commits it holds that are
  * nowhere else and how many files carry uncommitted changes, naming up to five, never a path on this machine.
  */
@@ -351,13 +350,13 @@ export function abandonList(plan: WorkPlan): { goes: GoingRow[]; stays: StayingR
   return { goes, stays };
 }
 
-/** What went and what stayed, as the page shows them after an abandon (design §4.2). */
+/** What went and what stayed, as the page shows them after an abandon. */
 export type AbandonOutcome = { went: Line[]; stayed: StayingRow[]; stillPaused: boolean };
 
 const ids = (quests: readonly string[]) => quests.map((quest) => `#${quest}`).join(', ');
 
 /**
- * What went and what stayed, from the second press's answer or from `abandoned.json`'s record of it (design §4.2): the
+ * What went and what stayed, from the second press's answer or from `abandoned.json`'s record of it: the
  * quests declined, the ask closed, the sessions stopped, each tree discarded or branch deleted with the tip `git branch`
  * brings it back at while git keeps its commits, the sessions archived, each shared decline's answer; then each piece kept,
  * with why. The answer also says what changed since the list, what a step could not take, what joined the work after
@@ -392,7 +391,7 @@ export function outcomeOf(said: AbandonAnswer | AbandonEntry): AbandonOutcome {
 }
 
 /**
- * The last abandon a page shows (design §4.2): the second press's answer, said at once, else this machine's record of it,
+ * The last abandon a page shows: the second press's answer, said at once, else this machine's record of it,
  * which a later look reads. Null where there is neither.
  */
 export function lastAbandon(work: Pick<WorkDoor, 'plan' | 'outcome'> | null | undefined): { outcome: AbandonOutcome; at: string } | null {
@@ -401,13 +400,13 @@ export function lastAbandon(work: Pick<WorkDoor, 'plan' | 'outcome'> | null | un
   return entry ? { outcome: outcomeOf(entry), at: entry.at } : null;
 }
 
-/** What a pause says (design §2.1): one line for the pause, and one failure for each session it meant to stop and could not. */
+/** What a pause says: one line for the pause, and one failure for each session it meant to stop and could not. */
 export function pauseNotices(answer: PauseAnswer): WorkNotice[] {
   if (answer.did === 'nothing') return [{ key: 'work.pause.nothing', values: {}, tone: 'ok' }];
   const notices: WorkNotice[] = [answer.stopped.length > 0
     ? { key: 'work.pause.done.stopped', values: { count: answer.stopped.length }, tone: 'ok' }
     : { key: answer.already ? 'work.pause.done.already' : 'work.pause.done.nothingStopped', values: {}, tone: 'ok' }];
-  // Parked, an intake and a teammate's are kept by design (§2.1); these three the pause meant to stop.
+  // Parked, an intake and a teammate's are kept by design; these three the pause meant to stop.
   for (const kept of answer.kept.filter((each) => ['elsewhere', 'not-running', 'unanswered'].includes(each.why))) {
     notices.push({ key: 'work.pause.unreached', values: { session: kept.session }, tone: 'error' });
   }
@@ -415,7 +414,7 @@ export function pauseNotices(answer: PauseAnswer): WorkNotice[] {
 }
 
 /**
- * What a resume says (design §2.4): that the driver's next look plans the work, then what still holds a quest of it,
+ * What a resume says: that the driver's next look plans the work, then what still holds a quest of it,
  * once: one quest by its hold's own sentence, several as a count, since each quest's page says why under *Sitting*.
  */
 export function resumeNotices(answer: ResumeAnswer): WorkNotice[] {
@@ -428,12 +427,12 @@ export function resumeNotices(answer: ResumeAnswer): WorkNotice[] {
 }
 
 /**
- * What an abandon says (design §3.1): how many of the pieces the list held went, and how many changed since and were kept.
+ * What an abandon says: how many of the pieces the list held went, and how many changed since and were kept.
  *
  * @remarks
- * **A partial abandon is not a plain success** (PAUSE1h, as HIST1n made a partial clear): only one that took every piece it
+ * **A partial abandon is not a plain success**: only one that took every piece it
  * listed says `ok`. One that kept some, because they changed since the list or the disk would not let them go (the driver's
- * `went` is what was listed less both), says so in the error's tone; the page's *What stayed* says which.
+ * `went` is what the list held less both), says so in the error's tone; the page's *What stayed* says which.
  */
 export function abandonNotice(answer: AbandonAnswer): WorkNotice {
   if (answer.did === 'nothing') return { key: 'work.abandon.nothing', values: {}, tone: 'ok' };

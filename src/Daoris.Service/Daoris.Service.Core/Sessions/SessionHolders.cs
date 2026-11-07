@@ -1,24 +1,24 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Who holds a working tree (D51): the session an open or a go-on is refused for, the sentence that names it, and where a repository's
+/// Who holds a working tree: the session an open or a go-on is refused for, the sentence that names it, and where a repository's
 /// main tree is. One session per working tree holds for a start and for going on alike, so both read it here.
 /// </summary>
 internal sealed class SessionHolders(QuestStore quests, SessionStore sessions, KnowledgeService? registry)
 {
     /// <summary>
-    /// The driver's code for a session that ended its turn on its own open helper ask (HELPERWAIT1; its <c>EndNoteCodes.EndedAwaitsHelper</c>,
+    /// The driver's code for a session that ended its turn on its own open helper ask (its <c>EndNoteCodes.EndedAwaitsHelper</c>,
     /// a twin read here by its spelling): completed, since it waits on that helper and not on the person.
     /// </summary>
     internal const string EndedAwaitsHelper = "ended.awaits-helper";
 
-    /// <summary>Whether a finished record ended waiting on its own helper (HELPERWAIT1): completed, by that code.</summary>
+    /// <summary>Whether a finished record ended waiting on its own helper: completed, by that code.</summary>
     internal static bool WaitedOnHelper(Session session) =>
         session.State == SessionState.Completed && NoteParts.Carries(session.NoteParts, EndedAwaitsHelper);
 
     /// <summary>
-    /// The session holding <paramref name="repository"/>'s <paramref name="tree"/> (D51): an active one (<see cref="SessionStore.ActiveForAsync"/>),
-    /// else one that ended waiting on its own helper while its quest is still taken (HELPERWAIT1; Codex's #5 on COWORKUX1), which goes on
+    /// The session holding <paramref name="repository"/>'s <paramref name="tree"/>: an active one (<see cref="SessionStore.ActiveForAsync"/>),
+    /// else one that ended waiting on its own helper while its quest is still taken, which goes on
     /// there with the answer or parks for the person, and so keeps its tree as a park does. <paramref name="except"/> is the record moving,
     /// which holds nothing against itself.
     /// </summary>
@@ -35,11 +35,11 @@ internal sealed class SessionHolders(QuestStore quests, SessionStore sessions, K
     }
 
     /// <summary>
-    /// The busy sentence, phrased once for both doors (D51).
+    /// The busy sentence, phrased once for both doors.
     /// </summary>
     /// <remarks>
     /// <b>It names the SESSION holding the tree, never the tree's PATH.</b> A path is machine-local
-    /// material (D47 §4) and a refusal is the one surface with no strip on it: it is composed here and
+    /// material and a refusal is the one surface with no strip on it: it is composed here and
     /// rendered verbatim wherever it lands. The session id is the actionable half anyway — it is what
     /// a person stops, and what the record they should read is filed under.
     /// </remarks>

@@ -9,7 +9,7 @@ import { exchangesOf } from './exchanges';
 import { ANSWER, askedEvents, askRow, nameOf, QUESTION } from './exchanges.fixtures';
 
 /**
- * COMMS1h (the comms design §7): a message is drawn whole once, at its home. An agent's ask for a helper is its card at the
+ * A message is drawn whole once, at its home. An agent's ask for a helper is its card at the
  * `helper_ask` call, never a tool card folded in a run; its answer folds into the card, and the turn that took it holds one line that
  * opens the card, never the answer drawn again.
  */

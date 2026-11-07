@@ -18,12 +18,12 @@ export type AtWorkAskViewProps = {
   /** Why each open quest is sitting, as the driver's last look said it (the `considerations` slice), read beside the answer. */
   considered?: readonly Consideration[];
   onRetry?: () => void;
-  /** The ask page's own channel read, its newest three messages (COWORKVIEW1c): each on the line of work that posted it. */
+  /** The ask page's own channel read, its newest three messages: each on the line of work that posted it. */
   channel?: AtWorkChannel;
 };
 
 /**
- * Who is at work on an ask (COWORKVIEW1d, the cowork view design §3.5): its lines of work, each folded to a count that opens its own
+ * Who is at work on an ask: its lines of work, each folded to a count that opens its own
  * view, and the quests it asked as a session's view draws them, with the channel's last words. It replaces nothing on the ask's page: the
  * sessions, the work and the channel keep their presses, and this section sits above them. Reading is never *nothing*; an ask with
  * nothing at work says so.

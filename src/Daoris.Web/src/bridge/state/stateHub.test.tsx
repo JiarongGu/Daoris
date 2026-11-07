@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { type QueryKey, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// What a press changed reaches every window as `STATE_CHANGED` (STATEHUB1b, D169): the hub is the one place a scope becomes
+// What a press changed reaches every window as `STATE_CHANGED`: the hub is the one place a scope becomes
 // the page's queries asked again, in every window alike.
 
 const { eventHandlers, invoke } = vi.hoisted(() => ({
@@ -40,7 +40,7 @@ function Hub() {
   return null;
 }
 
-/** A client holding an answer under each key, so whether each was invalidated can be read off its state. */
+/** A client holding an answer under each key, so whether each is invalidated can be read off its state. */
 function holding(...held: QueryKey[]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   for (const key of held) client.setQueryData(key, { held: true });
@@ -55,7 +55,7 @@ describe('the state hub (STATE_CHANGED)', () => {
   afterEach(() => eventHandlers.clear());
 
   /**
-   * The 采纳 a tab switch read stale (STATEHUB1): a landing moves the line every plan is judged against, so every session's plan
+   * The 采纳 a tab switch read stale: a landing moves the line every plan is judged against, so every session's plan
    * and gate is asked again, the named session's among them, with its second opinion and what of them waits.
    */
   it("a landing asks every session's plan and gate again, the one it named among them", () => {
@@ -95,7 +95,7 @@ describe('the state hub (STATE_CHANGED)', () => {
   });
 
   /**
-   * FOUNDATION1s part B: the knowledge index fed further, told as the repositories' scope, asks the repositories again, whose sizes the
+   * The knowledge index fed further, told as the repositories' scope, asks the repositories again, whose sizes the
    * status bar sums (a summary read mid-feed said 555 of 1,050), and nothing of the registry.
    */
   it("the index's feed asks the repositories again, and not the registry", () => {
@@ -108,7 +108,7 @@ describe('the state hub (STATE_CHANGED)', () => {
     expect(invalid(keys.registry(null))).toBe(false);
   });
 
-  /** A wire's words are added to (D169 point 3): a scope a newer shell names that this page does not know is no change here. */
+  /** A wire's words are added to: a scope a newer shell names that this page does not know is no change here. */
   it('a scope it does not know, an empty event or none at all changes nothing', () => {
     const { client } = holding(keys.allSessions, keys.landing('s1'));
     const invalidate = vi.spyOn(client, 'invalidateQueries');
@@ -123,8 +123,7 @@ describe('the state hub (STATE_CHANGED)', () => {
   });
 
   /**
-   * The rest of the routes (STATEHUB1d, D169 point 10): each scope they added asks again the family its hooks used to ask by
-   * hand, every key under it, and nothing of another family.
+   * The rest of the routes: each scope they declare asks again the family its hooks read, every key under it, and nothing of another family.
    */
   const families: [scope: string, held: QueryKey[]][] = [
     ['quests', [keys.allQuests, workKey({ scope: 'quest', id: 'q1' })]],
@@ -134,19 +133,19 @@ describe('the state hub (STATE_CHANGED)', () => {
     ['rules', [keys.rules]],
     ['history', [historyKey({ scope: 'workspace', id: 'aurora' }), historyKey({ scope: 'quest', id: 'q1' })]],
     ['sync', [keys.sync('*'), keys.sync('aurora')]],
-    // The workspaces and repositories registered: the registry and the repositories the service lists (STATEHUB1h).
+    // The workspaces and repositories registered: the registry and the repositories the service lists.
     ['registry', [keys.registry(null), keys.registry('aurora'), keys.repositories(null), keys.repositories('aurora')]],
     ['plugins', [keys.plugins]],
     // The agents this machine can run, what each start would run on and the accounts, all under the roster's key.
     ['harnesses', [keys.harnesses, keys.allStarts, keys.accounts]],
-    // The remaining presses' families (STATEHUB1h): the tools, with what a switch of git would change; Ask Daoris's history and
+    // The remaining presses' families: the tools, with what a switch of git would change; Ask Daoris's history and
     // what each conversation proposed; the browser's settings.
     ['tools', [[...ALL_TOOLS, 'list', false], [...ALL_TOOLS, 'git', 'system', '', '']]],
-    // HELPWIREDLIVE1: and the receipts *What it has* shows, which a resume or a change of mode adds while it is open. ASKQUESTS1: and
+    // And the receipts *What it has* shows, which a resume or a change of mode adds while it is open. And
     // what a conversation published, which an Apply adds.
     ['help', [[...HELP_HISTORY, ''], [...HELP_HISTORY, 'pinned'], [...HELP_PROPOSALS, 's1'], [...HELP_WIRED, 'h1'], [...HELP_PUBLISHED, 'h1']]],
     ['browser', [keys.browserSettings]],
-    // FABRIC-EVENT5b: How this Daoris is wired, told as a walk starts and as its sizes land.
+    // How this Daoris is wired, told as a walk starts and as its sizes land.
     ['wiring', [keys.systemWiring, keys.systemSpace]],
   ];
 
@@ -197,7 +196,7 @@ describe('the state hub (STATE_CHANGED)', () => {
   });
 
   /**
-   * FABRIC-EVENT5: a change told while a view's first read is on its way must not be lost to it. The query has no data yet, so an
+   * A change told while a view's first read is on its way must not be lost to it. The query has no data yet, so an
    * invalidation would reuse the read in flight, whose answer pre-dates the change; the hub asks once more after it.
    */
   it('a change told during a first read asks once more after it, whatever scope', async () => {
@@ -262,7 +261,7 @@ describe('the state hub (who is at work, COWORKVIEW1a)', () => {
 });
 
 /**
- * What is under way (STATEHUB1c, D169 point 7): the driver tells every window, whole at each change, which presses it has not
+ * What is under way: the driver tells every window, whole at each change, which presses it has not
  * answered yet, and the hub keeps it at the window's root; so *落地中…* is read by every view of that session, a view mounted
  * mid-press among them, rather than held by the one component that pressed.
  */
@@ -397,7 +396,7 @@ describe('the state hub (UNDER_WAY)', () => {
     expect(read('LAND_SESSION_TREE', 's1')).toEqual(['still', 'still']);
   });
 
-  /** PRESSSTEP1: the step the driver says a press has reached, read by every view of that session, and gone with the press. */
+  /** The step the driver says a press has reached, read by every view of that session, and gone with the press. */
   it('says the step a press has reached, that session’s and that route’s alone', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     function Step({ route, session }: { route: string; session: string | null }) {
@@ -434,7 +433,7 @@ describe('the state hub (UNDER_WAY)', () => {
   });
 
   /**
-   * ACCEPTALL1e: an entry's or an ask's Accept is under way in every window that shows that entry or ask, as another window's
+   * An entry's or an ask's Accept is under way in every window that shows that entry or ask, as another window's
    * telling carries it, and in this window from its send; one entry's press holds no other's, nor the ask's of the same id.
    */
   it('says an entry’s or an ask’s Accept is under way, from the driver’s telling and from this window’s own press', async () => {

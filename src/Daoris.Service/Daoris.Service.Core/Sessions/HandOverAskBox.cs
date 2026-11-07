@@ -4,15 +4,15 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Where a working session's agent asks to hand its session over to another agent (MIXAGENT1c, D163 point 3; the mixed agents
-/// design §2 and §5): two files under the home's <c>sessions</c> folder, named by the session, one writer each, the file the
+/// Where a working session's agent asks to hand its session over to another agent: two files under the home's <c>sessions</c> folder,
+/// named by the session, one writer each, the file the
 /// contract: <c>&lt;session&gt;.hand-over-ask.json</c> (the connector's <c>handover_propose</c>, replaced only once the ask before is
 /// settled) and <c>&lt;session&gt;.hand-over-state.json</c> (the driver's alone, naming the ask it settled by its id).
 /// </summary>
 /// <remarks>
 /// <para><b>This judges what only the record can say</b>: that a session speaks, that it is a working session and not a helper, a
 /// reviewer, an intake or Ask Daoris's own conversation, and that no ask of its own waits already. The person's <c>handOver</c> rule,
-/// the next agent in their order and whether the session had a turn since it was handed over are the driver's, which alone reads
+/// the next agent in their order and whether the session has a turn since it is handed over are the driver's, which alone reads
 /// <c>driver.json</c> and the session's turns; its verdict is the state file's.</para>
 ///
 /// <para><b>Not the hand-over's box.</b> <c>&lt;session&gt;.hand-over.json</c> is taken by whoever runs the session at once; this ask
@@ -37,7 +37,7 @@ public sealed class HandOverAskBox(string? home)
 
     public string? Home { get; } = home;
 
-    /// <summary>The home the driver names on the connector it offers, else the account's (D63): where the session's files live.</summary>
+    /// <summary>The home the driver names on the connector it offers, else the account's: where the session's files live.</summary>
     public static HandOverAskBox FromEnvironment() => new(RuleProposalBox.FromEnvironment().Home);
 
     /// <summary>Where one session's file is: <c>&lt;home&gt;/sessions/&lt;session&gt;&lt;suffix&gt;</c>, the home's <see cref="HomeEntry.Sessions"/>.</summary>

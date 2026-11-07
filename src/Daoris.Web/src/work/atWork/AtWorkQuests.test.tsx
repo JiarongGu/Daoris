@@ -5,7 +5,7 @@ import { en, zh } from '../../locales';
 import { AtWorkView } from './AtWorkView';
 import { ASKED_BY, CHAIN_AND_QUESTION, CONSIDERED, LANES_ALONGSIDE_AND_UNTAKEN, QUESTS_EACH_TAKER } from './atWork.fixtures';
 
-// COWORKVIEW1b-ii: the quests a part asked and what asked the attended part (the cowork view design §R11.3 row 4, §3.1).
+// The quests a part asked and what asked the attended part.
 
 afterEach(async () => {
   cleanup();

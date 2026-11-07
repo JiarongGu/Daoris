@@ -10,7 +10,7 @@ import {
   WORKSPACE_RECORDS_EMPTY_FILES, WORKSPACE_RECORDS_ONLY, WORKSPACE_ROOM_ONLY,
 } from './historyFixtures';
 
-// What a clear lists, sends and says on the screen (HIST1e, D153; the history-clearing design §2.4, §5, §6.1): pure, so every
+// What a clear lists, sends and says on the screen: pure, so every
 // plan the driver could answer is an argument, and the quest's page, the ask's page and the workspace's read one rule.
 
 const en = i18n.getFixedT('en');
@@ -63,9 +63,9 @@ describe('what the first press lists, and the second sends (design §5)', () => 
 });
 
 /**
- * HIST1o (seen on the install, 2026-10-07): with no finished work to take and only 1.3 KB of left-over files, a workspace's
- * ask opened with *everything its finished work keeps: their words, transcripts and files*, while its own list said only the
- * left-over files went. The opening is worded from the plan's units, as the list is: the finished work only where a unit goes.
+ * With no finished work to take and only 1.3 KB of left-over files, a workspace's
+ * ask opens with the left-over files only, never *everything its finished work keeps: their words, transcripts and files*.
+ * The opening is worded from the plan's units, as the list is: the finished work only where a unit goes.
  */
 describe('a workspace’s opening says only what goes (HIST1o)', () => {
   const WORKSPACE = { scope: 'workspace', id: 'aurora' } as const;
@@ -102,7 +102,7 @@ describe('where a clear is offered (design §6.1)', () => {
     expect(clearOffered(FAILED_PLAN)).toBe(true);
     expect(clearOffered(WORKSPACE_PLAN)).toBe(true);
     expect(clearOffered(WORKSPACE_LEFT_OVER)).toBe(true);
-    // Kept, or nothing to take: absent, never disabled (D119 §3.2).
+    // Kept, or nothing to take: absent, never disabled.
     expect(clearOffered(QUEST_ASKED)).toBe(false);
     expect(clearOffered(QUEST_TREE_HERE)).toBe(false);
     expect(clearOffered(FAILED_NONE)).toBe(false);
@@ -165,9 +165,9 @@ describe('the reading of what the home keeps (design §2.4)', () => {
   });
 
   /**
-   * UXFIX5 (the second-opinion review, `en/history.json:44`): the English read slower than its 中文, *an ask asked it,
-   * and clears it with its own*. Each reason now leads with what keeps it in a few words, as 中文 does, and reads the
-   * same for one unit or many, since a reason's line has one form for every count.
+   * The English reads as briefly as its 中文, not *an ask asked it, and clears it with its own*. Each reason leads with what
+   * keeps it in a few words, as 中文 does, and reads the same for one unit or many, since a reason's line has one form for
+   * every count.
    */
   it('says each reason in a few words that read for one unit or many, and one this window does not know', () => {
     const reasons = (count: number) => readingSaid(en, { ...WORKSPACE_EMPTY.reading!, keptBy: {
@@ -202,7 +202,7 @@ describe('the reading of what the home keeps (design §2.4)', () => {
     expect(readingSaid(zh, WORKSPACE_KEPT.reading!).takes).toBe('现在清除不会带走任何东西。');
   });
 
-  // HIST1k: the sentence was chosen from the bytes alone, so records with no file said "nothing" beside a live press.
+  // The sentence is not chosen from the bytes alone, so records with no file never say "nothing" beside a live press.
   it('says the records a clear would take where they hold no file, and nothing only where nothing at all would go', () => {
     expect(clearOffered(WORKSPACE_RECORDS_ONLY)).toBe(true);
     expect(readingSaid(en, WORKSPACE_RECORDS_ONLY.reading!).takes).toBe('A clear would take 1 closed quest: 0 B.');
@@ -211,14 +211,13 @@ describe('the reading of what the home keeps (design §2.4)', () => {
     const emptyFiles = { ...WORKSPACE_EMPTY.reading!, leftOver: { count: 2, bytes: 0 } };
     expect(clearOffered({ ...WORKSPACE_EMPTY, reading: emptyFiles })).toBe(true);
     expect(readingSaid(en, emptyFiles).takes).toBe('A clear would take 0 B: files no record holds any more.');
-    // UXFIX5: the 中文 read "no record-held files are here any more", which says there are none to take.
+    // The 中文 says the files no longer belong to any record, never that there are none to take.
     expect(readingSaid(zh, emptyFiles).takes).toBe('清除会带走 0 B：不再属于任何记录的文件。');
   });
 
   /**
-   * HIST1n (the second-opinion review's afternoon round, `history.ts:317`): 0 B was said as *records only, no files here*,
-   * which the reading does not prove, and beside left-over files of 0 B the next line and *What goes* say there are files.
-   * It now says what it read: the records, and their size.
+   * 0 B is not said as *records only, no files here*, which the reading does not prove, and beside left-over files of 0 B
+   * the next line and *What goes* say there are files. It says what it read: the records, and their size.
    */
   it('says only the records and their size where they hold 0 B beside left-over files that hold nothing', () => {
     const reading = WORKSPACE_RECORDS_EMPTY_FILES.reading!;
@@ -241,8 +240,8 @@ describe('what the second press says (design §5, §6.1)', () => {
   });
 
   /**
-   * HIST1n (the second-opinion review's afternoon round, `history.ts:395`): a press that cleared some of what it listed was
-   * said in the tone of one that cleared it all, so the kept units read as done.
+   * A press that clears some of what it listed is not said in the tone of one that cleared it all, so the kept units never
+   * read as done.
    */
   it('says a partial clear as what went and what was kept, never as a plain success', () => {
     expect(clearWent(WORKSPACE_CLEARED)).toBe(true);
@@ -275,8 +274,8 @@ describe('what the second press says (design §5, §6.1)', () => {
 });
 
 /**
- * HIST1n (the second-opinion review's afternoon round, `historyActs.ts:31`): a workspace's press whose every unit changed
- * since the list closed its ask as if it had cleared them. Nothing went, so the ask stays open and says why inside it.
+ * A workspace's press whose every unit changed since the list does not close its ask as if it had cleared them.
+ * Nothing went, so the ask stays open and says why inside it.
  */
 describe('a press that took nothing (UXFIX2’s answered contract)', () => {
   it('went nowhere where no unit was cleared and nothing was freed', () => {

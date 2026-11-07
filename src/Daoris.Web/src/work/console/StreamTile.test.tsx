@@ -6,7 +6,7 @@ import type { Quest, Session } from '../../data/api';
 import { aQuest } from '../../quests/aQuest';
 import { StreamTile } from './StreamTile';
 
-// A molecule, so every state is reached by PASSING it (components plan §2) — including the one
+// A molecule, so every state is reached by PASSING it — including the one
 // nothing local can produce: a session running on somebody else's machine.
 
 const session = (over: Partial<Session> = {}): Session => ({
@@ -54,7 +54,7 @@ describe('a stream tile', () => {
   });
 
   /**
-   * The reference console's one priority rule (components plan §3a): a session that needs the
+   * The reference console's one priority rule: a session that needs the
    * person wears the attention mark even while its process is busy.
    */
   it('wears the attention mark when a session is waiting on a person', () => {
@@ -63,7 +63,7 @@ describe('a stream tile', () => {
     expect(screen.getByText('waiting on you')).toBeInTheDocument();
   });
 
-  /** UX5 U17: the monitor reads a live chat between turns as idle, as the main window does. */
+  /** The monitor reads a live chat between turns as idle, as the main window does. */
   it('says a live chat between turns is idle', () => {
     render(<StreamTile session={session({ kind: 'chat' })} taking={false} />);
 
@@ -71,7 +71,7 @@ describe('a stream tile', () => {
   });
 
   /**
-   * A record fed from another machine is keyed `origin/id` (D47 §6) and its console never left that
+   * A record fed from another machine is keyed `origin/id` and its console never left that
    * machine. Saying so beats an empty well, which would read as "this session is silent".
    */
   it('says where a session runs when its stream is not this machine to give', () => {

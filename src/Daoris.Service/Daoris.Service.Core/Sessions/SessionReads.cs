@@ -4,8 +4,8 @@ using static Daoris.Knowledge.SessionSchema;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The reads of the sessions table: one record, the records of a quest, the tree and workspace locks (D51), the lists, and what the
-/// sync pushes and fetches (SYNC4). Blind, like the writes: what a read means is the ledger's to judge.
+/// The reads of the sessions table: one record, the records of a quest, the tree and workspace locks, the lists, and what the
+/// sync pushes and fetches. Blind, like the writes: what a read means is the ledger's to judge.
 /// </summary>
 internal sealed class SessionReads(SessionStore store)
 {
@@ -21,7 +21,7 @@ internal sealed class SessionReads(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// This machine's record writing <paramref name="piece"/> (COAGENT1b, D199 point 2): the partner's open is idempotent by the piece's
+    /// This machine's record writing <paramref name="piece"/>: the partner's open is idempotent by the piece's
     /// id, so a record already open for it is that one. The oldest first, should two ever be.
     /// </summary>
     public Task<Session?> ForPieceAsync(string piece, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
@@ -35,7 +35,7 @@ internal sealed class SessionReads(SessionStore store)
 
     /// <summary>
     /// The newest of this machine's records continuing <paramref name="id"/> by <c>from</c> (a hand-over, a move, a carry-on), or null where
-    /// none does: a piece's answer goes to its lead's newest successor (COAGENT1b; the co-agent design §2.3 step 9).
+    /// none does: a piece's answer goes to its lead's newest successor.
     /// </summary>
     public Task<Session?> ContinuedByAsync(string id, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
@@ -47,7 +47,7 @@ internal sealed class SessionReads(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// The record a quest's <c>PublishedBy</c> names (SESSONE1a): this machine's by that id, else a teammate's mirror, keyed
+    /// The record a quest's <c>PublishedBy</c> names: this machine's by that id, else a teammate's mirror, keyed
     /// <c>origin/id</c>, since the publisher's own machine wrote the id it knew the session by. Ids are random and 32 bits wide, so the
     /// first match stands; this machine's own is preferred.
     /// </summary>
@@ -64,7 +64,7 @@ internal sealed class SessionReads(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// The conversation that took <paramref name="questId"/> (CHATTAKE1, design §1.2 rule 2): this machine's first, else a teammate's
+    /// The conversation that took <paramref name="questId"/>: this machine's first, else a teammate's
     /// mirror, the earliest taker standing. Null when none recorded one, which is every chat from before the field.
     /// </summary>
     public Task<Session?> FindChatTookAsync(string questId, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
@@ -81,7 +81,7 @@ internal sealed class SessionReads(SessionStore store)
 
     /// <summary>
     /// The newest of THIS machine's records for a quest, or null — whether a session here left it
-    /// unfinished is what lets one carry it on (D80). A teammate's record is their machine's run.
+    /// unfinished is what lets one carry it on. A teammate's record is their machine's run.
     /// </summary>
     public Task<Session?> LastOwnForQuestAsync(string quest, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
@@ -96,7 +96,7 @@ internal sealed class SessionReads(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// The id alone of the newest of THIS machine's records for a quest, or null (FOUNDATION1 row d-ii): the head walk's second probe, on
+    /// The id alone of the newest of THIS machine's records for a quest, or null: the head walk's second probe, on
     /// <c>sessions_quest</c>, for a driven part with no successor, which is most often that newest record itself and so needs no more of the
     /// row than its id inside the say door's step.
     /// </summary>
@@ -109,9 +109,9 @@ internal sealed class SessionReads(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// Whether a session of THIS machine's took <paramref name="quest"/> through its own connector
-    /// (STANDDOWN2): the take is held here, so a person's stop of its session leaves it this machine's to
-    /// carry on once released (SESSUX1b2). A teammate's record never says so: its take is its machine's.
+    /// Whether a session of THIS machine's took <paramref name="quest"/> through its own connector:
+    /// the take is held here, so a person's stop of its session leaves it this machine's to
+    /// carry on once released. A teammate's record never says so: its take is its machine's.
     /// </summary>
     public Task<bool> TookHereAsync(string quest, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
@@ -123,8 +123,8 @@ internal sealed class SessionReads(SessionStore store)
 
     /// <summary>
     /// THIS machine's session with a process on <paramref name="quest"/>, or about to have one, or null: driven for it, or a conversation
-    /// that took it (CHATTAKE1). What holds the person's bring-forward of a lost take until the losing session has ended (SYNCMERGE1c4,
-    /// D178 point 3), so its late moves cannot stand on the fresh take. <b>Parked does not count</b>, as for
+    /// that took it. What holds the person's bring-forward of a lost take until the losing session has ended,
+    /// so its late moves cannot stand on the fresh take. <b>Parked does not count</b>, as for
     /// <see cref="RunningInTreeAsync"/>: a parked session asked the person and ended, and has no process to move.
     /// </summary>
     public Task<Session?> RunningForQuestAsync(string quest, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
@@ -142,8 +142,8 @@ internal sealed class SessionReads(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// The newest teammate's record for a quest that did not stand down, or null: what names another machine's take
-    /// (CARRY2), since the quest's log names a machine by an id no person reads. A stand-down says its machine has no take.
+    /// The newest teammate's record for a quest that did not stand down, or null: what names another machine's take,
+    /// since the quest's log names a machine by an id no person reads. A stand-down says its machine has no take.
     /// </summary>
     public Task<Session?> LastTeammateForQuestAsync(string quest, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
@@ -160,7 +160,7 @@ internal sealed class SessionReads(SessionStore store)
 
     /// <summary>
     /// A record of a session started for <paramref name="quest"/> — this machine's or a teammate's, in
-    /// any state — or null (D95). A quest a record names is not deleted: the record would name nothing.
+    /// any state — or null. A quest a record names is not deleted: the record would name nothing.
     /// </summary>
     public Task<Session?> AnyForQuestAsync(string quest, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
@@ -171,7 +171,7 @@ internal sealed class SessionReads(SessionStore store)
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
     }, ct);
 
-    /// <summary>Every quest a session record names — <see cref="AnyForQuestAsync"/> for a whole list at once (D95).</summary>
+    /// <summary>Every quest a session record names — <see cref="AnyForQuestAsync"/> for a whole list at once.</summary>
     public Task<IReadOnlySet<string>> QuestsNamedAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlySet<string>>(async () =>
     {
         await using var command = _db.Command();
@@ -184,19 +184,19 @@ internal sealed class SessionReads(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// The session holding a working tree, if any — the one-session-per-TREE question (D51).
+    /// The session holding a working tree, if any — the one-session-per-TREE question.
     /// </summary>
     /// <param name="tree">
     /// Which tree is being asked about. Null is the repository's main tree, path unknown.
     /// </param>
     /// <remarks>
     /// <b>Unknown means "possibly yours", on either side.</b> A stored row with no tree — anything
-    /// from before D51, or a record mirrored from a machine that rightly sent no path — holds every
+    /// from before trees are stored, or a record mirrored from a machine that rightly sent no path — holds every
     /// tree in its repository; and an ask that names no tree is answered by any active session there.
     /// The lock errs toward refusing, because a refusal is a sentence naming what holds the tree and
     /// the other way round is two agents in one working tree.
     ///
-    /// <para><b>The team's records are not this machine's lock</b> (D47 §6, SYNC4). A teammate's
+    /// <para><b>The team's records are not this machine's lock</b>. A teammate's
     /// session holds a tree on THEIR machine — the tree is the unit of exclusion, and it is per machine
     /// by definition — so a record that came down with an origin is never counted here, however
     /// active it is. Counting it would let a machine that went quiet mid-session lock a repository on
@@ -220,7 +220,7 @@ internal sealed class SessionReads(SessionStore store)
 
     /// <summary>
     /// This machine's completed records in <paramref name="tree"/> whose note carries <paramref name="code"/>, matched as
-    /// <see cref="ActiveForAsync"/> matches a tree (HELPERWAIT1): the sessions that ended waiting on their own helper, which keep their tree
+    /// <see cref="ActiveForAsync"/> matches a tree: the sessions that ended waiting on their own helper, which keep their tree
     /// while their quest is taken. Whether it is, is the caller's to read: the quests are not this store's.
     /// </summary>
     public Task<IReadOnlyList<Session>> CompletedWithCodeAsync(
@@ -244,7 +244,7 @@ internal sealed class SessionReads(SessionStore store)
 
     /// <summary>
     /// The session with a PROCESS in this directory, whichever record it belongs to — the intake
-    /// room's lock (D65 §1b), where every ask in a circle is a different "repository" in one room.
+    /// room's lock, where every ask in a circle is a different "repository" in one room.
     /// </summary>
     /// <remarks>
     /// <b>Parked does not count here</b>, unlike <see cref="ActiveForAsync"/>. The tree lock keeps a
@@ -267,7 +267,7 @@ internal sealed class SessionReads(SessionStore store)
 
     /// <summary>
     /// This machine's session of <paramref name="repository"/> running in <paramref name="workspace"/>, if any: Ask Daoris's
-    /// one at a time, which is per workspace and not per tree (ASKSCOPE1a, D158's ASKSCOPE1 note point 3), since every
+    /// one at a time, which is per workspace and not per tree, since every
     /// workspace's conversation runs in the one room. A team's record is never this machine's, as for the tree's lock.
     /// </summary>
     /// <param name="parked">Whether a parked record counts, as the tree's lock counts it for going on (<see cref="ActiveForAsync"/>).</param>
@@ -313,7 +313,7 @@ internal sealed class SessionReads(SessionStore store)
         return sessions;
     }, ct);
 
-    // ——— SYNC4: records both ways, by cursor.
+    // ——— Records both ways, by cursor.
 
     /// <summary>
     /// This machine's OWN records in a workspace written after <paramref name="revision"/>, in the
@@ -386,7 +386,7 @@ internal sealed class SessionReads(SessionStore store)
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? (reader.GetInt64(0), reader.GetInt64(1)) : (0, 0);
     }, ct);
 
-    // ——— A session's review on its record (REVIEWENV1b): blind, like every write here; the ledger and the exchange judge.
+    // ——— A session's review on its record: blind, like every write here; the ledger and the exchange judge.
 
     /// <summary>What this machine's record <paramref name="id"/> keeps of its review; <see cref="SessionReview.None"/> for none.</summary>
     public Task<SessionReview> ReviewOfAsync(string id, CancellationToken ct = default) => _db.RunAsync<SessionReview>(async () =>

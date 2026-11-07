@@ -6,10 +6,10 @@ import { type DrawnNode, type DrawnWire, type DrawOptions, FINISHED, type GraphF
 import type { GraphRun } from './run';
 import { executorSaid, stepTitle } from './said';
 
-// A workflow and its run drawn as flowcharts (FLOWCHART1d; D186 point 5, the flowchart design §2.4, §2.5 and §5.1): what
-// `WORKFLOW_CURRENT` and `WORKFLOW_RUN` answer, read onto the one drawing (`graphFlow`, SETUPUX1n). The page derives nothing the driver
+// A workflow and its run drawn as flowcharts: what
+// `WORKFLOW_CURRENT` and `WORKFLOW_RUN` answer, read onto the one drawing (`graphFlow`). The page derives nothing the driver
 // did not answer: a Current's answer holds each step's kind, part, executor and settings and no members and no wires (`current.ts:27-42`),
-// so it is drawn as its steps in their version's order. A run bound to a graph version (FABRIC-CUTOVER1e) answers its graph's wires, the
+// so it is drawn as its steps in their version's order. A run bound to a graph version answers its graph's wires, the
 // first read that does, and is drawn by them, a fork and its join included.
 
 export { FINISHED, WORKFLOW_TRACK };
@@ -62,31 +62,31 @@ export function outcomeSaid(t: TFunction, outcome: StepOutcome): string {
     : t(`workflow.${outcome.kind}.recorded`, { outcome: outcome.outcome });
 }
 
-/** How a run lights one step, and its end: the state's word and tone (`runTone`), and whether it was reached, is current or is done. */
+/** How a run lights one step, and its end: the state's word and tone (`runTone`), and whether it is reached, is current or is done. */
 export type StepLit = { state: { word: string; tone: PillTone }; reached: boolean; current: boolean; settled: boolean };
 export type FlowLit = { steps: Partial<Record<string, StepLit>>; finished: { word: string; tone: PillTone } | null };
 
 export type WorkflowFlow = GraphFlow;
 
 /**
- * A run bound to a graph version's own graph (FABRIC-CUTOVER1e, the driver's answer's `graph`): its entries, its end and its wires, which the
+ * A run bound to a graph version's own graph (the driver's answer's `graph`): its entries, its end and its wires, which the
  * drawing follows in place of the steps' order, so a fork and its join are drawn as the graph holds them.
  */
 export type FlowGraph = Pick<GraphRun, 'entries' | 'end' | 'wires'> & Partial<Pick<GraphRun, 'backs' | 'outcomes'>>;
 
 /**
- * **A workflow as a flowchart** (FLOWCHART1d), drawn through `graphFlow`: its steps in their version's order, each edge the move the
+ * **A workflow as a flowchart**, drawn through `graphFlow`: its steps in their version's order, each edge the move the
  * step it leaves names (the person's press, else automatically), a failure path where a step names one, and *Before it lands* and
- * *After it lands* as its sections, the landing their hinge. Lit by a run (§2.5), each step wears its state, the step the run
+ * *After it lands* as its sections, the landing their hinge. Lit by a run, each step wears its state, the step the run
  * stands at is current, a step not reached is dashed, and no path is drawn: a run keeps where each step stands now, not the order the
  * work went through. A run's *Finished* is drawn only once its record says it finished. A skip says who skipped it in its own words,
  * the run's (`runSaid`), never here.
  *
  * Worded, with no node's lines and no door: the chart adds those, a molecule's.
  *
- * **A graph run's drawing follows its graph** (FABRIC-CUTOVER1e; D186's FLOWCHART1d note): handed `graph`, the edges are its wires and the
+ * **A graph run's drawing follows its graph**: handed `graph`, the edges are its wires and the
  * configured end is flagged, so a fork and its join, and a failure's path, are drawn as the version holds them; a step no wire names (a
- * look the work added beside the graph, §6 of the cutover design) stands as an entry of its own.
+ * look the work added beside the graph) stands as an entry of its own.
  */
 export function workflowFlow(
   t: TFunction, workflow: Pick<CurrentWorkflow, 'steps'>, name: string, lit?: FlowLit, graph?: FlowGraph | null,

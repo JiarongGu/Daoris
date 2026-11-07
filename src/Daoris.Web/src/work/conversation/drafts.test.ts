@@ -14,7 +14,7 @@ describe('a draft per session (CONV4b)', () => {
 
     expect(two).toEqual([['s1', 'half a thought'], ['s2', 'another']]);
     expect(withDraft(two, 's1', '')).toEqual([['s2', 'another']]);
-    // Pure: what it was given is untouched.
+    // Pure: what it is given is untouched.
     expect(one).toEqual([['s1', 'half a thought']]);
   });
 
@@ -31,9 +31,9 @@ describe('a draft per session (CONV4b)', () => {
   });
 
   /**
-   * REV3: a map's keys are not in the order they were written — integer-like keys come first. With
-   * the limit reached, an all-digit session id (about one in fifty) was always the "oldest", and the
-   * keystroke being typed was dropped as it was made.
+   * A map's keys are not in the order they are written — integer-like keys come first. With
+   * the limit reached, an all-digit session id (about one in fifty) would always read as the "oldest", and the
+   * keystroke being typed would be dropped as it is made.
    */
   it('keeps the draft being typed however its session id is spelled, through a reload too', () => {
     let all: Drafts = [];
@@ -70,13 +70,13 @@ describe('a draft per session (CONV4b)', () => {
     expect(result.current[0]).toBe('for the first');
     unmount();
 
-    // A new window reads the same storage: the page was reloaded.
+    // A new window reads the same storage: the page is reloaded.
     const again = renderHook(() => useDraft('s2'));
     expect(again.result.current[0]).toBe('for the second');
   });
 
   /**
-   * NEW1b: a conversation that opened without the words it was started on keeps them in its box. They are put in its draft
+   * A conversation that opened without the words it is started on keeps them in its box. They are put in its draft
    * before it is attended, and read as it is; words already there stay, after a blank line.
    */
   it('gives a session the words a start put in its draft, read as it is attended', () => {

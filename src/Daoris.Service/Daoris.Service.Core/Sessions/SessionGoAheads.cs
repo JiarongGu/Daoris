@@ -1,8 +1,8 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A session asks the person for a go-ahead (KNOWUSE1a, D135 §2): held once on the ask its work is for, named by the act.
-/// The ledger hands in the stores and keeps the door as a one-line call (PART6).
+/// A session asks the person for a go-ahead: held once on the ask its work is for, named by the act.
+/// The ledger hands in the stores and keeps the door as a one-line call.
 /// </summary>
 public sealed class SessionGoAheads(QuestStore quests, SessionStore sessions, AskStore? asks)
 {
@@ -11,7 +11,7 @@ public sealed class SessionGoAheads(QuestStore quests, SessionStore sessions, As
     /// joined to the go-ahead already asked for that act, where the ask holds one, and asked anew where it holds none.
     /// </summary>
     /// <remarks>
-    /// <para><b>The ask is derived, never passed</b>: it is the session's entry origin (COMMS1c, D225), the one the channel's
+    /// <para><b>The ask is derived, never passed</b>: it is the session's entry origin, the one the channel's
     /// speaker reads, so a quest a sibling of the ask published is on the ask too. A line whose origin is no ask (a quest one
     /// repository asked of another, a conversation), is on none, and the answer says what to do instead.</para>
     ///
@@ -61,7 +61,7 @@ public sealed class SessionGoAheads(QuestStore quests, SessionStore sessions, As
             + "and end your turn with the quest still taken.";
         var quest = session.Quest is { } questId ? await quests.FindAsync(questId, ct).ConfigureAwait(false) : null;
 
-        // A set-up step never acts on production (REVIEWENV1b, D154 point 6, design §2.5): refused here by the place words a
+        // A set-up step never acts on production: refused here by the place words a
         // go-ahead is named by, so no wording of the act reaches the person as something they could approve.
         if (quest is { SetUpIn: { } environment } && GoAheadAct.ReadsAsProduction(on))
         {
@@ -165,10 +165,10 @@ public sealed class SessionGoAheads(QuestStore quests, SessionStore sessions, As
     private static string Saying(GoAheadAnswer answer) => answer.Words is { Length: > 0 } words ? $", saying: \"{words}\"" : "";
 
     /// <summary>
-    /// The person's answers to the go-aheads a parked session asked are its answer (GOAHEAD2): the answer that leaves none of
+    /// The person's answers to the go-aheads a parked session asked are its answer: the answer that leaves none of
     /// them waiting keeps the park's blank answer, <c>carry on.</c>, so the driver's
-    /// next look goes on with that same session, its own conversation resumed and handed the go-aheads' answers after it
-    /// (ANSWER1a, KNOWUSE1a's resumed prompt). One of its go-aheads still waiting keeps it parked, and is named.
+    /// next look goes on with that same session, its own conversation resumed and handed the go-aheads' answers after it.
+    /// One of its go-aheads still waiting keeps it parked, and is named.
     /// </summary>
     /// <remarks>
     /// <para><b>Only the sessions that asked this go-ahead</b>, and of those only this machine's driven parks: a session still
@@ -177,7 +177,7 @@ public sealed class SessionGoAheads(QuestStore quests, SessionStore sessions, As
     ///
     /// <para><b>Once.</b> Only the person's first answer to a go-ahead can be the last a park waited on, so a changed answer
     /// wakes nothing. A park that already holds words goes on with them and is handed these answers beside them, so nothing
-    /// is kept twice. Judged and kept under the store's lock, as an answer is (REV3), so the driver taking the park up and
+    /// is kept twice. Judged and kept under the store's lock, as an answer is, so the driver taking the park up and
     /// a second door never both read it waiting.</para>
     ///
     /// <para><b>The answers are not written as the person's words</b> (KNOWUSE1a2): the record keeps the blank answer, and the

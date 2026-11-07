@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 
-// ONEWAY1n-i (the oneway design §4 M4): the service's confirmations wait with no clock, so the host no longer answers `expires`. A
+// The service's confirmations wait with no clock, so the host answers no `expires`. A
 // confirmation without it is still listed, its time none, as a terminal's press is.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));

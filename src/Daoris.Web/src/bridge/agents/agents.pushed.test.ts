@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// What sessions consumed, as the shell pushes it (PUSH1e, D182): a keyed slice of two partitions, each measured session under its
+// What sessions consume, as the shell pushes it: a keyed slice of two partitions, each measured session under its
 // id and each account's share under its door and account, composed into `USAGE`'s answer in the route's order.
 
 vi.mock('@shenora/react', () => ({
@@ -43,7 +43,7 @@ describe('what sessions consumed, pushed (PUSH1e)', () => {
         'codex/home': { agent: 'codex', profile: 'home', sessions: 1, used: 5 },
         'claude-code/work': { agent: 'claude-code', profile: 'work', sessions: 2, used: 9 },
         'claude-code': { agent: 'claude-code', profile: null, sessions: 1, used: 3 },
-        // A share keyed by its door, as hosts wrote it before the agent was the key, reads as nothing, never as another agent's (AGENTPROVIDER1 s-vii).
+        // A share keyed by its door, as an earlier host keyed it, reads as nothing, never as another agent's.
         'claude-code-acp/work': { harness: 'claude-code-acp', profile: 'work', sessions: 1, used: 1 },
       }],
     ]), true) as { sessions: { session: string }[]; accounts: { agent: string; profile: string | null }[] };

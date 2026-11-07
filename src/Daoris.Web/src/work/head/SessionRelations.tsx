@@ -7,7 +7,7 @@ import { questName } from '../identity';
 import { Note } from '../Note';
 import type { Relations } from './relations';
 
-/** How much of an answer the head carries: enough to know what was said, and the quest holds the rest. */
+/** How much of an answer the head carries: enough to know what is said, and the quest holds the rest. */
 const SAYS = 280;
 
 /** The press that opens or folds the relations, in the ink of the chain's and the parts' own presses. */
@@ -16,16 +16,16 @@ const PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-small text-accent
 const DOOR ='min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent';
 
 /**
- * Who a session worked with (SESS1): the session that asked for its
+ * Who a session worked with: the session that asked for its
  * quest, the answer it carried on after, and what it asked of other repositories with their answers.
  *
  * @remarks
  * Beside the chain strip, which draws the ask, the steps and a quest's sessions; this says what the
- * strip cannot: the sideways asks (D32's quests between repositories) and the questions a session
- * waited on (D79). **Each is a door**, as the strip's are: a session attends it, a quest opens its
+ * strip cannot: the sideways asks (quests between repositories) and the questions a session
+ * waited on. **Each is a door**, as the strip's are: a session attends it, a quest opens its
  * record. Nothing to say, and nothing is drawn.
  *
- * **Folded to one line** (HEADFIT1; the UI/UX design §3.7 and R4, the UX7 design §6.2): measured in a real browser the relations cost
+ * **Folded to one line**: measured in a real browser the relations cost
  * 126 px between the record's head and its conversation, so the page says who it worked with in a line (who asked, what it carried
  * on after, how many it asked of others) and opens the rest in place, as the milestone and the parts do. The line gives way to the
  * list rather than sitting above it, so the title is said once, and *Hide* is the press back, as the chain's is.
@@ -60,7 +60,7 @@ export function SessionRelations({ relations, onQuest, onSession, defaultOpen = 
     );
   }
 
-  // Each quest by its name (SESSUX1j), whole title on its tip.
+  // Each quest by its name, whole title on its tip.
   const title = (quest: Quest) => (onQuest
     ? <button type="button" title={quest.title} onClick={() => onQuest(quest)} className={`${DOOR} text-small text-ink`}>{questName(quest)}</button>
     : <span title={quest.title} className="min-w-0 truncate text-small text-ink">{questName(quest)}</span>);

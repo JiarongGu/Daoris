@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// One session in a window of its own (SURF8). An ORGANISM, so the bridge is mocked, and as PRESENT:
+// One session in a window of its own. An ORGANISM, so the bridge is mocked, and as PRESENT:
 // a secondary window exists only where a shell does.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
@@ -25,7 +25,7 @@ const SESSIONS = [{
   id: 's1a2b3c4', quest: null, kind: 'chat', repository: 'engine', state: 'working',
   adapter: 'claude-code-acp', created: at(30), updated: at(1),
 }, {
-  // Another machine's: the record travelled here and the console did not (D47 §4).
+  // Another machine's: the record travelled here and the console did not.
   id: 'laptop/e5f6a7b8', quest: null, kind: 'driven', repository: 'engine', state: 'working',
   adapter: 'claude-code', created: at(20), updated: at(2),
 }];
@@ -81,8 +81,8 @@ describe('a session in a window of its own', () => {
   });
 
   /**
-   * CONSOLE3b: what the session runs beside itself has a tab here too, as in the main window, and a
-   * picked tab shows that stream. Read-only, as this window is (D56's one owner across windows): a
+   * What the session runs beside itself has a tab here too, as in the main window, and a
+   * picked tab shows that stream. Read-only, as this window is: a
    * task its harness can stop has no stop here, where no move is made.
    */
   it('grows the session’s stream tabs, shows a picked one, and offers no stop', async () => {
@@ -97,23 +97,21 @@ describe('a session in a window of its own', () => {
   });
 
   /**
-   * The same head as the main window's and the monitor's: a chat named by what was asked of it, and
-   * idle between turns. Found looking at CONSOLE3b: this window said `conversation · working` beside a
-   * main window saying `start the dev server · idle`, for the one session.
+   * The same head as the main window's and the monitor's: a chat named by what its first message asked, and
+   * idle between turns.
    */
   it('heads a chat by its opening, and idle between turns, as the other windows do', async () => {
     show();
 
     const heading = await screen.findByRole('heading', { name: 'start the dev server' });
-    // The record's head says it beside its title; the Timeline's states flow (FLOWCHART1b) says the shown word again below.
+    // The record's head says it beside its title; the Timeline's states flow says the shown word again below.
     const head = heading.closest('header[data-record-head]');
     expect(head).not.toBeNull();
     expect(within(head as HTMLElement).getByText('idle')).toBeInTheDocument();
   });
 
   /**
-   * FRAME1h, audit DE6: the console sat in a fixed 14 rem well, which could be neither grown for a long
-   * console nor hidden for a long conversation. It is the main window's panel now, and what a person makes
+   * The console is the main window's panel: it grows for a long console and hides for a long conversation, and what a person makes
    * of it is kept for every detached window, apart from the main window's own panel.
    */
   it('holds its console in a panel that grows and hides, kept for detached windows apart from the main window\'s', async () => {
@@ -147,7 +145,7 @@ describe('a session in a window of its own', () => {
   });
 
   /**
-   * Each window answers the key of the region it has (D118 §4): a detached window's is its console, on
+   * Each window answers the key of the region it has: a detached window's is its console, on
    * Ctrl+J. A read-only window has nowhere to move a view to, so its panel offers no views menu either.
    */
   it('toggles its console on Ctrl+J, and offers no views menu to move it with', async () => {
@@ -169,7 +167,7 @@ describe('a session in a window of its own', () => {
     expect(await within(panel()).findByText(/listening on 4200/)).toBeInTheDocument();
   });
 
-  /** The disclosure boundary (D47 §4): a session another machine runs has no console here, so no panel. */
+  /** The disclosure boundary: a session another machine runs has no console here, so no panel. */
   it('draws no panel for a session another machine runs, and says where it runs', async () => {
     show('laptop/e5f6a7b8');
 

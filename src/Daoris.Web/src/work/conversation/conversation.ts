@@ -1,9 +1,9 @@
 /**
- * A session's conversation, as the driver keeps it (D76, CONV1): typed events in Daoris's own small
+ * A session's conversation, as the driver keeps it: typed events in Daoris's own small
  * vocabulary, mapped by each door from its own wire — never parsed out of a console line.
  *
  * @remarks
- * **Machine-local material** (D47 §4). These arrive over the shell's bridge and never over HTTP, so a
+ * **Machine-local material**. These arrive over the shell's bridge and never over HTTP, so a
  * browser has none, exactly as it has no console.
  *
  * The shapes mirror the driver's `SessionEvent` record, camel-cased by the bridge. Every field but
@@ -20,11 +20,11 @@ export type {
   SessionEventKind, ToolContent, Turn, TurnTokens,
 } from './conversationTypes';
 
-/** A transient episode's one line (AGENTERRORS1a, D210 §8), by its code. */
+/** A transient episode's one line, by its code. */
 const transientLine = (event: SessionEvent): boolean => event.kind === 'note' && event.parts?.[0]?.code === 'agent.transient-retrying';
 
 /**
- * The message blocks a transient episode's failed attempts streamed (Codex's owed read of D210, finding 10), by key: each followed,
+ * The message blocks a transient episode's failed attempts streamed, by key: each followed,
  * past its own chunks and the meters, by the episode's line, by a try or a wait, or by the driver's note at its end, never by an
  * answer; none before the episode's first failure, which its line follows.
  */
@@ -50,11 +50,11 @@ const failedAttempts = (events: readonly SessionEvent[], where: Record<number, s
   return failed;
 };
 
-/** Context as the harness reported it: the latest reading and the highest (TOOL3's high-water mark). */
+/** Context as the harness reported it: the latest reading and the highest. */
 export type Usage = { used: number; size: number; most: number };
 
 /**
- * A session's events as the turns a conversation is drawn from (D76, CONV2) — pure, so every state
+ * A session's events as the turns a conversation is drawn from — pure, so every state
  * the view can be in is an ordinary assertion.
  *
  * @remarks
@@ -67,41 +67,41 @@ export type Usage = { used: number; size: number; most: number };
  *   updates set; an update's content replaces what came before, as the protocol says it does.
  * - **A plan is its latest entries**, in the place it first appeared in the turn.
  * - **Usage is a meter, never a block.**
- * - **A cancelled turn's last open calls are the ones its stop cut** (CONV4b): the tool calls at its
+ * - **A cancelled turn's last open calls are the ones its stop cut**: the tool calls at its
  *   end that never completed. Claude Code answers the cut call as failed and another agent leaves it
  *   running; either way the person stopped it, and a failure shown in the alarm's colour would say
- *   otherwise. A call that failed and was followed by more work failed on its own.
- * - **Words told to a working session wait where they were said** (STEER1, D136): an ask that carries
- *   `reaches` is a block in the turn it was said in, never a turn of its own, since the agent is still
+ *   otherwise. A call that failed and is followed by more work failed on its own.
+ * - **Words told to a working session wait where they are said**: an ask that carries
+ *   `reaches` is a block in the turn it is said in, never a turn of its own, since the agent is still
  *   on that turn. The same words under the same id are the ask of the turn that took them, and the
  *   waiting block goes.
- * - **Words to a session that parked or ended wait at its foot** (MSG1f, D137 §3.1): `resume` words open
- *   a turn of their own after the run that ended, holding nothing of the agent's, since that run was
- *   over before they were said. A waiting turn the resumed run took every word from, and that holds
+ * - **Words to a session that parked or ended wait at its foot**: `resume` words open
+ *   a turn of their own after the run that ended, holding nothing of the agent's, since that run is
+ *   over before they are said. A waiting turn the resumed run took every word from, and that holds
  *   nothing else but the driver's notes about them, goes, its notes at the head of the turn that took
- *   its first word (USERSHOWN1): the resume's opening line otherwise left a ghost above every resume.
- * - **A word the door's failure took was never read** (USERSHOWN1): a next-step word taken by the
- *   answer that was the door's failure, its turn holding nothing before the failure, waits where it
- *   was said again. And the harness's error streamed as its agent's words just before (`API Error: …`)
- *   is the failure the note says whole, so it reads as that (TURNFAIL1).
- * - **A driver's note about the words is their line** (MSG1f): a note naming their ids, that they went
+ *   its first word: the resume's opening line would otherwise leave a ghost above every resume.
+ * - **A word the door's failure took is never read**: a next-step word taken by the
+ *   answer that is the door's failure, its turn holding nothing before the failure, waits where it
+ *   is said again. And the harness's error streamed as its agent's words just before (`API Error: …`)
+ *   is the failure the note says whole, so it reads as that.
+ * - **A driver's note about the words is their line**: a note naming their ids, that they went
  *   to a new session or cannot go on here, settles the words it names, which stay as written and wait
  *   no longer, and carries what they said where the page holds every one. So does the note that a stop
- *   cut a word off on its way (MSG1c3), which carries the code the page words it by. A later note that
- *   they went to another session takes them back from the note that carried them (MSG1f2).
+ *   cut a word off on its way, which carries the code the page words it by. A later note that
+ *   they went to another session takes them back from the note that carried them.
  */
 export function toTurns(
   events: readonly SessionEvent[],
   { opening, workOf }: { opening?: SessionEvent | null; workOf?: (session: string) => string | null | undefined } = {},
 ): { turns: Turn[]; usage?: Usage; where: Record<number, string> } {
-  // The work of the record a helper's word names (COMMS1a): what tells a partner's answer from a helper's.
+  // The work of the record a helper's word names: what tells a partner's answer from a helper's.
   const helperWork = (event: SessionEvent) => (event.helper && workOf ? workOf(event.helper) : null);
   const turns: Turn[] = [];
   let usage: Usage | undefined;
   let current: Turn | null = null;
-  // Which block each event is part of (SESS1 S9): a jump lands on an event, and shows its block.
+  // Which block each event is part of: a jump lands on an event, and shows its block.
   const where: Record<number, string> = {};
-  // The provider's words each transient episode's line quotes (AGENTERRORS1a), whose repeats as the agent's words read as that line.
+  // The provider's words each transient episode's line quotes, whose repeats as the agent's words read as that line.
   const transient: string[] = [];
 
   const open = (key: string, ask?: Ask): Turn => {
@@ -111,46 +111,46 @@ export function toTurns(
     return turn;
   };
   const here = (key: string): Turn => current ?? open(key);
-  // Where words said after the record ended wait (MSG1f): the turn already waiting at its foot, or a new one.
+  // Where words said after the record ended wait: the turn already waiting at its foot, or a new one.
   const foot = (key: string): Turn => (current?.waiting ? current : Object.assign(open(key), { waiting: true }));
   const asked = (event: SessionEvent, key: string): Ask => ({
     key, text: event.text ?? '', origin: event.origin ?? 'person', at: event.at,
     ...(event.files?.length ? { files: event.files } : {}),
-    // A channel's message by its own mark (SESSCTX1b), never by Daoris's words around it.
+    // A channel's message by its own mark, never by Daoris's words around it.
     ...(event.channel ? { channel: event.channel } : {}),
-    // PARKVIEW1: an answer of its park's question pressed, by its mark, never read out of the words.
+    // An answer of its park's question pressed, by its mark, never read out of the words.
     ...(event.choice && (event.origin ?? 'person') === 'person' ? { choice: event.choice } : {}),
     ...(event.origin === 'target' && event.continues ? { continues: event.continues } : {}),
     ...(event.origin === 'target' && event.helper ? { helper: event.helper } : {}),
-    // What a target was composed of (CONTEXT1), or null where its record keeps none: said missing, never left out. Another
-    // agent's findings are no composed target (XAGENT1g): they name the opinion they are from instead. Nor are Daoris's own words
-    // (COWORK1b), named by their mark, never their sentence.
+    // What a target is composed of, or null where its record keeps none: said missing, never left out. Another
+    // agent's findings are no composed target: they name the opinion they are from instead. Nor are Daoris's own words,
+    // named by their mark, never their sentence.
     ...(authorOf(event, helperWork(event)) ? { from: authorOf(event, helperWork(event)) }
       : event.origin === 'target' && event.opinion ? { opinion: event.opinion }
         : event.origin === 'target' ? { account: event.account ?? null } : {}),
   });
 
-  // What was asked first, where the page began past it (SESS1 S1): the run reads from its ask, and the
+  // Where the page began past the ask, the ask comes first: the run reads from its ask, and the
   // gap after it is where the earlier events belong.
   if (opening && !events.some((event) => event.seq === opening.seq)) {
     open(`e${opening.seq}`, asked(opening, `e${opening.seq}`)).gap = true;
     where[opening.seq] = `e${opening.seq}`;
   }
 
-  // The person's words waiting to reach a session (STEER1, MSG1f), by their id: where each was said, its block, and whether they
-  // were the person's own (COWORK1c), never Daoris's nor another agent's.
+  // The person's words waiting to reach a session, by their id: where each is said, its block, and whether they
+  // are the person's own, never Daoris's nor another agent's.
   const waiting = new Map<string, { turn: Turn; key: string; seq: number; block: Block; person?: boolean }>();
-  // COWORK1c (the design §7): each word's receipts by its id, and the ask each word became, which they fold under.
+  // Each word's receipts by its id, and the ask each word became, which they fold under.
   const receipts = new Map<string, Receipts>();
   const asks = new Map<string, Ask>();
-  // The note that hands over what each word said (MSG1f), by the word's id: a later note saying the word went elsewhere
-  // takes it back (MSG1f2), so no second conversation is offered with words already gone.
+  // The note that hands over what each word said, by the word's id: a later note saying the word went elsewhere
+  // takes it back, so no second conversation is offered with words already gone.
   const handing = new Map<string, Block>();
-  // The turn that first took words from each waiting turn (USERSHOWN1): where the notes left there go once it holds no words.
+  // The turn that first took words from each waiting turn: where the notes left there go once it holds no words.
   const takers = new Map<Turn, Turn>();
-  // A word said at a next step, taken by the event just before this one (USERSHOWN1): the door's failure right after undoes it.
+  // A word said at a next step, taken by the event just before this one: the door's failure right after undoes it.
   let taken: { turn: Turn; word: string; seq: number; at: number; was: { turn: Turn; key: string; seq: number; block: Block } } | null = null;
-  // A transient episode's try or wait (AGENTERRORS1a2) parts the words on either side: each attempt's stream is its own block.
+  // A transient episode's try or wait parts the words on either side: each attempt's stream is its own block.
   let parted = false;
 
   for (const event of events) {
@@ -159,7 +159,7 @@ export function toTurns(
     taken = null;
     switch (event.kind) {
       case 'user': {
-        // A waiting word told again under its id (COWORK1a: its level changed while it waited): the latest says where it stands,
+        // A waiting word told again under its id (its level changed while it waited): the latest says where it stands,
         // in its place, and no second copy is drawn.
         const told = event.reaches && event.id ? waiting.get(event.id) : undefined;
         if (told) {
@@ -172,7 +172,7 @@ export function toTurns(
         }
 
         if (event.reaches) {
-          // After the record ended (MSG1f): at its foot, in the turn already waiting there or a new one, never in the
+          // After the record ended: at its foot, in the turn already waiting there or a new one, never in the
           // run that ended before the words were said.
           const turn = event.reaches === 'resume' ? foot(key) : here(key);
           const level = levelOf(event.level);
@@ -184,7 +184,7 @@ export function toTurns(
             ...(event.files?.length ? { files: event.files } : {}),
           };
           turn.items.push(block);
-          // Words sent now (STEER2b, D136) are taken where the steer is answered `injected`: the same words come again under
+          // Words sent now are taken where the steer is answered `injected`: the same words come again under
           // the same id as the ask of the turn that goes on. A refused or unreached steer is settled by its note instead.
           if (event.id) waiting.set(event.id, { turn, key, seq: event.seq, block, person: (event.origin ?? 'person') === 'person' });
           where[event.seq] = key;
@@ -197,7 +197,7 @@ export function toTurns(
         // Taken: the words are this turn's ask now, and wait no longer where they were said.
         const was = event.id ? waiting.get(event.id) : undefined;
         if (was) {
-          // PARKVIEW1: the answer the words were pressed as stays theirs where the session took them.
+          // The answer the words were pressed as stays theirs where the session took them.
           if (was.block.choice && opened.ask && !opened.ask.choice) opened.ask.choice = was.block.choice;
           const at = was.turn.items.findIndex((item) => item.key === was.key);
           was.turn.items = was.turn.items.filter((item) => item.key !== was.key);
@@ -207,7 +207,7 @@ export function toTurns(
           if (was.turn.waiting) {
             if (!takers.has(was.turn)) takers.set(was.turn, opened);
             // A turn that only waited, with nothing left in it but the driver's notes about its words (the resume's opening
-            // line, a cool-off's), was the words' alone: its notes go with the turn that took them (USERSHOWN1).
+            // line, a cool-off's), is the words' alone: its notes go with the turn that took them.
             if (was.turn.items.every((item) => item.kind === 'note')) {
               takers.get(was.turn)!.items.unshift(...was.turn.items);
               turns.splice(turns.indexOf(was.turn), 1);
@@ -237,7 +237,7 @@ export function toTurns(
         const turn = here(key);
         const last = turn.items[turn.items.length - 1];
         // Chunks of one message join; a chunk of another message, by the ids the wire gives them,
-        // begins anew (found looking at CONSOLE2: "DONESubagent finished"). No id joins, as before.
+        // begins anew. No id joins.
         const same = !parted && last && last.kind === event.kind && (!last.id || !event.id || last.id === event.id);
         parted = false;
         if (same) {
@@ -253,7 +253,7 @@ export function toTurns(
       case 'tool': {
         const turn = here(key);
         let card = event.id ? turn.items.find((b) => b.kind === 'tool' && b.id === event.id) : undefined;
-        // The close of a call a steer cut (STEER2b, D136) is written when the turn's prompt is answered, after the steered
+        // The close of a call a steer cut is written when the turn's prompt is answered, after the steered
         // words were taken as the ask of the turn that goes on: so it finds its card by id in an earlier turn and closes it
         // there. Only `cut` does; any other late update keeps showing as a continued card, as it always has.
         if (!card && event.id && event.status === 'cut') {
@@ -265,7 +265,7 @@ export function toTurns(
           for (const field of ['title', 'toolKind', 'status', 'locations', 'content', 'input', 'output'] as const) {
             if (event[field] != null) (card as Record<string, unknown>)[field] = event[field];
           }
-          // A line is said of the locations it came with (LEFT2): ACP replaces a present list whole, and a line
+          // A line is said of the locations it came with: ACP replaces a present list whole, and a line
           // kept past its list would mark a place in a file nobody named it of.
           if (event.locations != null) card.line = event.line ?? null;
           if (event.status === 'completed' || event.status === 'failed' || event.status === 'cut') card.finished = event.at;
@@ -297,14 +297,14 @@ export function toTurns(
         }
         break;
       case 'note': {
-        // AGENTERRORS1a (D210 §5.1, §8): a transient episode's one line quotes the provider's words its tries each stream.
+        // A transient episode's one line quotes the provider's words its tries each stream.
         if (event.parts?.[0]?.code === 'agent.transient-retrying') {
           const words = event.parts.find((part) => part.words)?.words ?? event.text;
           if (words?.trim()) transient.push(words);
         }
         if (doorFailed(event)) {
-          // 🔴 USERSHOWN1: a word taken at a next step by the very answer that was the door's failure was never read. The
-          // install's record kept "stuck?" as the ask of a turn holding only the failure; it waits where it was said again,
+          // 🔴 A word taken at a next step by the very answer that is the door's failure is never read. Else "stuck?" would be
+          // the ask of a turn holding only the failure; it waits where it is said again,
           // never reached once the session is over.
           if (justTaken && current === justTaken.turn && justTaken.turn.items.length === 0) {
             turns.splice(turns.indexOf(justTaken.turn), 1);
@@ -316,7 +316,7 @@ export function toTurns(
             current = was.turn;
           }
           // The harness's own error, streamed as its agent's words just before its door failed (`API Error: …`), is the
-          // failure the note says whole: it reads as that, never as the agent answering (TURNFAIL1).
+          // failure the note says whole: it reads as that, never as the agent answering.
           const turn = here(key);
           const said = lastAgent(turn);
           if (said?.kind === 'message' && said.text?.trim() && (event.text ?? '').includes(said.text.trim())) {
@@ -324,7 +324,7 @@ export function toTurns(
             for (const [seq, block] of Object.entries(where)) if (block === said.key) where[Number(seq)] = key;
           }
         }
-        // A note about the person's words (MSG1f) names them: they went elsewhere or cannot go on here, so they wait no
+        // A note about the person's words names them: they went elsewhere or cannot go on here, so they wait no
         // longer, and the note carries what they said where every one of them is held.
         const named = event.words ?? [];
         const held = named.map((id) => waiting.get(id));
@@ -334,7 +334,7 @@ export function toTurns(
           waiting.delete(named[index]!);
         }
         const said = named.length > 0 && held.every(Boolean) ? held.map((was) => was!.block.text ?? '') : undefined;
-        // COWORK1c: every word it names the person's own, so the page may offer to say them again (*Say it again*).
+        // Every word it names the person's own, so the page may offer to say them again (*Say it again*).
         const persons = said !== undefined && held.every((was) => was!.person === true);
         if (event.to) {
           for (const id of named) {
@@ -343,7 +343,7 @@ export function toTurns(
             handing.delete(id);
           }
         }
-        // A note about one call carries its id (SESS1 S6), so it folds with that call's run.
+        // A note about one call carries its id, so it folds with that call's run.
         const note: Block = {
           key, kind: 'note', at: event.at, text: event.text, ...(event.id ? { id: event.id } : {}),
           ...(event.to ? { to: event.to } : {}), ...(event.why ? { why: event.why } : {}),
@@ -356,11 +356,11 @@ export function toTurns(
         break;
       }
       case 'transient':
-        // AGENTERRORS1a2 (D210 §5.1, §8): a try or a wait of a transient episode is quiet, never a line; the head reads it (`retryingAt`).
+        // A try or a wait of a transient episode is quiet, never a line; the head reads it (`retryingAt`).
         parted = true;
         break;
       case 'receipt': {
-        // COWORK1c (the design §7, §8.2): no block of its own; it folds under the ask its word became, below.
+        // No block of its own; it folds under the ask its word became, below.
         if (event.id && (event.receipt === 'sent' || event.receipt === 'ended')) {
           receipts.set(event.id, { ...receipts.get(event.id), [event.receipt]: event.at });
         }
@@ -372,7 +372,7 @@ export function toTurns(
     }
   }
 
-  // 🔴 AGENTERRORS1a (D210 §5.1, §8): each try of a transient episode streams the provider's error as its agent's words before the
+  // 🔴 Each try of a transient episode streams the provider's error as its agent's words before the
   // door's failure, as the first failure did. The episode's one line says it, so each repeat reads as that line, never as the
   // agent answering, and the provider's error is shown once.
   if (transient.length > 0) {
@@ -383,7 +383,7 @@ export function toTurns(
       const repeats: Block[] = [];
       for (const item of turn.items) {
         if (item.kind !== 'message' || !item.text || !failed.has(item.key)) continue;
-        // 🔴 Codex's owed read of D210, finding 10: only a failed attempt's stream, and only the error it ends on. Consecutive chunks are
+        // 🔴 Only a failed attempt's stream, and only the error it ends on. Consecutive chunks are
         // one block, so a repeat may follow the agent's own words or another repeat; a quotation inside them, or in any other message
         // before or after the episode, stays as written.
         let left = item.text.trimEnd();
@@ -406,7 +406,7 @@ export function toTurns(
     }
   }
 
-  // Each word's receipts under the ask it became, taken at the ask's own moment (COWORK1c): only where a receipt was observed.
+  // Each word's receipts under the ask it became, taken at the ask's own moment: only where a receipt is observed.
   for (const [id, ask] of asks) {
     const seen = receipts.get(id);
     if (seen) ask.receipts = { ...seen, taken: ask.at };
@@ -421,7 +421,7 @@ export function toTurns(
     if (turn.ask && first) turn.firstAfter = since(turn.ask.at, first.at);
   }
 
-  // The wait for the first answer (WAITSHOWN1): the last turn, still open, asked and with nothing of the agent's yet.
+  // The wait for the first answer: the last turn, still open, asked and with nothing of the agent's yet.
   const tail = turns[turns.length - 1];
   if (tail?.ask && !tail.ended && !tail.waiting && !tail.items.some(AGENT)) tail.waitingSince = tail.ask.at;
 
@@ -429,7 +429,7 @@ export function toTurns(
 }
 
 /**
- * The codes of a part's first line where it began by a move or a hand-over (SWITCHCTX1c-i; the switch-context design §2.7): a briefed
+ * The codes of a part's first line where it began by a move or a hand-over: a briefed
  * move's, a curve move's and a hand-over's. The old part's last lines (`moved.on`, `chat.moved`, `chat.handed-over`) are the other side.
  */
 const BOUNDARY = new Set(['moved.from', 'chat.moved-from', 'chat.taken-over']);
@@ -444,7 +444,7 @@ export const beginsByMove = (turns: readonly Turn[]): boolean =>
   turns.some((turn) => turn.items.some((item) => BOUNDARY.has(noteCode(item) ?? '')));
 
 /**
- * Folds the opening line under the boundary of a part that began by a move (SWITCHCTX1c-i), as a briefed part's brief is folded, so a
+ * Folds the opening line under the boundary of a part that began by a move, as a briefed part's brief is folded, so a
  * move reads as one line on each side. A part with no boundary keeps its opening line as it is.
  */
 function foldOpening(turns: Turn[], where: Record<number, string>): void {
@@ -464,21 +464,21 @@ function foldOpening(turns: Turn[], where: Record<number, string>): void {
   for (const [seq, block] of Object.entries(where)) if (under.some((item) => item.key === block)) where[Number(seq)] = boundary.key;
 }
 
-/** What counts as the agent answering (WAITSHOWN1): its words, its thinking, its calls and its plan. */
+/** What counts as the agent answering: its words, its thinking, its calls and its plan. */
 const AGENT = (item: Block) => item.kind === 'message' || item.kind === 'thought' || item.kind === 'tool' || item.kind === 'plan';
 
 /** The last thing the agent did in a turn, past the driver's notes and the person's waiting words; undefined for none. */
 const lastAgent = (turn: Turn): Block | undefined => [...turn.items].reverse().find(AGENT);
 
 /**
- * The protocol door's failure (`door.failed`, ACPEND1): by its code, or by the driver's English on a record kept before its
+ * The protocol door's failure (`door.failed`): by its code, or by the driver's English on a record kept before its
  * parts.
  */
 const doorFailed = (event: SessionEvent): boolean =>
   event.parts?.[0]?.code === 'door.failed' || (!event.parts?.length && (event.text ?? '').startsWith('— the ACP session failed:'));
 
 /**
- * When a transient episode tries again (AGENTERRORS1a2, D210 §5.1, §8): the latest `transient` event's `next`, while no turn has ended
+ * When a transient episode tries again: the latest `transient` event's `next`, while no turn has ended
  * after it, so a try that works clears it and a later wait sets it again; undefined while a try runs, and where none waits. Whether it
  * is still ahead is the reader's, against its own clock.
  */
@@ -491,15 +491,15 @@ export function retryingAt(events: readonly SessionEvent[]): string | undefined 
   return undefined;
 }
 
-/** When the turn the agent is on was asked, while it has not answered yet (WAITSHOWN1); undefined once it has, or when none is open. */
+/** When the turn the agent is on began, while it has not answered yet; undefined once it has, or when none is open. */
 export const firstAnswerWait = (turns: readonly Turn[]): string | undefined => turns[turns.length - 1]?.waitingSince;
 
-/** A call the agent is inside: its title, and when it began by the driver's clock (WAITSAY1). */
+/** A call the agent is inside: its title, and when it began by the driver's clock. */
 export type RunningCall = { title: string; since: string };
 
 /**
- * The call the agent is inside, in the last turn while it is open (WAITSAY1): the last tool block that neither finished nor was
- * cut, pending or in progress. Read after `settle`, so a session that is not live says none — its open calls read stopped.
+ * The call the agent is inside, in the last turn while it is open: the last tool block that is pending or in progress,
+ * neither finished nor cut. Read after `settle`, so a session that is not live says none — its open calls read stopped.
  * A call this page holds only updates of has no title, and is not named.
  */
 export function runningCall(turns: readonly Turn[]): RunningCall | null {
@@ -508,7 +508,7 @@ export function runningCall(turns: readonly Turn[]): RunningCall | null {
   for (let at = turn.items.length - 1; at >= 0; at -= 1) {
     const item = turn.items[at]!;
     if (item.kind !== 'tool' || item.finished || item.stopped) continue;
-    // WAITSAY1b: a call the rules refused (D52) ended too; it waits on nobody, on either door.
+    // A call the rules refused ended too; it waits on nobody, on either door.
     if (item.status === 'completed' || item.status === 'failed' || item.status === 'cut' || item.status === 'refused') continue;
     if (item.title) return { title: item.title, since: item.at };
   }
@@ -516,8 +516,8 @@ export function runningCall(turns: readonly Turn[]): RunningCall | null {
 }
 
 /**
- * The key of the last thing the agent said, where it said anything: the jump to its last words (SESS1 S9), and what a parked
- * session asked the person, since its card keeps that message whole (PARK1; WAITFOOT1c).
+ * The key of the last thing the agent said, where it said anything: the jump to its last words, and what a parked
+ * session asked the person, since its card keeps that message whole.
  */
 export function lastWords(turns: readonly Turn[]): string | undefined {
   for (let turn = turns.length - 1; turn >= 0; turn -= 1) {
@@ -530,12 +530,12 @@ export function lastWords(turns: readonly Turn[]): string | undefined {
 }
 
 /**
- * The turns as a session that has ended leaves them (SESS1 S4): the last one, if the wire never said
- * it ended, was cut — and the calls it left open never finished, so they read *stopped*, never
- * *running* for good. The person's words still waiting never reached it (STEER1). A live session is
+ * The turns as a session that has ended leaves them: the last one, if the wire never said
+ * it ended, is cut — and the calls it left open never finished, so they read *stopped*, never
+ * *running* for good. The person's words still waiting never reached it. A live session is
  * left as it is: its last turn may simply be going on.
  *
- * Words said after it ended (MSG1f, `resume`) wait for it to go on, so its end is not theirs, and the
+ * Words said after it ended (`resume`) wait for it to go on, so its end is not theirs, and the
  * turn they wait in at its foot is no run: the last run before it is the one judged.
  */
 export function settle(turns: Turn[], live: boolean): Turn[] {
@@ -549,7 +549,7 @@ export function settle(turns: Turn[], live: boolean): Turn[] {
   while (at >= 0 && settled[at]!.waiting) at -= 1;
   const last = settled[at];
   if (!last || last.ended) return settled;
-  // The driver's lines written after the turn before ended (a move's last line, SWITCHCTX1c-i) are no run the session left unfinished.
+  // The driver's lines written after the turn before ended (a move's last line) are no run the session left unfinished.
   if (!last.ask && last.items.length > 0 && last.items.every((item) => item.kind === 'note') && settled[at - 1]?.ended) return settled;
   const cut: Turn = {
     ...last,
@@ -575,15 +575,15 @@ const WORK = new Set(['tool', 'thought', 'raw']);
 const isWork = (item: Block) => WORK.has(item.kind) || (item.kind === 'note' && Boolean(item.id));
 
 /**
- * A turn's items as a reader reads them (SESS1 S3): every word the agent said stays in view, and the
+ * A turn's items as a reader reads them: every word the agent said stays in view, and the
  * work between two of them folds into one run that counts it. A run of one is shown as itself, since
  * folding it saves nothing; the last run stays open while the turn goes on (`tailOpen`), so the work in
  * hand is in view.
  *
  * @remarks
- * This replaces folding a finished turn whole. A driven session is one turn — one ask, then the run —
- * so the whole-turn fold hid the agent's narration of hundreds of calls behind one row, and a run that
- * never ended folded nothing at all (the first real workspace, 2026-09-28).
+ * A driven session is one turn — one ask, then the run —
+ * so folding the whole turn would hide the agent's narration of hundreds of calls behind one row, and a run that
+ * never ended would fold nothing at all.
  */
 export function segments(items: readonly Block[], tailOpen: boolean, standsAlone?: (block: Block) => boolean): Segment[] {
   const parts: Segment[] = [];
@@ -595,7 +595,7 @@ export function segments(items: readonly Block[], tailOpen: boolean, standsAlone
   };
 
   for (const item of items) {
-    // A call drawn as its exchange's card (COMMS1h) is never folded into a run: it is where the request is read.
+    // A call drawn as its exchange's card is never folded into a run: it is where the request is read.
     if (isWork(item) && !standsAlone?.(item)) run.push(item);
     else {
       close();
@@ -614,7 +614,7 @@ export function runCount(items: readonly Block[]): { tools: number; failed: numb
   const tools = items.filter((item) => item.kind === 'tool');
   return {
     tools: tools.length,
-    // A call the stop or the session's end cut is not a failure (CONV4b), whatever the wire answered.
+    // A call the stop or the session's end cut is not a failure, whatever the wire answered.
     failed: tools.filter((item) => item.status === 'failed' && !item.stopped).length,
     thought: items.some((item) => item.kind === 'thought'),
   };

@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// This Daoris's read as a hook (WIRING1b, the this-Daoris design §6): the driver's `SYSTEM_WIRING`, shell-only, keyed under
+// This Daoris's read as a hook: the driver's `SYSTEM_WIRING`, shell-only, keyed under
 // `['system', 'wiring']`, its measure asked only when the page asks it, and read again while a walk is under way.
 
 const { invoke, shell } = vi.hoisted(() => ({ invoke: vi.fn(), shell: { available: true } }));
@@ -69,7 +69,7 @@ describe('the system domain', () => {
     expect(client.getQueryData<SystemWiring>(keys.systemWiring)?.measuring).toBe(true);
   });
 
-  /** A measure's answer that was read while the walk ran must not restore `measuring` over the read that found it ended. */
+  /** A measure's answer read while the walk ran must not restore `measuring` over the read that found it ended. */
   it('keeps a newer read over a late measure answer', async () => {
     let answerMeasure: (answer: SystemWiring) => void = () => undefined;
     invoke.mockImplementation(async (_module: string, _route: string, request?: { payload?: { measure?: boolean } }) =>
@@ -81,14 +81,14 @@ describe('the system domain', () => {
     let measured: Promise<SystemWiring> = Promise.resolve(wiring(false));
     act(() => { measured = result.current.measure(); });
     await new Promise((resolve) => setTimeout(resolve, 5));
-    // The walk ended and was told: the read that found it so lands before the measure's own answer.
+    // The walk ended and is told: the read that found it so lands before the measure's own answer.
     await act(async () => { await client.invalidateQueries({ queryKey: keys.systemWiring }); });
     await act(async () => { answerMeasure(wiring(true)); await measured; });
 
     expect(client.getQueryData<SystemWiring>(keys.systemWiring)?.measuring).toBe(false);
   });
 
-  /** FABRIC-EVENT5b: a window that hears the driver waits for its `wiring` event; one with no bus reads on the clock as before. */
+  /** A window that hears the driver waits for its `wiring` event; one with no bus reads on the clock. */
   it('reads again every two seconds while a walk is under way only where no event tells it', () => {
     expect(wiringAgainIn(wiring(true), false)).toBe(2_000);
     expect(wiringAgainIn(wiring(false), false)).toBe(false);
@@ -117,7 +117,7 @@ describe('the system domain', () => {
     vi.useRealTimers();
   });
 
-  // KEEP1c (the cleanup design §4.4): the Disk space card's read, under `['system', 'space']`, counting only what the page asks.
+  // The Disk space card's read, under `['system', 'space']`, counting only what the page asks.
   it('reads the disk space under its key asking no count, and counts the kinds asked or every kind', async () => {
     const space = { schema: 1, volume: null, volumeWhy: 'unreadable', kinds: [], run: null, held: null };
     invoke.mockImplementation(async () => space);

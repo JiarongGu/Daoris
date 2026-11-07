@@ -1,14 +1,13 @@
 import { LIST_ROW } from './listKeys';
 
 /**
- * The window's regions for F6 and Shift+F6 (D118 §3e), VS Code's *Focus Next Part*: the activity bar, the
+ * The window's regions for F6 and Shift+F6, VS Code's *Focus Next Part*: the activity bar, the
  * view's list, the main area, the panel, the side bar and the status bar, in the order the window draws
  * them. Each carries {@link REGION}, and a region that is not drawn is simply not in the round.
  *
  * @remarks
- * **Built before it was measured.** D118 has F6 measured on the window first, since the engine may keep F6
- * for itself, and dropped if it does. A branch cannot start the window, so the key is built alone, in one
- * commit, and the look on the window decides whether it stays.
+ * **Measured on the window.** The engine may keep F6 for itself, and the key is dropped if it does, so
+ * the look on the window decides whether it stays.
  */
 
 /** The attribute a region of the window carries, naming it. */

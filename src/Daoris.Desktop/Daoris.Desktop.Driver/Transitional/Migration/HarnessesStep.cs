@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>harnesses.json</c> in the shape this build reads (D232; POOL1a's fold and D165 §6's names, run once): each entry's <c>early</c> and
+/// <c>harnesses.json</c> in the shape this build reads (run once): each entry's <c>early</c> and
 /// <c>near</c> written as the switch and curve they read as, <c>prefer</c> and <c>parallel</c> taken out, then every agent's defaults and
 /// workspace lists folded into its one set, with a receipt of what the fold changed. A file that does not read is left as it is.
 /// </summary>

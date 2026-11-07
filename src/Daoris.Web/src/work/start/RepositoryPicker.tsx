@@ -22,8 +22,8 @@ export const CHIP = cn(
 );
 
 /**
- * The groups the picker lists for what was typed: *Recent* first, in the order kept, then each workspace's repositories by
- * name, none twice (the entry design §1). A typed word keeps the rows whose name or workspace holds it.
+ * The groups the picker lists for what is typed: *Recent* first, in the order kept, then each workspace's repositories by
+ * name, none twice. A typed word keeps the rows whose name or workspace holds it.
  */
 export function pickerGroups(repositories: readonly StartRepository[], recent: readonly string[], typed: string, recentLabel: string): Group[] {
   const word = typed.trim().toLowerCase();
@@ -48,7 +48,7 @@ export function pickerGroups(repositories: readonly StartRepository[], recent: r
 }
 
 /**
- * The repository chip and its picker (NEW1b, the entry design §1): searchable, *Recent* first, then each workspace's
+ * The repository chip and its picker: searchable, *Recent* first, then each workspace's
  * repositories. One with no checkout here is listed, not choosable, and says why; one whose checkout a session holds is
  * marked busy and stays choosable, since its own tree starts beside it.
  *
@@ -57,7 +57,7 @@ export function pickerGroups(repositories: readonly StartRepository[], recent: r
  * stays in the field, the arrows move the active row (`aria-activedescendant`), Enter takes it and Escape puts the list down
  * and the focus back on the chip. A menu would take every letter typed as its own type-ahead.
  *
- * **Its foot is the caller's** (`foot`): NEW1c puts *Add repository…* and *Import a folder…* there, which open the existing
+ * **Its foot is the caller's** (`foot`): the caller puts *Add repository…* and *Import a folder…* there, which open the existing
  * drawers with the draft kept. A press there closes the list first (`foot` is handed what closes it), so the drawer opens over
  * a composer with nothing floating. An import that registered several asks the list open on their workspace (`reveal`).
  */
@@ -69,10 +69,10 @@ export function RepositoryPicker({ repositories, busy = {}, recent = [], value, 
   recent?: readonly string[];
   value: string | null;
   onChoose: (repository: string) => void;
-  /** What the picker offers below its rows, after a rule (NEW1c), given what puts the list down: a press there closes it first. */
+  /** What the picker offers below its rows, after a rule, given what puts the list down: a press there closes it first. */
   foot?: (close: () => void) => ReactNode;
   /**
-   * Opens the list filtered to a workspace's group (NEW1c, an import that registered several): each new `n` is one ask, and an
+   * Opens the list filtered to a workspace's group (after an import that registered several): each new `n` is one ask, and an
    * empty workspace opens it whole.
    */
   reveal?: { workspace: string; n: number } | null;
@@ -138,7 +138,7 @@ export function RepositoryPicker({ repositories, busy = {}, recent = [], value, 
   }, [open, current?.name, typed]);
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    // An input method's press is its own (IME1): its Enter accepts a candidate and its Escape drops the composition.
+    // An input method's press is its own: its Enter accepts a candidate and its Escape drops the composition.
     if (isComposing(event)) return;
     if (event.key === 'ArrowDown') { event.preventDefault(); move(1); }
     else if (event.key === 'ArrowUp') { event.preventDefault(); move(-1); }

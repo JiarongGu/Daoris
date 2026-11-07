@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { linesSlice, sweepSlice, workSlice } from './lines';
 import { workOf, type MilestoneUnit, type WorkState } from '../../work/head/milestone';
 
-// The lines slice's page half (PUSH1b2, D182): one partition per repository, composed into the eight arrays `LINES` answers.
+// The lines slice's page half: one partition per repository, composed into the eight arrays `LINES` answers.
 
 const part = (repository: string, branch: string | null, extra: Record<string, unknown> = {}) => ({
   lines: [{ repository, workspace: 'default', branch, source: branch ? 'repository' : 'none', ...extra }],
@@ -66,7 +66,7 @@ describe('the work slice (PUSH1c2b)', () => {
     expect(composed.held).toHaveLength(1);
     expect(composed.units[0]!.held).toHaveLength(1);
     expect(composed.units[1]!.held).toEqual([]);
-    // FABRIC-PERFORM1j: the node records that do not read, from the held partition.
+    // The node records that do not read, from the held partition.
     expect(composed.unreadable.map((each) => each.file)).toEqual(['k.json']);
   });
 
@@ -85,7 +85,7 @@ describe("a unit's variant of the work (PUSH1c2b)", () => {
       unitOf('u-3', 'beta', { branch: 'topic' }),
     ] as unknown as MilestoneUnit[],
     recovery: [{ unit: 'r' }] as never[], unread: [], held: [heldOf('u-1'), heldOf('u-3')] as never[],
-    // FABRIC-PERFORM1j: one record naming a unit picked, one another's, one naming none.
+    // One record naming a unit picked, one another's, one naming none.
     unreadable: [{ file: 'a.json', unit: 'u-1', said: 'a' }, { file: 'b.json', unit: 'quest:q7', said: 'b' }, { file: 'c.json', unit: null, said: 'c' }],
   } satisfies WorkState;
 

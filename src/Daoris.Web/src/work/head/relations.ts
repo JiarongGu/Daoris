@@ -1,11 +1,11 @@
 import type { Quest, Session } from '../../data/api';
 
 /**
- * Who a session worked with, beyond its chain (SESS1): where its work came from and what it caused.
+ * Who a session worked with, beyond its chain: where its work came from and what it caused.
  *
  * @remarks
- * **Declared, never guessed** (the map's rule, MAP4): a quest names the session whose connector
- * published it (`publishedBy`), and a taken quest the question it waits on (`awaits`, D79). A session's
+ * **Declared, never guessed**: a quest names the session whose connector
+ * published it (`publishedBy`), and a taken quest the question it waits on (`awaits`). A session's
  * quests are never inferred from its repository and the times, which two sessions of one repository, or
  * a person publishing beside one, would make wrong. What the chain strip already draws (the ask, the
  * steps, a quest's sessions in order) is not said again here.
@@ -13,7 +13,7 @@ import type { Quest, Session } from '../../data/api';
 export type Relations = {
   /** The session that published its quest, when one did — with its record, where this machine holds it. */
   askedBy: { id: string; session: Session | null } | null;
-  /** The question its quest waited on, answered, when an earlier session asked it (D79's resume). */
+  /** The question its quest waited on, answered, when an earlier session asked it. */
   resumedAfter: Quest | null;
   /** The quests it published, oldest first; `question` marks the one its quest waited on. */
   asked: { quest: Quest; question: boolean }[];

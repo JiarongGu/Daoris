@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Session } from '../../data/api';
 import { SessionStripRow } from './SessionRow';
 
-// A session in the rail's 56px strip (FRAME6): its repository's initial and its mark, with the title,
+// A session in the rail's 56px strip: its repository's initial and its mark, with the title,
 // the repository and the state as its name and tip — the strip has no room for the words.
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
@@ -36,7 +36,7 @@ export const Attended: Story = { args: { selected: true } };
 /** Waiting on the person: the attention mark outranks being busy. */
 export const AwaitingPerson: Story = { args: { session: { ...SESSION, state: 'awaiting-person' } } };
 
-/** A parked quest's last session (SESSUX1c): the waiting mark, and *parked* in its name and tip. */
+/** A parked quest's last session: the waiting mark, and *parked* in its name and tip. */
 export const Parked: Story = {
   args: {
     session: { ...SESSION, state: 'failed', kind: 'driven', quest: '7a82cc' },

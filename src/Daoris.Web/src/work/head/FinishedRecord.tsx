@@ -4,7 +4,7 @@ import type { SessionRecord } from './sessionRecord';
 import { short } from './trace';
 
 /**
- * **What was kept of its work** (KEEPSIZE1): the record of the tree a finished session ran in, shown on its page once the tree is let
+ * **What is kept of its work**: the record of the tree a finished session ran in, shown on its page once the tree is let
  * go: where it landed, its tip and the recovery ref that holds it, its commits, and what the tree held that no commit holds.
  *
  * @remarks

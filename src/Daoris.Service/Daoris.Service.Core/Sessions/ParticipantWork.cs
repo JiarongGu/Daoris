@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The participant's work (FOUNDATION1c, D212; the foundation design §2.2): the capability a record was opened for, one closed code read
+/// The participant's work: the capability a record is opened for, one closed code read
 /// from the marks the record carries by one rule, never stored. The service answers it as <c>work</c> to a caller on this machine
 /// (<c>ToSession</c>), never on the wire, and the page draws a record by it where its host sends it.
 /// </summary>
@@ -13,7 +13,7 @@ namespace Daoris.Knowledge;
 /// <para><b>The one rule</b>, the first that holds: a mirror is another machine's, with no work here (null); <c>opinion</c> is
 /// <see cref="Review"/>; <c>serves</c> with <c>piece</c> is <see cref="Partner"/>; <c>serves</c> alone is <see cref="Help"/>; <c>ask</c> is
 /// <see cref="Intake"/>; the Ask Daoris repository is <see cref="AskDaoris"/>; a chat is <see cref="Chat"/>; otherwise <see cref="Build"/>. A
-/// co-worker is a relation, <c>serves</c>, never a work of its own (D203 point 1): a partner's marks are a helper's with a piece. An
+/// co-worker is a relation, <c>serves</c>, never a work of its own: a partner's marks are a helper's with a piece. An
 /// empty mark is none, as an absent one is.</para>
 /// <para><see cref="Design"/> and <see cref="Brainstorm"/> are in the closed set and read from no marks: a quest's session of design or
 /// decision work is built, admitted and read as <see cref="Build"/>, and a brainstorm's pass has no record.</para>
@@ -51,7 +51,7 @@ public static class ParticipantWork
     public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm];
 
     /// <summary>
-    /// The work <paramref name="session"/> was opened for, from its marks; null where it has none here, another machine's record.
+    /// The work <paramref name="session"/> is opened for, from its marks; null where it has none here, another machine's record.
     /// </summary>
     public static string? Of(Session session)
     {

@@ -4,9 +4,9 @@ import { keys } from '../../data/queries';
 import type { AbandonAnswer, PauseAnswer, ResumeAnswer, WorkPlan, WorkTarget } from '../../work/pausing/pausing';
 import { call, lookBound } from '../call';
 
-// The work of an ask or a quest on this machine (MOD3; PAUSE1e, D132 §7.3): what it holds and what a pause and an abandon
+// The work of an ask or a quest on this machine: what it holds and what a pause and an abandon
 // would do with each piece, a pause, a resume and an abandon. The driver library's `WorkPausing` and `WorkAbandoning`
-// answer each, which `daoris ask pause|--resume|--abandon` and `quest pause|resume|abandon` call too (D50).
+// answer each, which `daoris ask pause|--resume|--abandon` and `quest pause|resume|abandon` call too.
 
 /**
  * The shapes the routes answer live with the screen's own rule (`work/pausing/pausing.ts`), since a molecule may read a shape and
@@ -27,9 +27,9 @@ export const workKey = (target: WorkTarget) => [...keys.allQuests, 'work', targe
 const named = (target: WorkTarget) => ({ [target.scope]: target.id });
 
 /**
- * A pause stops sessions another Daoris process runs through its request folder, waited for ten seconds each (SESSUX1g),
+ * A pause stops sessions another Daoris process runs through its request folder, waited for ten seconds each,
  * and an abandon runs one sync pass per wired workspace and walks git per tree before it answers: each may outlast the
- * bridge's default 30 seconds, so the page waits as long as a look over one workspace may take (WSR7).
+ * bridge's default 30 seconds, so the page waits as long as a look over one workspace may take.
  */
 const WORK_BOUND = lookBound(1);
 
@@ -46,8 +46,8 @@ const planOf = (answer: unknown): WorkPlan | null => {
 };
 
 /**
- * The plan of an ask's work or a quest's (`WORK_PLAN`, design §1, §2.1, §3.2): every piece, what a pause and an abandon
- * would do with each and why, its own pause and its last abandon. Shell-only: a browser has no driver to ask (D47 §4), and
+ * The plan of an ask's work or a quest's (`WORK_PLAN`): every piece, what a pause and an abandon
+ * would do with each and why, its own pause and its last abandon. Shell-only: a browser has no driver to ask, and
  * `available` says so, so the pages name the terminal's commands instead of offering acts nothing can carry out.
  */
 export const useWorkPlan = (target: WorkTarget | null, { enabled = true }: { enabled?: boolean } = {}) => {
@@ -68,20 +68,20 @@ export const useWorkPlan = (target: WorkTarget | null, { enabled = true }: { ena
 };
 
 // Everything a move on a work changes, its quests (the plan among them), the asks, the sessions and the driver's state, is
-// asked again by the route's `STATE_CHANGED`, in every window (STATEHUB1d, D169): the hooks below ask nothing by hand.
+// asked again by the route's `STATE_CHANGED`, in every window: the hooks below ask nothing by hand.
 
-/** *Pause…*'s press (`WORK_PAUSE`, design §2.1): what it stopped, and what it could not reach. */
+/** *Pause…*'s press (`WORK_PAUSE`): what it stopped, and what it could not reach. */
 export const usePauseWork = () => useMutation({
   mutationFn: (target: WorkTarget) => call('WORK_PAUSE', named(target), { timeoutMs: WORK_BOUND }) as Promise<PauseAnswer>,
 });
 
-/** *Resume*'s press (`WORK_RESUME`, design §2.4): what it released, and what still holds each quest. */
+/** *Resume*'s press (`WORK_RESUME`): what it released, and what still holds each quest. */
 export const useResumeWork = () => useMutation({
   mutationFn: (target: WorkTarget) => call('WORK_RESUME', named(target), { timeoutMs: WORK_BOUND }) as Promise<ResumeAnswer>,
 });
 
 /**
- * *Abandon…*'s second press (`WORK_ABANDON`, design §3.1, §3.4): exactly the pieces its first press listed, with the
+ * *Abandon…*'s second press (`WORK_ABANDON`): exactly the pieces its first press listed, with the
  * person's reason, each judged again by the host as it goes.
  */
 export const useAbandonWork = () => useMutation({

@@ -15,7 +15,7 @@ import { TerminalTabs } from './TerminalTabs';
  * the terminal's scrollback.
  */
 const screens = new Map<string, Screen>();
-/** The size each terminal was last told, so a view shown again does not tell it twice. */
+/** The size each terminal is last told, so a view shown again does not tell it twice. */
 const told = new Map<string, string>();
 
 /** The tokens' colours and the platform's monospace at the size `host` wears. */
@@ -35,7 +35,7 @@ export function shellName(t: (key: string, options?: Record<string, unknown>) =>
 }
 
 /**
- * The terminal view (CONSOLE4b, D96): the person's own shell, drawn by a terminal renderer, in whichever
+ * The terminal view: the person's own shell, drawn by a terminal renderer, in whichever
  * region the view stands — the panel by default, beside the console.
  *
  * @remarks
@@ -50,7 +50,7 @@ export function shellName(t: (key: string, options?: Record<string, unknown>) =>
  * **Every open terminal is heard while the view is here**, not only the one shown, so a screen is never
  * behind its shell; while the view is away the frame holds what comes, and this catches each screen up.
  *
- * **More than one** (CONSOLE4c): each a tab, its own shell and its own process, named by its shell and
+ * **More than one**: each a tab, its own shell and its own process, named by its shell and
  * where it started; "+" offers the machine's shells, and a tab closes with its process.
  */
 export function TerminalView({ terminals, cwd }: {
@@ -112,7 +112,7 @@ export function TerminalView({ terminals, cwd }: {
     const typed = running ? screen.onData((data) => input(shownId, data)) : () => {};
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => fit());
     observer?.observe(element);
-    // The window's zoom (ZOOM1): the type is read from the page's root size, and the region keeps its size, so the screen
+    // The window's zoom: the type is read from the page's root size, and the region keeps its size, so the screen
     // takes the new type and the shell is told its new rows and columns.
     const stopZoom = subscribeZoom(() => {
       screen.look(lookOf(root.current));
@@ -151,7 +151,7 @@ export function TerminalView({ terminals, cwd }: {
     const media = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
     media?.addEventListener?.('change', relook);
     const stop = subscribeTheme(relook);
-    // And the window's zoom (ZOOM1), for the screens not shown: the one shown is fitted again above.
+    // And the window's zoom, for the screens not shown: the one shown is fitted again above.
     const stopZoom = subscribeZoom(relook);
     return () => {
       stop();

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// *What needs you* on a machine (UX6c, design §6), over a mocked shell: the rows as the shell pushes them (PUSH1d4, judged in
+// *What needs you* on a machine, over a mocked shell: the rows as the shell pushes them (judged in
 // .NET), and the acts that settle them where they stand. `OverviewView.test.tsx` holds the band in a browser, which says it is the
 // app's.
 
@@ -44,7 +44,7 @@ const ENDED = Array.from({ length: 7 }, (_, at) => ({
   ...base, id: `r3v13w0${at}`, quest: null, repository: 'engine', kind: 'chat', state: 'completed',
   updated: `2026-10-01T1${at}:00:00Z`,
 }));
-/** An intake, the one kind of record that names an ask: it takes no words (INT4b). */
+/** An intake, the one kind of record that names an ask: it takes no words. */
 const INTAKE = { ...base, id: 'i4t4k300', quest: null, repository: 'engine', kind: 'chat', state: 'completed', ask: 'a1', updated: '2026-10-01T09:30:00Z' };
 const QUESTS = [{
   id: 'q1', from: 'game', to: 'engine', title: 'Expose a streaming budget', body: 'a per-frame cap.', status: 'Taken',
@@ -65,7 +65,7 @@ const review = (session: string): SessionGrouping => ({
   session, group: 'review', shown: 'completed', archived: false, teammate: false, work: { commits: 2, uncommitted: 0 },
 });
 
-// The rows as the shell pushes them (PUSH1d4): each as `NeedsAPerson` judges it from the facts above.
+// The rows as the shell pushes them: each as `NeedsAPerson` judges it from the facts above.
 const row = (kind: PushedAttention['kind'], id: string, since: string | null, over: Partial<PushedAttention> = {}): PushedAttention =>
   ({ kind, id, since, ...over });
 const parkedQuest = row('parked-quest', 'q1', PARKED.since!, { where: 'engine', sitting: PARKED });
@@ -75,7 +75,7 @@ const held = row('trust', `${HOLD.trustFile}\n${HOLD.folder}`, QUESTS[0]!.filed,
 const widening = (proposal: RuleProposal = WIDENING) => row('rule', proposal.id, proposal.proposed, { detail: proposal.why, proposal });
 const toReview = (session: string) => row('review', session, ENDED.find((one) => one.id === session)?.updated ?? null, { where: 'engine', placed: review(session) });
 
-// UX6d: the accounts as the roster last read them (ROSTER1). `default` may run on two accounts: one cooling, one read signed out;
+// The accounts as the roster last read them. `default` may run on two accounts: one cooling, one read signed out;
 // a third, outside its list, read signed in.
 const READ = '2026-10-01T10:42:00Z';
 const ROSTER: HarnessRoster = {
@@ -138,7 +138,7 @@ function start(rows: PushedAttention[], props: {
     if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login') return { door: 'claude-code', action: 'login', started: true };
     if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login-new') return { door: 'claude-code', action: 'login-new', started: true };
     if (type === 'HARNESS_ACTION' && request?.payload?.action === 'profile-join') {
-      // Its default there, and still no place marked first: *first* is a next start the join's answer never names (ACCTUX4b).
+      // Its default there, and still no place marked first: *first* is a next start the join's answer never names.
       return { door: 'claude-code', action: 'profile-join', profile: 'account-4', places: [{ workspace: 'default', list: true, default: true }] };
     }
     if (type === 'RETRY_QUEST') return { drivable: [], holds: [], trees: [], running: [], notify: false, strikes: 3, forgiven: {}, retried: { quest: 'q1', did: 'marked' } };
@@ -148,7 +148,7 @@ function start(rows: PushedAttention[], props: {
     return {};
   });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  // What the shell pushed, composed as the slice composes it (PUSH1d4).
+  // What the shell pushed, composed as the slice composes it.
   client.setQueryData(keys.attention, composeAttention(new Map<string, unknown>([
     ['rows', Object.fromEntries(rows.map((each) => [`${each.kind}:${each.id}`, each]))], ['sessions', {}],
   ]), true));
@@ -174,9 +174,9 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * 🔴 No row starts a process to find out (design §6.3), and the band judges nothing (PUSH1d4): its rows are pushed, so it asks the
-   * machine none of what they were judged from (the rules, the groups, the driver's waits, the work, the accounts). It names an
-   * account from the roster as last read, never refreshed: a refresh asks the agents (UX6d, D150 point 5).
+   * 🔴 No row starts a process to find out, and the band judges nothing: its rows are pushed, so it asks the
+   * machine none of what they are judged from (the rules, the groups, the driver's waits, the work, the accounts). It names an
+   * account from the roster as last read, never refreshed: a refresh asks the agents.
    */
   it('asks the machine nothing but the roster’s last readings, which name the accounts', async () => {
     start([parkedQuest, held, widening(), toReview('r3v13w00'), waitRow()]);
@@ -188,7 +188,7 @@ describe('What needs you on a machine', () => {
     expect(roster.every(([, , request]) => !request?.payload?.refresh)).toBe(true);
   });
 
-  /** PUSHUX1: before the owner has judged, the band draws its skeleton, never *Nothing needs you*. */
+  /** Before the owner has judged, the band draws its skeleton, never *Nothing needs you*. */
   it('says nothing is waiting only once who needs the person is judged', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockResolvedValue({});
@@ -206,7 +206,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * MIXAGENT2c (D168, D163 point 3): an agent's ask for a helper that waits on the person's word is a row waiting for it, with
+   * An agent's ask for a helper that waits on the person's word is a row waiting for it, with
    * *Let it ask* and *Not now*, the session's page's own presses by the session and the ask; a refusal is said in its words.
    */
   it('lists an agent’s ask for a helper, lets it ask in one press and says a refused no in its words', async () => {
@@ -226,7 +226,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * NOTIFY2e (D196 point 8): an agent's ask to hand its session over that waits on the person's word is a row waiting for it, with
+   * An agent's ask to hand its session over that waits on the person's word is a row waiting for it, with
    * *Hand over to {agent}* and *Not now*, its session's foot's own presses by the session and the ask's own id; a refusal is said in
    * its words. Its session standing still on it, the row holds work.
    */
@@ -263,7 +263,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person's answer holds work, with a press per choice its agent
+   * A tool call a session holds for the person's answer holds work, with a press per choice its agent
    * offered, the session's page's own, sending that choice's id; its answer said in the page's words, a refusal by its code.
    */
   it('lists a tool call held for the person, answers it with the choice pressed and says a refused answer in its words', async () => {
@@ -289,7 +289,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * FABRIC-PERFORM1j: a node record that does not read is listed with its folder's press, which asks the shell to open it, naming no
+   * A node record that does not read is listed with its folder's press, which asks the shell to open it, naming no
    * folder; a refusal (no record kept now) is said in the driver's words.
    */
   it('lists a node record that does not read and opens its folder, saying a refusal in its words', async () => {
@@ -308,7 +308,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * INTEGRATE1o part o3 (§17.3): a run held at a declined request is listed with the run's own *Pass over…*, which asks once for the person's
+   * A run held at a declined request is listed with the run's own *Pass over…*, which asks once for the person's
    * words and then keeps the skip on the run's node through the run's door; a word already kept is said inside the ask, by its code.
    */
   it('lists a run held at a declined request and passes its node over with the person’s words, saying a refusal inside the ask', async () => {
@@ -332,7 +332,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * INTEGRATE1p (C33): a run's own declined request is listed with *Ask again…* and *Go on without it…*, each the run's node word through the
+   * A run's own declined request is listed with *Ask again…* and *Go on without it…*, each the run's node word through the
    * run's door: the first asks once and says nothing, the second needs the person's words.
    */
   it('lists a run held at its own declined request and asks again, or goes on without it with the person’s words', async () => {
@@ -354,7 +354,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * GITAUTH1a (the git auth design §5.2, §7.4): a held git remote is listed with what waits for the person's word, and its *Try again*
+   * A held git remote is listed with what waits for the person's word, and its *Try again*
    * asks the shell to lift its repositories' holds in its workspace, saying how many; one already lifted says so; a refusal in its words.
    */
   it('lists a held git remote and tries it again in one press, saying what it lifted', async () => {
@@ -387,7 +387,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between holds its session's work for
+   * A third answer in a row with nobody between holds its session's work for
    * the person, with *Go on with this answer* and *Not now*, the session's page's own, each sending the session and the choice; its
    * answer said in the page's words, a refusal by its code.
    */
@@ -410,7 +410,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * XAGENT1g (the second-agent design §9): a second opinion disputed where the work lands by itself waits for the person's word,
+   * A second opinion disputed where the work lands by itself waits for the person's word,
    * saying what its gate says; *Ask again* is one press, *Go on anyway…* asks once with their words, and its door opens the
    * session, where every press is.
    */
@@ -442,8 +442,8 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * UX6d (design §6.2, §9.4): the intake waiting behind a cooling account says so, and signs in the account it passed signed
-   * out in one press, whose steps follow under the row (the platform language §4: a step happens where it was started).
+   * The intake waiting behind a cooling account says so, and signs in the account it passed signed
+   * out in one press, whose steps follow under the row (a step happens where the person started it).
    */
   it('signs in an account a waiting start needs from its row, its steps under the row', async () => {
     start([waitRow()]);
@@ -460,7 +460,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * OWNSPACE1b-B (D175 point 7): the start held for no Daoris account is a row whose press is *Sign in for Daoris*, running
+   * The start held for no Daoris account is a row whose press is *Sign in for Daoris*, running
    * `login-new` in place with the sign-in's steps under the row, and no step 3 there (a new account serves by default).
    */
   it('signs in for Daoris from the row of a start held for no account, its steps under the row', async () => {
@@ -475,7 +475,7 @@ describe('What needs you on a machine', () => {
     expect(await within(item).findByRole('region', { name: 'Signing in to another Claude Code account' })).toBeInTheDocument();
   });
 
-  /** CODEXSIGNIN2: a sign-in refused at its start is said in the panel under the row, whole, with the way to try again or close. */
+  /** A sign-in refused at its start is said in the panel under the row, whole, with the way to try again or close. */
   it('keeps a refused sign-in’s panel under its row and says the sentence in it', async () => {
     start([waitRow()]);
     const was = invoke.getMockImplementation()!;
@@ -497,7 +497,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * POOL1c (the account-pool design §4.3): no account is outside the set, so a wait offers to let none run and joins none to a
+   * No account is outside the set, so a wait offers to let none run and joins none to a
    * list, whatever an older answer carries.
    */
   it('lets no account run a workspace: every account of Daoris’s serves every workspace', async () => {
@@ -522,7 +522,7 @@ describe('What needs you on a machine', () => {
   });
 
   /**
-   * OVERVIEWNOISE1b, the owner's report: a tree its session recorded that no branch record follows is one row, named by that session
+   * A tree its session recorded that no branch record follows is one row, named by that session
    * as Sessions names it, its block said once in the reader's language and never by the tree's path; its door is where the clean-up's
    * press is.
    */
@@ -552,7 +552,7 @@ describe('What needs you on a machine', () => {
     }
   });
 
-  /** Review can be many (§6.2): five rows, then the rest counted, a door into Sessions, where they are. */
+  /** Review can be many: five rows, then the rest counted, a door into Sessions, where they are. */
   it('shows five sessions to review, longest waiting first, then sends the rest to Sessions', async () => {
     const onSessions = vi.fn();
     const reviewDoor = vi.fn();
@@ -616,11 +616,11 @@ describe('What needs you on a machine', () => {
     expect(asked()).not.toContain('RULE_PROPOSAL');
     await userEvent.click(within(item).getByRole('button', { name: 'Allow' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000002', accept: true } }));
-    // Said as it was pressed, *Allow* (PROPOSEHERE1b): the conversation's card answers through the same owner.
+    // Said as the person pressed it, *Allow*: the conversation's card answers through the same owner.
     expect(notify).toHaveBeenCalledWith('Allowed: allow WebFetch for every session on this machine. Sessions started from now on are handed it.');
   });
 
-  /** PROPOSEHERE1c: an *Allow* here tells the session that proposed the rule, as the conversation's own does (PROPOSEHERE1b). */
+  /** An *Allow* here tells the session that proposed the rule, as the conversation's own does. */
   const allow = async () => {
     const item = await screen.findByRole('listitem', { name: 'allow WebFetch for every session on this machine' });
     await userEvent.click(within(item).getByRole('button', { name: 'Allow…' }));
@@ -667,11 +667,11 @@ describe('What needs you on a machine', () => {
 });
 
 /**
- * UX6c (design §6): the band settles from its rows what one press can, each on its record's own route at the service, its
- * sentence said back. Two asks sat proposed on the install until someone pressed through to publish them; now the row publishes.
+ * The band settles from its rows what one press can, each on its record's own route at the service, its
+ * sentence said back. The row publishes a proposed ask itself, with no need to press through elsewhere.
  */
 describe('What needs you settles what one press can', () => {
-  /** An ask the declarations proposed and nobody has published (INT4a), and a done held for the person's yes (DRIFT1d2). */
+  /** An ask the declarations proposed and nobody has published, and a done held for the person's yes. */
   const PROPOSED = {
     id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration per frame.', state: 'Proposed',
     tier: 'declarations', asked: '2026-09-21T08:00:00Z', updated: '2026-09-21T08:00:00Z',
@@ -729,7 +729,7 @@ describe('What needs you settles what one press can', () => {
     posted.length = 0;
   });
 
-  /** Never a card saying all clear (§6.1): one line, and what is running, which is the next thing a person asks. */
+  /** Never a card saying all clear: one line, and what is running, which is the next thing a person asks. */
   it('is one line when nothing needs you, saying what is working', async () => {
     const working = (id: string, state: string) => ({
       id, quest: 'q1', repository: 'engine', door: 'stub', kind: 'driven', state, created: '2026-09-21T09:00:00Z', updated: '2026-09-21T09:00:00Z',
@@ -742,7 +742,7 @@ describe('What needs you settles what one press can', () => {
     expect(within(band).queryByRole('list')).toBeNull();
   });
 
-  /** A group with no rows is not shown (§6.2). */
+  /** A group with no rows is not shown. */
   it('shows the groups that hold rows, each named', async () => {
     settle([proposed, departure]);
     const band = await screen.findByRole('region', { name: 'What needs you' });
@@ -753,7 +753,7 @@ describe('What needs you settles what one press can', () => {
     expect(within(band).queryByRole('group', { name: 'Ready for you' })).toBeNull();
   });
 
-  /** §9.4: publishing an ask its declarations proposed is one press, on the ask's own route, its sentence said back. */
+  /** Publishing an ask its declarations proposed is one press, on the ask's own route, its sentence said back. */
   it('publishes a proposed ask from its row, saying the service’s sentence', async () => {
     const notify = settle([proposed]);
     const item = await screen.findByRole('listitem', { name: 'Cap the hydration per frame.' });
@@ -787,9 +787,9 @@ describe('What needs you settles what one press can', () => {
   });
 
   /**
-   * GOAHEADSTALE1: the go-aheads nothing on their asks could still use are refused in one press, with one reason. Each goes through its
+   * The go-aheads nothing on their asks could still use are refused in one press, with one reason. Each goes through its
    * own door, the service's answer, as its row's Refuse would, saying no park goes on (`goesOn: false`), and nothing is nudged: refusing
-   * runs nothing. A go-ahead something still waits for is left as it was.
+   * runs nothing. A go-ahead something still waits for is left alone.
    */
   describe('the stale go-aheads', () => {
     const stale = (ask: string, number: number) => row('go-ahead', `${ask}#${number}`, '2026-09-20T09:00:00Z', {
@@ -865,7 +865,7 @@ describe('What needs you settles what one press can', () => {
     });
   });
 
-  /** A refusal is the service's sentence, verbatim, and the row stays as it was. */
+  /** A refusal is the service's sentence, verbatim, and the row stays unchanged. */
   it('says a refused publish in the service’s words', async () => {
     const notify = settle([proposed], { refused: true });
     const item = await screen.findByRole('listitem', { name: 'Cap the hydration per frame.' });

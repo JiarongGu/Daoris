@@ -9,9 +9,9 @@ import type { EditorRole, StepStaffing } from './answers';
 import { HOLDS, judgedFor, LIST, PALETTE } from './editFixtures';
 import { WorkflowEditor } from './WorkflowEditor';
 
-// A step's *Taken by* (SETUPUX1t; the Setup design's §2.4): the roles that take the step's work and cover this place, each named with its
+// A step's *Taken by*: the roles that take the step's work and cover this place, each named with its
 // place; *Give engine its own role for …* opening the one role editor beside the step; a place that has a role of its own offered *Edit* in
-// its place; and a role save the driver refused, with the editor open and the draft as it was. In English and 中文, both themes, at the main
+// its place; and a role save the driver refused, with the editor open and the draft unchanged. In English and 中文, both themes, at the main
 // area's wide, half and narrow widths (80, 39 and 25rem). A `play` presses what a person would.
 
 const nothing = () => {};
@@ -100,7 +100,7 @@ export const HasItsOwn: Story = { play: selected, args: { roles: OWN.map(editorR
 export const HasItsOwnNarrow: Story = { ...HasItsOwn, decorators: [storyWidths.narrow] };
 export const HasItsOwnChinese: Story = { ...HasItsOwn, decorators: [storyWidths.wide, chinese] };
 
-/** **A role save the driver refused**: the editor stays open under the driver's sentence, and the draft is as it was. */
+/** **A role save the driver refused**: the editor stays open under the driver's sentence, and the draft is unchanged. */
 const refusing: Story['play'] = async (context) => {
   await giving?.(context);
   press(document.body, /^Save$|^保存$/);

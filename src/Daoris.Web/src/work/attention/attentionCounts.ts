@@ -3,7 +3,7 @@ import type { AttentionKind } from './AttentionRow';
 import type { PushedAttention } from './attentionPushed';
 
 /**
- * What *What needs you* lists and the bell counts (the notification design §2.2): every row of the window's scope but a press's own,
+ * What *What needs you* lists and the bell counts: every row of the window's scope but a press's own,
  * whose card is drawn from the confirmation channel. The bell, the taskbar, *Notifications*' group and Overview's summary read this
  * one answer, so a count never holds a row the list does not.
  */
@@ -20,13 +20,13 @@ export function needsListed<T extends { kind: string; id?: string; obligation?: 
 }
 
 /**
- * The obligation a row is (the comms design §4.1 clause 3): the exchange's id .NET keys it by where it names one (a go-ahead's
+ * The obligation a row is: the exchange's id .NET keys it by where it names one (a go-ahead's
  * `go-ahead:<ask>/<n>`), else its kind and id, which for a helper's and a hand-over's ask is that exchange's id already.
  */
 export const obligationOf = (row: { kind: string; id?: string; obligation?: string }): string => row.obligation ?? `${row.kind}:${row.id ?? ''}`;
 
 /**
- * The bell's count (the notification design §2.1): each press of either source once, and each obligation of
+ * The bell's count: each press of either source once, and each obligation of
  * *What needs you* once. A message unread in a channel is no obligation, and is marked by the channel's own dot, never counted here.
  */
 export const bellCount = (presses: readonly unknown[], rows: readonly { kind: string; id?: string; obligation?: string }[]): number =>
@@ -36,7 +36,7 @@ export const bellCount = (presses: readonly unknown[], rows: readonly { kind: st
 export type AttentionPlace = 'sessions' | 'quests' | 'projects' | 'agents' | 'settings';
 
 /**
- * The place each kind is counted at (the UI/UX design §3.10): the place its door opens (`App.tsx`'s `attentionDoors`),
+ * The place each kind is counted at: the place its door opens (`App.tsx`'s `attentionDoors`),
  * where its step is taken, so a place's number is what the person finds to do there. A press is the bell's alone, its card in
  * *Notifications*. Typed over every kind, so a new kind is placed when it is added.
  */
@@ -90,7 +90,7 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   'git-ask': 'sessions',
 };
 
-/** The sessions a place is judged with: those the page holds, for the branch a unit of work was cut for (`workCutFor`). */
+/** The sessions a place is judged with: those the page holds, for the branch a unit of work is cut for (`workCutFor`). */
 type PlaceSessions = readonly Pick<Session, 'id' | 'repository' | 'tree'>[] | undefined;
 
 /**
@@ -118,7 +118,7 @@ export function placeCounts(rows: readonly PushedAttention[], sessions?: PlaceSe
 }
 
 /**
- * The session a `work` row's branch was cut for, where nothing records its owner and the page holds a session the
+ * The session a `work` row's branch is cut for, where nothing records its owner and the page holds a session the
  * branch is named for, by the name the trees give it (`daoris/` and the tree's folder, as WorkFrame finds a session's own branch).
  * That session is the row's door, and the place it is counted at.
  */

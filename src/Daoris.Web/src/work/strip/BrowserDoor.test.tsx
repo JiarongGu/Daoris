@@ -9,7 +9,7 @@ import { BrowserDoor } from './BrowserDoor';
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
 /**
- * BRW7: Daoris's browser has a door on the strip as visible as a region toggle, not only View → Browser
+ * Daoris's browser has a door on the strip as visible as a region toggle, not only View → Browser
  * and the palette. A molecule: a press goes out, and the shell decides what opens.
  */
 describe('the browser door', () => {
@@ -24,7 +24,7 @@ describe('the browser door', () => {
 });
 
 /**
- * BRW8: whose hands are on the page, said beside the door in words, before the person types into it —
+ * Whose hands are on the page, said beside the door in words, before the person types into it —
  * and a way to the session, so they can watch it or stop it.
  */
 describe('who is driving', () => {
@@ -73,8 +73,7 @@ describe('who is driving', () => {
   });
 
   /**
-   * SESSBADGE1: in Chinese the chip said *2 个会话正在操作* ("2 sessions are working") beside the browser's door, one more count of
-   * sessions working that disagreed with the others. It names the browser, first, so a long name is cut after it, never before.
+   * The chip names the browser it counts for, first, so a long name is cut after it, never before.
    */
   describe('names the browser it counts for, in both languages', () => {
     afterEach(() => i18n.changeLanguage('en'));

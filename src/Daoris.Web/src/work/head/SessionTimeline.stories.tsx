@@ -8,7 +8,7 @@ import { SessionTimeline, TimelineEntry } from './SessionTimeline';
 
 // Each kind of observed event, then the assembled layer. What is NOT here is the point: there is no
 // story for "step 3 of 7", because the record has no such thing and reading one out of the stream
-// was rejected by name (D52). Drawn in a session's page at the frame's widths (the UI/UX design R6), where a window
+// is rejected. Drawn in a session's page at the frame's widths, where a window
 // with no dock carries it; in 中文 and dark.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
@@ -88,8 +88,8 @@ export const Parked: Story = {
 };
 
 /**
- * A long note folds to four lines, with *Show all* (UX6b, design §2.5): the install's side bar showed an ended session's
- * whole verify report, in italics, past the window's foot. Drawn at the main area's 400 px floor.
+ * A long note folds to four lines, with *Show all*, so an ended session's whole verify report
+ * never runs past the window's foot. Drawn at the main area's 400 px floor.
  */
 export const ALongNoteFolds: Story = {
   args: {

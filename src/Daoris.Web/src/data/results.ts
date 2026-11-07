@@ -8,10 +8,10 @@ export const PAGE_SHOWN = 40;
  * A page of results, and whether the service had more to give.
  *
  * @remarks
- * 🔴 **Found on the deployed application** (D62), where the index holds 965 entries rather than the
- * fixture's handful. A broad query returned exactly forty results and the view rendered forty, with
- * nothing anywhere saying that was a limit — so "what has the family already learned about this"
- * answered with a silently truncated list, which is the one answer a search must never give
+ * 🔴 **On the deployed application** the index holds hundreds of entries, not the
+ * fixture's handful. A broad query that returned exactly forty results and rendered forty, with
+ * nothing anywhere saying that is a limit, would answer "what has the family already learned about this"
+ * with a silently truncated list, which is the one answer a search must never give
  * quietly.
  *
  * **Asking for one more is what turns a guess into a fact.** The alternative — noticing that the

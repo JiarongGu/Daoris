@@ -5,12 +5,11 @@ import { Drawer, Prose, SectionTitle } from '../../design/ui';
 export type ShortcutGroup = { menu: string; rows: { label: string; keys: string[] }[] };
 
 /**
- * Help › *Keyboard shortcuts* (UX7a, D152 §3.2): every key the window answers, by menu, in the reader's language, read
+ * Help › *Keyboard shortcuts*: every key the window answers, by menu, in the reader's language, read
  * from the one table that builds the menus, so the drawer never lists a key the menus do not print.
  *
  * @remarks
- * Before it no list of keys existed anywhere; nine keys were answered and three were printed. A drawer, as *About Daoris*
- * is (D41 §4): a thing read once and closed. **A molecule**: the groups and the notes arrive, a close goes out.
+ * A drawer, as *About Daoris* is: a thing read once and closed. **A molecule**: the groups and the notes arrive, a close goes out.
  */
 export function KeyboardShortcuts({ groups, browser = false, onClose }: {
   groups: readonly ShortcutGroup[];

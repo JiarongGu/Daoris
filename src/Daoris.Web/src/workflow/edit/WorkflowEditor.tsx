@@ -50,11 +50,11 @@ export type WorkflowEditorBridge = {
   onSave: (ask: WorkflowSaveAsk) => Promise<WorkflowSaveAnswer>;
   using: boolean;
   onUse: (ask: WorkflowUseAsk) => Promise<WorkflowUseAnswer>;
-  /** The plan of a choice (`WORKFLOW_USE {plan}`), which writes nothing; none, and *Use here* is today's press (SETUPUX1p). */
+  /** The plan of a choice (`WORKFLOW_USE {plan}`), which writes nothing; none, and *Use here* is today's press. */
   onPlan?: (ask: WorkflowUseAsk) => Promise<WorkflowUseAnswer>;
   /** Told when the editor opens and closes, so its reads are asked only while it shows. */
   onOpen?: (open: boolean) => void;
-  /** Ask Daoris's newest proposal against a draft of this place (FLOWCHART2f), as the bridge read it; none where none waits. */
+  /** Ask Daoris's newest proposal against a draft of this place, as the bridge read it; none where none waits. */
   proposal?: ProposalShown | null;
   /** The press naming each change of it taken or left, which settles it (`HELP_APPLY` with `taken` and `left`). */
   onSettleProposal?: (id: string, taken: readonly string[], left: readonly string[]) => Promise<unknown>;
@@ -72,19 +72,19 @@ export type WorkflowEditorProps = WorkflowEditorBridge & {
   pipeline?: 'development' | 'verification' | null;
   /** The lines the place declares, which a landing's target is chosen from; none, and the target is typed. */
   lines?: string[];
-  /** The draft the page held for this place when the editor was last unmounted, which it begins from; and where it reports each change. */
+  /** The draft the page held for this place when the editor last unmounted, which it begins from; and where it reports each change. */
   held?: EditorHold | null;
   onHold?: (hold: EditorHold) => void;
   onClose?: () => void;
 };
 
 /**
- * One step of the editor's history: the draft, the words of the change that made it, and what of each of Ask Daoris's proposals was taken
- * and left by then, so one undo takes back a take and its record together (D223 §8.6).
+ * One step of the editor's history: the draft, the words of the change that made it, and what of each of Ask Daoris's proposals is taken
+ * and left by then, so one undo takes back a take and its record together.
  */
 export type Snapshot = { draft: GraphDraft; said: string; decided?: Readonly<Record<string, Decided>> };
 
-/** What the save is aimed at, and the id a new one was copied from (a preset's, or a saved workflow's). */
+/** What the save is aimed at, and the id a new one is copied from (a preset's, or a saved workflow's). */
 export type Target = SaveTarget & { from: string | null };
 
 /**
@@ -100,7 +100,7 @@ export type EditorHold = {
 };
 
 /**
- * **The workflow editor** (WORKFLOWEDIT1b; FLOWCHART2b, D223 §3): a workflow composed on its chart. A step is added by a way's ＋, a ◎'s,
+ * **The workflow editor**: a workflow composed on its chart. A step is added by a way's ＋, a ◎'s,
  * its + key or the picker; a way's target is chosen in the selected step's *What happens next*, by a drag from a port or by picking on the
  * chart, and its kind is what the row and the target give, never named. A step moves within its chain, is duplicated, copied and pasted,
  * and removed alone or joined; every change is one step of history, undone and redone by the Edit menu and its keys, and said aloud.
@@ -148,8 +148,8 @@ function Composing({
   const latest = useRef(draft);
   latest.current = draft;
   const [chosen, setChosen] = useState<string | null>(null);
-  // The steps chosen with it by Ctrl- or Shift-press or a box: for Copy alone; every other act takes the primary (CANVAS1b).
-  // Kept with the primary it was chosen beside, so any act that moves the primary leaves it behind.
+  // The steps chosen with it by Ctrl- or Shift-press or a box: for Copy alone; every other act takes the primary.
+  // Kept with the primary it is chosen beside, so any act that moves the primary leaves it behind.
   const [alsoOf, setAlso] = useState<{ of: string | null; ids: readonly string[] }>({ of: null, ids: [] });
   const [drawer, setDrawer] = useState(false);
   const [picker, setPicker] = useState<InsertAt | null>(null);
@@ -164,7 +164,7 @@ function Composing({
   // The places an append reaches that the person let follow it, as one key (`consentKey`): consent holds for exactly that set.
   const [consented, setConsented] = useState<string | null>(held?.consented ?? null);
   // The steps the draft began from, which a save is reviewed against and *Use here* needs the draft to still be.
-  // A draft the conversation was told is not the version it came from: that version is read, and until it is the baseline is unknown.
+  // A draft the conversation is told is not the version it came from: that version is read, and until it is the baseline is unknown.
   const [readingBase, setReadingBase] = useState<{ id: string; version: number } | null>(
     () => (held ? held.reading : startFrom?.told && startFrom.id && startFrom.base != null ? { id: startFrom.id, version: startFrom.base } : null),
   );
@@ -194,7 +194,7 @@ function Composing({
   const selected = chosen !== null && draft.nodes.some((node) => node.id === chosen) ? chosen : null;
   const also = alsoOf.of !== null && alsoOf.of === selected ? alsoOf.ids.filter((id) => id !== selected && draft.nodes.some((node) => node.id === id)) : [];
 
-  // A saved version to begin from, once its answer lands; a version of steps (schema 1) is no graph to compose, and leaves the draft as it was.
+  // A saved version to begin from, once its answer lands; a version of steps (schema 1) is no graph to compose, and leaves the draft unchanged.
   useEffect(() => {
     if (waiting === null || shown?.id !== waiting) return;
     if (rebasing) {
@@ -222,7 +222,7 @@ function Composing({
   }, [waiting, rebasing, shown, target.base, t]);
 
   // The focus a change asks for, given once the dialogs it closed have let theirs go: a step by its id, the first that can take the way
-  // being chosen, or the control the picker was opened from.
+  // being chosen, or the control the picker is opened from.
   useEffect(() => {
     if (!focusing) return undefined;
     const timer = window.setTimeout(() => {
@@ -232,7 +232,7 @@ function Composing({
       }
       const nodes = [...(region.current?.querySelectorAll<HTMLElement>('[data-flow-node]') ?? [])];
       const found = focusing.at === PICKABLE ? nodes.find((node) => node.dataset.picking === 'true') : nodes.find((node) => node.dataset.flowNode === focusing.at);
-      // In the canvas's viewport the canvas reveals the step, so the focus scrolls nothing (CANVAS1a, trap 2).
+      // In the canvas's viewport the canvas reveals the step, so the focus scrolls nothing.
       found?.focus(found.closest('[data-canvas-world]') ? { preventScroll: true } : undefined);
     }, 0);
     return () => window.clearTimeout(timer);

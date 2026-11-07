@@ -8,12 +8,12 @@ import {
   answer, MISSING_CHAIN, NO_ASK_CHAIN, NOTHING, OLD_CHAIN, QUEST_CHAIN, SESSION_CHAIN, UNREAD_ANSWER, WAITING_CHAIN,
 } from './traceFixtures';
 
-// How a session or a quest came to be (TRACE1b, D143, D50), as its page's section shows it: folded, as every page first
+// How a session or a quest came to be, as its page's section shows it: folded, as every page first
 // shows it; folded once read, with its story; a quest's chain whole, open; a session's; links nothing keeps, each said
 // where it would have been; a quest no ask asked, with a running session's rules; an ask from before words were kept, a
 // merge kept only as the acceptance, and a teammate's record; a store that did not answer; nothing found; reading; a
-// refusal; and each in 中文, in dark, at half the window and narrow. Drawn in a page's main area at the frame's widths
-// (the UI/UX design R6): a quest's page and a session's carry it.
+// refusal; and each in 中文, in dark, at half the window and narrow. Drawn in a page's main area at the frame's widths:
+// a quest's page and a session's carry it.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
@@ -63,19 +63,19 @@ export const SessionChinese: Story = { ...Session, decorators: [chinese] };
 /** A session's chain in dark. */
 export const SessionDark: Story = { ...Session, decorators: [dark] };
 
-/** Links nothing keeps, each said missing where it would have been, and never guessed (D143 point 3). */
+/** Links nothing keeps, each said missing where it would have been, and never guessed. */
 export const Missing: Story = { args: { kind: 'session', id: 's3', answer: answer(MISSING_CHAIN) } };
 
 /** Missing links in 中文. */
 export const MissingChinese: Story = { ...Missing, decorators: [chinese] };
 
-/** A quest no ask asked, its running session's rules read from the file it was handed, and a cut instruction. */
+/** A quest no ask asked, its running session's rules read from the file it is handed, and a cut instruction. */
 export const NoAsk: Story = { args: { id: 'q5', answer: answer(NO_ASK_CHAIN) } };
 
 /** An ask from before words were kept, a merge kept only as the person's acceptance, and a teammate's record. */
 export const OldRecords: Story = { args: { id: 'q7', answer: answer(OLD_CHAIN) } };
 
-/** Waiting to land automatically (LAND2b): held once by a branch that stands, and an earlier landing not saying who accepted it. */
+/** Waiting to land automatically: held once by a branch that stands, and an earlier landing not saying who accepted it. */
 export const WaitingToLand: Story = { args: { kind: 'session', id: 's8', answer: answer(WAITING_CHAIN) } };
 
 /** Waiting to land, in 中文. */

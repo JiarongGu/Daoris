@@ -7,7 +7,7 @@ import { CommandCenter } from '../strip/CommandCenter';
 import { ActivityBar, type ActivityItem, AppStrip, StatusBar } from './frame';
 import { ZoomReadout } from './ZoomReadout';
 
-// The window's zoom (ZOOM1, the UI/UX design §3.11): the window at a level, the content scaled and the frame (the title strip,
+// The window's zoom: the window at a level, the content scaled and the frame (the title strip,
 // the activity bar, the status bar) at its own size, the level said over the content as it changes and on the status bar while
 // it is not 100%. The window is drawn at a fixed size in pixels, as a real window's viewport is, whatever the level.
 // `measured/zoom.spec.ts` measures these stories in Chromium.

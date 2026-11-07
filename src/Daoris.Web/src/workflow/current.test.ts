@@ -5,7 +5,7 @@ import {
   WORKSPACE,
 } from './fixtures';
 
-// WORKFLOW1b: what the page reads off a Current it was answered, and nothing it derives (design §2.7): the steps around
+// What the page reads off a Current the shell answered, and nothing it derives: the steps around
 // the landing, the Setup section that sets each step, and the person's part composed from the steps.
 
 describe('a Current read for drawing', () => {
@@ -32,7 +32,7 @@ describe('a Current read for drawing', () => {
     expect(yourPart([WORK(), BRANCH_AUTOMATIC])).toEqual([]);
   });
 
-  // INTEGRATE1r: the integrate step rides the landing's Accept where the person presses it, so the part does not say it twice; a
+  // The integrate step rides the landing's Accept where the person presses it, so the part does not say it twice; a
   // request the owner presses on its own, after an automatic landing, is a part of its own.
   it('says an owner-requested integration beside the landing once, and on its own after an automatic landing', () => {
     expect(yourPart(INTEGRATING.steps)).toEqual([{ press: 'accept' }]);

@@ -1,4 +1,4 @@
-// An ask's channel as the shell answers it (SESSONE2c, D167 points 6 to 8; the co-working design §2.4): where an ask's
+// An ask's channel as the shell answers it: where an ask's
 // sessions and the person talk, messages and Daoris's own coded lines in one time order. Pure, so every channel a person could
 // have is an argument; the bridge (`bridge/sessions/asks.ts`) asks, and the molecules draw from these.
 
@@ -16,10 +16,10 @@ export type ChannelItem = {
   session?: string | null;
   repository?: string | null;
   agent?: string | null;
-  /** The poster's line of work (D167 point 2), for a session's message. */
+  /** The poster's line of work, for a session's message. */
   entry?: string | null;
   to?: string | null;
-  /** The machine that posted it, where it was not this one (SESSONE2d); absent for this machine's own. */
+  /** The machine that posted it, where it is not this one; absent for this machine's own. */
   origin?: string | null;
   re?: string | null;
   question?: boolean;
@@ -31,25 +31,25 @@ export type ChannelItem = {
   name?: string | null;
   from?: string | null;
   /**
-   * When its sender asked it to reach a working session (COWORK1d, D188 point 2): true urgent, false ordinary; absent on a message
+   * When its sender asked it to reach a working session: true urgent, false ordinary; absent on a message
    * from before, which says no level.
    */
   urgent?: boolean | null;
-  /** What it reached in each repository it addresses, as the person reads it (COWORK1d, the design §8.4); absent from a host from before. */
+  /** What it reached in each repository it addresses, as the person reads it; absent from a host from before. */
   receipts?: ChannelReceipt[] | null;
-  /** The part a message is to alone (COMMS1k, the comms design §4.4): a session, whose line's head takes it. */
+  /** The part a message is to alone: a session, whose line's head takes it. */
   part?: string | null;
-  /** The origin a message to one part, or on a line's own channel, is kept on (COMMS1k): `ask:<id>`, `session:<id>` or `quest:<id>`. */
+  /** The origin a message to one part, or on a line's own channel, is kept on: `ask:<id>`, `session:<id>` or `quest:<id>`. */
   channel?: string | null;
-  /** What a message to one part reached in that part's line, as the person reads it (COMMS1k): a receipt's state. */
+  /** What a message to one part reached in that part's line, as the person reads it: a receipt's state. */
   receipt?: string | null;
-  /** That its poster is an agent outside Daoris, a member of the channel of its own (CHANNELJOIN1): never the person's, never a session's. */
+  /** That its poster is an agent outside Daoris, a member of the channel of its own: never the person's, never a session's. */
   outside?: boolean;
 };
 
 /**
- * A message's receipt in one repository it addresses (COWORK1d, the message-urgency design §7): `waiting`, `held`, `sent`, `taken`,
- * `read`, `partly`, `answered` or `not-reached`, never more than Daoris observed; answered is a reply, never that it was obeyed.
+ * A message's receipt in one repository it addresses: `waiting`, `held`, `sent`, `taken`,
+ * `read`, `partly`, `answered` or `not-reached`, never more than Daoris observed; answered is a reply, never that it is obeyed.
  */
 export type ChannelReceipt = { repository: string; state: string };
 
@@ -57,8 +57,8 @@ export type ChannelReceipt = { repository: string; state: string };
 export const RECEIPT_STATES = new Set(['waiting', 'held', 'sent', 'taken', 'read', 'partly', 'answered', 'not-reached']);
 
 /**
- * Whether the person may send a message on to a repository's session from its receipt (COWORK1d, the design §4.2, §8.4): where it
- * waits there, is held for a turn's end, was handed only partly, or never reached it. Taken, read, sent and answered have reached it.
+ * Whether the person may send a message on to a repository's session from its receipt: where it
+ * waits there, is held for a turn's end, is handed only partly, or never reached it. Taken, read, sent and answered have reached it.
  */
 export const forwardable = (receipt: ChannelReceipt): boolean =>
   receipt.state === 'waiting' || receipt.state === 'held' || receipt.state === 'partly' || receipt.state === 'not-reached';
@@ -76,15 +76,15 @@ export function forwardedOf(raw: unknown): ChannelForwarded {
 }
 
 /**
- * How Daoris's words around another session's claim begin when the driver hands one to a running session (SESSONE2b,
- * `ChannelText.Claim`): the record keeps them as the driver's own words (`target`). Since SESSCTX1b the event carries the message's
+ * How Daoris's words around another session's claim begin when the driver hands one to a running session
+ * (`ChannelText.Claim`): the record keeps them as the driver's own words (`target`). The event carries the message's
  * own mark (`channel`), which the page reads first; this opening tells a claim on a record from before. A twin of the driver's fixed
  * opening, held by a test on the driver's side.
  */
 export const CHANNEL_CLAIM_OPENING = "Another session says, on the ask's channel";
 
 /**
- * An ask's channel as the person reads it: their own mark, and how many items are past it, lines included; and since COMMS1k the
+ * An ask's channel as the person reads it: their own mark, and how many items are past it, lines included; and the
  * messages to one part each, kept apart from the items and never among them (empty from a host before them).
  */
 export type Channel = { ask: string; entry: string; items: ChannelItem[]; unread: number; mark?: string | null; addressed?: ChannelItem[] };
@@ -119,7 +119,7 @@ export function channelOf(raw: unknown): Channel | null {
 }
 
 /**
- * An ask the mirrored messages name and this machine does not hold (SESSONE2h): all this machine knows of a teammate's ask. There
+ * An ask the mirrored messages name and this machine does not hold: all this machine knows of a teammate's ask. There
  * is no record, so no title; `origins` are the machines its messages came from, and `unread` is against the person's local mark.
  */
 export type ElsewhereAsk = { id: string; workspace: string; origins: string[]; latest: string; messages: number; unread: number };
@@ -182,7 +182,7 @@ export function repositoriesOf(items: readonly ChannelItem[], known: readonly st
 }
 
 /**
- * What a session's panel holds of the channel (design §2.4): the messages to everyone, to its repository and by its own line
+ * What a session's panel holds of the channel: the messages to everyone, to its repository and by its own line
  * of work, and the lines of the quests that concern its repository (asked of it, or by it).
  */
 export function forEntry(items: readonly ChannelItem[], { entry, repository }: { entry: string; repository: string }): ChannelItem[] {
@@ -192,7 +192,7 @@ export function forEntry(items: readonly ChannelItem[], { entry, repository }: {
 }
 
 /**
- * The newest messages of what a session's panel holds, oldest first (COWORKVIEW1c, the cowork view design §3.3): the same read as the
+ * The newest messages of what a session's panel holds, oldest first: the same read as the
  * panel's, so the at-work view asks the channel for nothing of its own.
  */
 export function lastWords(channel: Channel | null | undefined, only: { entry: string; repository: string }, count = 3): ChannelItem[] {
@@ -200,14 +200,14 @@ export function lastWords(channel: Channel | null | undefined, only: { entry: st
   return forEntry(channel.items, only).filter((item) => item.kind === 'message').sort((a, b) => a.at.localeCompare(b.at)).slice(-count);
 }
 
-/** The newest messages of a whole channel, oldest first: the ask page's own read (COWORKVIEW1c, COWORKVIEW1d), and a line's own. */
+/** The newest messages of a whole channel, oldest first: the ask page's own read, and a line's own. */
 export function lastMessages(channel: { items: readonly ChannelItem[] } | null | undefined, count = 3): ChannelItem[] {
   if (!channel) return [];
   return channel.items.filter((item) => item.kind === 'message').sort((a, b) => a.at.localeCompare(b.at)).slice(-count);
 }
 
 /**
- * A line's own channel as the person reads it (COMMS1k, the comms design §4.4): the channel of a line of work on no ask held here (a
+ * A line's own channel as the person reads it: the channel of a line of work on no ask held here (a
  * chat's, a quest session's, a teammate's ask's), every message on it oldest first, each to one part naming it (`part`) with what it
  * reached in that part's line (`receipt`). It has no mark and no lines of Daoris's.
  */
@@ -243,7 +243,7 @@ export const unreadSum = (counts: Readonly<Record<string, number>>): number => O
 const LINE_CODES = new Set(['published', 'taken', 'done', 'declined', 'awaiting']);
 
 /**
- * One of Daoris's lines in the reader's language, from its code (D142): the quest by the name the list gives it, else by its
+ * One of Daoris's lines in the reader's language, from its code: the quest by the name the list gives it, else by its
  * id, and the repository it concerns. A code this page has no words for is said as the service wrote it.
  */
 export function lineWords(t: Said, line: ChannelItem): string {

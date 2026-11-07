@@ -6,19 +6,19 @@ import { CheckHeld } from '../CheckHeld';
 import { heldCheck, lineBatch, lineTone, lineWord } from './lineSaid';
 import type { CheckHeldAnswer, CheckHeldAsk, WorkflowRun, WorkflowRunAnswer } from '../run';
 
-/** What a repository's Workflow tab is handed of its line: the answer, or that it is on its way or was refused, and the person's word on a held check. */
+/** What a repository's Workflow tab is handed of its line: the answer, or that it is on its way or refused, and the person's word on a held check. */
 export type VerifyRunsProps = {
-  /** What `WORKFLOW_RUN { line }` answered; absent while it is read, or where it was refused. */
+  /** What `WORKFLOW_RUN { line }` answered; absent while it is read, or where it is refused. */
   answer?: WorkflowRunAnswer | null;
   reading?: boolean;
-  /** The read was refused, in the driver's sentence that says why. */
+  /** The read is refused, in the driver's sentence that says why. */
   refusal?: string | null;
   /** The person's *Run again* or *Not now* on a check held unknown (`WORK_HELD`); none, and nothing is offered. */
   onHeld?: (ask: CheckHeldAsk) => Promise<CheckHeldAnswer>;
 };
 
 /**
- * **A repository's verifications** (FABRIC-PIPELINE1d, the pipeline design §4.4): its newest verification runs, newest first, each the branch
+ * **A repository's verifications**: its newest verification runs, newest first, each the branch
  * and commit it judged, who asked it and when, its verdict as a status word, and each gate as its check ran it. A check Daoris could not
  * establish offers *Run again* and *Not now* under its row (`CheckHeld`).
  *

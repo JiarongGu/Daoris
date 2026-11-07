@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 
-// The live console's two sources (D49 §2): the backlog asked for once, and SESSION_OUTPUT batches as
+// The live console's two sources: the backlog asked for once, and SESSION_OUTPUT batches as
 // they arrive — one stream by the driver's sequence numbers. The bridge is mocked as present.
 const { invoke, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -36,8 +36,8 @@ describe('a session console (D49 §2)', () => {
   });
 
   /**
-   * 🔴 REV3: a live batch that arrived before the backlog's answer moved "the newest seen" past the
-   * whole backlog, and the backlog was then filtered away — lines 1 to 249 never shown, and nothing said
+   * A live batch that arrives before the backlog's answer must not move "the newest seen" past the
+   * whole backlog, which would filter the backlog away — lines 1 to 249 never shown, and nothing said
    * so. The two sources are merged by sequence, whichever lands first.
    */
   it('keeps the backlog when a live batch lands before it', async () => {
@@ -51,7 +51,7 @@ describe('a session console (D49 §2)', () => {
     expect(result.current.lines.map((line) => line.sequence)).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
-  /** REV3: a gap-fill answered after the person moved on was appended to the NEXT session's console. */
+  /** A gap-fill answered after the person moved on is not appended to the NEXT session's console. */
   it('never shows one session\'s lines on another\'s console', async () => {
     const gap = deferred<unknown>();
     invoke.mockImplementation(async (_module: string, _type: string, body?: { payload?: { id?: string; after?: number } }) => {

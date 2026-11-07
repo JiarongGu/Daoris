@@ -14,7 +14,7 @@ const PARKED: Attention = {
   detail: 'Two ways forward; I recommend the second.',
 };
 
-/** An ask the declarations proposed and nobody has settled (INT4d) — it waits in a circle. */
+/** An ask the declarations proposed and nobody has settled — it waits in a circle. */
 const PROPOSAL: Attention = {
   id: '7c1e9a04b2d5',
   kind: 'proposal',
@@ -31,13 +31,13 @@ const PARKED_QUEST: Attention = {
   since: '2026-09-21T09:00:00Z', detail: '3 session(s) have failed on `#7a82cc`.',
 };
 
-/** STEWARDROLE1b (D209 §5.3): a quest the steward stopped, waiting on a Try again. */
+/** A quest the steward stopped, waiting on a Try again. */
 const STEWARD_STOPPED: Attention = {
   id: '7a82cc', kind: 'steward-stopped', title: 'Read the media field names from config', where: 'engine', session: 's1',
   since: '2026-09-21T09:00:00Z', detail: 'The steward stopped session `s1`; Try again, by the steward or the owner, carries it on.',
 };
 
-/** INTEGRATE1o part o3 (§17.3): a run held at a request the receiver declined, waiting on the person's *Pass over…*. */
+/** A run held at a request the receiver declined, waiting on the person's *Pass over…*. */
 const REQUEST_DECLINED: Attention = {
   id: 'r7', kind: 'request-declined', title: 'Read the media field names from config', where: 'engine', since: '2026-09-21T09:00:00Z',
   detail: 'Quest #q9 to `web` was declined, so the work holds here until you pass it over.',
@@ -70,7 +70,7 @@ const REVIEW: Attention = {
   since: '2026-09-21T09:00:00Z', detail: '3 commits to review',
 };
 
-/** The intake for two asks, held behind `home`'s cool-off, having passed two accounts read signed out (UX6d, design §6.3). */
+/** The intake for two asks, held behind `home`'s cool-off, having passed two accounts read signed out. */
 const ACCOUNT_WAIT: Attention = {
   id: 'wait:claude-code/account-2', kind: 'account-wait', title: 'Intake for 2 asks', where: 'work', circle: true,
   since: '2026-09-21T11:35:00Z', detail: 'home cools until Oct 6, 04:42; account-1 and account-3 read signed out at 10:42.',
@@ -95,8 +95,8 @@ const UNREAD: Attention = {
 };
 
 /**
- * A signed-out account of Daoris's, which no waiting start names: when it was read is known, since when it holds work is
- * not (UXFIX3).
+ * A signed-out account of Daoris's, which no waiting start names: its read time is known, since when it holds work is
+ * not.
  */
 const SIGNED_OUT: Attention = {
   id: 'signed-out:claude-code/account-1', kind: 'signed-out', title: 'account-1', where: 'Claude Code',
@@ -108,7 +108,7 @@ const SIGNED_OUT: Attention = {
 };
 
 /** Every act a row can be handed, each a spy. */
-/** What an ask under the row hands its act to say how it ended (UXFIX2b3a). */
+/** What an ask under the row hands its act to say how it ended. */
 const answeredByAct = { done: expect.any(Function), refused: expect.any(Function) };
 
 const everyAct = (): Required<AttentionActs> => ({
@@ -132,8 +132,8 @@ describe('a row in what needs you', () => {
     expect(screen.getByText('Expose a streaming budget on the chunk API')).toBeInTheDocument();
     expect(screen.getByText('engine')).toBeInTheDocument();
     expect(screen.getByText('parked at a checkpoint')).toBeInTheDocument();
-    // 🔴 UX5 U40: how long, as a span. It said *waiting 3h ago*, a point pasted into a duration,
-    // which 中文 made plainly wrong: *已等待 3 小时前*, "has waited three hours ago".
+    // 🔴 How long, as a span, never *waiting 3h ago*, a point pasted into a duration,
+    // which 中文 makes plainly wrong: *已等待 3 小时前*, "has waited three hours ago".
     expect(screen.getByText('waiting 3h 0m')).toBeInTheDocument();
     expect(screen.getByText(/I recommend the second/)).toBeInTheDocument();
   });
@@ -176,7 +176,7 @@ describe('a row in what needs you', () => {
     expect(screen.getByText('its intake asked you')).toBeInTheDocument();
   });
 
-  /** UX6c: the three kinds the band gained, each by what it waits on. */
+  /** The three kinds of go-ahead, departure and review, each by what it waits on. */
   it('names a go-ahead, a departure and work to review by what each waits on', () => {
     const { unmount } = render(<AttentionRow item={GO_AHEAD} />);
     expect(screen.getByText('needs your go-ahead')).toBeInTheDocument();
@@ -197,8 +197,8 @@ describe('a row in what needs you', () => {
   });
 
   /**
-   * LANG1b (D142 points 1, 4, 5): a parked session's note in the reader's language, as one run the row clamps, the agent's
-   * question inline; a record from before parts as it was kept, marked.
+   * A parked session's note in the reader's language, as one run the row clamps, the agent's
+   * question inline; a record without parts as the person kept it, marked.
    */
   it('words a parked session’s note in the reader’s language, and shows an old one as recorded', async () => {
     await i18n.changeLanguage('zh');
@@ -241,8 +241,8 @@ describe('opening one', () => {
   });
 
   /**
-   * 🔴 On the first real parked session the row said the session waited and not where to reply. A door names where it
-   * goes, and since UX6c it is a press of its own beside the row's acts (design §6.3): answering a park, an intake's
+   * 🔴 A row must say where to reply, not only that the session waits. A door names where it
+   * goes, and it is a press of its own beside the row's acts: answering a park, an intake's
    * question or a review needs reading, so each of those is its door alone; every other row opens its record.
    */
   it('says where its door goes, by its kind', () => {
@@ -256,7 +256,7 @@ describe('opening one', () => {
     expect(doorOf({ ...PROPOSAL, kind: 'intake' })).toEqual(['Answer ask #7c1e9a04b2d5']);
     expect(doorOf(REVIEW)).toEqual(['Review']);
     expect(doorOf({ ...PARKED, kind: 'unanswerable' })).toEqual(['Open']);
-    // CONFIRMSEEN1: a terminal's press is answered on its card, where its values are read: its door is its one control.
+    // A terminal's press is answered on its card, where its values are read: its door is its one control.
     expect(doorOf({ ...PARKED, kind: 'confirmation' })).toEqual(['Confirm or refuse…']);
   });
 
@@ -274,8 +274,8 @@ describe('opening one', () => {
   });
 
   /**
-   * A door opens something, or it is not a door (platform language §4): a browser's parked row was a
-   * button that did nothing. Knowing is the half that travels, so the row is still there — as text.
+   * A door opens something, or it is not a door: a browser's parked row is not a
+   * button that does nothing. Knowing is the half that travels, so the row is still there — as text.
    */
   it('is no door where there is nowhere to go, and still says what is waiting', () => {
     render(<AttentionRow item={PARKED} />);
@@ -286,7 +286,7 @@ describe('opening one', () => {
 });
 
 /**
- * UX6c (design §6.3): an act sits on the row only where one press is safe and the row says what it does. What widens
+ * An act sits on the row only where one press is safe and the row says what it does. What widens
  * what Daoris may do, and a choice, asks once under the row first; the rest act on the press.
  */
 describe('settling one where it stands', () => {
@@ -414,7 +414,7 @@ describe('settling one where it stands', () => {
   });
 
   /**
-   * GOAHEADSTALE1: a go-ahead nothing on its ask could still use says so by its kind's word and offers only its refusal, whose question
+   * A go-ahead nothing on its ask could still use says so by its kind's word and offers only its refusal, whose question
    * says that nothing runs, since no session waits for it.
    */
   it('names a stale go-ahead so, and refuses it saying nothing runs', async () => {
@@ -432,7 +432,7 @@ describe('settling one where it stands', () => {
     expect(acts.answer).toHaveBeenCalledWith(stale, false, undefined, answeredByAct);
   });
 
-  /** The agent's own trust question, asked in the open under the row, and granted only on its press (D73). */
+  /** The agent's own trust question, asked in the open under the row, and granted only on its press. */
   it('asks the agent’s trust question under the row before it trusts the folder', async () => {
     const acts = everyAct();
     render(<AttentionRow item={TRUST} acts={acts} />);
@@ -445,7 +445,7 @@ describe('settling one where it stands', () => {
     expect(acts.trust).toHaveBeenCalledWith(TRUST, answeredByAct);
   });
 
-  /** UXFIX2b3b: the question stays while the grant is written; it closes once it landed and says a refusal itself. */
+  /** The question stays while the grant is written; it closes once it lands and says a refusal itself. */
   it('keeps the trust question open for a refusal, and closes it once the grant lands', async () => {
     const acts = everyAct();
     render(<AttentionRow item={TRUST} acts={acts} />);
@@ -470,7 +470,7 @@ describe('settling one where it stands', () => {
     expect(acts.acceptDeparture).toHaveBeenCalledWith(DEPARTURE);
   });
 
-  /** 🔴 A widening never applies without the person (D74): its accept asks once, naming the change; its decline does not. */
+  /** 🔴 A widening never applies without the person: its accept asks once, naming the change; its decline does not. */
   it('accepts a widening only after saying what it widens, and declines one in a press', async () => {
     const acts = everyAct();
     render(<AttentionRow item={RULE} acts={acts} />);
@@ -484,7 +484,7 @@ describe('settling one where it stands', () => {
     expect(acts.acceptRule).toHaveBeenCalledWith(RULE, answeredByAct);
   });
 
-  /** MIXAGENT2c: an agent's ask for a helper is said yes or no to in one press each, as its session's page does. */
+  /** An agent's ask for a helper is said yes or no to in one press each, as its session's page does. */
   it('lets an agent’s ask for a helper go, or says not now, in one press each', async () => {
     const HELPER: Attention = {
       id: 'a1', kind: 'helper', title: 'Which test covers the loader?', where: 'engine', since: '2026-09-21T11:00:00Z',
@@ -501,7 +501,7 @@ describe('settling one where it stands', () => {
     expect(screen.getByRole('button', { name: /Open/ })).toBeInTheDocument();
   });
 
-  /** NOTIFY2e: an agent's ask to hand its session over is said yes or no to in one press each, as its session's foot does. */
+  /** An agent's ask to hand its session over is said yes or no to in one press each, as its session's foot does. */
   const HAND_OVER: Attention = {
     id: 'h1', kind: 'hand-over', title: 'Near my limit; ParserTests are left.', where: 'engine', since: '2026-09-21T11:00:00Z',
     detail: 'Its agent asks to hand Fix the loader over to Codex. Nothing goes until you say yes.', session: 'c0nv0001', agent: 'Codex',
@@ -521,10 +521,10 @@ describe('settling one where it stands', () => {
   });
 
   /**
-   * HELPERWAIT1c (the co-worker design §5 point 4): a refused move back to the person says what happened, the refusal as the service
-   * said it, and its one control, the door to its session, in each language.
+   * A refused move back to the person says what happened, the refusal as the service
+   * says it, and its one control, the door to its session, in each language.
    */
-  /** INTEGRATE1h: an integration's wait on the owner is a row with one door to its repository's Integration tab, where it is pressed. */
+  /** An integration's wait on the owner is a row with one door to its repository's Integration tab, where it is pressed. */
   it('says an integration’s wait and opens its Integration tab', async () => {
     const held: Attention = {
       id: 'decide:c1', kind: 'integration', title: 'Candidate for main', where: 'engine', since: '2026-10-31T09:00:00Z',
@@ -539,7 +539,7 @@ describe('settling one where it stands', () => {
     expect(open).toHaveBeenCalledWith(held);
   });
 
-  /** INTEGRATE1h (§5.8): a declaration owed acceptance names its wait and has one door, to Setup, in each language; the row never accepts. */
+  /** A declaration owed acceptance names its wait and has one door, to Setup, in each language; the row never accepts. */
   it('says a declaration owed acceptance and opens Setup, never accepting it from the row', async () => {
     const owed: Attention = {
       id: 'declaration:engine', kind: 'integration', title: 'engine', where: 'engine', since: '2026-10-31T09:20:00Z',
@@ -569,7 +569,7 @@ describe('settling one where it stands', () => {
     }
   });
 
-  /** KNOWCENTRAL2e: a session whose memory waits is a row with one door to its page, where its Memory section decides. */
+  /** A session whose memory waits is a row with one door to its page, where its Memory section decides. */
   it('says memory waits on the person and opens the session', async () => {
     const waits: Attention = {
       id: 's1a2b3c4', kind: 'memory', title: 'Expose a streaming budget on the chunk API', where: 'engine', since: '2026-10-31T09:00:00Z',
@@ -624,7 +624,7 @@ describe('settling one where it stands', () => {
   });
 
   /**
-   * AUTONOMY1b3c: a tool call a session holds for the person is answered in one press per choice its agent offered, as its session's
+   * A tool call a session holds for the person is answered in one press per choice its agent offered, as its session's
    * page answers it, each sending that choice's id.
    */
   it('answers a held tool call with the choice pressed, in one press each', async () => {
@@ -662,7 +662,7 @@ describe('settling one where it stands', () => {
     expect(screen.queryByText('starts a session in engine')).toBeNull();
   });
 
-  /** Design §9.3's budget: a row holds three controls at most, folded, whatever its kind. */
+  /** A row holds three controls at most, folded, whatever its kind. */
   it('holds three controls at most, door included', () => {
     for (const item of [PARKED, PROPOSAL, PARKED_QUEST, GO_AHEAD, TRUST, DEPARTURE, RULE, REVIEW, ACCOUNT_WAIT, UNREAD, SIGNED_OUT]) {
       const { unmount } = render(<AttentionRow item={item} acts={everyAct()} onOpen={vi.fn()} />);
@@ -673,7 +673,7 @@ describe('settling one where it stands', () => {
 });
 
 /**
- * UX6d (design §6.2–§6.3): a start waiting for accounts says each account that would serve it as last known, signs in the
+ * A start waiting for accounts says each account that would serve it as last known, signs in the
  * ones read signed out in a press each, and lets a ready account in only after saying what that lets Daoris spend. Its door
  * is the agent's page, named by the agent.
  */
@@ -700,7 +700,7 @@ describe('an account’s row', () => {
     expect(open).toHaveBeenCalledWith(ACCOUNT_WAIT);
   });
 
-  /** §6.3: an account no read answered gets *Read* for that one account, the reading the person asks for. */
+  /** An account no read answered gets *Read* for that one account, the reading the person asks for. */
   it('reads an account no read answered, on the press', async () => {
     const acts = everyAct();
     render(<AttentionRow item={UNREAD} acts={acts} />);
@@ -709,7 +709,7 @@ describe('an account’s row', () => {
   });
 
   /**
-   * POOL1c (the account-pool design §4.3): every account of Daoris's serves every workspace, so a wait offers to let none run,
+   * Every account of Daoris's serves every workspace, so a wait offers to let none run,
    * and never names this machine's list, whatever an older answer carries beside it.
    */
   it('offers to let no account run, and never names this machine’s list', () => {
@@ -720,8 +720,8 @@ describe('an account’s row', () => {
   });
 
   /**
-   * UXFIX3: a signed-out account's row says when it was read where other rows say how long they waited. Its reading is not
-   * a wait, and as one, reading it again made an old blocker look new.
+   * A signed-out account's row says its read time where other rows say how long they waited. Its reading is not
+   * a wait: read again, it would make an old blocker look new.
    */
   it('says when a signed-out account was read, never that it waits', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -747,7 +747,7 @@ describe('an account’s row', () => {
     expect(screen.queryByText(/^read |waiting/)).not.toBeInTheDocument();
   });
 
-  /** OWNSPACE1b-B (D175 point 6): the hold for no Daoris account presses a label that names no account. */
+  /** The hold for no Daoris account presses a label that names no account. */
   it('signs in for Daoris from a start held for no account, a label naming nobody', async () => {
     const acts = everyAct();
     const none = { ...ACCOUNT_WAIT, account: { ...ACCOUNT_WAIT.account!, named: [], noAccount: true } };
@@ -768,9 +768,9 @@ describe('an account’s row', () => {
     expect(acts.signIn).toHaveBeenCalledWith(SIGNED_OUT, 'account-1');
   });
 
-  /** A sign-in's steps happen where it was started (platform language §4): the band hands its panel, under the row. */
+  /** A sign-in's steps happen where the person started it: the band hands its panel, under the row. */
   /**
-   * GITAUTH1a (the git auth design §5.2, §7.4): a held git remote offers *Try again* alone, on the row, which hands the row to its act; a
+   * A held git remote offers *Try again* alone, on the row, which hands the row to its act; a
    * host key changed since ssh trusted it wears danger's ink; handed no act, it offers none and still says what is held.
    */
   it('tries a held git remote again in one press, its changed host key in danger’s ink', async () => {
@@ -819,7 +819,7 @@ const OPINION: Attention = {
 };
 
 /**
- * UXFIX2b3a: each ask of the row is the shared inline confirmation: it takes the focus on opening, stays open and says it is
+ * Each ask of the row is the shared inline confirmation: it takes the focus on opening, stays open and says it is
  * waiting while its act runs, says a refusal inside it, and closes on success with the focus back on the press that opened it.
  */
 describe('an ask under the row answers inside itself', () => {

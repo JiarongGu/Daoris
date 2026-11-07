@@ -9,8 +9,8 @@ import {
   goesLine, moveSaid, takesWords, tooLong,
 } from './say';
 
-// The box on a session's page (MSG1f, D137 §5.1), as one pure answer: which box a session is offered, by what its record
-// says and what a word said now would do (`SESSION_QUEUE`'s `reaches` and `why`, MSG1d), and the sentences for what
+// The box on a session's page, as one pure answer: which box a session is offered, by what its record
+// says and what a word said now would do (`SESSION_QUEUE`'s `reaches` and `why`), and the sentences for what
 // takes no words and for why words did not go on.
 
 const t = i18n.getFixedT('en');
@@ -29,14 +29,14 @@ describe('boxOf', () => {
     expect(boxOf(facts({ session: null }))).toEqual({ kind: 'none' });
   });
 
-  /** §2.2: a teammate's record never takes words here, whatever its state; the page knows it without asking. */
+  /** A teammate's record never takes words here, whatever its state; the page knows it without asking. */
   it('draws the line on a teammate’s record, whatever its state', () => {
     for (const state of ['working', 'awaiting-person', 'completed'] as const) {
       expect(boxOf(facts({ session: session({ state }), here: false }))).toEqual({ kind: 'line', why: 'teammate' });
     }
   });
 
-  /** INT4h: a live intake's head already says why it takes no words; an ended one has only the line. */
+  /** A live intake's head already says why it takes no words; an ended one has only the line. */
   it('leaves a live intake to its head, and draws the line under an ended one', () => {
     const intake = { kind: 'chat' as const, quest: null, ask: '0fda18' };
     expect(boxOf(facts({ session: session({ ...intake, state: 'working' }), intake: true }))).toEqual({ kind: 'none' });
@@ -44,46 +44,46 @@ describe('boxOf', () => {
       .toEqual({ kind: 'line', why: 'intake' });
   });
 
-  /** XAGENT1g: a second opinion's reviewer takes no words, live or ended, and its line says why. */
+  /** A second opinion's reviewer takes no words, live or ended, and its line says why. */
   it('offers a second opinion’s reviewer no box, and says why once it ended', () => {
     const reviewer = { kind: 'chat' as const, quest: null, opinion: 'o1a2b3c4' };
     expect(boxOf(facts({ session: session({ ...reviewer, state: 'working' }) }))).toEqual({ kind: 'none' });
     expect(boxOf(facts({ session: session({ ...reviewer, state: 'completed' }) }))).toEqual({ kind: 'line', why: 'opinion' });
   });
 
-  /** §5.3: where nothing takes words the module says why by a code, and the page draws the line instead of the box. */
+  /** Where nothing takes words the module says why by a code, and the page draws the line instead of the box. */
   it('draws the line for the code the module answered', () => {
     expect(boxOf(facts({ session: session({ state: 'completed' }), reach: { reaches: null, why: 'superseded' } })))
       .toEqual({ kind: 'line', why: 'superseded' });
-    // HANDWORDS1: the conversation a continued one went on in rides the line.
+    // The conversation a continued one goes on in rides the line.
     expect(boxOf(facts({ session: session({ kind: 'chat', state: 'completed' }), reach: { reaches: null, why: 'continued', to: 'c2' } })))
       .toEqual({ kind: 'line', why: 'continued', to: 'c2' });
     expect(boxOf(facts({ session: session({ kind: 'chat', quest: null, state: 'stopped' }), reach: { reaches: null, why: 'help' } })))
       .toEqual({ kind: 'line', why: 'help' });
   });
 
-  /** CONV4: a live chat keeps its own composer, its turns and its endings. */
+  /** A live chat keeps its own composer, its turns and its endings. */
   it('keeps a live chat’s own composer', () => {
     expect(boxOf(facts({ session: session({ kind: 'chat', quest: null }), reach: { reaches: 'turn-end', why: null } })))
       .toEqual({ kind: 'chat' });
   });
 
-  /** §2.2: an ended chat goes on with words; until the module answers, its composer says it ended, as before. */
+  /** An ended chat goes on with words; until the module answers, its composer says it ended. */
   it('offers an ended chat the box where words go on, and its ended composer until the module answers', () => {
     const ended = session({ kind: 'chat', quest: null, state: 'completed' });
     expect(boxOf(facts({ session: ended, reach: { reaches: 'resume', why: null } }))).toEqual({ kind: 'say', mode: 'goOn' });
     expect(boxOf(facts({ session: ended }))).toEqual({ kind: 'chat' });
   });
 
-  /** D136: a working driven session whose door listens takes words at its next step or its turn's end. */
+  /** A working driven session whose door listens takes words at its next step or its turn's end. */
   it('offers a listening driven session the running door’s box', () => {
     expect(boxOf(facts({ listening: true, reach: { reaches: 'next-step', why: null } }))).toEqual({ kind: 'steer' });
     expect(boxOf(facts({ listening: true }))).toEqual({ kind: 'steer' });
   });
 
   /**
-   * §5.1, D126 §3.1: on a parked session the box is the answer, before the module answers too. Answered, the box stays:
-   * a second word joins the first (§2.4), and the same session goes on with them.
+   * On a parked session the box is the answer, before the module answers too. Answered, the box stays:
+   * a second word joins the first, and the same session goes on with them.
    */
   it('offers a parked driven session the answer, and once answered the box where the same session goes on', () => {
     const parked = session({ state: 'awaiting-person' });
@@ -93,7 +93,7 @@ describe('boxOf', () => {
   });
 
   /**
-   * §2.1: words said as a session winds up are held until its record ends, then reopen it, never refused; a working
+   * Words said as a session winds up are held until its record ends, then reopen it, never refused; a working
    * session no inbox here takes, and whose door the module has not answered for, is offered nothing.
    */
   it('offers a winding-up driven session the box that holds words for its end, and nothing while unknown', () => {
@@ -102,7 +102,7 @@ describe('boxOf', () => {
     expect(boxOf(facts())).toEqual({ kind: 'none' });
   });
 
-  /** §2.2: an ended driven session goes on with words; until the module answers, nothing is claimed. */
+  /** An ended driven session goes on with words; until the module answers, nothing is claimed. */
   it('offers an ended driven session the box where the same session goes on, once the module says so', () => {
     for (const state of ['completed', 'declined', 'failed', 'stopped'] as const) {
       expect(boxOf(facts({ session: session({ state }), reach: { reaches: 'resume', why: null } })))
@@ -118,14 +118,14 @@ describe('boxOf', () => {
 });
 
 describe('neverSentence', () => {
-  /** MSG1d: the codes nothing takes words for, each in the page's own words, in both catalogues. */
+  /** The codes nothing takes words for, each in the page's own words, in both catalogues. */
   it.each([
     ['teammate', 'This session ran on another machine, where its conversation is.'],
     ['stood-down', 'It stood down: #q1 is someone else\'s, so it has nothing to go on with.'],
     ['intake', 'An intake takes no words: it is answered through its ask.'],
     ['help', 'Ask Daoris\'s conversations take words in its own panel, which starts a new one.'],
     ['superseded', '#q1 went on in a later session here, so write to that one.'],
-    // HANDWORDS1: a conversation handed over or moved names the one that continues it.
+    // A conversation handed over or moved names the one that continues it.
     ['continued', 'It went on in conversation c2; say it to that one.'],
     ['not-found', 'Daoris no longer has this session\'s record, so nothing can take words for it.'],
   ])('says %s in its own sentence', (code, said) => {
@@ -160,7 +160,7 @@ describe('startFromRefusal', () => {
 });
 
 describe('reasonOf', () => {
-  /** §5.1: a reason is chrome, so the page words the code, never the note's English. */
+  /** A reason is chrome, so the page words the code, never the note's English. */
   it.each([
     ['account', 'its conversation stays with the account it ran on, and this start runs on another'],
     ['unkept', 'Daoris kept no id for its conversation'],
@@ -193,7 +193,7 @@ describe('reasonOf', () => {
 });
 
 describe('tooLong', () => {
-  /** §2.4: the native door takes the words as one argument, so its box refuses words past the bound before sending. */
+  /** The native door takes the words as one argument, so its box refuses words past the bound before sending. */
   it('holds a driven session on the native door to the bound, and nothing else', () => {
     const long = 'x'.repeat(NATIVE_WORDS_LIMIT + 1);
     expect(tooLong(long, { door: 'native', kind: 'driven' })).toBe(true);
@@ -205,8 +205,8 @@ describe('tooLong', () => {
 });
 
 /**
- * MSG1g2 (D137 §2.2, MSG1g's note): a resume asks for the account its record ran on, so the page reads that account's
- * cool-off from the facts `ACCOUNTS` answers: by the agent that owns the door's accounts (AGT7), the tool's own sign-in
+ * A resume asks for the account its record ran on, so the page reads that account's
+ * cool-off from the facts `ACCOUNTS` answers: by the agent that owns the door's accounts, the tool's own sign-in
  * where the record names no account, and only while it has not passed.
  */
 describe('coolingFor', () => {
@@ -245,7 +245,7 @@ describe('coolingFor', () => {
 });
 
 /**
- * MSG1g2 (D137 §2.2, MSG1g's note): what *Go on in a new session* came to, in the page's own words: kept, or each code
+ * What *Go on in a new session* came to, in the page's own words: kept, or each code
  * `SESSION_HAND_OVER` naming no agent refuses by, in both catalogues; and *Start a conversation with these words* the door where nothing
  * carries the words on by itself.
  */
@@ -292,7 +292,7 @@ describe('newSessionSaid', () => {
   });
 });
 
-// LINESTOGETHER1b (the review-flow design §2): the box's first line says where a word goes and when, before the person speaks.
+// The box's first line says where a word goes and when, before the person speaks.
 describe('where a word goes', () => {
   it('says the head and when the turn reaches it, in both languages', () => {
     expect(goesLine(t, { part: 6, place: 'head', reaches: 'turn-end' })).toBe('To part 6, the head · at its turn’s end');

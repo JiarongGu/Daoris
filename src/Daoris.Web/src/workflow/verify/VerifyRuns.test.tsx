@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import { FAILED_GATE, lineOf, NOT_NOW, RUNNING, UNKNOWN_HELD, VERIFIED, verification, WAITING } from './lineFixtures';
 import { VerifyRuns } from './VerifyRuns';
 
-// FABRIC-PIPELINE1d (the pipeline design §4.4): a repository's verifications on its Workflow tab, each the branch and commit it judged, who
+// A repository's verifications on its Workflow tab, each the branch and commit it judged, who
 // asked it, its verdict in a check's status words and each gate as its check ran it; an unknown held for the person offers *Run again* and
 // *Not now*. A molecule: every state is reached by its props.
 

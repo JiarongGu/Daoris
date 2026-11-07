@@ -20,7 +20,7 @@ export type KeptDoors = {
   sync?: () => void;
 };
 
-/** A kept unit's door as a button, where its page was handed one; nothing otherwise. */
+/** A kept unit's door as a button, where its page is handed one; nothing otherwise. */
 export function KeptDoorButton({ door, doors }: { door: KeptDoor | null; doors?: KeptDoors }) {
   const { t } = useTranslation();
   if (!door || !doors) return null;
@@ -62,7 +62,7 @@ function KeptPiece({ reason }: { reason: HistoryReason }) {
 }
 
 /**
- * **A clear's first press** (HIST1e, D153; the history-clearing design §5, §6.1): it says what the clear would take from this
+ * **A clear's first press**: it says what the clear would take from this
  * machine (a quest's work, its failed sessions, an ask's work, or for a workspace the counts by kind with the home's
  * left-over files and the intake's room), that nothing brings it back or, where a quest is forgotten here, that the remote
  * keeps the team's copy; and every unit kept, with its reason's sentence and the door that frees it. Then the clear's
@@ -70,18 +70,18 @@ function KeptPiece({ reason }: { reason: HistoryReason }) {
  *
  * @remarks
  * **A molecule**: the plan arrives as a prop and is held from when the list opened, since the reader answers again on every
- * look and the second press sends exactly the units the first listed (§5 step 2); the driver judges each again as it goes.
- * A list that finds nothing to take says so and offers only *Close*, never a press that clears nothing (D48 §6). A reason is
+ * look and the second press sends exactly the units the first listed; the driver judges each again as it goes.
+ * A list that finds nothing to take says so and offers only *Close*, never a press that clears nothing. A reason is
  * the refusal's own catalogue sentence for its code and variant, read in the reader's language, never the service's words.
  *
- * **It is the one inline confirmation** (UXFIX2): what goes and what stays take the focus on opening and describe the move,
+ * **It is the one inline confirmation**: what goes and what stays take the focus on opening and describe the move,
  * so a keyboard reaches it having heard them; the press keeps the list open until the clear answers; a refusal is said in it.
  */
 export function ClearAsk({ target, plan, meanIt, busy = false, doors, onClear, onClose, className }: {
   target: HistoryTarget;
   /** The plan as the first press read it; held from the first render. */
   plan: HistoryPlan;
-  /** The move's name: *Clear quest*, *Clear ask*, or *Clear N*, counted from the list as it was held. */
+  /** The move's name: *Clear quest*, *Clear ask*, or *Clear N*, counted from the list as it is held. */
   meanIt: string | ((list: ClearList) => string);
   /** A clear on its way: the presses wait for it. */
   busy?: boolean;

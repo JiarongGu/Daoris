@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Button, Inline } from '../../design/ui';
 
-// Declared here, structurally equal to bridge/sessions/trees.ts's shapes, so these molecules import no bridge domain (LANDSYNC1w).
+// Declared here, structurally equal to bridge/sessions/trees.ts's shapes, so these molecules import no bridge domain.
 /** One commit a landing leaves out because the line already holds it: short id, subject, why, and the line's commit with the same patch. */
 export type LeftOutCommit = { commit: string; subject: string; why: string; on?: string | null };
 /** One commit a landing would replay onto the line. */
@@ -21,9 +21,9 @@ const whyOf = (t: TFunction, commit: LeftOutCommit) => {
 };
 
 /**
- * What a press would leave out because the line holds it, and how many it would replay onto the line (LANDSYNC1): said before the
+ * What a press would leave out because the line holds it, and how many it would replay onto the line: said before the
  * press in the review's foot and in the head's ask. Where the line holds none of the tree's commits but moved since the work began,
- * the plan leaves out nothing and replays them all, and that is said (LANDREBASE1). Nothing where they land as made.
+ * the plan leaves out nothing and replays them all, and that is said. Nothing where they land as made.
  */
 export function LeftOutLines({ leftOut, lands }: { leftOut?: LeftOutCommit[] | null; lands?: LandsCommit[] | null }) {
   const { t } = useTranslation();
@@ -48,8 +48,8 @@ export function LeftOutLines({ leftOut, lands }: { leftOut?: LeftOutCommit[] | n
 }
 
 /**
- * Where Accept would be while replaying the work onto the line conflicts (D87's amendment point 5): git's lines, the words its session
- * is asked to rebase with, shown before the press, and the one press that says them through D137's say door (`useSay`), as the
+ * Where Accept would be while replaying the work onto the line conflicts: git's lines, the words its session
+ * is asked to rebase with, shown before the press, and the one press that says them through the say door (`useSay`), as the
  * person's own words. Accept is offered again once the tree changes, when the plan reads it again.
  */
 export function RebaseAsk({ conflict, onSay }: { conflict: LandingConflict; onSay: SayRebase }) {

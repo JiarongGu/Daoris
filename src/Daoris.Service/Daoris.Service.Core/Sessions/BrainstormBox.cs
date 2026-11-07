@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The brainstorm turn a connector serves (BRAINSTORM1a2, D176 points 1-4): the brainstorm, the turn, the answer file its result tool
-/// writes and the room the turn was handed, each as the driver names them on the connector it offers a pass. Blank is nothing said.
+/// The brainstorm turn a connector serves: the brainstorm, the turn, the answer file its result tool
+/// writes and the room the turn is handed, each as the driver names them on the connector it offers a pass. Blank is nothing said.
 /// </summary>
 /// <remarks>
 /// A twin of the driver's <c>BrainstormVariables</c>: the names are duplicated deliberately, never imported across. Every other
@@ -17,7 +17,7 @@ public sealed record BrainstormScope(string? Id, string? Turn, string? Answer, s
     public const string AnswerVariable = "DAORIS_BRAINSTORM_ANSWER";
     public const string RoomVariable = "DAORIS_BRAINSTORM_ROOM";
 
-    /// <summary>What this process was spawned with.</summary>
+    /// <summary>What this process is spawned with.</summary>
     public static BrainstormScope FromEnvironment() => new(
         Blank(Environment.GetEnvironmentVariable(IdVariable)), Blank(Environment.GetEnvironmentVariable(TurnVariable)),
         Blank(Environment.GetEnvironmentVariable(AnswerVariable)), Blank(Environment.GetEnvironmentVariable(RoomVariable)));
@@ -31,11 +31,11 @@ public sealed record BrainstormScope(string? Id, string? Turn, string? Answer, s
     private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
 
-/// <summary>What a result tool made of an answer: whether it is kept as valid, the codes it was refused with, and the agent's sentence.</summary>
+/// <summary>What a result tool made of an answer: whether it is kept as valid, the codes it is refused with, and the agent's sentence.</summary>
 public sealed record BrainstormKept(bool Kept, IReadOnlyList<string> Codes, string Message);
 
 /// <summary>
-/// Where a brainstorm pass's result tool writes its answer (BRAINSTORM1a2, D176 points 3 and 4): the one file the driver's spawn names,
+/// Where a brainstorm pass's result tool writes its answer: the one file the driver's spawn names,
 /// outside the pass's room, which the driver reads when the turn ends. One writer, the turn's tool; the file the contract.
 /// </summary>
 /// <remarks>
@@ -44,7 +44,7 @@ public sealed record BrainstormKept(bool Kept, IReadOnlyList<string> Codes, stri
 /// may give it again within its turn, and stays the file's until a valid one replaces it: a turn that ends refused is the driver's to
 /// judge, and its one repair is handed the same codes. A valid answer is kept once; Daoris never repairs, trims or keeps part of one.</para>
 ///
-/// <para><b>Judged against what the turn was handed</b>, read from its room: a generator's sources from <c>packet.json</c>, a
+/// <para><b>Judged against what the turn is handed</b>, read from its room: a generator's sources from <c>packet.json</c>, a
 /// synthesis's anonymous ids from <c>proposals.json</c>. A room that holds neither judges nothing, and nothing is written.</para>
 /// </remarks>
 public sealed class BrainstormBox(BrainstormScope scope)
@@ -156,7 +156,7 @@ public sealed class BrainstormBox(BrainstormScope scope)
 }
 
 /// <summary>
-/// The service's validator of a brainstorm's answers (BRAINSTORM1a2, D176 points 3 and 4): by the schema, with no model, codes only.
+/// The service's validator of a brainstorm's answers: by the schema, with no model, codes only.
 /// </summary>
 /// <remarks>
 /// A TWIN of the driver's <c>BrainstormAnswers</c> and <c>BrainstormSyntheses</c>, which judge the answer file again when the turn
@@ -188,7 +188,7 @@ public static class BrainstormChecks
     public static IReadOnlyList<string> Give(string? text, IReadOnlySet<string> sources) =>
         Parsed(text, root => GiveCodes(root, sources));
 
-    /// <summary>A synthesis against the anonymous ids its turn was handed: the codes it fails on, in order, each once.</summary>
+    /// <summary>A synthesis against the anonymous ids its turn is handed: the codes it fails on, in order, each once.</summary>
     public static IReadOnlyList<string> Synthesize(string? text, IReadOnlyCollection<string> ids) =>
         Parsed(text, root => SynthesisCodes(root, ids.ToHashSet(StringComparer.Ordinal)));
 

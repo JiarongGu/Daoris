@@ -4,7 +4,7 @@ import { type AccountsAnswer, type AccountScope, agentOf, machineScope, switchOf
 import { toolOf, type ToolDoor } from '../../agents/tools';
 import { coolingFor } from '../say';
 
-/** Daoris's offer to hand a conversation over (MIXAGENT1b-ii, D163): why, when it is offered again, and where it would go. */
+/** Daoris's offer to hand a conversation over: why, when it is offered again, and where it would go. */
 export type HandOverOffer = {
   /** `limit`: its account is cut; `near`: its account is near its limit by its scope's own near. */
   why: 'near' | 'limit';
@@ -15,25 +15,25 @@ export type HandOverOffer = {
   /** That account; null where the walk takes the agent's own sign-in. */
   account: string | null;
   /**
-   * Where the session's actor has an order of its own (MODELROLE1e, D205 §3.5(e)), the choice the offer names: its number in that order
+   * Where the session's actor has an order of its own, the choice the offer names: its number in that order
    * and the model it asks (null for account default). Absent where the roster's order stands because the actor is as before.
    */
   choice?: { n: string; model: string | null; effort?: string | null };
 };
 
 /**
- * Whether Daoris offers to go on with another agent (MIXAGENT1b-ii, D163 point 3), read only from facts the page already holds:
+ * Whether Daoris offers to go on with another agent, read only from facts the page already holds:
  * the conversation's own account is cut (`coolingFor`), or near its limit (the scope's `near`: a limit reached, usage credits
  * or its number, and only where its agent says how near its sessions are), and another present agent, in the roster's order,
  * has an account its next start would take (`scope.next`). The agent's pace warning alone is never near, so it offers nothing
- * and passes no account (USAGEREAD3b, D165 point 2). A conversation on the tool's own sign-in can be cut and is never near,
+ * and passes no account. A conversation on the tool's own sign-in can be cut and is never near,
  * since a sign-in that says nothing is never offered as near. No driver read: the offer is a line, and taken only by the
- * person's press (D163, `ask`). It is the fallback (SWITCH1e, D165 point 4): where the switch moves the conversation to another
+ * person's press (the `ask` rule). It is the fallback: where the switch moves the conversation to another
  * account of its own agent at its turn's end, there is no offer.
  *
  * @remarks
  * The scope is the conversation's workspace's own where it names one, else the machine's, as the start's chip reads it, for the
- * agent that owns the door's accounts (AGT7). An answer without the facts carries none, and then there is no offer.
+ * agent that owns the door's accounts. An answer without the facts carries none, and then there is no offer.
  */
 export function handOverOffer({ session, workspace, doors, answer, now, actor }: {
   session: Pick<Session, 'door' | 'profile'>;
@@ -59,8 +59,8 @@ export function handOverOffer({ session, workspace, doors, answer, now, actor }:
   if (!why) return null;
   if (switchesAway(session, doors, answer, scopeOf)) return null;
 
-  // Candidates are the actor's entries on other tools (MODELROLE1e, D205 §3.5(e)), in its order; where the actor is as before they are
-  // the roster's other tools (MIXAGENT1b-iii), each once by its first present door. A tool's other door is the same tool.
+  // Candidates are the actor's entries on other tools, in its order; where the actor is as before they are
+  // the roster's other tools, each once by its first present door. A tool's other door is the same tool.
   for (const { door, model, effort, from } of nextChoices(session, doors, actor)) {
     const agent = agentOf(answer, toolOf(door));
     const scope = agent ? scopeOf(agent) : null;
@@ -87,9 +87,9 @@ export function handOverOffer({ session, workspace, doors, answer, now, actor }:
 
 /**
  * Whether the switch moves the conversation to another account of its own agent at its turn's end, so the offer, the fallback,
- * stays down (SWITCH1e, D165 point 4, the switch design §4): its scope's switch is not `off`, its account is over the scope's curve
+ * stays down: its scope's switch is not `off`, its account is over the scope's curve
  * (`overCurve`, what `SwitchDecision` moves by), and another account of that scope has room (`room`). Each is .NET's verdict
- * (D182 point 6); an answer with no `room`, and the offer stands as before.
+ * an answer with no `room`, and the offer stands.
  */
 function switchesAway(
   session: Pick<Session, 'door' | 'profile'>,
@@ -111,7 +111,7 @@ const live = (cooling: { until: string } | null | undefined, now: Date): boolean
   Boolean(cooling) && Date.parse(cooling!.until) > now.getTime();
 
 /**
- * The present doors of tools other than the conversation's own, one door per tool, in the roster's order (MIXAGENT1b-iii): the
+ * The present doors of tools other than the conversation's own, one door per tool, in the roster's order: the
  * candidates Daoris's offer draws from and the hand-over's ask lists first.
  */
 export function otherToolDoors(session: Pick<Session, 'door'>, doors: readonly ToolDoor[]): ToolDoor[] {
@@ -131,7 +131,7 @@ export function otherToolDoors(session: Pick<Session, 'door'>, doors: readonly T
 export type NextChoice = { door: ToolDoor; model: string | null; effort: string | null; from: string };
 
 /**
- * The order a hand-over goes in (MODELROLE1e, D205 §3.5(e), round 4's Opus N1): every path takes the session's actor's effective
+ * The order a hand-over goes in: every path takes the session's actor's effective
  * order, so it is the actor's entries whose agent is a present door on another tool than the session's own, each with its model and its
  * number. No maker outside the actor's entries is a step. Where the actor is as before, or has no entries, the roster's order stands
  * (`otherToolDoors`) with no model, its `from` being `roster`. A TWIN with the driver's `HandOverOrder.Steps`, both held to
@@ -142,7 +142,7 @@ export function nextChoices(
   doors: readonly ToolDoor[],
   actor?: Pick<ActorRow, 'choices' | 'arranged'> | null,
 ): NextChoice[] {
-  // The order a start would walk (STAFFPOLICY1d): the role's policy arranges it where one is set, else the stored order stands.
+  // The order a start would walk: the role's policy arranges it where one is set, else the stored order stands.
   const entries = actor?.arranged ?? actor?.choices ?? [];
   if (entries.length === 0 || entries.every((entry) => entry.from === 'before')) {
     return otherToolDoors(session, doors).map((door) => ({ door, model: null, effort: null, from: 'roster' }));

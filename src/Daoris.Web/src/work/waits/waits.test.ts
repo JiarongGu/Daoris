@@ -10,7 +10,7 @@ import type { AnswerWait } from './AnswerAlone';
 import { conversationOffer, landingStands, rulesAsked, waitsOf } from './waits';
 import { said } from '../../test/said';
 
-// WAITFOOT1b (D168 point 2): which waits on the person stand, one rule the foot's strip and the head's work read, so the two
+// Which waits on the person stand, one rule the foot's strip and the head's work read, so the two
 // cannot disagree. A wait is the person's to press; what waits on an agent, a workflow or nothing is not one.
 
 const session = (over: Partial<Session> = {}): Session => ({
@@ -38,7 +38,7 @@ describe('the waits on the person', () => {
   it('names a park\'s question, and whether the box below carries its answer', () => {
     expect(waitsOf({ session: parked, onResolve: press, answerBelow: true })).toEqual([{ kind: 'question', below: true }]);
     expect(waitsOf({ session: parked, onResolve: press })).toEqual([{ kind: 'question', below: false }]);
-    // Answered (ANSWER1c), it goes on at the driver's next look: nothing asks the person again.
+    // Answered, it goes on at the driver's next look: nothing asks the person again.
     expect(waitsOf({ session: { ...parked, said: said('the first') }, onResolve: press, answerBelow: true })).toEqual([]);
   });
 
@@ -95,7 +95,7 @@ describe('the waits on the person', () => {
     expect(waitsOf({ session: session(), discards: { ...discards, keptAt: null }, onDiscardTree: press })).toEqual([]);
   });
 
-  // PROPOSEHERE1b (D168 point 2, D74): a rule the session proposed waits on the person where they talk to it.
+  // A rule the session proposed waits on the person where they talk to it.
   const proposal = (id: string, state: RuleProposal['state'], over: Partial<RuleProposal> = {}): RuleProposal => ({
     id, state, action: 'add', scope: 'repository', name: 'engine', list: 'allow', rule: 'Bash(git branch -D:*)',
     why: 'Auto mode refused the branch delete you asked for.', session: 's1a2b3c4', proposed: '2026-10-15T10:20:00Z', ...over,
@@ -124,7 +124,7 @@ describe('the waits on the person', () => {
       .toEqual([{ kind: 'rule', id: 'r1' }, { kind: 'accept' }]);
   });
 
-  // MIXAGENT2c (D168 points 2 and 3, D163 point 3): an agent's ask for a helper the driver's look holds waiting on the person's
+  // An agent's ask for a helper the driver's look holds waiting on the person's
   // word is one of the session's waits, as a rule it proposed is.
   const ask = (id: string, over: Partial<HelperAskRow> = {}): HelperAskRow => ({
     id, question: 'Which test covers the loader?', agent: null, askedBy: 'agent', at: '2026-09-21T11:00:00Z', state: 'waiting',
@@ -143,7 +143,7 @@ describe('the waits on the person', () => {
     expect(waitsOf({ session: session({ state: 'working' }), helpers: { asks } })).toEqual([]);
   });
 
-  // MIXAGENT1c (D163 point 3): its agent's ask to hand it over, which the driver's look holds waiting on the person's word under the
+  // Its agent's ask to hand it over, which the driver's look holds waiting on the person's word under the
   // `handOver` rule's `ask`, is one of the session's waits; one not read yet, one with their yes, taken or refused waits on none.
   const handed = (state: string | null): HandOverAskRow => ({
     id: 'a1b2c3d4', note: 'Near my limit; ParserTests are left.', at: '2026-10-20T09:00:00Z', state, code: null, agent: 'codex-acp',
@@ -167,7 +167,7 @@ describe('the waits on the person', () => {
       .toEqual([{ kind: 'rule', id: 'r1' }, { kind: 'helper', id: 'a1' }, { kind: 'accept' }]);
   });
 
-  // AUTONOMY1b3c (D184 point 3): a tool call the session holds for the person's answer under asking is one of its waits, the first
+  // A tool call the session holds for the person's answer under asking is one of its waits, the first
   // after a park's, since its turn stands still until they answer.
   const held = (request: string, over: Partial<PermissionWait> = {}): PermissionWait => ({
     session: 's1a2b3c4', request, call: null, title: 'npm test', kind: 'execute', since: '2026-10-20T09:00:00Z', until: '2026-10-20T09:15:00Z',
@@ -189,7 +189,7 @@ describe('the waits on the person', () => {
     })).toEqual([{ kind: 'permission', request: '7' }, { kind: 'rule', id: 'r1' }, { kind: 'helper', id: 'a1' }]);
   });
 
-  // COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between, which the bound holds for
+  // A third answer in a row with nobody between, which the bound holds for
   // the person, is one of its waits whatever its state: its line stands still until they answer, so it comes after a held call.
   const alone = (session: string): AnswerWait => ({ session, agent: 'codex-acp', words: ['w3'], since: '2026-10-21T09:00:00Z' });
 
@@ -217,13 +217,13 @@ describe('how the work stands for its landing', () => {
       .toMatchObject({ acceptable: true });
     const conflict = { says: 'CONFLICT', words: 'Rebase.' };
     expect(landingStands({ lands: LANDS, landing: { ...PLAN, conflict } })).toMatchObject({ acceptable: true, conflict });
-    // A dispute *Accept…* answers keeps it, with the token it sends back (XAGENT1g).
+    // A dispute *Accept…* answers keeps it, with the token it sends back.
     expect(landingStands({ lands: LANDS, landing: { ...PLAN, opinion: { ...GATES.disputed, answers: 't0k' } } }))
       .toMatchObject({ acceptable: true, answers: 't0k' });
   });
 });
 
-// ACCEPTFOOT1 (D164's note): an open conversation's record stays `working` between turns, so the driver's look offers its tree
+// An open conversation's record stays `working` between turns, so the driver's look offers its tree
 // nothing; once its turn has ended, the review's own answer says what is beyond the line, and that is its offer.
 describe('what an open conversation offers once its turn has ended', () => {
   const ENDED = { taking: false, queued: [] };
@@ -232,14 +232,14 @@ describe('what an open conversation offers once its turn has ended', () => {
     session: 'c0ffee11', base: 'abc1234', truncated: null, files: [{ path: 'a.ts', status: 'modified', added: 1, removed: 0, patch: '' }],
     behind: { line: 'main', commits: 0, ahead: 2 }, treeBranch: 'daoris/s-c0ffee11', offer: OFFER,
   };
-  // The turn ended at 1,000; the review was read after it.
+  // The turn ended at 1,000; the review is read after it.
   const AFTER = { endedAt: 1_000, readAt: 1_200 };
   const offer = (over: Partial<Parameters<typeof conversationOffer>[0]> = {}) =>
     conversationOffer({ tree: 's-c0ffee11', turn: ENDED, review: REVIEW, ...AFTER, ...over });
 
   it('offers what the driver would land of its tree, once its turn has ended', () => {
     expect(offer()).toEqual(OFFER);
-    // A branch its agent moved it to (TREEFOLLOW1), as the driver's offer names it.
+    // A branch its agent moved it to, as the driver's offer names it.
     const moved = { ...OFFER, branch: 'feature/x', uncommitted: 1 };
     expect(offer({ review: { ...REVIEW, treeBranch: 'feature/x', offer: moved } })).toEqual(moved);
   });

@@ -3,8 +3,8 @@ import {
   type ChannelItem, channelOf, elsewhereOf, forEntry, lineWords, newestAt, postedOf, repliesTo, repositoriesOf, sinceMark, unreadSum,
 } from './channel';
 
-// An ask's channel as the shell answers it (SESSONE2c, D167 points 6 to 8): the pure side of the page's Channel, so every
-// channel a person could have is an argument. The words come from codes, in the reader's language (D142).
+// An ask's channel as the shell answers it: the pure side of the page's Channel, so every
+// channel a person could have is an argument. The words come from codes, in the reader's language.
 
 const line = (code: string, at: string, over: Partial<ChannelItem> = {}): ChannelItem => (
   { kind: 'line', at, code, quest: 'q1', name: 'Read the figure', from: 'ask #a1', to: 'db', ...over });
@@ -67,7 +67,7 @@ describe('an ask’s channel', () => {
       .toEqual({ ask: 'a1', entry: 'person', items: ITEMS, unread: 2, mark: '2026-10-14T09:00:00Z', addressed: [] });
     expect(channelOf({ ask: 'a1', entry: 'person', items: [{ kind: 'message' }, ...ITEMS, 'junk'], unread: 'many' }))
       .toEqual({ ask: 'a1', entry: 'person', items: ITEMS, unread: 0, mark: null, addressed: [] });
-    // COMMS1k: the messages to one part each are read apart from the items, an item of another shape passed over.
+    // The messages to one part each are read apart from the items, an item of another shape passed over.
     expect(channelOf({ ask: 'a1', entry: 'person', items: [], unread: 0, addressed: [ITEMS[1], 'junk'] })?.addressed).toEqual([ITEMS[1]]);
     expect(channelOf({ drivable: [] })).toBeNull();
     expect(channelOf(null)).toBeNull();
@@ -76,7 +76,7 @@ describe('an ask’s channel', () => {
     expect(postedOf('no')).toEqual({ posted: false, code: 'other', message: null });
   });
 
-  /** SESSONE2h: the asks the mirrored messages name that this machine does not hold; a shell before the route answers something else. */
+  /** The asks the mirrored messages name that this machine does not hold; a shell before the route answers something else. */
   it('reads the asks held elsewhere, and an answer of another shape as no list', () => {
     const held = { id: '7e6f51', workspace: 'default', origins: ['key-a'], latest: '2026-10-15T09:00:00Z', messages: 2, unread: 1 };
     expect(elsewhereOf({ asks: [held] })).toEqual([held]);

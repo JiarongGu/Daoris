@@ -2,7 +2,7 @@ import type { NotePart } from '../../data/api';
 import type { Author } from './sender';
 
 /**
- * The codes a driver's note in a conversation carries, each the key the page words it by (D142 point 1): the
+ * The codes a driver's note in a conversation carries, each the key the page words it by: the
  * driver's `SessionEventCodes`, a twin held code for code by `conversation.test.ts`, which parses the driver's declarations.
  * A code not here leaves the driver's English line.
  */
@@ -11,7 +11,7 @@ export const CONVERSATION_CODES: Readonly<Record<string, string>> = {
   lost: 'work.conversation.lost',
   /** A word the person took back, or reworded, while it still waited: never taken by a turn. */
   withdrawn: 'work.conversation.withdrawn',
-  /** Daoris's own word dropped where it was to be delivered: what it said no longer held, so it was never said late. */
+  /** Daoris's own word dropped at its delivery: what it said no longer held, so it is never said late. */
   dropped: 'work.conversation.dropped',
 };
 
@@ -41,23 +41,23 @@ export type SessionEvent = {
   /** For `user`: `person`, or `target` for the prompt the driver composed and every word that is not the person's. */
   origin?: string | null;
   /**
-   * For `user`: `daoris` on Daoris's own words to the session (D188), a reopen told or a step's go-on. Its origin is
+   * For `user`: `daoris` on Daoris's own words to the session, a reopen told or a step's go-on. Its origin is
    * `target`, so a page that does not read this shows them as what Daoris handed, never as the person's. Absent on every other.
    */
   from?: string | null;
   /**
-   * For `user`: the helper or partner session whose answer these words are (D188 point 4). Its origin is `target`,
+   * For `user`: the helper or partner session whose answer these words are. Its origin is `target`,
    * so a page that does not read this shows them as the target Daoris composed. Which of the two it is, is the work of the record it
    * names (`sender.ts`). Absent on every other.
    */
   helper?: string | null;
   /**
-   * For the turn Daoris handed a session with another agent's findings (D155 point 7): the second opinion they are
+   * For the turn Daoris handed a session with another agent's findings: the second opinion they are
    * from. Its origin is `target`, so a page that does not read this shows them as what Daoris handed, never as the person's.
    */
   opinion?: string | null;
   /**
-   * For `user`: the ask's channel message these words carry, by its id (the session-context design §7): another session's
+   * For `user`: the ask's channel message these words carry, by its id: another session's
    * claim where the origin is `target`, the person's where it is theirs. Read before the claim's opening, which a record from before
    * is still told by. Absent on every other.
    */
@@ -68,14 +68,14 @@ export type SessionEvent = {
    */
   choice?: string | null;
   /**
-   * For `user`: on the brief a new part is handed as its first prompt (the session-context design §3.4), the session it
+   * For `user`: on the brief a new part is handed as its first prompt, the session it
    * continues. Its origin is `target` and it carries its account, as an instruction does. Absent on every other.
    */
   continues?: string | null;
   /**
-   * For the person's words to a working driven session (D136): when they reach it, `next-step` or `turn-end`, on
+   * For the person's words to a working driven session: when they reach it, `next-step` or `turn-end`, on
    * the event that shows them the moment they are said. The same words come again, under the same `id` and without
-   * this, where the session took them. `resume` (D137 §3.1) is words to a session that parked or ended, which
+   * this, where the session took them. `resume` is words to a session that parked or ended, which
    * its record keeps until the same session goes on with them. `now` is words *Send now* steered into the running
    * turn: they come again under the same `id` as the ask of the turn that goes on, or a note settles them.
    */
@@ -89,26 +89,26 @@ export type SessionEvent = {
   /** For the person's words shown the moment they are said: the door they were said at, `screen` or `terminal`. */
   door?: string | null;
   /**
-   * For the driver's note about the person's words (D137 §3.1): the ids of the words it speaks of, so it pairs
+   * For the driver's note about the person's words: the ids of the words it speaks of, so it pairs
    * with where they were shown.
    */
   words?: string[] | null;
   /** For the driver's note that the words went to a new session: that session's id, which the page links. */
   to?: string | null;
   /**
-   * For the driver's note about the person's words (D137 §5.1): why they did not go on in this session, by code.
+   * For the driver's note about the person's words: why they did not go on in this session, by code.
    * A reason is chrome, so the page says it in its own words from the code; the note's line is the driver's English.
    */
   why?: string | null;
   /**
-   * For a driver's note the page words itself (D142 point 1): a code of the driver's `SessionEventCodes`, which
+   * For a driver's note the page words itself: a code of the driver's `SessionEventCodes`, which
    * `CONVERSATION_CODES` keys. Daoris's own line is chrome, said in the reader's language; `text` beside it is the driver's
    * English, which stands for a code this page does not know.
    */
   code?: string | null;
   /**
-   * For `receipt` (the message-urgency design §7): what the door observed of the word under `id`, `sent` (the write to its
-   * harness returned) or `ended` (the turn that took it ended so). Each written only where it was observed.
+   * For `receipt`: what the door observed of the word under `id`, `sent` (the write to its
+   * harness returned) or `ended` (the turn that took it ended so). Each written only where observed.
    */
   receipt?: string | null;
   /**
@@ -130,7 +130,7 @@ export type SessionEvent = {
   output?: string | null;
   entries?: PlanEntry[] | null;
   used?: number | null;
-  /** For `transient` (D210 §5.1): the try going, counted from one; absent on a wait. */
+  /** For `transient`: the try going, counted from one; absent on a wait. */
   try?: number | null;
   /** For `transient`: when the wait beginning ends and the next try goes; absent on a try. */
   next?: string | null;
@@ -140,15 +140,15 @@ export type SessionEvent = {
   tokens?: TurnTokens | null;
   raw?: string | null;
   /**
-   * For the target the driver composed (`origin: 'target'`): what it was handed, section by section (D143 point 1).
+   * For the target the driver composed (`origin: 'target'`): what it is handed, section by section.
    * Absent on every other event, and on a target handed before the driver kept one.
    */
   account?: InstructionAccount | null;
 };
 
 /**
- * What a session was handed, section by section: the driver's `InstructionAccount`, kept beside its instruction.
- * The sections handed, in the instruction's order, then what was handed beside it, then those not handed, each saying why.
+ * What a session is handed, section by section: the driver's `InstructionAccount`, kept beside its instruction.
+ * The sections handed, in the instruction's order, then what is handed beside it, then those not handed, each saying why.
  */
 export type InstructionAccount = {
   /** The instruction's length in characters. */
@@ -174,11 +174,11 @@ export type HandedSection = {
   /** How many of its items it handed, of how many. */
   shown?: number | null;
   of?: number | null;
-  /** When its source was set (a standing answer). */
+  /** When its source is set (a standing answer). */
   at?: string | null;
-  /** Why nothing of it was handed: a `work.handed.none.*` code. */
+  /** Why nothing of it is handed: a `work.handed.none.*` code. */
   none?: string | null;
-  /** What was left out of it, each with why. */
+  /** What is left out of it, each with why. */
   cuts?: HandedCut[] | null;
 };
 
@@ -212,7 +212,7 @@ export type EventPage = {
   earlier: boolean;
   /** The newest sequence the session has. */
   latest: number;
-  /** What the session was first asked, where the page does not hold it — a long run reads from it. */
+  /** What the session is first asked, where the page does not hold it — a long run reads from it. */
   opening?: SessionEvent | null;
   /** Where the session's first failed call began, wherever it is in the run, or null. */
   firstFailure?: number | null;
@@ -243,7 +243,7 @@ export type Block = {
   /** For `held`: the session ended without taking the words — said, never left waiting for ever. */
   unreached?: boolean;
   /**
-   * For `held`: a driver's note below says where the words went, or that they cannot go on here (D137 §3.1). The
+   * For `held`: a driver's note below says where the words went, or that they cannot go on here. The
    * words stay as written and wait no longer; the note is their line, said once.
    */
   settled?: boolean;
@@ -263,7 +263,7 @@ export type Block = {
    */
   said?: string[];
   /**
-   * For a `note` about the person's words: every word it names was the person's own, shown where they said it, never
+   * For a `note` about the person's words: every word it names is the person's own, shown where they said it, never
    * Daoris's nor another agent's; what *Say it again* offers, with `said`.
    */
   persons?: boolean;
@@ -298,8 +298,8 @@ export type Block = {
 };
 
 /**
- * What was asked — by the person, or the target the driver composed — and what the person attached. A target carries what
- * it was composed of: its account, or `null` for one handed before the driver kept one.
+ * What is asked — by the person, or the target the driver composed — and what the person attached. A target carries what
+ * it is composed of: its account, or `null` for one handed before the driver kept one.
  */
 export type Ask = {
   key: string; text: string; origin: string; at: string; files?: string[]; account?: InstructionAccount | null;
@@ -318,7 +318,7 @@ export type Ask = {
   /** For Daoris's brief of the line a new part continues: the session it continues. A target, with its account. */
   continues?: string;
   /**
-   * What the door observed of these words (the message-urgency design §7, §8.2), each moment only where it was: `sent` when
+   * What the door observed of these words, each moment only where observed: `sent` when
    * the write to the harness returned, `taken` the ask's own moment, `ended` when the turn that took them ended (what
    * Daoris saw, never an answer). Absent on words whose door told no receipt, a record from before among them.
    */
@@ -327,7 +327,7 @@ export type Ask = {
   helper?: string;
 };
 
-/** A word's receipts as its conversation folds them: each the driver's moment it was observed. */
+/** A word's receipts as its conversation folds them: each the driver's moment of observing it. */
 export type Receipts = { sent?: string; taken?: string; ended?: string };
 
 /**
@@ -344,7 +344,7 @@ export type ChatMessage = {
 };
 
 /**
- * A message's urgency (D188 point 1): when the sender asked it to reach a working agent. `ordinary` at a natural point,
+ * A message's urgency: when the sender asked it to reach a working agent. `ordinary` at a natural point,
  * never inside a turn in flight; `urgent`, the person's default, at its next step where its door takes words then; `now`
  * cutting its step where its agent steers. A request: the door gives what it can and says so, and no level stops a turn.
  */
@@ -355,7 +355,7 @@ export const levelOf = (word: unknown): Level | undefined =>
   (word === 'ordinary' || word === 'urgent' || word === 'now' ? word : undefined);
 
 /**
- * One turn: what was asked, what the agent did about it, and how it ended. A turn with no `ended`
+ * One turn: what is asked, what the agent did about it, and how it ended. A turn with no `ended`
  * is still running — or ended without the wire saying, which reads the same.
  *
  * What it consumed is the harness's report (`tokens`). How long it took is the DRIVER's clock, which
@@ -367,8 +367,8 @@ export type Turn = {
   key: string;
   ask?: Ask;
   /**
-   * The person's words to a session that parked or ended, waiting at its foot for the same session to go on (D137
-   * §3.1): no run of the agent's, so never *working…* and never a turn the session ended inside.
+   * The person's words to a session that parked or ended, waiting at its foot for the same session to go on:
+   * no run of the agent's, so never *working…* and never a turn the session ended inside.
    */
   waiting?: boolean;
   /** Events between the ask and the items are not held yet: the page began past the ask. */

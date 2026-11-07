@@ -5,9 +5,9 @@ import { type LineSupervision, NO_SUPERVISION, readSupervision } from '../../wor
 import { call } from '../call';
 
 /**
- * A line's counts, the acts the person's rules made on it and the supervisor's course decisions (CONTEXTDRIVE1h, CONTEXTDRIVE1j): the
+ * A line's counts, the acts the person's rules made on it and the supervisor's course decisions: the
  * supervisor read `SESSION_SUPERVISOR` answers beside its decisions, for the head's chip, its card and *Details*. This machine's own
- * record only; nothing in a browser, and nothing from a driver before the counts, which answers none of the fields.
+ * record only; nothing in a browser, and nothing from a driver without the counts, which answers none of the fields.
  */
 export const useSessionSupervision = (id: string | null | undefined, enabled = true): LineSupervision => {
   const { isAvailable } = useShenora();

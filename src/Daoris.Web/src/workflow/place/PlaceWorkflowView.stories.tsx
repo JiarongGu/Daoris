@@ -14,7 +14,7 @@ import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, START, WORKSPACE } from '../f
 import { answerFor, CURRENT_ANSWER, PLACE_SETUP, SAVED_ROUTES } from './placeWorkflowFixtures';
 import { PlaceWorkflowView, type PlaceWorkflowProps } from './PlaceWorkflowView';
 
-// A place's Workflow (AGENTSPLACE1h, SETUPUX1o; the Setup design's §2.3), every state drawn from props at the main area's 80, 39 and 25 rem, in
+// A place's Workflow, every state drawn from props at the main area's 80, 39 and 25 rem, in
 // 中文 and in dark: the routes as a selection, the chosen route's chart (in a column of its own at 80 rem, one press away at 39 and 25), a
 // step's cell on selection, the folds with their owners, Gates waiting, landed work with no verification and with it, and a workspace's.
 
@@ -98,7 +98,7 @@ export const CurrentDefaultNarrowChinese: Story = { ...CurrentDefault, decorator
 export const CurrentDefaultDark: Story = { ...CurrentDefault, decorators: [dark] };
 
 /**
- * **The Landing row under a saved version** (WORKFLOWCLEAN1h-b): the version's own `land` options, saved as its next version once the places it
+ * **The Landing row under a saved version**: the version's own `land` options, saved as its next version once the places it
  * reaches are let follow it. And **under Current**: the rule as it stands, with the conversion and no editor.
  */
 export const LandingByVersion: Story = { args: { landingOpen: true } };
@@ -127,7 +127,7 @@ export const ShippedUpdateDark: Story = { ...ShippedUpdate, decorators: [dark] }
 export const DocumentsRoute: Story = { args: { first: { route: 'kind:docs' } } };
 export const DocumentsRouteNarrowChinese: Story = { ...DocumentsRoute, decorators: [storyWidths.narrow, chinese] };
 
-/** **A step selected**: its cell shows under the chart, with what it is set to, where that was set and its door to the setting. */
+/** **A step selected**: its cell shows under the chart, with what it is set to, where that is set and its door to the setting. */
 export const StepSelected: Story = { args: { route: undefined, current: CURRENT_ANSWER, first: { step: 'landing' } } };
 export const StepSelectedHalf: Story = { ...StepSelected, decorators: [storyWidths.half] };
 
@@ -164,7 +164,7 @@ export const WorkspaceWorkflow: Story = {
 export const WorkspaceWorkflowHalf: Story = { ...WorkspaceWorkflow, decorators: [storyWidths.half] };
 
 /**
- * **A workspace's Landing row** (WORKFLOWCLEAN1h-c): the same row a repository has, open here. Under a saved version, the version's `land` options;
+ * **A workspace's Landing row**: the same row a repository has, open here. Under a saved version, the version's `land` options;
  * under Current, the old rule as it stands, with the conversion and no editor.
  */
 const workspaceLanding: Pick<PlaceWorkflowProps, 'name' | 'page' | 'doors' | 'landing' | 'onConvert'> = {
@@ -202,7 +202,7 @@ export const Refused: Story = {
   args: { route: undefined, current: null, refusal: 'the driver is still coming up — its service is not answering yet. A moment.' },
 };
 
-/** A window with Ask Daoris in it, so the section offers *Ask Daoris* beside *Edit steps…* (FLOWCHART2g). */
+/** A window with Ask Daoris in it, so the section offers *Ask Daoris* beside *Edit steps…*. */
 function WithAsk({ children }: { children: ReactNode }) {
   useEffect(() => registerAskFill(nothing), []);
   return <>{children}</>;

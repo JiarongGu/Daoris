@@ -2,7 +2,7 @@ import { NODE_KINDS } from '../../data/generated/service';
 import type { FlowNode } from '../../design/FlowCanvas';
 import type { IconName } from '../../design/ui';
 
-// The chart's step kinds (FLOWCHART2a; D223): which variant of node draws a kind, in the graph's words (`claimed`, `land`) and in a
+// The chart's step kinds: which variant of node draws a kind, in the graph's words (`claimed`, `land`) and in a
 // Current's (`work`, `landing`), and what the drawing adds to a node for `StepNode`. Pure: no words, no React.
 
 /** The variants `StepNode` draws; a kind this page has none for is `unknown`, shown as recorded and never dropped. */
@@ -54,7 +54,7 @@ export type ChartStep = {
   terminal?: 'none' | 'finished';
   /** The declared holds, folded to one node or opened (the first member carrying the press that folds them again). */
   group?: { count: number; open: boolean; members: string[] };
-  /** What the driver's judgement refused at this step, in the reader's words (FLOWCHART2c): an outline on the step, its chip the canvas's, and the words in its description. */
+  /** What the driver's judgement refused at this step, in the reader's words: an outline on the step, its chip the canvas's, and the words in its description. */
   refused?: string[];
 };
 

@@ -15,9 +15,8 @@ import type { MilestoneUnit } from './head/milestone';
 import { SessionPageHead } from './head/SessionPageHead';
 import { questName } from './identity';
 
-// The record head with every block it can carry, drawn in a real browser by `measured/head.spec.ts` (MILESTONEUX1; the UI/UX
-// design §3.7 and §9 row 6; UX7's budget, the UX7 design §6.2): the pinned page head, the head, the parts folded to their line
-// (HEADFIT1), the one Accept, the chain folded to its line, the relations folded to theirs (HEADFIT1), the channel, the milestone
+// The record head with every block it can carry, drawn in a real browser by `measured/head.spec.ts`: the pinned page head, the head, the parts folded to their line,
+// the one Accept, the chain folded to its line, the relations folded to theirs, the channel, the milestone
 // folded to its line and the trace folded, then the first lines of the conversation, which a marked box stands in for. The frame
 // is the main area at each width the window gives it (`MAIN_WIDTHS`), with the page's own gutters: `ViewMain` is that area, so no
 // `storyWidths` box is drawn around it.
@@ -70,12 +69,12 @@ const ACCEPT: ComponentProps<typeof AttendedSession>['entryAccept'] = {
   scope: 'entry', offered: 2, open: false, onOpen: nothing, plans: null, onLand: nothing,
 };
 
-/** A typical record's quest (HEADFIT1b): asked by an ask straight to this repository, so its chain is the ask and this quest. */
+/** A typical record's quest: asked by an ask straight to this repository, so its chain is the ask and this quest. */
 const ASKED = quest({ id: 'q0000e', from: 'ask #c98a7e', title: 'Read the export table from the app' });
 
 /**
  * The main area at one width, as the frame draws a session: the pinned head, the record and the conversation's first lines.
- * `typical` draws the record UX7's budget binds (HEADFIT1b): its page head, the record's head and *Details*, the chain's line and
+ * `typical` draws the record the budget binds: its page head, the record's head and *Details*, the chain's line and
  * one folded line, the trace's; without it every block the head can carry is drawn.
  */
 function RecordHead({ width, milestone = MILESTONE, typical = false }: {
@@ -125,7 +124,7 @@ function RecordHead({ width, milestone = MILESTONE, typical = false }: {
               trace={{ open: false, onToggle: nothing }}
             />
           )}
-        {/* The conversation (D76): below the record, in the same scroll; its first box is what the budget measures to. */}
+        {/* The conversation: below the record, in the same scroll; its first box is what the budget measures to. */}
         <div data-conversation className="mt-2 min-w-0">
           {Array.from({ length: 12 }, (_, line) => (
             <p key={line} className="m-0 py-1 text-body text-ink-soft">The agent’s words, line {line + 1}.</p>
@@ -163,7 +162,7 @@ export const ChineseHalf: Story = { args: { width: 'half' }, decorators: [chines
 /** In 中文, at the floor. */
 export const ChineseNarrow: Story = { args: { width: 'narrow' }, decorators: [chinese] };
 
-/** A typical record, the one UX7's budget binds (HEADFIT1b): the page head, the head and *Details*, the chain's line, the trace's. */
+/** A typical record, the one the budget binds: the page head, the head and *Details*, the chain's line, the trace's. */
 export const TypicalWide: Story = { args: { typical: true } };
 
 /** The typical record at half. */

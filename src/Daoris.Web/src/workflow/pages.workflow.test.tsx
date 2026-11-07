@@ -10,7 +10,7 @@ import { QuestPage } from '../quests/QuestPage';
 import { WORK } from '../work/gates/reviewFixtures';
 import { IN_REVIEW, PULL_REQUEST_OPEN, SEVERAL } from './runFixtures';
 
-// WORKFLOW1c (the workflow design §7): a quest's page and an ask's carry their work's run in one line among their head's facts,
+// A quest's page and an ask's carry their work's run in one line among their head's facts,
 // *Workflow: waits for your look*, whose door opens the run; an ask's work in several repositories says each run apart.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);

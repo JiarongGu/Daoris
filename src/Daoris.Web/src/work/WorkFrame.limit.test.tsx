@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 
-// A conversation its account's limit holds, in the Work frame (LIMITRESUME1d2, D206 §3.7): one part of its suite, as WEBSPEED1 cut
-// it. The bridge is mocked as present, because the frame does not exist without one (D55).
+// A conversation its account's limit holds, in the Work frame: one part of its suite.
+// The bridge is mocked as present, because the frame does not exist without one.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
 import i18n from '../locales/i18n';
@@ -22,7 +22,7 @@ function respond(url: string): Response {
 afterEach(() => window.localStorage.clear());
 
 /**
- * The conversation's line (D206 §3.5, §3.7): read from its events' `chat.limit-waits`, never from the accounts alone, worded by the
+ * The conversation's line: read from its events' `chat.limit-waits`, never from the accounts alone, worded by the
  * walk of its agent's accounts; *Stop waiting* once it has ended, its refusal said in the runner's own sentence.
  */
 describe('a conversation its limit holds', () => {
@@ -117,7 +117,7 @@ describe('a conversation its limit holds', () => {
 });
 
 /**
- * LIMITSWITCH3b (D137's note of 2026-10-26): a closed quest's finished session whose words are held for a cooling account reads the wait
+ * A closed quest's finished session whose words are held for a cooling account reads the wait
  * as its state label on its rail row and its page's head, in both languages, never *completed*; with nothing held it still reads completed.
  */
 describe('a closed quest’s session held for an account’s reset', () => {

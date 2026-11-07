@@ -9,7 +9,7 @@ import { type HeavyHolder, type HeavyPart, heavyPartOf, type HeavySlot } from '.
 import { useNow } from './useNow';
 
 /**
- * A heavy run seen running and waiting (HEAVYSLOT1, the UI/UX design §3.5): who holds a repository's heavy-run slot, at which gate,
+ * A heavy run seen running and waiting: who holds a repository's heavy-run slot, at which gate,
  * and who waits behind it, as the driver read the records its runs keep beside the slot (`HEAVY_SLOT`), never a run's output. A
  * holder or a waiter with no session is a run from a terminal, said with no door.
  *

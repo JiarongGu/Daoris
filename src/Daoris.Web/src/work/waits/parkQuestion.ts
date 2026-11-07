@@ -1,7 +1,7 @@
 import type { GoAhead } from '../../data/api';
 
 /**
- * A parked session's question to the person (PARKVIEW1, the park's ask design §2): what only they can decide, as its agent asked it
+ * A parked session's question to the person: what only they can decide, as its agent asked it
  * through `question_ask` and the driver kept it for the park its last turn ended in. Every word is the agent's, shown as written in
  * every language; Daoris words only what surrounds it.
  */
@@ -12,19 +12,19 @@ export type ParkQuestion = {
   choices: { label: string; does: string }[];
   /** The answer it recommends, by its number from 1; null for none. */
   recommend: number | null;
-  /** Why it recommends that answer, as it said (QUESTIONUI1a); null where it gave none or recommends none. */
+  /** Why it recommends that answer, as it said; null where it gave none or recommends none. */
   why: string | null;
   /** By when the work needs the answer, as the agent knows it; null where it named none. Its claim: Daoris keeps no deadline. */
   by: string | null;
   /**
-   * The agent's mark that the question is the owner's alone (SUPERVISOR1b, the supervisor design §4.1): one of `OWNER_MARKS`, or a mark
+   * The agent's mark that the question is the owner's alone: one of `OWNER_MARKS`, or a mark
    * a later build knows, as written; null or absent for none. The supervisor answers no marked question.
    */
   owner?: string | null;
   /**
-   * The supervisor left this question to the owner (SUPERVISOR1b, the supervisor design §4.2, the decision's state `left`): the bound,
+   * The supervisor left this question to the owner (the decision's state `left`): the bound,
    * one of `SUPERVISOR_BOUNDS` or a later one, and its reasons, each naming its source. Carried by `SESSION_QUESTION` beside the question
-   * it was left on; absent where none was.
+   * it is left on; absent where none is.
    */
   left?: SupervisorLeft;
   at: string;
@@ -36,7 +36,7 @@ export type SupervisorLeft = { bound: string; reasons: { says: string; source: s
 /** The marks `question_ask` takes (`QuestionBox.OwnerMarks`), each with its own words on the card. */
 export const OWNER_MARKS = ['sign-in', 'access', 'spending', 'delete', 'repository-asks', 'preference'] as const;
 
-/** The bounds a supervisor leaves a question to the owner by (§4.1), the marks among them: `SupervisorBounds.All`. */
+/** The bounds a supervisor leaves a question to the owner by, the marks among them: `SupervisorBounds.All`. */
 export const SUPERVISOR_BOUNDS = ['go-ahead', ...OWNER_MARKS, 'unrecorded', 'contradicts', 'instructed'] as const;
 export type SupervisorBound = (typeof SUPERVISOR_BOUNDS)[number];
 
@@ -80,7 +80,7 @@ export function readQuestion(answer: unknown): ParkQuestion | null {
   }
   const recommend = typeof asked.recommend === 'number' && Number.isInteger(asked.recommend)
     && asked.recommend >= 1 && asked.recommend <= choices.length ? asked.recommend : null;
-  // Its reason explains the recommendation (QUESTIONUI1a): with none recommended, there is nothing for it to explain.
+  // Its reason explains the recommendation: with none recommended, there is nothing for it to explain.
   const left = readLeft(asked.left);
   return {
     id, question, choices, recommend, why: recommend === null ? null : why, by, owner: text(asked.owner),
@@ -105,8 +105,8 @@ function readLeft(value: unknown): SupervisorLeft | undefined {
 }
 
 /**
- * The words a choice sends as the park's answer (the design §4): its label, as the agent wrote it, then the person's own words after
- * a blank line where they wrote some. The agent was told its answer comes back so, a label it offered first.
+ * The words a choice sends as the park's answer: its label, as the agent wrote it, then the person's own words after
+ * a blank line where they wrote some. The agent is told its answer comes back so, a label it offered first.
  */
 export function choiceWords(label: string, words: string): string {
   const own = words.trim();
@@ -118,8 +118,8 @@ export const openGoAheads = (goAheads: readonly GoAhead[] | undefined): GoAhead[
   (goAheads ?? []).filter((goAhead) => goAhead.state === 'asked');
 
 /**
- * What the box's words become once a press kept them (the design §4): taken off only where the box still begins with the words the
- * press took, so words typed while it was on its way stay; a box changed under it is left as it is.
+ * What the box's words become once a press kept them: taken off only where the box still begins with the words the
+ * press took, so words typed while it is on its way stay; a box changed under it is left as it is.
  */
 export function afterPress(draft: string, taken: string): string {
   const said = taken.trim();

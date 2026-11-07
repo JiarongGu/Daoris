@@ -10,7 +10,7 @@ import {
   undo, type WayRowKey, wayTo, workflowIdFor,
 } from './graphDraft';
 
-// WORKFLOWEDIT1b, FLOWCHART2b (D223): the step editor's draft, the inverse of the run view's drawing (workflowFlow.ts): a schema-2 graph
+// The step editor's draft, the inverse of the run view's drawing (workflowFlow.ts): a schema-2 graph
 // read into steps and the ways each goes on, and written back as the driver reads it, a saved graph's fields kept as written. The editing
 // operations are proved over every shipped workflow, read from the driver's own data, each against its undo; the ways a step's table
 // offers are proved against the refusals of the driver's wire rules (`Nodes/NodeWires.cs`), mirrored below.
@@ -151,7 +151,7 @@ describe("the step editor's draft", () => {
     expect(carried).toEqual({ release: ['release'] });
     carried.release.push('none');
     expect(choice('local-release/find').outputsOn).toEqual({ release: ['release'] });
-    // A step that names no outputsOn, and a palette from a driver before DECIDE1d, write none: every output stays carried on every reach.
+    // A step that names no outputsOn, and a palette from an older driver, write none: every output stays carried on every reach.
     expect(graphOf(addStep(emptyDraft(), choice('local-release/release')).draft).nodes[0]).not.toHaveProperty('outputsOn');
     const older = { ...PALETTE, plugins: [{ plugin: 'local-release', steps: [{ ...PALETTE.plugins[0].steps[0], outputsOn: undefined }] }] };
     expect(graphOf(addStep(emptyDraft(), stepChoices(older).find((each) => each.kind === 'local-release/find')!).draft).nodes[0]).not.toHaveProperty('outputsOn');
@@ -461,7 +461,7 @@ it('offers a step of a kind the palette does not hold only once done', () => {
   expect(rowsOf(PALETTE, strange, 'a').map((row) => row.key)).toEqual(['done']);
 });
 
-// SETUPUX1r (D221 §2.3, D223 §3): a landing method brings its tail in one change, and an input is proposed from the step it is routed from.
+// A landing method brings its tail in one change, and an input is proposed from the step it is routed from.
 
 /** The refusals of `NodeGraphs`' `land-tail` rule, mirrored: the method's tail and no other, each step of it reached from the landing. */
 function tailProblems(graph: GraphJson): string[] {
@@ -613,7 +613,7 @@ describe('an input is proposed from the step it is routed from, and asked where 
   });
 });
 
-// WORKFLOWCLEAN1 1b: the palette says how each kind is offered, and the page keeps no list of its own.
+// The palette says how each kind is offered, and the page keeps no list of its own.
 describe('how the palette offers each kind', () => {
   it('reads `offered` from the palette: a landing\'s tail with its method, every other step alone', () => {
     expect(choice('integrate').offered).toBe('tail:integrate');

@@ -23,7 +23,7 @@ import { SessionTerminalHold } from './SessionTerminalHold';
 type Page = ComponentProps<typeof AttendedSession>;
 
 /**
- * The attended session's record (D76), the head the conversation sits under: what waits on the person, its line of work, its pieces,
+ * The attended session's record, the head the conversation sits under: what waits on the person, its line of work, its pieces,
  * its landing and its channel, each the page's own props from the hooks that read them.
  */
 export function AttendedPane({
@@ -46,7 +46,7 @@ export function AttendedPane({
   heavy: Page['heavy'];
   partRows: NonNullable<Page['parts']>['rows'];
   onShowPart: (id: string) => void;
-  /** Opens *At work* at the request named (COMMS1i). */
+  /** Opens *At work* at the request named. */
   openAtWork: (exchange: string) => void;
   attend: (id: string) => void;
   onOpenQuest?: (quest: string) => void;
@@ -67,19 +67,19 @@ export function AttendedPane({
 
   return (
     <AttendedSession
-      // What waits on the person, and every press on it: the strip at the foot is handed the same (D168 point 3).
+      // What waits on the person, and every press on it: the strip at the foot is handed the same.
       {...waits}
-      // Its pieces (COAGENT1b): what other agents write for it, and the ask of one; no wait of the person's.
+      // Its pieces: what other agents write for it, and the ask of one; no wait of the person's.
       pieces={pieceSection}
-      // COMMS1i: what its line waits on of others, At work's line from At work's read, a door to At work at the request it names.
+      // What its line waits on of others, At work's line from At work's read, a door to At work at the request it names.
       waitingOn={following?.id === attended.id && atWorkHeld && 'answer' in atWorkHeld ? {
         answer: atWorkHeld.answer,
         nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
         onOpen: openAtWork,
       } : null}
-      // RPC1g1: a terminal holding this conversation, said on its head with *Let go of the terminal*.
+      // A terminal holding this conversation, said on its head with *Let go of the terminal*.
       terminalHold={<SessionTerminalHold session={attended.id} />}
-      // CONTEXTDRIVE1j: the supervisor's decision on a point its rule referred, with *Overrule* while it is held.
+      // The supervisor's decision on a point its rule referred, with *Overrule* while it is held.
       supervisorCourse={<SessionSupervisorCourse session={attended.id} supervision={supervision} here={here} />}
       workAsk={workAskAt('head')}
       ruleAsk={ruleAskAt('head')}
@@ -89,15 +89,15 @@ export function AttendedPane({
       opening={openings[attended.id]}
       taking={taking[attended.id]}
       lastTurn={lastTurns[attended.id]}
-      // The page header above carries its state, its id and its stop (D126 §3.2): said once.
+      // The page header above carries its state, its id and its stop: said once.
       headed
-      // An agent on the roster has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7).
+      // An agent on the roster has accounts, so a record naming none ran on the tool's own sign-in.
       ownSignIn={roster.some((row) => row.door === attended.door)}
       nameOf={nameOf}
-      // Its entry's parts (SESSONE1c, D167 point 5): every act on this page stays the part shown's, and the strip picks it.
+      // Its entry's parts: every act on this page stays the part shown's, and the strip picks it.
       parts={attendedParts ? { entry: attendedParts, attended: attended.id, rows: partRows, onShow: onShowPart } : undefined}
       entryAccept={entryAccept}
-      // Its ask's channel, kept to this line of work (SESSONE2c): a post is the person's words, and a refusal is the service's code.
+      // Its ask's channel, kept to this line of work: a post is the person's words, and a refusal is the service's code.
       channel={attendedEntry && channelAsk && channel.available && (channel.loading || channel.channel) ? {
         channel: channel.channel,
         only: { entry: attendedEntry.entry, repository: attendedEntry.repository },
@@ -105,7 +105,7 @@ export function AttendedPane({
           onSuccess: (posted) => (posted.posted ? answered.done() : answered.refused(posted.code ?? 'other')),
           onError: (error) => answered.refused(sentence(error)),
         }),
-        // COWORK1d: *Send to its session*, the person's own press, as on the ask's page.
+        // *Send to its session*, the person's own press, as on the ask's page.
         onForward: (message, repository, answered) => forwardChannel.mutate({ ask: channelAsk, message, repository }, {
           onSuccess: (forwarded) => (forwarded.sent ? answered.done() : answered.refused(forwarded.code ?? 'other')),
           onError: (error) => answered.refused(sentence(error)),
@@ -151,7 +151,7 @@ export function AttendedPane({
       branch={branch}
       ownBranch={ownBranch}
       // Only this machine's own record: the clean-up's list is this machine's, and so is the branch it names.
-      // Told back to its ask (UXFIX2): a branch kept, or a refusal, is said inside it.
+      // Told back to its ask: a branch kept, or a refusal, is said inside it.
       onDiscardBranch={branch && here
         ? (answered) => discardBranch.mutate(branch, {
           onSuccess: sayDiscard(notify, t, answered),

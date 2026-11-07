@@ -3,9 +3,9 @@ import type { WorkflowEffective, WorkflowStart, WorkflowStep } from '../current'
 import { type DrawnGraph, type DrawOptions, drawnFromJson, graphFlow, type GraphFlow } from '../graphFlow';
 import { type RouteScope, whySaid } from '../routeSaid';
 
-// The place's routes and the chart the chosen one draws (SETUPUX1o; D221, the Setup design's §2.3): the route rows from the start node, the
+// The place's routes and the chart the chosen one draws: the route rows from the start node, the
 // label of the graph drawn, and the driver's `effective` answer read onto the one drawing. The page decides nothing the driver did not
-// answer: which workflow a route follows, how it was chosen and its graph are the driver's, and only the words are the page's.
+// answer: which workflow a route follows, how it is chosen and its graph are the driver's, and only the words are the page's.
 
 /** One route of the place as a row to choose: what it is called, the workflow it follows, and what chose it. */
 export type RouteRow = {

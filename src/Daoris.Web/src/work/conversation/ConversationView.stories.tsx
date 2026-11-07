@@ -6,15 +6,15 @@ import { ConversationView } from './ConversationView';
 import { type SessionEvent, settle, toTurns } from './conversation';
 import { CLAIMED } from './handedFixtures';
 
-// Every state of a conversation (D76, CONV2), built by the same fold the organism uses, so what a
+// Every state of a conversation, built by the same fold the organism uses, so what a
 // reviewer designs against is what a session shows: a finished turn folded, a running one open, a
-// driven session's composed target with what it was handed beneath it (CONTEXT1), the kinds a tool call
-// can be, a plan, the driver's own note and one worded from its parts (CONVNOTE1), an update this version does not know, a door that carries only
-// text, words a cooling account holds with *Go on in a new session* and what it came to (MSG1g2), the opening line worded
-// from its codes and an older one with none (UX7d-1), and 中文.
+// driven session's composed target with what it is handed beneath it, the kinds a tool call
+// can be, a plan, the driver's own note and one worded from its parts, an update this version does not know, a door that carries only
+// text, words a cooling account holds with *Go on in a new session* and what it came to, the opening line worded
+// from its codes and an older one with none, and 中文.
 
 let seq = 0;
-// A second and a half between events, so a finished turn's meter reads a span a session could take (CONV5).
+// A second and a half between events, so a finished turn's meter reads a span a session could take.
 const ev = (over: Partial<SessionEvent>): SessionEvent =>
   ({ seq: ++seq, at: new Date(Date.UTC(2026, 8, 25, 9) + seq * 1500).toISOString(), kind: 'message', ...over });
 
@@ -54,8 +54,8 @@ const FAILED: SessionEvent[] = [
 ];
 
 /**
- * Two turns the person stopped (CONV4b): one cut while a tool ran — Claude Code answers that call as
- * failed, and it draws as stopped — and one stopped while the model was still thinking, with no words.
+ * Two turns the person stopped: one cut while a tool ran — Claude Code answers that call as
+ * failed, and it draws as stopped — and one stopped while the model is still thinking, with no words.
  */
 const STOPPED: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', text: 'Run the whole test suite.' }),
@@ -69,7 +69,7 @@ const STOPPED: SessionEvent[] = [
 ];
 
 /**
- * STEER1 (D136): a driven session told two things while it works — one its agent reads at its next step, one at its
+ * A driven session told two things while it works — one its agent reads at its next step, one at its
  * turn's end — waiting where they were said, the run in hand still going.
  */
 const TOLD: SessionEvent[] = [
@@ -80,33 +80,33 @@ const TOLD: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', id: 'said-2', reaches: 'turn-end', text: 'And cap it at 64 KiB.' }),
 ];
 
-/** A driven session that finished, the run's last words and its end, before the person wrote to it (MSG1f). */
+/** A driven session that finished, the run's last words and its end, before the person wrote to it. */
 const FINISHED: SessionEvent[] = [
   ev({ kind: 'user', origin: 'target', text: 'You are the engine repository\'s agent. Take quest #q1 — "Expose a streaming budget".' }),
   ev({ kind: 'message', text: 'Capped hydration at **4 chunks per frame**, committed as `a1b2c3d`.' }),
   ev({ kind: 'turn', stopReason: 'end_turn' }),
 ];
 
-/** MSG1f (D137 §3.1): written to after it ended, the words waiting at its foot for the same session to go on. */
+/** Written to after it ended, the words waiting at its foot for the same session to go on. */
 const WRITTEN_TO: SessionEvent[] = [
   ...FINISHED,
   ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'Also say so in the release notes.', door: 'screen' }),
 ];
 
-/** MSG1f: its tree was gone, so a carry-on took the words, and the conversation says which session, a door. */
+/** Its tree is gone, so a carry-on took the words, and the conversation says which session, a door. */
 const WENT: SessionEvent[] = [
   ...WRITTEN_TO,
   ev({ kind: 'note', text: '— your words went to session `n3wn3w00`, because its tree is gone.', words: ['w1'], to: 'n3wn3w00', why: 'tree' }),
 ];
 
-/** MSG1f (D137 §2.2): its quest had closed and its agent refused the resume: the words stay, with one press. */
+/** Its quest had closed and its agent refused the resume: the words stay, with one press. */
 const CANNOT: SessionEvent[] = [
   ...WRITTEN_TO,
   ev({ kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1'], why: 'refused' }),
 ];
 
 /**
- * MSG1c3 (D142 point 1): a chat's word handed to its turn at the next step, then the person's stop while it was on its
+ * A chat's word handed to its turn at the next step, then the person's stop while it is on its
  * way: the agent may have read it, and the line says so in the reader's language, from its code.
  */
 const CUT_OFF: SessionEvent[] = [
@@ -118,7 +118,7 @@ const CUT_OFF: SessionEvent[] = [
 ];
 
 /**
- * CONVNOTE1 (D125's SIGNIN1b note): a chat's turn its agent refused for the account's sign-in. The driver's note carries its
+ * A chat's turn its agent refused for the account's sign-in. The driver's note carries its
  * parts, and the page words the line from them in the reader's language; its English is the console's.
  */
 const SIGNED_OUT_ENGLISH = 'The agent refused the claude-code account it ran on for its sign-in, so it reads signed out.';
@@ -133,7 +133,7 @@ const SIGN_IN_REFUSED: SessionEvent[] = [
 ];
 
 /**
- * UX7d-1 (D152's UX7d-1 note): a conversation that carried on from a cut-off session on another account. Its first line is
+ * A conversation that carried on from a cut-off session on another account. Its first line is
  * worded from its codes: the account and the step that chose it, the rest's step, the refused turn, and what each account
  * said; its English is the console's.
  */
@@ -174,7 +174,7 @@ const CHINESE: SessionEvent[] = [
 const meta: Meta<typeof ConversationView> = {
   title: 'Work/ConversationView',
   component: ConversationView,
-  // A session's page at the frame's widths (the UI/UX design R6, STORYGAP1): wide by default, a story's own width instead.
+  // A session's page at the frame's widths: wide by default, a story's own width instead.
   decorators: [sessionWidths.wide],
 };
 export default meta;
@@ -186,7 +186,7 @@ export const DrivenAndFinished: Story = { args: { turns: toTurns(DRIVEN).turns }
 export const DrivenAndFinishedHalf: Story = { ...DrivenAndFinished, decorators: [sessionWidths.half] };
 /** The same at the main area's 400 px floor. */
 export const DrivenAndFinishedNarrow: Story = { ...DrivenAndFinished, decorators: [sessionWidths.narrow] };
-/** Another agent's findings handed as the session's next turn (XAGENT1g): a block from that agent, then the session's answer. */
+/** Another agent's findings handed as the session's next turn: a block from that agent, then the session's answer. */
 export const AnotherAgentsFindings: Story = {
   args: {
     turns: toTurns([
@@ -196,7 +196,7 @@ export const AnotherAgentsFindings: Story = {
     ]).turns,
   },
 };
-/** COMMS1a: a helper's answer and a partner's, each drawn under its sender and open, never as the target Daoris composed. */
+/** A helper's answer and a partner's, each drawn under its sender and open, never as the target Daoris composed. */
 const HELPED: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', text: 'Check how the page cap is read.' }),
   ev({ kind: 'user', origin: 'target', helper: 'h1', id: 'w1', text: 'The helper answers your question: the cap is read from the streamer, and the page reads it once at the start.' }),
@@ -213,7 +213,7 @@ export const HelperAndPartnerWordsChineseHalf: Story = { ...helped, decorators: 
 export const HelperAndPartnerWordsChineseNarrow: Story = { ...helped, decorators: [sessionWidths.narrow, chinese] };
 
 export const Running: Story = { args: { turns: toTurns(RUNNING).turns, live: true } };
-/** WAITSHOWN1: a resumed conversation asked seven minutes ago, its agent still waiting on the model: *working…* and the wait, ticking. */
+/** A resumed conversation asked seven minutes ago, its agent still waiting on the model: *working…* and the wait, ticking. */
 const WAITING: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', at: new Date(Date.now() - 7 * 60_000).toISOString(), text: 'Go on with the budget, and cap the other loader too.' }),
   ev({ kind: 'note', text: 'It resumed on its own conversation.' }),
@@ -221,7 +221,7 @@ const WAITING: SessionEvent[] = [
 export const WaitingForFirstAnswer: Story = { args: { turns: toTurns(WAITING).turns, live: true } };
 
 /**
- * PARKVIEW1 (Fable's read, Q4): a park answered with a press of its question's answer, the person's own words after it: drawn as that
+ * A park answered with a press of its question's answer, the person's own words after it: drawn as that
  * answer chosen at the foot, waiting for the same session to go on, never as words they typed.
  */
 const CHOSE: SessionEvent[] = [
@@ -234,7 +234,7 @@ export const ParkAnsweredWithAChoice: Story = { args: { turns: toTurns(CHOSE).tu
 /** The same in 中文 at the floor: the mark translated, the answer as its question offered it. */
 export const ParkAnsweredWithAChoiceChineseNarrow: Story = { ...ParkAnsweredWithAChoice, decorators: [sessionWidths.narrow, chinese] };
 export const WaitingForFirstAnswerChinese: Story = { ...WaitingForFirstAnswer, decorators: [chinese] };
-/** WAITSAY1: a call that has run for nine minutes, named with how long. */
+/** A call that has run for nine minutes, named with how long. */
 const CALLING: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', at: new Date(Date.now() - 12 * 60_000).toISOString(), text: 'Run the tests and fix what fails.' }),
   ev({ kind: 'tool', id: 'long1', title: 'npm test', toolKind: 'execute', status: 'in_progress', at: new Date(Date.now() - 9 * 60_000).toISOString() }),
@@ -248,36 +248,36 @@ export const WrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(WRIT
 export const ChatWrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(WRITTEN_TO).turns, false), chat: true } };
 export const WordsWentToANewSession: Story = { args: { turns: settle(toTurns(WENT).turns, false), onSession: () => {} } };
 export const WordsCannotGoOnHere: Story = { args: { turns: settle(toTurns(CANNOT).turns, false), onStartFrom: () => {} } };
-/** SESSCTX1c part B: the words wait for the person, *Go on with Daoris's brief* beside the fresh start, in English and in 中文. */
+/** The words wait for the person, *Go on with Daoris's brief* beside the fresh start, in English and in 中文. */
 export const WordsWaitWithTheBriefReady: Story = {
   args: { turns: settle(toTurns(CANNOT).turns, false), onStartFrom: () => {}, onGoOnBrief: () => {} },
 };
 export const WordsWaitWithTheBriefReadyChinese: Story = { ...WordsWaitWithTheBriefReady, decorators: [chinese] };
 export const WordCutOffByAStop: Story = { args: { turns: toTurns(CUT_OFF).turns, chat: true } };
-/** CONVNOTE1: a turn refused for its sign-in, the driver's line worded from its parts. */
+/** A turn refused for its sign-in, the driver's line worded from its parts. */
 export const RefusedForItsSignIn: Story = { args: { turns: toTurns(SIGN_IN_REFUSED).turns, chat: true } };
-/** CONVNOTE1, in 中文: the same line from the other catalogue, never the driver's English. */
+/** In 中文: the same line from the other catalogue, never the driver's English. */
 export const RefusedForItsSignInChinese: Story = { ...RefusedForItsSignIn, decorators: [chinese] };
-/** UX7d-1: the line a conversation opens with, worded from its codes. */
+/** The line a conversation opens with, worded from its codes. */
 export const OpenedOnAnAccount: Story = { args: { turns: toTurns(OPENED).turns } };
-/** UX7d-1, in 中文: the same line under 驱动, every word from the catalogue, the accounts as code. */
+/** In 中文: the same line under 驱动, every word from the catalogue, the accounts as code. */
 export const OpenedOnAnAccountChinese: Story = { ...OpenedOnAnAccount, decorators: [chinese] };
-/** UX7d-1: an older driver's opening line with no parts, its English as written and its backticks as code. */
+/** An older driver's opening line with no parts, its English as written and its backticks as code. */
 export const OpenedBeforeCodes: Story = { args: { turns: toTurns(OPENED_BEFORE).turns, chat: true } };
 
-/** MSG1g2 (D137 §2.2): the account it ran on cools until a reset the agent named, so the words wait, with the door out. */
+/** The account it ran on cools until a reset the agent named, so the words wait, with the door out. */
 const COOLING_UNTIL = '2026-09-25T13:10:00Z';
 export const WordsACoolingAccountHolds: Story = {
   args: { turns: settle(toTurns(WRITTEN_TO).turns, false), cooling: { until: COOLING_UNTIL, quest: 'q1', onGoOnNew: () => {} } },
 };
-/** MSG1g2: the choice kept; the driver's next look carries the words on in a new session. */
+/** The choice kept; the driver's next look carries the words on in a new session. */
 export const NewSessionChosen: Story = {
   args: {
     turns: settle(toTurns(WRITTEN_TO).turns, false),
     cooling: { until: COOLING_UNTIL, quest: 'q1', onGoOnNew: () => {}, answer: { sent: true, why: null, message: 'it goes on in a new session' } },
   },
 };
-/** MSG1g2: its quest had closed, so nothing carries the words on by itself, and a conversation is the door instead. */
+/** Its quest has closed, so nothing carries the words on by itself, and a conversation is the door instead. */
 export const NewSessionRefusedQuestClosed: Story = {
   args: {
     turns: settle(toTurns(WRITTEN_TO).turns, false),
@@ -293,9 +293,9 @@ export const Chinese: Story = { args: { turns: toTurns(CHINESE).turns } };
 export const TextOnlyDoor: Story = { args: { turns: [] } };
 export const TextOnlyDoorStillRunning: Story = { args: { turns: [], live: true } };
 
-// WAITFOOT1c (D168 point 4): the blocks that raised what waits on the person say so, with *To the wait*: a go-ahead's call
+// The blocks that raised what waits on the person say so, with *To the wait*: a go-ahead's call
 // (folded in its run, so its run's line says it), the question the park asked, and the work at the end of the turn that did it.
-// WAITFOOT2b: each mark a quiet glyph, *To the wait* and what waits its name, what waits from here its tip.
+// Each mark a quiet glyph, *To the wait* and what waits its name, what waits from here its tip.
 const ASKED_TARGET = ev({ kind: 'user', origin: 'target', text: 'You are the engine repository\'s agent. Take quest #q1 — "Set the dashboard\'s target".' });
 const ASKED_CALL = ev({
   kind: 'tool', id: 'g1', title: 'go_ahead_ask', status: 'completed',

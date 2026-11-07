@@ -18,14 +18,14 @@ import type { PartSpent } from '../entries';
 import { spentLine } from '../head/partsLife';
 
 /**
- * One session in the rail — the working surface's smallest unit of attention (design §3).
+ * One session in the rail — the working surface's smallest unit of attention.
  *
  * @remarks
- * **A molecule: it imports no hook that reaches data** (components plan §2). The quest arrives as a
+ * **A molecule: it imports no hook that reaches data**. The quest arrives as a
  * prop rather than being looked up, which is what makes "a session whose quest is closed", "a
  * session on another machine" and all nine states reachable in a story by passing them.
  *
- * **The anatomy is the reference console's, with D55's two facts added** (components plan §3a): the
+ * **The anatomy is the reference console's, with two facts added**: the
  * mark and its word, what the session is for, how long it has been going, where it runs, which
  * tree it opened for itself, and when it last moved. `elapsed`, `sessionOrigin` and `ownTree`
  * each carry the reason they exist.
@@ -34,18 +34,18 @@ import { spentLine } from '../head/partsLife';
  * and reports a click.
  */
 /**
- * One session in the rail's 56px strip (FRAME6): its repository's initial and its mark, one press
- * away — a `StripMark` (D118 §5). The title, the repository and the state are its name and its tip,
- * since the strip has no room for the words and a mark is never hue alone (D41 §6).
+ * One session in the rail's 56px strip: its repository's initial and its mark, one press
+ * away — a `StripMark`. The title, the repository and the state are its name and its tip,
+ * since the strip has no room for the words and a mark is never hue alone.
  */
 export function SessionStripRow({ session, quest, opening, taking, grouping, selected = false, onSelect }: {
   session: Session;
-  /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle (UX5 U17). */
+  /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle. */
   taking?: boolean;
   quest?: Quest | null;
-  /** What the person first said in it, where this machine holds its record (RAIL1). */
+  /** What the person first said in it, where this machine holds its record. */
   opening?: string | null;
-  /** Where the list's reader placed it (SESSUX1c): a parked quest's last session wears *parked* here too. */
+  /** Where the list's reader placed it: a parked quest's last session wears *parked* here too. */
   grouping?: SessionGrouping | null;
   selected?: boolean;
   onSelect?: (id: string) => void;
@@ -66,8 +66,8 @@ export function SessionStripRow({ session, quest, opening, taking, grouping, sel
 }
 
 /**
- * Where a session's work is now, as this machine's own files say (LOOK2b): whether the tree it opened is still here,
- * and its landing (D113), standing or gone since as the record holds it. The rail asks it once for its rows.
+ * Where a session's work is now, as this machine's own files say: whether the tree it opened is still here,
+ * and its landing, standing or gone as the record holds it. The rail asks it once for its rows.
  */
 export type SessionWhere = {
   treeGone: boolean;
@@ -75,14 +75,14 @@ export type SessionWhere = {
 };
 
 /**
- * The call a working session is inside, with how long (WAITSAY1b): one whose permission request is held for the person says it
- * waits for their answer, timed from the hold (AUTONOMY1b3b), so a glance at the rail finds the session that stands still on them;
- * one the agent named nothing for is a tool call. Said in a few words (`callHead`, RAILLINE1), so the row's one line keeps room for
+ * The call a working session is inside, with how long: one whose permission request is held for the person says it
+ * waits for their answer, timed from the hold, so a glance at the rail finds the session that stands still on them;
+ * one the agent named nothing for is a tool call. Said in a few words (`callHead`), so the row's one line keeps room for
  * the facts after it; its whole title leads the line's tip.
  */
 function callLine(t: TFunction, calling: NonNullable<SessionGrouping['calling']>): string {
   const title = callHead(calling.title);
-  // FABRIC-PIPELINE1c: a call past its pipeline's bound, which Daoris told the session of, says so beside its time.
+  // A call past its pipeline's bound, which Daoris told the session of, says so beside its time.
   if (!calling.waiting) return t(calling.told ? 'work.rail.callingLong' : 'work.rail.calling', { title, elapsed: elapsed(calling.since) });
   return calling.title
     ? t('work.rail.callWaits', { title, elapsed: elapsed(calling.since) })
@@ -96,12 +96,12 @@ export function SessionRow({
   /** What a helper, or a part that continues another, spent: never zero, and said where its door said none. Absent where none answered. */
   spent?: PartSpent | null;
   /**
-   * When a line its account's limit cut off goes on by itself, and on which account (LIMITRESUME1d2, D206 §3.7): the head's first
+   * When a line its account's limit cut off goes on by itself, and on which account: the head's first
    * sentence, worded by the caller from the accounts it holds. Absent, nothing is claimed.
    */
   limitWait?: string | null;
   /**
-   * Its part in its repository's heavy-run slot (HEAVYSLOT1, the UI/UX design §3.5): the gate it runs, the gate it failed at, or the
+   * Its part in its repository's heavy-run slot: the gate it runs, the gate it failed at, or the
    * run it waits behind, said in place of the call it is inside, since that call is the heavy run. Absent, nothing is claimed.
    */
   heavy?: HeavyPart | null;
@@ -109,22 +109,22 @@ export function SessionRow({
   heavyBehind?: string | null;
   session: Session;
   /**
-   * The entry's name where it is not this record's own (SESSONE1c, D167): the ask's, for a line of work an ask began. Absent,
+   * The entry's name where it is not this record's own: the ask's, for a line of work an ask began. Absent,
    * the record's own name, which `sessionTitle` gives, so the row and the head still agree.
    */
   name?: string | null;
-  /** How many parts the entry this row stands for holds (D167): said where there is more than one. */
+  /** How many parts the entry this row stands for holds: said where there is more than one. */
   parts?: number;
   /**
    * Whether a turn is in flight, as the driver says. A live chat between turns reads idle, a quiet
-   * mark and the word (UX5 U17); absent, the record's word stands.
+   * mark and the word; absent, the record's word stands.
    */
   taking?: boolean;
-  /** When its last turn ended here, as the driver says (RAIL2): *moved* reads the later of it and the record. */
+  /** When its last turn ended here, as the driver says: *moved* reads the later of it and the record. */
   lastTurn?: string | null;
-  /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
+  /** The quest it serves, where the caller has it — absent is a state, not a gap. */
   quest?: Quest | null;
-  /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
+  /** What the person first said in it, where this machine holds its record — a conversation's name. */
   opening?: string | null;
   /**
    * The repository's registered checkout, so the row can tell a session in a tree of its OWN from
@@ -132,64 +132,64 @@ export function SessionRow({
    */
   root?: string | null;
   /**
-   * Where its work is now (LOOK2b): its tree, or where its landing put the work once it read as landed. Absent where
-   * the machine has not answered, and then the tree the record names stands, as before.
+   * Where its work is now: its tree, or where its landing put the work once it reads as landed. Absent where
+   * the machine has not answered, and then the tree the record names stands.
    */
   where?: SessionWhere | null;
   /**
-   * The title of the session whose work a second opinion's reviewer reads (XAGENT1g4c, the second-agent design §9), where the
+   * The title of the session whose work a second opinion's reviewer reads, where the
    * rail joined the two through the opinions the service lists. Absent where it did not, and then nothing is claimed.
    */
   reads?: string | null;
   /**
-   * The title of the session its record says it continues (`from`, MIXAGENT3a-i, the mixed-agents design §4), where the rail
+   * The title of the session its record says it continues (`from`), where the rail
    * joined the two. Absent where it did not, and then nothing is claimed.
    */
   continues?: string | null;
-  /** The title of the session a helper helps (`serves`, MIXAGENT3a-i), where the rail joined the two; absent, nothing claimed. */
+  /** The title of the session a helper helps (`serves`), where the rail joined the two; absent, nothing claimed. */
   helps?: string | null;
   /**
-   * Where the list's reader placed it (SESSUX1c, D126 §2.2): its derived word (*parked*, *awaiting reply*) and the
+   * Where the list's reader placed it: its derived word (*parked*, *awaiting reply*) and the
    * facts its line says for its group. Absent where no reader answered (a browser), and then the record speaks alone.
    */
   grouping?: SessionGrouping | null;
   /**
-   * Its repository as its line says it, first, where no group header names it: the list by state (D126 §4.2). Absent,
+   * Its repository as its line says it, first, where no group header names it: the list by state. Absent,
    * the group it sits in says it.
    */
   place?: string | null;
   /**
-   * Whether its line says it is archived (SESSUX1e, D126 §4.5): where the reader's mark stands and no heading above it
+   * Whether its line says it is archived: where the reader's mark stands and no heading above it
    * says so, as in a search and by repository. Under the Archived heading the heading says it.
    */
   archived?: boolean;
   selected?: boolean;
   onSelect?: (id: string) => void;
   /**
-   * The row's menu (RAIL1; SESSUX1d, D126 §3.1): the session's acts where its row is, as the one rule offers them
+   * The row's menu: the session's acts where its row is, as the one rule offers them
    * (`offeredActs`), in that order. Handed in, since which apply is the rule's and not the row's. Finish and Decline…
-   * stay its card's (D56).
+   * stay its card's.
    */
   acts?: readonly SessionActId[];
-  /** An act pressed, with the session it was pressed for, for the one owner to carry out (`sessionActs.ts`). Absent, no menu. */
+  /** An act pressed, with the session it is pressed for, for the one owner to carry out (`sessionActs.ts`). Absent, no menu. */
   onAct?: (act: SessionActId, id: string) => void;
 }) {
   const { t } = useTranslation();
   const title = name || sessionTitle(session, quest, opening);
   const origin = sessionOrigin(session);
-  // Where its work is (LOOK2b): where it landed while that reads as landed, as its review does (D113) — the landed
+  // Where its work is: where it landed while that reads as landed, as its review does — the landed
   // branch still stands, or the tree is gone — else the tree it opened, unless that is gone too.
   const landed = where?.landed && (where.treeGone || where.landed.state === 'standing') ? where.landed : null;
   const tree = landed || where?.treeGone ? null : ownTree(session, root);
   const running = SESSION_ACTIVE.has(session.state);
   const shown = shownOf(session, grouping, taking);
   const placed = placedFact(grouping, shown);
-  // WAITSAY1b: the rail holds no session's events, so the call its agent is inside is the reader's, as the driver heard it,
+  // The rail holds no session's events, so the call its agent is inside is the reader's, as the driver heard it,
   // timed from its start whenever this window opened; said only while it works, never of a chat between turns.
-  // HEAVYSLOT1: a heavy run it holds or waits for is said in place of its call, read from the slot's records, never its output.
+  // A heavy run it holds or waits for is said in place of its call, read from the slot's records, never its output.
   const heavyPart = running ? heavy ?? null : null;
   const pushed = shown === 'working' ? grouping?.calling ?? null : null;
-  // SESSWATCH1a (the session-watch design §5.1): quiet since it was last heard, neutral, after a heavy run's line where both hold. A
+  // Quiet since it last spoke, neutral, after a heavy run's line where both hold. A
   // quiet session making no call carries a call of no title, which says nothing of its own.
   const quiet = pushed?.quiet ?? null;
   const calling = pushed && !heavyPart && (pushed.title || pushed.waiting) ? pushed : null;
@@ -199,26 +199,26 @@ export function SessionRow({
   // One line of secondary facts, each absent when it has nothing to say — `MetaLine`'s rule, and
   // what keeps a rail of a dozen rows readable at 18rem. What the two absences MEAN is on the
   // helpers that produce them. Its repository leads where no group header says it, then what its
-  // group is about (SESSUX1c), since a cut line keeps its start.
+  // group is about, since a cut line keeps its start.
   const meta = [
     place ?? null,
     archived ? t('work.rail.archived') : null,
     parts && parts > 1 ? t('work.rail.parts', { count: parts }) : null,
     placed ? t(placed.line, placed.values) : null,
     limitWait ?? null,
-    // MODELROLE1c3 (D205 §3.5(c)): a record ended before anything ran says why in place of a failure, its account only here.
+    // A record ended before anything ran says why in place of a failure, its account only here.
     shown === 'not-started' ? notStartedLine(t, session) : null,
     calling ? callLine(t, calling) : null,
     heavyPart ? heavyLine(t, heavyPart, (id) => heavyBehind || id) : null,
     quiet ? t('work.rail.quiet', { time: elapsed(quiet) }) : null,
-    // SESSWATCH1b: Daoris's one word to it was kept; said once beside the quiet it speaks of.
+    // Daoris's one word to it is kept; said once beside the quiet it speaks of.
     quiet && pushed?.quietTold ? t('work.rail.quietTold') : null,
-    // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g). So is a second opinion's reviewer,
-    // marked as one (XAGENT1g, the second-agent design §9).
+    // An intake is a chat only by the way it is opened; it says what it is. So is a second opinion's reviewer,
+    // marked as one.
     t(isIntake(session) ? 'work.intake.kind' : isOpinion(session) ? 'opinion.session.kind'
       : session.kind === 'chat' ? 'work.kind.chat' : 'work.kind.driven'),
     isOpinion(session) && reads ? t('opinion.session.reads', { title: reads }) : null,
-    // Whom it continues, and whom a helper helps (MIXAGENT3a-i): the record's own links, where the rail joined them.
+    // Whom it continues, and whom a helper helps: the record's own links, where the rail joined them.
     session.from && continues ? t('work.rail.continues', { title: continues }) : null,
     isHelper(session) && helps ? t('work.rail.helps', { title: helps }) : null,
     isHelper(session) || session.from ? spentLine(t, spent) : null,
@@ -229,11 +229,11 @@ export function SessionRow({
   ].filter(Boolean).join(' · ');
 
   // Only the unusual facts explain themselves: a tip that appeared on every row would be one
-  // people stop reading. A running call's whole title leads, on a line of its own (RAILLINE1).
+  // people stop reading. A running call's whole title leads, on a line of its own.
   const explained = [
     archived ? t('work.rail.archivedTip') : null,
     placed ? t(placed.tip) : null,
-    // A held call's bound is its card's to say, read off the driver for that request (PERMUNTIL1): the mark carries none.
+    // A held call's bound is its card's to say, read off the driver for that request: the mark carries none.
     calling ? t(calling.waiting ? 'work.rail.callWaitsTip' : calling.told ? 'work.rail.callingLongTip' : 'work.rail.callingTip') : null,
     heavyPart?.kind === 'waiting' ? t('work.heavy.waitingTip') : null,
     heavyPart?.kind === 'admission' ? t('work.heavy.admissionTip') : null,
@@ -243,15 +243,15 @@ export function SessionRow({
   ].filter(Boolean).join(' ');
   const tip = [calling?.title || null, explained || null].filter(Boolean).join('\n');
 
-  // What the rule offered, each absent where it does not apply and never disabled (D119 §3.2); nothing at all where there
-  // is nowhere to report a press. One list for its ⋯ and its right-click (CTX1).
+  // What the rule offered, each absent where it does not apply and never disabled; nothing at all where there
+  // is nowhere to report a press. One list for its ⋯ and its right-click.
   const actions = actMenu(onAct ? acts : [], t, (act) => onAct?.(act, session.id), false, session);
 
   return (
     // A group, so the menu's trigger shows on the row's hover and focus and stays out of the way else;
-    // and a row of its list, so the list's arrows move to it (D118 §3e). A right-click offers its ⋯'s acts (CTX1).
+    // and a row of its list, so the list's arrows move to it. A right-click offers its ⋯'s acts.
     <li data-list-row="" className="group relative" {...contextOffer({ label: title, acts: actions })}>
-      {/* Every list's row door (FRAME1d): `aria-current` rather than `aria-selected`, since the row is a
+      {/* Every list's row door: `aria-current` rather than `aria-selected`, since the row is a
           button, not a listbox option, and the accent stripe beside it is not something every reader has. */}
       <ListRowDoor chosen={selected} onPress={() => onSelect?.(session.id)}>
         <span className="flex items-baseline justify-between gap-2">
@@ -304,17 +304,17 @@ export function SessionRow({
 }
 
 /**
- * What a row's line says for the group the reader placed it in (D126 §2.2), with the tip that explains it: how many
- * sessions failed before its quest parked, which question its quest waits on and who it was asked of, whose pause holds
- * its quest (PAUSE1e), what holds the words the person wrote to it after it ended (MSG1f2), that its stop holds its quest
+ * What a row's line says for the group the reader placed it in, with the tip that explains it: how many
+ * sessions failed before its quest parked, which question its quest waits on and who it is asked of, whose pause holds
+ * its quest, what holds the words the person wrote to it after it ended, that its stop holds its quest
  * here, or what its own tree holds to review. Null for every other row, whose group needs no sentence. *What needs you*
- * words a row to review by it too (UX6c), so the row and the band never say two things of one session's work.
+ * words a row to review by it too, so the row and the band never say two things of one session's work.
  */
 export function placedFact(
   grouping: SessionGrouping | null | undefined, shown: string,
 ): { line: string; values?: Record<string, unknown>; tip: string } | null {
   if (!grouping) return null;
-  // A pause that holds its quest (PAUSE1e, D132 §6.1) is the reason before every other, a stop's hold included.
+  // A pause that holds its quest is the reason before every other, a stop's hold included.
   if (grouping.pausedBy) {
     return {
       line: grouping.pausedBy.scope === 'ask' ? 'work.rail.pausedAsk' : 'work.rail.pausedQuest',
@@ -322,7 +322,7 @@ export function placedFact(
       tip: 'work.rail.pausedTip',
     };
   }
-  // What holds the person's words on a record that resumes later (MSG1f2, D137 §3.2): said from the facts where the page
+  // What holds the person's words on a record that resumes later: said from the facts where the page
   // has words for them, and in the planner's own sentence for anything else.
   if (grouping.holds) {
     const { why, reason, repository, until, account, accountName } = grouping.holds;
@@ -330,7 +330,7 @@ export function placedFact(
     if (why === 'hold' && repository) return { line: 'work.rail.wordsHeld.hold', values: { repository }, tip };
     if (why === 'cap') return { line: 'work.rail.wordsHeld.cap', tip };
     if (why === 'cooling' && until) {
-      // LIMITSWITCH1 (D137's note of 2026-10-25): words held for an account's limit say the wait as D206 §3.7 does, its time and the account
+      // Words held for an account's limit say the wait, its time and the account
       // that resets first, never only that the session ended. An agent's own sign-in has no id; the answer says a time.
       const time = moment(until);
       if (typeof account === 'string') return { line: 'work.limit.waits', values: { time, account: accountName || account }, tip };
@@ -349,11 +349,11 @@ export function placedFact(
       ? { line: 'work.rail.awaitsOf', values: { quest: grouping.awaits, repository: grouping.awaitsOf }, tip: 'work.rail.awaitsTip' }
       : { line: 'work.rail.awaits', values: { quest: grouping.awaits }, tip: 'work.rail.awaitsTip' };
   }
-  // A person's stop that holds its quest here (SESSUX1b, D126 §2.2): its quest moves again only on *Try again*.
+  // A person's stop that holds its quest here: its quest moves again only on *Try again*.
   if (shown === 'stopped' && grouping.holdsQuest) return { line: 'work.rail.heldHere', tip: 'work.rail.heldTip' };
   if (grouping.group === 'review' && grouping.work) {
     const { commits, uncommitted } = grouping.work;
-    // A count git could not give is still work (D88's proof keeps it): said as work, never as nothing.
+    // A count git could not give is still work: said as work, never as nothing.
     if (typeof commits === 'number' && commits > 0) return { line: 'work.rail.toReview', values: { count: commits }, tip: 'work.rail.reviewTip' };
     if (typeof uncommitted === 'number' && uncommitted > 0 && commits === 0) return { line: 'work.rail.uncommitted', tip: 'work.rail.reviewTip' };
     return { line: 'work.rail.workToReview', tip: 'work.rail.reviewTip' };

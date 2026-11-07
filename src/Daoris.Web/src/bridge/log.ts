@@ -4,21 +4,21 @@ import { keys } from '../data/queries';
 import { TIDIED_EVENTS } from '../projects/workspace/WorkspaceTidied';
 import type { LogFilters, LogReading, LogSince } from '../settings/Logs';
 
-// The machine log (MOD3): what the page reports into it, and Settings → Logs reading it back (D94).
+// The machine log: what the page reports into it, and Settings → Logs reading it back.
 
-/** The longest string the page reports: the machine log keeps a clue, never a paragraph (D94). */
+/** The longest string the page reports: the machine log keeps a clue, never a paragraph. */
 export const LOG_TEXT = 120;
 
 const clipped = (text: string) => (text.length <= LOG_TEXT ? text : `${text.slice(0, LOG_TEXT)}…`);
 
 /**
- * What the person did on the screen, into the machine log (LOG1b, D94): a view opened, a command run, a
+ * What the person did on the screen, into the machine log: a view opened, a command run, a
  * view moved, a message counted, a proposal settled, a failure the page caught.
  *
  * @remarks
  * **Fire and forget, and never a throw**: the log is evidence, never a reason for the page to fail, so a
  * report the bridge refuses — or a bridge that breaks — is dropped here. **Nothing in a browser**, which
- * has no bridge: the log is the machine's, and a browser over a remote is not on it (D47 §4).
+ * has no bridge: the log is the machine's, and a browser over a remote is not on it.
  *
  * **Counts and names, never words.** The shell's `DAORIS.LOG` module keeps only the catalogue's events and
  * fields and drops the rest, but a caller hands it a message's LENGTH, never its text. Called from
@@ -38,9 +38,9 @@ export function logEvent(event: string, data: Record<string, string | number | b
 export const LOG_LINES = 200;
 
 /**
- * The machine log read back (LOG1c, D94): the newest lines with the terminal's filters, applied by the
+ * The machine log read back: the newest lines with the terminal's filters, applied by the
  * shell — the reading `daoris logs` prints. Desktop only: no HTTP route serves the log, and a
- * browser has no bridge to ask (D47 §4).
+ * browser has no bridge to ask.
  */
 export const useMachineLog = (filters: LogFilters) => {
   const { isAvailable } = useShenora();
@@ -62,12 +62,12 @@ export const useMachineLog = (filters: LogFilters) => {
   });
 };
 
-/** How many cleaned-up lines a workspace's Branches tab reads, and how far back (AUTOTIDY1a): a week's, at most fifty. */
+/** How many cleaned-up lines a workspace's Branches tab reads, and how far back: a week's, at most fifty. */
 export const TIDIED_LINES = 50;
 export const TIDIED_SINCE: LogSince = '7d';
 
 /**
- * What the look cleaned up in a workspace on its own, and could not (AUTOTIDY1a, D88): the log's `branch.tidied` and
+ * What the look cleaned up in a workspace on its own, and could not: the log's `branch.tidied` and
  * `branch.kept` lines of the last week for this workspace, newest first. Desktop only, for `useMachineLog`'s reason: a
  * browser asks nothing and has no waiting state to show.
  */
@@ -97,8 +97,8 @@ export const STACK_FRAMES = 5;
 const FRAME = /^\s*(?:at\s+(?:new\s+)?([^\s(]+)|([^\s@]+)@)/;
 
 /**
- * The top of a component stack as the log keeps it (PAGELOOP1, D217): its first {@link STACK_FRAMES} frames by their names alone,
- * innermost first, joined ` < `, cut short. Never a frame's location, which is where the page was loaded from: a development build's
+ * The top of a component stack as the log keeps it: its first {@link STACK_FRAMES} frames by their names alone,
+ * innermost first, joined ` < `, cut short. Never a frame's location, which is where the page is loaded from: a development build's
  * module path with its query, a production build's column in a bundle the names find anyway. A production build's names are
  * minified, as written. Null where the stack names no frame.
  */
@@ -111,7 +111,7 @@ export function stackTop(componentStack: string | null | undefined): string | nu
   return names.length > 0 ? clipped(names.join(' < ')) : null;
 }
 
-/** The view this page shows (PAGELOOP1), for a render failure's line; null until a view says. */
+/** The view this page shows, for a render failure's line; null until a view says. */
 let shownView: string | null = null;
 
 /** Say which view this page shows now: a view's id, a name, never an address or what is on it. The main window's frame says it. */
@@ -120,7 +120,7 @@ export function pageShows(view: string): void {
 }
 
 /**
- * A render the page's error screen caught (PAGELOOP1, D217), into the machine log as `page.error` with `where` `render`: the message
+ * A render the page's error screen caught, into the machine log as `page.error` with `where` `render`: the message
  * cut short; the view the page shows, or `view`, the window's own where no view has said (a secondary window's, known before
  * anything is drawn); and the top of the component stack ({@link stackTop}), which React hands a boundary alone. Caught by the
  * screen, so React never hands it to the window, and `installPageErrors` never hears it.
@@ -136,8 +136,8 @@ export function reportPageStopped(error: unknown, componentStack?: string | null
 let pageErrorsHeard = false;
 
 /**
- * The page's own failures into the machine log (LOG1b): an error nothing caught, and a promise nobody
- * handled — the message only, cut short, never a stack or what was on the screen. Installed once, at the
+ * The page's own failures into the machine log: an error nothing caught, and a promise nobody
+ * handled — the message only, cut short, never a stack or what is on the screen. Installed once, at the
  * page's start, however often it is asked.
  */
 export function installPageErrors(): void {

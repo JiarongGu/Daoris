@@ -5,8 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 // A session's page header and its acts, reviewing what a session landed, and acting on it, in the Work frame, one part of
-// its suite (WEBSPEED1 cut the one file, which ran 181 s alone, into parts that run beside each other). The bridge is mocked
-// as present, because the frame does not exist without one (D55); what the parts share is in `test/workFrameBridge.ts`
+// its suite (the parts run beside each other). The bridge is mocked
+// as present, because the frame does not exist without one; what the parts share is in `test/workFrameBridge.ts`
 // and `test/workFrameKit.tsx`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
@@ -30,11 +30,11 @@ function respond(url: string): Response {
 
 // 🔴 Every test starts from a viewer with nothing remembered. The frame keeps its layout per viewer,
 // and a test that hid the console left it hidden for whichever console test ran next: four failed
-// in a shuffled order (UX5, 2026-09-26), and passed in file order only by luck of the order.
+// in a shuffled order, and passed in file order only by luck of the order.
 afterEach(() => window.localStorage.clear());
 
 /**
- * The session's page header, and every act where its session is (SESSUX1d, D126 §3): a running driven session is
+ * The session's page header, and every act where its session is: a running driven session is
  * stopped where it is read, asking once; a parked quest is tried again from its session; a row's acts attend their
  * session and do their part there.
  */
@@ -62,8 +62,8 @@ describe('a session’s page header and its acts', () => {
   };
 
   /**
-   * M1, the audit's first finding: a running driven session had no stop in Sessions, and its one stop was on its quest's
-   * page. Its page header's *Stop…* asks once, saying what follows for a session that has not taken its quest yet, and
+   * A running driven session has a stop in Sessions, not only on its quest's
+   * page: its page header's *Stop…* asks once, saying what follows for a session that has not taken its quest yet, and
    * stops nothing until its second press.
    */
   it('stops a running driven session from its page header, asking once and saying what follows', async () => {
@@ -84,13 +84,13 @@ describe('a session’s page header and its acts', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', { payload: { id: 's1a2b3c4' } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith('session s1a2b3c4 is being stopped — the record will say the person ended it.'));
-    // UXFIX2: it closes once the stop lands, never on the press.
+    // It closes once the stop lands, never on the press.
     await waitFor(() => expect(screen.queryByRole('group', { name: 'stop this session' })).toBeNull());
   });
 
   /**
-   * UXFIX2 (the second-opinion review): the stop's ask takes the focus to what follows, gives it back to *Stop…* when put
-   * down, and a refused stop is said inside it, word for word, where it was pressed, rather than in a toast; it stays open.
+   * The stop's ask takes the focus to what follows, gives it back to *Stop…* when put
+   * down, and a refused stop is said inside it, word for word, where it is pressed, rather than in a toast; it stays open.
    */
   it('gives the focus back to Stop… when put down, and says a refused stop inside its ask', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -118,7 +118,7 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * MIXAGENT1b-i (D163): *Go on with another agent…* folds into the head's ⋯ and asks under the head: the agent chip lists the
+   * *Go on with another agent…* folds into the head's ⋯ and asks under the head: the agent chip lists the
    * agents but the conversation's own; *Hand over* asks `SESSION_HAND_OVER`, and the page attends the conversation it opened.
    */
   const TWO_AGENTS = {
@@ -200,9 +200,9 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * AUTONOMY1b3c (D184 point 3): a tool call the running session holds for the person's answer under asking stands in its head,
+   * A tool call the running session holds for the person's answer under asking stands in its head,
    * read off `PERMISSION_WAITS`, and *Allow once* sends `SESSION_PERMISSION_ANSWER` with the option the agent offered; a refusal of
-   * the answer is said where it was pressed, by its code in the catalogue's words.
+   * the answer is said where it is pressed, by its code in the catalogue's words.
    */
   it('answers a tool call a running session holds for the person with the option they pressed', async () => {
     const held = {
@@ -230,7 +230,7 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * MIXAGENT2b (D163 points 2 and 3; the mixed-agents design §3, §5): the session's asks of helpers stand in its head under
+   * The session's asks of helpers stand in its head under
    * *Helpers*, an agent's that waits on the person with *Let it ask*, which sends `SESSION_HELPER_APPROVE`; *Ask another agent…*
    * folds into the head's ⋯ and asks under the head, its *Ask* sending `SESSION_HELPER_ASK` with the question, the agent left to
    * Daoris, and the ask closes once it is on file.
@@ -269,7 +269,7 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * MIXAGENT1b-ii (D163 point 3): when the conversation's own account is near its limit by its scope's near, a line under the head
+   * When the conversation's own account is near its limit by its scope's near, a line under the head
    * offers *Go on with codex (team)* and *Choose…*; the press asks `SESSION_HAND_OVER` with the reason `near` as Daoris's, *Choose…*
    * opens the ask with that choice made, and *Not now* puts it down for the run. Nothing is taken without the press.
    */
@@ -367,7 +367,7 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * SESSUX1f (D126 §5.4): an ended conversation the reader says is deletable offers *Delete…* in its header's ⋯; it asks
+   * An ended conversation the reader says is deletable offers *Delete…* in its header's ⋯; it asks
    * once under the header, deletes nothing until its second press, and a driven session's ⋯ offers none.
    */
   it('deletes an ended conversation from its header’s ⋯, asking once, and offers a driven session none', async () => {
@@ -395,7 +395,7 @@ describe('a session’s page header and its acts', () => {
 
     const ask = screen.getByRole('group', { name: 'delete this session' });
     expect(ask).toHaveTextContent('Nothing brings it back.');
-    // UXFIX2: opened from the ⋯, its sentence takes the focus, and *Never mind* gives it back to the ⋯.
+    // Opened from the ⋯, its sentence takes the focus, and *Never mind* gives it back to the ⋯.
     await waitFor(() => expect(within(ask).getByText(/^Deletes this conversation’s record/)).toHaveFocus());
     await user.click(within(ask).getByRole('button', { name: 'Never mind' }));
     expect(screen.queryByRole('group', { name: 'delete this session' })).toBeNull();
@@ -411,7 +411,7 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * PAUSE1e (D132 §2.6, §7.1): a running driven session's ⋯ offers *Pause quest…*; it asks once under the header, saying
+   * A running driven session's ⋯ offers *Pause quest…*; it asks once under the header, saying
    * from the driver's plan what it stops, and pauses on its second press. Where a pause holds its quest, *Resume quest* is
    * the header's loud act, in *Try again*'s place.
    */
@@ -483,7 +483,7 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * UX7c (D152 §7, amending D126 §3.2): the header says its word, its title and its facts; its id is its ⋯'s and its
+   * The header says its word, its title and its facts; its id is its ⋯'s and its
    * record's *Details*, and the record under it says neither its word nor its title again.
    */
   it('names the session in its header with its word and its facts, its id in Details alone', async () => {
@@ -501,8 +501,8 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * PROCESS1e (D164's amendment point 3): the attended session's *Details* says the process its own tree runs under, as the driver
-   * answers it for that session, with where each rule was set.
+   * The attended session's *Details* says the process its own tree runs under, as the driver
+   * answers it for that session, with where each rule is set.
    */
   it('says in Details how the session commits and lands, as the driver answers for it', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_PROCESS'
@@ -525,7 +525,7 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * FABRIC-MILESTONE1b (the fabric events design §D0): the attended session's foot says where its work stands, as the driver's
+   * The attended session's foot says where its work stands, as the driver's
    * `WORK_STATE` answers for that session: the end, the result, the clean-up and the recovery.
    */
   it('says at the foot where the work stands: the end, the result, the clean-up and the recovery, as the driver answers', async () => {
@@ -545,7 +545,7 @@ describe('a session’s page header and its acts', () => {
       : DRIVER_STATE));
     show('s1a2b3c4');
 
-    // Folded to its line, which already says what waits on the person; the facts open in place (MILESTONEUX1).
+    // Folded to its line, which already says what waits on the person; the facts open in place.
     const foot = await screen.findByRole('region', { name: 'Where this work stands' });
     const fold = within(foot).getByRole('button', { name: /Where this work stands/ });
     expect(fold).toHaveAttribute('aria-expanded', 'false');
@@ -560,9 +560,9 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * RELSPAM1: a running driven session on a quest an ask's intake published, with its milestone, is drawn again at every change of
-   * its record. Its *Who it worked with* and its milestone were keyed alike under the record, so each draw left one more copy of the
-   * relations line in the page: eleven on an installed window.
+   * A running driven session on a quest an ask's intake published, with its milestone, is drawn again at every change of
+   * its record. Its *Who it worked with* and its milestone are keyed apart under the record, so a draw never leaves one more
+   * copy of the relations line in the page.
    */
   it('keeps one line of who a running session worked with, however often its record changes', async () => {
     const intake = { ...PARKED_INTAKE, id: 'i9n8t7k6', state: 'completed', note: undefined };
@@ -597,7 +597,7 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * MIXAGENT3a-i (the mixed-agents design §4): a session that continues another says which agent's in its facts, by the roster's
+   * A session that continues another says which agent's in its facts, by the roster's
    * name for it, and why in the hand-over's words; its *Details* names that session and attends it on a press.
    */
   it('says whom a session continues in its header, and attends that session from Details', async () => {
@@ -617,7 +617,7 @@ describe('a session’s page header and its acts', () => {
     expect(onSelect).toHaveBeenCalledWith('e4r1i3r0');
   });
 
-  /** And, as a reviewer's, a helper's record takes one turn and no words (D163's MIXAGENT2a-i note): no box is offered. */
+  /** And, as a reviewer's, a helper's record takes one turn and no words: no box is offered. */
   it('titles a helper as one, says whom it helps by that session’s title, and offers it no box', async () => {
     SESSIONS = [DRIVEN, { ...CHAT, id: 'h3lp3r00', serves: 's1a2b3c4' }];
     show('h3lp3r00');
@@ -629,8 +629,8 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * FOUNDATION1c (D203 point 1; X4-1.3): a partner is drawn as one where its host sends its work, and is offered no box, as a helper is,
-   * on that host and on one that sends none (which draws it as a helper, as before).
+   * A partner is drawn as one where its host sends its work, and is offered no box, as a helper is,
+   * on that host and on one that sends none (which draws it as a helper).
    */
   it('titles a partner as one where the host sends its work, and offers it no box on either host', async () => {
     const partner = { ...CHAT, id: 'p4rtn3r0', serves: 's1a2b3c4', piece: 'p1a2b3c4' };
@@ -744,8 +744,7 @@ describe('a session’s page header and its acts', () => {
 });
 
 /**
- * Review (SURF6, design §5): what the session actually did. The dock's second occupant — which is
- * why the dock exists at all now, and why the timeline moved into it.
+ * Review: what the session actually did. The dock's second occupant.
  */
 describe('reviewing what a session landed', () => {
   const DIFF = {
@@ -766,14 +765,14 @@ describe('reviewing what a session landed', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
-    // A viewer who has opened the dock, where review lives: it opens on demand (UX5 U7).
+    // A viewer who has opened the dock, where review lives: it opens on demand.
     window.localStorage.setItem('daoris.dockClosed', '0');
   });
   afterEach(() => {
     vi.unstubAllGlobals();
     invoke.mockReset();
     eventHandlers.clear();
-    // A draft outlives its test the way it outlives a reload (CONV4b).
+    // A draft outlives its test the way it outlives a reload.
     window.localStorage.removeItem('daoris.drafts');
     window.localStorage.removeItem('daoris.dockClosed');
   });
@@ -788,7 +787,7 @@ describe('reviewing what a session landed', () => {
   });
 
   /**
-   * REVIEW2: the changes laid out in one column or the old side beside the new — one choice for the
+   * The changes laid out in one column or the old side beside the new — one choice for the
    * whole review, remembered per viewer like the frame's widths.
    */
   it('lays the changes out unified or side by side, and remembers which', async () => {
@@ -813,7 +812,7 @@ describe('reviewing what a session landed', () => {
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
 
     expect(await screen.findByText('src/chunk.ts')).toBeTruthy();
-    // Within the review's own bound (REVIEW4): the bridge's 30 seconds gave up on a diff git took most of a minute over.
+    // Within the review's own bound: the bridge's 30 seconds would give up on a diff git takes most of a minute over.
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', {
       payload: { id: 's1a2b3c4', read: expect.any(String) }, timeoutMs: 180_000,
     });
@@ -824,8 +823,8 @@ describe('reviewing what a session landed', () => {
   });
 
   /**
-   * REVIEW4: while git reads, the review's frame is the attended record's — its own branch, the commit it began at, the
-   * commits it reported — above the skeleton and the words saying what is read. The installed window sat blank here.
+   * While git reads, the review's frame is the attended record's — its own branch, the commit it began at, the
+   * commits it reported — above the skeleton and the words saying what is read, never a blank window.
    */
   it('stands the review’s frame from the attended record at once while git reads', async () => {
     SESSIONS = [{
@@ -860,7 +859,7 @@ describe('reviewing what a session landed', () => {
   });
 
   /**
-   * Unreviewable is INFORMATION, not a fault (D48 §6's class): a record that travelled from another
+   * Unreviewable is INFORMATION, not a fault: a record that travelled from another
    * machine names no tree here and never will. The host's sentence says which of the three it is.
    */
   it('renders the host’s own sentence when there is nothing here to diff', async () => {
@@ -888,7 +887,7 @@ describe('reviewing what a session landed', () => {
     expect(await screen.findByText('Nothing landed')).toBeTruthy();
   });
 
-  /** REVIEWDIRTY1-b: a tree holding only uncommitted work shows it, and does not say nothing landed. */
+  /** A tree holding only uncommitted work shows it, and does not say nothing landed. */
   it('shows a session\'s uncommitted work where it committed nothing', async () => {
     const uncommitted = { files: [{ path: 'src/draft.ts', status: 'modified', added: 1, removed: 0, patch: '@@ -1 +1 @@\n-a\n+b' }], truncated: false };
     invoke.mockImplementation(async (_module: string, type: string) =>
@@ -903,7 +902,7 @@ describe('reviewing what a session landed', () => {
 });
 
 /**
- * The two acts on a reviewed session (SURF6b, D51 rules 6–7). The guards themselves live in the tree
+ * The two acts on a reviewed session. The guards themselves live in the tree
  * layer and are tested against real git; what is asserted here is that the surface carries the
  * person's intent faithfully — and, above all, that it never sends `force` on a first press.
  */
@@ -915,21 +914,21 @@ describe('acting on what a session landed', () => {
     files: [{ path: 'src/chunk.ts', status: 'modified', added: 4, removed: 1, patch: '@@ -1 +1 @@\n-a\n+b' }],
   };
 
-  // The acts act on a session TREE (D51), so the session under test holds one. A record that names
+  // The acts act on a session TREE, so the session under test holds one. A record that names
   // no tree here is the other case, asserted at the end.
   const IN_A_TREE = { ...DRIVEN, tree: 'C:/somewhere/.daoris/trees/default/engine-abc' };
 
   beforeEach(() => {
     SESSIONS = [IN_A_TREE];
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-    // A viewer who has opened the dock, where review lives: it opens on demand (UX5 U7).
+    // A viewer who has opened the dock, where review lives: it opens on demand.
     window.localStorage.setItem('daoris.dockClosed', '0');
   });
   afterEach(() => {
     vi.unstubAllGlobals();
     invoke.mockReset();
     eventHandlers.clear();
-    // A draft outlives its test the way it outlives a reload (CONV4b).
+    // A draft outlives its test the way it outlives a reload.
     window.localStorage.removeItem('daoris.drafts');
     window.localStorage.removeItem('daoris.dockClosed');
   });
@@ -940,7 +939,7 @@ describe('acting on what a session landed', () => {
     await screen.findByText('src/chunk.ts');
   };
 
-  /** WSR1 (D87): the pane says where a press sends the work before it is pressed, in the driver's plan. */
+  /** The pane says where a press sends the work before it is pressed, in the driver's plan. */
   it('says before the press that accepting puts the work on the branch the rule names', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;
@@ -954,7 +953,7 @@ describe('acting on what a session landed', () => {
     expect(screen.getByText('feature/0fda18-fix', { selector: 'code' })).toBeTruthy();
   });
 
-  /** WSR4 (D100): who pushes it is said before the press — and what would refuse the press, where something would. */
+  /** Who pushes it is said before the press — and what would refuse the press, where something would. */
   it('says before the press which plugin pushes the branch, and what stands in its way', async () => {
     let plan: Record<string, unknown> = {
       session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix', source: 'workspace', plugin: 'github-pull-request',
@@ -976,7 +975,7 @@ describe('acting on what a session landed', () => {
     expect(await screen.findByText(/switched off on this machine/)).toBeTruthy();
   });
 
-  /** SESS1 S10: the head finds its branch in the clean-up's list by the tree's folder, on a Windows path too. */
+  /** The head finds its branch in the clean-up's list by the tree's folder, on a Windows path too. */
   it('names the branch its tree left and whether its work landed, in the head', async () => {
     SESSIONS = [{ ...IN_A_TREE, tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-abc12345' }];
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -995,7 +994,7 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * LAND3b (D102's LAND3 note): a failed session whose tree is gone left a branch only the terminal's
+   * A failed session whose tree is gone leaves a branch only the terminal's
    * `trees remove … --force` reached. Its head offers the discard, asks once, and presses the driver's forced removal of
    * that branch by its name and repository; the driver's sentence for a branch it kept is said whole, as a refusal is.
    */
@@ -1025,7 +1024,7 @@ describe('acting on what a session landed', () => {
     });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Discarded `daoris/s-abc12345` in engine.'));
 
-    // UXFIX2: it closed once the discard landed; a branch the driver kept is said inside the ask, whole, which stays open.
+    // It closes once the discard lands; a branch the driver kept is said inside the ask, whole, which stays open.
     await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'discard daoris/s-abc12345' })).toBeNull());
     answer = { repository: 'engine', branch: 'daoris/s-abc12345', done: false, message: 'there is no branch `daoris/s-abc12345` in `engine` — it is gone already.' };
     await userEvent.click(await screen.findByRole('button', { name: 'Discard branch…' }));
@@ -1036,7 +1035,7 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * LAND4 (D102's LAND4 note, the owner's case): a failed session's commits stayed in its tree and nothing offered to land
+   * A failed session's commits stay in its tree, so the page offers to land
    * them. Where the driver's reader says what its tree offers to land, its page says the commits, the branch and the tree
    * beside what it left, and *Accept…* asks once, saying where the rule puts it, then presses the review's own landing; the
    * driver's sentence is said once it landed, and a refusal inside the ask.
@@ -1057,7 +1056,7 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    // The head's, in the main area: the strip at the foot draws the same line (WAITFOOT1b, D168).
+    // The head's, in the main area: the strip at the foot draws the same line.
     const head = within(screen.getByRole('main'));
     await userEvent.click(await head.findByRole('button', { name: 'Accept…' }));
     expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
@@ -1080,7 +1079,7 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * ACCEPTALL1 (D167's 2026-10-15 amendment, the owner's *"I cannot accept for 2 sessions/quests at the same time"*): where more
+   * Where more
    * than one part of the attended line of work offers work to land, its page offers one Accept under the Parts strip; the plan is
    * read only once its ask opens, and the press lands the entry.
    */
@@ -1130,7 +1129,7 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * REVIEWFLOW1a (D168's table, point 3): the session's *Accept all* is one owner drawn in the head and at the foot, its ask open in
+   * The session's *Accept all* is one owner drawn in the head and at the foot, its ask open in
    * one of them at a time; where the foot's ask is open, the head's press is held, so words begun in the ask are not put down.
    */
   it('holds the head’s Accept all while its ask is open at the foot', async () => {
@@ -1176,7 +1175,7 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * REVIEWFLOW1a (D168's table, the Opus maker's N2): the work wait stands on the session's offer, one or more parts: a head with no
+   * The work wait stands on the session's offer, one or more parts: a head with no
    * work of its own beside a part that has some shows the session's *Accept…*.
    */
   it('offers the session’s Accept where the head has no work beside a part that has', async () => {
@@ -1209,8 +1208,8 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * ACCEPTALL1h (D169's ACCEPTALL1e note), REVIEWFLOW1a: while a line of work's one Accept lands it, the session's press in the head
-   * and in its review's foot waits, read by the entry the press names, and comes back once it answered.
+   * While a line of work's one Accept lands it, the session's press in the head
+   * and in its review's foot waits, read by the entry the press names, and comes back once it answers.
    */
   it('holds the session’s Accept in the head and in its review while its line of work lands', async () => {
     const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
@@ -1261,8 +1260,8 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * STATEHUB1c (D169 point 7, the owner's 2026-10-15 采纳): a landing pressed in the head was the head's alone, so the review
-   * offered *Accept* while it ran. Under way, every view of the session says so: the review's *Accept* reads *Landing…* and
+   * A landing pressed in the head is not the head's alone: the review must not
+   * offer *Accept* while it runs. Under way, every view of the session says so: the review's *Accept* reads *Landing…* and
    * waits, as it would for its own press, until the landing answers.
    */
   it('holds the review’s Accept as Landing… while the head’s landing is under way', async () => {
@@ -1296,7 +1295,7 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * LANDNAME1b (D145's LANDNAME1a note): a branch name entered in the head's ask asks the plan again with it, so the driver's
+   * A branch name entered in the head's ask asks the plan again with it, so the driver's
    * refusal shows before the press, and the press sends it; a press with no name stays `{ id }` (the test above).
    */
   it('asks the plan again with an entered branch name, and the press sends it', async () => {
@@ -1337,7 +1336,7 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * WAITFOOT1b (D168 point 3): *Accept…* stands in the head and in the strip at the foot, one press, and its ask is open in one
+   * *Accept…* stands in the head and in the strip at the foot, one press, and its ask is open in one
    * of them at a time: opening it in one puts the other down, a branch name typed there with it.
    */
   it('opens the work\'s ask in one place at a time, the head\'s or the foot\'s', async () => {
@@ -1373,9 +1372,9 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * ACCEPTFOOT1 (D164's note, D168 point 2): the owner, 2026-10-16, found no *Accept* in an open conversation whose turn ended
-   * with a commit beyond the line: its record stays `working`, so the driver's look offered nothing, and only the review's side
-   * bar had the press. Once its turn ends, the head and the foot offer it from the review's own answer; never while a turn runs.
+   * An open conversation whose turn ended
+   * with a commit beyond the line keeps its record `working`, so the driver's look offers nothing, and only the review's side
+   * bar would have the press. Once its turn ends, the head and the foot offer it from the review's own answer; never while a turn runs.
    */
   describe('an open conversation whose turn ended with work', () => {
     const TALK = { ...CHAT, tree: 'C:/somewhere/.daoris/trees/default/engine/s-c0ffee11' };
@@ -1395,8 +1394,8 @@ describe('acting on what a session landed', () => {
     const turn = (taking: boolean) => act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking }));
     const diffs = () => invoke.mock.calls.filter((call) => call[1] === 'SESSION_DIFF').length;
 
-    // The second maker's review: a review read before the turn's last commit was reused at its end, within the 15 s a live review
-    // is fresh for, so a turn that committed offered nothing; and a stale answer that offered stayed pressable while it was read again.
+    // A review read before the turn's last commit must not be reused at its end, within the 15 s a live review
+    // is fresh for, or a turn that committed offers nothing; and a stale answer that offered must not stay pressable while it is read again.
     it('reads the review again for the turn that ended, never offering from an answer read before it', async () => {
       SESSIONS = [TALK];
       let review: () => unknown = () => NOTHING;
@@ -1438,12 +1437,12 @@ describe('acting on what a session landed', () => {
       show('c0ffee11');
       const strip = await screen.findByRole('region', { name: 'Waiting on you' });
       expect(await within(strip).findByRole('button', { name: 'Accept…' })).toBeInTheDocument();
-      // The head's and the foot's, one press (D56).
+      // The head's and the foot's, one press.
       expect(screen.getAllByRole('button', { name: 'Accept…' })).toHaveLength(2);
     });
 
     /**
-     * CHATFLOW1d (the chat-flow design §5.2): a chat run's press refused for its second opinion, asked at that press, says so at the foot
+     * A chat run's press refused for its second opinion, asked at that press, says so at the foot
      * in the reader's language from the press's code, never the driver's English alone.
      */
     it.each([
@@ -1547,7 +1546,7 @@ describe('acting on what a session landed', () => {
     });
   });
 
-  // WAITFOOT2a: the strip stands aside while the head's waits are on screen, never from under an ask open in it.
+  // The strip stands aside while the head's waits are on screen, never from under an ask open in it.
   it('keeps the strip up while the work\'s ask is open in it, though the head came on screen', async () => {
     const watched = watchScreen();
     try {
@@ -1582,7 +1581,7 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * XAGENT1g (the second-agent design §7–§9): where a level asks a second opinion, the session's page draws it before *Accept…*
+   * Where a level asks a second opinion, the session's page draws it before *Accept…*
    * from the landing's plan, its findings read from the gate, and *Accept…*, which answers a dispute, sends the gate's token back.
    * *Ask again* is the driver's own press.
    */
@@ -1613,7 +1612,7 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    // The head's, in the main area: the strip at the foot draws the same gate (WAITFOOT1b, D168).
+    // The head's, in the main area: the strip at the foot draws the same gate.
     const head = within(screen.getByRole('main'));
     const gate = await head.findByRole('region', { name: 'Second opinion' });
     expect(gate).toHaveTextContent('1 finding by Codex (OpenAI) is disputed');
@@ -1633,8 +1632,8 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * SQUASHTIDY1b (D102's SQUASHTIDY1b note, the owner's case): a session whose work a squash-merged pull request carried, its
-   * tree still standing, was offered *Accept…* again. Where the driver's reader says the line holds its commits by content,
+   * A session whose work a squash-merged pull request carried, its
+   * tree still standing, is not offered *Accept…* again. Where the driver's reader says the line holds its commits by content,
    * its page offers no *Accept…*: the driver's sentence says where the work is, and *Discard branch…* asks once with the
    * driver's sentence naming the ref the commits stay at, then presses the review's Discard, unforced.
    */
@@ -1657,7 +1656,7 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    // The head's, in the main area: the strip at the foot draws the same line (WAITFOOT1b, D168).
+    // The head's, in the main area: the strip at the foot draws the same line.
     const head = within(screen.getByRole('main'));
     await userEvent.click(await head.findByRole('button', { name: 'Discard branch…' }));
     expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
@@ -1674,7 +1673,7 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * SQUASHTIDY1f (D102's SQUASHTIDY1f note): the review's own *Accept* was still offered for that session, and the landing
+   * The review's own *Accept* must not be offered for that session, or the landing
    * door would land a second copy. Its review offers no *Accept*: the driver's sentence stands in its place, and the head's
    * *Discard branch…* asks once and presses the review's Discard unforced, through the head's own press.
    */
@@ -1795,9 +1794,9 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * 🔴 REV3: an answer belongs to the session it was asked about. A refusal that landed after the
-   * person moved to another session armed *discard it anyway* THERE — and the forced press discards
-   * whichever session is attended now, a tree nobody had looked at.
+   * 🔴 An answer belongs to the session it is asked about. A refusal that lands after the
+   * person moves to another session must not arm *discard it anyway* THERE — the forced press discards
+   * whichever session is attended now, a tree nobody has looked at.
    */
   it('drops a discard answer that lands after the person moved to another session', async () => {
     let answer: (value: unknown) => void = () => {};
@@ -1885,9 +1884,9 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * UX5 U66, seen on the window: a chat in the repository's OWN checkout names that checkout as its
-   * tree, and Review offered to merge it and to discard it. The tree layer refuses both — a
-   * checkout is never a side effect's to delete — so they were moves that could only refuse. The
+   * A chat in the repository's OWN checkout names that checkout as its
+   * tree, and Review must not offer to merge it or to discard it. The tree layer refuses both — a
+   * checkout is never a side effect's to delete — so they would be moves that could only refuse. The
    * work can still be sent back as a quest: that is about the work, not the tree.
    */
   it('offers no tree acts on a session in the repository\u2019s own checkout, and still sends it back', async () => {

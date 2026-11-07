@@ -17,11 +17,11 @@ export type TerminalTab = {
 export type TerminalShellItem = { shell: string; name: string; default: boolean };
 
 /**
- * The terminal view's own tabs (CONSOLE4c, D96): each terminal by its shell and where it started, the
+ * The terminal view's own tabs: each terminal by its shell and where it started, the
  * shown one's close after them, and "+" with the machine's shells.
  *
  * @remarks
- * **The close is after the tabs, for the tab shown**, as the console's stop is (CONSOLE3a): a tab list
+ * **The close is after the tabs, for the tab shown**, as the console's stop is: a tab list
  * owns tabs and nothing else, and a button inside a tab is one label to a screen reader. A middle click
  * closes any tab, as a browser's and an editor's do.
  *

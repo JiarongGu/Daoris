@@ -21,7 +21,7 @@ import { fingerprintOf } from '../draftFingerprint';
 import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, NO_VERIFICATION, START, WORKSPACE } from '../fixtures';
 import { type LandingHand, PlaceWorkflowView, type PlaceWorkflowProps } from './PlaceWorkflowView';
 
-// SETUPUX1o (D221; the Setup design's §2.3): a place's Workflow draws its routes as a selection, the chosen route's chart (in its own column
+// A place's Workflow draws its routes as a selection, the chosen route's chart (in its own column
 // from 64 rem, one press away below), the folds with their owners, and Gates; choosing a route writes nothing. A molecule: every state is
 // reached by its props.
 
@@ -50,7 +50,7 @@ beforeEach(() => {
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
 });
 
-// The language goes back inside `act`, with the page still drawn (FRAMEACT1).
+// The language goes back inside `act`, with the page still drawn.
 afterEach(async () => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -274,7 +274,7 @@ describe("a place's Workflow, its folds and Gates", () => {
     const onAcceptIntegration = vi.fn((_request: unknown, answered: { done: () => void }) => answered.done());
     draw({ onAcceptGates, onAcceptIntegration });
 
-    // The ticks start empty (SETUPUX1k).
+    // The ticks start empty.
     await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for landed verification' }));
     await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for integration' }));
     await userEvent.click(screen.getByRole('button', { name: 'Accept the chosen…' }));
@@ -320,7 +320,7 @@ describe('Change… and Edit steps…', () => {
     expect(onOpen).toHaveBeenLastCalledWith(false);
   });
 
-  // REVIEW2 P1: Landed work is chosen only by its own press, so no panel opened on another route may reach a choice while it is the route shown.
+  // Landed work is chosen only by its own press, so no panel opened on another route may reach a choice while it is the route shown.
   it('stay out of the way on the landed route: Use here is not offered there, and the panel is for the route it opened on', async () => {
     const using = editor();
     draw({ editor: { ...using, onShow: vi.fn() }, current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
@@ -337,7 +337,7 @@ describe('Change… and Edit steps…', () => {
     expect(screen.queryByRole('button', { name: 'Use here' })).toBeNull();
   });
 
-  // REVIEW2 P5: the editor's draft is kept above the mount, so a fold, *Set up…* or a layout change that unmounts the section leaves it as it was.
+  // The editor's draft is kept above the mount, so a fold, *Set up…* or a layout change that unmounts the section leaves it unchanged.
   function Kept(props: Partial<Parameters<typeof Held>[0]>) {
     const [held, setHeld] = useState<PlaceFlowHold | null>(null);
     const [mounted, setMounted] = useState(true);
@@ -381,7 +381,7 @@ describe('Change… and Edit steps…', () => {
     expect(screen.queryByRole('heading', { name: 'Compose a workflow' })).toBeNull();
   });
 
-  // REVIEW2 P5's rest: the chart is drawn at one tree position whatever the layout, so the page taking a column for it, or giving it
+  // The chart is drawn at one tree position whatever the layout, so the page taking a column for it, or giving it
   // back, keeps the editor's selected step and its open drawer.
   it("keep the editor's selected step and its open drawer when the page changes its layout", async () => {
     const column = document.body.appendChild(document.createElement('div'));
@@ -416,7 +416,7 @@ describe('Change… and Edit steps…', () => {
     expect(await screen.findByRole('region', { name: 'Change what its work follows' })).toBeInTheDocument();
   });
 
-  // SETUPUX1r: Edit steps… opens on the graph the selected route follows, and tells the editor the route and pipeline it was opened for.
+  // Edit steps… opens on the graph the selected route follows, and tells the editor the route and pipeline it is opened for.
   it("open the selected route's effective graph, a saved workflow's newest version as the version to append to, and tell the editor the route", async () => {
     draw({ editor: editor(), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
 
@@ -446,7 +446,7 @@ describe('Change… and Edit steps…', () => {
     expect(openDraftNow()!.graph.nodes).toHaveLength(0);
   });
 
-  // WORKFLOWCLEAN1h-b: Current goes only to the conversion, from Edit steps… and from Change…'s Current tab.
+  // Current goes only to the conversion, from Edit steps… and from Change…'s Current tab.
   it('send a place that follows Current to the conversion, from Edit steps… and from the Current tab, and open no editor', async () => {
     const onConvert = vi.fn();
     const bridge = editor();
@@ -462,7 +462,7 @@ describe('Change… and Edit steps…', () => {
     expect(screen.queryByRole('button', { name: 'Use Current here' })).toBeNull();
   });
 
-  // WORKFLOWCLEAN1h-b: a copy behind the default this build ships is offered the update, a plan of one that appends the shipped graph.
+  // A copy behind the default this build ships is offered the update, a plan of one that appends the shipped graph.
   it("say Daoris ships a newer workflow, and plan the update as the copy's next version, with the shipped default it came from", async () => {
     const onJudge = vi.fn();
     const onSave = vi.fn(async (_ask: unknown) => ({ ...APPEND, written: true, version: 3 }));
@@ -595,7 +595,7 @@ describe('the answer on its way', () => {
   });
 });
 
-// FLOWCHART2g (D223 §4.4): asking from a place, and from a conversation's draft card.
+// Asking from a place, and from a conversation's draft card.
 describe('Ask Daoris from a place and from a conversation', () => {
   const fingerprint = () => fingerprintOf(MERGE_GRAPH);
 
@@ -612,7 +612,7 @@ describe('Ask Daoris from a place and from a conversation', () => {
     expect(onOpen).toHaveBeenLastCalledWith(true);
     const steps = await screen.findByRole('list', { name: 'How the steps go on' });
     expect(within(steps).getByRole('listitem', { name: 'find by local-release' })).toBeInTheDocument();
-    // The editor registers its draft, which the conversation is told with the person's next words (FLOWCHART2d).
+    // The editor registers its draft, which the conversation is told with the person's next words.
     expect(openDraftNow()).toMatchObject({ place: 'engine', workflow: 'release', base: 2 });
     expect(fill).toHaveBeenCalledTimes(1);
     expect(fill.mock.calls[0]![0]).toContain('engine');

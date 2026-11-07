@@ -4,7 +4,7 @@ import { storyWidths } from '../../design/storyWidths';
 import { RECORD } from './sessionRecord.fixtures';
 import { FinishedRecord } from './FinishedRecord';
 
-// KEEPSIZE1: the record of a finished session's tree, shown on its page once the tree is let go: kept whole, then with no ref and its
+// The record of a finished session's tree, shown on its page once the tree is let go: kept whole, then with no ref and its
 // commits unread, at the half and the narrow width, in English and 中文.
 
 const meta = {

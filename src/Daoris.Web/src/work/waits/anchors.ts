@@ -6,7 +6,7 @@ import type { PermissionWait } from './PermissionAsks';
 import type { Wait } from './waits';
 
 /**
- * How far a call's event may lie from the time the service took its request and still be that request's (WAITFOOT1c): ten
+ * How far a call's event may lie from the time the service took its request and still be that request's: ten
  * minutes. The driver stamps the call as it arrives and the service stamps the request as it takes it, on clocks that agree on
  * one machine and may drift a little against a shared host; the input's words do the joining, and the time only picks among
  * calls that say the same, so a bound this wide never joins a call to an ask made in another hour.
@@ -14,10 +14,10 @@ import type { Wait } from './waits';
 export const ANCHOR_BOUND_MS = 10 * 60_000;
 
 /**
- * A wait the conversation can show the raising event of (WAITFOOT1c, D168 point 4): a park's question (an intake's too), the work
+ * A wait the conversation can show the raising event of: a park's question (an intake's too), the work
  * to land (*Accept…* or the rebase words), the second opinion handed to the session, each go-ahead by its number, and each rule
- * proposal by its id (PROPOSEHERE1b), and each agent's ask for a helper by its id (WAITFOOT1e), and each tool call held for the
- * person's answer by its request's id (PERMANCHOR1). A review's gate and a discard the line holds are raised by no event of the session's.
+ * proposal by its id, and each agent's ask for a helper by its id, and each tool call held for the
+ * person's answer by its request's id. A review's gate and a discard the line holds are raised by no event of the session's.
  */
 export type AnchorWait =
   | 'question' | 'work' | 'opinion' | `goAhead:${number}` | `rule:${string}` | `helper:${string}` | `permission:${string}`;
@@ -38,15 +38,15 @@ export function anchorOf(wait: Wait): AnchorWait | null {
   }
 }
 
-/** The key the end of a turn is drawn under (WAITFOOT1c): where the work it did waits, after everything it holds. */
+/** The key the end of a turn is drawn under: where the work it did waits, after everything it holds. */
 export const turnEnd = (turn: string) => `end-${turn}`;
 
-/** What counts as the agent working in a turn: its words, its thinking, its calls and its plan (WAITSHOWN1's own). */
+/** What counts as the agent working in a turn: its words, its thinking, its calls and its plan. */
 const WORKED = new Set<Block['kind']>(['message', 'thought', 'tool', 'plan']);
 
 /**
  * The work to land is raised by the end of the turn that did it: the last turn the agent worked in, past the driver's notes
- * after it and words waiting at the foot for it to go on (MSG1f), which are no run of the agent's.
+ * after it and words waiting at the foot for it to go on, which are no run of the agent's.
  */
 export function workKey(turns: readonly Turn[]): string | undefined {
   for (let at = turns.length - 1; at >= 0; at -= 1) {
@@ -57,7 +57,7 @@ export function workKey(turns: readonly Turn[]): string | undefined {
 }
 
 /**
- * A second opinion's findings handed to the session (XAGENT1e) are raised by the turn they were handed as: its ask, which names
+ * A second opinion's findings handed to the session are raised by the turn they are handed as: its ask, which names
  * the opinion it is from. None for a gate that names no opinion, or one whose findings the page does not hold.
  */
 export function opinionKey(turns: readonly Turn[], opinion: string | null | undefined): string | undefined {
@@ -94,10 +94,10 @@ function nearest(turns: readonly Turn[], at: string, fits: (input: Record<string
 }
 
 /**
- * A go-ahead is raised by its `go_ahead_ask` call (KNOWUSE1a), which no id joins to it (D168 point 4): the call whose input says
- * the why this session's request was held with, word for word, and names every word of the act the go-ahead was first asked for
+ * A go-ahead is raised by its `go_ahead_ask` call, which no id joins to it: the call whose input says
+ * the why this session's request is held with, word for word, and names every word of the act the go-ahead is first asked for
  * (the service's own join, so a request that joined it in more words is found too), nearest when the service took it, within
- * `ANCHOR_BOUND_MS`. Never by its title (D52), which each door words its own way. This session's latest request first: it is
+ * `ANCHOR_BOUND_MS`. Never by its title, which each door words its own way. This session's latest request first: it is
  * the one its park waits on.
  */
 export function goAheadKey(turns: readonly Turn[], goAhead: GoAhead, session: string): string | undefined {
@@ -116,13 +116,13 @@ export function goAheadKey(turns: readonly Turn[], goAhead: GoAhead, session: st
   return undefined;
 }
 
-/** What a rule proposal's file names (D74), which its call's input is joined on. */
+/** What a rule proposal's file names, which its call's input is joined on. */
 export type ProposalFacts = Pick<RuleProposal, 'action' | 'scope' | 'rule' | 'default' | 'proposed'>;
 
 /**
  * A rule proposal is raised by its `permission_propose` call where the call's input names what the proposal file names: its
- * action, its scope and its rule (a default's id), nearest when it was proposed, within the bound. None where no call says so:
- * a proposal's id is not the call's. The proposal is a wait (PROPOSEHERE1b); this is its anchor.
+ * action, its scope and its rule (a default's id), nearest when it is proposed, within the bound. None where no call says so:
+ * a proposal's id is not the call's. The proposal is a wait; this is its anchor.
  */
 export function proposalKey(turns: readonly Turn[], proposal: ProposalFacts): string | undefined {
   const named = proposal.action === 'default' ? text(proposal.default) : text(proposal.rule);
@@ -132,13 +132,13 @@ export function proposalKey(turns: readonly Turn[], proposal: ProposalFacts): st
     && (proposal.action === 'default' ? text(input.id) : text(input.rule)) === named);
 }
 
-/** What an agent's ask for a helper is joined on (WAITFOOT1e): the question as written, the agent it named, when it was made. */
+/** What an agent's ask for a helper is joined on: the question as written, the agent it named, when it is made. */
 export type HelperFacts = { question: string; agent: string | null; at: string };
 
 /**
- * An agent's ask for a helper is raised by its `helper_ask` call (WAITFOOT1e, D168 point 4), which no id joins to it: the call
+ * An agent's ask for a helper is raised by its `helper_ask` call, which no id joins to it: the call
  * whose input carries the ask's question, word for word once trimmed, and the agent where the ask named one (as the tool's input
- * spells it, in either case); nearest when the ask was made, within `ANCHOR_BOUND_MS`. Never by the call's title (D52). None
+ * spells it, in either case); nearest when the ask is made, within `ANCHOR_BOUND_MS`. Never by the call's title. None
  * where no call says so.
  */
 export function helperKey(turns: readonly Turn[], ask: HelperFacts): string | undefined {
@@ -148,13 +148,13 @@ export function helperKey(turns: readonly Turn[], ask: HelperFacts): string | un
   return nearest(turns, ask.at, (input) => text(input.question) === question && (!agent || text(input.agent).toLowerCase() === agent));
 }
 
-/** What a held tool call is joined on (PERMANCHOR1): the request's id, the call it asks for, and when the driver held it. */
+/** What a held tool call is joined on: the request's id, the call it asks for, and when the driver held it. */
 export type PermissionFacts = Pick<PermissionWait, 'request' | 'call' | 'since'>;
 
 /**
- * A tool call held for the person's answer (AUTONOMY1b3c, D168 point 4) is raised by that call itself: the block whose id is the
+ * A tool call held for the person's answer is raised by that call itself: the block whose id is the
  * request's `call`, the agent's own id for it on the wire, which the driver reads from the same field as the call's events. An id
- * joins them, so no time picks among blocks, as a rule's card has its call (WAITFOOT1c). None where the request names no call.
+ * joins them, so no time picks among blocks, as a rule's card has its call. None where the request names no call.
  */
 export function permissionKey(turns: readonly Turn[], held: Pick<PermissionFacts, 'call'>): string | undefined {
   const call = held.call?.trim();
@@ -172,23 +172,23 @@ export type AnchorAsks = {
   goAheads?: readonly GoAhead[] | null;
   /** The opinion the landing's gate names (`OpinionGate.opinion`). */
   opinion?: string | null;
-  /** The rules it proposed that wait on the person, as the frame read them (PROPOSEHERE1b): what each call is joined on. */
+  /** The rules it proposed that wait on the person, as the frame read them: what each call is joined on. */
   proposals?: readonly (ProposalFacts & { id: string })[] | null;
-  /** The helpers it asked for, as the frame read them (WAITFOOT1e): what each `helper_ask` call is joined on. */
+  /** The helpers it asked for, as the frame read them: what each `helper_ask` call is joined on. */
   helpers?: readonly (HelperFacts & { id: string })[] | null;
-  /** The tool calls held for the person, as the shell read them (PERMANCHOR1): each call its request names. */
+  /** The tool calls held for the person, as the shell read them: each call its request names. */
   permissions?: readonly PermissionFacts[] | null;
 };
 
 /**
- * Where each wait was raised: the block's key where the page holds it, and the waits whose event may be on the pages before it
- * (`earlier`), which the way loads until it is held, as a jump to an event does (SESS1 S9).
+ * Where each wait is raised: the block's key where the page holds it, and the waits whose event may be on the pages before it
+ * (`earlier`), which the way loads until it is held, as a jump to an event does.
  */
 export type Anchors = { held: Partial<Record<AnchorWait, string>>; earlier: AnchorWait[] };
 
 /**
- * Each standing wait's raising event (WAITFOOT1c, D168 point 4), read from the turns the page holds. `earlier` says pages before
- * them exist, and `from` when the first one held was said: a go-ahead asked after it would be on this page, so where it is not
+ * Each standing wait's raising event, read from the turns the page holds. `earlier` says pages before
+ * them exist, and `from` when the first one held is said: a go-ahead asked after it would be on this page, so where it is not
  * found here it has none.
  */
 export function anchorsOf(
@@ -246,8 +246,8 @@ export function marksOf(waits: readonly Wait[], held: Partial<Record<AnchorWait,
 }
 
 /**
- * The way from each wait to the event that raised it (WAITFOOT1c, D168 point 4): *In the conversation* on the head's section and
- * the strip's line, a press the frame holds, where the conversation found the event or may find it on a page before.
+ * The way from each wait to the event that raised it: *In the conversation* on the head's section and
+ * the strip's line, a press the frame holds, where the conversation finds the event or may find it on a page before.
  */
 export type WaitEvents = {
   question?: () => void;
@@ -255,11 +255,11 @@ export type WaitEvents = {
   opinion?: () => void;
   /** Each go-ahead's, by its number. */
   goAheads?: Readonly<Record<number, () => void>>;
-  /** Each rule proposal's, by its id (PROPOSEHERE1b). */
+  /** Each rule proposal's, by its id. */
   rules?: Readonly<Record<string, () => void>>;
-  /** Each agent's ask for a helper, by its id (WAITFOOT1e). */
+  /** Each agent's ask for a helper, by its id. */
   helpers?: Readonly<Record<string, () => void>>;
-  /** Each tool call held for the person, by its request's id (PERMANCHOR1). */
+  /** Each tool call held for the person, by its request's id. */
   permissions?: Readonly<Record<string, () => void>>;
 };
 

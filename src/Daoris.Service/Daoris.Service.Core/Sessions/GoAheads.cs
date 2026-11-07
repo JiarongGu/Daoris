@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Daoris.Knowledge;
 
-/// <summary>What became of a go-ahead (KNOWUSE1a, D135 §2).</summary>
+/// <summary>What became of a go-ahead.</summary>
 public enum GoAheadState
 {
     /// <summary>Asked, and the person has not answered it yet.</summary>
@@ -17,18 +17,18 @@ public enum GoAheadState
     Refused,
 }
 
-/// <summary>One session's request for a go-ahead (KNOWUSE1a): who asked it, on which quest, when, and why.</summary>
+/// <summary>One session's request for a go-ahead: who asked it, on which quest, when, and why.</summary>
 /// <param name="Session">The session that asked.</param>
 /// <param name="Quest">The quest it worked; null for an intake, which works none.</param>
 /// <param name="At">When it asked.</param>
 /// <param name="Why">Why the work needs it, in the session's words.</param>
 public sealed record GoAheadRequest(string Session, string? Quest, DateTimeOffset At, string Why);
 
-/// <summary>The person's answer to a go-ahead (KNOWUSE1a): yes or no, their words where they gave any, and when.</summary>
+/// <summary>The person's answer to a go-ahead: yes or no, their words where they gave any, and when.</summary>
 public sealed record GoAheadAnswer(bool Approved, string? Words, DateTimeOffset At);
 
 /// <summary>
-/// A go-ahead held on an ask (KNOWUSE1a, D135 §2): the person's yes for one act outside a repository, asked once and named
+/// A go-ahead held on an ask: the person's yes for one act outside a repository, asked once and named
 /// by the act — its kind, where it lands and what it touches — with every session's request for it and the person's answer.
 /// </summary>
 /// <param name="Number">Its number on the ask, from 1, in the order asked: how a session and the person name it.</param>
@@ -44,8 +44,8 @@ public sealed record GoAhead(int Number, string Kind, string On, string Act)
     public GoAheadAnswer? Answer { get; init; }
 
     /// <summary>
-    /// The go-ahead whose words this one's shared without the words telling whether it was the same act, where that is
-    /// why it was asked once more; null for an act asked on its own.
+    /// The go-ahead whose words this one's shared without the words telling whether it is the same act, where that is
+    /// why it is asked once more; null for an act asked on its own.
     /// </summary>
     public int? Near { get; init; }
 
@@ -58,7 +58,7 @@ public sealed record GoAhead(int Number, string Kind, string On, string Act)
     public string Named => $"{Kind} on {On}: \"{Act}\"";
 }
 
-/// <summary>How a request reads against a go-ahead already asked (KNOWUSE1a).</summary>
+/// <summary>How a request reads against a go-ahead already asked.</summary>
 public enum GoAheadMatch
 {
     /// <summary>Another act: another kind, another place, or no word of what it touches shared.</summary>
@@ -72,7 +72,7 @@ public enum GoAheadMatch
 }
 
 /// <summary>
-/// How an act is named, so two wordings of one act join (KNOWUSE1a, D135 §2) — with no model, by words only (D24).
+/// How an act is named, so two wordings of one act join, with no model, by words only.
 /// </summary>
 /// <remarks>
 /// <para><b>Three parts, from the evidence's thirteen asks</b> (`docs/2026-10-03-knowledge-use-evidence.md` §4): one
@@ -153,7 +153,7 @@ public static class GoAheadAct
     /// <summary>
     /// Whether any word of <paramref name="said"/> reads as production, by this table's names for it (<c>production</c>,
     /// <c>prod</c>, <c>prd</c>, <c>live</c>): the whole of it, or a word between its dashes or spaces. Where a set-up step
-    /// asks a go-ahead, and what an environment may be named, are judged by it (REVIEWENV1b, D154 points 1 and 6), so
+    /// asks a go-ahead, and what an environment may be named, are judged by it, so
     /// production reads one way wherever a review meets it.
     /// </summary>
     public static bool ReadsAsProduction(string? said) =>
@@ -225,7 +225,7 @@ public static class GoAheadAct
         : word;
 }
 
-/// <summary>Why a session's request for a go-ahead was not kept (KNOWUSE1a) — or <see cref="None"/> when it was.</summary>
+/// <summary>Why a session's request for a go-ahead is not kept, or <see cref="None"/> when it is.</summary>
 public enum GoAheadRefusal
 {
     None,
@@ -246,34 +246,34 @@ public enum GoAheadRefusal
     NoAsk,
 
     /// <summary>
-    /// A set-up step's session asked one for production (REVIEWENV1b, D154 point 6): production is never where work is set up
+    /// A set-up step's session asked one for production: production is never where work is set up
     /// for review, so it is refused by construction, whatever the words of the act.
     /// </summary>
     Production,
 }
 
-/// <summary>What became of a request (KNOWUSE1a).</summary>
+/// <summary>What became of a request.</summary>
 public enum GoAheadJoin
 {
     /// <summary>An act not asked before on the ask: asked now.</summary>
     New,
 
-    /// <summary>An act already asked: the request joined it, and nothing new was asked of the person.</summary>
+    /// <summary>An act already asked: the request joins it, and nothing new is asked of the person.</summary>
     Joined,
 
-    /// <summary>Its words shared some of an earlier act's without telling whether it was that act: asked once more.</summary>
+    /// <summary>Its words share some of an earlier act's without telling whether it is that act: asked once more.</summary>
     Unmatched,
 }
 
-/// <param name="Refusal"><see cref="GoAheadRefusal.None"/> when the request was kept.</param>
+/// <param name="Refusal"><see cref="GoAheadRefusal.None"/> when the request is kept.</param>
 /// <param name="Message">The whole answer, phrased once here for every door.</param>
-/// <param name="Ask">The ask it was held on, when it was.</param>
-/// <param name="GoAhead">The go-ahead it was kept on, as it now stands, when it was.</param>
-/// <param name="Join">Whether it was asked anew, joined one, or asked once more.</param>
+/// <param name="Ask">The ask it is held on, when it is.</param>
+/// <param name="GoAhead">The go-ahead it is kept on, as it now stands, when it is.</param>
+/// <param name="Join">Whether it is asked anew, joins one, or is asked once more.</param>
 public sealed record GoAheadOutcome(
     GoAheadRefusal Refusal, string Message, string? Ask = null, GoAhead? GoAhead = null, GoAheadJoin Join = GoAheadJoin.New);
 
-/// <summary>Why the person's answer to a go-ahead was not kept (KNOWUSE1a) — or <see cref="None"/> when it was.</summary>
+/// <summary>Why the person's answer to a go-ahead is not kept, or <see cref="None"/> when it is.</summary>
 public enum GoAheadAnswerRefusal
 {
     None,
@@ -288,23 +288,23 @@ public enum GoAheadAnswerRefusal
     TooLong,
 }
 
-/// <param name="Refusal"><see cref="GoAheadAnswerRefusal.None"/> when the answer was kept.</param>
+/// <param name="Refusal"><see cref="GoAheadAnswerRefusal.None"/> when the answer is kept.</param>
 /// <param name="Message">The whole answer, phrased once here for every door.</param>
 /// <param name="Ask">The ask as it now stands, when there is one.</param>
 public sealed record GoAheadAnswerOutcome(GoAheadAnswerRefusal Refusal, string Message, Ask? Ask)
 {
-    /// <summary>The go-ahead as it now stands, when the answer was kept.</summary>
+    /// <summary>The go-ahead as it now stands, when the answer is kept.</summary>
     public GoAhead? GoAhead { get; init; }
 
     /// <summary>
-    /// It waited on the person until this answer: their first to it, not a change to one they gave before (GOAHEAD2). Only
-    /// such an answer can be the last a parked session was waiting on.
+    /// It waits on the person until this answer: their first to it, not a change to one they gave before. Only
+    /// such an answer can be the last a parked session waits on.
     /// </summary>
     public bool WasWaiting { get; init; }
 }
 
 /// <summary>
-/// What answering a go-ahead did to the parked sessions that asked it (GOAHEAD2): those that go on with the answers to the
+/// What answering a go-ahead does to the parked sessions that asked it: those that go on with the answers to the
 /// go-aheads they asked, and those still waiting on one of theirs, by number. Only this machine's driven parks are named.
 /// </summary>
 /// <param name="GoesOn">The parked sessions every one of whose go-aheads is now answered, in the order they asked it.</param>
@@ -330,7 +330,7 @@ public sealed record GoAheadParks(IReadOnlyList<string> GoesOn, IReadOnlyDiction
             : $"{string.Join(", ", numbers.SkipLast(1).Select(n => n.ToString(CultureInfo.InvariantCulture)))} and {numbers[^1].ToString(CultureInfo.InvariantCulture)}";
 }
 
-/// <summary>The bounds and the stored shape of go-aheads (KNOWUSE1a).</summary>
+/// <summary>The bounds and the stored shape of go-aheads.</summary>
 public static class GoAheads
 {
     /// <summary>The most characters of a session's reason, or of the person's words on an answer.</summary>
@@ -424,7 +424,7 @@ public static class GoAheads
         writer.WriteEndObject();
     }
 
-    /// <summary>The entries written back: each read one as it now stands, and each this build could not read as it was.</summary>
+    /// <summary>The entries written back: each read one as it now stands, and each this build cannot read, as stored.</summary>
     internal static string Written(IEnumerable<(JsonElement Raw, GoAhead? Read)> entries) => JsonFields.Written(writer =>
     {
         writer.WriteStartArray();

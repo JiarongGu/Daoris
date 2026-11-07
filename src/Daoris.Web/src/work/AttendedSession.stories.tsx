@@ -16,7 +16,7 @@ import { ViewMain } from './frame/ViewMain';
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 // The assembled region: the record and the observed layer over it. The stream is deliberately not
-// part of this — it has one home, the frame's output panel (D55) — and neither is the composer,
+// part of this — it has one home, the frame's output panel — and neither is the composer,
 // which sits beneath the region rather than inside it.
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
@@ -51,7 +51,7 @@ const meta: Meta<typeof AttendedSession> = {
   title: 'Work/AttendedSession',
   component: AttendedSession,
   args: { session: SESSION, quest: QUEST },
-  // A session's page at the frame's widths (the UI/UX design R6, STORYGAP1): wide by default, a story's own width instead.
+  // A session's page at the frame's widths: wide by default, a story's own width instead.
   decorators: [sessionWidths.wide],
 };
 export default meta;
@@ -76,7 +76,7 @@ export const Parked: Story = {
   },
 };
 
-/** A step of a chain (MAP1): the strip under the head says what came before and what is to come. */
+/** A step of a chain: the strip under the head says what came before and what is to come. */
 export const InAChain: Story = {
   args: {
     quest: { ...QUEST, parent: '19c0de', then: [{ to: 'platform', title: 'Report the cap back', body: '' }] },
@@ -91,7 +91,7 @@ export const InAChain: Story = {
   },
 };
 
-// ——— Titles first, on the assembled page (UX7c, D152 §7; the UX7 design §5.2, §6.2): the pinned head, the record folded
+// ——— Titles first, on the assembled page: the pinned head, the record folded
 // under it, and the conversation's first lines. The install's fourth attempt at a re-filed quest.
 
 const REFILED_TITLE = '(Re-filed from ask #0181ea, whose quest was taken outside the driver with no session.)';
@@ -138,7 +138,7 @@ function SessionPage({ quest }: { quest: Quest }) {
   );
 }
 
-/** With its quest's short title (SESSUX1j): the work in the head, the whole title once under it. */
+/** With its quest's short title: the work in the head, the whole title once under it. */
 export const PageWithAShortTitle: Story = {
   render: () => <SessionPage quest={{ ...REFILED_QUEST, short: 'Continue the production half' }} />,
 };
@@ -169,7 +169,7 @@ export const Finished: Story = {
   },
 };
 
-// ——— How it came to be (TRACE1b, D143): folded at the foot of its record, then open on its chain.
+// ——— How it came to be: folded at the foot of its record, then open on its chain.
 
 const nothing = () => {};
 

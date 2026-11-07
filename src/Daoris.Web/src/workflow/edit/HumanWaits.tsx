@@ -4,7 +4,7 @@ import type { DraftNode } from './graphDraftTypes';
 import { isApproval } from './humanDraft';
 
 /**
- * What a person's step waits for (NODEKIT1 HUMAN): a task the person presses *Done* on, or an approval they *Approve* or *Reject*, whose refusal
+ * What a person's step waits for: a task the person presses *Done* on, or an approval they *Approve* or *Reject*, whose refusal
  * goes on the step's *If you ask for changes* way. A molecule: the step and the choice arrive as props.
  */
 export function HumanWaits({ node, onChoose }: { node: DraftNode; onChoose: (approval: boolean) => void }) {

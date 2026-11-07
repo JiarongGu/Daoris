@@ -4,7 +4,7 @@ import { Refused } from '../InlineConfirm';
 import { joinLines } from '../noteLines';
 
 /**
- * **A line an account's limit cut off, waiting** (LIMITRESUME1d, D206 §3.7): one line under the page header, and at its foot, saying
+ * **A line an account's limit cut off, waiting**: one line under the page header, and at its foot, saying
  * when it resumes by itself and on which account, which resume comes (its own conversation, or a new session handed the brief), and a
  * reset that did not lift the limit. Beside it the person's ways out: *Go on now with…* (another agent or account; on Ask Daoris a new
  * conversation from this one), *Pause* for a driven line (the pause of its work, since its last record has ended and has no stop to
@@ -19,17 +19,17 @@ export function LimitWaitLine({ lines, busy = false, refusal = null, onGoOnNow, 
   lines: readonly string[];
   /** A press on its way: the presses wait for it. */
   busy?: boolean;
-  /** What a press came to where it was refused, in the catalogue's words or the driver's. */
+  /** What a press came to where it is refused, in the catalogue's words or the driver's. */
   refusal?: string | null;
-  /** *Go on now with…*: D163's hand-over ask, or Ask Daoris's new conversation from this one. */
+  /** *Go on now with…*: the hand-over ask, or Ask Daoris's new conversation from this one. */
   onGoOnNow?: () => void;
-  /** *Pause quest…*: a driven line's pause of its work (PAUSE1b). */
+  /** *Pause quest…*: a driven line's pause of its work. */
   onPause?: () => void;
   /** *Stop…*: a conversation that still runs. */
   onStop?: () => void;
   /** *Stop waiting*: an ended conversation held by its limit waits no more. */
   onStopWaiting?: () => void;
-  /** *Try now*: the account it waits for is offered again now (D125 §2.3). */
+  /** *Try now*: the account it waits for is offered again now. */
   onTryNow?: () => void;
   className?: string;
 }) {

@@ -30,7 +30,7 @@ const session = (over: Partial<Session> = {}): Session => ({
   ...over,
 });
 
-/** An intake parked asking the person (INT4b): a chat in the ask's name, in Daoris's own room. */
+/** An intake parked asking the person: a chat in the ask's name, in Daoris's own room. */
 const INTAKE: Partial<Session> = {
   id: 'i9n8t7k6',
   quest: null,
@@ -53,7 +53,7 @@ const quest = (over: Partial<Quest> = {}): Quest => aQuest({
   ...over,
 });
 
-/** Open the head's folded *Details* (UX7c, D152 §7), where its reference facts are. */
+/** Open the head's folded *Details*, where its reference facts are. */
 const details = () => fireEvent.click(screen.getByRole('button', { name: /^Details|^详情/ }));
 
 /** Every element between one and an ancestor of it, the ancestor included. */
@@ -91,7 +91,7 @@ describe('the attended session\'s head', () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  /** REV3: a half-written decline reason carried into the next parked session, ready to decline it. */
+  /** A half-written decline reason carried into the next parked session, ready to decline it. */
   it('starts each parked session\'s decline empty — a reason written for one never carries to another', () => {
     const parked: Partial<Session> = { state: 'awaiting-person', note: 'needs a person' };
     const { rerender } = render(<SessionHead session={session(parked)} onResolve={vi.fn()} />);
@@ -103,7 +103,7 @@ describe('the attended session\'s head', () => {
     expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
   });
 
-  /** SESS1 S10: what its own tree left — the branch, and whether its work is on a branch of the person's. */
+  /** What its own tree left — the branch, and whether its work is on a branch of the person's. */
   it('says what its own tree left: the branch, and whether its work landed', () => {
     const { rerender } = render(<SessionHead session={session({ state: 'completed' })} branch={{
       repository: 'engine', workspace: 'default', branch: 'daoris/s-a900f1ad', hasTree: true,
@@ -123,7 +123,7 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * TREEFOLLOWWEB2 (D164's TREEFOLLOW1 note): a tree the agent moved onto a branch of its own is named by the branch the driver's
+   * A tree the agent moved onto a branch of its own is named by the branch the driver's
    * `work` carries, once the clean-up lists none (it lists `daoris/` branches, and the tidy removed that one); the clean-up's row,
    * where it has one, still says whether the work landed.
    */
@@ -147,8 +147,8 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * UXFIX4b: the branch its tree left was cut to one line with nothing to read the rest by. It is shown whole as a branch
-   * row's name is (UXFIX4), wrapping after its separators on the line's own row, which wraps already.
+   * The branch its tree left is not cut to one line with nothing to read the rest by. It is shown whole as a branch
+   * row's name is, wrapping after its separators on the line's own row, which wraps already.
    */
   it('shows the branch its tree left whole, wrapping after its separators, never cut to a line', () => {
     const LONG = 'daoris/s-5a6b7c8d-a-chain-step-that-carries-a-long-slug-past-the-head';
@@ -166,7 +166,7 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * UX7c (D152 §7): its reference facts are a folded *Details*, its line naming the quest, the agent and the start; open,
+   * Its reference facts are a folded *Details*, its line naming the quest, the agent and the start; open,
    * each fact named, the account its own row, and the id with *Copy*.
    */
   it('is the record: identity, state, and what the session ran on and as, its reference folded', () => {
@@ -189,7 +189,7 @@ describe('the attended session\'s head', () => {
     expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument();
   });
 
-  /** ACCTNAME1 (D152 §4.2): *Details* names its account by the person's name where the frame hands the roster's namer. */
+  /** *Details* names its account by the person's name where the frame hands the roster's namer. */
   it('names its account in Details by the person’s name, and by its id with no namer', () => {
     const nameOf = (owner: string, profile?: string | null) => (owner === 'claude-code' && profile === 'acct-3f9c1a2b' ? 'work' : profile ?? '');
     const { rerender } = render(<SessionHead session={session({ profile: 'acct-3f9c1a2b' })} nameOf={nameOf} />);
@@ -202,7 +202,7 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * D125 §3.7 (TOOL4m's rest, built with UX6e): a session that ran on the tool's own sign-in names no account in its record,
+   * A session that ran on the tool's own sign-in names no account in its record,
    * so the head says *your own sign-in* where it shows an account, for an agent that has accounts at all.
    */
   it('says a session ran on your own sign-in where its record names no account', () => {
@@ -217,13 +217,12 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * The state stays beside the title it names, however wide the head is (platform language §4:
-   * status leads). The head follows the centre's width now (UX5 U16), and pushed to the far edge the
-   * pill sat a thousand pixels from its title on a wide window, which is what U10 had capped around.
+   * The state stays beside the title it names, however wide the head is (status leads).
+   * The head follows the centre's width, so the pill never sits a thousand pixels from its title on a wide window.
    */
   /**
-   * UX7c (D152 §7): under a page header that says the title, the record does not say it again; where the header showed the
-   * quest's short title (SESSUX1j), the record says the whole title once, at body size. The id is in *Details* alone.
+   * Under a page header that says the title, the record does not say it again; where the header shows the
+   * quest's short title, the record says the whole title once, at body size. The id is in *Details* alone.
    */
   it('under a header says no title at all, not even the whole one of a short-titled quest (HEAD2c)', () => {
     const { rerender } = render(<SessionHead session={session()} quest={quest()} headed />);
@@ -238,7 +237,7 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * HEAD2c (D162 point 3, the entry-and-heads design §2): the request as written is a row of *Details*, whole, with the
+   * The request as written is a row of *Details*, whole, with the
    * quest's door; a conversation with no quest puts its whole opening there when the header's one line cut it.
    */
   it('holds the request as written in Details, with the quest’s door', () => {
@@ -282,8 +281,8 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * PROCESS1e (D164's amendment point 3): *Details* says the process its own tree runs under, how its work is committed and how
-   * it lands, each with where it was set, in Setup's words; a session told none (no tree of its own here) says neither.
+   * *Details* says the process its own tree runs under, how its work is committed and how
+   * it lands, each with where it is set, in Setup's words; a session told none (no tree of its own here) says neither.
    */
   describe('the process it runs under', () => {
     const PROCESS: SessionProcess = {
@@ -340,7 +339,7 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * MIXAGENT3a-i (the mixed-agents design §4): *Details* names the session this one continues and the one a helper helps, by
+   * *Details* names the session this one continues and the one a helper helps, by
    * title with a door to it; where the frame holds no such session, its id in mono with no door.
    */
   describe('the sessions it continues and helps', () => {
@@ -430,7 +429,7 @@ describe('the attended session\'s head', () => {
     });
   });
 
-  /** UX5 U17: the head says a live chat between turns is idle, as the rail does. */
+  /** The head says a live chat between turns is idle, as the rail does. */
   it('says a live chat between turns is idle', () => {
     const { rerender } = render(<SessionHead session={session({ kind: 'chat' })} taking={false} />);
     expect(screen.getByText('idle')).toBeInTheDocument();
@@ -460,9 +459,9 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * SESS2 H3: the tree's whole machine path was the head's longest line, where the branch already
-   * names the tree. It stays the person's (D51 §9 guards the door, not this machine's own surface),
-   * on hover of the repository, and is no longer a line of its own.
+   * The tree's whole machine path would be the head's longest line, where the branch already
+   * names the tree. It stays the person's (the door guards the path, not this machine's own surface),
+   * on hover of the repository, and is no line of its own.
    */
   it('keeps the whole tree path on the repository\'s hover rather than as a line of its own', () => {
     const tree = 'C:/somewhere/.daoris/trees/default/engine/streaming-budget';
@@ -498,8 +497,8 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * `AwaitingPerson` has meant "only the person can clear this" since D46 and has never been
-   * rendered anywhere. Its analysis belongs at the TOP of the head (design §4) — above the record,
+   * `AwaitingPerson` means "only the person can clear this". Its analysis belongs at the
+   * TOP of the head — above the record,
    * because it is the reason the person is looking.
    */
   it('puts a parked session\'s analysis above its record, verbatim', () => {
@@ -514,7 +513,7 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * ANSWER1c (D131): answered, the park stays parked until the driver's next look, and the same session goes on then.
+   * Answered, the park stays parked until the driver's next look, and the same session goes on then.
    * The head shows the answer and says so, offers none of the moves a park waiting on the person has, and its state
    * reads answered, wherever the frame could act.
    */
@@ -536,8 +535,7 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * SESS2 H5, H6 (reversing the rule that it left the note to the timeline, which since FRAME6 is in
-   * the side bar and starts closed): an ended session says how it stands in the record's own words —
+   * An ended session says how it stands in the record's own words —
    * why a failed one failed — and a long note shows three lines with the rest a press away. A running
    * session says nothing here: its conversation is the answer.
    */
@@ -560,8 +558,8 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * MODELROLE1c3 (D205 §3.5(c), §7.1): a record ended `choice-not-offered` is said by its code's sentence, quiet, never the failure's red:
-   * here naming the account it was refused on, the record's own; on a teammate's mirror, which carries no account, naming none. In zh too.
+   * A record ended `choice-not-offered` is said by its code's sentence, quiet, never the failure's red:
+   * here naming the account it is refused on, the record's own; on a teammate's mirror, which carries no account, naming none. In zh too.
    */
   it('says a record ended choice-not-offered was not started, quietly, naming the account only here', async () => {
     const noteParts = [{ code: 'ended.choice-not-offered', values: { agent: 'claude-code-acp', model: 'opus' } }];
@@ -585,7 +583,7 @@ describe('the attended session\'s head', () => {
     }
   });
 
-  /** SESS2 H4: what its tree left, with the move that acts on it when the work is the person's to take. */
+  /** What its tree left, with the move that acts on it when the work is the person's to take. */
   it('says what its tree left, and offers the review when no branch of the person\'s holds the work', async () => {
     const onReview = vi.fn();
     const { unmount } = render(
@@ -611,7 +609,7 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * LAND4 (D102's LAND4 note): a session that ended with commits no branch of the person's holds offers its landing on its
+   * A session that ended with commits no branch of the person's holds offers its landing on its
    * page, whatever its ending, with its branch and its tree said. *Accept…* asks once, under the line, saying where accepting
    * puts the work by the repository's rule; for a session that did not finish, that only what it committed lands. The press
    * is the review's own, told back to its ask.
@@ -714,7 +712,7 @@ describe('the attended session\'s head', () => {
       expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
     });
 
-    // LANDBACK1 part 1: where the person's Accept is kept on the session it carried on, the head says so and never shows finished work.
+    // Where the person's Accept is kept on the session it carried on, the head says so and never shows finished work.
     it('shows a session its Accept carried on as carried on, and says it in Chinese too', async () => {
       render(
         <SessionHead
@@ -769,7 +767,7 @@ describe('the attended session\'s head', () => {
     });
 
     /**
-     * XAGENT1g (the second-agent design §7, §8.2): the second opinion stands before the review's gate, and while it holds the
+     * The second opinion stands before the review's gate, and while it holds the
      * work no *Accept…* is offered, except where *Accept…* answers it: then its ask says what it answers, and the press sends the
      * gate's token back.
      */
@@ -815,7 +813,7 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * SQUASHTIDY1b (D102's SQUASHTIDY1b note): a session whose commits the line holds by content, a squash-merged pull request's,
+   * A session whose commits the line holds by content, a squash-merged pull request's,
    * is offered no *Accept…*, since accepting would make a branch of work already there. Where *Accept…* would be, the head
    * says the driver's sentence, in Discard's own clause, and offers the review's Discard unforced, asking once with the
    * driver's sentence naming the ref the commits stay at. The press is told back to its ask.
@@ -904,7 +902,7 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * LAND3b (D102's LAND3 note): a failed session's tree is gone and its branch stands, holding commits no branch of the
+   * A failed session's tree is gone and its branch stands, holding commits no branch of the
    * person's holds, so no clean-up takes it and the review has no tree to discard. Its head offers the discard beside
    * what it left, asking once, naming the branch and its commits; while the tree is here, the review's Discard serves.
    */
@@ -924,7 +922,7 @@ describe('the attended session\'s head', () => {
     expect(ask).toHaveTextContent('Discards daoris/s-43c14a70 in engine, and with it 2 commits no branch of yours holds. Nothing brings them back.');
     fireEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
     expect(onDiscardBranch).toHaveBeenCalledOnce();
-    // UXFIX2: open, and waiting, until the discard answers.
+    // Open, and waiting, until the discard answers.
     expect(within(ask).getByRole('button', { name: 'Never mind' })).toBeDisabled();
     act(() => (onDiscardBranch.mock.calls[0]![0] as Answered).done());
     expect(screen.queryByRole('group', { name: 'discard daoris/s-43c14a70' })).toBeNull();
@@ -940,8 +938,8 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * UXFIX2 (the second-opinion review, `SessionHead.tsx:335`): the head's discard is the one inline confirmation. Its sentence
-   * takes the focus and describes the move; a branch the driver kept is said inside it, in its words, where it closed at
+   * The head's discard is the one inline confirmation. Its sentence
+   * takes the focus and describes the move; a branch the driver kept is said inside it, in its words, never closed at
    * once and refused in a toast; *Never mind* gives the focus back to *Discard branch…*.
    */
   it('says a kept branch inside the head’s discard ask, and gives the focus back to Discard branch… when put down', async () => {
@@ -972,7 +970,7 @@ describe('the attended session\'s head', () => {
     expect(screen.getByRole('button', { name: 'Discard branch…' })).toHaveFocus();
   });
 
-  /** REV3's lesson: an ask belongs to the branch it was asked about, so it never carries to another session's. */
+  /** An ask belongs to the branch it is asked about, so it never carries to another session's. */
   it('never carries an ask to discard one session\'s branch to another\'s', () => {
     const gone = (name: string): SweepBranch => ({
       repository: 'engine', workspace: 'default', branch: name, hasTree: false,
@@ -990,8 +988,8 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * INT4g: an intake serves an ask and runs in Daoris's own room, which is not a repository's tree
-   * (INT4b). Its record says so rather than reading `repository: ask #…`.
+   * An intake serves an ask and runs in Daoris's own room, which is not a repository's tree.
+   * Its record says so rather than reading `repository: ask #…`.
    */
   it('names an intake\'s ask and room rather than a repository and a tree', () => {
     render(<SessionHead session={session({ ...INTAKE, state: 'working' })} />);
@@ -1006,8 +1004,8 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * INT4g: a parked intake's answer is on its ask. Finish, decline and stop each ended the record
-   * without answering the ask, which then fell back to a proposal — so the head leads to the ask.
+   * A parked intake's answer is on its ask. Finish, decline and stop each end the record
+   * without answering the ask, which then falls back to a proposal — so the head leads to the ask.
    */
   it('gives a parked intake its ask as the answer, not a parked session\'s three moves', () => {
     const onAnswerAsk = vi.fn();
@@ -1043,9 +1041,9 @@ describe('the attended session\'s head', () => {
 });
 
 /**
- * LANG1b (D142 points 1, 4, 5): the head words Daoris's lines in the record's note in the reader's language, wherever it
+ * The head words Daoris's lines in the record's note in the reader's language, wherever it
  * shows the note — how an ended session stands, a park's card, the card with no moves, a parked intake's — keeps the
- * agent's words as written beneath their lead-in, and shows a record from before parts as it was kept, marked.
+ * agent's words as written beneath their lead-in, and shows a record from before parts as kept, marked.
  */
 describe('the head’s note, in the reader’s language', () => {
   beforeEach(async () => {
@@ -1121,7 +1119,7 @@ describe('the head’s note, in the reader’s language', () => {
   });
 });
 
-/** Two go-aheads the parked session asked, both still waiting on the person (KNOWUSE1a). */
+/** Two go-aheads the parked session asked, both still waiting on the person. */
 const ASKED: GoAhead[] = [
   {
     number: 1, kind: 'write', on: 'production', act: 'dashboard configuration', state: 'asked',
@@ -1134,7 +1132,7 @@ const ASKED: GoAhead[] = [
 ];
 
 /**
- * KNOWUSE1a2 (D135 §2): a park that asked go-aheads shows them beneath its card, each with *Approve* and *Refuse*, and a
+ * A park that asked go-aheads shows them beneath its card, each with *Approve* and *Refuse*, and a
  * press says which go-ahead, yes or no, and the person's words, for the frame to answer it and the park together. With
  * nothing to act through they are shown with no door; a park that asked none, or a session not parked, shows nothing new.
  */
@@ -1145,7 +1143,7 @@ describe('a park\'s go-aheads', () => {
     render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} />);
 
     const section = screen.getByRole('region', { name: 'Go-aheads it asked' });
-    // GOAHEAD2b: one still open keeps it parked, here as on the ask's page.
+    // One still open keeps it parked, here as on the ask's page.
     expect(section).toHaveTextContent('This session goes on once every go-ahead it asked is answered, here or on its ask');
     const items = within(section).getAllByRole('listitem');
     expect(items).toHaveLength(2);
@@ -1199,7 +1197,7 @@ describe('a park\'s go-aheads', () => {
   });
 
   /**
-   * PARKVIEW1 (the park's ask design §3): where the box below answers the park, it carries every press of what the park asks, so
+   * Where the box below answers the park, it carries every press of what the park asks, so
    * the head lists the go-aheads with no press and no field, saying where they are answered; and its card shows the question its
    * agent asked through the connector, its answers listed, in place of its whole last message.
    */
@@ -1244,7 +1242,7 @@ describe('a park\'s go-aheads', () => {
 });
 
 /**
- * WAITFOOT1c (D168 point 4): each of the head's waits whose raising event the conversation holds leads to it, *In the
+ * Each of the head's waits whose raising event the conversation holds leads to it, *In the
  * conversation*; one with none found has no such press.
  */
 describe('the way from the head\'s waits to the conversation', () => {
@@ -1265,7 +1263,7 @@ describe('the way from the head\'s waits to the conversation', () => {
     expect(toEvent.question).toHaveBeenCalledTimes(1);
 
     const [first, second] = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem');
-    // Go-ahead 1's call was not found: it has no such press.
+    // Go-ahead 1's call is not found: it has no such press.
     expect(within(first!).queryByRole('button', { name: 'In the conversation' })).toBeNull();
     await userEvent.click(within(second!).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.goAheads[2]).toHaveBeenCalledTimes(1);
@@ -1280,7 +1278,7 @@ describe('the way from the head\'s waits to the conversation', () => {
   });
 
   /**
-   * WAITFOOT2 (D168's WAITFOOT2 note): each section a wait stands in is marked, for the frame to watch; and while the head is on
+   * Each section a wait stands in is marked, for the frame to watch; and while the head is on
    * screen, where the strip stands aside, a raising block's *To the wait* leads here: the line takes the focus, outlined.
    */
   it('marks the sections its waits stand in, and shows the one a raising block leads to', () => {
@@ -1304,7 +1302,7 @@ describe('the way from the head\'s waits to the conversation', () => {
   });
 });
 
-/** PROPOSEHERE1b (D168 point 2, D74): the rules the session proposed stand in its head, whatever its state, with their presses. */
+/** The rules the session proposed stand in its head, whatever its state, with their presses. */
 describe('the rules a session proposed', () => {
   const RULE = {
     id: 'r1', state: 'waiting' as const, action: 'add' as const, scope: 'repository' as const, name: 'engine', list: 'allow' as const,
@@ -1338,7 +1336,7 @@ describe('the rules a session proposed', () => {
   });
 });
 
-/** AUTONOMY1b3c (D184 point 3): a tool call it holds for the person's answer stands in its head, a wait's section, with its presses. */
+/** A tool call it holds for the person's answer stands in its head, a wait's section, with its presses. */
 describe('the tool calls a session holds for the person', () => {
   const HELD = {
     session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T11:58:00Z', until: '2026-09-21T12:13:00Z',

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// CONSOLE4b (D96): the terminal as a view of the Work frame's regions — in the panel beside the console
+// The terminal as a view of the Work frame's regions — in the panel beside the console
 // by default, opened where the frame says a terminal starts. The bridge is mocked as present, as the rest
 // of the frame's suite mocks it; the renderer is stood in for, as the view's own suite does.
 

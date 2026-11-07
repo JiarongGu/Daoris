@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import { ProposedRules } from './ProposedRules';
 
-// PROPOSEHERE1b (D168 point 2, D74): the rules a session proposed, answered where the person talks to it. *Allow…* asks once,
+// The rules a session proposed, answered where the person talks to it. *Allow…* asks once,
 // since it widens what agents may do; *Decline* is direct. Props only: the frame holds the answer and its pending.
 
 const proposal = (over: Partial<RuleProposal> = {}): RuleProposal => ({

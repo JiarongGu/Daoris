@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The sentences and refusals the say, take-back and move doors share (MSG1a, D137): each phrased once so no two doors drift apart on
+/// The sentences and refusals the say, take-back and move doors share: each phrased once so no two doors drift apart on
 /// what the person is told.
 /// </summary>
 internal static class SaidAnswers
@@ -45,17 +45,17 @@ internal static class SaidAnswers
         },
         Session: null);
 
-    /// <summary>The producer's key a move keeps its word under (LINESTOGETHER1b): its part and its word there, which no other move shares.</summary>
+    /// <summary>The producer's key a move keeps its word under: its part and its word there, which no other move shares.</summary>
     internal static string MoveKey(string part, string word) => $"move:{part}:{word}";
 
-    /// <summary>The answer to a move's retry (LINESTOGETHER1b): moved already, naming where its word waits or that it left, nothing kept.</summary>
+    /// <summary>The answer to a move's retry: moved already, naming where its word waits or that it left, nothing kept.</summary>
     internal static SessionSayOutcome MovedAgain(string key, string record) => new(
         SessionSayRefusal.None,
         $"Already moved under key `{key}`: its word went to session `{record}`, and nothing more moved.",
         Session: null) { Again = true, MovedTo = record };
 
     /// <summary>
-    /// What never goes on (D137 §2.2, MSG1a), judged before anything is read of the words, for the say door and the take-back
+    /// What never goes on, judged before anything is read of the words, for the say door and the take-back
     /// alike: a teammate's record, an intake, a second opinion's reviewer, a helper and a stand-down. Null for any other.
     /// </summary>
     internal static SessionSayOutcome? Never(Session session)
@@ -82,7 +82,7 @@ internal static class SaidAnswers
                 Session: null) { Opinion = opinion };
         }
 
-        // MIXAGENT2a-i: the helper's twin of the reviewer's refusal above: its answer comes back through its file.
+        // The helper's twin of the reviewer's refusal above: its answer comes back through its file.
         if (session.Serves is { } serves)
         {
             return new SessionSayOutcome(
@@ -105,15 +105,15 @@ internal static class SaidAnswers
         return null;
     }
 
-    /// <summary>The say's sentence for words kept for a running session's run (COWORK1c).</summary>
+    /// <summary>The say's sentence for words kept for a running session's run.</summary>
     internal static string ForRunMessage(string id, string? from) =>
         $"Kept for session `{id}`, which runs: {(from == SaidFrom.Daoris ? "Daoris's words wait" : "your words wait")} on its record until its run takes them.";
 
-    /// <summary>The say's sentence for words kept for a record that winds up or moves (FOUNDATION1o).</summary>
+    /// <summary>The say's sentence for words kept for a record that winds up or moves.</summary>
     internal static string ForNextMessage(string id, string? from) =>
         $"Kept for session `{id}`, which is ending: {(from == SaidFrom.Daoris ? "Daoris's words wait" : "your words wait")} on its record for it to go on with.";
 
-    /// <summary>What the person is told their words will do; Daoris's own words are never called theirs (COWORK1b).</summary>
+    /// <summary>What the person is told their words will do; Daoris's own words are never called theirs.</summary>
     internal static string KeptMessage(Session session, string? from = null)
     {
         var whose = from == SaidFrom.Daoris ? "Daoris's words" : "your words";

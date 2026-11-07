@@ -2,7 +2,7 @@ import { getBridge } from '@shenora/react';
 import type { DriverPayloads, DriverRoute } from './generated/routes';
 
 // The bridge's own helper, shared by its domains and re-exported by none: a page reaches the driver
-// through a domain's named calls, never by naming a route itself (MOD3).
+// through a domain's named calls, never by naming a route itself.
 
 /** A route whose handler takes a payload record, which the generated routes carry. */
 export type TypedRoute = keyof DriverPayloads;
@@ -37,9 +37,9 @@ export function call(type: DriverRoute, payload?: Record<string, unknown>, optio
 const MINUTE = 60_000;
 
 /**
- * The driver's own bounds on its long routes (WSR7), spelled again so the page waits as long as the host may work. A
- * twin: `SyncBounds` (a fetch, how many at once, a replay) and `ToolInstall.LookBound` (one resource location's look,
- * TOOLS7) in the driver, each row held to its number by `SyncBoundsTests`. Minutes, or a
+ * The driver's own bounds on its long routes, spelled again so the page waits as long as the host may work. A
+ * twin: `SyncBounds` (a fetch, how many at once, a replay) and `ToolInstall.LookBound` (one resource location's look)
+ * in the driver, each row held to its number by `SyncBoundsTests`. Minutes, or a
  * count.
  */
 export const hostBounds = {
@@ -57,7 +57,7 @@ export const lookBound = (repositories: number) =>
   Math.ceil(Math.max(1, repositories) / hostBounds.fetchesAtOnce) * hostBounds.fetchMinutes * MINUTE + SLACK;
 
 /**
- * How long a terminal's press's Confirm may take (CONFIRMWAIT1a-i, the confirm-wait design §5.2): its grounds are read again before it
+ * How long a terminal's press's Confirm may take: its grounds are read again before it
  * runs, as long as its slowest read may take (`checkWithin`, which the shell tells on the press, so the page names no route), and the
  * bridge's slack beside it. None told keeps the bridge's own bound.
  */
@@ -67,12 +67,12 @@ export const confirmBound = (checkWithin: number | null | undefined): number | u
 /** How long a press over `rows` may take: at most one replay's bound each, one after another. */
 export const pressBound = (rows: number) => Math.max(1, rows) * hostBounds.replayMinutes * MINUTE + SLACK;
 
-/** How long *Look for updates* may take over `locations` (TOOLS7, D121 §3.7): one after another, each within a look's bound. */
+/** How long *Look for updates* may take over `locations`: one after another, each within a look's bound. */
 export const toolLookBound = (locations: number) => Math.max(1, locations) * hostBounds.toolLookMinutes * MINUTE + SLACK;
 
 /**
  * Whether the driver refused because it is still coming up (`DRIVER_NOT_READY`): its service is not handed to the routes
- * yet. A refusal of this kind is asked again when the driver says it is up (LOOK2a, `useDriverReady`).
+ * yet. A refusal of this kind is asked again when the driver says it is up (`useDriverReady`).
  */
 export const refusedNotReady = (error: unknown) => (error as { code?: unknown } | null)?.code === 'DRIVER_NOT_READY';
 

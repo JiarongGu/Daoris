@@ -4,16 +4,16 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Where a driven session's agent records what only the person can decide before it ends its turn on it (PARKVIEW1, the park's ask
-/// design §2): one file under the home's <c>sessions</c> folder, named by the session, <c>&lt;session&gt;.question.json</c>, written
+/// Where a driven session's agent records what only the person can decide before it ends its turn on it: one file under
+/// the home's <c>sessions</c> folder, named by the session, <c>&lt;session&gt;.question.json</c>, written
 /// whole by the connector's <c>question_ask</c> and replaced by a later one. The driver's <c>QuestionFiles</c> reads it and binds it to
 /// the park its run ends in, or deletes it; the two share no code, and each side's tests hold the same shape
 /// (<c>McpQuestionToolTests</c>, <c>QuestionFilesTests</c>).
 /// </summary>
 /// <remarks>
-/// <para><b>The agent's words, recorded, never read out of its prose</b> (D135's KNOWUSE1c: the closing note's headings are words,
+/// <para><b>The agent's words, recorded, never read out of its prose</b> (the closing note's headings are words,
 /// not a format): the question, the answers it offers with what it does on each, the one it recommends and by when, each kept as
-/// written once trimmed. A go-ahead is not asked here: an act's yes is <c>go_ahead_ask</c>'s, held on the ask (KNOWUSE1a).</para>
+/// written once trimmed. A go-ahead is not asked here: an act's yes is <c>go_ahead_ask</c>'s, held on the ask.</para>
 ///
 /// <para><b>Machine-local</b>: no wire carries it, so a teammate's mirror never shows a question its machine cannot answer.</para>
 /// </remarks>
@@ -35,13 +35,13 @@ public sealed class QuestionBox(string? home)
     /// <summary>The longest "by when", in characters: a window or a moment, as the agent knows it.</summary>
     public const int MaxBy = 200;
 
-    /// <summary>The longest reason for the recommendation, in characters (QUESTIONUI1a): drawn under the recommended answer.</summary>
+    /// <summary>The longest reason for the recommendation, in characters: drawn under the recommended answer.</summary>
     public const int MaxWhy = 300;
 
     public const string Suffix = ".question.json";
 
     /// <summary>
-    /// The marks an agent sets on a question it knows is the owner's alone (SUPERVISOR1b, D208; the supervisor design §4.1): a sign-in,
+    /// The marks an agent sets on a question it knows is the owner's alone: a sign-in,
     /// widening access, spending, deleting, a repository document that asks the owner, and the owner's own taste. A marked question is
     /// never answered by the supervisor; the mark only narrows, so an unmarked question is still judged by its holder. The driver's
     /// <c>SupervisorBounds.All</c> and the page's <c>OWNER_MARKS</c> name the same six; both readers take any mark as one.
@@ -54,7 +54,7 @@ public sealed class QuestionBox(string? home)
 
     public string? Home { get; } = home;
 
-    /// <summary>The home the driver names on the connector it offers, else the account's (D63): where the session's files live.</summary>
+    /// <summary>The home the driver names on the connector it offers, else the account's: where the session's files live.</summary>
     public static QuestionBox FromEnvironment() => new(RuleProposalBox.FromEnvironment().Home);
 
     /// <summary>Where one session's question is: <c>&lt;home&gt;/sessions/&lt;session&gt;.question.json</c>, the home's <see cref="HomeEntry.Sessions"/>.</summary>
@@ -65,8 +65,8 @@ public sealed class QuestionBox(string? home)
     /// <param name="named">The session the connector names, said back when no record is held for it.</param>
     /// <param name="choices">The answers it offers, each its label and what it does on it, in its order; null or empty for none.</param>
     /// <param name="recommend">The answer it recommends, by its number from 1, or null.</param>
-    /// <param name="why">Why it recommends that answer (QUESTIONUI1a), or null: said only with a recommendation.</param>
-    /// <param name="owner">One of <see cref="OwnerMarks"/> where the agent knows the question is the owner's alone (SUPERVISOR1b), or null.</param>
+    /// <param name="why">Why it recommends that answer, or null: said only with a recommendation.</param>
+    /// <param name="owner">One of <see cref="OwnerMarks"/> where the agent knows the question is the owner's alone, or null.</param>
     public (string? Id, string Message) Ask(
         Session? asker, string? named, string? question, IReadOnlyList<(string? Label, string? Does)>? choices, int? recommend, string? by,
         DateTimeOffset at, string? why = null, string? owner = null)
@@ -253,11 +253,11 @@ public sealed class QuestionBox(string? home)
 public sealed record QuestionKept(
     string Id, string Session, string Question, IReadOnlyList<QuestionChoice> Choices, int? Recommend, string? By, string? At)
 {
-    /// <summary>Why it recommends its answer (QUESTIONUI1a), or null where it gave no reason.</summary>
+    /// <summary>Why it recommends its answer, or null where it gave no reason.</summary>
     public string? Why { get; init; }
 
     /// <summary>
-    /// The agent's mark that the question is the owner's alone (SUPERVISOR1b), as the file says it, or null: any mark at all, one this
+    /// The agent's mark that the question is the owner's alone, as the file says it, or null: any mark at all, one this
     /// build does not know included, keeps the supervisor from answering it, the safe side.
     /// </summary>
     public string? Owner { get; init; }

@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, render, renderHook } from '@testing-library/react';
 
-// The secondary windows' calls (MOD3: moved from `shell.test.tsx` beside the domain they call).
+// The secondary windows' calls.
 
 const { invoke, notifyReady, eventHandlers, scheme } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
   // The push channel's seam: handlers land here by "module.type", and a test fires them as the host.
   eventHandlers: new Map<string, (payload: unknown) => void>(),
-  // The kit's colour-scheme client (THEMESCHEME1): what the engine every window renders on was told.
+  // The kit's colour-scheme client: what the engine every window renders on is told.
   scheme: vi.fn((_scheme: string) => Promise.resolve()),
 }));
 
@@ -32,9 +32,9 @@ import i18n from '../locales/i18n';
 import { useNoticeWords, useOpenWindow, useSecondaryWindowTheme, useTaskbarCount } from './windows';
 
 /**
- * WINDOW2: a secondary window's page tells its own frame which theme it is in, by the name it was
+ * A secondary window's page tells its own frame which theme it is in, by the name it is
  * opened under — Shenora's window commands route a second window's theme nowhere, so the native caption
- * stayed on the OS's theme over a page on the viewer's choice.
+ * would stay on the OS's theme over a page on the viewer's choice.
  */
 describe('a secondary window\'s caption (WINDOW2)', () => {
   afterEach(() => {
@@ -53,7 +53,7 @@ describe('a secondary window\'s caption (WINDOW2)', () => {
     expect(invoke).toHaveBeenLastCalledWith('DAORIS.WINDOWS', 'SET_THEME', { payload: { name: 'monitor', dark: true } });
   });
 
-  /** THEMESCHEME1: the engine is told the choice itself, never the effective theme (`useEngineTheme` has why). */
+  /** The engine is told the choice itself, never the effective theme (`useEngineTheme` has why). */
   it('tells the engine the viewer\'s choice on arrival and each time it changes', () => {
     invoke.mockResolvedValue({ applied: true });
     setThemeChoice('dark');
@@ -67,7 +67,7 @@ describe('a secondary window\'s caption (WINDOW2)', () => {
   });
 });
 
-/** NOTIFY1b, NOTIFY2c: each main window's taskbar button counts what waits in its workspace; the whole window's case is `sessionsBadge.test.tsx`. */
+/** Each main window's taskbar button counts what waits in its workspace; the whole window's case is `sessionsBadge.test.tsx`. */
 describe('the taskbar\'s count (NOTIFY1b)', () => {
   afterEach(() => {
     invoke.mockReset();
@@ -93,8 +93,8 @@ describe('the taskbar\'s count (NOTIFY1b)', () => {
   });
 
   /**
-   * SESSBADGE1: each count is told without waiting, so two told close together may reach the frame in either order; the title once
-   * kept 5 while the band read 4. Each carries a later order than the one before, even within one millisecond and across a reload of
+   * Each count is told without waiting, so two told close together may reach the frame in either order, and the title could
+   * keep 5 while the band reads 4. Each carries a later order than the one before, even within one millisecond and across a reload of
    * the page, and the frame never wears a count told before the one it wears (`WindowsModuleTests`).
    */
   it('tells each count with a later order than the one before', () => {
@@ -123,8 +123,8 @@ describe('the taskbar\'s count (NOTIFY1b)', () => {
   });
 
   /**
-   * NOTIFY2c: another main window a later launch opened (ONEINSTANCE1) holds its own workspace, so it counts its own and wears it on
-   * its own taskbar button, told by the name it was opened under as its title is.
+   * Another main window a later launch opens holds its own workspace, so it counts its own and wears it on
+   * its own taskbar button, told by the name it is opened under as its title is.
    */
   it('tells another main window\'s own frame its own count, by its name', () => {
     invoke.mockResolvedValue({ applied: true });
@@ -138,7 +138,7 @@ describe('the taskbar\'s count (NOTIFY1b)', () => {
 });
 
 /**
- * NOTIFY2d (the notification design §3.3): a main window's page hands the shell's notifier the notices' words in its language, at
+ * A main window's page hands the shell's notifier the notices' words in its language, at
  * its load and at each change of language, so a balloon behind the window speaks as the window does.
  */
 describe('the notices\' words told to the shell (NOTIFY2d)', () => {
@@ -179,7 +179,7 @@ describe('the notices\' words told to the shell (NOTIFY2d)', () => {
 });
 
 /**
- * MAINWINDOWS3 (D171's note): a window opened from a page follows that page's window, or holds its session's own
+ * A window opened from a page follows that page's window, or holds its session's own
  * workspace, so the page says which before it asks the shell for the window, and the new page finds it on arrival.
  */
 describe('opening a window from a main window', () => {
@@ -217,7 +217,7 @@ describe('opening a window from a main window', () => {
   }
 
   it('says the window follows this one before it asks the shell for it', async () => {
-    // Which windows were said to follow which when the shell was asked: the new page reads it on arrival.
+    // Which windows are said to follow which when the shell is asked: the new page reads it on arrival.
     let asked: string | null = null;
     invoke.mockImplementation(async () => {
       asked = window.localStorage.getItem('daoris.workspace.opened');

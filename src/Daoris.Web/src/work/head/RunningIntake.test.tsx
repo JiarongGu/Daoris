@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { RunningIntake } from './RunningIntake';
 
-// A RUNNING intake (INT4h): one turn, framed as one prompt, so it takes no messages — the pipe door
+// A RUNNING intake: one turn, framed as one prompt, so it takes no messages — the pipe door
 // gives it no stdin, and on the protocol door its stdin is the driver's own frames. What a person
-// can do here while it runs is look at the ask it serves; its stop is the page header's (SESSUX1d, D126 §3.3).
+// can do here while it runs is look at the ask it serves; its stop is the page header's.
 
 const show = (props: Partial<Parameters<typeof RunningIntake>[0]> = {}) =>
   render(<RunningIntake ask="0fda18" onOpen={() => {}} {...props} />);
@@ -32,7 +32,7 @@ describe('a running intake', () => {
     expect(onOpen).toHaveBeenCalledWith('0fda18');
   });
 
-  /** SESSUX1d (D126 §3.3): the stop and its sentence moved to the page header, the stop's one owner. */
+  /** The stop and its sentence belong to the page header, the stop's one owner. */
   it('offers no stop of its own: the page header’s stop asks with the sentence it said', () => {
     show();
 

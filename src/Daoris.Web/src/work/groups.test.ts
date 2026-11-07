@@ -6,8 +6,8 @@ import {
   sessionsByRepository, sessionsByState, shownOf, stripSessions, waitsOnYou,
 } from './groups';
 
-// The session list by state (SESSUX1c, D126 §2.1, §4): the reader's groups as the list draws them, by repository as
-// before, the strip, and what the list remembers. Pure, so every list a person could have is an argument.
+// The session list by state: the reader's groups as the list draws them, by repository,
+// the strip, and what the list remembers. Pure, so every list a person could have is an argument.
 
 const at = (minutesAgo: number) => new Date(Date.UTC(2026, 9, 2, 12, 0) - minutesAgo * 60_000).toISOString();
 
@@ -21,7 +21,7 @@ const grouping = (over: Partial<SessionGrouping> & { session: string; group: Ses
 
 const ids = (rows: { id: string }[]) => rows.map((row) => row.id);
 
-/** RAILLINE1: a running call in a few words, as its row and its head say it. */
+/** A running call in a few words, as its row and its head say it. */
 describe('a running call’s head', () => {
   it('says a short call as it is', () => {
     expect(callHead('npm test')).toBe('npm test');
@@ -47,7 +47,7 @@ describe('a running call’s head', () => {
 });
 
 describe('what the session list remembers', () => {
-  /** A first open with nothing remembered is by state (D126 §4.1), and nothing shows archived. */
+  /** A first open with nothing remembered is by state, and nothing shows archived. */
   it('reads nothing kept, or anything unreadable, as by state with archived hidden', () => {
     expect(sessionFilters({})).toEqual({ group: 'state', archived: false });
     expect(sessionFilters({ group: 'mood', archived: 'yes' })).toEqual({ group: 'state', archived: false });
@@ -83,7 +83,7 @@ describe('the list by state', () => {
     grouping({ session: 'c1', group: 'ended', shown: 'completed' }),
   ];
 
-  /** D126 §2.1: five groups in the order the person acts on them, each in the reader's order. */
+  /** Five groups in the order the person acts on them, each in the reader's order. */
   it('lists each group in the reader\'s order, and leaves an empty group out', () => {
     const groups = sessionsByState(sessions, groupings, { selected: null, archived: false });
 
@@ -95,7 +95,7 @@ describe('the list by state', () => {
     expect(only.map((group) => group.group)).toEqual(['working']);
   });
 
-  /** Archived is hidden unless ticked (§4.1); the attended session is never taken out from under its reader. */
+  /** Archived is hidden unless ticked; the attended session is never taken out from under its reader. */
   it('hides archived sessions unless they are shown, and keeps the attended one', () => {
     const marked = [...groupings.slice(0, 6), grouping({ session: 'c1', group: 'archived', shown: 'completed', archived: true })];
 
@@ -123,8 +123,8 @@ describe('the list by state', () => {
     const of = (name: string) => ids(groups.find((group) => group.group === name)!.sessions);
 
     expect(of('you')).toEqual(['p1', 'f1', 'n2']);
-    // A teammate's park waits on them, as the reader lists it (SESSUX1a); one the person answered goes on at the
-    // driver's next look (ANSWER1c).
+    // A teammate's park waits on them, as the reader lists it; one the person answered goes on at the
+    // driver's next look.
     expect(of('working')).toEqual(['w1', 'n1', 'team/n4', 'n5']);
     expect(of('ended')).toEqual(['n3', 'c2', 'c1']);
   });
@@ -141,7 +141,7 @@ describe('the list by state', () => {
 });
 
 /**
- * SESSUX1e, D126 §5.3: *Archive what ended…* takes every session the reader placed in Ended that is not archived, and
+ * *Archive what ended…* takes every session the reader placed in Ended that is not archived, and
  * says what stays in the list because it needs the person, by the headings the person sees.
  */
 describe('what Archive what ended takes', () => {
@@ -198,8 +198,8 @@ describe('the list by repository', () => {
   ];
 
   /**
-   * 🔴 The deployed application showed four empty-state sentences on a machine with four real session records (D62;
-   * working-surface design §7): an ended session is somewhere, never nowhere. Moved here with `partition`'s cases.
+   * 🔴 A machine with four real session records must not show four empty-state sentences:
+   * an ended session is somewhere, never nowhere.
    */
   it('lists an ended session beneath the live ones rather than dropping it, and keeps every live state live', () => {
     const states = sessionsByRepository([
@@ -215,7 +215,7 @@ describe('the list by repository', () => {
     expect(sessionsByRepository([], undefined, { selected: null, archived: false })).toEqual({ live: [], ended: [] });
   });
 
-  /** Today's arrangement (§4.3): a group per repository by name, waiting on you first within it, the ended beneath. */
+  /** The arrangement by repository: a group per repository by name, waiting on you first within it, the ended beneath. */
   it('groups the live sessions by repository, waiting on you first, and puts the ended beneath, newest first', () => {
     const { live, ended } = sessionsByRepository(sessions, undefined, { selected: null, archived: false });
 
@@ -223,7 +223,7 @@ describe('the list by repository', () => {
     expect(ids(ended)).toEqual(['c2', 'f1', 'c1']);
   });
 
-  /** It gains the reader's words: *parked* sorts with *waiting on you* (§4.3), and archived is hidden unless shown. */
+  /** It takes the reader's words: *parked* sorts with *waiting on you*, and archived is hidden unless shown. */
   it('sorts a parked session with waiting on you, and hides what is archived', () => {
     const groupings = [
       grouping({ session: 'f1', group: 'you', shown: 'parked', strikes: 3 }),
@@ -236,7 +236,7 @@ describe('the list by repository', () => {
     expect(ids(sessionsByRepository(sessions, groupings, { selected: null, archived: true }).ended)).toEqual(['c2', 'c1']);
   });
 
-  /** The rule that was already here, kept: a session that ends while you read it stays in its group. */
+  /** A session that ends while you read it stays in its group. */
   it('keeps the attended session among the live whatever state it reached', () => {
     const { live, ended } = sessionsByRepository(sessions, undefined, { selected: 'c1', archived: false });
 
@@ -248,7 +248,7 @@ describe('the list by repository', () => {
 describe('a long Ended group', () => {
   const rows = Array.from({ length: 15 }, (_, index) => ({ id: `e${index}` }));
 
-  /** §4.4: the first twelve, then a press for the rest, which are counted and never silently cut. */
+  /** The first twelve, then a press for the rest, which are counted and never silently cut. */
   it('shows the first twelve and counts the rest', () => {
     expect(cutEnded(rows, { limit: 12, open: false, keep: null })).toEqual({ rows: rows.slice(0, 12), hidden: 3 });
     expect(cutEnded(rows, { limit: 12, open: true, keep: null })).toEqual({ rows, hidden: 0 });
@@ -277,7 +277,7 @@ describe('the strip', () => {
     grouping({ session: 'c1', group: 'ended', shown: 'completed' }),
   ];
 
-  /** §2.5: what waits on the person first, then what runs, in the open list's order; what ended is the open list's. */
+  /** What waits on the person first, then what runs, in the open list's order; what ended is the open list's. */
   it('holds waiting on you, then working, in the open list\'s order', () => {
     expect(ids(stripSessions(sessions, groupings, { arrangement: 'state', selected: null, archived: false })))
       .toEqual(['p1', 'f1', 'w1']);
@@ -292,7 +292,7 @@ describe('the strip', () => {
 });
 
 /**
- * MIXAGENT3a-ii (the mixed-agents design §4, closing XAGENT1g4d): a helper under the session it serves, a reviewer under the
+ * A helper under the session it serves, a reviewer under the
  * session whose work it reads, each its own place where that session's row is not drawn. Never a second copy of a row.
  */
 describe('helpers and reviewers under the work they serve', () => {
@@ -318,7 +318,7 @@ describe('helpers and reviewers under the work they serve', () => {
     ]);
   });
 
-  /** One row per line of work (D167): a helper of a part that does not lead goes under its entry's row. */
+  /** One row per line of work: a helper of a part that does not lead goes under its entry's row. */
   it('draws one under the row that stands for the part it serves', () => {
     const ofPart = session({ id: 'h3lp3r01', state: 'working', kind: 'chat', serves: 'p4rt0000' });
     const nested = nestServing([[asker, ofPart]], { h3lp3r01: 'p4rt0000' }, {
@@ -341,7 +341,7 @@ describe('helpers and reviewers under the work they serve', () => {
 });
 
 describe('a row as the list shows it', () => {
-  /** The reader's two derived words stand; every other row keeps the page's own reading, idle among it (UX5 U17). */
+  /** The reader's two derived words stand; every other row keeps the page's own reading, idle among it. */
   it('shows the reader\'s word where it derived one, and the page\'s own otherwise', () => {
     const failed = session({ id: 'f1', state: 'failed' });
     const chat = session({ id: 'c1', state: 'working', kind: 'chat' });
@@ -356,7 +356,7 @@ describe('a row as the list shows it', () => {
   });
 
   /**
-   * ANSWER1c (D131): a park the person answered shows as answered, by the reader's word or, before the reader has
+   * A park the person answered shows as answered, by the reader's word or, before the reader has
    * answered for it, by its own record, which holds the answer.
    */
   it('shows a park the person answered as answered, by the reader or by its record', () => {
@@ -367,7 +367,7 @@ describe('a row as the list shows it', () => {
   });
 
   /**
-   * MSG1f (D137 §3.2): a record going on with the person's words shows *going on*, by the reader's word (an ended record
+   * A record going on with the person's words shows *going on*, by the reader's word (an ended record
    * whose words it will take up, which only the reader can say) or, while its run opens, by its own record.
    */
   it('shows a record going on with the person\'s words as going on, by the reader or by its record', () => {
@@ -378,7 +378,7 @@ describe('a row as the list shows it', () => {
   });
 
   /**
-   * LIMITSWITCH3b (D137's note of 2026-10-26): an ended record held for an account's reset shows *limit-waits* by the reader's word, in
+   * An ended record held for an account's reset shows *limit-waits* by the reader's word, in
    * place of the state it ended in; with no word from the reader (none) the record's own state stands.
    */
   it('shows a record held for an account’s reset as its wait, by the reader’s word', () => {
@@ -389,7 +389,7 @@ describe('a row as the list shows it', () => {
   });
 
   /**
-   * HELPERWAIT1: a session that ended its turn on its own helper's ask shows *awaiting helper* by the reader's word, resuming later, and
+   * A session that ended its turn on its own helper's ask shows *awaiting helper* by the reader's word, resuming later, and
    * nothing about it waits on the person.
    */
   it('shows a session waiting on its own helper as awaiting helper, never as waiting on the person', () => {
@@ -403,7 +403,7 @@ describe('a row as the list shows it', () => {
     expect(waitsOnYou(session({ id: 'p1', state: 'awaiting-person' }), null)).toBe(true);
     expect(waitsOnYou(session({ id: 'f1', state: 'failed' }), grouping({ session: 'f1', group: 'you', shown: 'parked' }))).toBe(true);
     expect(waitsOnYou(session({ id: 'w1', state: 'working' }), null)).toBe(false);
-    // ANSWER1c: answered, it goes on at the driver's next look, and nothing about it waits on the person.
+    // Answered, it goes on at the driver's next look, and nothing about it waits on the person.
     expect(waitsOnYou(session({ id: 'p2', state: 'awaiting-person', said: said('carry on.') }), null)).toBe(false);
   });
 });

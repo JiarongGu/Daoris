@@ -18,15 +18,15 @@ import {
 } from './words';
 
 /**
- * The newest messages of the line's channel (COWORKVIEW1c, the design §3.3): on an ask, the lines the session's panel already holds, so
- * the view asks the channel for nothing; on no ask held here, its own channel's (COMMS1k, `CHANNEL_LINE`), a message to one part naming
+ * The newest messages of the line's channel: on an ask, the lines the session's panel already holds, so
+ * the view asks the channel for nothing; on no ask held here, its own channel's (`CHANNEL_LINE`), a message to one part naming
  * it. Absent while neither is read, and then no block.
  */
 export type AtWorkChannel = {
   words: readonly ChannelItem[];
   /** *All messages*: opens the panel that holds the channel. Absent for a line's own channel, which no panel holds. */
   onOpen?: () => void;
-  /** The person's words on a line's own channel (COMMS1k): present only for one, which then draws a composer under its words. */
+  /** The person's words on a line's own channel: present only for one, which then draws a composer under its words. */
   onPost?: (post: ChannelPost, answered: ChannelAnswered) => void;
   /** The repositories a post on a line's own channel may be addressed to, as its messages name them. */
   recipients?: readonly string[];
@@ -55,14 +55,14 @@ export type AtWorkViewProps = {
   onOpenStream?: (stream: string) => void;
   /** The clock a time is read against; the window's now by default. */
   now?: Date;
-  /** An agent's name as the person calls it, for its co-workers (COMMS1i); its word where none is given. */
+  /** An agent's name as the person calls it, for its co-workers; its word where none is given. */
   nameOf?: (agent: string) => string;
-  /** The request the head's *Waiting on* opened the view at (COMMS1i): its row is outlined and takes the focus. */
+  /** The request the head's *Waiting on* opened the view at: its row is outlined and takes the focus. */
   seek?: ExchangeSeek | null;
 };
 
 /**
- * Who is at work on a session (COWORKVIEW1a, the cowork view design §5.2): the session's parts as the strip lists them, the
+ * Who is at work on a session: the session's parts as the strip lists them, the
  * attended one first, and its subagents, each with its state and its end, read from Daoris's records and never from the
  * conversation's text. Reading is never *nobody*, a failure says its words, and a stale answer keeps its rows dimmed.
  */
@@ -119,7 +119,7 @@ export function Failed({ why, onRetry }: { why: string; onRetry?: () => void }) 
 }
 
 /**
- * What the line waits on, first (the design §R11.3 row 3; COMMS1i, the comms design §7): read from its requests that hold, a quest as
+ * What the line waits on, first: read from its requests that hold, a quest as
  * *Waiting on #q7 in core (docs lane)* and a co-worker by whom and where it stands. The head draws the same line from the same read.
  * Where it waits on nothing and the session published quests, and no part of the entry waits, *published 3, waits on none*.
  */
@@ -132,7 +132,7 @@ function WaitingOn({ answer, nameOf }: { answer: AtWorkA; nameOf?: (agent: strin
 }
 
 /**
- * The head's *Waiting on* (COMMS1i, the comms design §7): *At work*'s line, the same words from the same read, and a door that opens
+ * The head's *Waiting on*: *At work*'s line, the same words from the same read, and a door that opens
  * *At work* at the first request it names. Nothing where the line waits on nothing it asked.
  */
 export function WaitingOnLine({ answer, nameOf, onOpen }: {
@@ -151,7 +151,7 @@ export function WaitingOnLine({ answer, nameOf, onOpen }: {
 }
 
 /**
- * Who the line asked to work with it (COMMS1i, the comms design §6, §7): each helper, partner and successor it asked, by whom and
+ * Who the line asked to work with it: each helper, partner and successor it asked, by whom and
  * where it stands, its door where one took it up. A quest is *Asked through quests*' row. A source not read is said, never drawn as none.
  */
 function Coworkers({ answer, nameOf, onOpen, sought }: {
@@ -217,7 +217,7 @@ export function Word({ item }: { item: ChannelItem }) {
 }
 
 /**
- * The channel's last words that sit on no listed part (COWORKVIEW1c, the design §3.3): the person's, another line of work's, a session's
+ * The channel's last words that sit on no listed part: the person's, another line of work's, a session's
  * that this list does not hold; then *All messages*, which opens the panel the whole channel is in.
  */
 function ChannelWords({ channel, parts }: { channel: AtWorkChannel; parts: readonly AtWorkPart[] }) {
@@ -305,7 +305,7 @@ function PartChildren({ t, part }: { t: TFunction; part: AtWorkPart }) {
   );
 }
 
-/** Whether *Nobody else is working on this* may be said (§5.2, rule 16): only where every source was read and holds nobody. */
+/** Whether *Nobody else is working on this* may be said: only where every source is read and holds nobody. */
 export function nobody(answer: AtWorkA): boolean {
   const { subagents, parts } = answer;
   return answer.parts.length === 1 && !answer.moreParts && !answer.earlier && !answer.published && !answer.quests?.length && !answer.parts[0]!.waits
@@ -355,7 +355,7 @@ function Subagents({ answer, quiet, now, streamOf, onOpenStream }: {
 }
 
 /**
- * The quests the entry's parts asked that opened no part of it (the design §3.1): one button each, opening the quest, with who took it
+ * The quests the entry's parts asked that opened no part of it: one button each, opening the quest, with who took it
  * and what the taker waits on. An untaken quest says why beside it from the driver's last look, none before the first. A chain's step
  * is set in under the quest before it.
  */
@@ -424,7 +424,7 @@ function QuestTaker({ t, quest, considered }: { t: TFunction; quest: AtWorkQuest
   );
 }
 
-/** What asked the attended part's quest (the design §3.1): one row, opening that quest. */
+/** What asked the attended part's quest: one row, opening that quest. */
 function AskedBy({ answer, onOpenQuest }: { answer: AtWorkA; onOpenQuest?: (quest: string) => void }) {
   const { t } = useTranslation();
   const { askedBy } = answer;
@@ -444,7 +444,7 @@ function AskedBy({ answer, onOpenQuest }: { answer: AtWorkA; onOpenQuest?: (ques
 }
 
 /**
- * Where the repository's way to hand rows on is not open (the design §6.4 point 3): the standing the driver judged, said where the
+ * Where the repository's way to hand rows on is not open: the standing the driver judged, said where the
  * session ran subagents, with the guide's lanes section behind it. A fact about the repository and this machine, never a verdict on
  * the agent's choice.
  */

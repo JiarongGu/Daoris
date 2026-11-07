@@ -5,7 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { useScope, WorkspaceScopeProvider, type WindowStore } from './scope';
 import { QuestsView } from '../test/questsView';
 
-// The claim WSP5 makes (workspace design §4): every cross-repository answer is scoped to ONE workspace
+// The claim: every cross-repository answer is scoped to ONE workspace
 // per query. Held at the query layer, so a view that never mentions workspaces still asks for one —
 // and, just as deliberately, a page with nothing chosen names none, because the door never invents a
 // default and the page states the scope it spans instead.
@@ -134,9 +134,9 @@ describe('the workspace scope', () => {
   });
 
   /**
-   * WINDOW1: a detached session read the scope once, at open, so the main window choosing another
-   * workspace never reached it — its queries kept asking for the circle it opened in. The browser
-   * tells every OTHER document of a storage write; the provider hears it and asks again. Since MAINWINDOWS3 it hears
+   * A detached session reading the scope once, at open, would never hear the main window choosing another
+   * workspace, and its queries would keep asking for the circle it opened in. The browser
+   * tells every OTHER document of a storage write; the provider hears it and asks again. It hears
    * the window that opened it, and no other.
    */
   it('a detached session follows a workspace the window that opened it chose, into every query it makes', async () => {
@@ -170,9 +170,9 @@ describe('the workspace scope', () => {
 });
 
 /**
- * MAINWINDOWS3 (D171's note): the owner wants two main windows of one instance, one on their work's workspace and one on
- * `games`. The scope was one shared key every document followed, so a choice in one main window moved them all. Each main
- * window now holds its own, a new one starts from the last chosen anywhere, and a detached window follows the window that
+ * Two main windows of one instance can sit on two workspaces, one on their work's workspace and one on
+ * `games`: a scope shared by one key every document follows would let a choice in one main window move them all. Each main
+ * window holds its own, a new one starts from the last chosen anywhere, and a detached window follows the window that
  * opened it, or its session's own workspace.
  */
 describe('each main window holds its own workspace scope', () => {

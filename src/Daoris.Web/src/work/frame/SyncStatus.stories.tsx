@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { SyncStatus } from './SyncStatus';
 
-// Where a circle stands with its remote (SYNC6b), as the status bar's sync item. Each state is one a
+// Where a circle stands with its remote, as the status bar's sync item. Each state is one a
 // real machine reaches: level, work waiting to go up, a quest in conflict, a remote that could not be
 // reached, a circle never synced — and a browser, which reads the standing but has no *Sync now*.
 
@@ -44,7 +44,7 @@ export const AheadAndInConflict: StoryObj = {
   ),
 };
 
-/** The remote could not be reached: the last time it was, and the wall in the host's own words. */
+/** The remote cannot be reached: the last time it could, and the wall in the host's own words. */
 export const Walled: StoryObj = {
   render: () => (
     <Bar>

@@ -7,33 +7,33 @@ import type { Attention } from './AttentionRow';
 import type { AttentionNames, PushedAttention } from './attention';
 import { questName } from '../identity';
 
-// *What needs you*'s accounts in words (UX6d, D150 §6.2–§6.3; TOOL4m's row). Which starts wait on their accounts, and which
-// signed-out account a list holds, is judged in .NET (PUSH1d4, `AccountAttention`); the page names each account as the roster it
+// *What needs you*'s accounts in words. Which starts wait on their accounts, and which
+// signed-out account a list holds, is judged in .NET (`AccountAttention`); the page names each account as the roster it
 // holds names it, says what the start holds, and says why it waits, in the reader's language.
 
 /**
- * An account's state as last known, the four of D150 §5.3 and a key's, which no sign-in names: unchecked, or refused by its
- * provider (ACCTUX1), which waits on the person as a sign-out does and is repaired by a new key, never a sign-in.
+ * An account's state as last known: out, cooling, unknown or in, and a key's, which no sign-in names: unchecked, or refused by its
+ * provider, which waits on the person as a sign-out does and is repaired by a new key, never a sign-in.
  */
 export type NamedState = 'out' | 'cooling' | 'unknown' | 'in' | 'keyed' | 'refused';
 
-/** One account a row names (D150 §5.3): its id (null for the tool's own sign-in), its name, its state, and when it was read. */
+/** One account a row names: its id (null for the tool's own sign-in), its name, its state, and its read time. */
 export type NamedAccount = {
   id: string | null;
   label: string;
   state: NamedState;
-  /** When its state was read; null where it never was. */
+  /** When its state is read; null where it is unread. */
   read: string | null;
   /** Its cool-off's end, where it cools. */
   until: string | null;
   /**
-   * Its cool-off is held in memory only, the file not having taken it (LIMITRESUME1d2, D206 §3.1, `AccountCooling.Unwritten`): the
-   * machine's problem, said beside the account. Absent where it was kept.
+   * Its cool-off is held in memory only, the file not having taken it (`AccountCooling.Unwritten`): the
+   * machine's problem, said beside the account. Absent where it is kept.
    */
   unwritten?: boolean;
 };
 
-/** Whose an account row is, so its acts and its door know the agent (UX6d). */
+/** Whose an account row is, so its acts and its door know the agent. */
 export type AccountRowFacts = {
   /** The agent's id: what the door opens and the terminal types. */
   agent: string;
@@ -46,24 +46,23 @@ export type AccountRowFacts = {
   /** The accounts the row names, in the order a start would walk them. */
   named: NamedAccount[];
   /**
-   * The start is held because no Daoris account of the agent's is signed in (OWNSPACE1b-B, D175): the row names no account and
+   * The start is held because no Daoris account of the agent's is signed in: the row names no account and
    * offers *Sign in for Daoris*, which runs the add flow's sign-in in place.
    */
   noAccount?: boolean;
 };
 
-/** One account a pushed row names (PUSH1d4): its id, the name the look read beside it (null where none), its state as judged. */
+/** One account a pushed row names: its id, the name the look read beside it (null where none), its state as judged. */
 export type PushedNamed = Omit<NamedAccount, 'label'> & { name?: string | null };
 
 /**
- * An account row's facts as pushed (PUSH1d4): every value of `AccountRowFacts` but the names, which the page gives. An account
- * outside a start's list, and one to read first, went with POOL1c (the account-pool design §4.3): every account serves every
- * workspace, and the page reads neither.
+ * An account row's facts as pushed: every value of `AccountRowFacts` but the names, which the page gives. There is no account
+ * outside a start's list and none to read first: every account serves every workspace, and the page reads neither.
  */
 export type PushedAccountFacts = Omit<AccountRowFacts, 'named'> & { named: PushedNamed[] };
 
 /**
- * An account's name as the row says it (ACCT2, ACCOUNTID1b): the roster's, where it holds the account; the tool's own sign-in as
+ * An account's name as the row says it: the roster's, where it holds the account; the tool's own sign-in as
  * the person knows it; else the name the look read beside it, else its id.
  */
 function labelOf(tool: Tool | undefined, id: string | null, name?: string | null): string {
@@ -84,8 +83,8 @@ export function accountFactsWorded(facts: PushedAccountFacts, tools: readonly To
 }
 
 /**
- * Why the start waits, as the accounts that would serve it stand (§6.3's *one line of why*): each cooling one until its
- * hold's end, those read signed out together by when, keys their provider refused together (ACCTUX1), those no read
+ * Why the start waits, as the accounts that would serve it stand (*one line of why*): each cooling one until its
+ * hold's end, those read signed out together by when, keys their provider refused together, those no read
  * answered. One that reads signed in holds nothing and is not said. Null where none is said.
  */
 export function whyLine(named: readonly NamedAccount[], now: Date): string | null {
@@ -134,10 +133,10 @@ export function heldTitle(holding: { quests: readonly string[]; asks: readonly s
 }
 
 /**
- * An account's row worded (UX6d, D150 §6.2): a start waiting for accounts, named by what it holds, its line saying the accounts
- * that would serve it as last known with when each was read, or that no Daoris account is signed in (OWNSPACE1b-B); a signed-out
+ * An account's row worded: a start waiting for accounts, named by what it holds, its line saying the accounts
+ * that would serve it as last known with each one's read time, or that no Daoris account is signed in; a signed-out
  * account, named as the roster names it, its line saying a key refused. Where it runs is not said: every account of Daoris's
- * serves every workspace (POOL1c). A signed-out account's row has no wait (UXFIX3): it says when it was read.
+ * serves every workspace. A signed-out account's row has no wait: it says its read time.
  */
 export function accountRowWorded(row: PushedAttention, names: AttentionNames, now: Date): Attention {
   const pushed = row.account ?? { agent: '', product: '', door: null, signsIn: false, named: [] };
@@ -148,14 +147,14 @@ export function accountRowWorded(row: PushedAttention, names: AttentionNames, no
       ...base,
       title: heldTitle(row.holding ?? { quests: [], asks: [] }, names.quests),
       circle: row.wholeWorkspace === true,
-      // No account to name where none is signed in: the hold says so itself (OWNSPACE1b-B), once, as the driver does.
+      // No account to name where none is signed in: the hold says so itself, once, as the driver does.
       detail: account.noAccount && account.named.length === 0
         ? i18n.t('work.attention.accounts.noAccount', { product: account.product })
         : whyLine(account.named, now),
     };
   }
   const [one] = account.named;
-  // A key its provider refused says so, and where it is repaired: its agent's page, where a new key is added (ACCTUX1).
+  // A key its provider refused says so, and where it is repaired: its agent's page, where a new key is added.
   const detail = one?.state === 'refused' ? i18n.t('work.attention.signedOut.refused', { product: account.product }) : null;
   return { ...base, title: one?.label ?? row.id, read: row.read ?? null, detail };
 }

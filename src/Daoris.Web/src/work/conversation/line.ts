@@ -1,18 +1,18 @@
 import type { Session } from '../../data/api';
 import { sessionOrigin } from '../identity';
 
-/** How many earlier parts a line draws above the attended one, and how many one press draws more (SWITCHCTX1c-i). */
+/** How many earlier parts a line draws above the attended one, and how many one press draws more. */
 export const EARLIER_AT_MOST = 3;
 
 /**
- * **The parts a session's page draws above the attended one** (SWITCHCTX1c-i; the switch-context design §2.7): the parts it
+ * **The parts a session's page draws above the attended one**: the parts it
  * continues by `from`, the part it came from, that part's, and so on, oldest first. A part of the same entry running alongside
  * continues none of these and is not among them: it stays a press away in the *Parts* strip.
  *
  * @remarks
  * Pressing an earlier part attends it, and its own ancestry is what is drawn, so the parts after it are not. The walk stops at a
  * record the page does not hold, at one outside `within` (the entry's parts, where the reader answered entries), at a record
- * from another machine, whose conversation stays there (D47 §4), and where the links loop.
+ * from another machine, whose conversation stays there, and where the links loop.
  */
 export function ancestryOf(
   sessions: readonly Pick<Session, 'id' | 'from'>[], attended: string, within?: ReadonlySet<string> | null,

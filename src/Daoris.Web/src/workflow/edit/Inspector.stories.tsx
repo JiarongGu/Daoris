@@ -9,7 +9,7 @@ import { stepTitle } from './editWords';
 import { draftOf, type GraphDraft, setLandMethod, setOption } from './graphDraft';
 import { Inspector } from './Inspector';
 
-// The inspector's options, tail and inputs (SETUPUX1r; D221 §2.3): a landing's options in the page's words with the names under Details, the
+// The inspector's options, tail and inputs: a landing's options in the page's words with the names under Details, the
 // tail its method brought, a pattern's preview, the inputs proposed from the step before, and an input two steps could feed, which asks. In
 // English and 中文, both themes, at the main area's wide, half and narrow widths (80, 39 and 25rem).
 

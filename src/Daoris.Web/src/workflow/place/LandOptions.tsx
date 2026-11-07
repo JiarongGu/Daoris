@@ -9,7 +9,7 @@ import { StepOptions } from '../edit/StepOptions';
 import { NextVersion } from './NextVersion';
 
 /**
- * **The land step's options of the version a place follows** (WORKFLOWCLEAN1h-b; the land node design §150): the editor's own options for the
+ * **The land step's options of the version a place follows**: the editor's own options for the
  * `land` step, and a change saved as the version's next through `NextVersion`, the editor's own judgement, review and save. It draws nothing
  * but the options and the save; the place's chart and the editor stay where they are.
  *

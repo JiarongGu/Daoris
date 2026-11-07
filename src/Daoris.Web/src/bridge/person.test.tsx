@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 
-// The person's door over the bridge (PERSONDOOR1f, RPC1c; D156 points 2 and 4): the key the shell holds, kept in memory; what a
+// The person's door over the bridge: the key the shell holds, kept in memory; what a
 // terminal asked the window to confirm, read as it mounts and kept current by the shell's telling; and the person's answer.
 
 const { invoke, eventHandlers } = vi.hoisted(() => ({
@@ -82,7 +82,7 @@ describe("the person's door over the bridge", () => {
     ]);
   });
 
-  // CONFIRMWAIT1a-i (the confirm-wait design §5.2, §10's bound row): a Confirm waits as long as the press's grounds may take to read,
+  // A Confirm waits as long as the press's grounds may take to read,
   // with the bridge's slack, not the bridge's own 30 seconds; a moved ground is answered with its reason and its values.
   it("sends a terminal's Confirm with its press's bound and the slack, and reads a changed answer's reason", async () => {
     invoke.mockResolvedValueOnce({ answered: false, why: 'changed', message: 'Not done.', reason: 'plan', values: { then: 'x', bad: 3 } })
@@ -115,7 +115,7 @@ describe("the person's door over the bridge", () => {
     expect(read.result.current[0]).not.toHaveProperty('expires');
   });
 
-  // CONFIRMSEEN1: the window's word that a card is in front of the person, by the confirmation's id; the service's counts its own.
+  // The window's word that a card is in front of the person, by the confirmation's id; the service's counts its own.
   it("says a terminal's press is shown by its confirmation's id, and reads which are shown", async () => {
     invoke.mockResolvedValueOnce({ shown: true }).mockResolvedValueOnce({ shown: false, why: 'gone', message: 'This no longer waits.' });
     const { result } = renderHook(() => useConfirmationShown(), { wrapper: wrapper() });
@@ -157,7 +157,7 @@ describe("the person's door over the bridge", () => {
     ]);
   });
 
-  // NOTIFY2j: what waits at the service's door, told by the shell to every window, so no window polls.
+  // What waits at the service's door, told by the shell to every window, so no window polls.
   const HELD = {
     id: 'h1', state: 'waiting', method: 'POST', path: '/api/asks', route: '/api/asks', act: 'an ask', values: [],
     fields: [{ name: '/sentence', type: 'string', value: 'Rename it.' }], asked: '2026-10-22T12:00:00Z', expires: '2026-10-22T12:02:00Z',

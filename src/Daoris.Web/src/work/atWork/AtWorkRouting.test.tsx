@@ -9,7 +9,7 @@ import {
 } from './atWork.fixtures';
 import type { AtWorkA, AtWorkHeld } from './types';
 
-// COWORKVIEW1b-i: each part's wait as the strip places it, how it joined, and the fold (the cowork view design §R11.3 row 3).
+// Each part's wait as the strip places it, how it joined, and the fold.
 
 afterEach(async () => {
   cleanup();
@@ -17,7 +17,7 @@ afterEach(async () => {
 });
 
 const rowOf = (key: number) => screen.getAllByRole('listitem')[key]!;
-// Another part attended is another line: its requests are its own read's (COMMS1i), none of the first's.
+// Another part attended is another line: its requests are its own read's, none of the first's.
 const attendedAs = (held: AtWorkHeld, attended: string): AtWorkHeld => ({
   ...(held as { answer: AtWorkA }), answer: { ...(held as { answer: AtWorkA }).answer, attended, exchanges: undefined },
 });
@@ -37,7 +37,7 @@ describe('each part’s wait', () => {
     expect(rowOf(0).textContent).toContain('waits on #q7, asked of driver');
     expect(screen.queryByText(/^Waiting on/)).toBeNull();
 
-    // COMMS1i: the line is read from the line's requests, the helper named and where it stands.
+    // The line is read from the line's requests, the helper named and where it stands.
     rerender(<AtWorkView held={LEAD_WAITING_ON_HELPER} />);
     expect(screen.getByText('Waiting on codex-acp, as helper · asked')).toBeTruthy();
     rerender(<AtWorkView held={attendedAs(LEAD_WAITING_ON_HELPER, 's2')} />);

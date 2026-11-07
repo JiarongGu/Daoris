@@ -7,7 +7,7 @@ const graph = {
   wires: [{ id: 'a', kind: 'after', from: 'work', to: 'line' }],
 };
 
-/** FLOWCHART2d (the flowchart design §8.7): the draft's fingerprint is the exact graph's digest, which the editor's judgement keys on. */
+/** The draft's fingerprint is the exact graph's digest, which the editor's judgement keys on. */
 describe('a draft fingerprint', () => {
   it('is the same for the same graph whatever order its keys were written in', () => {
     const reordered = { wires: graph.wires, nodes: graph.nodes.map((node) => ({ reach: node.reach, version: node.version, kind: node.kind, id: node.id })), end: 'line', entries: ['work'], schemaVersion: 2 };

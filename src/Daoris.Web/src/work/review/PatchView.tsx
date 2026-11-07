@@ -8,7 +8,7 @@ import './code.css';
 export type DiffLayout = 'unified' | 'split';
 
 /**
- * A file's patch drawn (REVIEW2): git's own lines, numbered on the side each belongs to, highlighted
+ * A file's patch drawn: git's own lines, numbered on the side each belongs to, highlighted
  * in the file's language, and unified or side by side.
  *
  * @remarks
@@ -20,7 +20,7 @@ export type DiffLayout = 'unified' | 'split';
  * known to be one — the highlighter cannot see what the patch does not carry. A language it does not
  * know is shown plain, never guessed.
  *
- * **Colour is never the only mark** (D41 §6): a changed line carries its sign, in a column of its own.
+ * **Colour is never the only mark**: a changed line carries its sign, in a column of its own.
  */
 export function PatchView({ patch, path, layout }: { patch: string; path: string; layout: DiffLayout }) {
   const parsed = useMemo(() => parsePatch(patch), [patch]);

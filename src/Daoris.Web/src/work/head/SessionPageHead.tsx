@@ -13,35 +13,35 @@ import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { PageHead } from '../frame/ViewMain';
 
 /**
- * **A session's page header** (SESSUX1d, D126 §3.2): Sessions' main area gains the header every view's chosen item has
- * (D118 §3b), pinned at the top while the conversation scrolls under it, since a session's page runs to thousands of
+ * **A session's page header**: Sessions' main area gains the header every view's chosen item has,
+ * pinned at the top while the conversation scrolls under it, since a session's page runs to thousands of
  * events and its acts must stay in reach there.
  *
  * @remarks
- * **A molecule: every state is reached by its props** (components plan §2). Which acts it offers is the one rule's
+ * **A molecule: every state is reached by its props**. Which acts it offers is the one rule's
  * (`offeredActs`), handed in; a press is reported, and the one owner (`sessionActs.ts`) carries it out.
  *
- * - **On the left** (UX7c, D152 §7, the UX7 design §5.2): its shown word on its pill first, so the word stays in one place
+ * - **On the left**: its shown word on its pill first, so the word stays in one place
  *   whatever the title's length; its title on one line, whole in its tip; and under them the facts its state makes matter,
- *   handed in (`sessionFacts`), faint, on one line whole in its tip (RAILLINE1), ending in the *Full access* chip where its
- *   record says it started so (SESSACCESS1).
+ *   handed in (`sessionFacts`), faint, on one line whole in its tip, ending in the *Full access* chip where its
+ *   record says it started so.
  *   Its id is not a line here: it is the ⋯'s *Copy session ID* and the record's *Details*.
  * - **On the right**: the primary act where the state has one (*Try again*, *Review*), then *Stop…* while it is live,
- *   then ⋯ with the rest in §3.1's order. *Answer…* is not here: the card under the header keeps the answer.
- * - **What asks under it** (the stop's ask, §3.3; the delete's, §5.4; the hand-over's, MIXAGENT1b-i) is pinned with it, since the ask is about the acts
+ *   then ⋯ with the rest in the one rule's order. *Answer…* is not here: the card under the header keeps the answer.
+ * - **What asks under it** (the stop's ask, the delete's, the hand-over's) is pinned with it, since the ask is about the acts
  *   beside it.
- * - **It is `PageHead`'s** (HEAD2c, D162; the entry-and-heads design §2): the title takes one line, cut with an ellipsis and
- *   whole in its tip and in the record's *Details*, and the acts hold still beside it at every width (HEADFIT1b, D185: a row
- *   of their own at the narrow width cost 38 px of the record head's 200). At 640 px of the main area or less, by its width
+ * - **It is `PageHead`'s**: the title takes one line, cut with an ellipsis and
+ *   whole in its tip and in the record's *Details*, and the acts hold still beside it at every width (a row
+ *   of their own at the narrow width would cost 38 px of the record head's 200). At 640 px of the main area or less, by its width
  *   and never the window's, *Stop…* is its square, its words its accessible name and its tip: still one press, never in the ⋯.
  *
- * **It says how tall it is** to the main area it is pinned in (`--session-head`), so the long run's toolbar (SESS1 S9)
+ * **It says how tall it is** to the main area it is pinned in (`--session-head`), so the long run's toolbar
  * pins beneath it rather than under it.
  */
 export function SessionPageHead({ session, title, shown, facts = [], factsTip, acts, primary = null, busy = false, onAct, asking, next, chip = null }: {
   /** The count a rule holds the line at, or one short of it (`supervisionChip`), said last on the facts line before the choice's chip. */
   chip?: SupervisionChip | null;
-  /** *Next* on the facts line (REVIEWFLOW1b): the press the first wait leads to, and the door to its step (*To the wait*). */
+  /** *Next* on the facts line: the press the first wait leads to, and the door to its step (*To the wait*). */
   next?: { press: 'answer' | 'accept' | 'rebase' | 'opinion' | 'review'; onPress: () => void } | null;
   /** The session it heads, as the frame holds it; its acts and its facts are worked out from it by the frame. */
   session: Session;
@@ -54,9 +54,9 @@ export function SessionPageHead({ session, title, shown, facts = [], factsTip, a
   facts?: readonly string[];
   /** The facts line's tip (`sessionFactsTip`): the running call's whole title, where the line says it short. */
   factsTip?: string | null;
-  /** Its shown word (D126 §2.2): the record's state, *idle*, or the reader's *parked* or *awaiting reply*. */
+  /** Its shown word: the record's state, *idle*, or the reader's *parked* or *awaiting reply*. */
   shown: ShownState;
-  /** The acts the one rule offers it in this header, in §3.1's order. */
+  /** The acts the one rule offers it in this header, in the rule's order. */
   acts: readonly SessionActId[];
   /** Its loud act, where the state has one (`primaryAct`). */
   primary?: SessionActId | null;
@@ -73,7 +73,7 @@ export function SessionPageHead({ session, title, shown, facts = [], factsTip, a
   const width = useWidth(own);
   const narrow = width !== undefined && width <= 640;
   const offered = onAct ? acts : [];
-  // The one split the page's right-click offers whole (CTX1), so the header and the menu never disagree.
+  // The one split the page's right-click offers whole, so the header and the menu never disagree.
   const { lead, stop, rest } = headerActs(offered, primary);
 
   // Its height, told to the scroll box it is pinned in, so what pins beneath it (the long run's toolbar) sits below it.
@@ -94,7 +94,7 @@ export function SessionPageHead({ session, title, shown, facts = [], factsTip, a
   return (
     // Pinned across the main area's gutters (`ViewMain`'s session gutters, 16 by 12 px), on the page's own surface so
     // the conversation scrolls under it rather than through it.
-    // The sticky box holds PageHead (HEAD2a's grid: the acts hold still by the main area's width) and what asks under it;
+    // The sticky box holds PageHead (its grid: the acts hold still by the main area's width) and what asks under it;
     // PageHead's own bottom margin is the box's padding instead.
     <div
       ref={own}
@@ -107,12 +107,12 @@ export function SessionPageHead({ session, title, shown, facts = [], factsTip, a
         actsBeside
         lead={<Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill>}
         facts={facts}
-        // One line (RAILLINE1): a running call is said in a few words there (`callHead`), and whole in the line's tip.
+        // One line: a running call is said in a few words there (`callHead`), and whole in the line's tip.
         factsOneLine
         factsTip={factsTip ?? undefined}
-        // Started under full access, by its record's pauses (SESSACCESS1, D184 point 1): the warning chip, last on the line, so the
+        // Started under full access, by its record's pauses: the warning chip, last on the line, so the
         // line is cut before it rather than cutting it. Any other start wears nothing.
-        // The choice its actor ran where it was not the first (D205 §4.6 item 2), before the access chip.
+        // The choice its actor ran where it is not the first, before the access chip.
         fact={next || chip || choiceChip(t, session) !== null || startedFull(session)
           ? (
             <span className="inline-flex items-center gap-1.5">
@@ -177,10 +177,10 @@ export function SessionPageHead({ session, title, shown, facts = [], factsTip, a
 }
 
 /**
- * **A stop's ask** (D126 §3.3): it ends work in flight, so it asks once, under the header (platform language §4: a
+ * **A stop's ask**: it ends work in flight, so it asks once, under the header (a
  * destructive edit asks once). It says what follows by what the session is, then the move, *Stop session*, and *Never
- * mind*. The sentence is the catalogue's, and its backticks are code (`Inline`). It is the one inline confirmation
- * (UXFIX2): open until the stop lands, a refusal said inside it.
+ * mind*. The sentence is the catalogue's, and its backticks are code (`Inline`). It is the one inline
+ * confirmation: open until the stop lands, a refusal said inside it.
  */
 export function StopAsk({ sentence, busy = false, onStop, onClose }: {
   sentence: string;
@@ -206,10 +206,9 @@ export function StopAsk({ sentence, busy = false, onStop, onClose }: {
 }
 
 /**
- * **A delete's ask** (SESSUX1f, D126 §5.4): nothing brings a deleted conversation back, so it asks once, under the header
+ * **A delete's ask**: nothing brings a deleted conversation back, so it asks once, under the header
  * as the stop's ask does: what goes, then *Delete session* and *Never mind*. The page offers *Delete…* only where the
- * driver said it would be taken, so the sentence is one for every session that reaches it. The one inline confirmation
- * (UXFIX2).
+ * driver said it would be taken, so the sentence is one for every session that reaches it. The one inline confirmation.
  */
 export function DeleteAsk({ busy = false, onDelete, onClose }: {
   /** A delete on its way: the presses wait for it. */
