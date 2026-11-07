@@ -104,8 +104,6 @@ public sealed class HookProcess : IHookChannel
         info.Environment["DAORIS_PLUGIN_DATA"] = plugin.Data;
         info.Environment[DaorisHome.Variable] = home;
         Tools.Hand(info, tools, home);
-        // GITAUTH1b (the git-auth design §6.7): the landing's grant goes to the one plugin process started for its push, and no other.
-        if (Granting.Value is { } grant) info.Environment[GitRouting.GrantVariable] = grant;
         // D241 point 5: the identity's API token goes to the one process started for a pull-request step; one the desktop inherited never does.
         info.Environment.Remove(PluginHostToken.Variable);
         if (HostToken.Value is { } hostToken) info.Environment[PluginHostToken.Variable] = hostToken;
@@ -115,12 +113,6 @@ public sealed class HookProcess : IHookChannel
             info.FileName, info.ArgumentList, info.Environment.TryGetValue(Tools.PathVariable, out var path) ? path : null);
         return info;
     }
-
-    /// <summary>
-    /// The landing's grant for the plugin process a landing starts (GITAUTH1b; <see cref="GitGrants"/>), set by
-    /// <see cref="LandingPlugins"/> around that one start, so only its process carries <see cref="GitRouting.GrantVariable"/>.
-    /// </summary>
-    internal static readonly AsyncLocal<string?> Granting = new();
 
     /// <summary>The API token for the plugin process one start makes (<see cref="PluginHostToken"/>), set by <see cref="HookSet"/> around that start alone.</summary>
     internal static readonly AsyncLocal<string?> HostToken = new();
