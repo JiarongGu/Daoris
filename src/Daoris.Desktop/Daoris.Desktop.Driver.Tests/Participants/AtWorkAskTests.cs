@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1d: the composition of an ask's view (the design §3.5, §R11.5): a branch of its own with no attended part, its lines of work
+/// The composition of an ask's view: a branch of its own with no attended part, its lines of work
 /// folded to counts and its quests; an ask the asks slice holds with nothing at work is valid and empty, one it does not hold is neither.
 /// </summary>
 public sealed class AtWorkAskTests

@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The scan behind both test projects' <c>ProcessStartsCensusTests</c> (CONSOLEWINDOWS1): every <c>new ProcessStartInfo</c> that says
+/// The scan behind both test projects' <c>ProcessStartsCensusTests</c>: every <c>new ProcessStartInfo</c> that says
 /// <c>UseShellExecute = false</c> runs a console program, and a console program started from a parent with no console of its own
 /// (the merge queue's detached runner, a gate under it) is given a visible window unless the start says <c>CreateNoWindow = true</c>.
 /// A start with <c>UseShellExecute = true</c> opens a window on purpose and is named in <see cref="Shell"/>; one that keeps a

@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The string a field or a node holds, which <see cref="Moments"/> reads a moment through and <see cref="Json.Text(JsonElement, string)"/> answers
-/// (FOUNDATION1 mod-ii): absent for a value of the wrong kind and for an element that is no object, empty kept, and the moment read as before.
+/// absent for a value of the wrong kind and for an element that is no object, empty kept, and the moment read the same way.
 /// </summary>
 public sealed class JsonTextTests
 {

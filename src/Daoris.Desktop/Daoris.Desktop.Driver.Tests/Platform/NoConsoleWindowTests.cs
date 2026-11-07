@@ -16,8 +16,7 @@ public sealed class NoConsoleWindowTests
         ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];
 
     /// <summary>
-    /// The spawns that inherit their console, by file, each with its reason (D199's note on the strict start made the one a list of
-    /// two): a console program's child that relays the stdio it was handed. With nothing redirected and no window, Windows gives a child
+    /// The spawns that inherit their console, by file, each with its reason: a console program's child that relays the stdio it is handed. With nothing redirected and no window, Windows gives a child
     /// a console of its own, which cuts that stdio, so each spawn names its reason beside an explicit <c>false</c>.
     /// </summary>
     private static readonly Dictionary<string, string> Inheriting = new(StringComparer.Ordinal)
@@ -32,7 +31,7 @@ public sealed class NoConsoleWindowTests
             + "the program was run in",
     };
 
-    /// <summary>The spawns that open a console the person is meant to see, marked <c>// console-window:</c> where taken (ADOSIGNIN1).</summary>
+    /// <summary>The spawns that open a console the person is meant to see, marked <c>// console-window:</c> where taken.</summary>
     private static readonly HashSet<string> Windowed = new(StringComparer.Ordinal) { "Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs" };
 
     [Fact]
@@ -72,7 +71,7 @@ public sealed class NoConsoleWindowTests
                         continue;
                     }
 
-                    // A console the person is meant to see (ADOSIGNIN1): marked where it is taken, and named with its reason in the other
+                    // A console the person is meant to see: marked where it is taken, and named with its reason in the other
                     // census's list of windows (`NoConsoleStarts.Windows`).
                     var before = source[Math.Max(0, spawn.Index - 200)..spawn.Index];
                     if (initializer.Contains("CreateNoWindow = false", StringComparison.Ordinal)
@@ -87,7 +86,7 @@ public sealed class NoConsoleWindowTests
                         missing.Add($"{Path.GetRelativePath(root, file)} at offset {spawn.Index}");
                     }
 
-                    // REVIEW2 T7: the flag set after the initializer (to the next spawn) counts too; a start that says true and then false opens the console.
+                    // The flag set after the initializer (to the next spawn) counts too; a start that says true and then false opens the console.
                     var rest = source[(spawn.Index + initializer.Length)..];
                     var next = rest.IndexOf("new ProcessStartInfo", 1, StringComparison.Ordinal);
                     if (Regex.IsMatch(next < 0 ? rest : rest[..next], @"\bCreateNoWindow\s*=\s*false\b"))
@@ -109,9 +108,8 @@ public sealed class NoConsoleWindowTests
 
     /// <summary>
     /// A redirected stream takes the console's code page unless the spawn names UTF-8, and on a
-    /// Chinese-locale machine that turned an em dash into `鈥?`: in a session's transcript at the first
-    /// deployment, and again in a plugin's answer (PLUG8), after the first fix was made at one spawn site
-    /// only. Every stream a spawn redirects is read, or written, as UTF-8.
+    /// Chinese-locale machine that turns an em dash into `鈥?`, in a session's transcript and in a
+    /// plugin's answer. Every stream a spawn redirects is read, or written, as UTF-8.
     /// </summary>
     [Fact]
     public void Every_stream_the_desktop_redirects_is_utf8()

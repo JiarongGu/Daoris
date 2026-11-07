@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTONOMY1b (D184 points 2, 3 and 5): what a driven start gets on its harness under its repository's permission prompts. Auto keeps
-/// each harness as it ran (D81); asking runs it in its asking mode and unrestricted in its mode that asks nothing, a flag on the native
+/// What a driven start gets on its harness under its repository's permission prompts. Auto keeps
+/// each harness as it ran; asking runs it in its asking mode and unrestricted in its mode that asks nothing, a flag on the native
 /// door and a required mode on the protocol door; a harness with no such mode is refused, naming it. The person's denies and the tree
 /// guard go in every mode, and a session going on under another setup says the change. No process, so the fast half.
 /// </summary>
@@ -36,8 +36,8 @@ public sealed class DrivenAccessTests : IDisposable
         ServiceUrl: "http://127.0.0.1:9");
 
     /// <summary>
-    /// 🔴 Per harness, the mode each value starts it in: auto keeps the adapter's own (D81), asking its asking mode, unrestricted its
-    /// mode that asks nothing (D183's full postures); a flag on the native door, a mode the protocol door must set or fail on.
+    /// 🔴 Per harness, the mode each value starts it in: auto keeps the adapter's own, asking its asking mode, unrestricted its
+    /// mode that asks nothing; a flag on the native door, a mode the protocol door must set or fail on.
     /// </summary>
     [Theory]
     [InlineData("claude-code", AccessRules.Auto, null, null)]
@@ -48,7 +48,7 @@ public sealed class DrivenAccessTests : IDisposable
     [InlineData("claude-code-acp", AccessRules.Asking, "!?default", null)]
     [InlineData("claude-code-acp", AccessRules.Unrestricted, "!bypassPermissions", null)]
     [InlineData("codex-acp", AccessRules.Auto, null, null)]
-    // CODEXPERM1: Codex's asking mode is the one whose boundary is the session's own tree, edits inside it unasked, anything past it asked.
+    // Codex's asking mode is the one whose boundary is the session's own tree, edits inside it unasked, anything past it asked.
     [InlineData("codex-acp", AccessRules.Asking, "!?workspace-write", null)]
     [InlineData("codex-acp", AccessRules.Unrestricted, "!agent-full-access", null)]
     public void Each_harness_starts_in_the_mode_its_permission_prompts_name(string name, string permissions, string? posture, string? permissionMode)
@@ -75,8 +75,8 @@ public sealed class DrivenAccessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A harness with no mode for the value is refused plainly, naming it, the value and where it was set, and the person's two ways
-    /// on: never run in its own mode under that label (D183 point 1).
+    /// 🔴 A harness with no mode for the value is refused plainly, naming it, the value and where it is set, and the person's two ways
+    /// on: never run in its own mode under that label.
     /// </summary>
     [Theory]
     [InlineData("stub", AccessRules.Unrestricted, "asks nothing")]
@@ -126,7 +126,7 @@ public sealed class DrivenAccessTests : IDisposable
     }
 
     /// <summary>
-    /// AUTONOMY1b3a (D184 point 3): under asking, the protocol door holds each request for the person to allow once or refuse, and one
+    /// Under asking, the protocol door holds each request for the person to allow once or refuse, and one
     /// nobody answers is refused at its bound; the native door has no wire to hold one on, and says so plainly.
     /// </summary>
     [Fact]
@@ -149,7 +149,7 @@ public sealed class DrivenAccessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The person's denies hold in every mode (D184 point 5): the spawn's rules, composed beside the mode and never from it, carry
+    /// 🔴 The person's denies hold in every mode: the spawn's rules, composed beside the mode and never from it, carry
     /// their deny and the tree guard on both Claude doors under each value, the native door by its flag, the protocol door on its meta.
     /// </summary>
     [Theory]
@@ -181,8 +181,8 @@ public sealed class DrivenAccessTests : IDisposable
     }
 
     /// <summary>
-    /// The start note names the mode the start got, after its setup's line (D183's HELPMODE1a1 note): a start nobody changed notes
-    /// nothing, as before, and any other says its setup and then its mode on its harness.
+    /// The start note names the mode the start got, after its setup's line: a start nobody changed notes
+    /// nothing, and any other says its setup and then its mode on its harness.
     /// </summary>
     [Fact]
     public void The_start_note_names_the_mode_the_start_got()
@@ -201,8 +201,8 @@ public sealed class DrivenAccessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A session going on under another setup runs under the one standing now and says the change first (D183 point 3, as HELPMODE1a2
-    /// says Ask Daoris's): a carry-on's new record, and a resume of the same record. A record from before the setting ran today's, auto,
+    /// 🔴 A session going on under another setup runs under the one standing and says the change first:
+    /// a carry-on's new record, and a resume of the same record. A record from before the setting ran today's, auto,
     /// and a value this build does not know reads as auto too.
     /// </summary>
     [Fact]
@@ -233,7 +233,7 @@ public sealed class DrivenAccessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 AUTONOMY1b2 (D184 point 1): a resume under a changed setup tells the service's door the setup it now runs under, each pause with
+    /// 🔴 A resume under a changed setup tells the service's door the setup it runs under, each pause with
     /// its value, so the record names it; one under the same setup, or from a record before the setting that ran auto, calls nothing.
     /// </summary>
     [Fact]
@@ -288,8 +288,8 @@ public sealed class DrivenAccessTests : IDisposable
     }
 
     /// <summary>
-    /// ACCESSSWAP1b (D183's note): a running session asks, at its turn's end, whether its repository's permission prompts as the file
-    /// stands now name another value than it started under: the access it would go on under, its workspace kept, or null where they
+    /// A running session asks, at its turn's end, whether its repository's permission prompts as the file
+    /// stands name another value than it started under: the access it would go on under, its workspace kept, or null where they
     /// name the same. Its workspace's and this machine's levels count as its start's did; another repository's change, or another
     /// pause's, is none.
     /// </summary>
@@ -303,7 +303,7 @@ public sealed class DrivenAccessTests : IDisposable
 
         Assert.Null(started.ChangedIn(config, adapter));
         Assert.Null(started.ChangedIn(With(new AccessEdit { Repository = "editor", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] }), adapter));
-        // Another pause: no access setup sets `landing` since WORKFLOWCLEAN1 1c, so routing stands for a pause that is not the prompts'.
+        // Another pause: no access setup sets `landing`, so routing stands for a pause that is not the prompts'.
         Assert.Null(started.ChangedIn(With(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Routing, AccessRules.Intake)] }), adapter));
         Assert.Null(started.ChangedIn(With(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Auto)] }), adapter));
 
@@ -316,10 +316,10 @@ public sealed class DrivenAccessTests : IDisposable
     }
 
     /// <summary>
-    /// ACCESSSWAP1b (D183's note): a change of the driver's file tells the console of each driven session running here whose permission
-    /// prompts it moves, by what it started under and what the file names now: its next turn runs under them. Moved back to what it
+    /// A change of the driver's file tells the console of each driven session running here whose permission
+    /// prompts it moves, by what it started under and what the file names: its next turn runs under them. Moved back to what it
     /// started under, it is told it goes on as it runs; a change that does not move them, another repository's or another pause's, or one
-    /// it was already told, tells it nothing. A session's run that ended tells nothing.
+    /// it has already been told, tells it nothing. A session's run that ended tells nothing.
     /// </summary>
     [Fact]
     public void A_change_of_the_file_tells_each_running_session_it_moves_and_its_change_back()
@@ -359,7 +359,7 @@ public sealed class DrivenAccessTests : IDisposable
         Assert.Empty(Told(config, widened));
     }
 
-    /// <summary>The record's setup read back as the service answers it on loopback (AUTONOMY1a), and none from a record before it.</summary>
+    /// <summary>The record's setup read back as the service answers it on loopback, and none from a record that predates it.</summary>
     [Fact]
     public void A_record_s_setup_is_read_back_with_it()
     {

@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// QUESTDELETE1: deleting the quest a named ask published never publishes the ask again, and never to a repository the ask did not name.
-/// On the installed build the driver's look opened an intake for such an ask a minute after the delete, and the intake published it to the
+/// Deleting the quest a named ask published never publishes the ask again, and never to a repository the ask did not name.
+/// A look that opened an intake for such an ask after the delete would publish it to the
 /// three repositories of its routing proposal, two of which the person never named. Here the service is its own host in a process of its
 /// own (<see cref="RealServiceHost"/>) and the driver's look runs over it, several times, with a stand-in intake that publishes to every
 /// repository the ask's proposal lists and leaves a mark each time it runs — so a re-route is a mark and a quest, never a guess.

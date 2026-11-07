@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 z-iii (D212, the design §13.5 and §13.6): each session's conversation id is the desktop store's <c>bindings</c> row alone,
+/// Each session's conversation id is the desktop store's <c>bindings</c> row alone,
 /// kept when the wire names it and read back by every resume, a deleted record taking its binding. The files an older build kept are the
 /// home migration's (<see cref="BindingFilesStep"/>), not read or written here.
 /// </summary>
@@ -129,7 +129,7 @@ public sealed class BindingsTests : IDisposable
 
         using var store = DesktopStore.Open(Db, new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
 
-        // The run and its kind are the process's own (FOUNDATION1f-i), the one every store of the process writes under, the move store's too.
+        // The run and its kind are the process's own, the one every store of the process writes under, the move store's too.
         Assert.Equal([(StoreProcess.Run, StoreProcess.Kind)], store.Runs().Select(run => (run.Run, run.Kind)));
     }
 }

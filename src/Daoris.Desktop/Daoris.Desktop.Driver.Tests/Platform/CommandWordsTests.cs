@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one command tree's words (D228): each group declared by the code that runs it and collected at start; <c>CommandTreeTests</c>
+/// The one command tree's words: each group declared by the code that runs it and collected at start; <c>CommandTreeTests</c>
 /// holds that every word declared routes.
 /// </summary>
 public sealed class CommandWordsTests

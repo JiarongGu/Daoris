@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>cap</c> in <c>driver.json</c> set from the window (CAPSET1, D130's CAPCOUNT1 note): how many sessions Daoris starts at
+/// <c>cap</c> in <c>driver.json</c> set from the window: how many sessions Daoris starts at
 /// once on this machine. A whole number of at least 1; the file's read already clamps, the setter refuses.
 /// </summary>
 public sealed class CapSetTests

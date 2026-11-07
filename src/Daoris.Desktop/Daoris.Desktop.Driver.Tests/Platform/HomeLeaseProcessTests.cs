@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One live driver loop per home (DRV8a, D104), now the home's lease (HOMELEASE1). A stray headless loop took a quest two
+/// One live driver loop per home, held by the home's lease. A stray headless loop took a quest two
 /// seconds before the desktop's own: the quest lock held, but a second loop on one home is almost never meant. The rows that
 /// start a process: an exited one's id, and a junction to the home made by <c>cmd</c>. The rest are <see cref="HomeLeaseTests"/>'.
 /// </summary>
@@ -166,7 +166,7 @@ public sealed class HomeLeaseProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HOMELEASE1: a junction to the home is another path to the same folder, and meets the same lease and the same id. Made
+    /// 🔴 A junction to the home is another path to the same folder, and meets the same lease and the same id. Made
     /// by <c>cmd /c mklink /J</c>, which needs no elevation.
     /// </summary>
     [Fact]

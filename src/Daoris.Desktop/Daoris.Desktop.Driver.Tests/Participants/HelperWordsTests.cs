@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT2a-ii (D163 point 4): a helper's answer waits on the asker's record as a word marked `helper`, which the driver reads
+/// A helper's answer waits on the asker's record as a word marked `helper`, which the driver reads
 /// as another agent's claim: never the person's words, never a second opinion's findings, and said so in the resumed turn's
 /// first line by a reason of its own.
 /// </summary>
@@ -106,7 +106,7 @@ public sealed class HelperWordsTests
     }
 
     /// <summary>
-    /// COAGENT1a (the co-agent design §2.5 point 5): the answer names the capture its helper read, by its name, commit, moment and
+    /// The answer names the capture its helper read, by its name, commit, moment and
     /// what it held, and says the work may have moved since; a capture with nothing uncommitted says so.
     /// </summary>
     [Fact]

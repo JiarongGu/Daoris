@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CUTOVER1f (RPC1e's door, the terminal RPC design §7.2 and §7.3): <c>daoris workflow skip|stop</c> through the running Daoris,
+/// <c>daoris workflow skip|stop</c> through the running Daoris,
 /// the person's press, sent to the instance, which shows it in its window and runs it on their Confirm; the terminal prints the lines the route
 /// answers (<c>said</c>, the alone path's own words) and keeps nothing here. Seen failing first.
 /// </summary>

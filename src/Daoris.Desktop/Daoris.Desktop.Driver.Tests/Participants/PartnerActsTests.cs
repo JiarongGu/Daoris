@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b2 (D199; the co-agent design §2.3 step 10, §6.1): which state takes which act, what the person's press judges and writes, the
-/// read of whether a handed piece was taken in, and an uncertain piece's hand-over in the look: its job ended, the keeper's moment written
+/// Which state takes which act, what the person's press judges and writes, the
+/// read of whether a handed piece has been taken in, and an uncertain piece's hand-over in the look: its job ended, the keeper's moment written
 /// with the end <c>stopped</c>, and the work kept and answered as any other end's is. The keeper is a stand-in here (the git half holds
 /// the real one), so nothing starts a process.
 /// </summary>

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1e: <c>daoris ask pause|--resume|--abandon</c> and <c>quest pause|resume|abandon</c> through the running Daoris (the
-/// terminal RPC design §7.2 and §7.3). A pause, a resume and an abandon's <c>--yes</c> are the person's presses, sent to the instance,
+/// <c>daoris ask pause|--resume|--abandon</c> and <c>quest pause|resume|abandon</c> through the running Daoris.
+/// A pause, a resume and an abandon's <c>--yes</c> are the person's presses, sent to the instance,
 /// which shows each in its window; the abandon's list is a read. The terminal prints the lines the route answers (<c>said</c>, the
 /// alone path's own words), and this process asks the service nothing.
 /// </summary>

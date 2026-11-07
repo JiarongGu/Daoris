@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The helper's instruction rendered whole (MIXAGENT2a-ii, D163 point 2; the mixed agents design §3): a question the asker wrote,
+/// The helper's instruction rendered whole: a question the asker wrote,
 /// as it wrote it, and what a helper may do and never. A sentence added, moved or reworded shows here as the whole
 /// instruction's difference, byte for byte, in <c>golden/helper-prompt/</c>; this class runs no process, so it is in the fast
-/// half (MOD8).
+/// half.
 /// </summary>
 public sealed class HelperPromptGoldenTests
 {
@@ -28,13 +28,13 @@ public sealed class HelperPromptGoldenTests
         Assert.Equal(File.ReadAllText(GoldenPath("asked.md")), HelperInstruction.Compose(Asked));
     }
 
-    /// <summary>The asker's work in progress laid over its copy (COAGENT1a, D199 point 5), as a helper is told of it.</summary>
+    /// <summary>The asker's work in progress laid over its copy, as a helper is told of it.</summary>
     internal static readonly HelperCaptured Captured = new(
         "0123456789ab", "2222222222222222222222222222222222222222", DateTimeOffset.Parse("2026-10-22T09:30:00Z"),
         [new CapturedFile("src/report.ts", new string('a', 64), 120), new CapturedFile("src/window.ts", new string('b', 64), 40)], ["old.md"], []);
 
     /// <summary>
-    /// COAGENT1a: a helper handed a capture is told its copy holds the asker's uncommitted work, by the capture's name, its moment and
+    /// A helper handed a capture is told its copy holds the asker's uncommitted work, by the capture's name, its moment and
     /// what it holds, that git's status and diff show it, that ignored files were not carried and that the work may have moved; one
     /// with nothing uncommitted is told so. Neither is told its copy lacks the uncommitted work.
     /// </summary>

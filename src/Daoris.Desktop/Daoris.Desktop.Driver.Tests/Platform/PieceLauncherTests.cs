@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199's note on the strict start), generalized by TERMTRUST1a (D201 point 4): the launcher takes the driver's words alone,
+/// The launcher takes the driver's words alone,
 /// joins only the agents' job and a piece's, in that order, and starts nothing where it could not join. Nothing is started here: the join
 /// and the start are handed in; the built program in a real job is <see cref="PieceLauncherProcessTests"/>' and <c>AgentStartsProcessTests</c>'.
 /// </summary>
@@ -24,7 +24,7 @@ public sealed class PieceLauncherTests
         Assert.Equal(["--flag", "a b", "--"], call.Value.Arguments);
     }
 
-    /// <summary>TERMTRUST1a (D201 point 4): the agents' job first, then a piece's, which nests beneath it; each read back in order.</summary>
+    /// <summary>The agents' job first, then a piece's, which nests beneath it; each read back in order.</summary>
     [Fact]
     public void The_agents_job_and_a_pieces_read_back_in_order()
     {
@@ -40,7 +40,7 @@ public sealed class PieceLauncherTests
     }
 
     /// <summary>
-    /// CONTAINCPU1: the launcher's own job is named by its process id, under a prefix of its own, so it is never read as the agents' job or
+    /// The launcher's own job is named by its process id, under a prefix of its own, so it is never read as the agents' job or
     /// a piece's, and a launcher could never be told to join one.
     /// </summary>
     [Fact]
@@ -71,7 +71,7 @@ public sealed class PieceLauncherTests
     [InlineData("--job|Local\\daoris-heavy-1|--|harness.exe")]
     [InlineData("--job|Local\\daoris-piece-|--|harness.exe")]
     [InlineData("--job|Local\\daoris-piece-p1|--| ")]
-    // TERMTRUST1a: the agents' prefix takes a process id alone, never its `-open` event's name or any other; it comes first, once.
+    // The agents' prefix takes a process id alone, never its `-open` event's name or any other; it comes first, once.
     [InlineData("--job|Local\\daoris-agents-|--|harness.exe")]
     [InlineData("--job|Local\\daoris-agents-12-open|--|harness.exe")]
     [InlineData("--job|Local\\daoris-agents-x1|--|harness.exe")]
@@ -119,7 +119,7 @@ public sealed class PieceLauncherTests
         Assert.Equal((0, 0), (joins, starts));
     }
 
-    /// <summary>TERMTRUST1a: each job joined in the order it was given, then the harness; one that will not join starts nothing.</summary>
+    /// <summary>Each job joined in the order given, then the harness; one that will not join starts nothing.</summary>
     [Fact]
     public void Each_job_is_joined_in_order_and_one_refused_starts_nothing()
     {
@@ -148,7 +148,7 @@ public sealed class PieceLauncherTests
     }
 
     /// <summary>
-    /// TERMTRUST1a: the harness is named by its full path, as the driver resolves it, never found by a search: a bare name would be looked
+    /// The harness is named by its full path, as the driver resolves it, never found by a search: a bare name would be looked
     /// for in the launcher's working folder first, which is the session's tree.
     /// </summary>
     [Fact]
@@ -162,7 +162,7 @@ public sealed class PieceLauncherTests
         Assert.Contains("full path", error.ToString());
     }
 
-    /// <summary>TERMTRUST1a: a start already made the launcher's is known as one, so a second pass leaves it, and the doors' tracking holds no job of its own over it.</summary>
+    /// <summary>A start already made the launcher's is known as one, so a second pass leaves it, and the doors' tracking holds no job of its own over it.</summary>
     [Fact]
     public void A_start_made_the_launchers_is_known_as_one()
     {

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONSOLE4a (D96): a shell under a Windows pseudo-console, so the person's own terminal behaves as a
+/// A shell under a Windows pseudo-console, so the person's own terminal behaves as a
 /// console window does. Every test here runs a real process, as the rest of this suite does: a pseudo-console
 /// is a few Win32 calls whose whole value is what a real console program does under them.
 /// </summary>
@@ -27,7 +27,7 @@ public sealed class PseudoConsoleTests : IDisposable
         private readonly StringBuilder _output = new();
         private readonly List<int> _exits = [];
 
-        /// <summary>What had arrived at the moment the exit was told: the exit must follow the last output.</summary>
+        /// <summary>What has arrived at the moment the exit is told: the exit must follow the last output.</summary>
         public string? OutputAtExit { get; private set; }
 
         public string Output

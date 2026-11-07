@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one way the driver writes and reads a moment (DEDUP2a): written round-trip in the invariant culture, read in it
+/// The one way the driver writes and reads a moment: written round-trip in the invariant culture, read in it
 /// with the offset kept, and never in the machine's culture, whose calendar (Buddhist, Hijri) would write and read
 /// other digits.
 /// </summary>

@@ -5,11 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TERMTRUST1a part (i), the Process half of the terminal-trust design §8 case 2 (D201 point 4): a stand-in harness started through the
+/// The Process half: a stand-in harness started through the
 /// agents' route (<see cref="AgentStarts"/>) with the built launcher laid out beside its home, once per kind of start the doors make (an
 /// agent's, a plugin's, a piece's). Its first instruction starts a child, and that child is in this Daoris's agents' job, and in a piece's
-/// beneath it for a piece; the harness speaks over the stdio the launcher was handed; a kill of the launcher alone ends the harness and its
-/// child; a start with no launcher laid out is made as it was and holds the open event until it ends. Each harness is the system's
+/// beneath it for a piece; the harness speaks over the stdio the launcher is handed; a kill of the launcher alone ends the harness and its
+/// child; a start with no launcher laid out is made without one and holds the open event until it ends. Each harness is the system's
 /// <c>cmd</c> running a script of this test's, never an agent.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -49,7 +49,7 @@ public sealed class AgentStartsProcessTests : IDisposable
 
     /// <summary>
     /// A stand-in harness's start, built as a session's is (every stream redirected as UTF-8, no window): its first instruction starts a
-    /// child, which says <c>child</c> with the word it was handed and waits on its standard input for a line.
+    /// child, which says <c>child</c> with the word it is handed and waits on its standard input for a line.
     /// </summary>
     private ProcessStartInfo Harness()
     {
@@ -141,7 +141,7 @@ public sealed class AgentStartsProcessTests : IDisposable
         Assert.True(said.GetProperty("contained").GetBoolean());
     }
 
-    /// <summary>PLUGINTRYJOB1: a folder trial is told a scratch home, and is still launched and logged by the machine's.</summary>
+    /// <summary>A folder trial is told a scratch home, and is still launched and logged by the machine's.</summary>
     [Fact]
     public async Task A_folder_trial_and_its_grandchild_are_in_the_agents_job_and_its_line_is_in_the_machines_log()
     {

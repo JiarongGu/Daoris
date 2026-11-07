@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKUX1d (the co-worker design §4.3, §7): talking to a helper is asking again. The person's ask names the ask it follows and where its
+/// Talking to a helper is asking again. The person's ask names the ask it follows and where its
 /// answer goes; one for the session keeps <c>helper.person-asked</c> on it, which the answers-alone count reads as the person's word; one
 /// kept for the person keeps none, and reaches the session only by <i>Pass to the lead</i>, which marks the state for the look.
 /// </summary>

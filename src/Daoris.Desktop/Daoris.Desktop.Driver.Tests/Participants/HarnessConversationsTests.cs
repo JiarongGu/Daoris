@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The harness's own conversation id (ANSWER1a, D131 §1): kept in the desktop store's bindings the moment the wire says it, with the door
+/// The harness's own conversation id: kept in the desktop store's bindings the moment the wire says it, with the door
 /// that opened it; read back when the person answers a park. Never read from the agent's own home.
 /// </summary>
 public sealed class HarnessConversationsTests : IDisposable
@@ -84,7 +84,7 @@ public sealed class HarnessConversationsTests : IDisposable
     }
 
     /// <summary>
-    /// A chat keeps its conversation too (MSG1c, D137 §4.2): what its door is told the id through keeps it under the chat's
+    /// A chat keeps its conversation too: what its door is told the id through keeps it under the chat's
     /// record with the door that opened it, read back as the conversation an ended chat goes on in; a blank id keeps
     /// nothing, and a record id that is not one keeps nothing.
     /// </summary>

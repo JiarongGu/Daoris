@@ -2,7 +2,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 using Daoris.Driver;
 
-/// <summary>AGENTSPLACE1a: the chain a chosen place is read through, and a registry of many undriven repositories answered as counts.</summary>
+/// <summary>The chain a chosen place is read through, and a registry of many undriven repositories answered as counts.</summary>
 public sealed class PlaceProjectionTests
 {
     [Fact]
@@ -28,7 +28,7 @@ public sealed class PlaceProjectionTests
         Assert.Null(read.Undriven);
     }
 
-    /// <summary>DEFAULTCONFIG1a: a place choosing a version copied from a default follows that default, and names what the copy changed.</summary>
+    /// <summary>A place choosing a version copied from a default follows that default, and names what the copy changed.</summary>
     [Fact]
     public void A_place_choosing_a_copy_of_a_default_follows_it_and_names_what_the_copy_changed()
     {
@@ -64,7 +64,7 @@ public sealed class PlaceProjectionTests
     private static string Wire(object value) => System.Text.Json.JsonSerializer.Serialize(value);
 
 
-    /// <summary>SETUPUX1d: a saved version of each shipped delivery lands as Current does for the same land.</summary>
+    /// <summary>A saved version of each shipped delivery lands as Current does for the same land.</summary>
     [Fact]
     public void A_saved_version_lands_as_Current_does_for_the_same_land()
     {
@@ -83,7 +83,7 @@ public sealed class PlaceProjectionTests
 
                 var saved = WorkflowSelection.Apply(DriverConfig.Empty with { Drivable = ["engine"] }, new WorkflowUse(id, "engine", null, null));
 
-                // WORKFLOWCLEAN1 1a: a saved workflow's delivery is the default it was copied from, with nothing the copy changed.
+                // A saved workflow's delivery is the default it is a copy of, with nothing the copy changed.
                 var lands = PlaceProjection.ValuesAt(saved, "engine", "aurora", PlaceSource.RepositoryLevel, store).Lands;
                 Assert.Equal(new SetupMatch(each.Id, []), lands);
             }
@@ -98,7 +98,7 @@ public sealed class PlaceProjectionTests
         }
     }
 
-    /// <summary>SETUPUX1d: the Sessions and Workflow summaries equal the readers a start uses, with where each was set.</summary>
+    /// <summary>The Sessions and Workflow summaries equal the readers a start uses, with where each is set.</summary>
     [Fact]
     public void The_look_helpers_and_standing_answer_equal_their_readers_with_where_each_was_set()
     {
@@ -133,7 +133,7 @@ public sealed class PlaceProjectionTests
         Assert.Equal(new PlaceValue(HelperRules.Resolve(DriverConfig.Empty, "site", "borealis").Rule.Mode, "default"), bare.Helpers);
     }
 
-    /// <summary>SETUPUX1d: each work names its role and where it sits, as the catalogue the start reads says.</summary>
+    /// <summary>Each work names its role and where it sits, as the catalogue the start reads says.</summary>
     [Fact]
     public void Each_work_names_its_role_and_scope_as_the_catalogue_says()
     {
@@ -157,7 +157,7 @@ public sealed class PlaceProjectionTests
         }
     }
 
-    /// <summary>SETUPUX1d: adoption is none, running (an open or taken set-up quest) or adopted, and a running one is listed with the driven.</summary>
+    /// <summary>Adoption is none, running (an open or taken set-up quest) or adopted, and a running one is listed with the driven.</summary>
     [Fact]
     public void Adoption_is_read_from_the_set_up_quest_and_a_running_one_is_listed_with_the_driven()
     {
@@ -196,7 +196,7 @@ public sealed class PlaceProjectionTests
         Assert.Equal(0, none.Workspaces.Single().Running);
     }
 
-    /// <summary>SETUPUX1d: a place's detail is its list row built by the same readers, driven or not, and a workspace's is its own row.</summary>
+    /// <summary>A place's detail is its list row built by the same readers, driven or not, and a workspace's is its own row.</summary>
     [Fact]
     public void A_place_s_detail_equals_its_row_and_its_readers_driven_or_not()
     {
@@ -222,7 +222,7 @@ public sealed class PlaceProjectionTests
         Assert.Null(PlaceProjection.Of(config, registry, Seeds, new PlacesAsk()).Detail);
     }
 
-    /// <summary>SETUPUX1d (N12): the members of a workspace are all of them, not the page in hand.</summary>
+    /// <summary>The members of a workspace are all of them, not the page in hand.</summary>
     [Fact]
     public void The_members_of_a_workspace_are_the_whole_list_with_driving_checkout_and_adoption()
     {

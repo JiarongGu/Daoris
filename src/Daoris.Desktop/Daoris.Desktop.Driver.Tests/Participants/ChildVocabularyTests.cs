@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row l: a lineage line is read in its agent's own words before the fold, by its provider's <see cref="IChildVocabulary"/>,
+/// A lineage line is read in its agent's own words before the fold, by its provider's <see cref="IChildVocabulary"/>,
 /// so the fold names no agent: Claude Code joins a call to its agent by the hook's line naming the same tool use, Codex names a thread
 /// with its parent and its root, and an agent that declares no vocabulary reads no call.
 /// </summary>

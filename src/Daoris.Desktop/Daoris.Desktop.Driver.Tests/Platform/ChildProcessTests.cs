@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one child-process runner (DEDUP4a, survey §4), against a real child: a node one-liner stands in for any program.
-/// The kill that raced a process's end was the defect the four hand-rolled copies carried.
+/// The one child-process runner, against a real child: a node one-liner stands in for any program.
+/// A kill that races a process's end is guarded.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class ChildProcessTests : IDisposable
@@ -125,7 +125,7 @@ public sealed class ChildProcessTests : IDisposable
     }
 }
 
-/// <summary>The one management's guarded kill (D249), with no child started (the fast half).</summary>
+/// <summary>The one management's guarded kill, with no child started (the fast half).</summary>
 public sealed class ChildProcessKillTests
 {
     [Fact]

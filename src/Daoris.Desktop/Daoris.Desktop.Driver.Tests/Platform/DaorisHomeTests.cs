@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Where every machine-local file lives (D63): one home, named by <c>DAORIS_HOME</c>, and no default
+/// Where every machine-local file lives: one home, named by <c>DAORIS_HOME</c>, and no default
 /// under the user profile. The driver's copy of a three-way twin — the CLI and the service hold the
-/// same contract in their own languages, sharing no code (WSP3's shape).
+/// same contract in their own languages, sharing no code.
 /// </summary>
 public sealed class DaorisHomeTests
 {
@@ -42,7 +42,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// 🔴 FINDDAORIS1 (D171 point 1): a terminal outside Daoris's own panel set nothing, and the install's launcher sets
+    /// 🔴 A terminal outside Daoris's own panel set nothing, and the install's launcher sets
     /// nothing either, so a program the install carries finds its home where it runs: the install's own <c>data</c>
     /// folder, beside the <c>app</c> folder it runs from, however deep inside it (the driver host is
     /// <c>app/daoris-driver/</c>). A workspace build is no install, and finds none.
@@ -80,8 +80,8 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// The host takes the install's home as its own process's <c>DAORIS_HOME</c> where none is named, as the desktop does
-    /// (D63), so its machine log, its files and every session it starts read the same machine; a home already named is left.
+    /// The host takes the install's home as its own process's <c>DAORIS_HOME</c> where none is named, as the desktop does,
+    /// so its machine log, its files and every session it starts read the same machine; a home already named is left.
     /// </summary>
     [Fact]
     public void Adopting_the_installs_home_sets_it_only_where_none_is_named()
@@ -107,7 +107,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// 🔴 D172 point 5 (HOMELAYOUT2, the install layout design §6.2) with its review note: an entry is read and written at its new
+    /// 🔴 An entry is read and written at its new
     /// place if that holds what the entry is, else at its old place if that is there, else at its new place; where both hold it,
     /// neither is chosen, and the refusal names both. What a place holds: a file that is not empty and, for JSON, parses; a folder
     /// that is not empty; or, for an entry whose place is known by the names it holds, one of those names. So an empty or
@@ -195,7 +195,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// 🔴 D172 point 2 (HOMELAYOUT3): a home names its Daoris folder, and the old home its entries were under before the new
+    /// 🔴 A home names its Daoris folder, and the old home its entries were under before the new
     /// places. An install's folder (it holds <c>INSTALLED.md</c>) and its <c>data/</c> name the same install, whose old home is that
     /// <c>data/</c>; any other home is its own Daoris folder and its own old home, a home named <c>data</c> with no install above it
     /// among them. A row is the shape on the disk (<c>install</c>, the marker at the root, or <c>root</c>), the home as named (empty:
@@ -250,9 +250,9 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// The home a file of it is in (HOMELAYOUT3: <c>DriverConfig.HomeOf</c>, <c>HarnessSettings.HomeOf</c>, the in-app browser's
+    /// The home a file of it is in (<c>DriverConfig.HomeOf</c>, <c>HarnessSettings.HomeOf</c>, the in-app browser's
     /// profile): the Daoris folder where the file is at the entry's new place, spelled as an install's <c>data/</c> where that folder
-    /// is an install, as every install's home has been since D63; else the old home it is under. A row is the shape, the file under
+    /// is an install, as every install's home is; else the old home it is under. A row is the shape, the file under
     /// the root, the entry, and the home under the root (empty: the root itself). The CLI's <c>home.test.ts</c> holds these rows.
     /// </summary>
     [Theory]
@@ -282,7 +282,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// 🔴 D172 §3 switched on (HOMELAYOUT3): every new place is under the top folder its category names, and the logs are the
+    /// 🔴 Every new place is under the top folder its category names, and the logs are the
     /// <c>logs</c> folder itself, so the Daoris folder holds the seven categories and nothing else of Daoris's at its top.
     /// </summary>
     [Fact]
@@ -296,7 +296,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// D172's table, one entry each, held cell for cell by the CLI's <c>home.test.ts</c> against the service's and its own. Here:
+    /// The layout's table, one entry each, held cell for cell by the CLI's <c>home.test.ts</c> against the service's and its own. Here:
     /// a name says one entry, and an entry is found by it.
     /// </summary>
     [Fact]
@@ -308,8 +308,8 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// USAGECAP1a1 (D179 point 2): every usage reading kept, in a folder of its own beside <c>windows.json</c>, a record of the
-    /// machine's own (the install layout design §2's seventh test: no key, no agent works in it, nothing fetched, no process
+    /// Every usage reading kept, in a folder of its own beside <c>windows.json</c>, a record of the
+    /// machine's own (no key, no agent works in it, nothing fetched, no process
     /// holds it, not the machine log), its files asked by name under it.
     /// </summary>
     [Fact]
@@ -325,8 +325,8 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// KEEP1a (D195 point 2, the cleanup design §2.3): the record of the keeping rules' runs, a file of the machine's own in
-    /// <c>data/</c> (the install layout design §2's seventh test), after the usage history, as the three twins hold it.
+    /// The record of the keeping rules' runs, a file of the machine's own in
+    /// <c>data/</c>, after the usage history, as the three twins hold it.
     /// </summary>
     [Fact]
     public void The_keeping_record_is_a_data_file_after_the_usage_history()
@@ -338,7 +338,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// NOTIFY2f (D196 point 6, the notification design §2.5): what ended, failed or went unanswered, a file of the machine's own in
+    /// What ended, failed or went unanswered, a file of the machine's own in
     /// <c>data/</c>, after the keeping record, as the three twins hold it.
     /// </summary>
     [Fact]
@@ -351,7 +351,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// TERMTRUST1a (D201 point 6, the terminal-trust design §4.2): the standing confirmation, a data file of its own, after the git
+    /// The standing confirmation, a data file of its own, after the git
     /// identities, as the three twins hold it; new since the layout, so its old place is its new one.
     /// </summary>
     [Fact]
@@ -366,7 +366,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// MODELROLE1c2 (D205 §9.2): what each agent last offered, a data file of its own after the standing confirmation, as the three twins
+    /// What each agent last offered, a data file of its own after the standing confirmation, as the three twins
     /// hold it; new since the layout, so its old place is its new one.
     /// </summary>
     [Fact]
@@ -381,7 +381,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// FOUNDATION1 z-i (D212, the design §13.2): the desktop's own store, a data file of its own after the knowledge index, as the
+    /// The desktop's own store, a data file of its own after the knowledge index, as the
     /// three twins hold it; new since the layout, so its old place is its new one.
     /// </summary>
     [Fact]
@@ -396,8 +396,8 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, a data folder of its own after the
-    /// agent offers, as the three twins hold it; kept in <c>data/</c>, which D172 backs up, never under <c>run/</c>, which anyone may
+    /// A terminal's presses waiting for the person, a data folder of its own after the
+    /// agent offers, as the three twins hold it; kept in <c>data/</c>, which is backed up, never under <c>run/</c>, which anyone may
     /// clear while Daoris is closed. New since the layout, so its old place is its new one.
     /// </summary>
     [Fact]
@@ -426,7 +426,7 @@ public sealed class DaorisHomeTests
         Assert.Equal(table.IndexOf(HomeEntry.ActFiles) + 1, table.IndexOf(HomeEntry.PlaceReceipts));
     }
 
-    /// <summary>COMMS1l: the steward desk's history, a data file of its own after the place receipts, as the three twins hold it.</summary>
+    /// <summary>The steward desk's history, a data file of its own after the place receipts, as the three twins hold it.</summary>
     [Fact]
     public void COMMS1l_the_steward_desk_is_a_data_file_after_the_place_receipts()
     {
@@ -438,7 +438,7 @@ public sealed class DaorisHomeTests
         Assert.Equal(table.IndexOf(HomeEntry.PlaceReceipts) + 1, table.IndexOf(HomeEntry.StewardDesk));
     }
 
-    /// <summary>D233 choice 6: the newest build that has run on the home, a data file of its own after the steward desk, as the three twins hold it.</summary>
+    /// <summary>The newest build that has run on the home, a data file of its own after the steward desk, as the three twins hold it.</summary>
     [Fact]
     public void The_last_build_is_a_data_file_after_the_steward_desk()
     {
@@ -450,7 +450,7 @@ public sealed class DaorisHomeTests
         Assert.Equal(table.IndexOf(HomeEntry.StewardDesk) + 1, table.IndexOf(HomeEntry.LastBuild));
     }
 
-    /// <summary>NOCOMPAT1 (D232): the migration's record and its copies are data, after the last build, as the three twins hold them.</summary>
+    /// <summary>The migration's record and its copies are data, after the last build, as the three twins hold them.</summary>
     [Fact]
     public void NOCOMPAT1_the_migration_record_and_salvage_are_data_after_the_last_build()
     {
@@ -463,8 +463,8 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, kept as long as the press's card lives, a
-    /// profiles folder after the window's, as the three twins hold it. A file that holds a key is a sign-in (D172 point 3), and never under
+    /// The keys of a terminal's sent presses, kept as long as the press's card lives, a
+    /// profiles folder after the window's, as the three twins hold it. A file that holds a key is a sign-in, and never under
     /// <c>run/</c>, which anyone may clear while Daoris is closed. New since the layout, so its old place is its new one.
     /// </summary>
     [Fact]
@@ -479,7 +479,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file of the person's choices at the home's root, named
+    /// Ask Daoris's configured access, a data file of the person's choices at the home's root, named
     /// with no <c>help-</c> prefix, since a workspace's room folder is matched by <c>help-*</c>.
     /// </summary>
     [Fact]
@@ -491,7 +491,7 @@ public sealed class DaorisHomeTests
         Assert.DoesNotMatch("^help", HomeEntry.ConfiguredAccess.Old);
     }
 
-    /// <summary>A file asked of the environment's home is the entry, by D172 point 5, or nothing with no home.</summary>
+    /// <summary>A file asked of the environment's home is the entry, or nothing with no home.</summary>
     [Fact]
     public void An_entry_asked_of_the_environment_is_the_entry_or_none_with_no_home()
     {
@@ -530,7 +530,7 @@ public sealed class DaorisHomeTests
         return home;
     }
 
-    /// <summary>An install's shape on disk (D93): the marker at its root, and the application under <c>app/</c>.</summary>
+    /// <summary>An install's shape on disk: the marker at its root, and the application under <c>app/</c>.</summary>
     internal static string Install()
     {
         var install = Path.Combine(TestHomes.Root, "daoris-install-tests", Guid.NewGuid().ToString("N")[..8]);

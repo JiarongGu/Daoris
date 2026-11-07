@@ -5,14 +5,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-C1a (D173, its FABRIC-C0 note; <c>docs/2026-10-16-fabric-contract-audit.md</c> §2): a part's native children, bound
+/// A part's native children, bound
 /// from what the harness itself wrote of their lineage. The fold reads the session's lineage lines: the connector's per call
 /// (<c>by: call</c>), the hook's on Claude Code (<c>by: hook</c>), the driver's off Claude Code's stream (<c>by: stream</c>)
 /// and the part's end (<c>by: end</c>). It binds each child to the part, never to a session of its own, and says what it
 /// does not know as unknown.
 /// </summary>
 /// <remarks>
-/// The lines are shaped as the probe kit's receipts (FABRIC-PROBE1): ids as the harnesses wrote them. The call lines are the
+/// The lines are shaped as the probe kit's receipts: ids as the harnesses wrote them. The call lines are the
 /// connector's own, word for word as its <c>CallLineageTests</c> hold them: the twin table (<c>.claude/knowledge/twins.md</c>).
 /// </remarks>
 public sealed class ChildBindingsTests
@@ -23,7 +23,7 @@ public sealed class ChildBindingsTests
     private const string SiblingB = "aeb870c28aae7df9f";
     private const string Tool = "mcp__daoris-knowledge__knowledge_search";
 
-    // COWORKVIEW1a: three processes' tokens, and the states a child reads (§3.6 "what a child reads", rule 5).
+    // Three processes' tokens, and the states a child reads.
     private const string P1 = "a000000000000001";
     private const string P2 = "a000000000000002";
     private const string P3 = "a000000000000003";

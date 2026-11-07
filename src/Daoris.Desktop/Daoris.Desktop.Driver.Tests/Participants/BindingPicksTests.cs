@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 a-ii (D212, the design §3.2 step 4 and §13.3's Bindings family): that the person picked a session's account is kept on its
+/// The person's pick of a session's account is kept on its
 /// binding in the desktop store, never on the service's record or a wire, and the account rule reads it as its constraint. A binding of a
 /// record from before, of an agent's pick and of a teammate's mirror holds no pick; a deleted record takes its pick; and a build from
 /// before the row, which knows the store at its second step, keeps reading and writing its bindings as it did and reads a picked

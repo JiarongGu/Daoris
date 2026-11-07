@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-C1a: the lineage hook as Claude Code runs it, node and the shipped script with the hook's input on stdin. It writes
+/// The lineage hook as Claude Code runs it, node and the shipped script with the hook's input on stdin. It writes
 /// the ids the input names and none of its paths, decides nothing, and exits 0 on an input it cannot read.
 /// </summary>
-/// <remarks>The inputs carry the keys Claude Code 2.1.299 handed the probe kit's logger (FABRIC-PROBE1).</remarks>
+/// <remarks>The inputs carry the keys Claude Code 2.1.299 handed the probe kit's logger.</remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class LineageHookProcessTests : IDisposable
 {
@@ -93,7 +93,7 @@ public sealed class LineageHookProcessTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-C2a (D173's note, point 1): an agent id sent that is not one is said as unreadable, never dropped to look like the
+    /// An agent id sent that is not one is said as unreadable, never dropped to look like the
     /// root's call; one never sent, or sent null, is the root's.
     /// </summary>
     [Fact]
@@ -111,7 +111,7 @@ public sealed class LineageHookProcessTests : IDisposable
         Assert.All(lines, line => Assert.Null(line["agent"]));
     }
 
-    /// <summary>COWORKVIEW1a: each line names the process the hook runs under, its token as the driver handed it, where it is one.</summary>
+    /// <summary>Each line names the process the hook runs under, its token as the driver handed it, where it is one.</summary>
     [Fact]
     public void Each_line_names_the_process_its_environment_handed_where_that_is_a_token()
     {

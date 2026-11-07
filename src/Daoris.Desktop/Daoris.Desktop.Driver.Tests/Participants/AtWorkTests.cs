@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1a's composition (the design §3.8, §4.1, rules 9, 10, 14, 16 and 17): who is at work on a session, from the entry's
+/// The composition of who is at work on a session, from the entry's
 /// parts, their records' read fields, each part's lineage reading and the two input slices' health, all handed as plain values.
 /// </summary>
 public sealed class AtWorkTests

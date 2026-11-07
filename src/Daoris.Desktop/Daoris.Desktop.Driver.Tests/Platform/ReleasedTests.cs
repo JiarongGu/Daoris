@@ -3,9 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>released</c> in <c>driver.json</c> (SESSUX1b, D126 §3.4): the quests the person released from their stop, each against
-/// the session they stopped, so a later stop holds the quest again. The driver's half of a TWIN with the CLI's
-/// <c>driverconfig.ts</c>, until it left with the driver family's TypeScript (PUSH1f2b).
+/// <c>released</c> in <c>driver.json</c>: the quests the person released from their stop, each against
+/// the session they stopped, so a later stop holds the quest again.
 /// </summary>
 /// <remarks>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</remarks>
 public sealed class ReleasedTests
@@ -81,7 +80,7 @@ public sealed class ReleasedTests
     }
 
     /// <summary>
-    /// AGENTERRORS1a2 (D210, the agent-errors design §5.1, §8): <i>Try again</i>'s transient release, <c>transientReleased</c>, keyed to the
+    /// <i>Try again</i>'s transient release, <c>transientReleased</c>, keyed to the
     /// session AND the end it releases, apart from the stop's <c>released</c>: the same record's next end is not released, an unsaid end
     /// passes nothing, and closing the quest drops it.
     /// </summary>

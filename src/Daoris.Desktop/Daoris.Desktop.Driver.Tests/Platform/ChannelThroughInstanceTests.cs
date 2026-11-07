@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1e: <c>daoris ask channel &lt;id&gt; "…"</c> through the running Daoris (the terminal RPC design §7.2 and §7.3): a post is the
+/// <c>daoris ask channel &lt;id&gt; "…"</c> through the running Daoris: a post is the
 /// person's words, sent to the instance's <c>CHANNEL_POST</c>, which shows it in its window; the terminal prints the lines the route
 /// answers (<c>said</c>, the alone path's own words), and this process asks the service nothing. A read stays the service's.
 /// </summary>
