@@ -258,8 +258,9 @@ public static class SetupBrief
         + "the knowledge `development-documents` are now in this tree: read both, since the steps after this follow them.";
 
     private static string Twins() =>
-        "**Hunt renamed twins.** Read the generated index in `AGENTS.md` end to end for two rows that say the same thing: "
-        + "a rule or document of this repository's own that a shared one now says under another name. `daoris doctor` "
+        "**Hunt renamed twins.** Read the generated `INDEX.md` that `daoris sync` writes in the harness's folder "
+        + "(`.claude/` for Claude Code, `.agents/` for the agents layout) end to end for two rows that say the same thing, "
+        + "and the rules table in `AGENTS.md`: a rule or document of this repository's own that a shared one now says under another name. `daoris doctor` "
         + "narrows the search and does not finish it. Retire this repository's copy only when every line of it is "
         + "somewhere else, and say where each went.";
 

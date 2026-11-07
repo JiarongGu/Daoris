@@ -5,16 +5,14 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A registration composed from a repository's line (WSSETUP5, D124 §3.3): what <c>connect</c> would send from that
-/// manifest. The driver's half of a TWIN with the CLI's <c>connect.ts</c> (<c>registration()</c>, with the
-/// <c>readManifest</c>, <c>isDeclared</c> and <c>readLanes</c> it runs first), whose <c>connect-twin.test.ts</c> holds
-/// the same table, row for row and in the same order, and parses this theory to hold it to its own.
+/// manifest. The table is the one holding of <c>LineRegistration</c>: the driver's <c>repository connect</c> and the
+/// registry's follow of a line both compose through it, and no CLI test reads this theory.
 /// </summary>
 /// <remarks>
 /// <para>Each row is a manifest and a lanes file as the line holds them, the service the body goes to, and what
 /// <c>connect</c> would do: the body it sends (<c>@root</c> is the checkout's root), <c>declares nothing</c> where it
 /// refuses for want of a declaration, or <c>refused: manifest</c> or <c>refused: lanes</c> where it refuses the file.
 /// The repository is <c>game</c> in every row.</para>
-/// <para>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</para>
 /// </remarks>
 public sealed class LineRegistrationTests
 {

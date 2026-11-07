@@ -69,6 +69,16 @@ public sealed partial class SetupBriefTests
         }
     }
 
+    /// <summary>The twin hunt reads the index <c>sync</c> writes, <c>&lt;target&gt;/INDEX.md</c>, not <c>AGENTS.md</c>, which holds the rules region alone.</summary>
+    [Fact]
+    public void The_twin_hunt_reads_the_index_sync_writes_in_the_targets_folder()
+    {
+        var (_, body) = SetupBrief.Compose(Input(SetupCase.Whole));
+
+        Assert.Contains("generated `INDEX.md` that `daoris sync` writes in the harness's folder", body);
+        Assert.DoesNotContain("generated index in `AGENTS.md`", body);
+    }
+
     /// <summary>The playbook says the knowledge step in the canon's words, and the body says the same words.</summary>
     [Fact]
     public void The_knowledge_step_is_in_the_canons_words_in_the_body_and_the_playbook()
