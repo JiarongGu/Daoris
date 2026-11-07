@@ -33,6 +33,8 @@ internal sealed class SupervisorCourseDecision
     public required string Generation { get; init; }
     public required DateTimeOffset GoesOnAt { get; init; }
     public SupervisorState State { get; set; } = SupervisorState.Held;
+    public DateTimeOffset StateAt { get; set; }
+    public string? Why { get; set; }
 }
 
 /// <summary>
@@ -141,7 +143,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
 
     private void Append(SupervisorCourseDecision decision, SupervisorState to, DateTimeOffset at, string? why)
     {
-        decision.State = to;
+        (decision.State, decision.StateAt, decision.Why) = (to, at, why);
         SupervisorDecisionFiles.TryAppend(book.Files.StatesOf(decision.Session, decision.Id), SupervisorDecisionFiles.StateLine(to, at, why, null));
     }
 

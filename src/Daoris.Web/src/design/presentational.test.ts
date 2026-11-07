@@ -93,6 +93,8 @@ const ORGANISMS = new Set<string>([
   './work/head/AttendedPane.tsx',
   // The terminal hold's container (RPC1g1): it holds the bridge's hold and its let-go, so `TerminalHold` is handed them and holds neither.
   './work/head/SessionTerminalHold.tsx',
+  // The supervisor's decision's container (CONTEXTDRIVE1j): it holds the bridge's overrule, so `SupervisorCourseCard` is handed the press and holds none.
+  './work/head/SessionSupervisorCourse.tsx',
   './work/head/partRows.ts',
   './work/conversation/AttendedConversation.tsx',
   './work/conversation/AttendedBoxes.tsx',

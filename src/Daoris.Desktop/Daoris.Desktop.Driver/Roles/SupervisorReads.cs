@@ -76,6 +76,23 @@ internal sealed class SupervisorReads(SupervisorBook book)
         return [.. views.OrderBy(view => view.KeptAt)];
     }
 
+    /// <summary>
+    /// <paramref name="session"/>'s course decisions, oldest first: each read from its file, and where memory still holds it, its state
+    /// as memory has it, which alone decides; the rest are history, marked <see cref="SupervisorCourseView.Earlier"/>.
+    /// </summary>
+    public IReadOnlyList<SupervisorCourseView> CoursesOf(string session)
+    {
+        if (!SessionEventText.IsLocalId(session) || !Directory.Exists(book.Files.FolderOf(session))) return [];
+        var views = new List<SupervisorCourseView>();
+        foreach (var file in Directory.EnumerateFiles(book.Files.FolderOf(session), "*.json"))
+        {
+            if (SupervisorCourseView.Read(book.Files, session, Path.GetFileNameWithoutExtension(file)) is not { } read) continue;
+            views.Add(book.Courses.TryGetValue(read.Id, out var live) ? read with { State = live.State, StateAt = live.StateAt, Why = live.Why, Earlier = false } : read);
+        }
+
+        return [.. views.OrderBy(view => view.KeptAt).ThenBy(view => view.Id, StringComparer.Ordinal)];
+    }
+
     private static SupervisorDecisionView View(SupervisorLiveDecision each) => new(
         each.Id, each.Session, each.Question, each.Choice, each.Reasons, each.Holder, each.Generation, each.KeptAt, each.GoesOnAt,
         each.State, each.StateAt, each.Why, each.Word, Earlier: false, each.Bound);

@@ -382,4 +382,106 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         Assert.Contains("- session s1: opened", lines[at..end]);
         Assert.True(Array.FindIndex(lines, line => line.StartsWith("<<< the branch's commits", StringComparison.Ordinal)) > end);
     }
+
+    private static readonly object WaitingPoint = new
+    {
+        waiting = new[]
+        {
+            new { session = "s1", repository = "engine", point = "rule-1", count = "answers-alone", n = 2, rule = "aa", place = "repository:engine", generation = "g-1" },
+        },
+    };
+
+    private static object CourseRow(string state, string @do = "go-on", string? why = null) => new
+    {
+        id = "d1", point = "rule-1", count = "answers-alone", n = 2, rule = "aa", place = "repository:engine", @do, state, why,
+        keptAt = "2026-11-07T09:00:00Z", goesOnAt = "2026-11-07T09:05:00Z", stateAt = "2026-11-07T09:00:00Z", earlier = false,
+    };
+
+    /// <summary>
+    /// A referred point is printed fenced as every part is, with its count, its value, the rule that referred it and the course still
+    /// waiting, then how to decide it; the question's part and its answer line are not printed for it.
+    /// </summary>
+    [Fact]
+    public async Task The_print_of_a_referred_point_says_its_count_value_rule_and_that_its_course_waits()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        _standIn = new InstanceStandIn(_pipe, _id) { Respond = (type, _) => type == SupervisorRoutes.Waiting ? WaitingPoint : null };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+        SupervisorRuleBook.SeedFresh(_home, () => StoreSettled.Yes);
+
+        var (exit, said) = await RunAsync(["supervise", "s1"], Instance());
+
+        Assert.Equal(0, exit);
+        var lines = said.Split('\n');
+        var at = Array.FindIndex(lines, line => line.StartsWith("<<< the point your rule referred: Daoris's own record, not the asking agent's · ", StringComparison.Ordinal));
+        Assert.True(at > 0, said);
+        Assert.Equal(["point: rule-1", "count: answers-alone", "value: 2", "rule: aa, the person's rule for repository:engine, refers it", "course: waiting for you to decide"], lines[(at + 1)..(at + 6)]);
+        Assert.Contains("<<< the line's course: Daoris's count from its records, not the asking agent's", said, StringComparison.Ordinal);
+        Assert.Contains("generation: g-1", said, StringComparison.Ordinal);
+        Assert.Contains("decide: daoris session supervise s1 --point rule-1 --generation g-1 --course go-on|hold --reason \"…\" --source \"<where>\"", said, StringComparison.Ordinal);
+        Assert.DoesNotContain("--choice", said, StringComparison.Ordinal);
+        Assert.DoesNotContain("the asking agent's question", said, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("held", "go-on", null, "course: answered, go-on: held for the owner's overrule until 2026-11-07T09:05:00Z")]
+    [InlineData("went-on", "go-on", null, "course: answered, go-on: the supervisor went on with it")]
+    [InlineData("overruled", "go-on", null, "course: answered, go-on: the owner overruled it")]
+    [InlineData("stale", "go-on", "rule-holds", "course: answered, go-on: no longer stands (rule-holds)")]
+    [InlineData("left", "hold", null, "course: answered, hold: left to the owner")]
+    public async Task The_print_of_a_referred_point_the_supervisor_decided_says_the_course_and_where_it_stands(string state, string course, string? why, string said)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        _standIn = new InstanceStandIn(_pipe, _id)
+        {
+            Respond = (type, _) => type switch
+            {
+                SupervisorRoutes.Waiting => new { waiting = Array.Empty<object>() },
+                "SESSION_SUPERVISOR" => new { courses = new[] { CourseRow(state, course, why) } },
+                _ => null,
+            },
+        };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var (exit, printed) = await RunAsync(["supervise", "s1"], Instance());
+
+        Assert.Equal(0, exit);
+        Assert.Contains("rule: aa, the person's rule for repository:engine, refers it", printed, StringComparison.Ordinal);
+        Assert.Contains(said, printed, StringComparison.Ordinal);
+        Assert.DoesNotContain("decide: daoris session supervise", printed, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_listing_names_a_point_with_its_count_and_its_value()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        _standIn = new InstanceStandIn(_pipe, _id) { Respond = (type, _) => type == SupervisorRoutes.Waiting ? WaitingPoint : null };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var (exit, said) = await RunAsync(["supervise"], Instance());
+
+        Assert.Equal(0, exit);
+        Assert.Contains("rule refers point rule-1: answers-alone at 2  generation g-1", said, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_session_with_neither_a_waiting_point_nor_a_course_decision_has_nothing_to_print()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        _standIn = new InstanceStandIn(_pipe, _id)
+        {
+            Respond = (type, _) => type switch
+            {
+                SupervisorRoutes.Waiting => new { waiting = Array.Empty<object>() },
+                "SESSION_SUPERVISOR" => new { decisions = Array.Empty<object>(), courses = Array.Empty<object>() },
+                _ => null,
+            },
+        };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var (exit, said) = await RunAsync(["supervise", "s1"], Instance());
+
+        Assert.Equal(1, exit);
+        Assert.Contains("no question of session `s1` waits for the supervisor", said, StringComparison.Ordinal);
+    }
 }

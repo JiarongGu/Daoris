@@ -225,8 +225,19 @@ public static class SessionsSuperviseCommand
         if (await WaitingAsync(instance, ct).ConfigureAwait(false) is not { } waiting) return await NoInstanceAsync(output).ConfigureAwait(false);
         if (waiting.Where(each => Text(each, "session") == id).Select(each => (JsonElement?)each).FirstOrDefault() is not { } listed)
         {
+            // No question and no point waits: a point the supervisor already decided is still printed, with its course as it stands.
+            if (await SupervisePointPrint.DecidedAsync(instance, id, ct).ConfigureAwait(false) is { Count: > 0 } decided)
+            {
+                return await SupervisePointPrint.PrintAsync(world, id, SupervisePointPrint.Decided(decided[^1]), output, ct).ConfigureAwait(false);
+            }
+
             await output.WriteLineAsync($"sessions supervise: no question of session `{id}` waits for the supervisor.").ConfigureAwait(false);
             return 1;
+        }
+
+        if (Text(listed, "point") is not null)
+        {
+            return await SupervisePointPrint.PrintAsync(world, id, SupervisePointPrint.Waiting(listed), output, ct).ConfigureAwait(false);
         }
 
         var record = await world.Service.RecordAsync(id, ct).ConfigureAwait(false);
@@ -289,7 +300,7 @@ public static class SessionsSuperviseCommand
     }
 
     /// <summary>The branch and its commits since its base, read by Daoris's own git here, the key already gone from this process.</summary>
-    private static async Task<string> CommitsAsync(PriorSession record, CancellationToken ct)
+    internal static async Task<string> CommitsAsync(PriorSession record, CancellationToken ct)
     {
         if (record.Tree is not { } tree || !Directory.Exists(tree)) return "no tree here";
         var (_, branch, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
@@ -402,5 +413,5 @@ public static class SessionsSuperviseCommand
         await output.WriteLineAsync($"sessions supervise: {RolesBrief.Said(held)}").ConfigureAwait(false);
     }
 
-    private static string? Text(JsonElement element, string name) => InstanceClient.Text(element, name);
+    private static string? Text(JsonElement element, string name) => SupervisePointPrint.Text(element, name);
 }

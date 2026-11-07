@@ -179,6 +179,76 @@ public sealed class SupervisorCourseTests : IDisposable
         Assert.Equal(GoOnMarks.AnswersAlone, Marks.Read("s1")?.Why);
     }
 
+    /// <summary>
+    /// A course decision reads back for the page and the print: the point's rule, its count and value, the act, who held it and when, and
+    /// where it stands, live from memory and, after a restart, from its files. The questions' history passes it by.
+    /// </summary>
+    [Fact]
+    public async Task A_course_decision_reads_back_with_its_rule_count_and_state_live_and_after_a_restart()
+    {
+        var book = Book(SupervisorRules.Refer);
+        var act = Referred(book, _ => true);
+        var decisions = new QuestionSupervisorDecisions(_home, new Admits("g-1"));
+        var kept = await decisions.CourseAsync(Course(act.Id), Points(book).PointOf(Asker, null), At);
+
+        var held = Assert.Single(decisions.CoursesOf("s1"));
+        Assert.Equal((kept.Decision, act.Id, SupervisorRules.AnswersAlone, 2, "aa", SupervisorRules.Machine, SupervisorCourseActs.GoOn),
+            (held.Id, held.Point, held.Count, held.N, held.Rule, held.Place, held.Do));
+        Assert.Equal((SupervisorState.Held, false, RoleHolders.Terminal, At, At.AddMinutes(1)), (held.State, held.Earlier, held.Holder.Kind, held.KeptAt, held.GoesOnAt));
+        Assert.Empty(decisions.History("s1"));
+        Assert.Empty(decisions.CoursesOf("s2"));
+
+        Assert.Equal([SupervisorState.WentOn], await decisions.ReleaseCoursesAsync(Points(book).Line(_ => Asker, _ => false), At.AddMinutes(2)));
+        var gone = Assert.Single(decisions.CoursesOf("s1"));
+        Assert.Equal((SupervisorState.WentOn, At.AddMinutes(2), (string?)null), (gone.State, gone.StateAt, gone.Why));
+
+        var after = Assert.Single(new QuestionSupervisorDecisions(_home, new Admits("g-1")).CoursesOf("s1"));
+        Assert.Equal((kept.Decision, act.Id, SupervisorState.WentOn, true, "aa", 2), (after.Id, after.Point, after.State, after.Earlier, after.Rule, after.N));
+    }
+
+    [Fact]
+    public async Task A_course_decision_overruled_or_stale_says_where_it_stands_and_why()
+    {
+        var book = Book(SupervisorRules.Refer);
+        var act = Referred(book, _ => true);
+        var decisions = new QuestionSupervisorDecisions(_home, new Admits("g-1"));
+        var kept = await decisions.CourseAsync(Course(act.Id), Points(book).PointOf(Asker, null), At);
+        await decisions.ReleaseCoursesAsync(Points(Book(SupervisorRules.Hold)).Line(_ => Asker, _ => false), At.AddMinutes(2));
+        var stale = Assert.Single(decisions.CoursesOf("s1"));
+        Assert.Equal((SupervisorState.Stale, SupervisorWhy.RuleHolds), (stale.State, stale.Why));
+
+        var again = new QuestionSupervisorDecisions(_home, new Admits("g-1"));
+        Assert.Equal((SupervisorState.Stale, SupervisorWhy.RuleHolds, true),
+            (again.CoursesOf("s1").Single().State, again.CoursesOf("s1").Single().Why, again.CoursesOf("s1").Single().Earlier));
+        Assert.Equal(kept.Decision, again.CoursesOf("s1").Single().Id);
+    }
+
+    [Fact]
+    public async Task The_owners_overrule_is_read_back_as_overruled_at_its_moment()
+    {
+        var book = Book(SupervisorRules.Refer);
+        var act = Referred(book, _ => true);
+        var decisions = new QuestionSupervisorDecisions(_home, new Admits("g-1"));
+        var kept = await decisions.CourseAsync(Course(act.Id), Points(book).PointOf(Asker, null), At);
+
+        await decisions.OverruleAsync("s1", kept.Decision!, (_, _, _) => Task.FromResult(true), At.AddSeconds(10));
+
+        var read = Assert.Single(decisions.CoursesOf("s1"));
+        Assert.Equal((SupervisorState.Overruled, At.AddSeconds(10)), (read.State, read.StateAt));
+    }
+
+    [Fact]
+    public async Task A_hold_is_read_back_as_left_to_the_owner_with_no_moment_it_goes_on()
+    {
+        var book = Book(SupervisorRules.Refer);
+        var act = Referred(book, _ => true);
+        var decisions = new QuestionSupervisorDecisions(_home, new Admits("g-1"));
+        await decisions.CourseAsync(Course(act.Id, SupervisorCourseActs.Hold), Points(book).PointOf(Asker, null), At);
+
+        var read = Assert.Single(decisions.CoursesOf("s1"));
+        Assert.Equal((SupervisorCourseActs.Hold, SupervisorState.Left), (read.Do, read.State));
+    }
+
     [Fact]
     public async Task Off_with_no_holder_the_point_waits_for_the_person_and_says_so_and_on_a_started_terminal_takes_it()
     {
