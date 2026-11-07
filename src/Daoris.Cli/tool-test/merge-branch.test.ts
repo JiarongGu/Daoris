@@ -10,10 +10,10 @@ import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 import { folderSet } from './support/folder-set.ts';
 
 /**
- * MOD9 (`docs/2026-09-30-parallel-development-design.md` §3 rule 6): the parent's one merge tool. It
- * replaced gate chains typed by hand, one of which lost a rehearsal's reason, and a batch that skipped
+ * The parent's one merge tool (`docs/2026-09-30-parallel-development-design.md` §3 rule 6). It
+ * stands in for gate chains typed by hand, one of which lost a rehearsal's reason, and for a batch that skipped
  * the .NET suites as "web only" while two C# tests read the web's catalogues. So the plan is read from
- * the declared set. Since GATE3 a merge runs the gates its paths can reach, and the tests of the lane
+ * the declared set. A merge runs the gates its paths can reach, and the tests of the lane
  * table below hold it to what each suite reads and each rehearsal runs, so that lesson stays a test; the
  * full set is still owed before a stage.
  *
@@ -22,13 +22,13 @@ import { folderSet } from './support/folder-set.ts';
  * this suite sits in would merge into it.
  */
 
-// The census of test units (CISCOPE1c) reads this file's strings as the lane table's data, not as reads: it names nearly every
+// The census of test units reads this file's strings as the lane table's data, not as reads: it names nearly every
 // path the table places. What it does read is declared.
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
-// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json — LANDBACKLOG1's twin reads the table row for row
-// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — INTEGRATE1c's twin sets the same joins apart, row for row
-// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — INTEGRATE1d's twin reads the table row for row
+// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json — the driver's twin reads the table row for row
+// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
+// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — the driver's twin reads the table row for row
 
 interface Gate { name: string; run: string; kind: string; cwd?: string; clock?: boolean; memoryGb?: number }
 interface Lane { id: string; title: string; summary: string; steward: boolean; paths: string[]; gates?: string[] }
@@ -36,20 +36,20 @@ interface Classified { lanes: { id: string; title: string; files: string[] }[]; 
 interface Options {
   branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean; prune: boolean; autoPrune: boolean;
   full: boolean; gated: boolean; rerun: string[]; passed: boolean; stale: boolean; oneAtATime: boolean;
-  /** GATEWT1: the full set in a worktree of its own, at this commit (main's tip when null). */
+  /** The full set in a worktree of its own, at this commit (main's tip when null). */
   beside: boolean; besideCommit: string | null;
-  /** INTEGRATE1j: the declared runner (`--full --beside --daoris-verify`). */
+  /** The declared runner (`--full --beside --daoris-verify`). */
   daorisVerify: boolean;
-  /** CI1: the CI runner on this commit (main's tip when null), its watch, and the stop asked of the watch. */
+  /** The CI runner on this commit (main's tip when null), its watch, and the stop asked of the watch. */
   ci: boolean; ciCommit: string | null; watch: boolean; stop: boolean;
-  /** CISCOPE1e: the queue's verbs: a preview, a request queued with its message file, the queue said or rechecked, the runner. */
+  /** The queue's verbs: a preview, a request queued with its message file, the queue said or rechecked, the runner. */
   preview?: boolean; messageFile?: string | null; queue?: boolean; recheck?: boolean; queueRun?: boolean;
-  /** CIFAST1: the stage's path, which runs the rehearsals a plain run owes. */
+  /** The stage's path, which runs the rehearsals a plain run owes. */
   ciStage: boolean;
-  /** CISCOPE1d: the nightly run by hand, every gate whole. */
+  /** The nightly run by hand, every gate whole. */
   ciNight: boolean;
 }
-/** GATEWT1: what the prune knows of the gate tree: git lists it, the commit it holds, its changes, its run's lock and its stage. */
+/** What the prune knows of the gate tree: git lists it, the commit it holds, its changes, its run's lock and its stage. */
 interface GateTreeFacts {
   listed: boolean; head: string | null; changes: string[]; error?: string;
   lock: { pid: number; commit: string; at: string; running: boolean } | null;
@@ -59,81 +59,81 @@ interface GateTreeFacts {
   processes?: Proc[]; processError?: string;
 }
 /**
- * GATELANES1: the two lanes, the light one's run order, and what each Process-lane gate starts after. GATELANES2: how
- * many light gates run at once, and the components each builds, of which no two gates hold one at once. GATEBUILD1: the
+ * The two lanes, the light one's run order, and what each Process-lane gate starts after; how
+ * many light gates run at once, and the components each builds, of which no two gates hold one at once; the
  * fast half whose build each Process half reuses.
  */
 interface Schedule {
   light: Gate[]; process: Gate[]; waits: Record<string, { after: string[]; component: string | null }>;
   width: number; components: Record<string, string[]>; reuses: Record<string, string>;
-  /** REHLANE1: the Process-lane gates each may run beside, the git half and the rehearsals with their own build output. */
+  /** The Process-lane gates each may run beside, the git half and the rehearsals with their own build output. */
   beside: Record<string, string[]>;
 }
-/** GATEBUILD1: the fast half that passed in this run, and the tree it ran on. */
+/** The fast half that passed in this run, and the tree it ran on. */
 interface Built { gate: string; tree: string | null }
-/** INTEGRATE1j: what a gate ran with, as its composition records it beside its log. */
+/** What a gate ran with, as its composition records it beside its log. */
 interface CompositionSettings {
   gate: string; run: string; cwd: string | null; runsettings: { path: string; text: string | null } | null; narrowed: string[];
   environment: { removed: string[]; added: Record<string, string> };
 }
 /**
  * What a lane runner hands a gate: when the light lane has ended, for a Process gate's re-run alone; and to a Process
- * half whose fast half passed in this run, that pass (GATEBUILD1).
+ * half whose fast half passed in this run, that pass.
  */
 interface Beside { settled?: () => Promise<void>; built?: Built; memory?: MemoryWait | null; again?: GateResult | null }
 interface Worktree { path: string; branch: string; locked: boolean; lockReason: string; prunable: boolean; bare: boolean }
 interface Candidate { branch: string; worktree: Worktree | null; held: string | null }
-/** CLEANUP2: what a prune knows of a harness-locked worktree beyond its changes: its branch at main's tip, the processes inside it. */
+/** What a prune knows of a harness-locked worktree beyond its changes: its branch at main's tip, the processes inside it. */
 interface Facts {
   gone?: boolean; error?: string; tracked: string[]; untracked: string[]; local: string | null;
   atTip?: boolean; processes?: Proc[]; processError?: string;
-  /** CLEANUP2b: minutes since the newest write read in the worktree. */
+  /** Minutes since the newest write read in the worktree. */
   idleMinutes?: number;
 }
 interface Proc { pid: number; exe: string; command: string }
-/** CLEANUP2: a folder under `.claude/worktrees/` that git does not list. */
+/** A folder under `.claude/worktrees/` that git does not list. */
 interface Folder { path: string; link: boolean; git: boolean; processes?: Proc[]; processError?: string }
 interface Slow { name: string; ms: number; tests: number }
 interface GateResult {
   gate: Gate; code: number; log: string; verdict: string; note: string; ms: number; slowest?: Slow[]; trx?: string;
-  /** MEMGATE1: 'memory' when the gate died of memory; `again` while its run again alone is still to come. */
+  /** 'memory' when the gate died of memory; `again` while its run again alone is still to come. */
   cause?: string; again?: boolean; flakes?: string[];
 }
-/** MEMGATE1: what a reading of the machine's memory answers, in bytes; null where it cannot be read, and why. */
+/** What a reading of the machine's memory answers, in bytes; null where it cannot be read, and why. */
 interface Reading { physical: number | null; commit: number | null; total?: number | null; why?: string }
-/** MEMGATE1: what a run's memory reading is made of, each a stand-in in a test. */
+/** What a run's memory reading is made of, each a stand-in in a test. */
 interface MemoryOptions { read?: () => Reading; sleep?: (ms: number) => Promise<void>; now?: () => number; pollMs?: number; boundMs?: number }
-/** MEMGATE1: a run's wait for a gate's need of memory, before it starts or runs again. */
+/** A run's wait for a gate's need of memory, before it starts or runs again. */
 type MemoryWait = (gate: Gate, options?: { again?: boolean; halted?: () => boolean }) => Promise<void>;
-/** CIPRIO1c: the step trees a run has running, by each step's own pid; `ended` says why once the run ended them. */
+/** The step trees a run has running, by each step's own pid; `ended` says why once the run ended them. */
 interface Trees { ended: string | null; hold: (pid: number) => void; release: (pid: number) => boolean; end: (why: string) => void }
 type Step = (command: string, cwd: string, fd: number, options?: { raise?: ((pid: number) => void) | null; trees?: Trees | null }) => Promise<number>;
 interface Rule { paths?: string[]; lane?: string; gates: string[] | '*'; why: string }
 interface Selected { gate: Gate; run: boolean; reached: boolean; why: string }
 interface Verdict {
   gate: string; verdict: string; tree: string | null; at: string; commit?: string | null; branch?: string | null;
-  /** PROCREACH1: a Process half's classes: how many ran, how many it kept by reach, and the oldest verdict it kept (its own start when none). */
+  /** A Process half's classes: how many ran, how many it kept by reach, and the oldest verdict it kept (its own start when none). */
   classes?: { ran: number | null; kept: number; sweep: string };
 }
-/** PROCREACH1: one class's verdict, kept with the tree it ran on. */
+/** One class's verdict, kept with the tree it ran on. */
 interface ClassVerdict { verdict: string; tree: string | null; at: string; commit?: string | null }
-/** PROCREACH1: what a CI run does with a Process half it owes: the whole half and why, or the classes it runs and those it keeps. */
+/** What a CI run does with a Process half it owes: the whole half and why, or the classes it runs and those it keeps. */
 interface ClassPlan {
   whole: string | null; run: { name: string; why: string }[]; kept: { name: string; verdict: ClassVerdict; standing: string }[]; sweep: string | null;
-  /** CISCOPE1b: why a half whose every class is kept passes without running, when it does. */
+  /** Why a half whose every class is kept passes without running, when it does. */
   composed?: string;
 }
-/** CISCOPE1b: a half's newest gate verdict and how it stands on the tree a CI run gates. */
+/** A half's newest gate verdict and how it stands on the tree a CI run gates. */
 interface Last { verdict: Verdict; standing: Standing }
 type Reached = { whole: { path: string; why: string }[]; classes: string[]; by: Map<string, string> };
-/** GATE6: how a verdict given on one tree stands for another, for its gate, and the paths that say so. */
+/** How a verdict given on one tree stands for another, for its gate, and the paths that say so. */
 interface Standing { standing: 'exact' | 'records' | 'unreached' | 'stale'; paths: string[]; records: string[] }
 /** What a stage judges by: this tree, the paths another differs by (null when git cannot say), which are records, which reach a gate. */
 interface Judging { tree: string; drift: (from: string) => string[] | null; isRecord: (path: string) => boolean; reaching: (gate: string, paths: string[]) => string[] }
 /** One gate as the stage judges it: the verdict that counts and how it stands, or a newer one that no longer does. */
 interface Judged { name: string; verdict: Verdict | null; exact: boolean; standing: Standing | null; stale: (Standing & { verdict: Verdict }) | null }
 
-/** REHLANE2b: the build servers of its own the deployment rehearsal builds on, the twin of a run beside's. */
+/** The build servers of its own the deployment rehearsal builds on, the twin of a run beside's. */
 const rehearsalKit = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
   '../../../tools/rehearsal-kit.mjs') as { OWN_BUILD_SERVERS: Readonly<Record<string, string>> };
@@ -157,10 +157,10 @@ const tool = await import(
     print?: (line: string) => void;
     halt?: () => boolean;
     memory?: MemoryOptions | null;
-    /** CI1: a Process gate waits only for what builds its component, the heavy light gates beside it as memory allows. */
+    /** A Process gate waits only for what builds its component, the heavy light gates beside it as memory allows. */
     byMemory?: boolean;
   }) => Promise<GateResult[]>;
-  /** MEMGATE1: a heavy gate waits for memory rather than failing for want of it. */
+  /** A heavy gate waits for memory rather than failing for want of it. */
   memoryNeed: (gate: { name: string; run: string; memoryGb?: number }) => number;
   MEMORY_NEEDS: Readonly<Record<string, number>>;
   MEMORY_POLL_MS: number;
@@ -179,7 +179,7 @@ const tool = await import(
   isGitHalf: (gate: { name: string; run: string }) => boolean;
   BESIDE_GIT_HALF: readonly string[];
   runsBesideGitHalf: (gate: { name: string; run: string }) => boolean;
-  /** CIFAST1: the rehearsals a plain CI run owes a stage, and the stage's path that runs them. */
+  /** The rehearsals a plain CI run owes a stage, and the stage's path that runs them. */
   STAGE_REHEARSALS: readonly string[];
   isStageRehearsal: (gate: { name: string; run: string }) => boolean;
   stageCommand: (commit: string) => string;
@@ -244,7 +244,7 @@ const tool = await import(
   verifyInputs: (env: Record<string, string | undefined>, options?: { besideCommit?: string | null }) => {
     commit: string; result: string; mode: string | null; base: string | null; declaration: string; tree: string | null; gates: string[] | null; failure: string | null;
   };
-  /** INTEGRATE1j part 2: the gates DAORIS_VERIFY_GATES names, by their declared names, in the plan's order. */
+  /** The gates DAORIS_VERIFY_GATES names, by their declared names, in the plan's order. */
   verifyNamed: <G extends { name: string; declared: string }>(plan: G[], names: string[]) => G[];
   compositionEnvironment: () => { removed: string[]; added: Record<string, string> };
   compositionDigest: (units: string[] | null, settings: Record<string, unknown>) => string;
@@ -324,11 +324,11 @@ const tool = await import(
   copyPrivateFiles: (home: string, tree: string, files: string[]) => string[];
   keepGateLogs: (tree: string, home: string, sha: string) => boolean;
   rescueGateLogs: (tree: string, home: string) => string[];
-  /** CIPRIO1: a full set beside the merges is a guest: below normal priority, its own build servers, stopped when main moves on. */
+  /** A full set beside the merges is a guest: below normal priority, its own build servers, stopped when main moves on. */
   lowerPriority: (setPriority?: (pid: number, priority: number) => void) => string | null;
   BESIDE_ENVIRONMENT: Readonly<Record<string, string>>;
   startBesideRun: (options?: { setPriority?: (pid: number, priority: number) => void; env?: Record<string, string | undefined>; say?: (line: string) => void }) => void;
-  /** FAMILYFAIL1b: the raise a run beside hands a rehearsal's step, null in a run that did not lower itself. */
+  /** The raise a run beside hands a rehearsal's step, null in a run that did not lower itself. */
   rehearsalRaise: () => ((pid: number) => void) | null;
   watchTip: (commit: string | null, resolveTip?: () => string | null, options?: { onMove?: (moved: { from: string; to: string }) => void }) => {
     check: () => boolean; poll: (ms: number) => () => void; superseded: { from: string; to: string } | null;
@@ -336,7 +336,7 @@ const tool = await import(
   supersededLines: (superseded: { from: string; to: string }, ran: string[], left: string[], ended?: string[]) => string[];
   besideOutcome: (code: number, superseded: { from: string; to: string } | null) => { passed: boolean; superseded: string | null };
   runStep: Step;
-  /** CIPRIO1c: a superseded or stopped run ends the gates it is running, each with its whole tree. */
+  /** A superseded or stopped run ends the gates it is running, each with its whole tree. */
   STEP_ENDED: number;
   TIP_POLL_MS: number;
   stepTrees: (options?: { end?: (pid: number) => void }) => Trees;
@@ -345,10 +345,10 @@ const tool = await import(
   }) => void;
   descendants: (listing: string, pid: number) => number[];
   stoppedLines: (ran: string[], left: string[], ended?: string[]) => string[];
-  /** CISTAGEFAIL1: whether a result is the failure that ends a stage's CI run. */
+  /** Whether a result is the failure that ends a stage's CI run. */
   endsStageRun: (result: GateResult) => boolean;
   stopOnInterrupt: (trees: Trees, options?: { on?: { once: (event: string, listener: () => void) => unknown; off: (event: string, listener: () => void) => unknown }; say?: (line: string) => void }) => () => void;
-  /** CI1: the local CI runner, its record, its watch and the stop it is asked by. */
+  /** The local CI runner, its record, its watch and the stop it is asked by. */
   CI_RECORD: string;
   CI_WATCH: string;
   CI_STOP: string;
@@ -367,11 +367,11 @@ const tool = await import(
     stopAsked: () => boolean; sleep: (ms: number) => Promise<void>; say: (line: string) => void; pollMs?: number; tickMs?: number; now?: () => number;
     schedule?: ((tip: string) => { kind: string; key: string; why?: string } | null) | null; report?: (() => string[]) | null;
   }) => Promise<number>;
-  /** CISCOPE1d: the gate store kept per gate, the scoped run's apart from the background's. */
+  /** The gate store kept per gate, the scoped run's apart from the background's. */
   keptVerdicts: (verdicts: (Verdict & { kind?: string })[], keep?: number) => (Verdict & { kind?: string })[];
   VERDICTS_KEPT_PER_GATE: number;
   nightHour: (env: Record<string, string | undefined>) => number | null;
-  /** PROCREACH1: a Process half run by the classes a change reaches, each class's verdict kept with its tree, a whole half at least daily. */
+  /** A Process half run by the classes a change reaches, each class's verdict kept with its tree, a whole half at least daily. */
   CLASS_VERDICTS_FILE: string;
   SWEEP_BOUND_MS: number;
   classResults: (trx: string) => Map<string, { tests: number; failed: string[] }>;
@@ -385,24 +385,24 @@ const tool = await import(
   composeRefusal: (facts: { classes: string[]; verdicts: Record<string, ClassVerdict[]>; last: Last | null }) => string | null;
   lastVerdict: (gate: string, verdicts: Verdict[], judging: Judging) => Last | null;
 };
-/** CI1: what `os.cpus()` answers of a processor, the times it spent by kind since the machine started. */
+/** What `os.cpus()` answers of a processor, the times it spent by kind since the machine started. */
 interface CpuTimes { times: { user: number; nice: number; sys: number; idle: number; irq: number } }
-/** CI1: the machine's load as a CI run measures it before its gates start: the share of its processors busy, its free memory. */
+/** The machine's load as a CI run measures it before its gates start: the share of its processors busy, its free memory. */
 interface Load { busy: number | null; physical: number | null; commit: number | null }
-/** CI1: one gate in a CI run's status file. */
+/** One gate in a CI run's status file. */
 interface CiGate {
   name: string; kind: string; lane: 'light' | 'process'; state: 'kept' | 'waiting' | 'running' | 'done' | 'not run' | 'owed';
   verdict: string | null; at: string | null; ms: number | null; log: string | null; note: string | null;
   kept: { commit: string | null; tree: string | null; standing: string } | null;
 }
-/** CI1: a CI run's status file, `local/scratch/ci-<sha7>/status.json`, which the parent reads and a later page may. */
+/** A CI run's status file, `local/scratch/ci-<sha7>/status.json`, which the parent reads and a later page may. */
 interface CiStatus {
   schema: number; commit: string; tree: string; state: string; pid: number; started: string; updated: string; ended: string | null;
   since: { commit: string | null; at: string | null; paths: number | null }; light: { width: number; idle: boolean; why: string };
   stage: boolean; kind?: string; owed: string[]; gates: CiGate[]; error?: string;
 }
 
-// The stage's own question (GATE6b's proof): the publish asks the merge tool's `--passed` before it builds.
+// The stage's own question: the publish asks the merge tool's `--passed` before it builds.
 const publish = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam as the merge tool above
   '../../../tools/desktop-publish.mjs') as { ungatedRefusal: (to: string, repoRoot: string) => { refusal: string | null; note: string | null } };
@@ -429,7 +429,7 @@ test('the arguments name one branch, or several after --batch, and the flags', (
     ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
     preview: false, messageFile: null, queue: false, recheck: false, queueRun: false, daorisVerify: false,
   });
-  // CISCOPE1e: the queue's verbs, each alone with what it takes.
+  // The queue's verbs, each alone with what it takes.
   assert.equal(tool.parseArgs(['a', '--preview']).preview, true);
   assert.equal(tool.parseArgs(['a', '--message', 'local/a.msg']).messageFile, 'local/a.msg');
   assert.equal(tool.parseArgs(['a', '--message', 'local/a.msg', '--one-at-a-time']).oneAtATime, true);
@@ -444,22 +444,22 @@ test('the arguments name one branch, or several after --batch, and the flags', (
   assert.equal(tool.parseArgs(['a', '--gated']).gated, true);
   assert.equal(tool.parseArgs(['--continue', '--gated']).gated, true);
   assert.throws(() => tool.parseArgs(['--rerun', 'web', '--gated']), /--rerun takes gate names/);
-  // GATELANES1: every verb that runs gates runs them one at a time when told to, as on a loaded machine.
+  // Every verb that runs gates runs them one at a time when told to, as on a loaded machine.
   for (const argv of [['a', '--one-at-a-time'], ['--continue', '--one-at-a-time'], ['--rerun', 'web', '--one-at-a-time'],
     ['--stale', '--one-at-a-time'], ['--full', '--one-at-a-time'], ['--full', '--keep-going', '--one-at-a-time']]) {
     assert.equal(tool.parseArgs(argv).oneAtATime, true, argv.join(' '));
   }
-  // GATE6b: each stale gate run again on the checkout as it stands.
+  // Each stale gate run again on the checkout as it stands.
   assert.equal(tool.parseArgs(['--stale']).stale, true);
   assert.equal(tool.parseArgs(['--stale', '--keep-going']).keepGoing, true);
-  // GATE3: every gate for one merge, or for the checkout as it stands; and whether the full set passed it.
+  // Every gate for one merge, or for the checkout as it stands; and whether the full set passed it.
   assert.equal(tool.parseArgs(['a', '--full']).full, true);
   assert.equal(tool.parseArgs(['--plan', 'a', '--full']).full, true);
   assert.equal(tool.parseArgs(['--continue', '--full']).full, true);
   const alone = tool.parseArgs(['--full']);
   assert.deepEqual([alone.full, alone.branches], [true, []]);
   assert.equal(tool.parseArgs(['--passed']).passed, true);
-  // GATE4: the named gates again, on the merge in place.
+  // The named gates again, on the merge in place.
   assert.deepEqual(tool.parseArgs(['--rerun', 'web', 'driver-process']).rerun, ['web', 'driver-process']);
   assert.equal(tool.parseArgs(['--rerun', 'web', '--keep-going']).keepGoing, true);
   assert.deepEqual(tool.parseArgs(['a', '--batch', 'b', 'c']).branches, ['a', 'b', 'c']);
@@ -470,7 +470,7 @@ test('the arguments name one branch, or several after --batch, and the flags', (
   assert.equal(tool.parseArgs(['--continue', '--keep-going']).keepGoing, true);
   assert.equal(tool.parseArgs(['--drop-batch']).dropBatch, true);
   assert.equal(tool.parseArgs(['--plan', 'a', '--batch', 'b']).plan, true);
-  // GATE2: the prune on its own, its plan, and a merge that leaves the merged branches standing.
+  // The prune on its own, its plan, and a merge that leaves the merged branches standing.
   const prune = tool.parseArgs(['--prune']);
   assert.deepEqual([prune.prune, prune.plan, prune.branches], [true, false, []]);
   const planned = tool.parseArgs(['--prune', '--plan']);
@@ -516,7 +516,7 @@ test('the arguments refuse what would merge the wrong thing, with exit 2', () =>
 });
 
 // ---------------------------------------------------------------------------------------------------
-// GATEWT1: the full set in its own worktree, beside the merges
+// The full set in its own worktree, beside the merges
 
 test('--full --beside gates a commit in a worktree of its own, main\'s tip when it names none, and takes only the run\'s flags', () => {
   const plain = tool.parseArgs(['--full', '--beside']);
@@ -540,7 +540,7 @@ test('--full --beside gates a commit in a worktree of its own, main\'s tip when 
   }
 });
 
-// INTEGRATE1j part 1: the flag that makes the tool D192's declared runner, valid with `--full --beside` alone, taking its commit from the environment.
+// The flag that makes the tool the declared runner, valid with `--full --beside` alone, taking its commit from the environment.
 test('--daoris-verify is the declared runner: only with --full --beside, naming no commit, taking only the run\'s flags', () => {
   const asked = tool.parseArgs(['--full', '--beside', '--daoris-verify', '--one-at-a-time']);
   assert.deepEqual([asked.full, asked.beside, asked.daorisVerify, asked.besideCommit, asked.oneAtATime], [true, true, true, null, true]);
@@ -563,7 +563,7 @@ test('--daoris-verify is the declared runner: only with --full --beside, naming 
 });
 
 // ---------------------------------------------------------------------------------------------------
-// CI1: the local CI runner, main's tip gated after each merge so a release waits only for the last delta
+// The local CI runner, main's tip gated after each merge so a release waits only for the last delta
 
 test("--ci gates a commit in the gate tree, main's tip unless named; --watch follows main's tip, --stop ends the watch", () => {
   const plain = tool.parseArgs(['--ci']);
@@ -576,13 +576,13 @@ test("--ci gates a commit in the gate tree, main's tip unless named; --watch fol
   assert.equal(tool.parseArgs(['--watch', '--ci']).watch, true);
   assert.deepEqual([tool.parseArgs(['--ci', '--stop']).stop], [true]);
   assert.equal(plain.ciStage, false, 'a plain run is no stage\'s');
-  // CIFAST1: the stage's path, its commit after --stage or after --ci.
+  // The stage's path, its commit after --stage or after --ci.
   for (const argv of [['--ci', '--stage', 'abc1234'], ['--ci', 'abc1234', '--stage'], ['--stage', '--ci', 'abc1234']]) {
     const stage = tool.parseArgs(argv);
     assert.deepEqual([stage.ci, stage.ciStage, stage.ciCommit, stage.branches], [true, true, 'abc1234', []], argv.join(' '));
   }
   assert.deepEqual([tool.parseArgs(['--ci', '--stage']).ciStage, tool.parseArgs(['--ci', '--stage']).ciCommit], [true, null]);
-  // CISCOPE1d: the nightly run by hand, every gate whole, its commit after --night or after --ci.
+  // The nightly run by hand, every gate whole, its commit after --night or after --ci.
   for (const argv of [['--ci', '--night', 'abc1234'], ['--ci', 'abc1234', '--night']]) {
     const night = tool.parseArgs(argv);
     assert.deepEqual([night.ci, night.ciNight, night.ciStage, night.ciCommit], [true, true, false, 'abc1234'], argv.join(' '));
@@ -654,7 +654,7 @@ test("a CI run gates what this tree's verdicts lack: a gate with none, or whose 
   let chosen = tool.ciPlan({ ...facts, plan, verdicts: plan.map((gate) => verdict(gate, 't1')) });
   assert.deepEqual(chosen.run, ['universal', 'web', 'cli']);
   assert.deepEqual(chosen.kept.map((kept) => `${kept.name} ${kept.verdict.verdict} ${kept.standing.standing}`), ['service PASS unreached']);
-  // The stage forgives the records (GATE6); the CI does not: a backlog edit since reaches the service suite, which runs.
+  // The stage forgives the records; the CI does not: a backlog edit since reaches the service suite, which runs.
   chosen = tool.ciPlan({ ...facts, plan, verdicts: plan.map((gate) => verdict(gate, 't0')) });
   assert.deepEqual(chosen.run, plan);
   // A failure stays owed whatever changed since: the service suite failed on t1, nothing since reaches it, and it runs again.
@@ -757,7 +757,7 @@ test("a CI run's status names each gate of the plan: those it runs waiting, the 
     log: 'local/scratch/ci-ccccccc/web.log', note: null, kept: { commit: 'c'.repeat(40), tree: 't1', standing: 'unreached' },
   });
 
-  // CIFAST1: a gate a plain run owes a stage is `owed`, neither failed nor passed, naming the stage's path.
+  // A gate a plain run owes a stage is `owed`, neither failed nor passed, naming the stage's path.
   const owing = tool.ciStatus({
     commit: 'a'.repeat(40), tree: 't2', plan: [...plan, { name: 'rehearse-family', run: 'npm run rehearse:family', kind: 'rehearsal' }],
     chosen: { run: ['universal', 'driver-process'], kept: [], owed: ['web', 'rehearse-family'] },
@@ -863,7 +863,7 @@ test('a taken-over lock ends what its dead pid started since the lock\'s at, and
   assert.deepEqual(strays, []);
   const taken = tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => false, end, endStrays });
   assert.deepEqual(calls, [[process.pid, Date.parse('2026-10-18T10:00:00Z')]]);
-  // CIPRIO1e: the shells' orphans, by the gate tree's folder, beside the dead pid's children, each pid once
+  // The shells' orphans, by the gate tree's folder, beside the dead pid's children, each pid once
   assert.deepEqual(strays, [[join(fx.root, tool.GATE_TREE), Date.parse('2026-10-18T10:00:00Z')]]);
   assert.deepEqual(taken.stale, { pid: process.pid, commit: 'a'.repeat(40), at: '2026-10-18T10:00:00Z', ended: [7, 8, 9] });
   fx.cleanup();
@@ -929,7 +929,7 @@ test('the gate tree\'s run logs are kept in the main checkout as beside-<sha7>, 
   assert.equal(readFileSync(join(kept, 'first.log'), 'utf8'), 'new\n');
   assert.equal(tool.keepGateLogs(tree, home, '1234567' + '0'.repeat(33)), false, 'no run folder, nothing kept');
 
-  // A run that was killed left its folder in the tree and none in the main checkout.
+  // A killed run leaves its folder in the tree and none in the main checkout.
   const killed = join(tree, 'local', 'scratch', 'full-9999999');
   mkdirSync(killed, { recursive: true });
   writeFileSync(join(killed, 'last.partial'), 'half\n');
@@ -949,7 +949,7 @@ test('the prune never takes the gate tree while its full set runs; a merge\'s pr
     assert.equal(kept.remove, false);
     assert.match(kept.why, /^its full set is running \(pid 7, since 2026-10-18 10:00 UTC, on aaaaaaa\): never removed while it runs$/);
   }
-  // A merge's prune keeps a gated tree its stage has not read: that is what the run was for.
+  // A merge's prune keeps a gated tree its stage has not read: that is what the run is for.
   const waiting = tool.gateTreeVerdict(idle, { atMerge: true });
   assert.equal(waiting.remove, false);
   assert.match(waiting.why, /its stage has not read it: npm run publish:desktop -- --to <install> --service --stage --from-gated aaaaaaa; --prune removes it/);
@@ -1108,7 +1108,7 @@ test('the worktree a branch is checked out in is found in the porcelain list', (
 });
 
 // ---------------------------------------------------------------------------------------------------
-// The prune (GATE2): which merged branches go, with their worktrees, and which stay and why
+// The prune: which merged branches go, with their worktrees, and which stay and why
 
 const tree = (path: string, branch: string, more: Partial<Worktree> = {}): Worktree => ({
   path, branch, locked: false, lockReason: '', prunable: false, bare: false, ...more,
@@ -1151,8 +1151,8 @@ test('a prune considers each merged branch but main, the main checkout\'s, the o
 });
 
 test('a prune never takes a Daoris session\'s tree or branch: a daoris/ or quest/ branch, with its worktree', () => {
-  // DOGFOOD1: the install drives this repository, its sessions' trees under its own home and their branches at main's tip
-  // until their first commit, which reads as merged; a merge's prune took one mid-session (HOMEFIX2's batch, 2026-10-20).
+  // The install drives this repository, its sessions' trees under its own home and their branches at main's tip
+  // until their first commit, which reads as merged; a merge's prune would take one mid-session.
   const worktrees = [
     tree('D:/work/repo', 'main'),
     tree('D:/work/repo/.claude/worktrees/agent-a', 'worktree-agent-a'),
@@ -1180,7 +1180,7 @@ test('a merged branch goes with its worktree only when that is unlocked, has no 
   assert.deepEqual(tool.pruneVerdict({ branch: 'b', worktree: null, held: 'named in this batch' }, null), { remove: false, why: 'named in this batch' });
 
   // A branch at main's tip is merged; a worktree locked for any reason but the agent harness's is in use however it
-  // looks, and is never looked into (CLEANUP2 lifts the harness's own lock, below).
+  // looks, and is never looked into (the harness's own lock is lifted, below).
   const locked = tool.pruneVerdict(at({ locked: true, lockReason: 'the owner keeps this' }), null);
   assert.equal(locked.remove, false);
   assert.match(locked.why, /locked, so in use \(the owner keeps this\)/);
@@ -1203,8 +1203,8 @@ test('a merged branch goes with its worktree only when that is unlocked, has no 
   assert.match(tool.pruneVerdict(at(), { ...clean, tracked: ['a'], local: 'local/x' }).why, /tracked files[\s\S]*local\//);
 });
 
-// CLEANUP2: the agent harness keeps its lock for its session's whole life, not only while the agent runs, so nine
-// finished agents' merged worktrees stood locked (2026-10-18). Its lock is lifted when nothing is left inside.
+// The agent harness keeps its lock for its session's whole life, not only while the agent runs, so
+// finished agents' merged worktrees stand locked. Its lock is lifted when nothing is left inside.
 test('the agent harness\'s lock is its own reason: claude agent, an agent id and a pid', () => {
   assert.equal(tool.harnessLock('claude agent agent-a (pid 57256)'), true);
   assert.equal(tool.harnessLock('claude agent agent-aa965da03c60bca87 (pid 1)'), true);
@@ -1213,7 +1213,7 @@ test('the agent harness\'s lock is its own reason: claude agent, an agent id and
   }
 });
 
-// CLEANUP2b: the newest write is read from the tree's top level, its folders' children, and the git folder's HEAD, index and
+// The newest write is read from the tree's top level, its folders' children, and the git folder's HEAD, index and
 // log, never a full walk; a source file edited in place deeper down is not seen, which the two hours cover.
 test('the newest write of a worktree is read from its top level, its folders\' children and its git folder', () => {
   const repo = scratch('newest-write', [{ name: 'first', run: 'node gate.mjs first' }], { 'src/a.ts': 'a\n' });
@@ -1265,7 +1265,7 @@ test('a harness-locked merged worktree goes, unlocked, only when it is clean, ho
   });
   assert.match(all.why, /tracked files \(a\.ts\)[\s\S]*local\/ \(local\/notes\.md\)[\s\S]*untracked files[\s\S]*pid 3: code \./);
 
-  // CLEANUP2b: a worker may be in the tree with no process naming its folder, so a write in the last two hours keeps it.
+  // A worker may be in the tree with no process naming its folder, so a write in the last two hours keeps it.
   const young = tool.pruneVerdict(at(), { ...clean, idleMinutes: 7 });
   assert.equal(young.remove, false);
   assert.equal('unlock' in young, false);
@@ -1367,7 +1367,7 @@ test('a folder under .claude/worktrees/ git does not list goes when it holds no 
 
 test('a gate is a check, a suite or a rehearsal by what it runs', () => {
   assert.equal(tool.gateKind('dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check'), 'check');
-  // A tool's own --check is a check too, run with the fast ones (ORIENT1a); a tool run otherwise is not.
+  // A tool's own --check is a check too, run with the fast ones; a tool run otherwise is not.
   assert.equal(tool.gateKind('node tools/orient-index.mjs --check'), 'check');
   assert.equal(tool.gateKind('node tools/orient-index.mjs'), 'suite');
   assert.equal(tool.gateKind('npm run verify'), 'suite');
@@ -1404,7 +1404,7 @@ test('the plan is the declared gates plus the rehearsals only the workflow runs,
   assert.deepEqual(plan.map((gate) => gate.name), ['universal', 'cli', 'service', 'rehearse', 'rehearse-family', 'web', 'deployment']);
   assert.deepEqual(plan.map((gate) => gate.kind), ['check', 'suite', 'suite', 'rehearsal', 'rehearsal', 'rehearsal', 'rehearsal']);
   // A long-lived build server carried a broken environment into a publish on 2026-09-30, and the deployment rehearsal ran
-  // after a shutdown of every build server; since REHLANE2b its builds keep servers of their own, and BEFORESTEP1 left a gate no
+  // after a shutdown of every build server; its builds keep servers of their own, and a gate has no
   // step before it at all: a planned gate has no `before`.
   assert.ok(plan.every((gate) => !('before' in gate)));
 });
@@ -1429,11 +1429,11 @@ test("this repository's plan runs every declared gate once, fast first, and the 
 });
 
 // ---------------------------------------------------------------------------------------------------
-// GATE3: a merge runs the gates its lanes reach; the full set runs before the install is staged
+// A merge runs the gates its lanes reach; the full set runs before the install is staged
 
 const repoPlan = tool.readPlan(repoRoot);
 const repoLanes = tool.readLanes(repoRoot)!.lanes;
-// GATESLIM1: `runs` and `selected` are what `--gated` runs (what a merge's paths reach, the long gates apart): the lane table's
+// `runs` and `selected` are what `--gated` runs (what a merge's paths reach, the long gates apart): the lane table's
 // own answer, which these tests hold to the code. `mergeRuns` is what a merge runs by default: the blocking checks only.
 const selected = (paths: string[], full = false, gated = true) => tool.selectGates(repoPlan, paths, { lanes: repoLanes, full, gated }).gates;
 const mergeRuns = (paths: string[], full = false): string[] => selected(paths, full, false).filter((entry) => entry.run).map((entry) => entry.gate.name);
@@ -1441,31 +1441,31 @@ const mergeRuns = (paths: string[], full = false): string[] => selected(paths, f
 const runs = (paths: string[], full = false): string[] => selected(paths, full).filter((entry) => entry.run).map((entry) => entry.gate.name);
 /** What the lane table says can see the change, run or not: what holds the table to the code. */
 const reaches = (paths: string[]): string[] => selected(paths).filter((entry) => entry.reached).map((entry) => entry.gate.name);
-/** The gates whose verdicts a change to these paths makes stale (GATE6), in the plan's order. */
+/** The gates whose verdicts a change to these paths makes stale, in the plan's order. */
 const stalens = (paths: string[]): string[] => ALL.filter((gate) => tool.pathsReaching(gate, paths, { lanes: repoLanes }).length > 0);
 const BASE = ['universal', 'code-map', 'test-map', 'cli'];
 const ALL = repoPlan.map((gate) => gate.name);
-// GATE5: the real-process halves and the deployment rehearsal run only in the full set.
+// The real-process halves and the deployment rehearsal run only in the full set.
 const LONG = ['service-process', 'driver-process', 'driver-process-git', 'modules-process', 'deployment'];
-/** GATESLIM1: what a merge runs by default, the blocking checks; every other gate it reaches is "in the CI beside". */
+/** What a merge runs by default, the blocking checks; every other gate it reaches is "in the CI beside". */
 const BLOCKING = ['universal', 'code-map', 'test-map'];
-/** The kept names' table (SESSDEL1c): among the driver's tests, and the page's twin reads it too. */
+/** The kept names' table: among the driver's tests, and the page's twin reads it too. */
 const KEPT_NAMES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json';
-/** The backlog merges' table (LANDBACKLOG1): among the driver's tests, and the merge tool's twin reads it too. */
+/** The backlog merges' table: among the driver's tests, and the merge tool's twin reads it too. */
 const BACKLOG_MERGES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json';
-/** The joins union leaves and the merge sets apart (INTEGRATE1c): among the driver's tests, and the merge tool's twin reads it too. */
+/** The joins union leaves and the merge sets apart: among the driver's tests, and the merge tool's twin reads it too. */
 const UNION_JOINS = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json';
-/** The integration declarations' table (INTEGRATE1d): among the driver's tests, and the merge tool's twin reads it too. */
+/** The integration declarations' table: among the driver's tests, and the merge tool's twin reads it too. */
 const INTEGRATION_DECLARATIONS = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json';
 /**
- * The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. Each by its
- * name, at whatever depth of the driver's folder it is tracked (STRUCT1, D166).
+ * The driver's sources whose declarations the page's twin vitests parse. Each by its
+ * name, at whatever depth of the driver's folder it is tracked.
  */
 const PAGE_PARSED_NAMES = ['NoteCodes.cs', 'EndNoteCodes.cs', 'StartNoteCodes.cs', 'HeldNoteCodes.cs', 'ChatNoteCodes.cs', 'AccountNoteCodes.cs', 'PeerNoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'TraceCodes.cs', 'LandingCode.cs', 'WorkplaceFacts.cs', 'SweepKind.cs', 'BackgroundState.cs', 'TraceChains.cs', 'LandedKind.cs'];
 const DRIVER_FOLDER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
 const PAGE_PARSED = PAGE_PARSED_NAMES
   .map((name) => trackedFiles().find((path) => path.startsWith(DRIVER_FOLDER) && posix.basename(path) === name) ?? `${DRIVER_FOLDER}${name}`);
-/** MOD9e's rule, by the names it holds wherever the driver keeps them. */
+/** The page-parsed rule, by the names it holds wherever the driver keeps them. */
 const isPageParsedRule = (rule: Rule) => rule.paths?.some((path) => PAGE_PARSED_NAMES.some((name) => path === `${DRIVER_FOLDER}**/${name}`)) ?? false;
 
 test('the long gates are the real-process halves and the deployment rehearsal, read from what each runs', () => {
@@ -1483,39 +1483,39 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // The service's suite scans this repository's own doctrine and decisions, so the docs reach it.
     ['docs only', ['docs/2026-09-30-parallel-development-design.md'], [...BASE, 'service']],
     ["the steward's records", ['TASKS.md', 'docs/task-archive.md'], [...BASE, 'service']],
-    // The .NET suites read the page's catalogues and sources: MOD9's incident.
+    // The .NET suites read the page's catalogues and sources.
     ['the web shell', ['src/Daoris.Web/src/App.tsx'], [...BASE, 'web-types', 'web-rules', 'service', 'driver', 'modules', 'web', 'web-unit']],
     ["the web's settings", ['src/Daoris.Web/src/settings/DriverDomain.tsx'], [...BASE, 'web-types', 'web-rules', 'service', 'driver', 'modules', 'web', 'web-unit']],
     ['the driver', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'],
       [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
     ['ServiceHostLocator', ['src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceHostLocator.cs'],
       [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
-    // MOD9e: the page's twin vitests parse these driver sources' declarations, so a change to one runs the web gate's unit
-    // run as well (WEBSPLIT1), and not its build.
+    // The page's twin vitests parse these driver sources' declarations, so a change to one runs the web gate's unit
+    // run as well, and not its build.
     ...PAGE_PARSED.map((path): [string, string[], string[]] => [`${path.split('/').at(-1)}, which a page twin parses`, [path],
       [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'web-unit', 'deployment']]),
-    // PROC1b: the driver's Process classes run in two halves, the git-only ones four at once and the rest eight at once (PROCPAR1).
+    // The driver's Process classes run in two halves, the git-only ones four at once and the rest eight at once.
     ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'censuses', 'driver-process', 'driver-process-git']],
-    // GATE6: a browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
+    // A browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
-    // FLOWCHART1e: what the measured-box check draws reaches its gate beside the web shell's; its own specs and config reach it alone.
+    // What the measured-box check draws reaches its gate beside the web shell's; its own specs and config reach it alone.
     ...['flowLayout.ts', 'Flow.tsx', 'Flow.stories.tsx', 'flowFrames.tsx', 'ui.tsx', 'ui.stories.tsx', 'storyWidths.tsx'].map((name): [string, string[], string[]] =>
       [`${name}, which the measured-box check draws`, [`src/Daoris.Web/src/design/${name}`], [...BASE, 'web-types', 'web-rules', 'service', 'driver', 'modules', 'web', 'web-unit', 'web-measured']]),
     ["the measured-box check's spec", ['src/Daoris.Web/measured/flow.spec.ts'], [...BASE, 'web-measured']],
     ["the measured-box check's config", ['src/Daoris.Web/playwright.measured.config.ts'], [...BASE, 'web-measured']],
     ['a design file it does not draw', ['src/Daoris.Web/src/design/theme.ts'], [...BASE, 'web-types', 'web-rules', 'service', 'driver', 'modules', 'web', 'web-unit']],
-    // MOD9c: the driver's console and occasion scans read every C# source of the modules and the app, from its source root.
+    // The driver's console and occasion scans read every C# source of the modules and the app, from its source root.
     ['the modules', ['src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/DriverModule.cs'], [...BASE, 'driver', 'modules', 'censuses', 'modules-process', 'deployment']],
     ["the modules' loop", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs'], [...BASE, 'driver', 'modules', 'censuses', 'modules-process', 'deployment']],
     ['the desktop app', ['src/Daoris.Desktop/Daoris.Desktop.App/Program.cs'], [...BASE, 'driver', 'modules', 'censuses', 'modules-process', 'deployment']],
-    // What those scans do not read stays the modules lane's alone: a project file, the icon, the modules' tests (the launcher is built by the driver gate, LAUNCHGATE1).
+    // What those scans do not read stays the modules lane's alone: a project file, the icon, the modules' tests (the launcher is built by the driver gate).
     ["the modules' project", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Daoris.Desktop.Modules.csproj'], [...BASE, 'modules', 'modules-process', 'deployment']],
     ["the app's icon", ['src/Daoris.Desktop/Daoris.Desktop.App/daoris.ico'], [...BASE, 'modules', 'modules-process', 'deployment']],
     ['the launcher', ['src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
     ["the modules' tests", ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleRoutesTests.cs'], [...BASE, 'modules', 'censuses', 'modules-process']],
-    // GATESLIM1: the tests of the tools only the parent runs are the tool-tests gate, reached by those tools and their folder.
+    // The tests of the tools only the parent runs are the tool-tests gate, reached by those tools and their folder.
     ['the publish script', ['tools/desktop-publish.mjs'], [...BASE, 'tool-tests', 'rehearse-family', 'deployment']],
-    // FAMILYFAIL1: the rehearsals' kit imports it too, to end what a timed-out command left running.
+    // The rehearsals' kit imports it too, to end what a timed-out command left running.
     ['the process queries the publish and the kit import', ['tools/processes.mjs'], [...BASE, 'tool-tests', 'rehearse', 'rehearse-family', 'deployment']],
     ['the service publisher the publish calls', ['tools/service-publish.mjs'], [...BASE, 'tool-tests', 'rehearse', 'rehearse-family', 'deployment']],
     ["the family rehearsal's set-up kit", ['tools/setup-kit.mjs'], [...BASE, 'tool-tests', 'rehearse-family']],
@@ -1528,22 +1528,22 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the deployment rehearsal', ['tools/deployment-rehearsal.mjs'], [...BASE, 'deployment']],
     ['the canon', ['canon/core/rules/task-lifecycle.md'], [...BASE, 'service', 'rehearse', 'rehearse-family']],
     ['the examples', ['examples/engine/README.md'], [...BASE, 'service', 'rehearse-family', 'web', 'modules', 'modules-process']],
-    // MOD9b: the driver reads the offers and the adoption playbook, as the service reads the digest's note table.
+    // The driver reads the offers and the adoption playbook, as the service reads the digest's note table.
     ["the install's offers", ['examples/plugins/github-pull-request/land.mjs'], [...BASE, 'service', 'driver', 'driver-process', 'rehearse-family', 'web', 'deployment']],
     ['the adoption playbook', ['.claude/knowledge/adoption.md'], [...BASE, 'service', 'driver']],
     ["the digest's note table", ['tools/orient-index-fixtures/decision-notes.json'], [...BASE, 'service']],
-    // HIST1m: the history words' table sits among the service's tests, and the driver's twin reads it too.
+    // The history words' table sits among the service's tests, and the driver's twin reads it too.
     ["the history words' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/history-words.json'], [...BASE, 'service', 'driver']],
-    // FOUNDATION1c: the participant's work table sits among the service's tests, and the driver's twin and the page's identity read it too.
+    // The participant's work table sits among the service's tests, and the driver's twin and the page's identity read it too.
     ["the participant's work table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work.json'], [...BASE, 'service', 'driver', 'web-unit']],
     ["the participant's work readers' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'], [...BASE, 'service', 'driver', 'modules', 'censuses']],
-    // SESSDEL1c: the kept names' table sits among the driver's tests, and the page's twin reads it too.
+    // The kept names' table sits among the driver's tests, and the page's twin reads it too.
     ["the kept names' table", [KEPT_NAMES], [...BASE, 'driver', 'web-unit']],
-    // LANDBACKLOG1: the backlog merges' table sits among the driver's tests, and the merge tool's twin reads it too.
+    // The backlog merges' table sits among the driver's tests, and the merge tool's twin reads it too.
     ["the backlog merges' table", [BACKLOG_MERGES], [...BASE, 'tool-tests', 'driver']],
-    // INTEGRATE1d: the integration declarations' table sits among the driver's tests, and the merge tool's twin reads it too.
+    // The integration declarations' table sits among the driver's tests, and the merge tool's twin reads it too.
     ["the integration declarations' table", [INTEGRATION_DECLARATIONS], [...BASE, 'tool-tests', 'driver']],
-    // MIXAGENT1c: the person's order's table sits among the driver's tests, and the page's twin reads it too.
+    // The person's order's table sits among the driver's tests, and the page's twin reads it too.
     ["the hand-over order's table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/hand-over-order.json'], [...BASE, 'driver', 'web-unit']],
     // REVIEWENV1c4: the review rules' table sits among the driver's tests, and the service's tool test reads its gate rows.
     ["the review rules' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json'], [...BASE, 'service', 'driver']],
@@ -1560,10 +1560,10 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // ORIENT2h6: the fence table sits among the CLI's fixtures, and the driver's SelfDescription twin reads it too, and
     // since ORIENT2h6b the service's MarkdownFence twin.
     ['the fence table', ['src/Daoris.Cli/test/fixtures/fence-cases.json'], [...BASE, 'service', 'driver']],
-    // SWITCH1a: the rotation-use table, among the driver's fixtures since PUSH1f2e, which its twin reads; since SWITCH1d the
+    // The rotation-use table, among the driver's fixtures, which its twin reads, and the
     // page's curve rules.
     ['the rotation-use table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/rotation-use.json'], [...BASE, 'driver', 'web-unit']],
-    // PUSH1f2b (D194 point 7): the driver family's shared tables moved to the driver's fixtures with their last CLI readers gone, the
+    // The driver family's shared tables sit in the driver's fixtures, with no CLI reader left: the
     // landing sentences, which cycle governs a unit, the bytes an edit of driver.json writes, a named graph
     // as a version, and a graph judged when saved; the CLI's keep lock test still reads the lock rows, and verify runs it at every merge.
     ["the driver's tables the CLI's TypeScript left", [
@@ -1573,26 +1573,26 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-graph-versions.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/graph-problems.json',
     ], [...BASE, 'driver', 'driver-process', 'driver-process-git']],
-    // KEEPALL1: the bytes an edit of each other home file a door edits writes sit among the CLI's fixtures, and the driver's
-    // HomeFilesKeepTests reads them too; since KEEPALL1e the service's RemoteConfigKeepTests its remotes.json rows' reads, and since
-    // KEEPALL1c the modules' BrowserSettingsTests browser/settings.json's.
+    // The bytes an edit of each other home file a door edits writes sit among the CLI's fixtures, and the driver's
+    // HomeFilesKeepTests reads them too, as the service's RemoteConfigKeepTests its remotes.json rows' reads and
+    // the modules' BrowserSettingsTests browser/settings.json's.
     ['the home-files-keep table', ['src/Daoris.Cli/test/fixtures/home-files-keep.json'], [...BASE, 'service', 'driver']],
-    // SWITCH1b-iii: the usage curve's table, among the driver's fixtures since PUSH1f2e, which its twin reads; since SWITCH1d the
+    // The usage curve's table, among the driver's fixtures, which its twin reads, and the
     // page's twin.
     ['the usage curve table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/usage-curves.json'], [...BASE, 'driver', 'modules', 'web-unit']],
-    // PARKVIEW1: a park's question as each reader takes it, the driver's QuestionFilesTests and the page's parkQuestion.test.ts.
+    // A park's question as each reader takes it, the driver's QuestionFilesTests and the page's parkQuestion.test.ts.
     ['the park question table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/park-question.json'], [...BASE, 'driver', 'web-unit']],
-    // AGENTPROVIDER1a: the provider census's exceptions the four censuses share: the driver's ProviderCensusTests, the service's, the
+    // The provider census's exceptions the four censuses share: the driver's ProviderCensusTests, the service's, the
     // page's providerCensus.test.ts and the tools' provider-census.test.ts.
     ['the provider census', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-census.json'], [...BASE, 'driver', 'service', 'web-unit', 'tool-tests']],
-    // AGENTPROVIDER1b part 3, placed by INTEGRATE1d part 4: the stand-ins' reader is the tools' (its tool test and the family rehearsal
+    // The stand-ins' reader is the tools' (its tool test and the family rehearsal
     // import it), and each provider's own files are the driver's, which the tool test and the rehearsal read too.
     ["the stand-ins' reader", ['tools/stand-ins.mjs'], [...BASE, 'tool-tests', 'rehearse-family']],
     ...['provider.json', 'pending.json', 'Program/agent.mjs'].map((file): [string, string[], string[]] => [
       `a provider's ${file}`, [`src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/Stub/${file}`],
       [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment'],
     ]),
-    // D251: the tools' provider census runs the contracts' generator, which reads each provider's own sources and the registry's reader.
+    // The tools' provider census runs the contracts' generator, which reads each provider's own sources and the registry's reader.
     ['a provider\'s vocabulary source', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/Codex/CodexProvider.cs'],
       [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment']],
     ['the provider vocabulary reader', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Registry/ProviderVocabulary.cs'],
@@ -1603,33 +1603,33 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the CLI's seam", ['src/Daoris.Cli/src/cli.ts'], [...BASE, 'driver', 'driver-process', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ["the CLI's seam's module", ['src/Daoris.Cli/src/platform/driverprogram.ts'], [...BASE, 'driver', 'driver-process', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // ORIENT2e2: the service's roles twin reads the CLI's ROLES from its file, so that file reaches the service too; by its
-    // name in whichever module folder it sits (STRUCT5d).
+    // name in whichever module folder it sits.
     ["the CLI's roles", ['src/Daoris.Cli/src/layout/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ["the CLI's roles, at the sources' top", ['src/Daoris.Cli/src/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/tool-test/merge-branch.test.ts'], [...BASE, 'tool-tests']],
     ['the service', ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'],
       [...BASE, 'service', 'service-process', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment']],
     ['the devkit', ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'], [...BASE, 'devkit']],
-    // The driver's fast CategoryTests read the file too (PROCPAR1), so a change there runs the driver's fast half.
+    // The driver's fast CategoryTests read the file too, so a change there runs the driver's fast half.
     ["the Process halves' settings", ['src/Daoris.Desktop/process.runsettings'], [...BASE, 'driver', 'driver-process', 'modules-process']],
-    // PROC1c: the second file runs only the driver's git-only classes, four at once.
+    // The second file runs only the driver's git-only classes, four at once.
     ["the git-only classes' settings", ['src/Daoris.Desktop/git.process.runsettings'], [...BASE, 'driver-process-git']],
     ['the declared gates', ['daoris.gates.json'], ALL],
     ['nothing at all', [], BASE],
   ];
   for (const [what, paths, listed] of cases) {
-    // In the plan's order: the web's typecheck (MERGETSC1) is a check, before the CLI's verify.
+    // In the plan's order: the web's typecheck is a check, before the CLI's verify.
     const expected = ALL.filter((gate) => listed.includes(gate));
     assert.deepEqual(reaches(paths), expected, `${what}: what the table says can see it`);
     assert.deepEqual(runs(paths), expected.filter((gate) => !LONG.includes(gate)), `${what}: what a merge runs`);
-    // GATE6: the stage reads the same table, so the gates a changed path makes stale are the ones it reaches.
+    // The stage reads the same table, so the gates a changed path makes stale are the ones it reaches.
     if (paths.length) assert.deepEqual(stalens(paths), expected, `${what}: the verdicts it makes stale`);
   }
   // Lanes add up: a branch crossing two runs what either reaches.
   assert.deepEqual(runs(['docs/x.md', 'tools/release-rehearsal.mjs', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']),
     [...BASE, 'service', 'driver', 'modules', 'censuses', 'rehearse']);
 
-  // FLOWCHART1e's proof: a merge touching the flowchart's layout lists the measured-box check, saying what reached it, and
+  // A merge touching the flowchart's layout lists the measured-box check, saying what reached it, and
   // --gated runs it.
   const flowLayout = ['src/Daoris.Web/src/design/flowLayout.ts'];
   const measured = selected(flowLayout, false, false).find((entry) => entry.gate.name === 'web-measured')!;
@@ -1638,7 +1638,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   assert.ok(runs(flowLayout).includes('web-measured'));
   assert.equal(runs(['src/Daoris.Web/src/App.tsx']).includes('web-measured'), false, 'a page change it does not draw');
 
-  // GATESLIM1's proof: a branch that changes no tool the parent alone runs skips the tool-tests gate; --full runs it, as a light suite.
+  // A branch that changes no tool the parent alone runs skips the tool-tests gate; --full runs it, as a light suite.
   assert.equal(runs(['src/Daoris.Service/Daoris.Service.Core/Asks.cs']).includes('tool-tests'), false);
   assert.equal(runs(['src/Daoris.Cli/src/cli.ts']).includes('tool-tests'), false);
   assert.equal(runs(['tools/merge-branch.mjs']).includes('tool-tests'), true);
@@ -1647,7 +1647,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   assert.equal(slim.kind, 'suite');
   assert.equal(tool.isHeavyGate(slim), false);
 
-  // GATE5's proof: a driver change runs eight gates, and says the desktop's long ones are in the full set before staging.
+  // A driver change runs eight gates, and says the desktop's long ones are in the full set before staging.
   const driver = selected(['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs']);
   assert.deepEqual(driver.filter((entry) => entry.run).map((entry) => entry.gate.name),
     ['universal', 'code-map', 'test-map', 'cli', 'driver', 'modules', 'censuses', 'rehearse-family']);
@@ -1657,7 +1657,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     assert.match(entry.why, /^in the full set before staging/, name);
     assert.match(entry.why, /Driver\.cs/, `${name} says what reached it`);
   }
-  // GATESLIM1: by default a merge runs the blocking checks alone; every other gate it reaches is listed, skipped, "in the CI beside";
+  // By default a merge runs the blocking checks alone; every other gate it reaches is listed, skipped, "in the CI beside";
   // the long gates keep their own reason; --gated runs what the paths reach; --full runs every gate and a rerun names one.
   const service = ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'];
   assert.deepEqual(mergeRuns(service), BLOCKING);
@@ -1697,7 +1697,7 @@ test("a merge that changes the web's sources blocks on its typecheck, and one th
 
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
   for (const paths of [service, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
-    // The desktop's sources reach the censuses' path check (REVIEW2 T6), and nothing else here.
+    // The desktop's sources reach the censuses' path check, and nothing else here.
     assert.deepEqual(mergeRuns(paths), paths[0]!.startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
     assert.equal(runs(paths).includes('web-types'), false, `--gated: ${paths[0]}`);
     assert.equal(stalens(paths).includes('web-types'), false, `its verdict stands: ${paths[0]}`);
@@ -1731,7 +1731,7 @@ test("a merge that changes the web's sources blocks on its design and structure 
 
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
   for (const paths of [service, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
-    // The desktop's sources reach the censuses' path check (REVIEW2 T6), and nothing else here.
+    // The desktop's sources reach the censuses' path check, and nothing else here.
     assert.deepEqual(mergeRuns(paths), paths[0]!.startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
     assert.equal(runs(paths).includes('web-rules'), false, `--gated: ${paths[0]}`);
     assert.equal(stalens(paths).includes('web-rules'), false, `its verdict stands: ${paths[0]}`);
@@ -1743,7 +1743,7 @@ test("a merge that changes the web's sources blocks on its design and structure 
 });
 
 /**
- * STRUCT1 (D166): the driver's files move into module folders one module per branch, so the rule naming the sources the page's
+ * The driver's files move into module folders one module per branch, so the rule naming the sources the page's
  * twins parse names each by its file's name at any depth of the driver's folder. A move edits no rule, a file of the same
  * name in another project is not one of them, and each name is one tracked source, so a rename fails here rather than
  * leaving a glob that matches nothing.
@@ -1782,7 +1782,7 @@ test('a repository declaring no generated folder writes none, and an entry witho
   fx.cleanup();
 });
 
-// MERGEJOIN1: what union leaves when two branches each append a note to one decision, set apart by the merge.
+// What union leaves when two branches each append a note to one decision, set apart by the merge.
 test("a note's label straight under a line gets one blank line above it; nothing else in the file moves", () => {
   const glued = [
     '## D1 — a thing (2026-10-04)', '',
@@ -1814,7 +1814,7 @@ test("a note's label straight under a line gets one blank line above it; nothing
   assert.equal(tool.setApart('A.\r\n**Built 2026-10-04 (X1).**\r\n').text, 'A.\r\n\r\n**Built 2026-10-04 (X1).**\r\n');
 });
 
-// UNIONGLUE1: a heading union left under another entry's last line, set apart unless a side of the merge held it so.
+// A heading union leaves under another entry's last line, set apart unless a side of the merge held it so.
 test("a heading straight under a line gets one blank line above it, unless a side already held that join", () => {
   const old = ['# Archive', '', '## A1 — old (2026-10-01)', 'Done.', '## A2 — glued long ago (2026-10-02)', 'Done.'];
   const merged = [...old, '## A3 — left (2026-10-20)', 'Left.', '## A4 — right (2026-10-20)', 'Right.',
@@ -1831,7 +1831,7 @@ test("a heading straight under a line gets one blank line above it, unless a sid
   assert.equal(tool.setApartHeadings('A.\r\n## B\r\n').text, 'A.\r\n\r\n## B\r\n');
 });
 
-// MERGETASKS1: the backlog merged by its base, a row added or removed beside the other side's kept so, one both edited left.
+// The backlog merged by its base, a row added or removed beside the other side's kept so, one both edited left.
 test('the backlog merged by its base keeps a row a side added, drops one a side removed, and leaves one both sides edited', () => {
   const base = ['# Tasks', '', '- [ ] **A1** one.', '- [ ] **A2** two.', '- [ ] **A3** three.', ''].join('\n');
   // An added row beside a removed one, which git reads as one conflict.
@@ -1855,7 +1855,7 @@ test('the backlog merged by its base keeps a row a side added, drops one a side 
   assert.equal(tool.mergeByBase(base, same, same).text, same);
 });
 
-// LANDBACKLOG1: the rule is a twin. A landing's replay settles a backlog-only conflict by it, and the driver's BacklogMerge holds the
+// The rule is a twin. A landing's replay settles a backlog-only conflict by it, and the driver's BacklogMerge holds the
 // same table, row for row.
 test("the declared backlog and its merge by base read as the table the driver's landing holds too (LANDBACKLOG1)", () => {
   type Row = { name: string; base: string[]; ours: string[]; theirs: string[]; text: string[] | null; kept: number; dropped: number; both: number[] };
@@ -1866,7 +1866,7 @@ test("the declared backlog and its merge by base read as the table the driver's 
   };
   assert.ok(table.paths.length >= 10 && table.merges.length >= 8 && table.rows.length >= 10, 'the table holds its rows');
   for (const row of table.paths) assert.equal(tool.backlogOf(row.manifest), row.backlog, row.name);
-  // INTEGRATE1c: the declared row tables, merged by the same rule (the merges below), and read by the driver's twin from this table.
+  // The declared row tables, merged by the same rule (the merges below), and read by the driver's twin from this table.
   for (const row of table.rows) assert.deepEqual(tool.rowTablesOf(row.declaration), row.tables, row.name);
   for (const row of table.merges) {
     const merged = tool.mergeByBase(row.base.join('\n'), row.ours.join('\n'), row.theirs.join('\n'));
@@ -1877,7 +1877,7 @@ test("the declared backlog and its merge by base read as the table the driver's 
   }
 });
 
-// INTEGRATE1d: a repository's `integration` is read whole, in one place per twin; the driver's IntegrationDeclaration holds the
+// A repository's `integration` is read whole, in one place per twin; the driver's IntegrationDeclaration holds the
 // same table, row for row, and row c's row tables are read through it.
 test("the integration declaration reads whole as the table the driver's reader holds too (INTEGRATE1d)", () => {
   type Row = { name: string; declaration: string | null; problem: string | null; read: Record<string, unknown> | null };
@@ -1894,7 +1894,7 @@ test("the integration declaration reads whole as the table the driver's reader h
   assert.deepEqual(tool.rowTablesOf(JSON.stringify({ integration: { by: 'agent', merge: [{ paths: 'b.md', by: 'rows' }] } })), []);
 });
 
-// INTEGRATE1j part 1 (design §5.9): the runner's inputs, each missing, malformed or contradicting one a refusal in a sentence.
+// The runner's inputs, each missing, malformed or contradicting one a refusal in a sentence.
 test('the declared runner validates its inputs: each missing, malformed or contradicting one is refused in a sentence (INTEGRATE1j)', () => {
   const tip = 'a'.repeat(40);
   const base = 'b'.repeat(40);
@@ -1903,7 +1903,7 @@ test('the declared runner validates its inputs: each missing, malformed or contr
   const without = (name: string) => Object.fromEntries(Object.entries(ok).filter(([each]) => each !== name));
   assert.deepEqual(tool.verifyInputs(ok), { commit: tip, result: ok.DAORIS_VERIFY_RESULT, mode: null, base: null, declaration: ok.DAORIS_VERIFY_DECLARATION, tree: null, gates: null, failure: null });
   assert.equal(tool.verifyInputs({ ...ok, DAORIS_VERIFY_MODE: 'commits', DAORIS_VERIFY_BASE: base }).mode, 'commits');
-  // INTEGRATE1j part 2: every mode is built; each names its base, `run` and `plan` take the gates named, `probe` the failure's file.
+  // Every mode is built; each names its base, `run` and `plan` take the gates named, `probe` the failure's file.
   for (const mode of ['run', 'plan', 'probe']) {
     const more = mode === 'probe' ? { DAORIS_VERIFY_FAILURE: absolute('failure.json') } : {};
     assert.equal(tool.verifyInputs({ ...ok, DAORIS_VERIFY_MODE: mode, DAORIS_VERIFY_BASE: base, ...more }).mode, mode);
@@ -2007,7 +2007,7 @@ test('the declared runner answers its commits mode with the commit check\'s prob
   assert.deepEqual(tool.verifyCommitsAnswer({ commit, base, declaration: 'c'.repeat(40), commits: [{ sha: '1111111', ...own }] }).problems, []);
 });
 
-// INTEGRATE1j part 2 (design §4.5, §5.9): what a gate ran with, kept beside its log, so a probe repeats one of its failures as composed.
+// What a gate ran with, kept beside its log, so a probe repeats one of its failures as composed.
 test('a gate\'s composition records its units and settings with its environment\'s rule, and digests both the same whatever their order (INTEGRATE1j)', () => {
   const gate = { name: 'driver-process', declared: 'driver-process', run: 'dotnet test src/X.Tests --settings src/X/process.runsettings' };
   const runsettings = { path: 'src/X/process.runsettings', text: '<RunSettings><TestCaseFilter>Category=Process</TestCaseFilter></RunSettings>\n' };
@@ -2060,7 +2060,7 @@ test('a run answers each gate it ran with its composition, kept beside its log, 
   assert.deepEqual(gates, [
     { name: 'The check', verdict: 'pass', wallSeconds: 3, log: '/kept/check.log', composition: { units: null, settings: '/kept/check.composition.json', digest: digest('a') }, failures: [] },
     { name: 'suite', verdict: 'fail', exit: 1, log: '/kept/suite.log', composition: { units: ['S.SessionTests'], settings: '/kept/suite.composition.json', digest: digest('b') }, failures: [failure] },
-    // A settings file that was not kept is not named: the digest still says what the gate was to run with.
+    // A settings file that is not kept is not named: the digest still says what the gate is to run with.
     { name: 'late', verdict: 'not-run', composition: { units: null, digest: digest('c') }, failures: [] },
   ]);
 });
@@ -2175,7 +2175,7 @@ test('a run that did not finish still answers, saying so in every mode, so its r
   assert.deepEqual(tool.verifyUnfinished('probe', { commit, base, declaration, why }), { schema: 2, mode: 'probe', commit, base, declaration, result: 'cannot', signature: null, unfinished });
 });
 
-// INTEGRATE1c: the joins union leaves are set apart in a landing's replay too, by the driver's twin, which holds the same table.
+// The joins union leaves are set apart in a landing's replay too, by the driver's twin, which holds the same table.
 test("the joins a union merge leaves are set apart as the table the driver's replay holds too (INTEGRATE1c)", () => {
   type Join = { name: string; kind: 'labels' | 'headings'; sides?: string[][]; text: string[]; result: string[]; set: { line: number; label: string }[] };
   const table = JSON.parse(readFileSync(join(repoRoot, UNION_JOINS), 'utf8')) as { joins: Join[] };
@@ -2198,7 +2198,7 @@ test('a note set apart is named by its task, or by its label when it names none'
 test('a path no rule places runs every gate but the long ones, and says which path; --full runs every gate and says so', () => {
   const unplaced = tool.selectGates(repoPlan, ['docs/x.md', 'src/Daoris.Somewhere/Program.cs'], { lanes: repoLanes, gated: true });
   assert.deepEqual(unplaced.unplaced, ['src/Daoris.Somewhere/Program.cs']);
-  // MERGETSC1, MERGEWEBRULES1: but a path check, which its own paths reach.
+  // But a path check, which its own paths reach.
   const typechecks = tool.PATH_CHECKS.map((check) => check.gate);
   assert.deepEqual(unplaced.gates.filter((entry) => !entry.reached).map((entry) => entry.gate.name), typechecks, 'when unsure, a path reaches everything');
   assert.deepEqual(unplaced.gates.filter((entry) => entry.run).map((entry) => entry.gate.name), ALL.filter((gate) => !LONG.includes(gate) && !typechecks.includes(gate)));
@@ -2254,7 +2254,7 @@ test('every gate the lane table names is one this repository runs, and every lan
 /**
  * What a rehearsal runs is code: its own script, everything that imports, and the tools it starts. A
  * change to any of those must reach it, or the table hides the rehearsal's own failure (and, for the
- * deployment rehearsal, which only the full set runs since GATE5, says the wrong thing about it). The
+ * deployment rehearsal, which only the full set runs, says the wrong thing about it). The
  * spawned scripts are named here by hand (a spawn is not an import); the imports are followed.
  */
 test('every tool a rehearsal imports or starts is one whose change reaches that rehearsal', () => {
@@ -2284,23 +2284,23 @@ test('every tool a rehearsal imports or starts is one whose change reaches that 
 });
 
 /**
- * MOD9's incident, as a test: two C# tests read the web's catalogues, and a batch called "web only"
+ * Two C# tests read the web's catalogues, and a batch called "web only"
  * skipped them. Every repository path a .NET test reads must be one whose change reaches that test's
  * suite, which a merge then runs, and its Process half when the reading class is a Process class,
- * which the full set runs (GATE5). A read is a path under `src/Daoris.…` (`srcReads`), or under any other
- * top-level folder (`treeReads`, MOD9b): the service's twin read the digest's note table under `tools/`,
- * and the scan, seeing `src/` alone, never asked for the row that sends its change there (ORIENT1h). Or it
- * is a path under a source root (`sourceRootReads`, MOD9c): the driver's console and occasion scans read
- * the modules' and the app's sources from `SourceRoot()`, which neither pattern saw. Or it is read through
- * a local holding a repository folder (`localReads`, MOD9d).
+ * which the full set runs. A read is a path under `src/Daoris.…` (`srcReads`), or under any other
+ * top-level folder (`treeReads`): the service's twin reads the digest's note table under `tools/`,
+ * and a scan seeing `src/` alone never asks for the row that sends its change there. Or it
+ * is a path under a source root (`sourceRootReads`): the driver's console and occasion scans read
+ * the modules' and the app's sources from `SourceRoot()`, which neither pattern sees. Or it is read through
+ * a local holding a repository folder (`localReads`).
  *
- * MOD9d: each read must also be a file or folder this repository tracks, and one a rule of the lane table
- * places. A read no rule placed reached every gate, so the checks after it passed while holding nothing:
+ * Each read must also be a file or folder this repository tracks, and one a rule of the lane table
+ * places. A read no rule places reaches every gate, so the checks after it pass while holding nothing:
  * three modules tests read the whole desktop tree, `src/Daoris.Desktop`, through a local, and a driver test's
  * scratch workspace in this repository's layout read as `src/Daoris.Desktop/app/bin`.
  */
 test("every repository file a .NET suite reads is one whose change reaches that suite (MOD9's incident)", () => {
-  // A suite's fast gate, its Process half, and the half its Parallel=Git classes run in (PROC1b), where it has one.
+  // A suite's fast gate, its Process half, and the half its Parallel=Git classes run in, where it has one.
   const suites: [string, string, string | null, string | null][] = [
     ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/', 'driver', 'driver-process', 'driver-process-git'],
     ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/', 'modules', 'modules-process', null],
@@ -2319,11 +2319,11 @@ test("every repository file a .NET suite reads is one whose change reaches that 
   for (const file of files.filter((path) => path.endsWith('.cs'))) {
     const suite = suites.find(([folder]) => file.startsWith(folder));
     if (!suite) continue;
-    // A suite's `SourceFiles` is how its tests read a source by name (FOUNDATION1 mod-0): each read is counted where it is called
+    // A suite's `SourceFiles` is how its tests read a source by name: each read is counted where it is called
     // (namedReads), so the helper's own walk of a project's folder is no read of its own.
     if (posix.basename(file) === 'SourceFiles.cs') continue;
     const text = readFileSync(join(repoRoot, file), 'utf8');
-    // A class's traits are its code's, not its strings': CategoryTests holds both traits in its fixtures' raw strings (PROCPAR1).
+    // A class's traits are its code's, not its strings': CategoryTests holds both traits in its fixtures' raw strings.
     const code = text.replace(/"""[\s\S]*?"""/g, '""').replace(/"(?:[^"\\\r\n]|\\.)*"/g, '""');
     const isProcess = /\[Trait\(Category\.Name, Category\.Process\)\]/.test(code);
     const half = /\[Trait\(Category\.Parallel, Category\.Git\)\]/.test(code) ? suite[3] ?? suite[2] : suite[2];
@@ -2338,7 +2338,7 @@ test("every repository file a .NET suite reads is one whose change reaches that 
     outsideSrc += [...outside, ...fromLocals].filter((read) => !read.startsWith('src/')).length;
     for (const read of [...found, ...outside, ...fromRoot, ...fromLocals, ...named]) {
       reads += 1;
-      // MOD9d: a read no rule places reaches every gate, so the two checks below pass while holding nothing.
+      // A read no rule places reaches every gate, so the two checks below pass while holding nothing.
       if (!isReal(read, files, folders)) problems.push(`${file} reads ${read}, which is no file or folder this repository tracks`);
       else if (tool.selectGates(repoPlan, [read], { lanes: repoLanes }).unplaced.length) problems.push(`${file} reads ${read}, which no rule of the lane table places`);
       else if (!runs([read]).includes(suite[1])) problems.push(`${file} reads ${read}, and a merge changing it does not run ${suite[1]}`);
@@ -2373,7 +2373,7 @@ test('the scan reads a source found by name wherever the tree keeps it, and a wa
 });
 
 /**
- * STRUCT1 (D166): the paths a .NET test reads through `SourceFiles`, which finds a source by its name at any depth of its
+ * The paths a .NET test reads through `SourceFiles`, which finds a source by its name at any depth of its
  * project, so the read is the one tracked file of that name under the project (`SourceFiles.Driver("Landing.cs")`,
  * `SourceFiles.Find("Daoris.Desktop.Modules", "DriverLoop.cs")`). A walk of a project for a pattern (`SourceFiles.All`), or a
  * name the scan cannot read (`SourceFiles.Driver($"{name}.cs")`), reads the project's folder, for its C# sources when the
@@ -2396,7 +2396,7 @@ function namedReads(text: string, files: readonly string[]): string[] {
   return [...reads];
 }
 
-/** MOD9d: a read names something here, a tracked file or a file in a tracked folder (`probe.txt`, `probe.cs`), or it holds nothing. */
+/** A read names something here, a tracked file or a file in a tracked folder (`probe.txt`, `probe.cs`), or it holds nothing. */
 function isReal(read: string, files: readonly string[], folders: ReadonlySet<string>): boolean {
   return files.includes(read) || (/\/probe\.(?:txt|cs)$/.test(read) && folders.has(posix.dirname(read)));
 }
@@ -2437,14 +2437,14 @@ test('the scan sees a read under any top-level folder, and never a name, a sente
 });
 
 /**
- * MOD9b: the paths a .NET source reads under this repository's top-level folders but `src`, whose reads the scan above
+ * The paths a .NET source reads under this repository's top-level folders but `src`, whose reads the scan above
  * matches by its own pattern. A read is a run of string literals whose joined path is tracked, as
  * `Path.Combine(Root(), "tools", "orient-index-fixtures", "decision-notes.json")`, so a workspace's name or a sentence
  * is none. Its base, the argument before the run, is a call or a member (`Root()`, `WorkspaceRoot.Folder`), as every
  * read of `src/` is: a bare name is a folder the test made, often in this repository's own layout (`room`, `_home`), and
  * a string is the start of a longer run. A folder read is a file in it. A top-level folder alone (`"tools"`) is a
  * workspace's name far more often than a read, and a top-level file (`daoris.json`, the marker the tests walk up to) is
- * not read this way; neither is taken. A run that is a local's whole initializer is no read itself (MOD9d): what is read
+ * not read this way; neither is taken. A run that is a local's whole initializer is no read itself: what is read
  * through the local is (`localReads`).
  */
 function treeReads(text: string, files: readonly string[]): string[] {
@@ -2524,7 +2524,7 @@ test('the scan resolves a source root as its walk does, and reads under it what 
   ].join('\n');
   assert.deepEqual(sourceRootReads(scanner, repository, files), []);
 
-  // What the scan above then asks of the lane table: without MOD9c's row, the modules' and the app's sources reach no driver suite.
+  // What the scan above then asks of the lane table: without the modules' row, the modules' and the app's sources reach no driver suite.
   const without = tool.REACH.filter((rule) => !rule.paths?.includes('src/Daoris.Desktop/Daoris.Desktop.Modules/**/*.cs'));
   const reached = (path: string, reach: readonly Rule[]) => tool.selectGates(repoPlan, [path], { lanes: repoLanes, reach, gated: true })
     .gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
@@ -2535,7 +2535,7 @@ test('the scan resolves a source root as its walk does, and reads under it what 
 });
 
 /**
- * MOD9c: the paths a .NET source reads from a source root, a folder above the test other than the repository, which the
+ * The paths a .NET source reads from a source root, a folder above the test other than the repository, which the
  * `src/` pattern and `treeReads` cannot see: `Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "DriverLoop.cs")`. A
  * source-root helper is a method of the file with no parameters that walks up from the test binary until a named folder
  * is there (`!Directory.Exists(Path.Combine(folder.FullName, "Daoris.Desktop.Driver"))`) and returns the folder it
@@ -2641,7 +2641,7 @@ test('the scan reads through a local holding a repository folder, and never thro
     '        File.WriteAllText(Path.Combine(workspace, "daoris.json"), "{}");',
   ].join('\n');
   assert.deepEqual([...srcReads(scratch, files), ...treeReads(scratch, files), ...localReads(scratch, files)], []);
-  // What was read before is the repository's own root, from a call or a member, as every other read of `src/` is.
+  // The base is the repository's own root, from a call or a member, as every other read of `src/` is.
   assert.deepEqual(srcReads('File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App", "Program.cs"));', files),
     ['src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']);
 
@@ -2655,7 +2655,7 @@ test('the scan reads through a local holding a repository folder, and never thro
 });
 
 /**
- * MOD9 and MOD9d: the paths a .NET source reads under `src/Daoris.…`, a run of string literals from `"src"`. Its base, the
+ * The paths a .NET source reads under `src/Daoris.…`, a run of string literals from `"src"`. Its base, the
  * argument before the run, is a call or a member (`RepositoryRoot()`, `WorkspaceRoot.Folder`), as `treeReads` takes it: a
  * bare name is a folder the test made (`Path.Combine(workspace, "src", "Daoris.Desktop", "app", "bin")`, a scratch workspace
  * on a field the test set) or a local holding a repository folder, whose reads `localReads` takes; and a string is the middle
@@ -2670,12 +2670,12 @@ function srcReads(text: string, files: readonly string[]): string[] {
     const base = text.slice(0, match.index).trimEnd().replace(/,$/, '').trimEnd();
     if (base.endsWith('"') || BARE_NAME.test(base)) continue;
     const segments = ['src', match[1]!, ...[...match[2]!.matchAll(/"([^"]*)"/g)].map((part) => part[1]!)];
-    // A tracked file is read as itself whatever its extension (PROCPAR1's `process.runsettings`), never as a folder.
+    // A tracked file is read as itself whatever its extension (`process.runsettings`), never as a folder.
     if (/\.(cs|ts|tsx|mjs|js|json|css|md|props|txt)$/.test(segments.at(-1)!) || files.includes(segments.join('/'))) {
       reads.push(segments.join('/'));
       continue;
     }
-    // STRUCT5d: a folder searched for one name at any depth (`Directory.EnumerateFiles(Path.Combine(…, "src"), "documents.ts",
+    // A folder searched for one name at any depth (`Directory.EnumerateFiles(Path.Combine(…, "src"), "documents.ts",
     // SearchOption.AllDirectories)`) reads the file of that name wherever it lies under it, and nothing else of the folder.
     const folder = segments.join('/');
     const named = /^\s*\)\s*,\s*"([^"*?\\/]+)"\s*,\s*SearchOption\.AllDirectories\b/.exec(text.slice(match.index + match[0].length));
@@ -2696,11 +2696,11 @@ test('a folder searched for one name at any depth reads that file wherever it li
   assert.ok(runs(['src/Daoris.Cli/src/layout/documents.ts']).includes('service'));
 });
 
-/** A base that is a name alone, a local, a field or a parameter, rather than a call or a member: MOD9b's folder the test made. */
+/** A base that is a name alone, a local, a field or a parameter, rather than a call or a member: a folder the test made. */
 const BARE_NAME = /(?:^|[^\w.!?])@?[A-Za-z_]\w*$/;
 
 /**
- * MOD9d: the locals, fields and expression-bodied helpers of a .NET source that hold a folder of this repository, each by
+ * The locals, fields and expression-bodied helpers of a .NET source that hold a folder of this repository, each by
  * name, and where each is declared. One is declared as `Path.Combine` of a base and a run of string literals whose joined
  * path is a tracked folder below the top level: `var root = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop")`, or
  * `static string Page => Path.Combine(…)`. The base is the repository's root, a call or a member as for every other read
@@ -2733,18 +2733,18 @@ function localRoots(text: string, files: readonly string[]): { roots: Map<string
 }
 
 /**
- * MOD9d: the paths a .NET source reads through a local holding a repository folder (`localRoots`), which the `src/` pattern
+ * The paths a .NET source reads through a local holding a repository folder (`localRoots`), which the `src/` pattern
  * read as the whole folder: `src/Daoris.Desktop`, which no rule places, since it holds every desktop lane. A use the code
  * makes, never one in a comment or a string, is read by its shape:
  * - `Path.Combine(local, "Program.cs")`: the run of string literals joined under the folder, when it names a tracked file
  *   or folder; a path that names nothing here (a check that a retired project is gone) is no read.
  * - `Path.Combine(local, project)` or `Path.Combine(local, $"{name}.cs")`: a name the scan cannot read. The folders directly
- *   under the local's that the file names are read, the project list a scan hands it (as MOD9c reads a source root's), and
+ *   under the local's that the file names are read, the project list a scan hands it (as a source root's are read), and
  *   with none named, any file in the local's folder.
  * - the base of a narrower local, whose own uses are read, or `Path.GetRelativePath(local, …)`, which names a path and reads
  *   nothing: no read.
  * - any other use (handed to a read, an enumeration, a return or a helper): any file in the local's folder.
- * A folder is read for its C# sources when every search pattern the file enumerates names C# sources (MOD9c).
+ * A folder is read for its C# sources when every search pattern the file enumerates names C# sources.
  */
 function localReads(text: string, files: readonly string[]): string[] {
   const tracked = new Set(files);
@@ -2781,7 +2781,7 @@ function localReads(text: string, files: readonly string[]): string[] {
   return [...reads];
 }
 
-/** MOD9c: a folder a file reads is read for its C# sources when every search pattern the file enumerates names C# sources. */
+/** A folder a file reads is read for its C# sources when every search pattern the file enumerates names C# sources. */
 function probeFor(text: string): string {
   const patterns = [...text.matchAll(/\b(?:Enumerate|Get)Files\s*\([^;]*?"([^"]*\*[^"]*)"/g)].map((match) => match[1]!);
   return patterns.length > 0 && patterns.every((pattern) => pattern.endsWith('.cs')) ? 'probe.cs' : 'probe.txt';
@@ -2790,12 +2790,12 @@ function probeFor(text: string): string {
 /**
  * Reads outside the page by the page's twins that no rule sends to the web gate, each named exactly with its reason, so a new
  * read is placed on purpose or owed here, and a row that places one fails this test until the row drops it. None is owed: the
- * six driver sources SESSDEL1c's scan found are placed by MOD9e's row (`PAGE_PARSED`).
+ * six driver sources the scan finds are placed by the page-parsed row (`PAGE_PARSED`).
  */
 const OWED_PAGE_READS: string[] = [];
 
 /**
- * SESSDEL1c: MOD9's incident from the page's side. The page's vitests run in the web gate alone, so a file outside the page a
+ * The page's vitests run in the web gate alone, so a file outside the page a
  * vitest reads (a twin's table, a writer's declarations) is one whose change must reach the web gate, or a merge changing it
  * passes and the full set fails. The kept names' table sits among the driver's tests, whose rule reaches the driver's
  * suites alone.
@@ -2806,14 +2806,14 @@ test("every file outside the page a page's vitest reads is one whose change reac
   for (const file of files.filter((path) => /^src\/Daoris\.Web\/src\/.+\.test\.tsx?$/.test(path))) {
     for (const read of pageReads(file, readFileSync(join(repoRoot, file), 'utf8'), files)) reads.add(read);
   }
-  // WEBSPLIT1: the vitests run in the web gate's unit run.
+  // The vitests run in the web gate's unit run.
   const unreached = [...reads].filter((read) => !runs([read]).includes('web-unit')).sort();
   assert.deepEqual(unreached, OWED_PAGE_READS, "each a file a vitest reads, and a merge changing it does not run the web gate's unit run");
   assert.ok(reads.has(KEPT_NAMES), "the scan does not see the page's twin read the kept names' table");
   for (const path of PAGE_PARSED) assert.ok(reads.has(path), `the scan does not see a page twin parse ${path}`);
   assert.ok(reads.size >= 8, `the scan found only ${reads.size} reads: its pattern no longer matches how the page's tests read the repository`);
 
-  // MOD9e: what the scan asks of the lane table, with the row taken away: the six reach the driver's gates and no vitest.
+  // What the scan asks of the lane table, with the row taken away: the six reach the driver's gates and no vitest.
   const without = tool.REACH.filter((rule) => !isPageParsedRule(rule));
   assert.equal(without.length, tool.REACH.length - 1, "MOD9e's rule names each source by its name under the driver's folder");
   for (const path of PAGE_PARSED) {
@@ -2855,7 +2855,7 @@ test("the page's scan reads through node:fs from the page, the repository or the
   assert.deepEqual(pageReads(at, "import { render } from '@testing-library/react';\nexpect(map.source).toBe('docs/code-map.json');", files), []);
   assert.deepEqual(pageReads(at, "import table from '../../../Daoris.Cli/test/fixtures/shell-words.json';", files),
     ['src/Daoris.Cli/test/fixtures/shell-words.json']);
-  // STRUCT1: a twin that reads the driver by name reads each source it names, wherever the driver keeps it, and the helper
+  // A twin that reads the driver by name reads each source it names, wherever the driver keeps it, and the helper
   // it imports from the page is the page's own.
   const moved = ['src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Trace.Chain.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs'];
   const byName = [
@@ -2866,7 +2866,7 @@ test("the page's scan reads through node:fs from the page, the repository or the
   ].join('\n');
   assert.deepEqual(pageReads(at, byName, moved), moved);
 
-  // What the scan above then asks of the lane table: without SESSDEL1c's row, the kept names' table reaches no web gate.
+  // What the scan above then asks of the lane table: without the kept names' row, the kept names' table reaches no web gate.
   const without = tool.REACH.filter((rule) => !rule.paths?.includes(KEPT_NAMES));
   const reached = (reach: readonly Rule[]) => tool.selectGates(repoPlan, [KEPT_NAMES], { lanes: repoLanes, reach, gated: true })
     .gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
@@ -2875,7 +2875,7 @@ test("the page's scan reads through node:fs from the page, the repository or the
 });
 
 /**
- * SESSDEL1c: the paths outside the page a page's vitest reads. A read from disk goes through `node:fs`, so a test that does not
+ * The paths outside the page a page's vitest reads. A read from disk goes through `node:fs`, so a test that does not
  * import it reads nothing from disk: a path it says (`docs/code-map.json`, a map's data) is no read. In one that does, a read
  * is a run of string literals, joined, naming a tracked file or folder from where vitest runs, the page
  * (`join(process.cwd(), '..', 'Daoris.Cli', …)`), from the repository (`join(root, 'src', …)`) or from the test's own folder;
@@ -2894,7 +2894,7 @@ function pageReads(file: string, text: string, files: readonly string[]): string
     const found = ['', '.ts', '.tsx', '.mjs', '.js', '.json'].map((extension) => `${path}${extension}`).find((candidate) => tracked.has(candidate));
     if (found && outside(found)) reads.add(found);
   }
-  // STRUCT1 (D166): a twin that reads the driver by name (`driverSource('Trace.Chain.cs')`, or a name it hands on to it) reads
+  // A twin that reads the driver by name (`driverSource('Trace.Chain.cs')`, or a name it hands on to it) reads
   // each driver source it names, the one tracked file of that name at any depth of the driver's folder.
   if (/\bdriverSource\b/.test(text)) {
     const driver = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
@@ -2943,7 +2943,7 @@ const CATALOGUE_FAILURE = [
 
 test('only a gate that runs the Process category is one whose failures may be flakes (MOD8)', () => {
   assert.equal(tool.isProcessGate({ name: 'driver-process', run: 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings' }), true);
-  // PROC1c: the git-only classes' half is a Process half too, by its settings file's name: its trx and its alone-rerun hold.
+  // The git-only classes' half is a Process half too, by its settings file's name: its trx and its alone-rerun hold.
   assert.equal(tool.isProcessGate({ name: 'driver-process-git', run: 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.process.runsettings' }), true);
   assert.equal(tool.isProcessGate({ name: 'driver', run: 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process' }), false);
   assert.equal(tool.isProcessGate({ name: 'service', run: 'dotnet test src/Daoris.Service' }), false);
@@ -3093,7 +3093,7 @@ test("a branch's files are placed in lanes, the steward's lane, the shared recor
     { id: 'modules', title: 'Desktop modules', files: ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs', 'src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'] },
     { id: 'tools', title: 'Tools', files: ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'] },
   ]);
-  // DEV2: the steward's lane holds what the parent's list held, and the map itself. The archive merges
+  // The steward's lane holds the parent's list and the map itself. The archive merges
   // by union too, but it is the steward's, and that is what the parent needs to hear.
   assert.deepEqual(placed.steward, ['TASKS.md', 'docs/task-archive.md', 'daoris.lanes.json']);
   assert.deepEqual(placed.shared, ['CHANGELOG.md']);
@@ -3114,8 +3114,8 @@ test("the lane map's lanes are the design's §5 lanes, by id and title", () => {
 });
 
 /**
- * DEV2 (`docs/2026-10-01-self-development-design.md` §2.1): the map is the repository's declaration,
- * and what makes it unreadable is a rule, so the driver's reader (DEV6) can hold the same table.
+ * The map is the repository's declaration (`docs/2026-10-01-self-development-design.md` §2.1),
+ * and what makes it unreadable is a rule, so the driver's reader can hold the same table.
  */
 test('the lanes file is unreadable for a bad or repeated id, a lane with no paths, two stewards, or an undeclared gate', () => {
   const lane = (id: string, more: Record<string, unknown> = {}) => ({ id, title: id, summary: `the ${id} lane`, paths: [`${id}/**`], ...more });
@@ -3175,7 +3175,7 @@ test("this repository's lanes each carry an id, a title and a one-line summary, 
   const stewards = lanes.filter((lane) => lane.steward);
   assert.deepEqual(stewards.map((lane) => [lane.id, lane.paths, lane.gates]),
     [['records', ['TASKS.md', 'docs/task-archive.md', 'daoris.lanes.json'], ['universal', 'cli']]]);
-  // A code lane never narrows its gates: MOD9's "web only" batch skipped the .NET suites.
+  // A code lane never narrows its gates: a "web only" batch skips the .NET suites.
   assert.deepEqual(lanes.filter((lane) => lane.gates !== undefined).map((lane) => lane.id), ['records']);
 });
 
@@ -3209,8 +3209,8 @@ test('every lane path and every laneless path matches a tracked file, and no tra
 });
 
 /**
- * LEFT1: `queries.ts` and a few paths sat outside every lane unremarked, and a new source tree would
- * have too. Every tracked file now has a place: a lane (the steward's among them, DEV2), a record that
+ * A path outside every lane would sit there unremarked, and a new source tree with it.
+ * Every tracked file has a place: a lane (the steward's among them), a record that
  * merges by union, or the map's `laneless` list (the docs, the doctrine, the harness's settings). A new
  * top-level path fails here until the map places it on purpose.
  */
@@ -3233,7 +3233,7 @@ test('every tracked file has a place, so a new path is placed on purpose, never 
 const planned = (name: string, run: string): Gate => ({ name, run, kind: 'suite' });
 
 /**
- * A step that answers each command from a function and records what it was asked, in order. It heads
+ * A step that answers each command from a function and records what it is asked, in order. It heads
  * its output with the command, as `runStep` does, since a rehearsal's own output is read from there.
  */
 function fakeStep(answer: (command: string) => { out: string; code: number }): { asked: string[]; step: Step } {
@@ -3250,7 +3250,7 @@ function fakeStep(answer: (command: string) => { out: string; code: number }): {
 test('the first failing gate stops the run and names every gate after it; --keep-going runs them all', async () => {
   const root = join(repoRoot, 'scratch-root');
   const dir = join(root, 'local', 'scratch', 'merge-x');
-  // GATELANES2: three builds of one component, so the light lane runs them in turn and the third is not yet started.
+  // Three builds of one component, so the light lane runs them in turn and the third is not yet started.
   const gates = ['a', 'b', 'c'].map((name) => planned(name, `dotnet build src/S/${name}`));
   const run = async (_root: string, gate: Gate, at: string): Promise<GateResult> => {
     const failed = gate.name === 'b';
@@ -3271,7 +3271,7 @@ test('the first failing gate stops the run and names every gate after it; --keep
 });
 
 // ---------------------------------------------------------------------------------------------------
-// GATELANES1: the light gates run beside the Process lane, which stays one gate at a time
+// The light gates run beside the Process lane, which stays one gate at a time
 
 const processRun = (project: string) => `dotnet test ${project} --settings src/Daoris.Desktop/process.runsettings`;
 
@@ -3336,16 +3336,16 @@ test("this repository's light lane runs the suites' fast halves first, and the P
   const schedule = tool.laneSchedule(repoPlan);
   assert.deepEqual(schedule.light.map((gate) => gate.name),
     ['service', 'driver', 'modules', 'censuses', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'devkit', 'web', 'web-unit', 'web-measured']);
-  // REHLANE1, REHLANE2, REHLANE2b: the rehearsals right after the git half, beside it, one after the other.
+  // The rehearsals right after the git half, beside it, one after the other.
   assert.deepEqual(schedule.process.map((gate) => gate.name),
     ['service-process', 'driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'modules-process']);
   for (const name of ['service-process', 'driver-process', 'driver-process-git', 'modules-process']) {
-    // GATEORDER1: and for the heavy light gates, so no Process half runs under their load.
+    // After the heavy light gates too, so no Process half runs under their load.
     assert.deepEqual(schedule.waits[name], { after: ['service', 'driver', 'modules', 'censuses', 'cli', 'devkit', 'web', 'web-unit', 'web-measured'], component: name === 'service-process' ? 'src/Daoris.Service' : 'src/Daoris.Desktop' }, name);
   }
   assert.deepEqual(repoPlan.filter((gate) => tool.isHeavyGate(gate)).map((gate) => gate.name), ['cli', 'service', 'devkit', 'driver', 'modules', 'censuses', 'web', 'web-unit', 'web-measured']);
   assert.equal(tool.isHeavyGate({ name: 'x', run: 'node tools/orient-index.mjs --check' }), false);
-  // A rehearsal builds what its command does not name. REHLANE2: and the release and deployment rehearsals' packs stage the
+  // A rehearsal builds what its command does not name, and the release and deployment rehearsals' packs stage the
   // CLI's dist/, which the bin the cli gate's `daoris check` runs prefers.
   for (const name of ['rehearse', 'rehearse-family', 'deployment']) {
     assert.deepEqual(schedule.waits[name], { after: schedule.light.map((gate) => gate.name), component: null }, name);
@@ -3386,7 +3386,7 @@ async function within(promise: Promise<unknown>, what: string, ms = PATIENCE): P
 
 /**
  * A fake gate runner for the lanes: each gate notes its start and its end, ends when what `until` names for it has
- * happened, and fails when `failing` names it. What each gate was handed beside it is kept.
+ * happened, and fails when `failing` names it. What each gate is handed beside it is kept.
  */
 function laneRun(names: string[]) {
   const events: string[] = [];
@@ -3416,7 +3416,7 @@ function summary(printed: string[]): string[] {
   return printed.slice(at + 1).map((line) => /^\s+(PASS|FAIL|FLAKE|MEMORY|NOT RUN)\s+(\S+)/.exec(line)!.slice(1).join(' '));
 }
 
-// a and b build one component, so the light lane runs them in turn (GATELANES2), as both lanes' tests below need.
+// a and b build one component, so the light lane runs them in turn, as both lanes' tests below need.
 const laneGates = (): Gate[] => [
   planned('a', 'dotnet build src/L/A'), planned('b', 'dotnet build src/L/B'), planned('p', processRun('fake/P.Tests')), planned('q', processRun('fake/Q.Tests')),
 ];
@@ -3440,7 +3440,7 @@ test("the light lane runs beside the Process lane: both at once, each verdict it
 });
 
 test('scheduled by memory, a Process gate starts beside a heavy light gate once the gate that builds its component has ended (CI1)', async () => {
-  // a builds p's component; h is a heavy light gate of none, which a merge's Process gate waits for (GATEORDER1).
+  // a builds p's component; h is a heavy light gate of none, which a merge's Process gate waits for.
   const gates = [planned('a', 'dotnet build fake/P.Tests'), planned('h', 'npm run verify'), planned('p', processRun('fake/P.Tests'))];
   const lanes = laneRun(['a', 'h', 'p']);
   lanes.until['h'] = () => lanes.started['p']!.promise;
@@ -3495,7 +3495,7 @@ test("a Process gate starts once the light gates of its component have ended, wh
   ];
   const schedule = tool.laneSchedule(gates);
   assert.deepEqual(schedule.light.map((gate) => gate.name), ['d', 'm', 'u', 'h']);
-  // GATEORDER1: the heavy light gate h is waited for too; the cheap one, u, is not.
+  // The heavy light gate h is waited for too; the cheap one, u, is not.
   assert.deepEqual(schedule.waits['dp'], { after: ['d', 'm', 'h'], component: 'src/X' });
   assert.deepEqual(schedule.waits['r'], { after: ['d', 'm', 'u', 'h'], component: null });
 
@@ -3532,7 +3532,7 @@ test('--one-at-a-time runs every gate in turn, in the plan\'s order, as before t
 });
 
 // ---------------------------------------------------------------------------------------------------
-// GATELANES2: the light lane's gates of different components side by side; GATEBUILD1: a Process half reuses its fast half's build
+// The light lane's gates of different components side by side; a Process half reuses its fast half's build
 
 test("a gate's components are what its command builds, and what the root scripts it names build", () => {
   const scripts = {
@@ -3563,22 +3563,22 @@ test("this repository's light gates run three at once, never two that build one 
   // The CLI's verify ends in the devkit's universal gates, and the web gate builds the HTTP host its own build writes into.
   assert.deepEqual(building('src/Daoris.Devkit'), ['universal', 'code-map', 'cli', 'devkit']);
   assert.deepEqual(building('src/Daoris.Service'), ['service', 'web']);
-  // WEBSPLIT1: the web gate's unit run builds none, so it runs beside any.
+  // The web gate's unit run builds none, so it runs beside any.
   assert.deepEqual(schedule.components['web-unit'], []);
-  // FLOWCHART1e: nor does the measured-box check, which serves the page's source with Vite.
+  // Nor does the measured-box check, which serves the page's source with Vite.
   assert.deepEqual(schedule.components['web-measured'], []);
-  // GATELANES1's light order and GATEORDER1's waits hold: the gates that build a Process half's component run first, the service's
+  // The light order and the waits hold: the gates that build a Process half's component run first, the service's
   // and the desktop's alike.
   assert.deepEqual(schedule.light.map((gate) => gate.name),
     ['service', 'driver', 'modules', 'censuses', 'web', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'devkit', 'web-unit', 'web-measured']);
   assert.deepEqual(schedule.waits['driver-process']!.after, ['service', 'driver', 'modules', 'censuses', 'web', 'cli', 'devkit', 'web-unit', 'web-measured']);
-  // GATEBUILD1: each Process half reuses the build of its own test project's fast half.
+  // Each Process half reuses the build of its own test project's fast half.
   assert.deepEqual(schedule.reuses, { 'service-process': 'service', 'driver-process': 'driver', 'driver-process-git': 'driver', 'modules-process': 'modules' });
 });
 
 test("this repository's web gates write the page's types with a generator built into an output of its own, so they build no component beside the .NET gates", () => {
   // Each web gate's pre-script runs the generator, which references the contracts and the desktop modules: built in their own
-  // folders it wrote the contracts' obj/ while the service's or the desktop's gate built them there (CS2012).
+  // folders it would write the contracts' obj/ while the service's or the desktop's gate builds them there.
   const webScripts = (JSON.parse(readFileSync(join(repoRoot, 'src', 'Daoris.Web', 'package.json'), 'utf8')) as { scripts: Record<string, string> }).scripts;
   for (const pre of ['pretypecheck', 'pretest', 'prebuild']) assert.match(webScripts[pre]!, /^node \.\.\/\.\.\/tools\/contracts\.mjs --if-stale$/, pre);
   const { build, built } = contracts.generatorBuild(join(repoRoot, contracts.OWN_OUTPUT));
@@ -3722,7 +3722,7 @@ test("a Process half told not to build runs its command with --no-build and says
 });
 
 // ---------------------------------------------------------------------------------------------------
-// REHLANE1: the family rehearsal beside the driver's git half. WEBSPLIT1: the web gate's unit run, a light gate of its own
+// The family rehearsal beside the driver's git half; the web gate's unit run, a light gate of its own
 
 const gitRun = (project: string) => `dotnet test ${project} --settings src/Daoris.Desktop/git.process.runsettings`;
 const rootScripts = (): Record<string, string> =>
@@ -3732,7 +3732,7 @@ test('the git half is the Process half run with the git settings, and the rehear
   assert.equal(tool.isGitHalf({ name: 'renamed', run: gitRun('src/X/X.Tests') }), true);
   assert.equal(tool.isGitHalf({ name: 'driver-process', run: processRun('src/X/X.Tests') }), false);
   assert.equal(tool.isGitHalf({ name: 'driver', run: 'dotnet test src/X/X.Tests --filter Category!=Process' }), false);
-  // REHLANE2: the release rehearsal too, which builds no .NET project at all. REHLANE2b: and the deployment rehearsal, whose
+  // The release rehearsal too, which builds no .NET project at all, and the deployment rehearsal, whose
   // publish and build go into an output of its own.
   assert.deepEqual([...tool.BESIDE_GIT_HALF], ['rehearse', 'rehearse:family', 'rehearse:deploy']);
   assert.equal(tool.runsBesideGitHalf({ name: 'renamed', run: 'npm run rehearse:family' }), true);
@@ -3748,9 +3748,9 @@ test("this repository's Process lane runs the release, family and deployment reh
   const schedule = tool.laneSchedule(repoPlan, { scripts: rootScripts() });
   assert.deepEqual(schedule.process.map((gate) => gate.name),
     ['service-process', 'driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'modules-process']);
-  // Never beside each other (REHLANE2): the family runs the CLI's bin, which prefers the dist/ the release rehearsal's pack
+  // Never beside each other: the family runs the CLI's bin, which prefers the dist/ the release rehearsal's pack
   // stages in the CLI's folder and removes again; the deployment rehearsal packs that folder too, and runs the bin
-  // (REHLANE2b); and two Process-lane gates at once is the measured ceiling.
+  // too; and two Process-lane gates at once is the measured ceiling.
   assert.deepEqual(schedule.beside, {
     'driver-process-git': ['rehearse', 'rehearse-family', 'deployment'],
     rehearse: ['driver-process-git'], 'rehearse-family': ['driver-process-git'], deployment: ['driver-process-git'],
@@ -3761,7 +3761,7 @@ test("this repository's Process lane runs the release, family and deployment reh
     assert.deepEqual(schedule.waits[name], { after: schedule.light.map((gate) => gate.name), component: null }, name);
   }
   // No gate is planned a step before it: the deployment rehearsal's builds keep build servers of their own in place of the
-  // shutdown it once ran after, which would stop the builds of every gate beside it (REHLANE2b).
+  // shutdown, which would stop the builds of every gate beside it.
   assert.deepEqual(repoPlan.filter((gate) => 'before' in gate).map((gate) => gate.name), []);
 });
 
@@ -3775,12 +3775,12 @@ function rehearsalProjects(text: string): Record<string, string> {
 }
 
 /**
- * REHLANE1: a rehearsal that runs beside the git half builds a project of a component that half builds only into its
+ * A rehearsal that runs beside the git half builds a project of a component that half builds only into its
  * own output (`ownBuild`), never into that project's folders, which the git half builds into and runs from; and it shuts
- * no build server down. Read from the tool its root script runs, as REACH's rows for the rehearsals are. REHLANE2: or it runs
- * no `dotnet` at all, as the release rehearsal does. REHLANE2b: and every publish of the desktop it runs is told an output of
+ * no build server down. Read from the tool its root script runs, as REACH's rows for the rehearsals are. Or it runs
+ * no `dotnet` at all, as the release rehearsal does. And every publish of the desktop it runs is told an output of
  * its own (`tools/desktop-publish.mjs`'s `--artifacts-path`, whose test holds every `dotnet publish` that tool runs to the
- * output it is told), and no such gate is planned a step before it, as the deployment rehearsal's shutdown once was.
+ * output it is told), and no such gate is planned a step before it, as a build-server shutdown would be.
  */
 test('a rehearsal that runs beside the git half builds what that half builds into its own output, or no .NET at all, and shuts no build server down', () => {
   const scripts = rootScripts();
@@ -3818,14 +3818,14 @@ test('a rehearsal that runs beside the git half builds what that half builds int
   assert.deepEqual(building, ['rehearse:family', 'rehearse:deploy']);
   assert.deepEqual(publishing, ['rehearse:deploy']);
   // In place of that shutdown, every build the deployment rehearsal makes keeps build servers of its own, as a run beside's
-  // do (CIPRIO1): it joins none a build before it left, one of which once carried a broken environment into a publish.
+  // do: it joins none a build before it left, one of which can carry a broken environment into a publish.
   const deploy = readFileSync(join(repoRoot, 'tools', 'deployment-rehearsal.mjs'), 'utf8');
   assert.match(deploy, /\n {2}Object\.assign\(process\.env, OWN_BUILD_SERVERS\);/, 'the deployment rehearsal builds on servers it may share');
   assert.deepEqual({ ...rehearsalKit.OWN_BUILD_SERVERS }, { ...tool.BESIDE_ENVIRONMENT });
 });
 
 /**
- * REHLANE2 (the tool's header says why): the release rehearsal runs beside the git half only while no desktop test reads the
+ * The release rehearsal (the tool's header says why) runs beside the git half only while no desktop test reads the
  * CLI package's folder outside its `src/` and `test/`, which no pack writes, nor runs its bin. Read from every tracked
  * desktop source, and from the stager's own list.
  */
@@ -3870,7 +3870,7 @@ test('the release, family and deployment rehearsals run beside the git half, one
   const order = lanes.events.join(', ');
   assert.ok(['r', 'f', 'dep'].every((name) => at(`start ${name}`) > at('end dp')), `none runs beside the driver's other half: ${order}`);
   assert.ok(at('start f') > at('end r'), `the family never runs beside the release rehearsal, whose staged dist/ its CLI would run: ${order}`);
-  // REHLANE2b: the deployment rehearsal packs the CLI's folder as the release rehearsal does, and runs its bin as the family does.
+  // The deployment rehearsal packs the CLI's folder as the release rehearsal does, and runs its bin as the family does.
   assert.ok(at('start dep') > at('end r') && at('start dep') > at('end f'), `the deployment rehearsal runs beside neither: ${order}`);
   assert.ok(at('start dep') < at('end dg'), `the deployment rehearsal runs beside the git half: ${order}`);
   assert.ok(['dg', 'r', 'f', 'dep'].every((name) => at('start mp') > at(`end ${name}`)), `the next Process half waits for all four: ${order}`);
@@ -3920,7 +3920,7 @@ test("the git half's failures are re-run alone: after the rehearsal beside it ha
   assert.ok(waiting.events.indexOf('start f') > waiting.events.indexOf('end dg'), waiting.events.join(', '));
   assert.ok(waiting.events.indexOf('alone') > waiting.events.indexOf('end u'), 'the light lane ended first, as before');
 
-  // REHLANE2: the release rehearsal runs beside dg when dg wants to be alone, and the family waits for it: dg's re-run waits
+  // The release rehearsal runs beside dg when dg wants to be alone, and the family waits for it: dg's re-run waits
   // for the release rehearsal to end, and the family, next beside dg, starts only once dg has ended.
   const chain = [...gates.slice(0, 2), planned('r', 'npm run rehearse'), gates[2]!];
   const chained = laneRun(chain.map((gate) => gate.name));
@@ -3946,7 +3946,7 @@ test("this repository's web gate runs its unit tests as a light gate of its own,
   assert.equal(web.run, 'npm run test:web:e2e');
   assert.equal(scripts['test:web:e2e'],
     'npm --prefix src/Daoris.Web run build && dotnet build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e');
-  // A person's whole web run is both, its unit tests first, as it was.
+  // A person's whole web run is both, its unit tests first.
   assert.equal(scripts['test:web'], 'npm run test:web:unit && npm run test:web:e2e');
   const schedule = tool.laneSchedule(repoPlan, { scripts });
   assert.deepEqual(schedule.components['web-unit'], []);
@@ -3956,7 +3956,7 @@ test("this repository's web gate runs its unit tests as a light gate of its own,
   // The web gate goes before its unit run, so the place service frees goes to the build the light lane's floor waits on.
   const light = schedule.light.map((gate) => gate.name);
   assert.ok(light.indexOf('web') < light.indexOf('web-unit'), light.join(', '));
-  // WEBGATE1: vitest's workers, a quarter of the machine, set in the page's own config, which the unit run reads wherever it runs.
+  // Vitest's workers, a quarter of the machine, set in the page's own config, which the unit run reads wherever it runs.
   assert.match(readFileSync(join(repoRoot, 'src', 'Daoris.Web', 'vite.config.ts'), 'utf8'), /maxWorkers: process\.env\.DAORIS_WEB_WORKERS \?\? '25%'/);
 });
 
@@ -3993,11 +3993,11 @@ test('a real-process failure is re-run alone once: a pass alone is a FLAKE, a se
   const alone = 'Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 5 s - D.dll (net10.0)\n';
 
   let fake = fakeStep((command) => (command.includes('--filter') ? { out: alone, code: 0 } : { out: PROCESS_FAILURE, code: 1 }));
-  // GATELANES1: the re-run alone waits for the light lane beside it to end, so a pass alone is still a pass with nothing beside.
+  // The re-run alone waits for the light lane beside it to end, so a pass alone is still a pass with nothing beside.
   const first = fake;
   let result = await tool.runGate(fx.root, driver, fx.root, { step: fake.step, settled: async () => { first.asked.push('the light lane ended'); } });
   assert.equal(result.verdict, 'FLAKE');
-  // The full run leaves its trx (PROC1); the re-run of one test adds none.
+  // The full run leaves its trx; the re-run of one test adds none.
   assert.deepEqual(fake.asked, [tool.trxCommand(driver.run, join(fx.root, 'driver-process.trx')), 'the light lane ended', tool.rerunCommand(driver.run, flaky)]);
   assert.match(result.note, /failed in the full run and passed alone: ProcessJobTests\.A_child.*driver-process\.rerun\.log/);
   assert.match(readFileSync(join(fx.root, 'driver-process.rerun.log'), 'utf8'), /Passed!/);
@@ -4041,7 +4041,7 @@ test('a real-process failure is re-run alone once: a pass alone is a FLAKE, a se
 });
 
 // ---------------------------------------------------------------------------------------------------
-// A rehearsal that died, rather than failed, is run again once (LEFT1)
+// A rehearsal that died, rather than failed, is run again once
 
 // What the tool and npm write around a rehearsal's own lines: none of it is the rehearsal speaking.
 const NPM_BANNER = '$ npm run rehearse:family\n\n> daoris-workspace@0.0.1 rehearse:family\n> node tools/family-rehearsal.mjs\n\n';
@@ -4115,7 +4115,7 @@ test('a rehearsal that died is run again once, with its steps: a pass is a FLAKE
   assert.equal(fake.asked.length, 1);
   assert.match(result.note, /reported failed checks/);
 
-  // The rule is the rehearsals': a suite that dies is read as it always was.
+  // The rule is the rehearsals': a suite that dies is read the same way.
   fake = fakeStep(() => ({ out: '', code: 127 }));
   result = await tool.runGate(fx.root, planned('cli', 'npm run verify'), fx.root, { step: fake.step });
   assert.equal(result.verdict, 'FAIL');
@@ -4124,7 +4124,7 @@ test('a rehearsal that died is run again once, with its steps: a pass is a FLAKE
 });
 
 // ---------------------------------------------------------------------------------------------------
-// MEMGATE1: a heavy gate waits for memory rather than failing for want of it, and a gate that died of memory is said so
+// A heavy gate waits for memory rather than failing for want of it, and a gate that died of memory is said so
 // and run again once, alone. On 2026-10-22 a full set beside the install's driven sessions and two builders ran a 64 GB
 // machine out of commit: the sensitive scan threw OutOfMemoryException, web-rules could not allocate, the family
 // rehearsal's landing said "Out of memory." twice, each read as the change's failure, and each passed run later.
@@ -4370,7 +4370,7 @@ test('MEMGATE1: a second death of memory is a failure still named as memory; a s
   assert.match(result!.note, /exit 1; died of memory \("Out of memory\."\), then failed run again alone, not of memory; web-rules\.rerun\.log/);
   assert.match(run.printed.at(-1)!, /^\s+FAIL\s+web-rules\s/);
 
-  // How a summary says them: a flake of memory is the machine's, never recorded under FLAKE1; a failure names it.
+  // How a summary says them: a flake of memory is the machine's, never recorded as a flake; a failure names it.
   const as = (name: string, verdict: string, cause?: string): GateResult => ({ gate: planned(name, 'x'), code: 0, log: '', verdict, note: '', ms: 0, ...(cause ? { cause } : {}) });
   assert.equal(tool.flakeNote([as('driver', 'FLAKE'), as('rehearse', 'FLAKE')]), ', with 2 flakes (driver, rehearse): record it under FLAKE1');
   assert.equal(tool.flakeNote([as('driver', 'FLAKE'), as('web-rules', 'FLAKE', 'memory')]),
@@ -4739,7 +4739,7 @@ test("MEMGATE1: the machine's memory is read from the platform: Windows' free ph
 });
 
 // ---------------------------------------------------------------------------------------------------
-// GATE4: a fixed gate re-runs alone, and the rest's verdicts are kept, saying from when
+// A fixed gate re-runs alone, and the rest's verdicts are kept, saying from when
 
 test('a re-run runs the named gates and any the merge has not run yet, and keeps the rest\'s verdicts with their time', () => {
   const plan = ['universal', 'cli', 'driver', 'driver-process', 'web', 'deployment'];
@@ -4762,7 +4762,7 @@ test('a re-run runs the named gates and any the merge has not run yet, and keeps
   assert.deepEqual(named.kept.map((kept) => `${kept.name} ${kept.verdict}`), ['universal PASS', 'driver FAIL', 'driver-process PASS', 'web PASS']);
   assert.deepEqual(named.fresh, []);
 
-  // GATE6: a verdict a fixed path reaches is not kept: that gate runs again, saying which path, and a named one is just named.
+  // A verdict a fixed path reaches is not kept: that gate runs again, saying which path, and a named one is just named.
   const passed = { ...results, driver: { verdict: 'PASS', at: '2026-10-04T10:09:00Z' }, 'driver-process': { verdict: 'PASS', at: 'x' }, web: { verdict: 'FAIL', at: 'y' } };
   const fixed = tool.rerunPlan(plan, chosen, passed, ['web'], { universal: ['src/Daoris.Web/e2e/platform.spec.ts'], web: ['src/Daoris.Web/e2e/platform.spec.ts'] });
   assert.deepEqual(fixed.run, ['universal', 'web']);
@@ -4785,11 +4785,11 @@ test('the stage counts a gate passed on this tree, or on one that differs from i
     // Passed, then failed on the same tree: the newest says.
     { gate: 'web', verdict: 'PASS', tree: 'T', at: at(9) },
     { gate: 'web', verdict: 'FAIL', tree: 'T', at: at(11) },
-    // A flake is a pass that was said.
+    // A flake is a pass that is said.
     { gate: 'driver-process', verdict: 'FLAKE', tree: 'T', at: at(10) },
     { gate: 'deployment', verdict: 'PASS', tree: null, at: at(10) },
   ];
-  // Every path reaches every gate here, as it did before GATE6: what a stage forgives without the lane table.
+  // Every path reaches every gate here: what a stage forgives without the lane table.
   const judging = {
     tree: 'T', drift: (from: string) => ({ R: ['TASKS.md'], C: ['src/x.cs', 'TASKS.md'] } as Record<string, string[]>)[from] ?? null,
     isRecord: (path: string) => path === 'TASKS.md', reaching: (_gate: string, paths: string[]) => paths,
@@ -4828,7 +4828,7 @@ test('the stage counts a gate passed on this tree, or on one that differs from i
 });
 
 // ---------------------------------------------------------------------------------------------------
-// GATE6: a verdict stays good until a path its gate reaches changes
+// A verdict stays good until a path its gate reaches changes
 
 test('SCOPEPLAN1: gate reach and selection prepare each rule a bounded number of times per read', () => {
   let directReads = 0;
@@ -4971,7 +4971,7 @@ test('a changed lane map cannot forgive itself or source by broadening its stewa
 });
 
 // ---------------------------------------------------------------------------------------------------
-// GATE6b: a gate re-run on the checkout as it stands, and the smallest command a refusal names
+// A gate re-run on the checkout as it stands, and the smallest command a refusal names
 
 const hourOf = (hour: number) => `2026-10-05T${String(hour).padStart(2, '0')}:00:00Z`;
 // T is the checkout; S is a tree before a fix that reaches every gate here.
@@ -5031,7 +5031,7 @@ test("a re-run on the checkout runs the named gates and each the stage calls sta
 });
 
 // ---------------------------------------------------------------------------------------------------
-// PROC1: a Process gate leaves a trx with each test's duration, and the slowest classes are named
+// A Process gate leaves a trx with each test's duration, and the slowest classes are named
 
 const TRX = [
   '<?xml version="1.0" encoding="utf-8"?>',
@@ -5117,7 +5117,7 @@ test('a Process gate writes its trx beside its log, and the slowest classes are 
   result.ms = 1000;
   await tool.runGates(fx.root, [processGate], fx.root, { run: async () => result, print: (line) => printed.push(line) });
   assert.match(printed[0]!, /PASS\s+driver-process/);
-  // PROCPAR1b: the classes run at once, so the wall is the run's own (result.ms), never the classes' sum.
+  // The classes run at once, so the wall is the run's own (result.ms), never the classes' sum.
   assert.match(printed[1]!, /slowest classes of driver-process, by their own times; the half's wall was 1 s \(its classes ran at once, so the times do not add up to it\), from driver-process\.trx:/);
   assert.match(printed[2]!, /^\s+1\.\s+4 m 1 s\s+2 tests\s+SlowTests$/);
   assert.match(printed[3]!, /^\s+2\.\s+2 m 0 s\s+1 test\s+Outer\+InnerTests$/);
@@ -5125,7 +5125,7 @@ test('a Process gate writes its trx beside its log, and the slowest classes are 
 });
 
 // ---------------------------------------------------------------------------------------------------
-// PROCREACH1: a Process half run by the classes a change reaches, each class's verdict kept with its tree
+// A Process half run by the classes a change reaches, each class's verdict kept with its tree
 
 test("a Process half's trx gives each class's verdict: a failed test fails its class, and one that passed alone is its class's flake", () => {
   assert.deepEqual([...tool.classResults(TRX)].map(([name, result]) => `${name} ${result.tests} ${result.failed.join(',')}`),
@@ -5219,7 +5219,7 @@ test('a half the CI owes runs the classes a change reaches and keeps the rest; a
   assert.equal(tool.SWEEP_BOUND_MS, 24 * 60 * 60 * 1000);
   assert.match(tool.classPlan({ ...facts, verdicts: every(pass('t1')), now: Date.parse(at(11)), bound: 30 * 60_000 }).whole ?? '', /older than 0\.5 hours/);
 
-  // Every class kept with no verdict of the half's own to compose from: the whole half, for one (CISCOPE1b's refusals below).
+  // Every class kept with no verdict of the half's own to compose from: the whole half, for one (the refusals below).
   plan = tool.classPlan({ ...facts, verdicts: every(pass('t2')) });
   assert.match(plan.whole ?? '', /every class is kept, but the half has no verdict of its own: it runs whole for a verdict of its own/);
   // No class with a pass that stands (a tree git cannot compare): the whole half.
@@ -5246,7 +5246,7 @@ test('CISCOPE1b: a half whose every class stands passes without running only whe
   let plan = tool.classPlan({ ...facts, verdicts: whole, last: last() });
   assert.deepEqual([plan.whole, plan.run, plan.kept.length, plan.sweep], [null, [], 3, at(10)]);
   assert.equal(plan.composed, 'its last verdict, a pass on 2026-10-22 10:00 UTC, went stale by reach alone (src/Shell/Window.cs), which reaches none of its classes');
-  // So does a half whose last pass was itself composed (none ran, every class kept): its classes' own passes stand.
+  // So does a half whose last pass is itself composed (none ran, every class kept): its classes' own passes stand.
   plan = tool.classPlan({ ...facts, verdicts: whole, last: last('PASS', { ran: 0, kept: 3, sweep: at(10) }) });
   assert.equal(plan.whole, null);
   assert.ok(plan.composed);
@@ -5346,7 +5346,7 @@ test('the stage refuses a Process half that kept classes on verdicts older than 
     'a sweep whose time does not read is no sweep within the bound');
 });
 
-// CISCOPE1d (design §5.3 point 2, §8 row 4): a standing whole pass's age, before a stage only.
+// A standing whole pass's age, before a stage only.
 test('before a stage a whole Process pass standing by reach counts only within the bound, an older one behind it neither; on its own tree at any age', () => {
   const now = Date.parse('2026-10-24T12:00:00Z');
   const judging = { tree: 'T', drift: (from: string) => (from === 'T' ? [] : ['docs/a.md']), isRecord: () => false, reaching: () => [] };
@@ -5432,7 +5432,7 @@ test("CISCOPE1d: the watch runs a night due first, then a tip with no verdict, t
 });
 
 // ---------------------------------------------------------------------------------------------------
-// CIPRIO1: a full set beside the merges is a guest on the machine
+// A full set beside the merges is a guest on the machine
 
 test('a full set beside lowers its own priority to below normal at its start, and says so when it cannot', () => {
   const asked: [number, number][] = [];
@@ -5478,7 +5478,7 @@ test('a gate step started after the run lowered itself runs at the lowered prior
   }
 });
 
-// FAMILYFAIL1b: the rehearsals' bounds are wall-clock, so in a run beside they start at normal priority
+// The rehearsals' bounds are wall-clock, so in a run beside they start at normal priority
 
 test('a run beside raises a rehearsal step\'s child to normal, touches no suite\'s, and says once when it cannot', async () => {
   const fx = makeFixture('merge-branch-raise');
@@ -5497,7 +5497,7 @@ test('a run beside raises a rehearsal step\'s child to normal, touches no suite\
     await tool.runGate(fx.root, planned('s', 'dotnet test src/S'), fx.root, { step });
     assert.deepEqual(given, { 'npm run rehearse:family': true, 'dotnet test src/S': false });
 
-    // FAMILYFAIL1c: a Process half's bounds are wall-clock too, so its full run and each test it runs alone get the raise;
+    // A Process half's bounds are wall-clock too, so its full run and each test it runs alone get the raise;
     // the fast half beside them does not.
     const raised: string[] = [];
     const flaky = 'Daoris.Desktop.Driver.Tests.ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked';
@@ -5516,7 +5516,7 @@ test('a run beside raises a rehearsal step\'s child to normal, touches no suite\
     });
     assert.equal(fastRaised, false);
 
-    // FAMILYFAIL1d: a gate the repository marks clock-bound (`"clock": true`) is raised too, though it is no Process half:
+    // A gate the repository marks clock-bound (`"clock": true`) is raised too, though it is no Process half:
     // the CLI's suites hold real processes on wall-clock bounds. The mark is read from daoris.gates.json and planned.
     writeFileSync(join(fx.root, 'daoris.gates.json'), JSON.stringify({ gates: [
       { name: 'cli', run: 'npm run verify', clock: true },
@@ -5601,7 +5601,7 @@ test('a run of main\'s tip stops before its next gate once a newer tip supersede
   assert.match(lines, /left: b, c/);
   assert.deepEqual(tool.besideOutcome(1, watch.superseded), { passed: false, superseded: 'bbbbbbb2' });
   assert.deepEqual(tool.besideOutcome(0, null), { passed: true, superseded: null });
-  // Even a run whose gates all passed is not passed once it was superseded.
+  // Even a run whose gates all passed is not passed once it is superseded.
   assert.equal(tool.besideOutcome(0, watch.superseded).passed, false);
 });
 
@@ -5610,7 +5610,7 @@ test('a run given a named commit is never superseded: no commit to watch, no tip
   let moved = 0;
   const watch = tool.watchTip(null, () => { reads += 1; return 'bbbbbbb2'; }, { onMove: () => { moved += 1; } });
   assert.equal(watch.check(), false);
-  // CIPRIO1c: nor polled while its gates run.
+  // Nor polled while its gates run.
   const unwatch = watch.poll(5);
   await sleep(50);
   unwatch();
@@ -5623,7 +5623,7 @@ test('a run given a named commit is never superseded: no commit to watch, no tip
   assert.equal(tool.watchTip('aaaaaaa1', () => 'aaaaaaa1').check(), false);
 });
 
-// CIPRIO1c: a superseded run ended only before its next gate, so a gate on an old tip (a Process half, a rehearsal) ran
+// A superseded run ends only before its next gate unless its running gates are ended too, so a gate on an old tip (a Process half, a rehearsal) runs
 // to its end, up to an hour of the machine's time beside five workers, for a verdict nobody would use
 
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
@@ -5712,7 +5712,7 @@ test('a run that ends its trees ends a running step\'s whole tree, its shell, ch
   }
 });
 
-// CIPRIO1d: killed outright (no SIGINT), the run's node leaves its steps' shells and everything under them running
+// Killed outright (no SIGINT), the run's node leaves its steps' shells and everything under them running
 const PARENT = [
   "import { spawn } from 'node:child_process';",
   "import { mkdirSync, writeFileSync } from 'node:fs';",
@@ -5753,7 +5753,7 @@ test('a run killed outright leaves no gate tree: the next run taking its lock en
   }
 });
 
-// CIPRIO1e: a non-detached shell ends with its killed parent here, and its child runs on under a dead parent id, which a
+// A non-detached shell ends with its killed parent here, and its child runs on under a dead parent id, which a
 // listing by the dead pid cannot find: the gate tree's folder in the command line does.
 const SHELL_PARENT = [
   "import { spawn } from 'node:child_process';",
@@ -5971,7 +5971,6 @@ const GIT_ENV = {
 };
 
 // A builder's worktree sets the variables that locate a repository; inherited, they send a fixture's git to the real one's .git
-// (REVIEW2: a run registered a worktree of the real repository under a fixture).
 const LOCATING = /^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES)$/i;
 const fixtureEnv = () => Object.fromEntries(Object.entries(process.env).filter(([key]) => !LOCATING.test(key)));
 
@@ -5984,7 +5983,7 @@ function git(cwd: string, ...args: string[]): string {
 const TRAILER = '\n\nCo-Authored-By: Claude Fixture (Anthropic) <fixture@example.test>';
 
 /**
- * CLEANUP2b: a worktree as a finished agent's is, nothing in it or in its git folder written for `minutes`: every
+ * A worktree as a finished agent's is, nothing in it or in its git folder written for `minutes`: every
  * entry's times set back (links are not followed), and the files of the git folder a worktree keeps beside the repository.
  */
 function age(worktree: string, minutes: number): void {
@@ -6004,7 +6003,7 @@ function age(worktree: string, minutes: number): void {
 // Every gate appends its name to local/ran.txt and prints a thousand lines, so a test can read the order
 // the gates ran in and whether a log kept the whole output. Given `once`, it exits with its code the first
 // time only, as a rehearsal that died under load and passes run again.
-// Given GATE_HOLD, it waits (ten minutes at most, well past any test's own wait: load made a minute too short, TESTWAIT4) until that file is written, as a long gate runs while a test acts beside it.
+// Given GATE_HOLD, it waits (ten minutes at most, well past any test's own wait: load can make a minute too short) until that file is written, as a long gate runs while a test acts beside it.
 const GATE = [
   "import { appendFileSync, existsSync, writeFileSync } from 'node:fs';",
   "const [name, code = '0', once] = process.argv.slice(2);",
@@ -6018,7 +6017,7 @@ const GATE = [
   '',
 ].join('\n');
 
-// CI1: a gate for the CI's runs, which write their logs in the main checkout and leave the gate tree's `local/` unmade: it
+// A gate for the CI's runs, which write their logs in the main checkout and leave the gate tree's `local/` unmade: it
 // makes its own, notes its name, and fails where CI_FAIL names it, as a change that broke it would.
 const CI_GATE = [
   "import { appendFileSync, mkdirSync } from 'node:fs';",
@@ -6031,7 +6030,7 @@ const CI_GATE = [
 ].join('\n');
 
 /**
- * PROCREACH1: `dotnet test`, faked for a Process half run by reach. It reads the filter of the settings it is handed, runs each
+ * `dotnet test`, faked for a Process half run by reach. It reads the filter of the settings it is handed, runs each
  * class of the project's `*Tests.cs` that no `FullyQualifiedName!~<class>.` keeps out, notes which in `local/ran.txt`, and writes
  * the trx the merge tool asked for, a test a class, as the real one does.
  */
@@ -6061,7 +6060,7 @@ const FAKE_DOTNET_REACH = [
   '',
 ].join('\n');
 
-/** PROCREACH1: a desktop of its own for the CI's runs by reach: a test project compiling against two areas, and three Process classes. */
+/** A desktop of its own for the CI's runs by reach: a test project compiling against two areas, and three Process classes. */
 const DESK_FILES: Record<string, string> = {
   'src/Desk/process.runsettings': '<RunSettings><RunConfiguration><TestCaseFilter>Category=Process</TestCaseFilter></RunConfiguration></RunSettings>\n',
   'src/Desk/Desk.Tests/Desk.Tests.csproj': '<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><ProjectReference Include="..\\Desk.Core\\Desk.Core.csproj" /></ItemGroup></Project>\n',
@@ -6077,7 +6076,7 @@ const DESK_FILES: Record<string, string> = {
 };
 
 /**
- * CI1: what a test waits for, read again until it holds, failing rather than hanging when it never does. CIWATCHHOLD1: the bound
+ * What a test waits for, read again until it holds, failing rather than hanging when it never does. The bound
  * is the tool tests' hang guard, five patiences (ten minutes, as `HANG_MS` in merge-queue.test.ts): it elapses only on failure,
  * and a watch gating a tip under a whole-file run's load took longer than two minutes (287 s run).
  */
@@ -6106,12 +6105,12 @@ const FAKE_DOTNET = [
   '',
 ].join('\n');
 
-/** What ran, or what was recorded, in name order: light gates that build nothing in common run side by side (GATELANES2). */
+/** What ran, or what is recorded, in name order: light gates that build nothing in common run side by side. */
 const unordered = (list: string[]): string[] => [...list].sort();
 
 /**
- * CISCOPE1d: a background run's receipt on HEAD's tree, as `local/ci-runs.jsonl` holds one, for the tests whose subject is the
- * gates' judgement (GATE6, GATE6b) rather than where the receipt comes from: a stage needs one beside its gates' verdicts.
+ * A background run's receipt on HEAD's tree, as `local/ci-runs.jsonl` holds one, for the tests whose subject is the
+ * gates' judgement rather than where the receipt comes from: a stage needs one beside its gates' verdicts.
  */
 function receipt(root: string, fields: { kind?: string; finished?: boolean } = {}): void {
   const file = join(root, 'local', 'ci-runs.jsonl');
@@ -6124,7 +6123,7 @@ function receipt(root: string, fields: { kind?: string; finished?: boolean } = {
 
 interface Scratch {
   root: string;
-  /** `cwd`: where the tool runs, the repository's main checkout unless named (GATEWT1 runs it in the gate tree). */
+  /** `cwd`: where the tool runs, the repository's main checkout unless named (the gate tree's run names it). */
   run(args: string[], extra?: Record<string, string>, cwd?: string): Promise<{ status: number | null; out: string }>;
   ran(): string[];
   cleanup(): void;
@@ -6171,11 +6170,11 @@ function scratch(name: string, gates: { name: string; run: string }[], files: Re
         if (key.toUpperCase() !== 'PATH' && key !== 'NODE_TEST_CONTEXT' && !LOCATING.test(key)) env[key] = value;
       }
       env['PATH'] = `${bin}${delimiter}${process.env['PATH'] ?? process.env['Path'] ?? ''}`;
-      // GATESLIM1: a merge blocks on the checks alone by default, so the tests that watch gates run read the merge with --gated;
+      // A merge blocks on the checks alone by default, so the tests that watch gates run read the merge with --gated;
       // `BY_DEFAULT` in `extra` is the default itself, and the verbs that name their own gates take no flag.
       const named = args.some((arg) => ['--full', '--rerun', '--stale', '--passed', '--prune', '--gated', '--ci'].includes(arg));
       const given = named || extra['BY_DEFAULT'] !== undefined ? args : [...args, '--gated'];
-      // MEMGATE1: a scratch's heavy gates never read the machine's memory, so no test here waits on what the machine holds.
+      // A scratch's heavy gates never read the machine's memory, so no test here waits on what the machine holds.
       const child = spawn(process.execPath, [TOOL, ...given], { cwd, env: { ...env, ...GIT_ENV, MERGE_BRANCH_MEMORY: 'off', MERGE_BRANCH_CI_NIGHT_HOUR: 'off', ...extra }, windowsHide: true });
       let out = '';
       child.stdout.on('data', (chunk) => { out += String(chunk); });
@@ -6224,7 +6223,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
 
   test('it refuses before touching anything, and the commit check refuses what a hand-back left out', async () => {
     const repo = scratch('refusals', [{ name: 'first', run: 'node gate.mjs first' }]);
-    // Merged into main, so the merge's prune removes it (GATE2); a refusal comes first and touches nothing.
+    // Merged into main, so the merge's prune removes it; a refusal comes first and touches nothing.
     git(repo.root, 'branch', 'old');
     branch(repo.root, 'bare', { 'bare.txt': 'x\n' }, { trailer: false });
     const tree = join(dirname(repo.root), 'bare-tree');
@@ -6251,7 +6250,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(merging(repo.root), false, 'a refusal merged something');
     assert.deepEqual(repo.ran(), [], 'a refusal ran a gate');
     assert.doesNotMatch(result.out, /prune/, 'a refusal pruned');
-    // `old` was still there to prune below: no refusal removed it.
+    // `old` is still there to prune below: no refusal removes it.
 
     result = await repo.run(['bare', '--no-commit-check']);
     assert.equal(result.status, 0, result.out);
@@ -6281,7 +6280,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.match(result.out, /in the CI beside/);
     assert.deepEqual(repo.ran(), ['universal'], 'only the blocking check ran');
     repo.cleanup();
-    // OVERVIEWNOISE1a: a scratch repository left under `_fixtures/` kept a landed session's tree from the tidy.
+    // A scratch repository left under `_fixtures/` keeps a landed session's tree from the tidy.
     assert.equal(existsSync(dirname(repo.root)), false, 'the case left its scratch repository');
   });
 
@@ -6361,8 +6360,8 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.match(result.out, /note: it edits the steward's records \(TASKS\.md\); a subagent never does/);
     assert.doesNotMatch(result.out, /crosses/, "the steward's lane is not a crossing: it is named on its own");
     assert.match(result.out, /outside every lane\s+1 file: notes\.txt/);
-    // The steward's `gates` is for a landing of its lane alone (the queue's, D115): this tool chooses by its
-    // own lane table, which names neither gate here, so both run: side by side, as they build nothing (GATELANES2).
+    // The steward's `gates` is for a landing of its lane alone (the queue's): this tool chooses by its
+    // own lane table, which names neither gate here, so both run: side by side, as they build nothing.
     assert.deepEqual(unordered(repo.ran()), ['first', 'second']);
     assert.match(result.out, /PASS\s+first\s.*local\/scratch\/merge-feature-one\/first\.log/);
     assert.match(result.out, /PASS\s+second\s.*local\/scratch\/merge-feature-one\/second\.log/);
@@ -6436,7 +6435,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
-  // INTEGRATE1c: the day's second set-aside (2026-10-28): two branches each added a row at one line of docs/development.md's census table.
+  // Two branches each add a row at one line of docs/development.md's census table.
   test("a row table the line declares by rows merges by the merge base, two rows added at one line both kept; one the line does not declare is left, and a branch's own declaration changes nothing", async () => {
     const census = (...rows: string[]) => ['# Guide', '', '| When | Run |', '|---|---|', '| a test names a login | `node tools/live-logins.mjs` |', ...rows, '', 'Next.', ''].join('\n');
     const gates = [{ name: 'first', run: 'node gate.mjs first' }];
@@ -6496,7 +6495,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       "console.log('orient-index: docs/index/ written, 1 of 1 files changed');",
       '',
     ].join('\n');
-    // The folder and its command are the repository's declaration (GENREGEN1), as this repository's own are.
+    // The folder and its command are the repository's declaration, as this repository's own are.
     const gates = [{ name: 'first', run: 'node gate.mjs first' }];
     const repo = scratch('generated', gates, {
       'daoris.gates.json': `${JSON.stringify({ gates, generated: [{ paths: 'docs/index', run: 'node tools/orient-index.mjs' }] }, null, 2)}\n`,
@@ -6689,11 +6688,11 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     branch(repo.root, 'one', { 'one.txt': '1\n', 'CHANGELOG.md': `${changelog}- **One** landed, and its line is long enough.\n` });
     branch(repo.root, 'two', { 'two.txt': '2\n', 'CHANGELOG.md': `${changelog}- **Two** landed, and its line is long enough.\n` });
 
-    // --full: the real-process half and the deployment rehearsal run in the full set only (GATE5).
+    // --full: the real-process half and the deployment rehearsal run in the full set only.
     let result = await repo.run(['one', '--batch', 'two', '--full']);
     assert.equal(result.status, 0, result.out);
-    // GATELANES1: the Process half runs beside the light lane, so only the Process lane's own order is fixed; and the
-    // check and the CLI's gate build nothing in common, so they run side by side too (GATELANES2).
+    // The Process half runs beside the light lane, so only the Process lane's own order is fixed; and the
+    // check and the CLI's gate build nothing in common, so they run side by side too.
     const ran = repo.ran();
     assert.deepEqual(unordered(ran), ['cli', 'dotnet-run', 'dotnet-test'], 'the rehearsals wait for the last branch');
     assert.match(result.out, /light\s+check, cli\n.*Process\s+driver/);
@@ -6712,7 +6711,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     // rehearsal that dies once; told to, it runs every gate in turn, as before the lanes.
     result = await repo.run(['--continue', '--one-at-a-time'], { FAKE_DOTNET: 'flake' });
     assert.equal(result.status, 0, result.out);
-    // The next merge's start prunes the branch the last one landed (GATE2).
+    // The next merge's start prunes the branch the last one landed.
     assert.match(result.out, /removed\s+one\s+the branch/);
     assert.deepEqual(repo.ran().slice(0, 3), ran, 'the first merge\'s, as read above');
     assert.deepEqual(repo.ran().slice(3), [
@@ -6750,7 +6749,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     // The canon reaches the family rehearsal; a document reaches neither it nor the driver's Process half.
     branch(repo.root, 'canon-edit', { 'canon/core/rules/x.md': 'x\n' });
     branch(repo.root, 'docs-edit', { 'docs/y.md': 'y\n' });
-    // A path no rule places reaches every gate, and a merge still leaves the Process half to the full set (GATE5).
+    // A path no rule places reaches every gate, and a merge still leaves the Process half to the full set.
     branch(repo.root, 'unplaced-edit', { 'elsewhere/z.cs': 'z\n' });
 
     let plan = await repo.run(['--plan', 'docs-edit']);
@@ -6786,7 +6785,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       { name: 'third', run: 'node gate.mjs third' },
     ]);
     branch(repo.root, 'fix', { 'fix.txt': 'x\n' });
-    // A merge this tool did not leave is not one it re-gates; with none open, --rerun gates the checkout (GATE6b).
+    // A merge this tool did not leave is not one it re-gates; with none open, --rerun gates the checkout.
     git(repo.root, 'merge', '--quiet', '--no-ff', '--no-commit', 'fix');
     let result = await repo.run(['--rerun', 'first']);
     assert.equal(result.status, 2, result.out);
@@ -6795,7 +6794,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     git(repo.root, 'merge', '--abort');
 
     // One at a time, which the batch keeps, so the failure leaves the third gate unstarted: side by side, the three
-    // build nothing in common and would start together (GATELANES2).
+    // build nothing in common and would start together.
     result = await repo.run(['fix', '--one-at-a-time']);
     assert.equal(result.status, 1, result.out);
     assert.deepEqual(repo.ran(), ['first', 'second']);
@@ -6821,7 +6820,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
-  // GATE6's proof at --rerun: the gates are named as this repository names them, so the tool's own lane table places
+  // At --rerun the gates are named as this repository names them, so the tool's own lane table places
   // the paths (a scratch repository has no lanes file, and the table's path rules need none).
   test('--rerun keeps a verdict no fixed path reaches, and runs again each one a fixed path reaches, saying which path', async () => {
     const spec = 'src/Daoris.Web/e2e/platform.spec.ts';
@@ -6836,7 +6835,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     branch(repo.root, 'both', { [spec]: 'one\n', [driverTest]: 'one\n' });
     let result = await repo.run(['both']);
     assert.equal(result.status, 1, result.out);
-    // Side by side, as they build nothing (GATELANES2): which ran counts here, not in what order.
+    // Side by side, as they build nothing: which ran counts here, not in what order.
     assert.deepEqual(unordered(repo.ran()), ['cli', 'driver', 'driver-process', 'web']);
 
     // The browser test fixed in the merge: the web gate, and the baseline every path reaches; the driver's verdicts are kept.
@@ -6869,13 +6868,13 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /the full set has NOT passed this checkout/);
     assert.match(result.out, /first\s+none\s+no verdict on this tree/);
-    // CISCOPE1d: no background run finished on it either, so the stage's own run is what it names.
+    // No background run finished on it either, so the stage's own run is what it names.
     assert.match(result.out, /not staged\s+no background run's receipt on its commit's tree \([0-9a-f]{7}\): no background run finished on it/);
     assert.match(result.out, /\n {2}Run the stage's own CI run on it: node tools\/merge-branch\.mjs --ci --stage [0-9a-f]{7}\n/);
 
     result = await repo.run(['--full']);
     assert.equal(result.status, 0, result.out);
-    // Side by side, as they build nothing (GATELANES2), so each verdict is recorded as its gate ends, in either order.
+    // Side by side, as they build nothing, so each verdict is recorded as its gate ends, in either order.
     assert.deepEqual(unordered(repo.ran()), ['first', 'second']);
     assert.match(result.out, /PASS\s+first\s.*local\/scratch\/full-[0-9a-f]{7}\/first\.log/);
     assert.equal(merging(repo.root), false, '--full alone merges nothing');
@@ -6885,12 +6884,12 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(record.verdicts[0]!.tree, git(repo.root, 'rev-parse', 'HEAD^{tree}'), 'the tree that was gated, the clean checkout\'s');
     assert.equal(record.verdicts[0]!.commit, git(repo.root, 'rev-parse', 'HEAD'));
 
-    // CISCOPE1d: `--full` on the checkout is no background run, so its passes alone do not stage it.
+    // `--full` on the checkout is no background run, so its passes alone do not stage it.
     assert.match(result.out, /A stage still needs its evidence: no background run's receipt on its commit's tree/);
     result = await repo.run(['--passed']);
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /the full set has passed this checkout \(.*\): 2 of 2 gates, but the stage's evidence is missing \(CISCOPE1d\)/);
-    // A sweep-only run's receipt, and a run that was stopped, are said and never counted.
+    // A sweep-only run's receipt, and a run that is stopped, are said and never counted.
     receipt(repo.root, { kind: 'sweep' });
     result = await repo.run(['--passed']);
     assert.equal(result.status, 1, result.out);
@@ -6906,7 +6905,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
 
     // The parent writes the records after the gates: a tree that differs only by them is forgiven, once committed.
     writeFileSync(join(repo.root, 'CHANGELOG.md'), '# Changelog\n\n## Unreleased\n\n- **A** line, long enough.\n');
-    // CISCOPE1d: uncommitted, it is a dirty checkout whose HEAD has a receipt and passing verdicts, refused all the same.
+    // Uncommitted, it is a dirty checkout whose HEAD has a receipt and passing verdicts, refused all the same.
     result = await repo.run(['--passed']);
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /not staged\s+its content \(tree [0-9a-f]{7}\) is not its commit's \(tree [0-9a-f]{7}\): a stage builds a commit's tree, never uncommitted changes/);
@@ -6923,7 +6922,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
-  // GATE6's proof at the stage: a browser test fixed after the full set, and re-gated by the web gate alone.
+  // At the stage: a browser test fixed after the full set, and re-gated by the web gate alone.
   test('--passed counts a verdict no path changed since reaches: a browser test re-gated alone stages, a driver change does not', async () => {
     const spec = 'src/Daoris.Web/e2e/platform.spec.ts';
     const driverTest = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs';
@@ -6952,7 +6951,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(repo.ran().slice(3), ['web']);
     git(repo.root, 'commit', '--quiet', '--no-edit');
     writeFileSync(join(repo.root, 'CHANGELOG.md'), '# Changelog\n\n## Unreleased\n\n- **A** browser test, fixed.\n');
-    // CISCOPE1d: the records committed, and a background run finished on that commit, as the watch's would.
+    // The records committed, and a background run finished on that commit, as the watch's would.
     git(repo.root, 'commit', '--quiet', '-am', `the records${TRAILER}`);
     receipt(repo.root);
     result = await repo.run(['--passed']);
@@ -6971,7 +6970,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
-  // GATE6b's proof: a fix committed on the checkout after the full set stages once the gates it reaches run again.
+  // A fix committed on the checkout after the full set stages once the gates it reaches run again.
   test('--stale runs exactly the gates a fix committed past the full set reaches, and the stage then accepts the tree', async () => {
     const spec = 'src/Daoris.Web/e2e/platform.spec.ts';
     const driverTest = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs';
@@ -6987,7 +6986,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     // The refusal names --stale, which runs two gates, not a second full run.
     writeFileSync(join(repo.root, spec), 'two\n');
     git(repo.root, 'commit', '--quiet', '-am', `fix the spec${TRAILER}`);
-    // CISCOPE1d: with no background run on the fix, the stage's own run is what it names.
+    // With no background run on the fix, the stage's own run is what it names.
     result = await repo.run(['--passed']);
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /\n {2}Run the stage's own CI run on it: node tools\/merge-branch\.mjs --ci --stage [0-9a-f]{7}\n/);
@@ -7036,7 +7035,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(unordered(repo.ran()), ['first', 'second', 'third']);
     assert.match(result.out, /\n {2}Run the gate it lacks on it: node tools\/merge-branch\.mjs --rerun second\n/, 'the failed full set names the smaller command');
 
-    // CISCOPE1d: the background run finished on this commit too, its flake failing there as here.
+    // The background run finished on this commit too, its flake failing there as here.
     receipt(repo.root);
     result = await repo.run(['--passed']);
     assert.equal(result.status, 1, result.out);
@@ -7090,7 +7089,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     const inUse = add('in-use');
     git(repo.root, 'worktree', 'lock', '--reason', 'claude agent agent-x (pid 1)', inUse);
     writeFileSync(join(inUse, 'tracked.txt'), 'the agent is mid-edit\n');
-    // Idle for hours, so only what the plan says of them decides (CLEANUP2b keeps a tree written in the last two).
+    // Idle for hours, so only what the plan says of them decides (a tree written in the last two hours is kept).
     age(fresh, 300);
     age(inUse, 300);
     writeFileSync(join(add('changed'), 'tracked.txt'), 'changed\n');
@@ -7148,7 +7147,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
-  // GITWORKTREECONFIG1: a shared `core.worktree` (under `extensions.worktreeConfig`) makes a linked worktree report the main checkout's root.
+  // A shared `core.worktree` (under `extensions.worktreeConfig`) makes a linked worktree report the main checkout's root.
   test('--prune never removes through a worktree git binds to the main checkout, and goes on where the value is in the main checkout\'s own worktree configuration', async () => {
     const repo = scratch('prune-bound', [{ name: 'first', run: 'node gate.mjs first' }], { '.gitignore': 'local/\n', 'tracked.txt': 'base\n' });
     const trees = join(dirname(repo.root), 'trees');
@@ -7183,8 +7182,8 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
-  // CLEANUP2: 24 worktrees stood with three agents running (2026-10-18): five kept for worker logs under local/, nine
-  // for the harness's lock, which it holds for its session's life, and one half-removed folder two leaked processes held.
+  // The leftovers a prune meets: worktrees kept for worker logs under local/, worktrees under the harness's lock, which it
+  // holds for its session's life, and a half-removed folder that leaked processes hold.
   test('--prune lifts the harness\'s lock from a merged worktree left with nothing, takes worker logs and half-removed folders, and names what holds the rest', async () => {
     const repo = scratch('prune-leftovers', [{ name: 'first', run: 'node gate.mjs first' }], { '.gitignore': 'local/\n.claude/worktrees/\n', 'tracked.txt': 'base\n' });
     const trees = join(dirname(repo.root), 'trees');
@@ -7217,7 +7216,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
         writeFileSync(join(notes, path), 'a worker wrote this\n');
       }
       add('owned', 'the owner keeps this');
-      // CLEANUP2b: a worker started minutes ago, clean, merged, behind main's tip and with no process naming its folder
+      // A worker started minutes ago, clean, merged, behind main's tip and with no process naming its folder
       // (a shell's working folder is not on a command line) is kept; the others were last written hours ago.
       const young = add('young', harness('y'));
       for (const path of [done, busy, logs]) age(path, 300);
@@ -7305,7 +7304,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     }
   });
 
-  // GATEWT1's proof: the full set ran in the main checkout, so no merge could run for its hour and a half.
+  // A full set run in the main checkout leaves no merge able to run for its hour and a half.
   test('--full --beside gates main\'s tip in a worktree of its own while a merge lands, its verdicts in the main checkout\'s store', async () => {
     // The install's output is ignored, as this repository's is: the tree gated is the commit's.
     const repo = scratch('beside', [{ name: 'first', run: 'node gate.mjs first' }], {
@@ -7335,12 +7334,12 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     const npmRan = () => (existsSync(npmLog) ? readFileSync(npmLog, 'utf8').split('\n').filter(Boolean) : []);
     const ranThere = join(gateTree, 'local', 'ran.txt');
 
-    // Named, though it is main's tip: the merge that lands meanwhile would supersede a run of main's tip (CIPRIO1c).
+    // Named, though it is main's tip: the merge that lands meanwhile would supersede a run of main's tip.
     const beside = repo.run(['--full', '--beside', gated], { GATE_HOLD: hold, PATH });
     try {
       // Bounded as waitFor is, five times the shared patience: the gate tree's gate has started, and holds until the test lets
-      // it go. It was 3000 tries of 100 ms, which a loaded machine's start outlasted (2026-10-28, candidate 71d60dd); the
-      // shared patience alone, two minutes, is shorter still, and candidate 6a03b3b's start outlasted it. The start is a
+      // it go. A fixed count of 100 ms tries is outlasted by a loaded machine's start; the
+      // shared patience alone, two minutes, is shorter still. The start is a
       // worktree, an install and the full set's first gate, not one process.
       for (const end = Date.now() + 5 * PATIENCE; Date.now() < end && !(existsSync(ranThere) && readFileSync(ranThere, 'utf8').includes('first'));) {
         await new Promise((done) => setTimeout(done, 100));
@@ -7403,7 +7402,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
-  // CIPRIO1c's proof: a gate on an old tip ran to its end, up to an hour of the machine's time, for a verdict nobody used.
+  // A gate on an old tip would run to its end, up to an hour of the machine's time, for a verdict nobody uses.
   test('--full --beside on main\'s tip ends the gate it is running, with its whole tree, once main moves on, and is recorded superseded', async () => {
     const repo = scratch('beside-superseded', [{ name: 'held', run: 'node tree.mjs' }, { name: 'after', run: 'node gate.mjs after' }], { 'tree.mjs': TREE });
     const at = join(dirname(repo.root), 'pids');
@@ -7433,7 +7432,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       const record = JSON.parse(readFileSync(join(repo.root, 'local', 'gate-tree.json'), 'utf8')) as { commit: string; passed: boolean | null; superseded?: string };
       assert.deepEqual([record.commit, record.passed, record.superseded], [from, false, to]);
       assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.lock')), false, 'the lock is let go');
-      // Its log says it was ended, and an ended gate gives no verdict on the tree.
+      // Its log says it is ended, and an ended gate gives no verdict on the tree.
       assert.match(readFileSync(join(repo.root, 'local', 'scratch', `beside-${sha}`, 'held.log'), 'utf8'), /\(ended, not failed: main moved from/);
       const store = join(repo.root, 'local', 'gate-verdicts.json');
       const verdicts = existsSync(store) ? (JSON.parse(readFileSync(store, 'utf8')) as { verdicts: Verdict[] }).verdicts : [];
@@ -7446,8 +7445,8 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     }
   });
 
-  // GATEWT1b and GATEWT1c: the gate tree's universal gate failed for want of the private patterns file, and a prune
-  // after the stage deleted the only copy of a failed run's logs.
+  // The gate tree's universal gate fails for want of the private patterns file, and a prune
+  // after the stage would delete the only copy of a failed run's logs.
   test('--full --beside copies the declared private file into the tree on every run and keeps the run\'s logs past --prune', async () => {
     const needs = [
       "import { existsSync, readFileSync } from 'node:fs';",
@@ -7493,7 +7492,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
-  // CI1's proof: a release's verification ran 20 gates for 2 h 48 min at publish time, since nothing verified main between.
+  // A release's verification runs every gate at publish time when nothing verified main between.
   test("--ci gates main's tip in the gate tree: every gate at first, then what the paths since reach; a failure stays owed; its status and logs are the main checkout's, and the stage reads its verdicts", async () => {
     const repo = scratch('ci', [
       { name: 'universal', run: 'node ci-gate.mjs universal' },
@@ -7552,7 +7551,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     result = await repo.run(['--passed'], {}, gateTree);
     assert.equal(result.status, 0, result.out);
     assert.equal(publish.ungatedRefusal(join(dirname(repo.root), 'install'), gateTree).refusal, null);
-    // CISCOPE1d: each run left its receipt, by tree, with its kind and each gate's verdict and the kind that gave it.
+    // Each run leaves its receipt, by tree, with its kind and each gate's verdict and the kind that gave it.
     const receipts = () => readFileSync(join(repo.root, 'local', 'ci-runs.jsonl'), 'utf8').split('\n').filter(Boolean)
       .map((line) => JSON.parse(line) as { commit: string; tree: string; kind: string; finished: boolean; state: string; gates: { name: string; state: string; verdict: string | null; kind: string | null }[] });
     assert.deepEqual(receipts().map((each) => [each.commit, each.tree, each.kind, each.finished, each.state]), [
@@ -7580,7 +7579,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(record().lastGreen!.commit, second, 'the last green run is still the one before');
     result = await repo.run(['--passed'], {}, gateTree);
     assert.equal(result.status, 1, 'a failed commit is still refused at the stage');
-    // CISCOPE1d: the failure is filed as known red, by its gate's step where it names no test, first seen on this commit.
+    // The failure is filed as known red, by its gate's step where it names no test, first seen on this commit.
     type Filed = { gate: string; test: string; state: string; firstSeen: { commit: string }; lastSeen: { commit: string }; cleared: { commit: string; kind: string } | null };
     const findings = () => (JSON.parse(readFileSync(join(repo.root, 'local', 'ci-findings.json'), 'utf8')) as { findings: Filed[] }).findings;
     assert.deepEqual(findings().map((each) => [each.gate, each.test, each.state, each.firstSeen.commit]), [['universal', 'universal', 'red', third]]);
@@ -7593,7 +7592,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(ranThere(), ['tool-tests', 'universal']);
     assert.deepEqual(states(statusOf(fourth)), ['universal done PASS', 'service kept PASS', 'tool-tests done PASS']);
-    // Its pass on a commit that descends from where it was last seen failing clears it.
+    // Its pass on a commit that descends from the commit it last failed on clears it.
     assert.deepEqual(findings().map((each) => [each.state, each.cleared?.commit, each.cleared?.kind]), [['cleared', fourth, 'ci']]);
     assert.match(result.out, /known red \(local\/ci-findings\.json\): 0 filed, 1 cleared by this run; 0 open/);
     // A late run on the older, failing commit, which fourth does not precede: its pass clears nothing, and its failure is
@@ -7607,7 +7606,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
-  // CIFINDINGSKEEP1's proof: a stage CI kept scoped passes of two gates and left their older findings open.
+  // A stage CI keeps scoped passes of two gates and leaves their older findings open.
   test('--ci clears a gate\'s older finding from the pass it kept on this tree, with the kept verdict\'s provenance; a pass that does not stand on this tree clears nothing', async () => {
     const repo = scratch('ci-keep', [
       { name: 'universal', run: 'node ci-gate.mjs universal' },
@@ -7664,7 +7663,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     }
   });
 
-  // CIFAST1's proof: a CI run took 45 to 75 minutes, the family and deployment rehearsals 14 to 23 and 14 to 22 of it.
+  // A CI run takes 45 to 75 minutes, the family and deployment rehearsals 14 to 23 and 14 to 22 of it.
   test('--ci owes the family and deployment rehearsals a stage, running neither; --ci --stage runs them on the commit to stage, one after the other, and the stage asks their pass', async () => {
     const repo = scratch('ci-stage', [
       { name: 'universal', run: 'node ci-gate.mjs universal' },
@@ -7741,7 +7740,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       assert.deepEqual(record().runs.at(-1)!.stage, true);
       result = await repo.run(['--passed'], {}, gateTree);
       assert.equal(result.status, 0, result.out);
-      // CISCOPE1d: the stage's path left a receipt of its kind on this tree, which the stage counts.
+      // The stage's path leaves a receipt of its kind on this tree, which the stage counts.
       const receipts = readFileSync(join(repo.root, 'local', 'ci-runs.jsonl'), 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line) as { kind: string; state: string; finished: boolean });
       assert.deepEqual(receipts.map((each) => `${each.kind} ${each.state} ${each.finished}`), ['ci green true', 'stage failed true', 'ci green true', 'stage green true']);
       assert.match(result.out, /receipt\s+a stage run finished on this commit's tree/);
@@ -7752,7 +7751,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       assert.match(result.out, /nothing to run/);
       assert.deepEqual(statusOf(tip).owed, []);
 
-      // CISCOPE1d: the night runs every gate whole, the rehearsals included, whatever stands, and a finished one satisfies it.
+      // The night runs every gate whole, the rehearsals included, whatever stands, and a finished one satisfies it.
       clear();
       result = await repo.run(['--ci', '--night']);
       assert.equal(result.status, 0, result.out);
@@ -7773,7 +7772,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     }
   });
 
-  // CISTAGEFAIL1: a stage needs every gate green, so its first failed gate ends the run; a plain run keeps going for the whole picture.
+  // A stage needs every gate green, so its first failed gate ends the run; a plain run keeps going for the whole picture.
   test('--ci --stage ends at the first failed gate: the next never starts, the lock is let go, and it says nothing was staged; a plain --ci runs all three', async () => {
     const repo = scratch('ci-stagefail', [
       { name: 'universal', run: 'node ci-gate.mjs universal' },
@@ -7895,7 +7894,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     result = await repo.run(['--passed'], env, gateTree);
     assert.equal(result.status, 0, result.out);
 
-    // CISCOPE1d: the due record holds the half's last sweep, its whole run's; past its bound the stage refuses, and the stage's
+    // The due record holds the half's last sweep, its whole run's; past its bound the stage refuses, and the stage's
     // own run runs the half whole though its pass stands, which satisfies it again.
     const sweepFile = join(repo.root, 'local', 'ci-sweep.json');
     const dueRecord = JSON.parse(readFileSync(sweepFile, 'utf8')) as { halves: Record<string, { last: string; commit: string; kind: string }> };
@@ -7928,7 +7927,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests BetaTests LonelyTests']);
     assert.match(halfOf(fifth).classes!.whole ?? '', /src\/Desk\/Desk\.Tests\/GlobalUsings\.cs acts on every test unnamed/);
 
-    // CISCOPE1b: a fixture no class names reaches the gate and none of its classes; the last pass, whole, went stale by it
+    // A fixture no class names reaches the gate and none of its classes; the last pass, whole, went stale by it
     // alone, so the half passes by its kept classes without running, and the stage takes that pass.
     const sixth = commit('src/Desk/Desk.Tests/unused.txt', 'nothing reads this\n');
     result = await repo.run(['--ci'], env);
@@ -8066,7 +8065,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
   });
 });
 
-// REVIEW2: a builder's worktree sets GIT_DIR; the fixtures' git must still be the fixture's own, and the real repository registers
+// A builder's worktree sets GIT_DIR; the fixtures' git must still be the fixture's own, and the real repository registers
 // no worktree of the fixture's. Outside the concurrent suite: the variables are the process's, and every test beside would read them.
 // The real repository's own worktrees move while this runs (other sessions commit and add theirs), so only the fixture's are looked for.
 test('a fixture repository ignores the variables that locate the real one: its git and the tool it runs change its worktrees alone', async () => {
