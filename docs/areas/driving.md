@@ -37,7 +37,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SnapshotLook`, `PausedLook`, `SupervisorLook` | `WorkOrders/`, `WorkOrders/Work/` | The read phase, first: the roster's mark and the starts opening taken, then the snapshot; the paused work held; the supervisor's decisions moved, its unattributed words taken back, and the look's answers-alone bound left in the state |
 | `AloneLook`, `UnableLook`, `PiecesOnFileLook`, `HandOversLook`, `StaffPolicyLook`, `CommittedLook`, `OverlapsLook`, `OverlapsToldLook`, `RosterLook` | `WorkOrders/`, `WorkOrders/Work/`, `Loop/Look/` | The read phase, shaping the snapshot in this order: the answers that would go on alone marked; the words a record could not go on with; the pieces on file; the quests handed to another agent; the staff course's moves and holds; the commits a failed session left; what running units changed and the overlaps told; the roster told what started, leaving `LookState.Looked` |
 | `ChannelLook`, `ReopensLook`, `ReviewsLook` | `Loop/Look/` | The read phase, from `Looked`: the ask's channel, the sources' reopens (their taken-off words leave the snapshot), the set-ups' tabs |
-| `OpinionsLook`, `HelpersLook`, `PartnersLook`, `BrainstormsLook`, `MeetingsLook` | `Loop/Look/` | The read phase's last: the second opinions owed, then the helpers, partners, brainstorms and meetings, each started beside the look and counted into `LookState.Passes` under the cap. They reach the driver's classes through `ILookStagesWiring` |
+| `OpinionsLook`, `HelpersLook`, `PartnersLook`, `BrainstormsLook`, `MeetingsLook` | `Loop/Look/` | The read phase, before the plan: the second opinions owed, then the helpers, partners, brainstorms and meetings, each started beside the look and counted into `LookState.Passes` under the cap. They reach the driver's classes through `ILookStagesWiring` |
 | `LoopRuns` | `Loop/Look/LoopRuns.cs` | The one-look run and the gate's run-until-idle, and the wait for the sessions they started (the sync and the lost-claim stop beside them, the endings after); the driver's `RunOnceAsync` and `RunUntilIdleAsync` are its doors |
 | `RunDoors`, `LookDoors` | `Loop/Run/RunDoors.cs`, `Loop/Look/LookDoors.cs` | The doors the run's stages (`IRunWiring`) and the look's passes (`ILookWiring` and the interfaces over it) reach the driver through, one line each to the driver's member or the unit that owns it; the stages and passes are built on them, never on `Driver` |
 | `SessionEquipment` | `Loop/Session/SessionEquipment.cs` | The spawn prepared for either kind of session: the adapter's process, the toolchain's environment and tools-up-front switch on it (`Equip`, shared with the conversation's run), a dsh home's profile, and whether the handed rules let the connector's tool through |
@@ -51,7 +51,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SessionWaits` | `Loop/Session/SessionWaits.cs` | How a driven session's turn waits and ends: the background-work judgement, the turn-end look at a quest closed with uncommitted work, the bounds on a lingering process, and a given-up run's capture observed |
 | `LookKept` | `Loop/Look/LookKept.cs` | The look's first pass: a cool-off the file would not take written again, a lifted drain's held word freed, the conversations' and notices' files moved into the store |
 | `PlanLook` | `Loop/Look/PlanLook.cs` | The read phase's last: the plan made over the snapshot with the starts still opening held, under the cap the passes' slots left; it writes `LookState.Plan` and `Starts` |
-| `AnsweredIntakesLook`, `IntakesLook`, `StartsLook`, `RuleActsLook` | `Loop/Look/` | The `Planned` phase: a parked intake ended once its ask is answered; the asks due an intake in the slots left; then every claimed start and intake begun at once (`BegunStarts`, the run of each in `ClaimedStart`) and settled, writing `LookState.OpenedStarts` and `Outcome` (`StartsOutcome`: held, signed out, untrusted, waits by `AccountWaits`, a limited line's news by `LimitedStart`). The rules' acts the plan made (a quest parked, held on a transient episode or by the bound of moves, a line moved to another choice) are said on their lines once, by `RuleActsLook`. They reach the driver through `IStartsWiring` |
+| `AnsweredIntakesLook`, `IntakesLook`, `StartsLook`, `RuleActsLook`, `CourseReleaseLook` | `Loop/Look/` | The `Planned` phase: a parked intake ended once its ask is answered; the asks due an intake in the slots left; then every claimed start and intake begun at once (`BegunStarts`, the run of each in `ClaimedStart`) and settled, writing `LookState.OpenedStarts` and `Outcome` (`StartsOutcome`: held, signed out, untrusted, waits by `AccountWaits`, a limited line's news by `LimitedStart`). The rules' acts the plan made (a quest parked, held on a transient episode or by the bound of moves, a line moved to another choice) are said on their lines once, by `RuleActsLook`; then the supervisor's go-on on a quest's referred point is released through the quest's own *Try again* (`CourseReleaseLook`). They reach the driver through `IStartsWiring` and `ILookWiring` |
 | `BindRunsLook`, `EndingsLook` | `Loop/Look/` | The `Begun` phase: what the starts bound, said; what ended reported, told to the plugins' hooks and synced (the idle loop asks the same `EndAsync`) |
 | `UnresolvedDeliveries`, `ChannelMembersLook` | `Workflows/UnresolvedDeliveries.cs`, `WorkOrders/ChannelMembersLook.cs` | The `After` phase, at a whole look only: the deliveries a stopped run left unresolved, settled by the lease's holder; then an outside agent's channel membership ended as expired where its claims lapsed, its ask has no quest open and no part running, or it neither read nor posted for a day |
 | `DriverWatch` | `Loop/DriverWatch.cs` | The loop's surface: its nudges, its doors and its settings; each run is a `WatchRun` |
@@ -80,7 +80,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `PartEnds` | `Events/PartEnds.cs` | The class of each end, read from the journal row alone |
 | `SessionWatch` | `Events/SessionWatch.cs` | Marks a quiet session and brings it to the person; ends nothing by itself |
 | `TransientRetry` | `Agents/TransientRetry.cs` | Retries a transient failure in the same conversation on a fixed backoff |
-| `DriverConfig` | `Settings/DriverConfig.cs` | Drivable, holds, cap, trees, strikes, releases, poll, the quiet bound; its doors over the units below, so callers name it alone |
+| `DriverConfig` | `Settings/DriverConfig.cs` | Drivable, holds, cap, poll, trees, the adapters' commands, notify, the restart marks (`Forgiven`) and the quiet bound; its doors over the units below, so callers name it alone |
 | `MachineSettings` | `Settings/List/MachineSettings.cs` | Every machine setting declared once: its one key, which the terminal's verb, the route, Ask Daoris's door and the page's words spell, and its field in `driver.json`; the page reads it as `SETTINGS` |
 | `QuietSetting` | `Settings/QuietSetting.cs` | `quietMinutes`, the one quiet setting: its bounds as the list declares them, its read, its edit and the watcher's Q |
 | `DriverConfigReader`, `DriverConfigWriter`, `DriverConfigDisk`, `DriverConfigEdits` | `Settings/` | `driver.json` read by hand, written by hand, loaded and saved onto the file as it stands under its lock, and the keyed-map edits; the pause, release and role records (`WorkPause`, `TransientRelease`, `RoleRelease`, `RoleReleaseKinds`, `IRoleStarts`) each in a file of their own |
@@ -321,7 +321,7 @@ look and the run, the lazily built parts and the settables, and grows by a one-l
 | a part of a quest's start | a stage of its own in its phase's subdomain of `Loop/Run/`, marked `[RunStage]`; what it reaches of the driver goes on `IRunWiring`; what it reads of an earlier stage or leaves for a later one goes on `RunState`, written by one stage | `Loop/DriverRunPartsTests`, and the tests of the stage it moves |
 | a kind of quest operation, or a verb of one | a module of its own in `Service/Quests/Operations/`, marked `[QuestOperation(kind, Log)]`, its payload on `IQuestOperation` and its verbs on `QuestTx`; the store gains only the verb's door | `Quests/QuestsPartsTests`, and the tests of the verb it moves |
 | when a look runs | `Loop/Watch/WatchRun.cs` | `Loop/LookStagesTests`, `Loop/DriverWatchLookTests`, `Loop/LookParallelTests`, `Loop/SessionsOutliveTheirLookTests` |
-| what a read costs at a home's size | the read's own unit: whole lists asked at once, git once per repository rather than per tree, the session list read as its change | `Loop/HomeSizeBenchProcessTests` over `Loop/BenchHome` (3,000 records, two dozen trees, one with 12,000 ignored files), each read's time and its git starts and session-record requests held to its budget (the look 0 starts and 2 requests, the tidy 8 starts, a tree's walk 17); `Workplace/TidyGitCountTests` and `Workplace/OfferGitCountTests` hold the starts per branch and per offer; `Loop/SessionChangeBenchProcessTests`, one change read as its change; the modules' `Loop/SessionReadsBenchProcessTests` over the same home, a slice's push and a landing's plan and press each reading every record once, as its change, and the look's snapshot the open ones and every record once each; `Loop/LookWorkBenchProcessTests` over ten open trees and thirty runs, the look's overlaps and the nodes' pass each starting no git where nothing moved and held under a second, and after a tree moved the overlaps one start and the nodes 8, that tree's alone, each kept start a fact read once: its layout (one `rev-parse`: common dir, top level, branch), its `status` (head and own branch), the one `log` of commits no branch of the person's holds, the repository's line (origin's HEAD and one ref listing, the checkout's), and the content proof's `merge-base`, `diff --name-only` and branches by date, which only a tree with commits beyond its line asks |
+| what a read costs at a home's size | the read's own unit: whole lists asked at once, git once per repository rather than per tree, the session list read as its change | `Loop/HomeSizeBenchProcessTests` over `Loop/BenchHome` (3,000 records, two dozen trees, one with 12,000 ignored files), each read's time and its git starts and session-record requests held to its budget (the look 0 starts and 2 requests, the tidy 8 starts, a tree's walk 17); `Workplace/TidyGitCountTests` and `Workplace/OfferGitCountTests` hold the starts per branch and per offer; `Loop/SessionChangeBenchProcessTests`, one change read as its change; the modules' `Loop/SessionReadsBenchProcessTests` over the same home, a slice's push and a landing's plan and press each reading every record once, as its change, and the look's snapshot the open ones and every record once each; `Loop/LookWorkBenchProcessTests` over ten open trees and thirty runs, the look's overlaps and the nodes' pass each starting no git where nothing moved and held under a second, and after a tree moved the overlaps one start and the nodes 7, that tree's alone, each kept start a fact read once: its layout (one `rev-parse`: common dir, top level, branch), its `status` (head and own branch), the one `log` of commits no branch of the person's holds, the repository's line (origin's HEAD and one ref listing, the checkout's), and the content proof's `merge-base`, `diff --name-only` and branches by date, which only a tree with commits beyond its line asks |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `Events/SessionWatchTests`, `Events/SessionWatchQuietSettingTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests`, `Loop/QuietWordTests`, `Course/AnswersAloneTests`, `Settings/QuietSettingTests` |
 | a machine setting, or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key: the verb in `DriverChoicesCommand` and `ChoiceRoutes`, `SET_<KEY>` in the modules, Ask Daoris's door, the page's `settings.<key>.*` words | the modules' `Platform/MachineSettingsCensusTests`, the page's `settings/everySetting.test.tsx`, and each door's own tests |
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
@@ -335,44 +335,45 @@ look and the run, the lazily built parts and the settables, and grows by a one-l
 Driver tests are under `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/`; service tests under
 `src/Daoris.Service/Daoris.Service.Tests/`.
 
-The gates that bite: `driver` (which also runs `StructureTests`: the module structure and the size ratchet), `censuses`,
-`driver-process` and `driver-process-git` (real processes and git, run serially), `service`, and `orient-index`,
-`test-map` and `code-map` for any new file. A changed driven loop also meets the family rehearsal
+The gates that bite: `driver` (which also runs `StructureTests`: the module structure), `censuses`,
+`driver-process` and `driver-process-git` (real processes and git, run serially), `service`, and `universal` (which writes the
+index with `tools/orient-index.mjs`), `test-map` and `code-map` for any new file; `npm run quick` holds the size ratchet
+(`tools/size-ratchet.mjs`). A changed driven loop also meets the family rehearsal
 (`npm run rehearse:family`), whose stub-adapter phase proves the loop.
 
 ## Contradictions
 
 - D46 and D51 say one driven session per repository; `WorkOrders/Domain/RoundConsidering.cs` (the `OpensOwnTree` branch) runs sessions side by
   side, one per tree, where the repository opens its own trees. The code reads right (as D115 and D167 already say).
-- D46 says a fresh session per quest; `Course/Domain/LineCourse.Decide.cs:164-185` resumes the agent's own conversation
+- D46 says a fresh session per quest; `Course/Domain/LineCourse.Decide.cs` (`Decide`, `Account`) resumes the agent's own conversation
   where it holds. D189 reads right.
 - D51 rule 2 says a tree is opened for one line and never reused; D214 hands trees from line to line. D214 is proposed
   and unbuilt, and `Workplace/SessionTrees.cs` (the worktree half of D51) opens a tree for one line and keeps no pool. D51 reads right today.
 - D83 says the person answers a park; `Service/Sessions/SessionSays.cs` lands an appointed supervisor's
   attributed word on a park. D208 and D229 read right.
 - D88 counts work on any branch of the person's as landed; `Workplace/EndJudgement.cs:322-326` calls it handed, not
-  ended, and `Workplace/TreeSetAside.cs:23-30` makes the look wait for the line; only the press goes on D88's proof.
+  ended, and `Workplace/TreeSetAside.cs` (`GoesByItself`) makes the look wait for the line; only the press goes on D88's proof.
   The code reads right.
 - D58 makes `strikes` in `driver.json` the count; D229 makes it the failures rule, and no configuration reads the key: the
   release's migration takes it out (`Transitional/Migration/RulesStep.cs`). D229 reads right.
 - D81 sets a driven session's posture to the harness's `auto`; D184 sets it from the repository's access setup,
   written on the record at the open (`Service/Sessions/Records/Session.cs`, `Access`). D184 reads right.
 - D131 falls back to a plain carry-on when a conversation cannot resume; D189 hands the new part Daoris's brief
-  (`LineCourse.Decide.cs:271-306`). D189 reads right.
+  (`LineCourse.Decide.cs`, `Briefed`). D189 reads right.
 - D65 point 4 says a workflow is a chain of quests; D157 and D190 make it a named, versioned graph that governs a
   bound run, with chains kept as its steps. D190 reads right.
 
 ## Open
 
-- **D214** (no backlog row): a repository's pool of trees handed from line to line; proposed, both makers' reads of
-  round 3 owed.
+- **TREEPOOL1** (D214): rooms first with an optimised fallback for a session's tree; proposed, both makers' reads of
+  round 5 owed.
 - **SESSWATCH1d, 1e**: the record of quiet episodes, then an automatic end only where it shows such quiet is not work.
 - **SESSWATCH1f**: each pass asked for its own minutes.
 - **ONEWAY1j / SESSCTX1e**: *Go on fresh*, one press per go-on case.
 - **SESSCTX1a**: resume and a fresh part measured on each door.
 - **LIMITRESUME1** (under ONEWAY1g): what is left of the limit resume.
 - **AGENTERRORS1** (rows 1c to 1e): the one error policy built into the agent interface.
-- **AGENTPROVIDER1m-i**: every executor (the driven start, continuations, intakes, passes) holds `AgentRun`.
+- **AGENTPROVIDER1**: what is left of the one provider contract every agent implements (rows h, r and t).
 - **TOOL4n**: a driven Claude Code session that ends on a limit on the native door cools its account.
 - **TREEOPENERR1**: the next fresh-tree open that fails with no stderr, read and reported.
 - **LINESTOGETHER1e**: the steward's forms for several lines in one repository.

@@ -22,7 +22,7 @@ public sealed class EveryChildIsHandedTheToolsTests
 {
     private static readonly string[] Projects = ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host"];
 
-    internal const string Exempt = "Not the tools' environment (TOOLS5):";
+    internal const string Exempt = "Not the tools' environment:";
 
     [Fact]
     public void Every_process_the_driver_starts_is_handed_the_tools_environment_or_says_why_not()

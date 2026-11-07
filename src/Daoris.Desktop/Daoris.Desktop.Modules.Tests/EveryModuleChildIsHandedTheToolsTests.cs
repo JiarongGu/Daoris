@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <remarks>
 /// <para><b>Handed</b> is a call to <c>Tools.Hand(</c> after the initializer, before the start's first
 /// <c>return</c>, <c>Process.Start(</c> or start through the gate (<c>ProcessStarts.Shared.StartAsync(</c>). <b>Why not</b> is a comment directly above the statement that says
-/// <c>Not the tools' environment (TOOLS5):</c> and gives the reason: today, the host and the application are
+/// <c>Not the tools' environment:</c> and gives the reason: today, the host and the application are
 /// Daoris's own programs, and Edge is the system's.</para>
 /// <para>A source scan, as <c>NoConsoleWindowTests</c> holds <c>CreateNoWindow</c>: the next start written will not
 /// know to.</para>
@@ -21,7 +21,7 @@ public sealed class EveryModuleChildIsHandedTheToolsTests
 {
     private static readonly string[] Projects = ["Daoris.Desktop.Modules", "Daoris.Desktop.App", "Daoris.Desktop.Launcher"];
 
-    private const string Exempt = "Not the tools' environment (TOOLS5):";
+    private const string Exempt = "Not the tools' environment:";
 
     [Fact]
     public void Every_process_the_modules_start_is_handed_the_tools_environment_or_says_why_not()

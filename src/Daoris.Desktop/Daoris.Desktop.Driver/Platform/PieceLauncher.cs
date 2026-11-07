@@ -124,7 +124,7 @@ public static class PieceLauncher
             }
         }
 
-        // Not the tools' environment (TOOLS5): the launcher's own, which the driver built for the harness and handed the launcher whole.
+        // Not the tools' environment: the launcher's own, which the driver built for the harness and handed the launcher whole.
         var info = new ProcessStartInfo(taken.Harness)
         {
             UseShellExecute = false,

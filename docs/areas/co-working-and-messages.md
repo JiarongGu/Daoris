@@ -30,7 +30,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | ChannelJoinRoutes, PipeOutsideOnly | `Modules/Bridge/Routes/ChannelJoinRoutes.cs`, `Modules/Platform/PipeOutsideOnly.cs` | The join's `CHANNEL_JOIN` press under the person's Confirm, refused `inside` before any card from an agents' job |
 | ChannelMemberVerb, ChannelMemberDoors | `Driver/WorkOrders/ChannelMemberVerb.cs`, `Driver/Service/Wire/ChannelMemberDoors.cs` | The member's forms of the terminal's channel verb (`join`, `--member`, `leave`) and their service doors, with the person's listing and key-held end |
 | ChannelMemberRoll, ChannelMembersLook, ChannelOutsideRoutes | `Service/Asks/ChannelMemberRoll.cs`, `Driver/WorkOrders/ChannelMembersLook.cs`, `Modules/Bridge/Routes/ChannelOutsideRoutes.cs` | The members a channel holds and whether its claims are spent; the look's end of a spent or day-quiet membership; the window's `CHANNEL_MEMBERS` read and `CHANNEL_MEMBER_REMOVE` |
-| ChannelBounds, ChannelRefusal, ChannelAcks | `Service/Asks/ChannelTerms.cs` | The bounds (4,000 chars, 10 posts, 3 urgent, 20 handed, 3 members a channel and 8 a machine), refusal codes, acknowledgment states |
+| ChannelBounds, ChannelRefusal, ChannelAcks, ChannelReceipts | `Service/Asks/ChannelTerms.cs` | The bounds (4,000 chars, 10 posts, 3 urgent, 20 handed, 3 members a channel and 8 a machine), refusal codes, acknowledgment states, the receipts a message shows per repository |
 | ChannelTools | `Mcp/ChannelTools.cs` | `channel_post` (urgent or ordinary, `to`, `re`) and `channel_read` |
 | CallTable, ToolClasses | `Mcp/CallTable.cs`, `Mcp/ToolClasses.cs` | Which work may call which connector tool; a census holds every tool to a class |
 | SolicitedAnswers | `Service/Sessions/SolicitedAnswers.cs` | The one door for a helper's answer, a partner's and an opinion's findings, to the line's head |
@@ -108,7 +108,7 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
     ends a member whose claims are spent, or that neither read nor posted for 24 hours, by the person's key with `why` `expired`; the
     person's *Remove* ends it as `removed`, its own leave as `left`. A member is woken by `channel.posted` (`message` of 8 hex where kept
     here, `ask`, `poster`, `by` of `person`, `part`, `outside` or `teammate`, `urgent`), told from each `message` row by
-    `Plugins/ChannelPosts.cs`, and subscribes with `events relay --once --kinds channel.posted --not-by <its id>`, so its own posts move
+    `Driver/Plugins/ChannelPosts.cs`, and subscribes with `events relay --once --kinds channel.posted --not-by <its id>`, so its own posts move
     the watermark and wake nothing. (from D244)
 13. Delivery is by identity. A part is handed what its entry has not acknowledged, by message id, and one part of the entry claims each
     message. The entry's mark is for display. (from D188)
@@ -242,7 +242,7 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 
 **Tests that pin it.** Driver: `ExchangesTests`, `ChannelReachTests`, `ChannelNextStepTickTests`, `ChannelCommandTests`,
 `DrivenInboxTests`, `DaorisWordsTests`, `AnswersAloneTests`, `AnswersAloneHoldTests`, `HelperJudgeTests`, `HelperLookTests`,
-`HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `PartnerActsTests`, `PartnerLandingTests` (git half), `PieceLandingsTests`, the `Piece*RetentionTests` (git half: tidy, sync, clear), `PartnerProcessTests`, `PartnerChatProcessTests`, `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
+`HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `PartnerActsTests`, `PartnerLandingTests` (git half), `PieceLandingsTests`, `PieceRetentionTests` (git half: tidy, sync, clear), `PartnerProcessTests`, `PartnerChatProcessTests`, `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
 `Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`, `ChannelMemberVerbTests`. Service: `ChannelTests`, `ChannelPartsTests`, `TeammateAskChannelTests`, `ChannelSyncTests`, `ChannelMembersTests`, `ChannelMemberDoorsTests`,
 `SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, `BrainstormDeskTests`, `MeetingDeskTests`, `McpChannelToolTests`,
 `McpRoleFilterTests`, `ToolClassesTests`. Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`, `ChannelJoinPipeTests`,
@@ -255,18 +255,18 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 
 ## Contradictions
 
-1. D188 point 4 (the third answer alone waits, fixed) vs D225's note of 2026-11-03 (a fact, no number fixed). Code seeds a rule at 2 (`SupervisorRuleBook.AnswersAloneBound`, `Driver/Roles/SupervisorRuleBook.cs:10`, seeded at `:99`); `AnswersAlone.Count` is the fact, and the rule decides. D225 and the code read right.
+1. D188 point 4 (the third answer alone waits, fixed) vs D225's note of 2026-11-03 (a fact, no number fixed). Code seeds a rule at 2 (`SupervisorRuleBook.AnswersAloneBound`, `Driver/Roles/SupervisorRuleBook.cs:10`, seeded at `:110`); `AnswersAlone.Count` is the fact, and the rule decides. D225 and the code read right.
 2. D225's note of 2026-11-03 says it amends D188 "point 4's bound" and then repeats the line as "point 5's bound" (`docs/decisions/D225.md:42-43`). Point 4 reads right.
 3. D188 point 7 (*answered*: the turn that took it ended with an answer) vs D225's COMMS1h note (that is *taken, turn ended*; *answered* is a reply). D225 reads right.
-4. D188 point 6 (the channel's mark moves on taking) vs code (delivery by per-message acknowledgment, the mark for display, `Driver/WorkOrders/ChannelReach.cs:87-92`). Code reads right.
-5. D167 point 7 (a message reaches a running session at its next step) vs D188 and code (only urgent does, `Driver/WorkOrders/ChannelReach.cs:77-85`). D188 reads right.
+4. D188 point 6 (the channel's mark moves on taking) vs code (delivery by per-message acknowledgment, the mark for display, `Driver/WorkOrders/ChannelReach.cs:86-91`). Code reads right.
+5. D167 point 7 (a message reaches a running session at its next step) vs D188 and code (only urgent does, `Driver/WorkOrders/ChannelReach.cs:76-84`). D188 reads right.
 6. D167 point 6 (each ask has one channel) and `Driver/WorkOrders/Domain/ChannelWords.cs:17-18` ("any other origin has none") vs code (a line on no ask posts on its own channel, `Service/Asks/ChannelDesk.cs`'s `SpeakerAsync`). Code reads right.
 7. `ChannelDesk`'s summary ("read at a session's next look") vs D188's levels. D188 reads right.
 8. The co-working skill ("the service refuses one past the bound" for urgent posts) vs code (a fourth urgent post is kept ordinary, `Service/Asks/ChannelTerms.cs:18-22`, `Mcp/ChannelTools.cs:54`). Code reads right.
 9. D163 point 3 (helpers default `ask`) vs code (default `on` for agents set up here, `Driver/Settings/HelperKey.cs:17`, D163's HELPERDEFAULT1 note). Code reads right.
 10. D199 point 2 (the lead asks a piece with `partner_ask`) vs code (no such tool; `Mcp/ToolClasses.cs` has `partner_answer` alone). Code reads right today.
 11. D203 point 7 (*What needs you* gains no kind) vs code (a `helper-ended` row, `Modules/Loop/AttentionSessionRows.cs:80`, from D203's own HELPERWAIT1c note). Code reads right: it stands in for the park row.
-12. D225's COMMS1i note (*At work* lists no reviewers) vs its later note and code (reviewers from records with `serves`, `Driver/WorkOrders/AtWorkExchangeReading.cs:14-31`). Code reads right.
+12. D225's COMMS1i note (*At work* lists no reviewers) vs its later note and code (reviewers from records with `serves`, `Driver/WorkOrders/AtWorkExchangeReading.cs:14-33`). Code reads right.
 13. D136 point 4 (*Send now* stops the turn on a turn-end door) vs D188 (now stops nothing; `--now` is refused, naming `--level now`). D188 reads right.
 14. D176 point 1 (the driver's verb writes the request) vs its ONEWAY1t note and code (the service desk is the one writer, `Service/Sessions/BrainstormDesk.cs`). Code reads right.
 15. D32's shape (a quest is a checklist item written into the receiver's backlog by `daoris quest post`) vs its amendment and code (the service holds quests; the CLI has no quest command). The amendment reads right.
@@ -279,7 +279,7 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 - **CHANNELJOIN1** (`docs/2026-11-06-event-channel-design.md` §5; built: the member in the service and its doors, the join under the
   person's Confirm and the terminal's verb, the head's outside agents with *Remove*, the chip's *outside Daoris*, the card's `untold`
   words, the glossary's *outside agent* and the look's end of a membership; `channel.posted` told at `work/event` from each message
-  kept, the relay's `--not-by` and the co-working skill's section for an outside member). The admission keeps no confirmation id: nothing reads it, so the route is not handed it.
+  kept, the relay's `--not-by` and the co-working skill's section for an outside member). The admission keeps no confirmation id: nothing reads it, so the route is not handed it. Left: the installed look.
 - No row: *Send to its session* from a line's own channel.
 - **AGENTROOM1b**: `meeting_say`, so a real agent takes a meeting turn (today refused `no-message-tool`). **AGENTROOM1c**: `daoris meeting`. **AGENTROOM1d**: one account's turns one at a time across meetings. D177's floor request has no row.
 - **MEETUX1a-d**: a meeting from the window, its rounds and a brainstorm's document on their pages, a waiting meeting in *What needs you*.

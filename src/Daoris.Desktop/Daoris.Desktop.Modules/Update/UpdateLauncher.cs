@@ -24,7 +24,7 @@ public static class UpdateLauncher
         var launcher = Path.Combine(install, StagedBuild.Launcher);
         if (!File.Exists(launcher)) return false;
 
-        // Not the tools' environment (TOOLS5): the launcher is Daoris's own program, and it hands this process's environment,
+        // Not the tools' environment: the launcher is Daoris's own program, and it hands this process's environment,
         // its home included, to the application it starts, which hands every child the tools' environment there.
         // Through the shell: a start that does not go through it hands the launcher every inheritable handle this
         // process holds, the engine's DevTools socket among them, and the launcher hands them on to the application it starts,

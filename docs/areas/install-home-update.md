@@ -21,7 +21,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 | `HomePlacing` | `Mod/Update/HomePlacing.cs` | The one-time rename of an install's entries into D172's places, journalled and recovered |
 | `DaorisHome` | `Drv/Platform/DaorisHome.cs` | The home seam: `Resolve`, `InstallOf`, `Adopt`, `Entry`, `Places`, `FolderOf`, `InstallBin`, `HomeOf` |
 | `ProgramHome` | `Drv/Platform/ProgramHome.cs` | The home a program names once at its entry (the window's and the host's): what carries no home of its own, Daoris's own git and a probe's tools, reads it, never the variable a process inherited; a unit that acts for a home (a fetch's holds, a squash's author) is handed it. `ProcessHomeCensusTests` names each library read of the variable left, with why |
-| `HomeEntry` table | `Drv/Platform/DaorisHome.cs:342-476` | Every home file: name, category, new place, old place |
+| `HomeEntry` and its `Table` | `Drv/Platform/DaorisHome.cs`, beside `DaorisHome` | Every home file: name, category, new place, old place |
 | Home twins | `src/Daoris.Service/Daoris.Service.Core/Platform/DaorisHome.cs`, `src/Daoris.Cli/src/platform/home.ts` | The same table and rules, cell for cell |
 | `HomeLease`, `HomeIdentity` | `Drv/Platform/HomeLease.cs`, `HomeIdentity.cs` | One writer per home (`run/home.lease`); the home's id (`data/home.json`) |
 | `StagedBuild` | `Drv/Install/StagedBuild.cs` | `update/` layout, manifest read and check, the swap journal, the request reader, what runs from a folder |
@@ -204,16 +204,14 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     nothing; a step that throws stops the run there, said in the machine log (`home.migrated`, `home.migration-held`,
     `home.migration-failed`), and the next start runs it and the steps after it. (from D232)
 54. This release's migration is `nocompat1`, in the order of `HomeMigration.Steps`: the staffing into the store; the caps as
-    the supervisor's rules; the old workflow records as saved graphs, then a push-landing workflow as steps; `driver.json`'s keys
+    the supervisor's rules; the old workflow records as saved graphs, then a push-landing workflow as steps; a run bound to a workflow version no graph reads, rebound to its place's choice; `driver.json`'s keys
     no code writes; `no-push` as git access; `harnesses.json`'s old names and pooled sections; a waiting say's `now`; unkeyed
     solicited attempts; held presses with no question; the event logs' `answered` receipts, `chat.told-routing` notes and old
     handed sections; the session records' `answer` column; finished records' English-only notes; closed quests with a
     six-character id; terminals' `*.turn` marks; the desktop store's names (store step 22: a binding's `door`, the staffing's
-    projection tables dropped); the binding files into the store; and the wired, usage and brainstorm files' door names. The
+    projection tables dropped); the binding files into the store; the wired, usage, lineage and brainstorm files' door names;
+    and a stored standing confirmation grant, removed. The
     next release that changes a shape replaces them. (from D232)
-55. A read still kept until its chunk deletes it is one register entry with `// transitional: <id>` at the site; the gate
-    fails a marker with no entry, an entry with no marker, and an entry whose row is closed. (from D228, D232)
-
 ## Where a change goes
 
 - **Install layout or publish:** `tools/desktop-publish.mjs`, with its twins in the same change: `StagedBuild`'s names,
@@ -240,27 +238,26 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 `test/deployment-rehearsal.test.ts`.
 
 **Gates that bite.** `driver`, `modules`, `driver-process`, `modules-process` and `censuses` for the C#; `service` for its twin;
-`cli` (`npm run verify`: the home census, the transitional markers, the size ratchet); `tool-tests` for the publish; and
+`cli` (`npm run verify`: the home census, the size ratchet); `tool-tests` for the publish; and
 `deployment` (`npm run rehearse:deploy`, Windows only, run at the merge), whose phase 9 stages beside a running install,
 drains, swaps, rolls back and refuses.
 
 ## Contradictions
 
-1. D27 (the devkit verifies its own hash) vs `src/Daoris.Devkit/Daoris.Devkit.Core/VersionPin.cs:24-34` and the devkit
+1. D27 (the devkit verifies its own hash) vs `VersionPin.Require` (`src/Daoris.Devkit/Daoris.Devkit.Core/VersionPin.cs`) and the devkit
    README's Distribution section (a version pin only; the installer verifies the digest). The code reads right.
-2. D43 (`--install` lands the hosts in `~/.daoris/bin`) vs `tools/service-publish.mjs:108-117` (the home's `bin` entry). The
+2. D43 (`--install` lands the hosts in `~/.daoris/bin`) vs `tools/service-publish.mjs`'s `--install` (the home's `bin` entry). The
    code reads right; D43 itself carries no amendment.
-3. D172 point 2 (`DAORIS_HOME` names the Daoris folder) vs `Drv/Platform/DaorisHome.cs:55`, `:79-80` and
-   `Mod/Update/InstallHome.cs:171,196` (an install's home is `<install>/data`). The code and D172's HOMELAYOUT3 note read right.
-4. D172 point 6 (the move runs "at a start after a confirmed update") vs `Mod/Update/HomePlacing.cs:32-35` (any start with the
+3. D172 point 2 (`DAORIS_HOME` names the Daoris folder) vs `DaorisHome.InstallOf`/`OfInstall` (`Drv/Platform/DaorisHome.cs`) and
+   `Mod/Update/InstallHome.cs`'s home setting (an install's home is `<install>/data`). The code and D172's HOMELAYOUT3 note read right.
+4. D172 point 6 (the move runs "at a start after a confirmed update") vs the `HomePlacing` summary (`Mod/Update/HomePlacing.cs`: any start with the
    update at rest, never the first after a swap). The code reads right.
-5. D139 §3 (`daoris-driver update`) vs `Drv/Install/UpdateCommand.cs`' mark (the verb is `daoris update`; the old name is
-   refused). The tree reads right.
-6. D121 §2 (`tools.json` twinned in the CLI; versions in `<home>/tools/`) vs `Drv/Install/Tools.cs:17` and `:57-63` (the driver
-   alone; the CLI's `tools.ts` is gone) and `DaorisHome.cs:434` (`cache/tools`). The code reads right.
-7. D57 (managed agents under `~/.daoris/toolchain/`) vs `DaorisHome.cs:433` (`cache/toolchain`). The code reads right.
-8. D232 (no older reader) vs `DaorisHome.cs:119-128` (old places), `HomeLease.cs:128` (old lease and `driver.lock`) and
-   `InstallHome.cs:209` (D63's `~/.daoris` move-in), none of them in the register or the migration. The code is today's
+5. D139 §3 (`daoris-driver update`) vs `Drv/Install/UpdateCommand.cs` (the verb is `daoris update`). The tree reads right.
+6. D121 §2 (`tools.json` twinned in the CLI; versions in `<home>/tools/`) vs `Drv/Install/Tools.cs` (`Tools`' remarks and `Declared`: the driver
+   alone; the CLI's `tools.ts` is gone) and the `ToolVersions` entry (`cache/tools`). The code reads right.
+7. D57 (managed agents under `~/.daoris/toolchain/`) vs the `Toolchain` entry (`cache/toolchain`). The code reads right.
+8. D232 (no older reader) vs `HomeEntry.Old` places, `HomeLease.OlderIn` (old lease and `driver.lock`) and
+   `InstallHome.Migrate` (D63's `~/.daoris` move-in), none of them in the migration. The code is today's
    behaviour until ONEWAY1w moves them into the migration.
 
 ## Open
@@ -268,7 +265,4 @@ drains, swaps, rolls back and refuses.
 - **ONEWAY1w**: the home's old places as a migration step: every entry at its old place moved, `driver.lock`, D63's move-in and
   the flat service host ended.
 - **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
-- **NOCOMPAT1b2**: the rest of the old workflow logic's reads (`current-followed`, `auto-lander`, `work-cycles`), and the page's
-  handed sections (`handed-before-block`); the register and its gate deleted with the last of them.
-- **ONEWAY1ai-ii, ai-iv**: the driver's, the tools' and the documents' words name `daoris …` alone.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

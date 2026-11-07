@@ -169,7 +169,7 @@ test('a merge diff is read from a branch tip, apart from the working tree', () =
 
 test('the command line exits 0 on a clean change, 1 on a breach and 2 where there is no main', () => {
   const { dir, git } = repo({ 'src/Reads.cs': BASE });
-  const run = (...args) => spawnSync(process.execPath, [join(root, 'tools', 'comment-gate.mjs'), '--root', dir, ...args], { encoding: 'utf8' });
+  const run = (...args) => spawnSync(process.execPath, [join(root, 'tools', 'comment-gate.mjs'), '--root', dir, ...args], { encoding: 'utf8', windowsHide: true });
   assert.equal(run().status, 0);
   put(dir, { 'src/Reads.cs': `${BASE}// Names D99.\n` });
   const refused = run();
@@ -191,7 +191,7 @@ test('--all reads every source file: an old comment naming a row id is refused, 
   assert.equal(checked, 1);
   assert.equal(problems.length, 3, problems.join('\n'));
   assert.ok(problems.every((p) => p.startsWith('src/Old.cs:8:')));
-  const run = (dir) => spawnSync(process.execPath, [join(root, 'tools', 'comment-gate.mjs'), '--root', dir, '--all'], { encoding: 'utf8' });
+  const run = (dir) => spawnSync(process.execPath, [join(root, 'tools', 'comment-gate.mjs'), '--root', dir, '--all'], { encoding: 'utf8', windowsHide: true });
   assert.equal(run(clean.dir).status, 0);
   assert.match(run(clean.dir).stdout, /clean \(all 2 source files\)/);
   const refused = run(old.dir);
@@ -204,7 +204,3 @@ test('--all holds a comment the share rule would let pass, since it has no base 
   assert.equal(checkAll(dir).problems.length, 1);
 });
 
-test('the census marker of child environments is no naming', () => {
-  assert.deepEqual(namings("Not the tools' environment (TOOLS5): git's own git."), []);
-  assert.equal(namings("Not the tools' environment (TOOLS5): see TOOLS6.").length, 1);
-});
