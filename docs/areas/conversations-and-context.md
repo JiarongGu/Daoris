@@ -1,6 +1,6 @@
 # Conversations and context — how it works now
 
-Read from main at `7b04533ba` (2026-11-07). Paths without a root are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
+Read from main at `e38ab6db6` (2026-11-08). Paths without a root are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 
 ## What it does
 
@@ -121,7 +121,7 @@ of everything it handed, section by section.
     person's words alone. It is refused while running, with no words, or while the quest is open or taken. (from D137, D189)
 17. Answers alone (a helper's, a second opinion's) take a line on at most twice in a row. The next one waits for the
     person's word, *Go on with this answer* or *Not now*. On a home whose rules are reached, the supervisor rule sets the
-    number. (from D188, D229)
+    number, and a `refer` rule holds the line for the agent supervisor's course act (roles area). (from D188, D229, D233)
 18. Past its transient bound, a record goes on only with a word the person said after it ended, or with *Try again*.
     (from D210, D212)
 19. A conversation's line reads the supervisor's rules as a driven line does (`ConversationRules`): its episode makes its
@@ -155,7 +155,8 @@ of everything it handed, section by section.
     minutes. (from D165)
 26. `switch: off` moves nothing. A driven line meets the curve only at its next start's walk, why `curve`. (from D165, D125)
 27. A hand-over is the person's press or the agent's ask. The agent's ask passes the `handOver` rule first: `on` admits it,
-    `ask` puts it to the person, `off` refuses it. (from D163)
+    `ask` puts it to the person, `off` refuses it. The steward's hand-over act of a quest's session runs the person's press
+    inside its grants (roles area). (from D163)
 28. A conversation's hand-over is taken at its turn's end. Its first message is the brief, with none of the person's words.
     A quest's session stops at once for the person's press, which is their stop. An agent's ask waits for the turn's end.
     Before the next part starts in the tree (a conversation's hand-over, an account's move, or a quest's session handed over),
@@ -235,7 +236,7 @@ of everything it handed, section by section.
   rules are the roles area's.
 - **Ask Daoris:** history in `Context/HelpConversations.cs`; a door's answer, where one is wanted, in `Help/Proposals/` with its
   row in the room's doors table.
-- **Never grow the hubs.** `Course/Chat/ChatGoOn.cs` (39 KB), `Loop/Chat/ChatRunner.cs` (37 KB) and `Loop/Chat/ChatRun.cs`
+- **Never grow the hubs.** `Course/Chat/ChatGoOn.cs` (37 KB), `Loop/Chat/ChatRunner.cs` (37 KB) and `Loop/Chat/ChatRun.cs`
   (31 KB) stand near the 40 KB source budget and do not grow: `ChatGoOn` takes new go-on behaviour in a unit beside it,
   `ChatRunner` only wires and `ChatRun` is the one run. A conversation's turns grow in their parts under `Loop/Chat/Turns/`,
   never in `ChatTurns.cs`, which is their door. New behaviour goes in its own file (D231). Agents comes before Participants and
@@ -290,8 +291,8 @@ of everything it handed, section by section.
 - **SESSCTX1e (ONEWAY1j):** *Go on fresh*, Daoris's compaction on the person's press, re-cut as a hand-over to the same
   agent and account, after SESSCTX1a is measured.
 - **LIMITGOON1 (STAFFPOLICY1 row i):** the limit move seen on the installed window, among that row's installed proof.
-- **LIMITRESUME1 (ONEWAY1g row f):** the native door's limit sentence and a missing-id `--resume` recorded, so a native limit
-  concludes limited with no strike.
+- **LIMITRESUME1 (ONEWAY1g row f):** the installed proof, one session run to its limit once. A turn whose last words are its
+  account's limit already concludes limited on both doors.
 - **CHATFLOW1:** a conversation's work in its own tree runs its repository's workflow; left, the installed look (SETUPUX1x).
 - **RPC1g:** a terminal's conversation is the running Daoris's. The design (`docs/2026-11-06-terminal-conversation-design.md`)
   is accepted (D238; g5, seen on the install, is left): one runner, a terminal holding one conversation over the pipe under one Confirm, nothing alone with no instance.
