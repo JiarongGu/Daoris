@@ -8,7 +8,8 @@ namespace Daoris.Driver;
 /// native resume's one retry's and each go-on's, is a turn of its own over its own spawn's container and <see cref="LauncherRunner"/>, which
 /// this run owns and disposes at its close. Each event the layer yields is translated once (<see cref="LayerReadings"/>) and handed to the
 /// run's sink as today's transports hand theirs, each line written to the transcript as it is shown; the lines the harness says outside a
-/// frame and on stderr are the runner's, kept as its own words with what its stream says of its background work (<see cref="HarnessWords"/>).
+/// frame and on stderr are the runner's, kept as its own words with what its events say of its background work (<see cref="HarnessWords"/>).
+/// Where someone watches its console, what its agent runs beside itself is the door's streams beside (<see cref="LayerStreams"/>).
 /// The end is read as the conclusion reads it, its exit off the runner or the host's wait since the layer's terminal carries none; a stop
 /// Daoris asked before the terminal is a stop. An operation the layer's members do not carry is refused before anything is written.
 /// </summary>
@@ -48,7 +49,8 @@ internal sealed class LayerRun(
     private TextWriter? _file;
 
     /// <summary>One process of the run: its readings, runner and container, its lineage token where it is held, and its turn.</summary>
-    private sealed class Leg(LayerReadings readings, LauncherRunner runner, LayerContainer container, string? proc, Action named)
+    private sealed class Leg(
+        LayerReadings readings, LauncherRunner runner, LayerContainer container, string? proc, LayerStreams? streams, Action named)
     {
         public LayerReadings Readings { get; } = readings;
 
@@ -58,11 +60,8 @@ internal sealed class LayerRun(
 
         public string? Proc { get; } = proc;
 
-        /// <summary>The leg's children read off its frames, each start and end once, as today's capture reads them (AGENTPROVIDER1l).</summary>
-        public NativeChildren Children { get; } = new();
-
-        /// <summary>The leg's background tasks read off its frames, each start and end once, as today's capture reads them.</summary>
-        public NativeTasks Tasks { get; } = new();
+        /// <summary>The streams its agent runs beside itself, where someone watches and the door keeps them; null otherwise.</summary>
+        public LayerStreams? Streams { get; } = streams;
 
         /// <summary>Told once the agent named its conversation and the sink kept it.</summary>
         public Action Named { get; } = named;
@@ -247,7 +246,6 @@ internal sealed class LayerRun(
                 },
                 Heard = hold is null ? seat.Heard : hold.Heard,
                 Wrote = Wrote,
-                Framed = Framed,
                 Outside = Own,
                 Error = Own,
             },
@@ -268,7 +266,7 @@ internal sealed class LayerRun(
             Effort = start.Effort,
             PluginDirectories = start.Plugins,
         };
-        leg = new Leg(readings, runner, container, proc, named);
+        leg = new Leg(readings, runner, container, proc, Beside(), named);
         leg.Spawned = proc is null || hold is null ? leg.Started.Task : hold.SpawnedAsync(proc, leg.Started.Task);
         _leg = leg;
         leg.Turn = Task.Run(() => TurnAsync(leg, session, options));
@@ -281,28 +279,43 @@ internal sealed class LayerRun(
         {
             await foreach (var evt in session.StreamAsync(options, CancellationToken.None).ConfigureAwait(false))
             {
+                if (leg.Streams?.Take(evt) == true) continue;
                 Handed(leg, leg.Readings.Read(evt));
             }
         }
         finally
         {
             Handed(leg, leg.Readings.Flush());
-            // The ends only an update said, its notification never written, as today's capture says them at its stream's close (BGWAIT1c).
-            foreach (var ended in leg.Tasks.Close()) Work(ended);
+            // Said while the transcript is still open: what it left running ended with it.
+            if (leg.Streams is { } streams) await streams.EndAllAsync().ConfigureAwait(false);
             leg.Started.TrySetResult(null);
             Close();
         }
     }
 
-    /// <summary>A turn's readings handed in order, its process told once the conversation it named is kept.</summary>
+    /// <summary>
+    /// A turn's readings handed in order, its process told once the conversation it named is kept; a child's or a background task's start
+    /// or end read too by the harness's ending for its own background work (BGWAIT1c) and by the streams beside, as today's capture tells them.
+    /// </summary>
     private void Handed(Leg leg, IReadOnlyList<WireReading> readings)
     {
         foreach (var reading in readings)
         {
             Hand(reading);
             if (reading is WireReading.ConversationNamed) leg.Named();
+            if (reading is WireReading.ChildSeen or WireReading.ChildEnded or WireReading.TaskStarted or WireReading.TaskEnded)
+            {
+                _own.Read(reading);
+                leg.Streams?.Read(reading);
+            }
         }
     }
+
+    /// <summary>The door's streams beside over the run's, where someone watches its console; each child's words translated as the session's are.</summary>
+    private LayerStreams? Beside() => registration.Beside is { } beside && ReadingStreams.Of(_sink) is { } streams
+        ? new LayerStreams(
+            beside(streams, Line), () => new LayerReadings(start.Transport, start.Clock, start.CoolOff, steps: registration.Steps))
+        : null;
 
     /// <summary>
     /// The process's end as the conclusion reads it: where it is held, its exit under the host's wait (the first process bounded by its
@@ -346,23 +359,6 @@ internal sealed class LayerRun(
     {
         Input.AttachAsync((_, _) => Task.FromResult(true), CancellationToken.None).GetAwaiter().GetResult();
         Input.Detach();
-    }
-
-    /// <summary>
-    /// Each raw frame of the turn's stdout, read before the layer reads its line: a child's or a background task's start or end, said once as
-    /// its reading, which the harness's ending reads for its own background work (BGWAIT1c), as today's capture says it.
-    /// </summary>
-    private void Framed(NativeFrame frame)
-    {
-        if (_leg is not { } leg) return;
-        if (leg.Children.Read(frame) is { } child) Work(child);
-        if (leg.Tasks.Read(frame) is { } task) Work(task);
-    }
-
-    private void Work(WireReading reading)
-    {
-        _own.Read(reading);
-        Hand(reading);
     }
 
     /// <summary>A line the harness says outside a frame or on stderr: the transcript's and the console's, and its own words.</summary>

@@ -16,8 +16,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// The turn's own report (denials, the context against the window, tokens by model) is <see cref="LayerTurnReport"/>'s, said at the
-/// terminal as the native capture says it, and the conversation is the first the agent announced. What the layer's members do not carry is
-/// no reading yet: background tasks (AG18 with LQ7).
+/// terminal as the native capture says it, and the conversation is the first the agent announced. A child's and a background task's start
+/// and end are <see cref="LayerWork"/>'s readings, an end after the terminal marked so.
 /// </remarks>
 /// <param name="door">The bound door's transport word, the failure's door.</param>
 /// <param name="clock">The clock the failure is seen on.</param>
@@ -35,6 +35,8 @@ internal sealed class LayerReadings(
     private readonly LayerRefusals _refusals = refusals ?? LayerRefusals.None;
 
     private readonly LayerTurnReport _report = new();
+
+    private readonly LayerWork _work = new();
 
     private TurnTokens? _tokens;
 
@@ -133,6 +135,9 @@ internal sealed class LayerReadings(
         AgentModelUsage byModel => Report(() => _report.Split(byModel)),
         ContextReading figures when figures.UsedTokens is not null || figures.WindowTokens is not null => [LayerTurnReport.Figures(figures)],
         LayerEnded ended => Ending(ended),
+        AgentTaskStarted started => Work(_work.Started(started)),
+        AgentTaskEnded ended => Work(_work.Ended(ended, afterTurn: Ended is not null)),
+        AgentTaskOutputFile file => Report(() => _work.Output(file)),
         _ => [],
     };
 
@@ -142,6 +147,8 @@ internal sealed class LayerReadings(
         keep();
         return [];
     }
+
+    private static IReadOnlyList<WireReading> Work(WireReading? reading) => reading is null ? [] : [reading];
 
     /// <summary>
     /// The conversation is the one the agent announced, the first kept: a later frame that only carries an id names nothing, as the native

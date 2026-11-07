@@ -78,6 +78,14 @@ public interface IStreamsReader
     {
     }
 
+    /// <summary>
+    /// A line a child said, by the call that spawned it, on that child's own stream: what a reader of the wire's events rather than its frames
+    /// hands (the layer's, a child's event naming its spawning call). A wire whose streams keep none passes over it.
+    /// </summary>
+    void Said(string call, string text)
+    {
+    }
+
     /// <summary>True when the line was a stream's, so the session's reader never sees it.</summary>
     bool Take(NativeFrame frame);
 

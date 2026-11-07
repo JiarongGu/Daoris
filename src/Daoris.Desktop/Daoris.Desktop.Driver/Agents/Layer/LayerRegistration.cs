@@ -18,6 +18,12 @@ internal sealed record LayerRegistration(string Door, Action<LyntaiBuilder> Regi
     public Func<Lyntai.Agents.ToolCall, SessionEvent>? Steps { get; init; }
 
     /// <summary>
+    /// The streams the door's agent runs beside itself, as the door's native reader keeps them (CONSOLE3c), over the run's streams and its
+    /// console; null keeps none, so a child's words are the session's, as a dialect with no streams beside says them.
+    /// </summary>
+    public Func<ISessionStreams, Action<string>, IStreamsReader>? Beside { get; init; }
+
+    /// <summary>
     /// The door's own options type over the turn's prompt, holding what the start's carriers hand it (its rules file and its servers file,
     /// §5.6); null takes the layer's own options, carrying neither.
     /// </summary>

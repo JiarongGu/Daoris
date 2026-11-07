@@ -106,16 +106,23 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
 
         if (frame.Text("parent_tool_use_id") is { Length: > 0 } parent)
         {
-            Child? child;
-            lock (_gate) child = _children.GetValueOrDefault(parent);
-            // A child nobody announced (a synchronous one, which has no task) is still not the session's.
-            child ??= Open(parent, $"subagent/{parent}", "subagent");
+            var child = ChildOf(parent);
             foreach (var text in child.Words.Read(frame).Lines) streams.Line(child.StreamId, text);
             return true;
         }
 
         if (frame.Type == "user") Watch(frame.Root);
         return false;
+    }
+
+    public void Said(string call, string text) => streams.Line(ChildOf(call).StreamId, text);
+
+    /// <summary>The child its spawning call names; one nobody announced (a synchronous one, which has no task) is still not the session's.</summary>
+    private Child ChildOf(string call)
+    {
+        Child? child;
+        lock (_gate) child = _children.GetValueOrDefault(call);
+        return child ?? Open(call, $"subagent/{call}", "subagent");
     }
 
     /// <summary>A backgrounded command's result names its file in words: read the file from there on.</summary>

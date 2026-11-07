@@ -45,7 +45,7 @@ internal sealed class NativeTasks
         if (frame.Type != "system" || frame.Text("task_id") is not { Length: > 0 } task) return null;
         switch (frame.Subtype)
         {
-            case "task_started" when frame.Text("task_type") != "local_agent":
+            case "task_started" when frame.Text("task_type") != NativeChildren.Subagent:
                 return _updated.TryAdd(task, default)
                     ? new WireReading.TaskStarted(task) { Kind = frame.Text("task_type"), Name = frame.Text("description") }
                     : null;
