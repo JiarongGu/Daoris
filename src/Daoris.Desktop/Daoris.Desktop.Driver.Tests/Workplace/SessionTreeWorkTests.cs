@@ -36,7 +36,7 @@ public sealed class SessionTreeWorkTests : IDisposable
         await CommitAsync(tree.Path, "one.txt", "one");
         await CommitAsync(tree.Path, "two.txt", "two");
 
-        Assert.Equal(new TreeWork(2, 0), await trees.WorkAsync(tree.Path));
+        Assert.Equal(new TreeWork(2, 0) { Unlanded = 2 }, await trees.WorkAsync(tree.Path));
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public sealed class SessionTreeWorkTests : IDisposable
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "draft.txt"), "half done\n");
 
-        Assert.Equal(new TreeWork(0, 1), await trees.WorkAsync(tree.Path));
+        Assert.Equal(new TreeWork(0, 1) { Unlanded = 0 }, await trees.WorkAsync(tree.Path));
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class SessionTreeWorkTests : IDisposable
 
         var work = await trees.WorkAsync(tree.Path);
 
-        Assert.Equal(new TreeWork(0, 0), work);
+        Assert.Equal(new TreeWork(0, 0) { Unlanded = 0 }, work);
         Assert.False(work!.Holds);
     }
 
