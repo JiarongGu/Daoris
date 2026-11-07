@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the outgoing part left running when a hand-over or an account's move ended it (COAGENT1g; the co-agent design §2.6, §9 row 7): how
+/// What the outgoing part left running when a hand-over or an account's move ended it: how
 /// many processes its job still held once its own process had gone, and whether they were gone before the next part started.
 /// </summary>
 public sealed record PartLeft(int Count, bool Emptied)
@@ -27,7 +27,7 @@ public sealed record PartLeft(int Count, bool Emptied)
 }
 
 /// <summary>
-/// The wait a hand-over makes before its next part starts in the same tree (COAGENT1g). The runner's stop kills the part's process tree and
+/// The wait a hand-over makes before its next part starts in the same tree. The runner's stop kills the part's process tree and
 /// ends its job, but waits for neither, and a command the agent left in the background whose parent had already exited is out of the tree's
 /// reach. So the job is taken from the part's tracking before the stop (<see cref="SessionProcesses.TakeJob"/>), and once the part's own
 /// process has gone, what the job still holds is ended and waited for, as a partner's strict job is at its turn's end.
@@ -39,7 +39,7 @@ public static class PartLeftovers
 
     /// <summary>
     /// End what the job still holds and wait, within <paramref name="bound"/>, until it holds nothing; then let go of it, which ends anything
-    /// left. Null where there is no job to read: none was held, or the system keeps no count (elsewhere than Windows).
+    /// left. Null where there is no job to read: none is held, or the system keeps no count (elsewhere than Windows).
     /// </summary>
     public static async Task<PartLeft?> EndAsync(ProcessJob? job, TimeSpan bound)
     {

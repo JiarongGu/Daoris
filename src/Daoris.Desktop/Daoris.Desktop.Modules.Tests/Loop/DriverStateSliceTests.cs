@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The driver's state, the push path's first slice (PUSH1a, D182): one owner in the shell's loop judging what <c>STATE</c> answers
+/// The driver's state, the push path's first slice: one owner in the shell's loop judging what <c>STATE</c> answers
 /// into three allow-listed partitions, pushed when they change, and read by a window's first snapshot from memory.
 /// </summary>
 public sealed class DriverStateSliceTests : DriverModuleBridge
@@ -38,7 +38,7 @@ public sealed class DriverStateSliceTests : DriverModuleBridge
         var classed = DriverStateSlice.Partitions.SelectMany(each => each.Value).Concat(DriverStateSlice.PulledOnly).ToHashSet();
         Assert.All(state.EnumerateObject().Select(each => each.Name), field => Assert.Contains(field, classed));
         Assert.Equal(state.GetProperty("drivable").GetRawText(), Data(snapshot, "choices")["drivable"]!.ToJsonString());
-        // HEAVYRUN1b2b: this machine's heavy gates are a standing choice, pushed with the others.
+        // This machine's heavy gates are a standing choice, pushed with the others.
         Assert.Equal(state.GetProperty("heavyGates").GetRawText(), Data(snapshot, "choices")["heavyGates"]?.ToJsonString());
     }
 

@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A scratch install and a build staged beside it as the publish stages one (UPDATE1): the updater's tests', and the pipe's drain proof's
-/// (DRAINHOLD1), which drains a real <see cref="InstallUpdater"/> as the shell wires it.
+/// A scratch install and a build staged beside it as the publish stages one: the updater's tests', and the pipe's drain proof's,
+/// which drains a real <see cref="InstallUpdater"/> as the shell wires it.
 /// </summary>
 internal static class StagedInstalls
 {

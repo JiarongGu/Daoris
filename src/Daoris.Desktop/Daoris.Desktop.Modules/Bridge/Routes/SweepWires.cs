@@ -27,8 +27,7 @@ public static class SweepWires
 
     /// <summary>
     /// A branch's row in bringing up to date, the list's and the press's alike: what the press does with it, where its own
-    /// commits start, how many it carries, and how many the line already holds, which the replay leaves out (LANDSYNC3b, D87's
-    /// 2026-10-16 note), as `trees sync` says them.
+    /// commits start, how many it carries, and how many the line already holds, which the replay leaves out, as `trees sync` says them.
     /// </summary>
     public static object RebaseRow(RebaseItem item) => new
     {
@@ -37,8 +36,8 @@ public static class SweepWires
     };
 
     /// <summary>
-    /// The clean-up's list as <c>SWEEP_PLAN</c> answers it and the pushed <c>sweep</c> slice carries each repository's part of it
-    ///: one builder, two doors. A row names its session only where it could offer that
+    /// The clean-up's list as <c>SWEEP_PLAN</c> answers it and the pushed <c>sweep</c> slice carries each repository's part of it:
+    ///one builder, two doors. A row names its session only where it could offer that
     /// session's landing (<see cref="OffersLanding"/>), the only rows the door reads the records for, so a row says the same whichever
     /// other rows stand beside it.
     /// </summary>
@@ -67,7 +66,7 @@ public static class SweepWires
     {
         item.Repository, item.Workspace, item.Branch, item.Kind, item.Where, item.Files, item.Detail,
         item.PullRequest, item.Commits, item.Removable,
-        // LANDRETIRE1 part 2: when the landing recorded it, and its quest with whether the service says it is closed.
+        // When the landing recorded it, and its quest with whether the service says it is closed.
         item.LandedAt, item.Quest, item.QuestClosed,
     };
 }

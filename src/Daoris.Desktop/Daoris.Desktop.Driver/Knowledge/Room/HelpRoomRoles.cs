@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The working roles as the room says them (STAFFPOLICY1g, D226; the staff policy design §6.5): each role's choices, its policy in the
+/// The working roles as the room says them: each role's choices, its policy in the
 /// fold's words, the next new start the policy would take and the last seven days' starts and moves, read from the home's records, so
 /// <i>why did this run on Opus?</i> is answered from them. The facts are read as the room is written
 /// (<see cref="HelpRoleFacts.Read"/>, with the housekeeping), and a room built by hand says none.
@@ -70,7 +70,7 @@ public sealed record HelpRole(string Id, string Name, IReadOnlyList<string> Take
     /// <summary>The policy is set and in use.</summary>
     public const string Set = "set";
 
-    /// <summary>The policy was set for other choices than the role has now, so the role runs in order.</summary>
+    /// <summary>The policy is set for other choices than the role has now, so the role runs in order.</summary>
     public const string Stale = "stale";
 
     /// <summary>The choices have not been set, so this machine's defaults run.</summary>

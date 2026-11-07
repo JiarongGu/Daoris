@@ -4,8 +4,8 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// One taskbar button for a pinned Daoris (TASKBAR1, D108). The window belongs to
-/// <c>app/Daoris.Desktop.exe</c> while a person runs <c>Daoris.exe</c> at the install's root (D93), and
+/// One taskbar button for a pinned Daoris. The window belongs to
+/// <c>app/Daoris.Desktop.exe</c> while a person runs <c>Daoris.exe</c> at the install's root, and
 /// Windows groups a button by its process's executable unless the window names an application id. So
 /// an install's windows name one, with a relaunch command that starts the root launcher.
 /// </summary>
@@ -24,7 +24,7 @@ public sealed class TaskbarIdentityTests : IDisposable
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 
-    /// <summary>An install as the publish lays it out (D93): the marker and the launcher at the root, the application in `app/`.</summary>
+    /// <summary>An install as the publish lays it out: the marker and the launcher at the root, the application in `app/`.</summary>
     private string Install(string name = "install", bool marked = true, bool launcher = true)
     {
         var install = Path.Combine(_root, name);
@@ -113,7 +113,7 @@ public sealed class TaskbarIdentityTests : IDisposable
     }
 
     /// <summary>
-    /// The launcher and the application are two artefacts that share no code (D93), and they agree on two
+    /// The launcher and the application are two artefacts that share no code, and they agree on two
     /// things: the launcher's file name, which the relaunch command names, and the id, which the launcher
     /// carries for its own process so a chained start is one application to Windows. Held on the
     /// launcher's own source and project, the way the publish script's twin test holds its names.

@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// WORKFLOWCLEAN1 1f: Ask Daoris's <c>setup</c> kind has one door, <c>place</c>. The repository-alone <c>setup</c> door is refused naming it, and the
-/// claim a proposal's Apply takes (HELPAPPLY1) is held by one until it is let go.
+/// Ask Daoris's <c>setup</c> kind has one door, <c>place</c>. The repository-alone <c>setup</c> door is refused naming it, and the
+/// claim a proposal's Apply takes is held by one until it is let go.
 /// </summary>
 public sealed class HelpSetupDoorTests : DriverModuleBridge
 {

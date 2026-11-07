@@ -3,27 +3,27 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The permission posture Daoris drives a session under, expressed as the wire's own mode (ACP2): read from the adapter's posture
+/// The permission posture Daoris drives a session under, expressed as the wire's own mode: read from the adapter's posture
 /// string, and set on the session once it answers its open.
 /// </summary>
 /// <remarks>
-/// <para><b>D81 widened it, by decision</b>: a session does as much as the harness would on its
-/// own, so an adapter may name <c>auto</c>, the mode
+/// <para><b>A session does as much as the harness would on its
+/// own</b>, so an adapter may name <c>auto</c>, the mode
 /// in which the harness judges each action itself, ahead of <c>acceptEdits</c>. What the doctrine
 /// keeps is kept by the rules handed at spawn (no push, the tree guard), which hold in every mode.
-/// This door sets a mode, which is what the evaluation observed Claude Code offering on
-/// `session/new` (§1a).</para>
+/// This door sets a mode, which is what Claude Code offers on
+/// `session/new`.</para>
 ///
 /// <para>🔴 <b>Never a mode the adapter did not name, and never one the agent did not offer.</b> The
 /// wire also offers <c>bypassPermissions</c>; a driver that reached for a neighbouring mode when
-/// its own was missing is how a permission boundary widens without a decision. An adapter names
+/// its own is missing is how a permission boundary widens without a decision. An adapter names
 /// its postures in order, and the first the agent offers is set. An agent that offers no modes is
 /// left exactly alone — its permissions are its own business, which is the stub's shape and any
 /// future harness's right.</para>
 ///
-/// <para>🔴 <b>A posture marked required is set, or the session does not open</b> (HELPMODE1a1, D183 point 3): Ask Daoris's
+/// <para>🔴 <b>A posture marked required is set, or the session does not open</b>: Ask Daoris's
 /// full access, a <see cref="PostureAsked.Required"/> posture of the adapter's <see cref="AgentDoor.FullPosture"/>, and a driven
-/// session's asking or unrestricted permission prompts (AUTONOMY1b, <see cref="DrivenAccess"/>). Left alone, an agent that does
+/// session's asking or unrestricted permission prompts (<see cref="DrivenAccess"/>). Left alone, an agent that does
 /// not offer it would run in its own mode under that label; it fails plainly instead, naming what the agent offers and the
 /// person's two ways on (<see cref="AcpSession.Unoffered"/>'s words where a driven start gave them). Every other posture keeps the leniency
 /// above.</para>
@@ -35,11 +35,11 @@ internal sealed class AcpPosture(
     Func<string?> sessionId)
 {
     /// <param name="created">The answer to the open: the modes it offers.</param>
-    /// <param name="again">Whether a value was set on the session since it answered, which may have moved its mode: set it whatever it said.</param>
+    /// <param name="again">Whether a value is set on the session since it answered, which may have moved its mode: set it whatever it said.</param>
     public async Task SetAsync(JsonElement created, CancellationToken ct, bool again = false)
     {
         // An adapter that names no posture asks for none — dsh, whose wire carries no modes, and the
-        // stub, whose permissions are its own business (ACP3).
+        // stub, whose permissions are its own business.
         if (posture is not { Length: > 0 }) return;
 
         var (named, required, _) = PostureAsked.Parse(posture);
@@ -48,7 +48,7 @@ internal sealed class AcpPosture(
             var offered = offers.Count > 0
                 ? $"it offers {string.Join(", ", offers.Order(StringComparer.Ordinal).Select(mode => $"`{mode}`"))}"
                 : "it offers no modes";
-            // A driven start's required posture is its repository's permission prompts' (AUTONOMY1b), said in its setup's words.
+            // A driven start's required posture is its repository's permission prompts', said in its setup's words.
             return new(unoffered()?.Invoke(named, offered)
                 ?? $"the agent does not offer `{named}`, the mode that asks nothing which full access needs ({offered}), so it does not start in "
                 + "a narrower one under that name. Choose restricted access for Ask Daoris (`daoris ask-daoris mode restricted`), or another "
@@ -71,8 +71,8 @@ internal sealed class AcpPosture(
             if (mode.TryGetProperty("id", out var id) && id.GetString() is { } name) offered.Add(name);
         }
 
-        // The adapter names its postures in order of preference, `|`-separated (D81): the first the
-        // agent offers is the one. None offered is left alone, exactly as a single posture was.
+        // The adapter names its postures in order of preference, `|`-separated: the first the
+        // agent offers is the one. None offered is left alone, exactly as a single posture is.
         var chosen = named.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault(offered.Contains);
         if (chosen is null)

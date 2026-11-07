@@ -4,8 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// One terminal's press waiting for the person, as its record keeps it across a restart (CONFIRMWAIT1a-ii, the confirm-wait design
-/// §7.1): the confirmation's own id, which names the file; the terminal's id and the binding it was sent under; the module, route and
+/// One terminal's press waiting for the person, as its record keeps it across a restart: the confirmation's own id, which names the file; the terminal's id and the binding it is sent under; the module, route and
 /// payload as sent; the grounds read at the ask; the asker as the system named it; when it was asked and first shown; whether it carries
 /// a key; and how it stands (<see cref="Waiting"/>, <see cref="Begun"/>, or <see cref="Ended"/> with its answer). No card's fields and
 /// no named values: those are made again from the payload, so a record cannot show one thing and run another.
@@ -36,10 +35,10 @@ internal sealed record PipeWaitingRecord(
 internal sealed record PipeWaitingFile(string Path, string Name, PipeWaitingRecord? Record, bool Newer);
 
 /// <summary>
-/// The records of a terminal's presses waiting for the person (CONFIRMWAIT1a-ii, the confirm-wait design §7.1): one file each under the
+/// The records of a terminal's presses waiting for the person: one file each under the
 /// home's <c>data/pipe-waiting/</c> (<see cref="HomeEntry.PipeWaiting"/>), named by the confirmation's own id, never the terminal's,
 /// which never reaches a path; written whole as BOM-less UTF-8 (<see cref="JsonFile"/>). A kept place of the home, not <c>run/</c>,
-/// which D172 lets anyone clear while Daoris is closed; never a key in it (D172 point 3).
+/// which anyone may clear while Daoris is closed; never a key in it.
 /// </summary>
 internal sealed class PipeWaiting(string folder)
 {
@@ -161,7 +160,7 @@ internal sealed class PipeWaiting(string folder)
         writer.WriteEndObject();
         writer.WriteString("module", record.Module);
         writer.WriteString("route", record.Route);
-        // A keyed press keeps no payload and no grounds: its key never reaches data/ (D172 point 3).
+        // A keyed press keeps no payload and no grounds: its key never reaches data/.
         if (!record.Keyed && record.Payload is { } payload) writer.WriteString("payload", payload);
         writer.WriteStartArray("grounds");
         foreach (var ground in record.Keyed ? [] : record.Grounds)

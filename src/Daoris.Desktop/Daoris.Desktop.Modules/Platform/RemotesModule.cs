@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The machine's wiring, as a surface (D50, workspace design §2b): which deployment serves each
+/// The machine's wiring, as a surface: which deployment serves each
 /// workspace on this machine. The page asks, this edits the home's `remotes.json` — the same file
 /// `daoris remote` edits and the same file the sync loop reads.
 /// </summary>
@@ -41,7 +41,7 @@ public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBas
     /// hand between calls, and a surface that answered from a cache would report its own last write.
     /// </summary>
     private static string Path =>
-        // With no home there is no map to edit, and the home's own sentence says what to set (D63).
+        // With no home there is no map to edit, and the home's own sentence says what to set.
         RemoteTarget.ResolvePath() ?? DaorisHome.Require(HomeEntry.Remotes);
 
     protected override Task<object?> RouteMessageAsync(
@@ -58,7 +58,7 @@ public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBas
                 var url = PayloadHelper.GetRequiredValue<string>(request.Payload, "url");
                 var key = PayloadHelper.GetRequiredValue<string>(request.Payload, "key");
 
-                // The operation judges the pair and makes the edit alone onto the file as it stands (KEEPALL1e).
+                // The operation judges the pair and makes the edit alone onto the file as it stands.
                 var path = Path;
                 Kept(() => RemoteOperations.Set(path, workspace, url, key));
 

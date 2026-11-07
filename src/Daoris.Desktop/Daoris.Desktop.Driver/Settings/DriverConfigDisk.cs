@@ -5,8 +5,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// <c>driver.json</c> read from disk and an edit written onto it as it stands, under its lock. The edit (what changed between
 /// <see cref="DriverConfig.Source"/> as read and the choices) is made onto the file read again here, under the same keep rules: written
-/// over <see cref="DriverConfig.Source"/>, a change another writer made in between was lost, and a file that had since stopped reading
-/// was overwritten.
+/// over <see cref="DriverConfig.Source"/>, a change another writer made in between would be lost, and a file that had since stopped reading
+/// would be overwritten.
 /// </summary>
 internal static class DriverConfigDisk
 {
@@ -16,12 +16,12 @@ internal static class DriverConfigDisk
     /// before the save, a file that did not read or held a key twice included.
     /// </summary>
     /// <exception cref="DriverConfigUnreadableException">
-    /// The file is there and does not read (CONFIGREAD1): it could not be opened, is not JSON, or is not the choices' shape.
+    /// The file is there and does not read: it could not be opened, is not JSON, or is not the choices' shape.
     /// The sentence names the file, and the line and byte where the parser stopped; every door says it as it says a refusal.
     /// </exception>
     public static DriverConfig Load(string path)
     {
-        // A fresh home's staffing is in the store before it has a file (ONEWAY1b), so a missing file is filled too.
+        // A fresh home's staffing is in the store before it has a file, so a missing file is filled too.
         if (!File.Exists(path)) return RoleStaffingPort.Fill(DriverConfig.Empty with { Source = "{}", SourceFile = Path.GetFullPath(path) }, path);
 
         string text;
@@ -65,8 +65,8 @@ internal static class DriverConfigDisk
     /// be what it finds. A file that does not read now, or holds a key twice in one object, is refused and left as it is; one that is
     /// gone is written from nothing. The edit touches only the key paths it changed (<see cref="JsonKeeping"/>): an object taken out
     /// since is made again with only the edit's keys, and one that is no longer an object refuses it. The re-read and the rename are
-    /// made holding the file's lock (CONFIGLOCK1, <see cref="KeepLock"/>), which the CLI's writer takes too; the lock is read again just
-    /// before the rename, and a save whose lock was taken is refused with nothing written.
+    /// made holding the file's lock (<see cref="KeepLock"/>), which the CLI's writer takes too; the lock is read again just
+    /// before the rename, and a save whose lock another writer takes is refused with nothing written.
     /// </summary>
     public static void Save(DriverConfig config, string path, KeepSeams? seams)
     {

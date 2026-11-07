@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>repository</c> proposal (ENTRY1d1, D161's ENTRY1d note): a registered repository moved to a workspace on
+/// Ask Daoris's <c>repository</c> proposal: a registered repository moved to a workspace on
 /// this machine. Its door is <c>wire</c>, its target the repository as the registry names it, its value the workspace. It is
 /// judged against the registry as the service answers it, and applied through the local host's
 /// <c>POST /api/registry/{repository}/workspace</c>, the door the Manage drawer's *Move to workspace* uses.
 /// </summary>
 /// <remarks>
-/// <para><b>A move needs no path</b> (D48 §7, the workspace design §7): it edits one field of the registry's row, locally and
+/// <para><b>A move needs no path</b>: it edits one field of the registry's row, locally and
 /// at once, and touches no file. So the proposal names only the repository and the workspace. Adding or importing one needs a
-/// folder, which stays the person's pick: a go opens Repositories' Add or Import with the workspace filled (ENTRY1d2a,
+/// folder, which stays the person's pick: a go opens Repositories' Add or Import with the workspace filled (
 /// <see cref="HelpGoProposals"/>).</para>
 ///
 /// <para><b>A new workspace is allowed</b>, as the drawer's free text allows it: a move to a name no repository is in yet
@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// change.</para>
 ///
 /// <para><b>Any registered repository</b>, adopted or not, as the route takes it. The drawer is offered to adopters only
-/// because its other half writes the repository's declaration (INT3c); the move is not that half.</para>
+/// because its other half writes the repository's declaration; the move is not that half.</para>
 ///
 /// <para><b>No terminal twin.</b> No command edits only this field: <c>daoris connect --workspace</c> registers the whole row
 /// again from the declaration, from inside the checkout, and refuses a repository that declares nothing. So the card shows
@@ -27,12 +27,12 @@ internal sealed class HelpRepositoryProposals : IHelpProposalKind
 {
     public string Kind => "repository";
 
-    // ENTRY1d1: a move to a workspace, by name; adding or importing needs a folder and is never this.
+    // A move to a workspace, by name; adding or importing needs a folder and is never this.
     public string Tool => "repository_propose";
 
     public IReadOnlyList<string> Doors { get; } = ["wire"];
 
-    /// <summary>ASKSCOPE1c: its target is the repository it moves, and its value the workspace it moves it to.</summary>
+    /// <summary>Its target is the repository it moves, and its value the workspace it moves it to.</summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
         new([proposal.Workspace, proposal.Value], [proposal.Target, proposal.Repository]);
 
@@ -79,7 +79,7 @@ internal sealed class HelpRepositoryProposals : IHelpProposalKind
 }
 
 /// <summary>
-/// A move the route takes (ENTRY1d1): the repository as the registry spells it, the workspace it is in (null where the registry
+/// A move the route takes: the repository as the registry spells it, the workspace it is in (null where the registry
 /// answered none for it), and the workspace it moves to, as the route stores a name.
 /// </summary>
 public sealed record HelpRepositoryMove(string Repository, string? From, string Workspace);
@@ -87,7 +87,7 @@ public sealed record HelpRepositoryMove(string Repository, string? From, string 
 public interface IHelpRepositoryDoors
 {
     /// <summary>
-    /// The local host's <c>POST /api/registry/{repository}/workspace</c> (ENTRY1d1), the Manage drawer's *Move to workspace*:
+    /// The local host's <c>POST /api/registry/{repository}/workspace</c>, the Manage drawer's *Move to workspace*:
     /// one field of the registry's row. The service's answer comes back as its sentence, a refusal included.
     /// </summary>
     Task<(bool Ok, string Message)> WireRepositoryAsync(string repository, string workspace, CancellationToken ct);

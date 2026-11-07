@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>Who says a reading is so (the agent-provider design §3.1): the agent on its wire, the transport, or Daoris reading either.</summary>
+/// <summary>Who says a reading is so: the agent on its wire, the transport, or Daoris reading either.</summary>
 public enum ReadingBy
 {
     /// <summary>The agent said it on its wire.</summary>
@@ -11,7 +11,7 @@ public enum ReadingBy
     /// <summary>The transport saw it: a process's line, its exit.</summary>
     Observed,
 
-    /// <summary>Counted from what was reported or observed.</summary>
+    /// <summary>Counted from what is reported or observed.</summary>
     Computed,
 
     /// <summary>Concluded without anyone saying it: a child closed because its parent ended.</summary>
@@ -20,7 +20,7 @@ public enum ReadingBy
 
 /// <summary>
 /// What a run's door said happened, as one closed set of readings beside <see cref="SessionEvent"/>, which <see cref="Said"/> carries
-/// (the agent-provider design §3.1, row l). A transport reads its wire and writes each reading to its run's <see cref="IReadingSink"/>, composed
+/// A transport reads its wire and writes each reading to its run's <see cref="IReadingSink"/>, composed
 /// where the run's executor is built of its owners' parts: Context keeps the event file and the console, Participants the binding's
 /// conversation and the lineage, Agents the account's windows. Every payload is Events' own or lower, so a reading names no Agents type; the provider mints
 /// nothing, and what it does not say is never a reading.
@@ -51,12 +51,12 @@ public abstract record WireReading
     public long Sequence { get; init; }
 
     /// <summary>
-    /// The lineage token of the process that said it (COWORKVIEW1a), so a part keeping what a process did names that process; null before its
+    /// The lineage token of the process that said it, so a part keeping what a process did names that process; null before its
     /// run stamped it, or where its process ran under none.
     /// </summary>
     public string? Process { get; init; }
 
-    /// <summary>An event the session's record keeps, of today's kinds: the person's words, the agent's, a tool, a turn, usage, a note.</summary>
+    /// <summary>An event the session's record keeps: the person's words, the agent's, a tool, a turn, usage, a note.</summary>
     public sealed record Said(SessionEvent Event) : WireReading;
 
     /// <summary>A line the person reads on the run's console, as its transcript says it.</summary>
@@ -68,10 +68,10 @@ public abstract record WireReading
     /// <summary>The account's windows as the agent reported them, unread: the provider's window words read them above.</summary>
     public sealed record WindowsSaid(JsonElement Windows) : WireReading;
 
-    /// <summary>The door's init frame: what it said it loaded at its start (HELPWIRED1b), the tools, servers, skills and plugins.</summary>
+    /// <summary>The door's init frame: what it said it loaded at its start, the tools, servers, skills and plugins.</summary>
     public sealed record Loaded(WireLoaded Init) : WireReading;
 
-    /// <summary>A stream the agent runs beside itself opened: a subagent or a background task, its own console (CONSOLE3c).</summary>
+    /// <summary>A stream the agent runs beside itself opened: a subagent or a background task, its own console.</summary>
     public sealed record StreamOpened(SessionStream Stream) : WireReading;
 
     /// <summary>A line of a stream beside the run.</summary>
@@ -101,12 +101,12 @@ public abstract record WireReading
         /// <summary>Its name, where its wire gave one.</summary>
         public string? Name { get; init; }
 
-        /// <summary>What it was asked to do, as its wire described it.</summary>
+        /// <summary>What it is asked to do, as its wire describes it.</summary>
         public string? Task { get; init; }
     }
 
     /// <summary>
-    /// A child's end its wire said, with the word it said it in, or none; said once, and only for a child whose start was seen. A child's end
+    /// A child's end its wire said, with the word it said it in, or none; said once, and only for a child whose start is seen. A child's end
     /// that only its session's close implies is no reading: its process's own end says it.
     /// </summary>
     public sealed record ChildEnded(string Child, ChildSignal Signal, string? Word) : WireReading;
@@ -125,11 +125,11 @@ public abstract record WireReading
     }
 
     /// <summary>
-    /// A background task's end its wire said, with the word it said it in, or none; said once, and only for a task whose start was seen.
+    /// A background task's end its wire said, with the word it said it in, or none; said once, and only for a task whose start is seen.
     /// </summary>
     public sealed record TaskEnded(string Task, string? Word) : WireReading
     {
-        /// <summary>The file its output was written to, where its wire named one.</summary>
+        /// <summary>The file its output is written to, where its wire names one.</summary>
         public string? Output { get; init; }
 
         /// <summary>
@@ -147,7 +147,7 @@ public abstract record WireReading
 
     /// <summary>
     /// The agent refused the model its actor asked at the open, before any prompt: the account's refusal of that model, which the offers
-    /// store keeps before the open's re-ask walks on (D205 §3.3).
+    /// store keeps before the open's re-ask walks on.
     /// </summary>
     public sealed record ModelRefused(ModelRefusal Refusal) : WireReading;
 }

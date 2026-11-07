@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a further part of a session reads of the parts before it (SESSONE1d), beneath the quest on a first start: the newest
+/// What a further part of a session reads of the parts before it, beneath the quest on a first start: the newest
 /// <see cref="TargetPrompt.PartsShown"/> by name, each in a line, the rest counted, and where its own tree stands to theirs. Short on
 /// purpose: their records and branches hold the rest, and the session reads those itself.
 /// </summary>

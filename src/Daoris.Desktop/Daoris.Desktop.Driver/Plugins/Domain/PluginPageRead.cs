@@ -9,25 +9,25 @@ public sealed record PagePoint(string Name, string? Kind, long? WaitMs, bool? Li
 /// <summary>A plugin's hook as written: its command, `${plugin}` left as written, and the points it declares.</summary>
 public sealed record PageHook(IReadOnlyList<string> Command, IReadOnlyList<string> Points);
 
-/// <summary>An agent a plugin declares, as written: its way in is the protocol door, and its posture null where its wire names none (ACP3).</summary>
+/// <summary>An agent a plugin declares, as written: its way in is the protocol door, and its posture null where its wire names none.</summary>
 public sealed record PageAgent(
     string Name, IReadOnlyList<string> Command, string WayIn, string? Posture, string? ProfileVariable, string? Package,
     IReadOnlyList<string>? Install);
 
 /// <summary>
-/// A server a plugin hands, as written: its command, and its environment variables by NAME only
-/// (D119 §4.1), since a value may be a key. Whether it drives Daoris's browser, which is withheld where no shell
-/// answers (D78).
+/// A server a plugin hands, as written: its command, and its environment variables by NAME only,
+/// since a value may be a key. Whether it drives Daoris's browser, which is withheld where no shell
+/// answers.
 /// </summary>
 public sealed record PageServer(string Name, IReadOnlyList<string> Command, IReadOnlyList<string> Environment, bool DrivesBrowser)
 {
-    /// <summary>Who it is handed to (HELPPLUG1a, D170 point 3): <c>sessions</c>, <c>help</c> (Ask Daoris) or both.</summary>
+    /// <summary>Who it is handed to: <c>sessions</c>, <c>help</c> (Ask Daoris) or both.</summary>
     public IReadOnlyList<string> To { get; init; } = [PluginServerTo.Sessions];
 
     /// <summary>The tools of it that read, which Ask Daoris may call once the person approves them.</summary>
     public IReadOnlyList<string> Allow { get; init; } = [];
 
-    /// <summary>The tools of it that change something outside Daoris, never allowed silently (HELPPLUG1a's tightening).</summary>
+    /// <summary>The tools of it that change something outside Daoris, never allowed silently.</summary>
     public IReadOnlyList<string> Writes { get; init; } = [];
 
     /// <summary>
@@ -36,7 +36,7 @@ public sealed record PageServer(string Name, IReadOnlyList<string> Command, IRea
     /// </summary>
     public string? Help { get; init; }
 
-    /// <summary>An approval on file no longer matches what the manifest declares, so it asks again (HELPPLUG1c, PLUGINSHOWCHANGED1).</summary>
+    /// <summary>An approval on file differs from what the manifest declares, so it asks again.</summary>
     public bool Changed { get; init; }
 
     /// <summary>The writes the person accepted, where approved.</summary>
@@ -53,7 +53,7 @@ public sealed record PageRule(string Scope, string Name, string? Pattern);
 public sealed record PageLanding(IReadOnlyList<PageRule> Rules, string? Problem);
 
 /// <summary>
-/// Where it came from (D103): <c>folder</c>, <c>offer</c>, <c>none</c> or <c>unread</c>; whether an update
+/// Where it came from: <c>folder</c>, <c>offer</c>, <c>none</c> or <c>unread</c>; whether an update
 /// <c>waits</c> or it is <c>current</c> (null where it cannot be told), what would change, and an update's refusal.
 /// </summary>
 public sealed record PageSource(
@@ -89,14 +89,14 @@ public sealed record PluginPageRead(
     IReadOnlyList<PageAgent> Agents, IReadOnlyList<PageServer> Servers, PageLanding? Landing, PageSource Source, PageData Data,
     IReadOnlyList<string> Tests)
 {
-    /// <summary>The steps it declares (FABRIC-UNIT1e, §D9), each the one node declaration a built-in is; none for one refused by them.</summary>
+    /// <summary>The steps it declares, each the one node declaration a built-in is; none for one refused by them.</summary>
     public IReadOnlyList<NodeDeclaration> Steps { get; init; } = [];
 
-    /// <summary>What its steps create (FABRIC-UNIT1e, §D3).</summary>
+    /// <summary>What its steps create.</summary>
     public IReadOnlyList<PluginResource> Resources { get; init; } = [];
 
     /// <summary>
-    /// The tools it declares as its manifest says them (ADOSIGNIN1): nothing is found or checked by reading, so each is
+    /// The tools it declares as its manifest says them: nothing is found or checked by reading, so each is
     /// <see cref="ToolStanding.Found"/> null until the person asks.
     /// </summary>
     public IReadOnlyList<ToolStanding> Tools { get; init; } = [];

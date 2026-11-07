@@ -3,7 +3,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The write transaction a <see cref="DesktopStore.Write{T}"/> hands its work (FOUNDATION1 z-i, the design §13.4): every statement it runs is
+/// The write transaction a <see cref="DesktopStore.Write{T}"/> hands its work: every statement it runs is
 /// inside the one transaction the store began with <c>BEGIN IMMEDIATE</c>, after it read the writer stamp under the write lock, so a read, a
 /// check and a write never interleave across processes. It lives as long as the work does, and the work awaits nothing in another process.
 /// </summary>

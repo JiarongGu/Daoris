@@ -3,14 +3,14 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// One answer for Daoris and every child (TOOLS5, D121 §2.4), the modules' half: every process the modules, the
+/// One answer for Daoris and every child, the modules' half: every process the modules, the
 /// application and the launcher start is handed the tools' environment, or names why not. The driver's twin of this
 /// scan holds the driver's starts and the terminal (<c>EveryChildIsHandedTheToolsTests</c>); the modules start the
 /// rest through the driver's library, which that scan holds.
 /// </summary>
 /// <remarks>
 /// <para><b>Handed</b> is a call to <c>Tools.Hand(</c> after the initializer, before the start's first
-/// <c>return</c>, <c>Process.Start(</c> or start through the gate (<c>ProcessStarts.Shared.StartAsync(</c>, PROCSTART2). <b>Why not</b> is a comment directly above the statement that says
+/// <c>return</c>, <c>Process.Start(</c> or start through the gate (<c>ProcessStarts.Shared.StartAsync(</c>). <b>Why not</b> is a comment directly above the statement that says
 /// <c>Not the tools' environment (TOOLS5):</c> and gives the reason: today, the host and the application are
 /// Daoris's own programs, and Edge is the system's.</para>
 /// <para>A source scan, as <c>NoConsoleWindowTests</c> holds <c>CreateNoWindow</c>: the next start written will not

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Where a run's failure is read for its account (the agent-lyntai design §5.2, rounds 4 and 5).</summary>
+/// <summary>Where a run's failure is read for its account.</summary>
 public enum ReaderSite
 {
     /// <summary>A driven run's conclusion: a start's, a continuation's, a helper's, an intake's, an opinion's or a partner's.</summary>
@@ -35,7 +35,7 @@ public enum ReaderSet
 /// <summary>Which entry an account reader takes.</summary>
 public enum AccountRoute
 {
-    /// <summary>A Daoris-run kind: the reader reads the failure through the door's tables, as today.</summary>
+    /// <summary>A Daoris-run kind: the reader reads the failure through the door's tables.</summary>
     Tables,
 
     /// <summary>A bound kind: the reader takes the typed outcome through its trusted entry, reading no sentence.</summary>
@@ -43,14 +43,14 @@ public enum AccountRoute
 }
 
 /// <summary>
-/// The account readers each door's site has, as today's code calls them (the agent-lyntai design §5.2, D125's recorded state), and the
-/// entry a run's kind routes them through. A move changes neither: what reads nothing today goes on reading nothing.
+/// The account readers each door's site has, and the
+/// entry a run's kind routes them through. What reads nothing here reads nothing.
 /// </summary>
 public static class AccountReaders
 {
     /// <summary>
     /// The readers <paramref name="site"/> calls on <paramref name="door"/>: the protocol door's conclusion all four; the native door's
-    /// driven conclusion is handed no failure (D125), so only the refused credential, read from the harness's own words, and the refused
+    /// driven conclusion is handed no failure, so only the refused credential, read from the harness's own words, and the refused
     /// model act; a protocol conversation reads its limit and its sign-in, a protocol brainstorm pass its limit; a native conversation and
     /// a native pass read nothing.
     /// </summary>

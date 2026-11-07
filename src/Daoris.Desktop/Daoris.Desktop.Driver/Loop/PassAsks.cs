@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The asks a door makes of the loop for a whole pass of the evaluation runtime (FABRIC-CUTOVER1d; the cutover design §4): a landing held by a
+/// The asks a door makes of the loop for a whole pass of the evaluation runtime: a landing held by a
 /// run's graph for a judgement not made yet asks for a pass that reads the units afresh, as the look's deadline does, and a press waits for it
 /// within a bound. A pass takes the asks made before it began (<see cref="Take"/>) and answers them once it ends (<see cref="Done"/>); one made
 /// while it runs waits for the next, which the ask's wake starts after it.
 /// </summary>
-/// <param name="wake">Asks the loop for the pass: link 8's wake, with the whole look's read asked of it.</param>
+/// <param name="wake">Asks the loop for the pass: the wake, with the whole look's read asked of it.</param>
 public sealed class PassAsks(Action wake)
 {
     private readonly Lock _gate = new();
@@ -49,7 +49,7 @@ public sealed class PassAsks(Action wake)
         }
     }
 
-    /// <summary>The asks a pass beginning now takes: whether one was asked, and those waiting on it.</summary>
+    /// <summary>The asks a pass beginning now takes: whether one is asked, and those waiting on it.</summary>
     public (bool Asked, IReadOnlyList<TaskCompletionSource<bool>> Waiting) Take()
     {
         lock (_gate)

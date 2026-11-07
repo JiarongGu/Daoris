@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The shell's half of PLUGUI1d (D119 §2, §4.2): the loop keeps one record of its plugins' health, and hands it and
+/// The shell's half of the plugin record: the loop keeps one record of its plugins' health, and hands it and
 /// the shell's machine log to its hook set and to every landing a route builds, so what a landing or a hand-off does
 /// with a plugin is the loop's to know and the log's to keep.
 /// </summary>
@@ -39,8 +39,8 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
             })
             .ToList();
 
-        // An entry's or an ask's Accept (ACCEPTALL1), and the clean-up's list a terminal asks for, which says a plugin's own lines into
-        // its answer (RPCOPEN1). A landing is a run's land, which builds no plugin wire here; Ask Daoris hands no branch on (D233).
+        // An entry's or an ask's Accept, and the clean-up's list a terminal asks for, which says a plugin's own lines into
+        // its answer. A landing is a run's land, which builds no plugin wire here; Ask Daoris hands no branch on.
         Assert.Equal(2, built.Count(call => call.Kind == "LandingPlugins"));
         Assert.Contains(built, call => call is { Kind: "HookSet", File: "LoopRun.cs" });
         Assert.All(built, call => Assert.True(
@@ -49,7 +49,7 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// WORKFLOWCLEAN1 1c (the cleanup design §2.2): the press on a run whose <c>land</c> Daoris performs is the review's word and a wait, so it
+    /// The press on a run whose <c>land</c> Daoris performs is the review's word and a wait, so it
     /// builds no plugin wire and calls no landing; the route builds its wire only where it lands in place (a chat run's press, the transitional
     /// path). Read from the source, as a reviewer would, since a landing needs git and a plugin's process.
     /// </summary>
@@ -75,7 +75,7 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PLUGUI1e: the loop's conversations write <c>plugin.served</c> to the shell's log for each plugin server they are
+    /// The loop's conversations write <c>plugin.served</c> to the shell's log for each plugin server they are
     /// handed or withheld, as its driven sessions do through the hook set. A conversation needs a service, git and a
     /// harness, so this half reads the construction; the driver's tests hold what the runner writes.
     /// </summary>

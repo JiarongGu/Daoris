@@ -1,8 +1,7 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Which main window's taskbar button is lit for a terminal's press waiting unshown (NOTIFY2b, D196 point 4, the notification
-/// design §3.3): the main window last in front, while no main window is, from the press's ask until a main window comes forward, or
+/// Which main window's taskbar button is lit for a terminal's press waiting unshown: the main window last in front, while no main window is, from the press's ask until a main window comes forward, or
 /// the last press waiting unshown ends or is shown. Kept here, in plain <c>net10.0</c>, so that is tested; the application flashes
 /// the button (<c>FlashWindowEx</c>) as it is told.
 /// </summary>

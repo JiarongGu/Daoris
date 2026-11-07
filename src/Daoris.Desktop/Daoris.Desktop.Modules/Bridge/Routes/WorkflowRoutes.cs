@@ -487,7 +487,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// The person's declaration of a kind of task for a workspace: <c>{workspace, kind,
     /// label, paths}</c>, or <c>drop: true</c> with no label. Declared again, the label and the paths are replaced; the workflow a kind maps to is
     /// <c>WORKFLOW_USE</c>'s. Answers <c>{ done, refused, message, changed, reach, start }</c>, the reach being what the workspace's repositories
-    /// now run (§17.7).
+    /// now run.
     /// </summary>
     [DriverRoute("WORKFLOW_KIND", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORKFLOW_KIND", Workspace = "workspace")]

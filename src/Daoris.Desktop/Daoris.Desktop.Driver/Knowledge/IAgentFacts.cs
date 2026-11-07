@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The agents as their registrations declare them (the agent-provider design §2.7, §6; COAGENT1 §3): the port the room, the roster's
+/// The agents as their registrations declare them: the port the room, the roster's
 /// answer and the terminal's list read for an agent's facts, each agent once with its doors and each door's sheet. It sits here, below
 /// Agents, since the room reads it; Agents answers it from each provider's registration.
 /// </summary>
@@ -36,7 +36,7 @@ public sealed record AgentFacts(
 }
 
 /// <summary>
-/// What a person can do with an agent's accounts, by its own flows (AGT7, CODEXACCT1, AGENTMARK1): each control is absent where its
+/// What a person can do with an agent's accounts, by its own flows: each control is absent where its
 /// only outcome would be a refusal.
 /// </summary>
 /// <param name="SignsIn">It declares a sign-in flow.</param>

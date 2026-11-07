@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// This machine's syncs — one per workspace that has a remote (D48 §5). What the driver holds and
-/// ticks; a circle with no entry in the map syncs nowhere, silently (D21).
+/// This machine's syncs — one per workspace that has a remote. What the driver holds and
+/// ticks; a circle with no entry in the map syncs nowhere, silently.
 /// </summary>
 /// <remarks>
 /// One circle's wall does not stop another's pass: each runs, each reports, and the tick carries
-/// whatever trouble there was with the workspace's name on it — "the sync is failing" is not a useful
+/// whatever trouble there is with the workspace's name on it — "the sync is failing" is not a useful
 /// sentence on a machine that holds two deployments' keys. Nor does one circle's slow remote hold
-/// another's: the circles' passes run at once (PARALLEL1b).
+/// another's: the circles' passes run at once.
 /// </remarks>
 public sealed class RemoteSyncSet : IDisposable
 {
@@ -36,8 +36,8 @@ public sealed class RemoteSyncSet : IDisposable
     }
 
     /// <summary>
-    /// This machine's syncs, re-read from the remotes map on every pass (SYNC0d). An empty map is an
-    /// empty set that syncs nowhere, silently (D21) — never a null the loop holds for good.
+    /// This machine's syncs, re-read from the remotes map on every pass. An empty map is an
+    /// empty set that syncs nowhere, silently — never a null the loop holds for good.
     /// </summary>
     /// <remarks>
     /// The local key arrives from the caller, which has already read it for its own client: a second
@@ -51,8 +51,8 @@ public sealed class RemoteSyncSet : IDisposable
     /// on this one, a changed key is used, and a removed circle stops.
     /// </summary>
     /// <remarks>
-    /// 🔴 Built once, the set synced nothing a person wired after the loop started until a restart,
-    /// while the remotes editor told them the loop re-reads the map on its next pass. A circle whose
+    /// 🔴 Built once, the set would sync nothing a person wires after the loop starts until a restart,
+    /// while the remotes editor tells them the loop re-reads the map on its next pass. A circle whose
     /// url and key are unchanged keeps its sync, clients and all, so a steady map costs one file read.
     /// </remarks>
     /// <param name="handler">The test seam, as on <see cref="RemoteSync"/>.</param>
@@ -92,22 +92,22 @@ public sealed class RemoteSyncSet : IDisposable
     public Task<SyncReport> RunOnceAsync(CancellationToken ct = default) => RunOnceAsync(workspace: null, ct);
 
     /// <summary>
-    /// One pass at a time through this set. The tick and *Sync now* share it (SYNC6b), and a pass
+    /// One pass at a time through this set. The tick and *Sync now* share it, and a pass
     /// re-reads the map into the set's own dictionary, which two passes at once would corrupt.
     /// </summary>
     private readonly SemaphoreSlim _pass = new(1, 1);
 
     /// <summary>
-    /// Told at the end of every pass, the tick's and <i>Sync now</i>'s, however it ended (PUSH1a2, D182): where each circle stands may
+    /// Told at the end of every pass, the tick's and <i>Sync now</i>'s, however it ended: where each circle stands may
     /// have moved, if only when it last tried. A hearer only asks for a reading; it is told outside the gate.
     /// </summary>
     public event Action? Passed;
 
-    /// <summary>One pass — of every circle, or of the one <paramref name="workspace"/> names (SYNC6a).</summary>
-    /// <exception cref="DriverException">A circle was named that this machine has no remote for.</exception>
+    /// <summary>One pass — of every circle, or of the one <paramref name="workspace"/> names.</summary>
+    /// <exception cref="DriverException">A circle is named that this machine has no remote for.</exception>
     public async Task<SyncReport> RunOnceAsync(string? workspace, CancellationToken ct = default)
     {
-        // LOOKWAIT1: the wait for the gate is said apart from the pass, so a slow look names a *Sync now* it queued behind.
+        // The wait for the gate is said apart from the pass, so a slow look names a *Sync now* it queued behind.
         var queued = System.Diagnostics.Stopwatch.GetTimestamp();
         await _pass.WaitAsync(ct).ConfigureAwait(false);
         var waited = System.Diagnostics.Stopwatch.GetElapsedTime(queued);
@@ -138,7 +138,7 @@ public sealed class RemoteSyncSet : IDisposable
             throw new DriverException(NoRemote(workspace));
         }
 
-        // PARALLEL1b (D181 point 3): the circles at once, each against its own host and key with its own clients, so one remote that is
+        // The circles at once, each against its own host and key with its own clients, so one remote that is
         // slow to answer holds its own circle's pass and not the next's. Said in the circles' order whatever order they end in.
         var reports = await Task.WhenAll(syncs.Select(sync => sync.RunOnceAsync(ct))).ConfigureAwait(false);
         var problems = new List<string>();
@@ -159,16 +159,16 @@ public sealed class RemoteSyncSet : IDisposable
 }
 
 /// <summary>
-/// One pass of ONE WORKSPACE's local↔remote sync (D47 §9, D48 §5): feed that circle's joined
+/// One pass of ONE WORKSPACE's local↔remote sync: feed that circle's joined
 /// registrations and each sharing repository's content UP, each ordered by the commit it speaks for;
 /// carry the retires this machine owes the circle; keep the team's rows here current, updated and
-/// removed (SYNC5b); then ask the host to fetch, rebase and push the circle's quests and records (D68).
+/// removed; then ask the host to fetch, rebase and push the circle's quests and records.
 /// Registrations go first, so the remote knows who is joined before their records and quests arrive.
 /// Runs on the driver's own tick — a server machine running `daoris` with a key is just another
 /// machine, not a special deployment.
 /// </summary>
 /// <remarks>
-/// One instance per workspace, because one shared deployment serves one workspace (D48 §5) — a
+/// One instance per workspace, because one shared deployment serves one workspace — a
 /// machine with two circles runs two of these, against two hosts, with two keys.
 /// <see cref="RemoteSyncSet"/> is what the driver holds.
 /// </remarks>
@@ -210,7 +210,7 @@ public sealed class RemoteSync : IDisposable
         try
         {
             // Read the registry UNSCOPED and filter here, deliberately. The joined half is this
-            // workspace's alone (§5) — but the guard half must span the whole machine, because it is
+            // workspace's alone — but the guard half must span the whole machine, because it is
             // what stops a teammate's row overwriting a local registration that happens to share a
             // name in another circle, root and all. A scoped read would make that guard blind by half.
             var registryJson = await DriverHttp.GetAsync(_local, $"{_localBase}/api/registry", ct).ConfigureAwait(false);
@@ -218,7 +218,7 @@ public sealed class RemoteSync : IDisposable
                 _local, $"{_localBase}/api/registry/retired?workspace={Uri.EscapeDataString(_workspace)}", ct)
                 .ConfigureAwait(false));
 
-            // Every WIRED circle gets its pass (sync design §6), whether or not anything here joins it:
+            // Every WIRED circle gets its pass, whether or not anything here joins it:
             // nothing leaves that the manifests do not declare, while the team's rows and quests still
             // come down — a machine that joined nothing still addresses its teammates, and *Sync now*
             // on such a circle must do what it says.
@@ -239,8 +239,8 @@ public sealed class RemoteSync : IDisposable
             wall = error.Message;
         }
 
-        // 🔴 The host's pass runs whatever the feed met (SYNC6b). It is where a try is RECORDED, so a
-        // feed that stopped the pass at a remote that was down left the circle's standing saying
+        // 🔴 The host's pass runs whatever the feed met. It is where a try is RECORDED, so a
+        // feed that stopped the pass at a remote that is down would leave the circle's standing saying
         // "synced" while the sync had just failed. The quests stand on their own besides.
         try
         {
@@ -263,8 +263,8 @@ public sealed class RemoteSync : IDisposable
 
     /// <summary>
     /// Each joined repository UP: its registration, then its content — the remote must know who is
-    /// joined before their records and content arrive (D47 §9). Session records ride the host's pass
-    /// with the quests (SYNC4).
+    /// joined before their records and content arrive. Session records ride the host's pass
+    /// with the quests.
     /// </summary>
     /// <returns>What the remote deliberately did not take, and what waits on a commit, in one sentence each.</returns>
     private async Task<IReadOnlyList<string>> FeedUpAsync(
@@ -284,22 +284,22 @@ public sealed class RemoteSync : IDisposable
         var name = Uri.EscapeDataString(repo.Repository);
 
         // The canonical line rides the registration, because the deployment cannot ask git and this
-        // machine can (D48 §6). Read per tick rather than cached: a repository's default branch changes
+        // machine can. Read per tick rather than cached: a repository's default branch changes
         // about once in its life, and the tick that follows should know.
-        // The line the person set wins over the checkout's guess here too (WSR2): the deployment orders
+        // The line the person set wins over the checkout's guess here too: the deployment orders
         // feeds by the line this machine says is canonical, and one answer for every door is the point.
-        // No home is no choices, and the guess alone, as before; the file is the one every door resolves (CONFIGSEAM1).
+        // No home is no choices, and the guess alone; the file is the one every door resolves.
         var configPath = DriverConfig.FindPath();
         var choices = configPath is null ? DriverConfig.Empty : DriverConfig.Load(configPath);
         var defaultBranch = await CheckoutReads.Current.LineAsync(repo.Root, repo.Repository, _workspace, choices, ct).ConfigureAwait(false);
 
         // Where this checkout stands, asked of git at the moment of feeding — the claim the deployment
-        // will compare against what it holds (D48 §6).
+        // will compare against what it holds.
         var provenance = await CheckoutReads.Current.ProvenanceAsync(repo.Root, ct).ConfigureAwait(false);
         var clean = provenance is not null && await CheckoutReads.Current.CleanAsync(repo.Root, ct).ConfigureAwait(false);
 
         // The declaration is the manifest, so a registration speaks for the commit while the manifest is
-        // as that commit has it — whatever else is in flight (SYNC5b). A modified manifest names none,
+        // as that commit has it — whatever else is in flight. A modified manifest names none,
         // and the deployment keeps a declaration that named one over it.
         var declaredAt = provenance is not null
             && (clean || await CheckoutReads.Current.UnmodifiedAsync(repo.Root, Manifest, ct).ConfigureAwait(false))
@@ -337,7 +337,7 @@ public sealed class RemoteSync : IDisposable
         }
 
         // A feed speaks for a commit, and the host's index and map are read from the working tree — so
-        // a tree with work in flight would send that work under the commit's name (SYNC5a).
+        // a tree with work in flight would send that work under the commit's name.
         if (!clean)
         {
             notes.Add(
@@ -384,7 +384,7 @@ public sealed class RemoteSync : IDisposable
     }
 
     /// <summary>
-    /// One checkout's feeds, ordered against what the deployment holds (SYNC5a, SYNC5b): git is asked
+    /// One checkout's feeds, ordered against what the deployment holds: git is asked
     /// once per held commit, and what waits on one commit is said once, naming everything that does.
     /// </summary>
     private sealed class Ordering(RemoteSyncPayloads.JoinedRepository repo, TreeProvenance here)
@@ -417,12 +417,12 @@ public sealed class RemoteSync : IDisposable
     }
 
     /// <summary>
-    /// The retires this machine owes the circle, carried to its deployment and then cleared (SYNC5b).
+    /// The retires this machine owes the circle, carried to its deployment and then cleared.
     /// </summary>
     /// <remarks>
     /// A retire goes only where the circle still lists the repository: a circle that never heard of it
-    /// has nothing to take back, and telling it would name a repository to a deployment that was never
-    /// told of it. One owed for a repository joined here again is void — the store clears those as the
+    /// has nothing to take back, and telling it would name a repository to a deployment that has never
+    /// been told of it. One owed for a repository joined here again is void — the store clears those as the
     /// row rejoins, and this is the same rule said once more where it is spent.
     /// </remarks>
     /// <returns>What this pass retired at the circle — still in the list it read, and not to come back down.</returns>
@@ -453,15 +453,15 @@ public sealed class RemoteSync : IDisposable
     }
 
     /// <summary>
-    /// The remote's registry kept current here (SYNC5b): the team's rows written when new or changed, and
+    /// The remote's registry kept current here: the team's rows written when new or changed, and
     /// this circle's copies retired when the circle no longer lists them. Everything this machine holds
     /// with a root keeps its own registration.
     /// </summary>
     /// <remarks>
-    /// The rows are filed in THIS sync's workspace. That is not a feed naming its own circle (which WSP1
-    /// forbids, and still does — the remote's answer carries no workspace anyone reads): it is the
+    /// The rows are filed in THIS sync's workspace. That is not a feed naming its own circle (which is
+    /// forbidden — the remote's answer carries no workspace anyone reads): it is the
     /// receiving machine's own wiring deciding, since a row arriving from this workspace's deployment
-    /// belongs to this workspace by construction (D48 §2/§5).
+    /// belongs to this workspace by construction.
     /// </remarks>
     private async Task MirrorRegistryAsync(
         string remoteRegistryJson, string localRegistryJson, IReadOnlyList<string> retiredHere, CancellationToken ct)
@@ -480,7 +480,7 @@ public sealed class RemoteSync : IDisposable
 
     /// <summary>
     /// Fetch, rebase, push for this circle's quests, then its session records both ways — asked of this
-    /// machine's HOST, which runs the pass (D69, SYNC4): a take claims by push from the door it was made
+    /// machine's HOST, which runs the pass: a take claims by push from the door it is made
     /// at, and the tick runs the same code by asking for it, so there is one implementation of the sync
     /// and not two that drift.
     /// </summary>

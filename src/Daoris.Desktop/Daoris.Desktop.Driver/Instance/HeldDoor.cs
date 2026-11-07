@@ -2,14 +2,14 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <see cref="HeldDoor.OpenAsync"/> came to: the exit, the connection where the request was answered, and its answer's data.</summary>
+/// <summary>What <see cref="HeldDoor.OpenAsync"/> came to: the exit, the connection where the request is answered, and its answer's data.</summary>
 /// <param name="Exit">0 where the instance answered; else the verb's exit, its sentence already said.</param>
 /// <param name="Held">The connection, still open, where the instance answered; the caller disposes it where it holds nothing.</param>
 /// <param name="Data">The answer's data, or default.</param>
 public sealed record HeldOpened(int Exit, HeldConversation? Held, JsonElement Data);
 
 /// <summary>
-/// A verb's door to the running Daoris for a conversation (RPC1g2, D238 points 1 and 4, the terminal-conversation design §3.3): the
+/// A verb's door to the running Daoris for a conversation: the
 /// request that holds what it opens, or <c>HOLD</c> of one already open, sent through the one connection the verb then keeps. It acts
 /// alone nowhere: where no Daoris answers on the home it says so, exit 2, and nothing is run.
 /// </summary>
@@ -33,7 +33,7 @@ public static class HeldDoor
     public static async Task<HeldOpened> OpenAsync(
         InstanceWorld world, string module, string type, object payload, bool hold, Action<HeldNotice> told, CancellationToken ct = default)
     {
-        // STEWARDROLE1a-i (D209 §3.3): a role's terminal presses nothing as the owner, and acts nowhere alone.
+        // A role's terminal presses nothing as the owner, and acts nowhere alone.
         if (world.RoleTerminal()) return new(await InstanceDoor.RoleRefusedAsync(world).ConfigureAwait(false), null, default);
 
         var look = await InstanceDoor.FindAsync(world, ct).ConfigureAwait(false);

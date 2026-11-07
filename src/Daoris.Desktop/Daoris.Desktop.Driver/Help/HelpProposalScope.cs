@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What a proposal names (ASKSCOPE1c): the workspaces and the repositories, as its kind reads its fields.</summary>
+/// <summary>What a proposal names: the workspaces and the repositories, as its kind reads its fields.</summary>
 /// <param name="Workspaces">The workspaces it names; a blank one names none.</param>
 /// <param name="Repositories">The repositories it names, by the registry's names; a blank one names none.</param>
 internal sealed record HelpNames(IReadOnlyList<string?> Workspaces, IReadOnlyList<string?> Repositories)
@@ -12,7 +12,7 @@ internal sealed record HelpNames(IReadOnlyList<string?> Workspaces, IReadOnlyLis
     public bool Every { get; init; }
 
     /// <summary>
-    /// The records it names by id (ASKSCOPE1c2), each as a sentence names it, with the workspace the facts its kind reads file it
+    /// The records it names by id, each as a sentence names it, with the workspace the facts its kind reads file it
     /// under; one they do not hold is left out (<see cref="HelpProposalScope"/>).
     /// </summary>
     public IReadOnlyList<(string Said, string? Workspace)> Records { get; init; } = [];
@@ -36,7 +36,7 @@ internal sealed record HelpNames(IReadOnlyList<string?> Workspaces, IReadOnlyLis
         facts.Sessions.FirstOrDefault(each => Is(each.Id, id)) is { } session ? [Session(session.Id, session.Workspace)] : [];
 
     /// <summary>
-    /// ASKSCOPE1c3: the held or parked quest a retry names, filed under its repository's workspace (a quest record carries a
+    /// The held or parked quest a retry names, filed under its repository's workspace (a quest record carries a
     /// repository, not a workspace). A repository registered in several workspaces files it under the conversation's where any
     /// registration is, as a repository is judged (<c>Elsewhere</c>); a quest on neither list, or whose repository is registered
     /// nowhere, names nothing, and <c>retry</c> refuses it.
@@ -60,18 +60,18 @@ internal sealed record HelpNames(IReadOnlyList<string?> Workspaces, IReadOnlyLis
 }
 
 /// <summary>
-/// A proposal judged against the workspace its conversation is bound to (ASKSCOPE1c, D158's ASKSCOPE1 note point 5): one naming
+/// A proposal judged against the workspace its conversation is bound to: one naming
 /// another workspace, a repository of another, or every workspace at once is refused before its kind judges it, and says so.
 /// </summary>
 /// <remarks>
 /// <para><b>By the record, never by the proposal.</b> The workspace is the conversation's (<see cref="HelpMachineFacts.Circle"/>),
-/// read from its record, so nothing the helper writes in a proposal moves it. <c>default</c>'s room is the whole machine
-/// (ASKSCOPE1b), so its conversation's proposals are judged by their kind alone, as before.</para>
+/// read from its record, so nothing the helper writes in a proposal moves it. <c>default</c>'s room is the whole machine,
+/// so its conversation's proposals are judged by their kind alone.</para>
 ///
 /// <para><b>A name registered nowhere is left to the kind</b>, whose own refusal names what is registered. One registered in
 /// several workspaces is the conversation's where any of them is.</para>
 ///
-/// <para><b>A record named by id is its workspace's</b> (ASKSCOPE1c2): a quest, an ask or a session a delete, an accept, a pause,
+/// <para><b>A record named by id is its workspace's</b>: a quest, an ask or a session a delete, an accept, a pause,
 /// a clear, an archive or a go's item names is refused where the facts its kind reads file it under another workspace. One those
 /// facts do not hold names no workspace, and its kind refuses an id it does not know.</para>
 /// </remarks>
@@ -110,7 +110,7 @@ internal static class HelpProposalScope
     }
 
     /// <summary>
-    /// ASKSCOPE1c3: whether the placed session <paramref name="session"/> is the conversation's workspace's, by the record that files
+    /// Whether the placed session <paramref name="session"/> is the conversation's workspace's, by the record that files
     /// it; true for all where the conversation has no circle. A row no record files is not (its workspace is unknown).
     /// </summary>
     public static bool InCircle(HelpMachineFacts facts, string session) =>

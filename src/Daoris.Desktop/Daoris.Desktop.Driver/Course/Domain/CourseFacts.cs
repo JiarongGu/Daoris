@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
-// FOUNDATION1e part 1 (the foundation design §3.1, §10 row 1e): the facts the course decides over, read by nothing. The decision itself,
-// LineCourse.Decide, is part 2's; rows h and i adopt it one path per branch. Everything here is a value: the executor reads the world
+// The facts the course decides over, read by nothing. The decision itself,
+// LineCourse.Decide, is elsewhere. Everything here is a value: the executor reads the world
 // (the record, the account, this machine's event files for the answers-alone count) into the facts, so the judgement stays pure and the
 // course never reads an event file (the answers-alone count is a fact, as AnswersAlone.Count is read once by the executor).
 
-/// <summary>Who wrote a word waiting on a line, as the answers-alone count and the say door tell them apart (D188, SUPERVISOR1a-i).</summary>
+/// <summary>Who wrote a word waiting on a line, as the answers-alone count and the say door tell them apart.</summary>
 public enum CourseAuthor
 {
     /// <summary>The person: their word resets the answers-alone count.</summary>
@@ -27,9 +27,9 @@ public enum CourseAuthor
 /// <summary>A word kept on the line, waiting: its id and its author. The text is the executor's.</summary>
 /// <param name="Key">
 /// The key a word of Daoris's carries (<see cref="DaorisKeys"/>), which tells its resume words (a limit's, a restart's, a retry's) from
-/// the words that state a fact (a rebase, a reopen): FOUNDATION1e part 2, for which words go to a new part.
+/// the words that state a fact (a rebase, a reopen), for which words go to a new part.
 /// </param>
-/// <param name="AfterEnd">Said after the record ended: past a transient bound only such a word of the person's goes on (AGENTERRORS1a).</param>
+/// <param name="AfterEnd">Said after the record ended: past a transient bound only such a word of the person's goes on.</param>
 public sealed record CourseWord(string Id, CourseAuthor Author, string? Key = null, bool AfterEnd = false)
 {
     /// <summary>Whether it is an answer the line goes on by with nobody between (<see cref="AnswersAlone.Solicited"/>).</summary>
@@ -39,13 +39,13 @@ public sealed record CourseWord(string Id, CourseAuthor Author, string? Key = nu
     public bool Persons => Author == CourseAuthor.Person;
 
     /// <summary>
-    /// Whether a new part an own account's cooling opens carries it (LIMITSWITCH3, <see cref="DaorisWords.NewPartCarries"/>): the person's,
+    /// Whether a new part an own account's cooling opens carries it (<see cref="DaorisWords.NewPartCarries"/>): the person's,
     /// and Daoris's own that state a fact; never Daoris's resume words, a helper's answer or another agent's findings.
     /// </summary>
     public bool NewPartCarries => Persons || (Author == CourseAuthor.Daoris && !DaorisKeys.IsResume(Key));
 }
 
-/// <summary>Where the line stands when it is asked what next: the boundary of §3.1's inputs.</summary>
+/// <summary>Where the line stands when it is asked what next: the boundary of the course's inputs.</summary>
 public enum CourseBoundary
 {
     /// <summary>A turn is running: a word steers or waits, and an automatic move waits for the turn's end.</summary>
@@ -91,7 +91,7 @@ public enum CoursePressKind
     /// <summary>A pause.</summary>
     Pause,
 
-    /// <summary>*Try again*: the release of a record ended past its transient bound, or of the person's stop (AGENTERRORS1a2).</summary>
+    /// <summary>*Try again*: the release of a record ended past its transient bound, or of the person's stop.</summary>
     TryAgain,
 }
 
@@ -99,17 +99,17 @@ public enum CoursePressKind
 /// <param name="Kind">Which press.</param>
 /// <param name="Agent">The agent a hand-over or a pick names; null otherwise.</param>
 /// <param name="Account">The account a hand-over or a pick names; null for the walk's.</param>
-/// <param name="Intent">The press's own intent key, which keys a start so a second press opens a second line (§3.1, X-3.2).</param>
+/// <param name="Intent">The press's own intent key, which keys a start so a second press opens a second line.</param>
 /// <param name="Why">
-/// A hand-over's why, as its box or a handed quest's store keeps it: the person's press, Daoris's offer at a limit, the agent's ask
-/// (FOUNDATION1e part 2). Null reads as the press's own: <see cref="CourseFromWhy.Press"/>.
+/// A hand-over's why, as its box or a handed quest's store keeps it: the person's press, Daoris's offer at a limit, the agent's ask.
+/// Null reads as the press's own: <see cref="CourseFromWhy.Press"/>.
 /// </param>
 /// <param name="By">Who asked the hand-over: the person, the agent or Daoris. Null reads as the person.</param>
 public sealed record CoursePress(
     CoursePressKind Kind = CoursePressKind.None, string? Agent = null, string? Account = null, string? Intent = null, CourseFromWhy? Why = null,
     CourseFromBy? By = null);
 
-/// <summary>The newest part of the line, as the record keeps it (§3.1's first input).</summary>
+/// <summary>The newest part of the line, as the record keeps it (the course's first input).</summary>
 /// <param name="State">The record's state (<c>parked</c>, <c>ended</c>, <c>stood-down</c>, <c>working</c>…).</param>
 /// <param name="EndCode">The code the part ended by, or null while it runs.</param>
 /// <param name="Limited">An account's limit ended the part.</param>
@@ -126,17 +126,17 @@ public sealed record CoursePress(
 /// <param name="StoodDown">A stood-down record.</param>
 /// <param name="SupersededBy">The part a later part of the line supersedes this one by; null while this is the head.</param>
 /// <param name="Waiting">The words waiting on the record, with their ids and authors.</param>
-/// <param name="Session">The record's own id: Daoris's limit word is keyed by it (FOUNDATION1e part 2, as the facts below).</param>
+/// <param name="Session">The record's own id: Daoris's limit word is keyed by it.</param>
 /// <param name="QuestStatus">A driven record's quest status (<c>Open</c>, <c>Taken</c>, or another word for closed); null for a conversation.</param>
-/// <param name="AskDaoris">Ask Daoris's own conversation: it waits for its own account, never switches, and has no new session (D205 §3.5(e)).</param>
-/// <param name="NotOffered">The record's agent refused its asked model at the open, so no conversation began (MODELROLE1d2).</param>
+/// <param name="AskDaoris">Ask Daoris's own conversation: it waits for its own account, never switches, and has no new session.</param>
+/// <param name="NotOffered">The record's agent refused its asked model at the open, so no conversation began.</param>
 /// <param name="Protocol">The protocol door, whose resume of a missing conversation fails closed, so a limited line resumes there first.</param>
 /// <param name="AgentGone">The agent the record ran on is no longer one of this machine's.</param>
 /// <param name="Judged">
 /// The resume judge's reason by its code (<see cref="Continuations.Judge"/>, <see cref="ContinueWhy"/>), before the wire or on it; null where
 /// the record resumes its own conversation. The course reads its kinds (never, holds, lost) and nothing of its sentence.
 /// </param>
-/// <param name="Revision">The record's revision, which the answer's preconditions carry (§3.1, X).</param>
+/// <param name="Revision">The record's revision, which the answer's preconditions carry.</param>
 public sealed record CourseHead(
     string State, string? EndCode = null, bool Limited = false, string? Role = null, string? Choice = null, string? Adapter = null,
     string? Profile = null, string? Tree = null, bool Kept = false, bool DoorResumes = false, bool Conversation = false,
@@ -156,33 +156,33 @@ public sealed record CourseHead(
 
 /// <summary>
 /// The account facts, read once: <see cref="LineAccount"/>'s answer for the line's own account, so every path decides on the same reading
-/// of it (§3.2). Null where the executor has not asked the rule, for a trigger that moves no account.
+/// of it. Null where the executor has not asked the rule, for a trigger that moves no account.
 /// </summary>
 /// <remarks>
-/// FOUNDATION1e part 2: the answer is the executor's one reading of where the line's next account is, however its path reads it today (the
+/// The answer is the executor's one reading of where the line's next account is, however its path reads it (the
 /// rule over the cooling store, the walk a new part takes, the walk over a role's order); the course reads it once and never walks.
 /// </remarks>
 /// <param name="Answer">The reading: the own account resumes, another account carries the words, they wait, or nothing carries them.</param>
-/// <param name="Picked">The person picked the line's own account, kept on its binding (FOUNDATION1a-ii): it is the one account, never moved.</param>
+/// <param name="Picked">The person picked the line's own account, kept on its binding: it is the one account, never moved.</param>
 /// <param name="Earliest">
 /// The reset the line waits for where <paramref name="Answer"/> names none: a limited conversation's, the earliest of every cooling account
 /// of its agent (<see cref="ResetSet.Wake"/>), where the walk handed back its own account.
 /// </param>
-/// <param name="Later">The role's later choice on another agent the judge-only walk found ready (LIMITGOON2); null where none is.</param>
-/// <param name="Agent">The agent the answer's selection runs on, where the walk over a role's order took another than the line's (WALKAGENT1).</param>
+/// <param name="Later">The role's later choice on another agent the judge-only walk found ready; null where none is.</param>
+/// <param name="Agent">The agent the answer's selection runs on, where the walk over a role's order took another than the line's.</param>
 /// <param name="Curve">The walk's first step passed an account over its usage curve: a driven carry-on's move is then the curve's.</param>
 public sealed record CourseAccount(
     LineAnswer? Answer = null, bool Picked = false, CoolingEntry? Earliest = null, CourseLater? Later = null, string? Agent = null,
     bool Curve = false);
 
-/// <summary>A later choice of the line's role on another agent, ready now (LIMITGOON2, D205 §3.5(e)).</summary>
+/// <summary>A later choice of the line's role on another agent, ready now.</summary>
 /// <param name="Agent">The choice's agent.</param>
 /// <param name="Choice">The choice, as the role's order names it.</param>
 /// <param name="Account">The account the walk found ready, or null for that agent's walk at the open.</param>
 public sealed record CourseLater(string Agent, string? Choice = null, string? Account = null);
 
 /// <summary>
-/// The answers-alone hold's facts (COWORK1e, D188 point 4): the count across the line's preceding parts, read from this machine's event
+/// The answers-alone hold's facts: the count across the line's preceding parts, read from this machine's event
 /// files by the executor, which writes the hold's marks; its bound; and whether the person's press released the held answer.
 /// </summary>
 /// <param name="Count">The go-ons by answers alone at the line's end, in a row.</param>
@@ -195,16 +195,16 @@ public sealed record CourseAlone(int Count, int Bound, bool Released = false, bo
     public bool AtBound => !Released && Count >= Bound;
 }
 
-/// <summary>The failure the line's last part ended on, by D210's reader (the agent-errors design).</summary>
+/// <summary>The failure the line's last part ended on, as the failure reader classes it.</summary>
 /// <param name="Kind">The four kinds every failure is read into; null where the part did not fail.</param>
-/// <param name="PastBound">A transient failure whose retries are spent: the course decides only what follows the bound (D210 point 3).</param>
+/// <param name="PastBound">A transient failure whose retries are spent: the course decides only what follows the bound.</param>
 public sealed record CourseFailure(AgentErrorKind? Kind = null, bool PastBound = false);
 
-/// <summary>The rules the course applies, handed in as the verdicts of the functions that hold them (§3.1's rules).</summary>
+/// <summary>The rules the course applies, handed in as the verdicts of the functions that hold them.</summary>
 /// <param name="HandOverAdmits">The hand-over rule's consent for an agent's ask (<c>HandOverRules</c>), true where the ask is admitted.</param>
 /// <param name="SwitchAdmits">The curve's scope switch admits Daoris's own move (<c>CurveMove</c>), true where it does.</param>
 /// <param name="CurveAccount">The account <c>SwitchDecision.Decide</c> names, or null where it names none.</param>
-/// <param name="LaterChoices">How many later choices of the role the line may take (step 4 of the account rule).</param>
+/// <param name="LaterChoices">How many later choices of the role the line may take.</param>
 /// <param name="HandOverAsks">
 /// Where the hand-over rule does not admit an agent's ask, whether it asks the person (<c>ask</c>) rather than refusing it (<c>off</c>).
 /// </param>
@@ -214,7 +214,7 @@ public sealed record CourseRules(
     bool Runner = false);
 
 /// <summary>
-/// What Daoris's own word on a resume is keyed by (FOUNDATION1e part 2): a conversation's wake keys its limit word by the wake's clock, a
+/// What Daoris's own word on a resume is keyed by: a conversation's wake keys its limit word by the wake's clock, a
 /// driven line by the cool-off's <c>until</c> as its note said it, an update's restart by its build, a released transient end by when it ended.
 /// </summary>
 /// <param name="Until">The cool-off's <c>until</c> as the driven record's limit line says it (<see cref="LimitResume.Until"/>); null for unsaid.</param>
@@ -223,7 +223,7 @@ public sealed record CourseRules(
 /// <param name="Ended">When the record ended past its transient bound, which <i>Try again</i>'s go-on is keyed by.</param>
 public sealed record CourseLimit(string? Until = null, DateTimeOffset? Woke = null, string? Build = null, DateTimeOffset? Ended = null);
 
-/// <summary>The phases of a move record (§3.3): a move stands from <c>Decided</c> until it ends delivered, fell back or closed.</summary>
+/// <summary>The phases of a move record: a move stands from <c>Decided</c> until it ends delivered, fell back or closed.</summary>
 public enum CourseMovePhase
 {
     /// <summary>Decided: the course made it and nothing has begun.</summary>
@@ -232,7 +232,7 @@ public enum CourseMovePhase
     /// <summary>Delivering: the new part is open and its words are going across.</summary>
     Delivering,
 
-    /// <summary>Held for the person: it stands until it closes <c>resolved</c> by §3.3's one rule.</summary>
+    /// <summary>Held for the person: it stands until it closes <c>resolved</c> by the held move's one rule.</summary>
     Held,
 
     /// <summary>Delivered: the move ended.</summary>
@@ -245,7 +245,7 @@ public enum CourseMovePhase
     Closed,
 }
 
-/// <summary>A move record standing for the line (§3.3), as the course reads it.</summary>
+/// <summary>A move record standing for the line, as the course reads it.</summary>
 /// <param name="Phase">The record's phase.</param>
 /// <param name="Destination">Whether this part is the move's destination (it takes no move of its own until the move ends).</param>
 /// <param name="OldPart">Whether this part is the move's old part (its words are the move's).</param>
@@ -256,9 +256,9 @@ public sealed record CourseStanding(CourseMovePhase Phase, bool Destination = fa
 }
 
 /// <summary>
-/// A met condition of the line's role policy (STAFFPOLICY1e, the staff policy design §3.3, §4): what <see cref="StaffJudge.OnCondition"/> answered
+/// A met condition of the line's role policy: what <see cref="StaffJudge.OnCondition"/> answered
 /// for it, read once by the executor with the facts the action needs. Null on the course's facts where the role has no policy that applies, and
-/// then every answer is today's.
+/// then every answer is the unpolicied one.
 /// </summary>
 /// <param name="Action">The condition and its action; its <see cref="StaffAction.MovesBound"/> makes the ask the bound's.</param>
 /// <param name="Now">The moment the facts are read at.</param>
@@ -273,12 +273,12 @@ public sealed record CoursePolicy(
     bool Approved = false, int Moves = 0);
 
 /// <summary>
-/// Everything the course decides over (the foundation design §3.1's inputs): the line's head, the boundary it stands at, the account
+/// Everything the course decides over: the line's head, the boundary it stands at, the account
 /// facts, the answers-alone hold, the failure, the person's press, the rules and a move record standing for the line.
 /// </summary>
-/// <param name="Limit">What Daoris's word on a resume is keyed by (FOUNDATION1e part 2).</param>
-/// <param name="CarryOn">Which of the planner's carry-ons asked, with <see cref="CourseTrigger.CarryOn"/> (FOUNDATION1e part 2).</param>
-/// <param name="Policy">The role policy's met condition, where the line's role has one that applies (STAFFPOLICY1e); null for today's answers.</param>
+/// <param name="Limit">What Daoris's word on a resume is keyed by.</param>
+/// <param name="CarryOn">Which of the planner's carry-ons asked, with <see cref="CourseTrigger.CarryOn"/>.</param>
+/// <param name="Policy">The role policy's met condition, where the line's role has one that applies; null for the unpolicied answers.</param>
 public sealed record CourseFacts(
     CourseHead Head, CourseBoundary Boundary = CourseBoundary.BetweenTurns, CourseAccount? Account = null, CourseAlone? Alone = null,
     CourseFailure? Failure = null, CoursePress? Press = null, CourseRules? Rules = null, CourseStanding? Standing = null,

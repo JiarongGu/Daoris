@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a plugin's step creates that a unit's cleanup must account for (FABRIC-UNIT1d; the fabric events design §D3): the manifest's
+/// What a plugin's step creates that a unit's cleanup must account for: the manifest's
 /// <c>resources: [{ schema, role?, cleanup }]</c>. A step's receipt names one by its schema; Daoris never removes it itself.
 /// </summary>
 /// <param name="Schema">What it is, like <c>acme.deploy/preview@1</c>: a receipt's resource is of a declared schema.</param>
@@ -12,13 +12,13 @@ namespace Daoris.Driver;
 /// <param name="Cleanup">Who removes it: <see cref="PluginSteps.CleanupPoint"/>, the plugin through its own cleanup adapter.</param>
 public sealed record PluginResource(string Schema, string Role, string Cleanup);
 
-/// <summary>A declared resource's role (§D3's ownership entry, as far as a manifest declares it). Twin: the CLI's <c>RESOURCE_ROLES</c>.</summary>
+/// <summary>A declared resource's role, as far as a manifest declares it. Twin: the CLI's <c>RESOURCE_ROLES</c>.</summary>
 public static class PluginResourceRoles
 {
     /// <summary>Removed at the unit's true end, through the plugin's cleanup adapter.</summary>
     public const string Temporary = "temporary";
 
-    /// <summary>Kept as the work's result; a superseded attempt's is temporary whatever it declared (§D3).</summary>
+    /// <summary>Kept as the work's result; a superseded attempt's is temporary whatever it declared.</summary>
     public const string Result = "result";
 
     public static readonly IReadOnlyList<string> All = [Temporary, Result];
@@ -30,36 +30,35 @@ public static class PluginResourceRoles
 public sealed record PluginStepsRead(IReadOnlyList<NodeDeclaration> Steps, IReadOnlyList<PluginResource> Resources, string? Code, string? Problem);
 
 /// <summary>
-/// A plugin's steps and resources (FABRIC-UNIT1d; the fabric events design §D4, §D6, §D9, §E2): the manifest declares a step once, and it
+/// A plugin's steps and resources: the manifest declares a step once, and it
 /// is read into the one <see cref="NodeDeclaration"/> every built-in is, of the plugin's own kind <c>&lt;plugin&gt;/&lt;step&gt;</c>, and
 /// judged by <see cref="NodeDeclarations.Problem"/>: never a second model.
 /// </summary>
 /// <remarks>
-/// <para><b>A problem refuses the plugin</b>, as a server's or a skill's does (§C4), with its code and its words. The rules are checked
+/// <para><b>A problem refuses the plugin</b>, as a server's or a skill's does, with its code and its words. The rules are checked
 /// in one order, and the first broken one is said.</para>
 ///
-/// <para>Reading starts nothing: no transport, no dispatch, no supervision (PERFORM1a onward). The CLI's <c>steps.ts</c> was this
-/// class's twin, held to <c>PluginStepsTests</c>' theory cell for cell, until it left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f).</para>
+/// <para>Reading starts nothing: no transport, no dispatch, no supervision.</para>
 /// </remarks>
 public static class PluginSteps
 {
-    /// <summary>The point a performed step is asked on (§D6), and the only one its <c>perform</c> may name.</summary>
+    /// <summary>The point a performed step is asked on, and the only one its <c>perform</c> may name.</summary>
     public const string PerformPoint = "work/perform";
 
-    /// <summary>The point that answers what became of an attempt (§D6): a <c>perform</c>'s <c>reconcile</c> names it.</summary>
+    /// <summary>The point that answers what became of an attempt: a <c>perform</c>'s <c>reconcile</c> names it.</summary>
     public const string ReconcilePoint = "work/reconcile";
 
-    /// <summary>The point a plugin removes what it created on (§D3): a resource's <c>cleanup</c> names it.</summary>
+    /// <summary>The point a plugin removes what it created on: a resource's <c>cleanup</c> names it.</summary>
     public const string CleanupPoint = "work/cleanup";
 
-    /// <summary>A step's or a port's name: lowercase letters, digits and dashes, at most 40 (§C4). Twin: the CLI's <c>STEP_NAME</c>.</summary>
+    /// <summary>A step's or a port's name: lowercase letters, digits and dashes, at most 40. Twin: the CLI's <c>STEP_NAME</c>.</summary>
     public static readonly Regex NameShape = new(@"^[a-z0-9][a-z0-9-]{0,39}\z", RegexOptions.CultureInvariant);
 
     /// <summary>
     /// A schema's name, <c>&lt;owner&gt;/&lt;name&gt;@&lt;version&gt;</c> (<c>acme.deploy/receipt@1</c>, <c>daoris/quest.close@1</c>): its
-    /// owner a plugin id by <see cref="PluginCatalog.IsId"/>, the one owner of that shape (REFAC1); its name words of lowercase letters
-    /// and digits parted by single dots or dashes; its version a whole number from 1. Compared ordinally (WIRE1a's choice 2), and with
-    /// no <c>:</c>, since a reference is <c>&lt;schema&gt;:&lt;id&gt;</c> (§D6). Twin: the CLI's <c>isSchema</c>.
+    /// owner a plugin id by <see cref="PluginCatalog.IsId"/>, the one owner of that shape; its name words of lowercase letters
+    /// and digits parted by single dots or dashes; its version a whole number from 1. Compared ordinally, and with
+    /// no <c>:</c>, since a reference is <c>&lt;schema&gt;:&lt;id&gt;</c>. Twin: the CLI's <c>isSchema</c>.
     /// </summary>
     public static bool IsSchema(string text) =>
         SchemaParts.Match(text) is { Success: true } match && PluginCatalog.IsId(match.Groups["owner"].Value);
@@ -72,7 +71,7 @@ public static class PluginSteps
 
     /// <summary>
     /// The manifest's <c>steps</c> and <c>resources</c>, read from its <paramref name="root"/> object for plugin <paramref name="plugin"/>:
-    /// absent is none, so a manifest written before reads as it did. Each step's shape is read here, field by field in the manifest's
+    /// absent is none. Each step's shape is read here, field by field in the manifest's
     /// order, and then its declaration is judged by <see cref="NodeDeclarations.Problem"/>, whose code names the field the words say.
     /// </summary>
     public static PluginStepsRead Read(string plugin, JsonElement root)
@@ -86,7 +85,7 @@ public static class PluginSteps
                 var (step, code, name) = Step(plugin, row, steps);
                 if (code is not null) return Refused(code, name);
 
-                // FABRIC-PERFORM1a (UNIT1d's choice 8): a performed step is asked at `work/perform` on the plugin's process, so a
+                // A performed step is asked at `work/perform` on the plugin's process, so a
                 // manifest whose hooks do not name that point declares a step nothing could ask; refused when read, after its own shape.
                 if (step!.Reach == NodeReach.Performed && !Names(root, PerformPoint)) return Refused(PluginStepCodes.PerformPoint, name);
                 steps.Add(step);
@@ -113,7 +112,7 @@ public static class PluginSteps
                     role = declaredRole.GetString()!;
                 }
 
-                // §D3: who cleans it is said, never guessed; an unknown owner would block the unit's cleanup.
+                // Who cleans it is said, never guessed; an unknown owner would block the unit's cleanup.
                 if (!row.TryGetProperty("cleanup", out var cleanup) || !Is(cleanup, CleanupPoint)) return Refused(PluginStepCodes.Cleanup, schema);
                 resources.Add(new PluginResource(schema, role, CleanupPoint));
             }
@@ -203,7 +202,7 @@ public static class PluginSteps
             if (NodeOutcomes.Problem(outcomes) is not null) return Broken("outcomes");
         }
 
-        // DECIDE1d: each output carried on some outcomes alone, judged once the declaration is whole.
+        // Each output carried on some outcomes alone, judged once the declaration is whole.
         var carried = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
         if (row.TryGetProperty("outputsOn", out var declaredOn))
         {
@@ -215,7 +214,7 @@ public static class PluginSteps
             }
         }
 
-        // SETUPUX1f: the words a person reads the step by; absent is none, so a manifest written before reads as it did.
+        // The words a person reads the step by; absent is none.
         if (!ReadWords(row, "title", StepWords.TitleMost, oneLine: true, out var title)) return Broken("title");
         if (!ReadWords(row, "about", StepWords.AboutMost, oneLine: false, out var about)) return Broken("about");
 
@@ -287,7 +286,7 @@ public static class PluginSteps
     }
 
     /// <summary>
-    /// A step's <paramref name="field"/> of words, authored text (D222): none where absent (true), else one text or a map of language tags to
+    /// A step's <paramref name="field"/> of words, authored text: none where absent (true), else one text or a map of language tags to
     /// texts, each not blank, within <paramref name="most"/> characters and, for a title, on one line; false for anything else.
     /// </summary>
     private static bool ReadWords(JsonElement row, string field, int most, bool oneLine, out AuthoredText? words)
@@ -326,7 +325,7 @@ public static class PluginSteps
 
     private static PluginStepsRead Refused(string code, string? name) => new([], [], code, Words(code, name));
 
-    // ——— What a person reads (FABRIC-UNIT1e, §D9): `plugin list`, a package's description and an update's change list say a step
+    // ——— What a person reads: `plugin list`, a package's description and an update's change list say a step
     // and a resource in these words.
 
     /// <summary>A step's name as its manifest writes it: its kind past <c>&lt;plugin&gt;/</c>.</summary>
@@ -403,7 +402,7 @@ public static class PluginSteps
 }
 
 /// <summary>
-/// The codes a manifest's steps and resources are refused by (FABRIC-UNIT1d), beside the field codes <see cref="NodeDeclarations.Problem"/>
+/// The codes a manifest's steps and resources are refused by, beside the field codes <see cref="NodeDeclarations.Problem"/>
 /// returns (<c>version</c>, <c>reach</c>, <c>retry</c>, <c>timeoutSeconds</c>, <c>outputs</c>, <c>perform</c>, <c>transient</c>), which
 /// a step's shape reuses for the same field. Twin: the CLI's <c>steps.ts</c>.
 /// </summary>
@@ -415,7 +414,7 @@ public static class PluginStepCodes
     public const string Idempotent = "idempotent";
     public const string Reconcile = "reconcile";
 
-    /// <summary>A performed step whose manifest's <c>hooks.points</c> does not name <c>work/perform</c> (FABRIC-PERFORM1a).</summary>
+    /// <summary>A performed step whose manifest's <c>hooks.points</c> does not name <c>work/perform</c>.</summary>
     public const string PerformPoint = "perform-point";
 
     public const string Resources = "resources";

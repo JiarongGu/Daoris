@@ -1,7 +1,7 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A main window wearing how much waits on the person in its workspace (NOTIFY1b, NOTIFY2c): its taskbar button's overlay and its
+/// A main window wearing how much waits on the person in its workspace: its taskbar button's overlay and its
 /// title, told by its own page over <c>SET_BADGE</c>. <paramref name="window"/> is the main window's name (<see cref="MainWindows.First"/>
 /// or <c>main:&lt;n&gt;</c>); <paramref name="count"/> is never below none; <paramref name="description"/> is what a screen reader says
 /// of the overlay, in the page's language, or null.
@@ -13,13 +13,13 @@ namespace Daoris.Desktop;
 public delegate void ShowWaiting(string window, int count, string? description);
 
 /// <summary>
-/// A main window's page telling its frame the workspace it holds (MAINWINDOWS3b), for the title: <paramref name="name"/> is the
+/// A main window's page telling its frame the workspace it holds, for the title: <paramref name="name"/> is the
 /// window's, or null for the first main window; <paramref name="workspace"/> is null where the page names none.
 /// </summary>
 public delegate void ShowWorkspace(string? name, string? workspace);
 
 /// <summary>
-/// What the main window's taskbar button and title say of a count (NOTIFY1b): the judgement, here where it is tested,
+/// What the main window's taskbar button and title say of a count: the judgement, here where it is tested,
 /// while the window draws the overlay and sets the title.
 /// </summary>
 /// <remarks>
@@ -61,7 +61,7 @@ public static class WaitingBadge
     private const string Separator = " — ";
 
     /// <summary>
-    /// The workspace a window's page names in its title (MAINWINDOWS3b): the part after the separator, taken only from a title
+    /// The workspace a window's page names in its title: the part after the separator, taken only from a title
     /// that starts with <see cref="Name"/> and the separator, so the frame's name stays its own and no other page text reaches
     /// the taskbar. Null when the page names none.
     /// </summary>

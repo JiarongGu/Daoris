@@ -4,19 +4,19 @@ using Shenora.Core.Shell;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The hand-over of a later launch to <see cref="SecondLaunch"/> (ONEINSTANCE1, D171 point 2), as the application gives it to
+/// The hand-over of a later launch to <see cref="SecondLaunch"/>, as the application gives it to
 /// the kit's single-instance guard (<c>WindowsHostOptions.SingleInstance</c>): the options themselves, so what the kit runs is
-/// what the tests run (ONEINSTANCE2).
+/// what the tests run.
 /// </summary>
 /// <remarks>
-/// <para><b>Nothing silent</b> (ONEINSTANCE2). A launch that opens no window must say why where the person reads: so its arrival
+/// <para><b>Nothing silent</b>. A launch that opens no window must say why where the person reads: so its arrival
 /// is written before anything is resolved or awaited (<c>window.launch</c>), and whatever the hand-over throws is written where
 /// it happened (the <c>error</c> event, <see cref="Where"/>), never thrown into the kit's callback, which reports to a logger
 /// alone, nor left in a task nobody watches.</para>
 ///
 /// <para>Called on the window's thread, after the kit has brought the first main window forward; the hand-over runs on it up
-/// to its first wait, so <see cref="SecondLaunch.OpenAsync"/> still reads that bringing forward before anything else
-/// (MAINWINDOWS2).</para>
+/// to its first wait, so <see cref="SecondLaunch.OpenAsync"/> still reads that bringing forward before anything else.
+/// </para>
 /// </remarks>
 public static class LaterLaunch
 {

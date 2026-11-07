@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A plugin observes the pipeline beside it (STATEHUB1g, D169 point 9): each <c>STATE_CHANGED</c> the publisher puts on the kit's bus
+/// A plugin observes the pipeline beside it: each <c>STATE_CHANGED</c> the publisher puts on the kit's bus
 /// is told to the plugins listening at <c>state/changed</c>, and a slow or failing plugin never delays a press's answer, nor changes it.
 /// </summary>
 /// <remarks>

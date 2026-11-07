@@ -5,18 +5,18 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One review environment (REVIEWENV1a, D154 point 1, the review-environment design §1.1): where a repository's work runs for
+/// One review environment: where a repository's work runs for
 /// the person to look at before it lands.
 /// </summary>
 /// <param name="Name">Lower-case letters, digits and dashes, at most 32, never production.</param>
 /// <param name="Kind"><c>local</c> or <c>deployed</c>.</param>
 /// <param name="Procedure">A repository-relative path to the document or skill that says how work reaches it; never read here.</param>
 /// <param name="Address">Where the app is used: a local one's, required; a deployed one's, optional.</param>
-/// <param name="Run">A local one's command for work needing a process of its own (§2.3), the person's standing say-so.</param>
+/// <param name="Run">A local one's command for work needing a process of its own, the person's standing say-so.</param>
 public sealed record ReviewEnvironment(string Name, string Kind, string Procedure, string? Address = null, string? Run = null);
 
 /// <summary>
-/// A review rule (design §1.3): its environments, the first the default, and whether work waits for the person's look. With
+/// A review rule: its environments, the first the default, and whether work waits for the person's look. With
 /// no environment it is <see cref="None"/>, a repository's <c>false</c>: none here, whatever its workspace says.
 /// </summary>
 public sealed record ReviewRule(IReadOnlyList<ReviewEnvironment> Environments, bool Required = false)
@@ -32,8 +32,7 @@ public sealed record ReviewRule(IReadOnlyList<ReviewEnvironment> Environments, b
 public sealed record ReviewSpelled(string? Name, string? Kind, string? Procedure, string? Address = null, string? Run = null);
 
 /// <summary>
-/// The review rule as <c>driver.json</c> keeps it, <c>reviews</c> and <c>workspaceReviews</c> (REVIEWENV1a, D154 point 2;
-/// FOUNDATION1 mod-iii): the key's shape, its limits and the sentences that say what does not read, read and written by the settings'
+/// The review rule as <c>driver.json</c> keeps it, <c>reviews</c> and <c>workspaceReviews</c>: the key's shape, its limits and the sentences that say what does not read, read and written by the settings'
 /// own parser. What the rule means, its resolution, edit and words, stays with the review rule (<see cref="ReviewRules"/>), which
 /// answers through this for what it shares.
 /// </summary>
@@ -136,7 +135,7 @@ public static class ReviewKey
 
     /// <summary>
     /// Why <paramref name="name"/> cannot name a review environment, or null when it can: its shape, <c>none</c>, and production.
-    /// The rule's own judgement of a name, which the terminal's review choice reads too (REVIEWENV1j), so a choice is refused in
+    /// The rule's own judgement of a name, which the terminal's review choice reads too, so a choice is refused in
     /// the words a rule is.
     /// </summary>
     public static string? NameProblem(string? name)
@@ -154,7 +153,7 @@ public static class ReviewKey
     public static bool ReadsAsProduction(string name) => name.Split('-').Any(word => Production.Contains(word));
 
     /// <summary>
-    /// A path a procedure may be (design §1.1, as KNOWUSE1c names a router): from the repository's root, with forward slashes,
+    /// A path a procedure may be, as a router is named: from the repository's root, with forward slashes,
     /// no space around it, and no <c>..</c>, <c>.</c>, empty part, root, drive or control character.
     /// </summary>
     internal static bool IsProcedurePath(string path) => path == path.Trim() && SafeNames.IsRepositoryPath(path);

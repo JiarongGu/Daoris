@@ -3,8 +3,8 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// How long a session may say nothing, with nothing it runs using the machine, before Daoris looks in on it (D200, the session-watch
-/// design §3): <c>quietMinutes</c> in <c>driver.json</c>, the one quiet setting, which the watcher's bound Q is read from. Written only
+/// How long a session may say nothing, with nothing it runs using the machine, before Daoris looks in on it:
+/// <c>quietMinutes</c> in <c>driver.json</c>, the one quiet setting, which the watcher's bound Q is read from. Written only
 /// when set, so the list tells the default from a choice.
 /// </summary>
 public static class QuietSetting

@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The agent family's long verbs (PUSH1f2e5, D194, the alone-path design §1.4): <c>daoris agent install</c> and <c>key</c>, the words
-/// <c>daoris agent install|key …</c> hands this program. No route takes either (§2): each acts on the terminal's word, refused from a session's
-/// terminal (D194 point 5), and holds no lease at its top. <c>install</c> runs the agent's own installer at this terminal, which writes the
+/// The agent family's long verbs: <c>daoris agent install</c> and <c>key</c>, the words
+/// <c>daoris agent install|key …</c> hands this program. No route takes either: each acts on the terminal's word, refused from a session's
+/// terminal, and holds no lease at its top. <c>install</c> runs the agent's own installer at this terminal, which writes the
 /// machine and not the home, so it holds none at all; <c>key</c> reads the key from the terminal's standard input, holding nothing while the
-/// person types, and publishes the key's account under the home's lease, waited for and never refused. Today's text is kept
+/// person types, and publishes the key's account under the home's lease, waited for and never refused. Its text is kept
 /// (<c>fixtures/agents-text.json</c>).
 /// </summary>
 /// <remarks>
@@ -25,8 +25,8 @@ internal static class AgentLongCommand
     }
 
     /// <summary>
-    /// <c>install &lt;agent&gt;</c> (D49 §4): the agent's own installer, never automatic, on the system's npm whatever Daoris runs node as
-    /// (TOOLS5, D121 §2.7; <see cref="HarnessActions.OnTheSystem"/>), started at this terminal (<see cref="HarnessActions.TerminalRunAsync"/>).
+    /// <c>install &lt;agent&gt;</c>: the agent's own installer, never automatic, on the system's npm whatever Daoris runs node as
+    /// (<see cref="HarnessActions.OnTheSystem"/>), started at this terminal (<see cref="HarnessActions.TerminalRunAsync"/>).
     /// Its exit is the CLI's <c>relay</c>'s: 0 where the installer ended well, else 2.
     /// </summary>
     internal static async Task<int> InstallAsync(IReadOnlyList<string> args, AgentsWorld world, CancellationToken ct)
@@ -92,9 +92,9 @@ internal static class AgentLongCommand
     }
 
     /// <summary>
-    /// <c>key &lt;agent&gt; [--account &lt;account&gt;]</c> (AGT3, D67 §1; KEYREPLACE1a): an account that is an API key, the key read from
-    /// standard input and never an argument, which is in the process list and the shell's history. A door's key is its owner's account
-    /// (AGT7). With <c>--account</c>, a new key into an account that is a key, by its id or its name: its id stays, so its name, lists and
+    /// <c>key &lt;agent&gt; [--account &lt;account&gt;]</c>: an account that is an API key, the key read from
+    /// standard input and never an argument, which is in the process list and the shell's history. A door's key is its owner's account.
+    /// With <c>--account</c>, a new key into an account that is a key, by its id or its name: its id stays, so its name, lists and
     /// defaults stand. Every check that needs no key is made before the key is read; the key's account is then written under the home's
     /// lease (<see cref="HomeLease.ForPublicationAsync"/>) through <see cref="HarnessKeys"/>, the window's own writer.
     /// </summary>
@@ -114,7 +114,7 @@ internal static class AgentLongCommand
                 + "One given as an argument is now in your shell history; revoke it if that matters.");
         }
 
-        // A key given for a door is its owner's account (AGT7), and it takes the owner's variable.
+        // A key given for a door is its owner's account, and it takes the owner's variable.
         var owner = roster.Adapters.OwnerOfAgent(name).Value;
         if (roster.KeyVariableOf(name) is null)
         {
@@ -172,13 +172,13 @@ internal static class AgentLongCommand
         }
         catch (DriverException refused)
         {
-            // The keys file refused the write, as the window's is refused: one line with its code (D194 point 6).
+            // The keys file refused the write, as the window's is refused: one line with its code.
             await error.WriteLineAsync($"{Prefix}: {refused.Message} ({ChoiceCodes.Of(refused)})").ConfigureAwait(false);
             return 2;
         }
         catch (IOException held)
         {
-            // The file's edit lock, held by another writer for the whole of its wait: nothing was written.
+            // The file's edit lock, held by another writer for the whole of its wait: nothing is written.
             await error.WriteLineAsync($"{Prefix}: {held.Message}").ConfigureAwait(false);
             return 2;
         }

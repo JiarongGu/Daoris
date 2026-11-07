@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a native run's harness wrote that its agent could not (AGT3c), kept as its output passes: its stderr and the lines it
+/// What a native run's harness wrote that its agent could not, kept as its output passes: its stderr and the lines it
 /// printed outside its protocol, the last <see cref="HarnessEnding.LinesKept"/> of them, and the words its failed turn gave.
 /// One per session, begun again by each run, so the conclusion reads the run that ended last.
 /// </summary>
@@ -11,7 +11,7 @@ public sealed class HarnessWords
     private readonly Queue<string> _lines = new();
     private string? _failure;
 
-    // BGWAIT1c: the commands it backgrounded still running, by task id, and those the harness ended after its turn.
+    // The commands it backgrounded still running, by task id, and those the harness ended after its turn.
     private readonly Dictionary<string, string> _running = new(StringComparer.Ordinal);
     private readonly List<string> _cut = [];
     private bool _modelRefused;
@@ -30,7 +30,7 @@ public sealed class HarnessWords
     }
 
     /// <summary>
-    /// A reading of the session's own background work (BGWAIT1c; docs/2026-09-30-console3-native-streams-evidence.md): a command it
+    /// A reading of the session's own background work (docs/2026-09-30-console3-native-streams-evidence.md): a command it
     /// backgrounded started (<see cref="WireReading.TaskStarted"/>, never a subagent, which is a child), and that command ended after its turn's
     /// result in a kill's or a stop's word (<see cref="WireReading.TaskEnded"/>), which only the harness does there, since the door has no stop
     /// for one task. Work that ended before the turn did is no cut. Told as each reading is said, whether or not a console keeps the streams
@@ -68,7 +68,7 @@ public sealed class HarnessWords
         lock (_gate) _failure = failure;
     }
 
-    /// <summary>The failed turn was the door's refusal of the model it was handed (MODELROLE1c3, <see cref="HarnessEnding.ModelRefused"/>).</summary>
+    /// <summary>The failed turn is the door's refusal of the model it is handed (<see cref="HarnessEnding.ModelRefused"/>).</summary>
     public void ModelRefused()
     {
         lock (_gate) _modelRefused = true;

@@ -4,7 +4,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The push path's host half (PUSH1a, D182 points 3 and 4): a slice judged once, each partition numbered within the slice's
+/// The push path's host half: a slice judged once, each partition numbered within the slice's
 /// epoch and pushed whole when it changed, a snapshot read from memory, and a manifest of the numbers through the same bus, all
 /// told by one judgement at a time so the window receives them in the order they were numbered.
 /// </summary>
@@ -108,7 +108,7 @@ public sealed class StateSlicesTests
     }
 
     /// <summary>
-    /// PUSH1e: a judgement that pushed something tells its hearers once, its snapshot already holding it, so a slice judged from this
+    /// A judgement that pushed something tells its hearers once, its snapshot already holding it, so a slice judged from this
     /// one's memory reads what was pushed; one that moved nothing tells nothing, and a hearer's failure is said and stops no other.
     /// </summary>
     [Fact]
@@ -176,7 +176,7 @@ public sealed class StateSlicesTests
         Assert.Equal("test", Told().Single(each => each.Type == StateSlice.ManifestType).CoalesceKey);
     }
 
-    /// <summary>A keyed slice (PUSH1d2) over one partition `w` of four records by key, each as <see cref="_records"/> holds it.</summary>
+    /// <summary>A keyed slice over one partition `w` of four records by key, each as <see cref="_records"/> holds it.</summary>
     private readonly Dictionary<string, object> _records = new(StringComparer.Ordinal)
     {
         ["s1"] = new { State = "working" }, ["s2"] = new { State = "working" }, ["s3"] = new { State = "completed" }, ["s4"] = new { State = "failed" },
@@ -205,7 +205,7 @@ public sealed class StateSlicesTests
         string.Join(",", System.Text.Json.JsonSerializer.SerializeToNode(data, Shenora.Core.Ipc.IpcJson.Options)!.AsObject().Select(each => each.Key));
 
     /// <summary>
-    /// PUSH1d2 (D182 point 3): a keyed partition whose judgement moved a few of its keys pushes those alone, on the number the window
+    /// A keyed partition whose judgement moved a few of its keys pushes those alone, on the number the window
     /// holds, with the keys gone named; never coalesced, since a delta coalesced away loses what it carried; the snapshot stays whole.
     /// </summary>
     [Fact]
@@ -298,7 +298,7 @@ public sealed class StateSlicesTests
     }
 
     /// <summary>
-    /// COWORKVIEW1a (the design §4.1, <i>an input's health</i>): a slice's health is read from memory beside its snapshot, and its move
+    /// A slice's health is read from memory beside its snapshot, and its move
     /// is told as a failure begins and ends, never at a second failure with the same words, once at one whose words changed.
     /// </summary>
     [Fact]
@@ -324,7 +324,7 @@ public sealed class StateSlicesTests
     }
 
     /// <summary>
-    /// COWORKVIEW1a (C5-1.2): a first judgement of no partition sets the slice judged and pushes nothing, so its health is told once to
+    /// A first judgement of no partition sets the slice judged and pushes nothing, so its health is told once to
     /// wake a read that waits on it; a second empty judgement tells neither.
     /// </summary>
     [Fact]
@@ -344,7 +344,7 @@ public sealed class StateSlicesTests
     }
 
     /// <summary>
-    /// SLICESTALL1: the service client's read times out by cancelling, and the worker took that for its own stop, so one slow answer
+    /// The service client's read times out by cancelling, and the worker took that for its own stop, so one slow answer
     /// ended the slice for the window's life and every view kept what it last held. A read's timeout is a failure like any other.
     /// </summary>
     [Fact]
@@ -372,7 +372,7 @@ public sealed class StateSlicesTests
         await running;
     }
 
-    /// <summary>SLICESTALL1: a throw past the judgement itself, here in writing a partition down, is said and the worker goes on.</summary>
+    /// <summary>A throw past the judgement itself, here in writing a partition down, is said and the worker goes on.</summary>
     [Fact]
     public async Task A_judgement_that_throws_past_its_read_is_said_once_and_the_worker_goes_on()
     {
@@ -462,7 +462,7 @@ public sealed class StateSlicesTests
     }
 
     /// <summary>
-    /// PUSH1b1: a slice judged from facts that have not landed (the machine's facts, which start after the slices) answers nothing
+    /// A slice judged from facts that have not landed (the machine's facts, which start after the slices) answers nothing
     /// to judge from yet: it stays not judged, so a window never installs an empty slice as the truth, and pushes nothing.
     /// </summary>
     [Fact]
@@ -490,7 +490,7 @@ public sealed class StateSlicesTests
     }
 
     /// <summary>
-    /// PUSH1b1: where a move reaches the slice with no bus event (the machine's facts landing), its owner hands a hearing that wakes
+    /// Where a move reaches the slice with no bus event (the machine's facts landing), its owner hands a hearing that wakes
     /// it: heard while the worker runs, and no longer once it stops.
     /// </summary>
     [Fact]

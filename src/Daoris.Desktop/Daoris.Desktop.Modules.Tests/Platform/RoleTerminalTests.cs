@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// D233 point 2 (the supervisor design §2.2, §2.3, §5; D209 §2.2, §3.4): the supervisor and the steward are catalogue roles, and one the
+/// The supervisor and the steward are catalogue roles, and one the
 /// role door staffs with the terminal is held this run once the window starts its terminal. The key's hash lives in memory alone, so a
 /// restart starts nothing; a role's act is covered only by its holder's proof over the connection's nonce, against the role as the
 /// catalogue says now; a role's change ends its hold and sweeps its decisions after the judge's step, never inside.
@@ -105,7 +105,7 @@ public sealed class RoleTerminalTests : Bridge
         Assert.NotEqual(generation, GenerationOf(next));
     }
 
-    /// <summary>§2.2, §3.1, §4.6: covered only for its hold's generation and key, by a proof over this connection's unused nonce.</summary>
+    /// <summary>Covered only for its hold's generation and key, by a proof over this connection's unused nonce.</summary>
     [Fact]
     public void A_role_act_is_covered_only_by_the_holders_proof_over_its_own_nonce_and_form()
     {
@@ -133,7 +133,7 @@ public sealed class RoleTerminalTests : Bridge
         Assert.Equal(StandingWhy.NotNamed, standing.JudgeRole(Driver, "SESSION_INPUT", Answer(key!, nonce, generation), null, nonce).Why);
     }
 
-    /// <summary>SUPERVISOR1b (§3.1 <c>SUPERVISOR_DEFER</c>): the defer is the role's second act, judged as the answer is, its proof over its own route's bytes.</summary>
+    /// <summary>The defer is the role's second act, judged as the answer is, its proof over its own route's bytes.</summary>
     [Fact]
     public void A_defer_is_judged_as_the_answer_is_each_proved_over_its_own_route()
     {
@@ -223,7 +223,7 @@ public sealed class RoleTerminalTests : Bridge
     }
 
     /// <summary>
-    /// §5, §3.6: a role's change raced against a keeping, a release and an admission. The judge's step ends first and the sweep follows
+    /// A role's change raced against a keeping, a release and an admission. The judge's step ends first and the sweep follows
     /// under each decision's lock: no lock taken in reverse, nothing deadlocks, and nothing is kept, released or admitted under the dead
     /// generation.
     /// </summary>
@@ -282,7 +282,7 @@ public sealed class RoleTerminalTests : Bridge
         }
     }
 
-    // STEWARDROLE1a-i (D209 §2.2, §3.4): a holder apart from its holds, shared or its own; a role ended alone, the holder's hash kept to its
+    // A holder apart from its holds, shared or its own; a role ended alone, the holder's hash kept to its
     // last; a holder ended by its last role or its tab; and the act judged against the role's authority as the catalogue says now.
 
     /// <summary>A judge whose catalogue staffs both roles with the terminal, the steward's table holding <paramref name="probe"/>.</summary>
@@ -348,7 +348,7 @@ public sealed class RoleTerminalTests : Bridge
         Assert.Equal(2, standing.Now().Holders!.Count);
     }
 
-    /// <summary>D209 §2.2, Codex's final read, finding 10: either role of a shared holder ended ends that hold alone, and the other goes on.</summary>
+    /// <summary>Either role of a shared holder ended ends that hold alone, and the other goes on.</summary>
     [Theory]
     [InlineData(AppointedRoles.Steward)]
     [InlineData(AppointedRoles.Supervisor)]
@@ -392,7 +392,7 @@ public sealed class RoleTerminalTests : Bridge
     }
 
     /// <summary>
-    /// D209 §2.2: a holder's tab ending, by whichever of its paths (the module tells each once, <c>HolderTerminalTests</c>), drops its hash
+    /// A holder's tab ending, by whichever of its paths (the module tells each once, <c>HolderTerminalTests</c>), drops its hash
     /// and every hold it holds in one step, swept after it; a tab that ends while its start opens it leaves nothing kept.
     /// </summary>
     [Fact]
@@ -429,7 +429,7 @@ public sealed class RoleTerminalTests : Bridge
         Assert.DoesNotContain(standing.Now().Holds!, each => each.Kind == AppointedRoles.Steward);
     }
 
-    /// <summary>D209 §3.4: an act in the role's table but not its authority, an act no table names, and another form, each refused.</summary>
+    /// <summary>An act in the role's table but not its authority, an act no table names, and another form, each refused.</summary>
     [Fact]
     public void A_role_act_is_judged_against_the_roles_authority_and_admitted_once_with_an_id_daoris_draws()
     {
@@ -463,7 +463,7 @@ public sealed class RoleTerminalTests : Bridge
         n = Nonce();
         Assert.Equal(RoleWhy.NotGranted, Judge(RoleKit.Act(key!, n, generation), n).Why);
 
-        // The steward's table is the catalogue's vocabulary of its acts, the set-up act apart: §3.1 rows 1 to 8.
+        // The steward's table is the catalogue's vocabulary of its acts, the set-up act apart.
         Assert.Equal(AppointedRoles.StewardActs.Where(act => act != StewardActNames.Setup).Order(StringComparer.Ordinal), StewardActs.Table.Keys.Order(StringComparer.Ordinal));
     }
 

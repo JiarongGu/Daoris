@@ -1,9 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What Context asks of the review: the checks a brief reads a call by (design §3.1 item 4), the gates a tree's <c>daoris.gates.json</c>
-/// declares and this machine's heavy-gate mapping for a repository. Review installs it when the driver loads and does exactly what the
-/// brief did before it was a port.
+/// What Context asks of the review: the checks a brief reads a call by, the gates a tree's <c>daoris.gates.json</c>
+/// declares and this machine's heavy-gate mapping for a repository. Review installs it when the driver loads.
 /// </summary>
 internal interface IContextReview
 {

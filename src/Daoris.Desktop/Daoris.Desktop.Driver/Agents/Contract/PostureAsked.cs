@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The posture a start asks of a protocol door (the design §4.5): the modes it names in the agent's own words, whether the session must
-/// set one or not open (D183 point 3; AUTONOMY1b), and whether the person answers its permission requests. Help and Participants build
+/// The posture a start asks of a protocol door: the modes it names in the agent's own words, whether the session must
+/// set one or not open, and whether the person answers its permission requests. Help and Participants build
 /// one; <see cref="Wire"/> is the one string the open carries, and <see cref="Parse"/> its one reader.
 /// </summary>
 /// <param name="Modes">The modes in order, <c>|</c> between them, the first the agent offers being set.</param>

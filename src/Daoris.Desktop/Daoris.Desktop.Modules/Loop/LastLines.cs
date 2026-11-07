@@ -4,13 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The last few lines a program printed on a stream, read for as long as it runs (HOSTSTART1): what the HTTP host said
+/// The last few lines a program printed on a stream, read for as long as it runs: what the HTTP host said
 /// on its standard error before it exited, for the sentence the window shows.
 /// </summary>
 /// <remarks>
 /// <para><b>Read from the start, never held.</b> A pipe nobody reads fills, and a host that writes to a full one waits on
 /// it, so a supervisor that redirected the stream and read it only after an exit would stall a chatty host before it
-/// answered. A thread of its own reads it to its end, as the host's own input watch does (LOG2a): the read blocks for
+/// answered. A thread of its own reads it to its end, as the host's own input watch does: the read blocks for
 /// the host's whole life, which is no work for the thread pool.</para>
 ///
 /// <para><b>Bounded.</b> At most <see cref="MostLines"/> lines are kept, the newest, and each is cut at
@@ -21,7 +21,7 @@ namespace Daoris.Desktop;
 /// they print nothing, and a NUL ends a window label's text. Not kept: blank lines, and the frames of an exception
 /// the runtime printed (<c>   at …</c>, <c>--- End of …</c>), which come after the exception's reasons and would push
 /// them out. Nothing printed on the host's standard error is a secret: its starter's key arrives on its input, and no
-/// start failure repeats that input (PERSONDOOR1a).</para>
+/// start failure repeats that input.</para>
 /// </remarks>
 public sealed class LastLines
 {

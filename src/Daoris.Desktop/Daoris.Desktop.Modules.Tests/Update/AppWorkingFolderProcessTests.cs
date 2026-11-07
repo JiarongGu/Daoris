@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// APPCWD1 against the machine (D139 §5): a child that names no working folder stands in its parent's, and on Windows a process
+/// Against the machine: a child that names no working folder stands in its parent's, and on Windows a process
 /// standing in <c>app/</c> keeps it from being renamed while it lives, though it runs from somewhere else and the launcher does not
 /// wait for it. So these start a real child where the application stands and try the swap's move of <c>app/</c>.
 /// </summary>

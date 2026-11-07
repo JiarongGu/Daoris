@@ -4,29 +4,29 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// An ended conversation's move at its limit's wake, kept until its words are delivered (LIMITRESUME1c, D206 §3.5, Codex 8):
-/// <c>&lt;home&gt;/sessions/&lt;session&gt;.limit-move.json</c>, beside D163's hand-over box. An older build wrote it before the new part
-/// opened, as the move's one durable owner; this build writes none (FOUNDATION1f-vi part a) and reads one only to import it.
+/// An ended conversation's move at its limit's wake, kept until its words are delivered:
+/// <c>&lt;home&gt;/sessions/&lt;session&gt;.limit-move.json</c>, beside the hand-over box. An older build wrote it before the new part
+/// opened, as the move's one durable owner; this build writes none and reads one only to import it.
 /// </summary>
 /// <param name="Why">The move's reason: <c>limit</c> for another account ready first, or the refusal's code that proved its own conversation lost.</param>
 /// <param name="Before">How many of the record's events stand before the first refused turn's words: the brief is composed from those alone.</param>
-/// <param name="Through">How many of the record's events there were when it was written: the refused turns' words are read within them.</param>
+/// <param name="Through">How many of the record's events there are when it is written: the refused turns' words are read within them.</param>
 /// <param name="Said">
 /// The ids of the words said while it waited, still on the old record until they are delivered; where <paramref name="Moved"/>, the ids of the
 /// words the new part's open moved there, which wait on the new part until they are delivered.
 /// </param>
 /// <param name="To">The new part once it opened; null before.</param>
 /// <param name="Moved">
-/// That the new part's open moved the words (FOUNDATION1d-ii part 4), so <paramref name="Said"/> names them on <paramref name="To"/>: the delivery
+/// That the new part's open moved the words, so <paramref name="Said"/> names them on <paramref name="To"/>: the delivery
 /// and the come-up read and take them there, never on the old record. Written only where true, so a box from before, and an older build's
 /// reading of this one, keeps its old meaning.
 /// </param>
 public sealed record LimitMoveBox(string Why, int Before, int Through, IReadOnlyList<string> Said, string? To = null, bool Moved = false);
 
 /// <summary>
-/// The ended-record moves' boxes this home keeps (LIMITRESUME1c), read without trusting their shape and written whole, as BOM-less UTF-8
-/// with LF. <b>This machine's, never the record's.</b> A file that does not read is no move: the wake tries again. Since FOUNDATION1f-vi
-/// part a no production code writes a box: the move is kept in the move record, and a box is only what an older build wrote, imported once
+/// The ended-record moves' boxes this home keeps, read without trusting their shape and written whole, as BOM-less UTF-8
+/// with LF. <b>This machine's, never the record's.</b> A file that does not read is no move: the wake tries again. No
+/// production code writes a box: the move is kept in the move record, and a box is only what an older build wrote, imported once
 /// at the come-up (<c>LimitBoxImport</c>) and, while it stands in place, its record's <c>Never</c>. <see cref="Write"/> stays for a test to
 /// leave the box an older build would.
 /// </summary>
@@ -74,7 +74,7 @@ public sealed class LimitBoxes(string home)
 
     /// <summary>
     /// A box's text read as its move, or null where it does not read as one: the one reading of the format, which the move record's import
-    /// (FOUNDATION1f-i part 2) reads the bytes it took once by.
+    /// reads the bytes it took once by.
     /// </summary>
     public static LimitMoveBox? Parse(string text)
     {

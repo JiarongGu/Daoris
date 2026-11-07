@@ -4,15 +4,15 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The person's words waiting on a parked or ended record, taken back, reworded or moved to the line's head through the service's
-/// doors (SAIDBACK1b, LINESTOGETHER1b): the service keeps them, and this tells the conversation and both queues what became of them.
+/// doors: the service keeps them, and this tells the conversation and both queues what became of them.
 /// </summary>
 internal sealed class WordsQueueEdits(DriverLoop loop, Action<string> tell)
 {
-    /// <summary>The move's answer where the service's never came (LINESTOGETHER1b): not moved, nor refused, but not known.</summary>
+    /// <summary>The move's answer where the service's never came: not moved, nor refused, but not known.</summary>
     public const string NotKnown = "not-known";
 
     /// <summary>
-    /// Take back one of the person's words waiting on a record, or reword it (SAIDBACK1b, D76). <see cref="QueueEdit.Taken"/> where
+    /// Take back one of the person's words waiting on a record, or reword it. <see cref="QueueEdit.Taken"/> where
     /// nothing holds the word for this machine: no service yet, a word no longer on the record, a record that runs again or is gone, or
     /// a host without the door.
     /// </summary>
@@ -29,7 +29,7 @@ internal sealed class WordsQueueEdits(DriverLoop loop, Action<string> tell)
     }
 
     /// <summary>
-    /// Move one of the person's words held on a part's record to the head (LINESTOGETHER1b, the review-flow design §2). Moved, the part
+    /// Move one of the person's words held on a part's record to the head. Moved, the part
     /// settles the old word with the withdrawn note and the head shows the person's words under their new id; a retry the service
     /// answers moved already shows nothing again. Both queues are told again whatever it answers. A request whose answer never came is
     /// <see cref="NotKnown"/>: the move may have happened, and asked again under its key it says.
@@ -68,7 +68,7 @@ internal sealed class WordsQueueEdits(DriverLoop loop, Action<string> tell)
     }
 
     /// <summary>
-    /// A terminal's <c>sessions take-back</c> (SAIDBACK1c, D137 §2.4): the shell's half, so the withdrawn note is written in the record
+    /// A terminal's <c>sessions take-back</c>: the shell's half, so the withdrawn note is written in the record
     /// of the conversation this shell holds, which the page may have open. Answered in the say's shape: sent is done, a refusal's code
     /// is <c>why</c>.
     /// </summary>
@@ -102,7 +102,7 @@ internal sealed class WordsQueueEdits(DriverLoop loop, Action<string> tell)
         tell(id);
         if (!answer.Done) return answer;
 
-        // QUEUEEDIT1a's line, by its code, which the page words; the one note shape every door keeps (WITHDRAWNLINE1).
+        // The line, by its code, which the page words; the one note shape every door keeps.
         loop.Output.Append(id, $"— the person took back word {word} before the session took it.");
         loop.Events.Keep(id, SessionNotes.Withdrawn(word), null);
         if (answer.Word is { } kept)

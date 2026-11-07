@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The staffing the store holds, as the fields of a loaded <see cref="DriverConfig"/> hold it (FOUNDATION1w-s part 3, the design §19.15):
+/// The staffing the store holds, as the fields of a loaded <see cref="DriverConfig"/> hold it:
 /// the actors' orders with the entries that do not read.
 /// </summary>
 public sealed record StaffingHeld(
@@ -11,17 +11,17 @@ public sealed record StaffingHeld(
     IReadOnlyDictionary<string, string> ActorErrors);
 
 /// <summary>
-/// Settings' port to the roles' staffing (§19.15, <c>IRoleStaffing</c>): what the home's own <c>driver.json</c> load asks for the staffing
+/// Settings' port to the roles' staffing (<c>IRoleStaffing</c>): what the home's own <c>driver.json</c> load asks for the staffing
 /// instead of the file's. Roles implements it over <c>role_staffing</c>; Settings names nothing of Roles'.
 /// </summary>
 public interface IRoleStaffing
 {
-    /// <summary>The store's staffing, or null before the import, where the file's is read as it always was.</summary>
+    /// <summary>The store's staffing, or null before the import, where the file's is read.</summary>
     StaffingHeld? Held();
 }
 
 /// <summary>
-/// Which <c>driver.json</c> reads its staffing through a port (FOUNDATION1w-s part 3): the home's own, which a composition root wired.
+/// Which <c>driver.json</c> reads its staffing through a port: the home's own, which a composition root wired.
 /// Keyed by the file, so two homes in one process (a test's) never share a port.
 /// </summary>
 public static class RoleStaffingPort
@@ -70,5 +70,5 @@ public static class RoleStaffingPort
     }
 }
 
-/// <summary>The staffing a config's file held when it was read, which a save writes back untouched (<see cref="DriverConfig.AsFile"/>).</summary>
+/// <summary>The staffing a config's file held at the read, which a save writes back untouched (<see cref="DriverConfig.AsFile"/>).</summary>
 internal sealed record FileStaffing(IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> Actors);

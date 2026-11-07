@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// NOTIFY2i's route (D196 point 8, the notification design §9): <c>NOTIFICATIONS</c>, what <c>daoris notices</c> prints through the
+/// The <c>NOTIFICATIONS</c> route, what <c>daoris notices</c> prints through the
 /// running Daoris, read from what the windows hold — the confirmation channel of both sources, the <c>attention</c> slice's rows and the
 /// <c>notices</c> slice's messages — and the notices' record, changing nothing.
 /// </summary>
@@ -165,7 +165,7 @@ public sealed partial class NotificationsReadTests : DriverModuleBridge
         Assert.Equal("holding", NoticesRead.Group("hand-over", stands: true, stale: false));
         Assert.Equal("word", NoticesRead.Group("hand-over", stands: false, stale: false));
         Assert.Equal("word", NoticesRead.Group("go-ahead", stands: false, stale: true));
-        // INTEGRATE1h: an integration's wait that holds its line or its unit's flow.
+        // An integration's wait that holds its line or its unit's flow.
         Assert.Equal(("holding", "word"), (NoticesRead.Group("integration", stands: true, stale: false), NoticesRead.Group("integration", stands: false, stale: false)));
         Assert.Equal("word", NoticesRead.Group("a-later-kind", stands: false, stale: false));
     }

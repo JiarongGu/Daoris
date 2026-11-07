@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A cycle as <c>driver.json</c> keeps it (FABRIC-GRAPH1; FOUNDATION1 mod-iii): a graph's JSON, compact, every value as written. The
+/// A cycle as <c>driver.json</c> keeps it: a graph's JSON, compact, every value as written. The
 /// settings' own reading of the text of a cycle, which the graph homes' <see cref="NodeGraphHomes.Compact(string)"/> answers through.
 /// </summary>
 public static class CycleText

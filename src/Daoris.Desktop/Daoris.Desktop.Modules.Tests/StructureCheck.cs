@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The desktop modules library's map (D166): each module it holds and the shared test fixtures that stay loose at the tests'
+/// The desktop modules library's map: each module it holds and the shared test fixtures that stay loose at the tests'
 /// top. A file's module, and a test's, is its first folder, so no file is listed. A trimmed copy of the service core's gate.
 /// Read from <c>fixtures/structure.json</c>.
 /// </summary>
@@ -34,7 +34,7 @@ internal sealed record StructureBreach(string File, int Line, string Rule, strin
 
 /// <summary>
 /// The structure gate's rules over the library's sources as (path, text) pairs, each path relative to the library's folder
-/// with <c>/</c> between its parts (the code-structure design §5):
+/// with <c>/</c> between its parts:
 /// <list type="bullet">
 /// <item><c>top</c>: no file sits at the library's top.</item>
 /// <item><c>module</c>: a file in a folder is in a declared module's folder, and no <c>Application</c>, <c>Infrastructure</c>

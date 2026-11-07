@@ -1,33 +1,33 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One configuration of the ACP door a plugin declares (D64 §3) — the adapter seam's own fields, as a
+/// One configuration of the ACP door a plugin declares — the adapter seam's own fields, as a
 /// file. A fifth harness arrives this way rather than as Daoris code.
 /// </summary>
 /// <param name="Name">What `driver.json` and the roster call it. Refused if this build carries it.</param>
 /// <param name="Command">The default command, `${plugin}` already expanded; the machine's `commands` row outranks it.</param>
-/// <param name="Posture">D37 in this harness's own vocabulary, or null for a wire that carries none (ACP3).</param>
-/// <param name="ProfileVariable">The environment variable that makes a directory an account (D49 §4).</param>
+/// <param name="Posture">The harness's own word for its ordinary posture, or null for a wire that carries none.</param>
+/// <param name="ProfileVariable">The environment variable that makes a directory an account.</param>
 /// <param name="Product">
-/// What a person calls the tool it runs, as the plugin says (XAGENT1b, D155 point 4): trimmed, and null where it says none, says
+/// What a person calls the tool it runs, as the plugin says: trimmed, and null where it says none, says
 /// a blank or says something that is not text. Never a reason to refuse the plugin.
 /// </param>
 /// <param name="Maker">
 /// Who makes that tool, as the plugin says, read as <paramref name="Product"/> is: the plugin's word, by which its agent may count
-/// as another maker's for a second opinion (the second-agent design §3.1). Null is a maker not declared, which is never taken
+/// as another maker's for a second opinion. Null is a maker not declared, which is never taken
 /// as independent.
 /// </param>
 /// <param name="OwnHome">
-/// The plugin's word that its agent's own home is nobody's, a sandboxed tool (OWNSPACE1c, D175): the agent that names a
+/// The plugin's word that its agent's own home is nobody's, a sandboxed tool: the agent that names a
 /// <paramref name="ProfileVariable"/> otherwise always takes a Daoris account. Only JSON <c>true</c> says it; never a reason to
 /// refuse the plugin. A built-in harness never reads it. Twin: the CLI's <c>ownHome</c>.
 /// </param>
 /// <param name="FullPosture">
-/// The harness's own mode that asks nothing (COAGENT1e, the co-agent design §3.4), as <c>posture</c> names its ordinary one: the word
+/// The harness's own mode that asks nothing, as <c>posture</c> names its ordinary one: the word
 /// a full-access start hands it, where a start would otherwise be refused naming the agent. Trimmed; null where none is declared.
 /// </param>
 /// <param name="AskingPosture">
-/// The harness's own mode that asks the person (COAGENT1e), the word a start under the asking posture hands it, so a request it holds
+/// The harness's own mode that asks the person: the word a start under the asking posture hands it, so a request it holds
 /// reaches the person; null where none is declared, and such a start is refused naming the agent.
 /// </param>
 public sealed record PluginHarness(
@@ -46,13 +46,13 @@ public sealed record PluginHarness(
     string? AskingPosture = null);
 
 /// <summary>
-/// What a plugin speaks (D64 §4): the process, and the points it listens on.
+/// What a plugin speaks: the process, and the points it listens on.
 /// </summary>
 public sealed record PluginHooks(IReadOnlyList<string> Command, IReadOnlyList<string> Points);
 
 /// <summary>
-/// An MCP server a plugin hands to sessions (D65 §1f) — a browser, a ticket system, whatever the session should be able to
-/// reach — and, where it says so, to Ask Daoris (D170 point 3). Beside the knowledge host, never instead of it.
+/// An MCP server a plugin hands to sessions — a browser, a ticket system, whatever the session should be able to
+/// reach — and, where it says so, to Ask Daoris. Beside the knowledge host, never instead of it.
 /// </summary>
 /// <param name="Name">What the agent calls it — tools arrive as `mcp__&lt;name&gt;__&lt;tool&gt;`. The knowledge host's name is refused.</param>
 /// <param name="Command">The program and its arguments, `${plugin}` already expanded.</param>
@@ -61,19 +61,19 @@ public sealed record PluginServer(
     string Name, IReadOnlyList<string> Command, IReadOnlyDictionary<string, string> Environment)
 {
     /// <summary>
-    /// Who it is handed to (HELPPLUG1a): <see cref="PluginServerTo.Sessions"/>, <see cref="PluginServerTo.Help"/> or both, as
-    /// declared; absent is sessions alone, as every server was before (INT1). Twin: the CLI's <c>PluginServer.to</c>.
+    /// Who it is handed to: <see cref="PluginServerTo.Sessions"/>, <see cref="PluginServerTo.Help"/> or both, as
+    /// declared; absent is sessions alone. Twin: the CLI's <c>PluginServer.to</c>.
     /// </summary>
     public IReadOnlyList<string> To { get; init; } = [PluginServerTo.Sessions];
 
     /// <summary>
-    /// The tools of it that read, which Ask Daoris may call once the person approves them (D170 point 3 and its note); none
+    /// The tools of it that read, which Ask Daoris may call once the person approves them; none
     /// where it declares none. Only a server handed to Ask Daoris declares any. Twin: the CLI's <c>PluginServer.allow</c>.
     /// </summary>
     public IReadOnlyList<string> Allow { get; init; } = [];
 
     /// <summary>
-    /// The tools of it that change something outside Daoris (HELPPLUG1a's tightening): never allowed silently, only as writes the
+    /// The tools of it that change something outside Daoris: never allowed silently, only as writes the
     /// person accepted (<see cref="HelpGrants"/>). A tool is in <see cref="Allow"/> or here, never both. Twin: <c>PluginServer.writes</c>.
     /// </summary>
     public IReadOnlyList<string> Writes { get; init; } = [];
@@ -83,14 +83,14 @@ public sealed record PluginServer(
 }
 
 /// <summary>
-/// A skill a plugin hands (HELPPLUG1b, D170 point 4): its folder <c>skills/&lt;name&gt;</c> beside the manifest, holding a
+/// A skill a plugin hands: its folder <c>skills/&lt;name&gt;</c> beside the manifest, holding a
 /// <c>SKILL.md</c>, and who it is handed to, as a server's <c>to</c> says it. Handed at spawn (<see cref="SpawnSkills"/>), never
 /// into a repository. Twin: the CLI's <c>PluginSkill</c>.
 /// </summary>
 /// <param name="Name">Its folder's name, as a harness names a skill: lowercase letters, digits and dashes.</param>
 public sealed record PluginSkill(string Name)
 {
-    /// <summary>A skill's name (HELPPLUG1b): lowercase letters, digits and dashes, at most 64. Twin: the CLI's <c>SKILL_NAME</c>.</summary>
+    /// <summary>A skill's name: lowercase letters, digits and dashes, at most 64. Twin: the CLI's <c>SKILL_NAME</c>.</summary>
     public static readonly System.Text.RegularExpressions.Regex NameShape =
         new(@"^[a-z0-9][a-z0-9-]{0,63}\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
@@ -104,7 +104,7 @@ public sealed record PluginSkill(string Name)
 
 /// <summary>A plugin's manifest, as read — with everything a refused plugin would have contributed already removed.</summary>
 /// <param name="Icon">
-/// Its icon (PLUGUI2, D140 §3.1): a path inside its folder to an SVG or a PNG, as the manifest writes it, once the
+/// Its icon: a path inside its folder to an SVG or a PNG, as the manifest writes it, once the
 /// manifest's rules hold. Null with none, and with one those rules refuse. <c>PluginIcon.Read</c> judges the file.
 /// </param>
 /// <param name="IconProblem">Why its declared icon is not drawn, by the manifest's rules; never a reason to refuse the plugin.</param>
@@ -121,7 +121,7 @@ public sealed record PluginManifest(
     string? IconProblem = null)
 {
     /// <summary>
-    /// The tools its process runs (PLUGTOOL1a, D150 point 7; the UX6 design §7.2), each read or saying its first problem.
+    /// The tools its process runs, each read or saying its first problem.
     /// None for a refused plugin. <see cref="PluginToolChecks"/> finds and checks them, only at a trial or a press.
     /// </summary>
     public IReadOnlyList<PluginTool> Tools { get; init; } = [];
@@ -129,18 +129,18 @@ public sealed record PluginManifest(
     /// <summary>Why <c>tools</c> as a whole is not read, when it is not an array; never a reason to refuse the plugin.</summary>
     public string? ToolsProblem { get; init; }
 
-    /// <summary>The skills it hands sessions or Ask Daoris (HELPPLUG1b, D170 point 4); none for a refused plugin.</summary>
+    /// <summary>The skills it hands sessions or Ask Daoris; none for a refused plugin.</summary>
     public IReadOnlyList<PluginSkill> Skills { get; init; } = [];
 
     /// <summary>
-    /// The steps it declares (FABRIC-UNIT1d; the fabric events design §D9, §E2): each a node of its own kind, <c>&lt;id&gt;/&lt;step&gt;</c>,
+    /// The steps it declares: each a node of its own kind, <c>&lt;id&gt;/&lt;step&gt;</c>,
     /// read into the one <see cref="NodeDeclaration"/> a built-in is and judged by its <see cref="NodeDeclarations.Problem"/>. None for a
     /// refused plugin, or one that declares none. <see cref="PluginSteps"/> reads them. Twin: the CLI's <c>steps</c>.
     /// </summary>
     public IReadOnlyList<NodeDeclaration> Steps { get; init; } = [];
 
     /// <summary>
-    /// What its steps create that a unit's cleanup must account for (§D3), each by schema, with its role and who cleans it. None for a
+    /// What its steps create that a unit's cleanup must account for, each by schema, with its role and who cleans it. None for a
     /// refused plugin, or one that declares none. Twin: the CLI's <c>resources</c>.
     /// </summary>
     public IReadOnlyList<PluginResource> Resources { get; init; } = [];

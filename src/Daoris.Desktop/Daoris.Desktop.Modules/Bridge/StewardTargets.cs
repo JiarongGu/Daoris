@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The conditions of the steward's quest and tree acts that read a dependency (STEWARDROLE1d), each judged again under the gates of the
+/// The conditions of the steward's quest and tree acts that read a dependency, each judged again under the gates of the
 /// act's target: a quest that exists, a session's tree this home opened, and a landing that pushes nothing.
 /// </summary>
 internal static class StewardTargets
@@ -13,7 +13,7 @@ internal static class StewardTargets
     public static async Task<string?> QuestExistsAsync(RoleActRun run, string quest, CancellationToken ct) =>
         run.World is { } world && await world.QuestStatusAsync(quest, ct).ConfigureAwait(false) is null ? StewardWhy.NoQuest : null;
 
-    /// <summary>A quest's own session whose working tree is one this home opened (D51): never the person's checkout.</summary>
+    /// <summary>A quest's own session whose working tree is one this home opened: never the person's checkout.</summary>
     public static async Task<string?> OwnTreeAsync(RoleActRun run, string session, CancellationToken ct)
     {
         if (run.World is not { } world) return null;
@@ -23,7 +23,7 @@ internal static class StewardTargets
 
     /// <summary>
     /// A tree's landing, which never pushes to a remote: its plan, read through the landing's own open route, names no plugin that
-    /// pushes the branch once it is made (D100). A plan that cannot be read is no plan that pushes nothing, so the act is refused.
+    /// pushes the branch once it is made. A plan that cannot be read is no plan that pushes nothing, so the act is refused.
     /// </summary>
     public static async Task<string?> LandsWithoutPushingAsync(RoleActRun run, string session, CancellationToken ct)
     {

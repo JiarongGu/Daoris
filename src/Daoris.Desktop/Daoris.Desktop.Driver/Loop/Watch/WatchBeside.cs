@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The work a watch's run starts beside its looks, each pass on the pool so no look waits on its git or on a conversation's start: the tidy
-/// of session branches (AUTOTIDY1), the wake of the conversations that wait for an account (LIMITRESUME1c) and the following of every line
-/// (WSSETUP5). It keeps no state: the run holds each pass's task and begins the next only once that one has ended.
+/// of session branches, the wake of the conversations that wait for an account and the following of every line.
+/// It keeps no state: the run holds each pass's task and begins the next only once that one has ended.
 /// </summary>
 internal sealed class WatchBeside(DriverWatch watch, ServiceClient service, string home)
 {
@@ -17,7 +17,7 @@ internal sealed class WatchBeside(DriverWatch watch, ServiceClient service, stri
 
     private Task FirstScreenAsync(CancellationToken ct) => watch.FirstScreenAsync(ct);
     /// <summary>
-    /// One pass of the <c>limits</c> stage (LIMITRESUME1c, D206 §3.4), started on the pool so the look beside it does not wait on a
+    /// One pass of the <c>limits</c> stage, started on the pool so the look beside it does not wait on a
     /// conversation's start. A closing loop ends it with nothing said; a failure past its own catches is written to the log.
     /// </summary>
     internal Task LimitsAsync(Func<DriverConfig, CancellationToken, Task> limits, DriverConfig config, CancellationToken ct) =>
@@ -39,7 +39,7 @@ internal sealed class WatchBeside(DriverWatch watch, ServiceClient service, stri
         }, CancellationToken.None);
 
     /// <summary>
-    /// One tidy pass (AUTOTIDY1), started on the pool so the look beside it does not wait on its git. A closing loop ends it
+    /// One tidy pass, started on the pool so the look beside it does not wait on its git. A closing loop ends it
     /// with nothing said; what else stops it is said once, in a later look's report.
     /// </summary>
     internal Task<IReadOnlyList<string>> TidyAsync(BranchTidying tidy, CancellationToken ct)
@@ -50,7 +50,7 @@ internal sealed class WatchBeside(DriverWatch watch, ServiceClient service, stri
             try
             {
                 await FirstScreenAsync(ct).ConfigureAwait(false);
-                // A review step in progress keeps the tree it shows from (REVIEWENV1d), as a session in use keeps its own.
+                // A review step in progress keeps the tree it shows from, as a session in use keeps its own.
                 return await Stages.TimeAsync(
                         "tidy", () => tidy.LookAsync(service, Log, ct, token => ReviewServed.ReviewingAsync(Reviews, service, token)), beside: true)
                     .ConfigureAwait(false);
@@ -68,8 +68,8 @@ internal sealed class WatchBeside(DriverWatch watch, ServiceClient service, stri
     }
 
     /// <summary>
-    /// Every repository with a checkout here, followed from its line (WSSETUP5): what the pass says, for a look's report,
-    /// or null where the service did not answer, so the next look tries again. Started on the pool, so the look beside it
+    /// Every repository with a checkout here, followed from its line: what the pass says, for a look's report,
+    /// or null where the service does not answer, so the next look tries again. Started on the pool, so the look beside it
     /// does not wait on its git.
     /// </summary>
     internal Task<IReadOnlyList<string>?> FollowEveryLineAsync(DriverConfig config, CancellationToken ct) =>
@@ -81,7 +81,7 @@ internal sealed class WatchBeside(DriverWatch watch, ServiceClient service, stri
                 var report = await Stages.TimeAsync(
                         "follow", () => RegistrationFollow.FollowAsync(new RegistrationWorld(service, home, config), only: null, ct), beside: true)
                     .ConfigureAwait(false);
-                // Each line classed as it is made (NOTIFY2h2).
+                // Each line classed as it is made.
                 return
                 [
                     .. report.Followed.Select(followed => RegistrationFollow.EventLine(followed, Lines)).OfType<string>(),
@@ -92,7 +92,7 @@ internal sealed class WatchBeside(DriverWatch watch, ServiceClient service, stri
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
-                // A closing loop, its first-screen wait among what it ends (STARTFAST1b): nothing followed, nothing said.
+                // A closing loop, its first-screen wait among what it ends: nothing followed, nothing said.
                 return null;
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)

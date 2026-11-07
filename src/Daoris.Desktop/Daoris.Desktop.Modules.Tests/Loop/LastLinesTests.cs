@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// HOSTSTART1: a host that exits at start said why on its standard error, and the window showed only that it exited.
+/// A host that exits at start said why on its standard error, and the window showed only that it exited.
 /// The supervisor now reads that stream for as long as the host runs and keeps its last few lines, bounded, for the
 /// sentence the window shows. Over a reader of text here, so this is the fast half; <see cref="HostSupervisorTests"/>
 /// holds the same over a real stand-in host.

@@ -21,8 +21,8 @@ namespace Daoris.Desktop;
 public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?>? locate = null) : IDisposable
 {
     /// <summary>
-    /// The variable that asks the host this supervisor starts to stop when its standard input ends
-    /// (LOG2a), set to <c>1</c>. A twin of the host's <c>InputEndStop.Variable</c>, duplicated on purpose
+    /// The variable that asks the host this supervisor starts to stop when its standard input ends,
+    /// set to <c>1</c>. A twin of the host's <c>InputEndStop.Variable</c>, duplicated on purpose
     /// since the artefacts share no code; each side's tests hold the same spelling.
     /// </summary>
     public const string StopOnInputEnd = "DAORIS_STOP_ON_INPUT_END";
@@ -30,7 +30,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     private readonly HttpClient _probe = new() { Timeout = TimeSpan.FromSeconds(2) };
     private Process? _owned;
 
-    /// <summary>What the host this supervisor started printed last on its standard error (HOSTSTART1).</summary>
+    /// <summary>What the host this supervisor started printed last on its standard error.</summary>
     private LastLines? _said;
 
     /// <summary>How long a host whose input was closed is given to stop by itself before it is killed.</summary>
@@ -50,8 +50,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// install carries. Set only on adoption, and only when both pages could be read.
     /// </summary>
     /// <remarks>
-    /// 🔴 The first deployment's 4d: the shell adopted the machine's host, the window was new, the
-    /// page was old, and no surface said so. Adoption stays the rule — a running host is somebody's —
+    /// 🔴 Adoption stays the rule — a running host is somebody's —
     /// but the shell can say what it adopted, because the platform's page names its own bundle in a
     /// script tag and the install's `index.html` names the bundle it carries. Different names are a
     /// different page; nothing else about the host is claimed.
@@ -59,46 +58,45 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     public string? Notice { get; private set; }
 
     /// <summary>
-    /// Whether this window started its host, adopted one already answering, or has none (WIRING1b, the this-Daoris design
-    /// §3.2): a <see cref="WindowWiring"/> word. An adopted host's environment is its starter's, which This Daoris says.
+    /// Whether this window started its host, adopted one already answering, or has none: a <see cref="WindowWiring"/> word. An adopted host's environment is its starter's, which This Daoris says.
     /// </summary>
     public string Held { get; private set; } = WindowWiring.None;
 
     /// <summary>
-    /// What the last probe heard, with when (WIRING1b): This Daoris shows it rather than asking again, so the page's open asks
+    /// What the last probe heard, with when: This Daoris shows it rather than asking again, so the page's open asks
     /// no network. Null before the first probe.
     /// </summary>
     public ServiceProbe? Last { get; private set; }
 
     /// <summary>
     /// The variable that asks the host this supervisor starts to read its person key from the first line of its standard
-    /// input (PERSONDOOR1a), set to <c>1</c>. A twin of the host's <c>PersonKey.InputVariable</c>, duplicated on purpose since
+    /// input, set to <c>1</c>. A twin of the host's <c>PersonKey.InputVariable</c>, duplicated on purpose since
     /// the artefacts share no code; each side's tests hold the same spelling.
     /// </summary>
     public const string PersonKeyOnInput = "DAORIS_PERSON_KEY_ON_INPUT";
 
     /// <summary>
-    /// The person key handed to the host this supervisor starts (the person-door design §2.1): 32 bytes in base64url
+    /// The person key handed to the host this supervisor starts: 32 bytes in base64url
     /// without padding, written on the first line of its input and never anywhere else. Null hands none, and the host keeps
-    /// today's trust. Minting one for each start is PERSONDOOR1g's; an adopted host is handed nothing (§2.3).
+    /// today's trust. An adopted host is handed nothing.
     /// </summary>
     public string? PersonKey { get; init; }
 
     /// <summary>
-    /// Whether the host this supervisor started proved it holds <see cref="PersonKey"/> (PROVED1, the this-Daoris design §3.2):
+    /// Whether the host this supervisor started proved it holds <see cref="PersonKey"/>:
     /// its readiness probe asks <c>/api/status?prove=</c> a fresh nonce and checks the answer's <c>proof</c>. Null where nothing
     /// was asked: no key was handed, or the host was adopted.
     /// </summary>
     public bool? Proved { get; private set; }
 
-    /// <summary>The start's timer (STARTFAST1), told when the host answers; none in a headless loop or a test.</summary>
+    /// <summary>The start's timer, told when the host answers; none in a headless loop or a test.</summary>
     public StartStages? Stages { get; set; }
 
     private readonly object _beginning = new();
     private Task<bool>? _begun;
 
     /// <summary>
-    /// Bring the host up now, off the caller's thread, for <see cref="UpAsync"/> to take (STARTFAST1b, the start-path design §5a): the
+    /// Bring the host up now, off the caller's thread, for <see cref="UpAsync"/> to take: the
     /// shell begins it before the window's engine starts, so the host's cold start runs beside Chromium's rather than after it. The
     /// same task however often it is asked. Not stopped by the loop's stop, which only stops waiting for it; its probes are bounded.
     /// </summary>
@@ -128,7 +126,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         Proved = null;
         var found = await ProbeAsync(null, ct).ConfigureAwait(false);
 
-        // 🔴 HOSTID1: an answer is adopted only when it is a Daoris host's. Something else on the port —
+        // An answer is adopted only when it is a Daoris host's. Something else on the port —
         // another program that happened to take it — is not this machine's host: its answers would be
         // read as the machine's, and starting ours beside it would only fail to bind.
         if (found == Answer.Foreign)
@@ -143,9 +141,9 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         {
             Held = WindowWiring.Adopted;
 
-            // 🔴 The notice informs; it never decides (REV3). A throw while reading the install's own
-            // page — unreadable, locked — used to escape here, and the loop counted a host that had
-            // just answered as down, and never started.
+            // 🔴 The notice informs; it never decides. A throw while reading the install's own
+            // page — unreadable, locked — must not escape here, or the loop counts a host that has
+            // just answered as down, and never starts.
             try
             {
                 Notice = await AdoptionNoticeAsync(ct).ConfigureAwait(false);
@@ -169,11 +167,11 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 
         try
         {
-            // Through the start gate (PROCSTART2), as every start of the desktop's is; held by no job (D249): it stops itself when its
-            // input ends with this process (LOG2a), and a job's kill would cut that stop short.
+            // Through the start gate, as every start of the desktop's is; held by no job: it stops itself when its
+            // input ends with this process, and a job's kill would cut that stop short.
             _owned = await ProcessStarts.Shared.StartAsync(
                 StartInfo(location, asksKey: PersonKey is not null), ProcessPurpose.EndsItself, CancellationToken.None).ConfigureAwait(false);
-            // HOSTSTART1: read from the start, so a host that prints more than a pipe holds never waits on it.
+            // Read from the start, so a host that prints more than a pipe holds never waits on it.
             if (_owned is not null) _said = LastLines.Drain(_owned.StandardError);
             if (_owned is not null && PersonKey is not null) HandKey(_owned, PersonKey);
         }
@@ -186,7 +184,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             return false;
         }
 
-        // A nonce for this start's proof (design §2.3), asked on every readiness probe, so the answer that makes the host
+        // A nonce for this start's proof, asked on every readiness probe, so the answer that makes the host
         // ready is the one that says whether it holds the key.
         var nonce = PersonKey is null ? null : Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(16));
         for (var attempt = 0; attempt < 100; attempt += 1)
@@ -216,8 +214,8 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     }
 
     /// <summary>
-    /// The trouble's sentence, followed by the host's last lines on its standard error where it printed any
-    /// (HOSTSTART1): a host that dies at start says why there, and the window showed only that it exited. Bounded and as
+    /// The trouble's sentence, followed by the host's last lines on its standard error where it printed any:
+    /// a host that dies at start says why there, and the window showed only that it exited. Bounded and as
     /// printed (<see cref="LastLines"/>); the window shows them as text, never as markup.
     /// </summary>
     private async Task<string> WithWhatItSaidAsync(string sentence, bool exited, CancellationToken ct)
@@ -240,7 +238,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 
     /// <summary>
     /// Why a shell with no host answering and none to start has none — a sentence for the person, naming the two
-    /// commands that lay one down in the words the driver's no-connector sentences use (CONNECTOR1c): the install's
+    /// commands that lay one down in the words the driver's no-connector sentences use: the install's
     /// first, as <see cref="ServiceHostLocator.Candidates"/> ranks them after the person's own path.
     /// </summary>
     public static string NoHost(string serviceUrl) =>
@@ -250,9 +248,9 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         + $"{ServiceHostLocator.PathVariable} to the path of one.";
 
     /// <summary>
-    /// How a host this supervisor starts is started (LOG2a): its standard input redirected and
+    /// How a host this supervisor starts is started: its standard input redirected and
     /// <see cref="StopOnInputEnd"/> set, so closing that input is its stop. Its standard error is redirected
-    /// too, and read for as long as it runs, so a host that dies at start says why (HOSTSTART1); its output
+    /// too, and read for as long as it runs, so a host that dies at start says why; its output
     /// is left alone. The working directory is the location's, not the binary's — a dev host must run from
     /// its project so the platform bundle in its wwwroot is what gets served (see HostLocation).
     /// </summary>
@@ -261,7 +259,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     public static ProcessStartInfo StartInfo(HostLocation location, bool asksKey = false)
     {
         // Not the tools' environment (TOOLS5): the host is Daoris's own program, found by its own locator (D60, D93),
-        // and it starts no process (D121 §1.1); the knowledge feed's git is the checkout's driver's.
+        // and it starts no process; the knowledge feed's git is the checkout's driver's.
         var start = new ProcessStartInfo
         {
             FileName = location.Executable,
@@ -278,7 +276,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             StandardErrorEncoding = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
         };
         start.Environment[StopOnInputEnd] = "1";
-        // Only the ask is in the environment, never the key: an environment is copied into every child (design §2.1).
+        // Only the ask is in the environment, never the key: an environment is copied into every child.
         if (asksKey) start.Environment[PersonKeyOnInput] = "1";
         return start;
     }
@@ -298,7 +296,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     }
 
     /// <summary>
-    /// The proof of possession of <paramref name="key"/> for <paramref name="nonce"/> (the person-door design §2.3): HMAC-SHA-256
+    /// The proof of possession of <paramref name="key"/> for <paramref name="nonce"/>: HMAC-SHA-256
     /// under the key's 32 bytes, of the nonce's UTF-8, in base64url without padding. A twin of the host's <c>PersonKey.Prove</c>,
     /// held to the same vectors; null for a key that is not one.
     /// </summary>
@@ -341,7 +339,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// takes as its stop, and only a host still running <see cref="StopWithin"/> later is killed.
     /// </summary>
     /// <remarks>
-    /// 🔴 LOG2a: the first real machine log held an <c>app.started</c> from the host for every start and
+    /// The first real machine log held an <c>app.started</c> from the host for every start and
     /// no <c>app.stopped</c> at all. The shell killed the host it started, so nothing the host does on a
     /// clean stop ever ran. Closing the input asks for that stop without a door: a route to stop the host
     /// would be one any caller on the machine could press. The kill stays as the backstop, for a host
@@ -385,7 +383,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// has, so that is what tells one from another program on the port. Nothing more is claimed: two
     /// Daoris hosts are told apart by the page each serves (<see cref="Notice"/>), never by this.
     /// </summary>
-    /// <param name="nonce">The proof asked of a host this supervisor started and handed a key (PROVED1); null asks none.</param>
+    /// <param name="nonce">The proof asked of a host this supervisor started and handed a key; null asks none.</param>
     /// <param name="ct">The loop's stop.</param>
     private async Task<Answer> ProbeAsync(string? nonce, CancellationToken ct)
     {
@@ -402,7 +400,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             }
 
             var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-            // What it said, its tier and version, kept for This Daoris (WIRING1b), read by the same rule as a Daoris host's.
+            // What it said, its tier and version, kept for This Daoris, read by the same rule as a Daoris host's.
             Last = ServiceProbe.Of(body, asked);
             if (!IsDaorisStatus(body)) return Answer.Foreign;
             if (nonce is not null) Proved = Proves(body, nonce);
@@ -417,7 +415,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 
     /// <summary>
     /// Whether a status body is a Daoris host's: an object naming its search tier. The driver's own reading, which a terminal
-    /// finding the running desktop's service asks too (FINDDAORIS1), so the two never disagree on what a Daoris host is.
+    /// finding the running desktop's service asks too, so the two never disagree on what a Daoris host is.
     /// </summary>
     internal static bool IsDaorisStatus(string body) => RunningService.IsDaorisStatus(body);
 
@@ -478,8 +476,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 }
 
 /// <summary>
-/// Whether this process may begin the host before the window's single-instance guard has run (STARTFAST1b, the start-path design
-/// §5a): a named mutex of Daoris's own for the service's address, held for the process's life. The guard runs inside the kit's
+/// Whether this process may begin the host before the window's single-instance guard has run: a named mutex of Daoris's own for the service's address, held for the process's life. The guard runs inside the kit's
 /// runner, after the point the host is begun, so a second launch would otherwise begin one too: a host racing the first one's for
 /// the port, which the first could adopt as its own and lose when the second launch exits. A launch that cannot claim it (another
 /// Daoris holds it, or the system refused it) begins nothing, and its loop brings the host up as before.

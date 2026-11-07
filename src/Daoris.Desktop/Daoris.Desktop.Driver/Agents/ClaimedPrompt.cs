@@ -7,13 +7,13 @@ using Piece = TargetPrompt.Piece;
 /// </summary>
 internal static class ClaimedPrompt
 {
-    /// <summary>A first start (D46 §3): the quest, to take, work and close, or stand down from where it is someone else's.</summary>
+    /// <summary>A first start: the quest, to take, work and close, or stand down from where it is someone else's.</summary>
     internal static IReadOnlyList<Piece> ClaimingPieces(SessionTarget target) =>
     [
         TargetPrompt.Head(target, $"Your target is quest `#{target.QuestId}`, asked by `{target.Asker}`:"),
         .. TargetPrompt.Beneath(target),
         new(HandedSections.WrittenTo, WrittenTo(target)),
-        // A further part of a session is told the parts before it (SESSONE1d), counted as what the sessions before it left.
+        // A further part of a session is told the parts before it, counted as what the sessions before it left.
         new(HandedSections.CarryOn, AgentContext.Current.Parts(target)),
         .. RetriedPieces(target),
         .. TargetPrompt.Tail(target, target.Retried is not null
@@ -39,7 +39,7 @@ internal static class ClaimedPrompt
     ];
 
     /// <summary>
-    /// What an earlier session on a still-open quest left (RETRYWORK1): it committed work in this tree and failed before it took the
+    /// What an earlier session on a still-open quest left: it committed work in this tree and failed before it took the
     /// quest, so this session is told its record, its commits on this branch and Daoris's brief of its line, as a carry-on of a take is
     /// (<see cref="CarryingOnPieces"/>). Nothing for every other first start.
     /// </summary>
@@ -64,7 +64,7 @@ internal static class ClaimedPrompt
 
     /// <summary>
     /// For a first start handed the words the person wrote to an earlier session on its quest after it ended, which could
-    /// not go on with them (MSG1b, D137 §2.2): their words, verbatim, quoted line by line. Nothing for any other start: a
+    /// not go on with them: their words, verbatim, quoted line by line. Nothing for any other start: a
     /// carry-on says them in its own paragraph (<see cref="Before"/>).
     /// </summary>
     internal static string WrittenTo(SessionTarget target) => target is { PersonSaid: { } said, CutOff: null, Answered: null }

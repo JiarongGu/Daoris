@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// FINDDAORIS1 (D171 point 1): the desktop leaves the address of the service it holds or adopted in its home while it runs,
+/// The desktop leaves the address of the service it holds or adopted in its home while it runs,
 /// naming its own process, and takes it away at its clean exit, so a terminal's <c>daoris</c> finds the Daoris that runs.
 /// </summary>
 public sealed class DriverLoopAddressTests : Bridge
@@ -55,7 +55,7 @@ public sealed class DriverLoopAddressTests : Bridge
         var source = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Loop", "LoopRun.cs"));
         var run = source[source.IndexOf("private async Task<bool> HostUpAsync(", StringComparison.Ordinal)..];
 
-        // The host the shell began early, or brought up here (STARTFAST1b): either way the supervisor's answer.
+        // The host the shell began early, or brought up here: either way the supervisor's answer.
         var ensured = run.IndexOf("supervisor.UpAsync(ct)", StringComparison.Ordinal);
         var down = run.IndexOf("if (!up)", StringComparison.Ordinal);
         var announced = run.IndexOf("Announce();", StringComparison.Ordinal);
@@ -63,7 +63,7 @@ public sealed class DriverLoopAddressTests : Bridge
     }
 
     /// <summary>
-    /// RPC1a (the terminal RPC design §6.3): the pipe is named in the address only once it is served; a stop answers every new
+    /// The pipe is named in the address only once it is served; a stop answers every new
     /// hello <c>stopping</c>, lets the pipe's presses answer, and only then takes the address away, so no terminal finds the home
     /// with no instance and acts alone while a press it sent still runs.
     /// </summary>
@@ -112,7 +112,7 @@ public sealed class DriverLoopAddressTests : Bridge
     }
 
     /// <summary>
-    /// RPC1i (§6.3): a stop whose drain ends with a press still under way goes on, as it always did, and says so in the machine log:
+    /// A stop whose drain ends with a press still under way goes on, as it always did, and says so in the machine log:
     /// <c>pipe.drained</c> with how many presses were left, so a terminal told <i>nothing was done</i> by a closing Daoris can be read
     /// against what the instance knew. A drain that ends clean says nothing.
     /// </summary>
@@ -184,7 +184,7 @@ public sealed class DriverLoopAddressTests : Bridge
         ];
     }
 
-    /// <summary>Held on the loop's source: the pipe is served once the loop holds the home, and named in the address after (§6.3).</summary>
+    /// <summary>Held on the loop's source: the pipe is served once the loop holds the home, and named in the address after.</summary>
     [Fact]
     public void The_loop_serves_the_pipe_once_it_holds_the_home_and_names_it_after()
     {

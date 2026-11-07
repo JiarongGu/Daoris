@@ -19,14 +19,14 @@ public interface IProcessTable
     ProcessFacts? Read(int id);
 }
 
-/// <summary>The judge's look at what a role's act came from (D209 §6.1): null where it is the holder's harness as Daoris started it, else why not.</summary>
+/// <summary>The judge's look at what a role's act came from: null where it is the holder's harness as Daoris started it, else why not.</summary>
 public interface IHolderWalk
 {
     string? Check(PipeClientProcess? client, HolderProcess? harness);
 }
 
 /// <summary>
-/// The configuration walk (STEWARDROLE1a-i, D209 §6.1, Codex's final read, finding 13): at each admission of every route of the census's
+/// The configuration walk: at each admission of every route of the census's
 /// <c>Role</c> class, from the verb's process up its parents, through the shell the harness's Bash tool ran it in, to <b>the holder's
 /// harness process, by the id and creation time the terminal module recorded when it started it</b>; then that process's image, its
 /// argument vector after the image and its <see cref="HolderTerminal.ConfigVariable"/>, read from the system, and the configuration

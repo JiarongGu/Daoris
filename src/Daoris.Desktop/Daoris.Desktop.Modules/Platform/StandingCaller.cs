@@ -8,7 +8,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Daoris.Desktop;
 
-/// <summary>Where a terminal's process stands, as the standing confirmation's judge reads it (the terminal-trust design §3.3 point 3).</summary>
+/// <summary>Where a terminal's process stands, as the standing confirmation's judge reads it.</summary>
 public enum StandingPlace
 {
     /// <summary>In none of the jobs any Daoris on this Windows session made for its agents, every one read, and nothing left untold.</summary>
@@ -29,9 +29,8 @@ public interface IStandingCaller
 }
 
 /// <summary>
-/// A pipe's client, held by a handle from the connection's taking for the connection's life (the terminal-trust design §3.3 point 3,
-/// Codex's finding 8): never a process id read again later, which may name another process. A process that would not open, or that was
-/// created after the connection was taken, is unknown.
+/// A pipe's client, held by a handle from the connection's taking for the connection's life: never a process id read again later, which may name another process. A process that would not open, or that
+/// came after the connection's taking, is unknown.
 /// </summary>
 public sealed class PipeClientProcess : IDisposable
 {
@@ -105,31 +104,31 @@ public sealed class PipeClientProcess : IDisposable
 }
 
 /// <summary>
-/// The judge's look at where a terminal's process stands (TERMTRUST1a part (ii), D201 point 4, the terminal-trust design §3.3 point 3):
+/// The judge's look at where a terminal's process stands:
 /// every job of the agents' prefix, <c>Local\daoris-agents-&lt;process id&gt;</c>, in this Windows session's namespace, found by listing it
 /// and asked by handle whether the client is in it; any <c>-open</c> event of the prefix, which a Daoris holds while one of its agents
 /// runs uncontained; this process's own job; and every instance pipe of this session, whose server must hold a job of the prefix.
 /// </summary>
 /// <remarks>
-/// <para><b>This only ever adds a card.</b> Being in none of those jobs never makes a caller the person (D156 §2.4): the person's grant
+/// <para><b>This only ever adds a card.</b> Being in none of those jobs never makes a caller the person: the person's grant
 /// covers the press, and the jobs only take the cover from an agent. Anything it cannot tell is <see cref="StandingPlace.Untold"/>.</para>
 ///
-/// <para><b>The prefix is part (i)'s</b> (<c>PieceLauncher.AgentsPrefix</c> and <c>AgentJobs.NameOf</c> on its branch): a constant both
-/// sides need, kept here as <see cref="Prefix"/> with this comment naming the other copy. Until part (i) lands, this process holds no job
-/// of the prefix, so <see cref="OwnContained"/> answers false and every press asks (D201's note on order).</para>
+/// <para><b>The prefix is the launcher's</b> (<c>PieceLauncher.AgentsPrefix</c> and <c>AgentJobs.NameOf</c>): a constant both
+/// sides need, kept here as <see cref="Prefix"/> with this comment naming the other copy. Where this process holds no job
+/// of the prefix, <see cref="OwnContained"/> answers false and every press asks.</para>
 ///
-/// <para><b>Elevation</b> (§3.4): a judge that is not elevated cannot open an elevated Daoris's job, which answers untold; safe, and said.</para>
+/// <para><b>Elevation</b>: a judge that is not elevated cannot open an elevated Daoris's job, which answers untold; safe, and said.</para>
 /// </remarks>
 public sealed class StandingCaller : IStandingCaller
 {
-    /// <summary>What every agents' job, and its <c>-open</c> event, is named by (part (i)'s twin: <c>PieceLauncher.AgentsPrefix</c>).</summary>
+    /// <summary>What every agents' job, and its <c>-open</c> event, is named by (the launcher's twin: <c>PieceLauncher.AgentsPrefix</c>).</summary>
     public const string Prefix = "daoris-agents-";
 
     /// <summary>What an uncontained agent's event adds to its process's job name.</summary>
     public const string OpenSuffix = "-open";
 
     /// <summary>
-    /// Whether every agent this process runs is contained (§3.3 point 3): its own agents' job is in the listing, and its own <c>-open</c>
+    /// Whether every agent this process runs is contained: its own agents' job is in the listing, and its own <c>-open</c>
     /// event is not, which the listing already reads. Part (i) may hand a sharper one (its <c>AgentJobs.Shared.Uncontained</c>).
     /// </summary>
     public Func<StandingListing, bool> OwnContained { get; set; } =
@@ -177,8 +176,7 @@ public sealed class StandingCaller : IStandingCaller
     }
 
     /// <summary>
-    /// The agents' job <paramref name="client"/> is in, by its name, or null where it is in none or it cannot tell (STEWARDROLE1c, D209
-    /// §6.2): the desk's per-caller key, which keys nothing of a press's judgement.
+    /// The agents' job <paramref name="client"/> is in, by its name, or null where it is in none or it cannot tell: the desk's per-caller key, which keys nothing of a press's judgement.
     /// </summary>
     public string? JobOf(PipeClientProcess? client)
     {

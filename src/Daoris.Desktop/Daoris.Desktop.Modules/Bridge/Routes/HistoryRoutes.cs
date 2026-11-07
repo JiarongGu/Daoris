@@ -6,53 +6,52 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Clearing finished history from this machine, the page's <c>bridge/history.ts</c> (HIST1c, D153; the history-clearing
-/// design §6.3): the first press, what a clear would take and keep, and the second, which sends exactly what the first
+/// Clearing finished history from this machine, the page's <c>bridge/history.ts</c>: the first press, what a clear would take and keep, and the second, which sends exactly what the first
 /// listed. The driver library's <see cref="HistoryClearing"/> is the one implementation, which the terminal's history verbs
-/// call too (D50).
+/// call too.
 /// </summary>
 /// <remarks>
-/// <para><b>Nothing machine-local comes back</b>: ids, counts and bytes, never a path or a title (§2.4), as the platform
-/// language says of every page (§4).</para>
+/// <para><b>Nothing machine-local comes back</b>: ids, counts and bytes, never a path or a title, as the platform
+/// language says of every page.</para>
 ///
 /// <para><b>Each reason is a code in <see cref="Refusals"/></b>, the catalogue's words, with the facts its sentence names and
 /// which of its sentences is meant as <c>context</c>; read by the driver library from the service's word and the records it
 /// names, never from the service's sentence. A word this build does not know is a newer service's, said verbatim as the
 /// driver's refusal.</para>
 ///
-/// <para><b>The answers are the driver library's projection</b> (<see cref="HistoryAnswers"/>, HIST1d), which
-/// <c>daoris history --json</c> prints too, so the terminal's answer is this route's field for field (D50).</para>
+/// <para><b>The answers are the driver library's projection</b> (<see cref="HistoryAnswers"/>), which
+/// <c>daoris history --json</c> prints too, so the terminal's answer is this route's field for field.</para>
 /// </remarks>
 public sealed class HistoryRoutes(DriverLoop loop)
 {
     private readonly DriverLoop _loop = loop;
 
     /// <summary>
-    /// The first press (§5 step 1): every unit of a workspace, one quest's work, one quest's failed sessions or one ask's work,
-    /// each with what it takes, what that holds on the disk and why it would stay; and for a workspace, the reading (§2.4).
+    /// The first press: every unit of a workspace, one quest's work, one quest's failed sessions or one ask's work,
+    /// each with what it takes, what that holds on the disk and why it would stay; and for a workspace, the reading.
     /// Changes nothing. One quest or ask this machine does not hold is refused.
     /// </summary>
     [DriverRoute("HISTORY_PLAN", PipeClass.Open)]
     private async Task<object?> HistoryPlanAsync(HistoryPlanRead press, CancellationToken cancellationToken)
     {
-        // RPC1e: `history` and a clear's list without `--yes`, in the verb's words.
+        // `history` and a clear's list without `--yes`, in the verb's words.
         if (press.Said) return await SaidAsync(SaidAsk(press, yes: false), cancellationToken).ConfigureAwait(false);
         var (scope, id) = HistoryNamed(press.Workspace, press.Quest, press.Ask, press.Failed);
         var plan = await HistoryClearing.PlanAsync(WorldOf(_loop), scope, id, cancellationToken).ConfigureAwait(false);
         if (scope != HistoryScope.Workspace && plan.Units is [{ Keep.Word: HistoryWords.Unknown } unknown]) throw HistoryKept(unknown.Keep!);
 
-        // HIST1d: the driver library's projection, which `daoris history --json` prints too, field for field.
+        // The driver library's projection, which `daoris history --json` prints too, field for field.
         return HistoryAnswers.Plan(plan);
     }
 
     /// <summary>
-    /// The second press (§5): exactly the <c>units</c> the first press listed as may go, each judged again, cleared, its files
+    /// The second press: exactly the <c>units</c> the first press listed as may go, each judged again, cleared, its files
     /// removed and what names it tidied. What went comes back in counts and bytes, with what changed since the list and stayed;
     /// a clear of one quest, one ask or one quest's failed sessions that stayed is refused in its code.
     /// </summary>
     /// <remarks>
     /// What it took leaves the quests, the asks and the sessions, and the driver's state its loop, nudged, reads again; and every
-    /// plan is stale (STATEHUB1d, D169). A clear refused in its code publishes nothing (D169 point 5): the page that pressed it
+    /// plan is stale. A clear refused in its code publishes nothing: the page that pressed it
     /// asks its plans again itself.
     /// </remarks>
     [DriverRoute("HISTORY_CLEAR", PipeClass.Person, Drain = PipeDrain.Passes)]
@@ -61,7 +60,7 @@ public sealed class HistoryRoutes(DriverLoop loop)
     [Publishes("HISTORY_CLEAR", StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver | StateScopes.History)]
     private async Task<object?> HistoryClearAsync(HistoryClearPress press, CancellationToken cancellationToken)
     {
-        // RPC1e: a terminal's `--yes`, which lists again and clears what may go, as the verb does alone; a kept unit is its exit 1.
+        // A terminal's `--yes`, which lists again and clears what may go, as the verb does alone; a kept unit is its exit 1.
         var (scope, id) = HistoryNamed(press.Workspace, press.Quest, press.Ask, press.Failed);
         if (press.Said)
         {
@@ -80,14 +79,14 @@ public sealed class HistoryRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// The verb's own lines and exit code for a history route a terminal sent (RPC1e): <see cref="HistoryCommand.RunAsync"/> with this
+    /// The verb's own lines and exit code for a history route a terminal sent: <see cref="HistoryCommand.RunAsync"/> with this
     /// Daoris's world, at the terminal's door.
     /// </summary>
     private Task<object> SaidAsync(HistoryAsk ask, CancellationToken cancellationToken) =>
         TerminalSaid.RunAsync(output => HistoryCommand.RunAsync(ask, WorldOf(_loop), output, cancellationToken));
 
     /// <summary>
-    /// What the terminal asked, read from the route's payload (RPC1e): a clear's list (<c>clear: true</c>) or its press names its scope as
+    /// What the terminal asked, read from the route's payload: a clear's list (<c>clear: true</c>) or its press names its scope as
     /// the page's does; the reading names a workspace or none, and <c>json</c> for the route's own answer.
     /// </summary>
     private static HistoryAsk SaidAsk(HistoryPlanRead press, bool yes)
@@ -133,7 +132,7 @@ public sealed class HistoryRoutes(DriverLoop loop)
     /// <summary>
     /// A unit kept, refused in its code with the facts its sentence names and which of its sentences is meant: the driver
     /// library's projection (<see cref="HistoryAnswers.Reason"/>, whose code is <see cref="HistoryCodes.Of"/>'s), the one the
-    /// plan's and the clear's answers carry, raised as the IPC's exception (REFAC1). A word this build does not know is a newer
+    /// plan's and the clear's answers carry, raised as the IPC's exception. A word this build does not know is a newer
     /// service's: it said no, and its sentence, verbatim, says why.
     /// </summary>
     private static Exception HistoryKept(HistoryKeep keep)

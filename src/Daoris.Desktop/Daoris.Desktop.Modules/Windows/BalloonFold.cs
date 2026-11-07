@@ -1,11 +1,11 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The balloon's own coalescing of a terminal's presses (CONFIRMWAIT1a-i, the confirm-wait design §8.2): at most one balloon a minute
+/// The balloon's own coalescing of a terminal's presses: at most one balloon a minute
 /// across every press. The first ask of a quiet minute is shown at once, by its act; the asks after it in that minute are folded into
 /// one balloon at the minute's end, naming how many came in it (<see cref="FoldedKind"/>), and that balloon begins the next minute. Every
 /// other kind passes through. The press's <c>SESSION_ATTENTION</c> event stays one per press, since the page's toast and the window's
-/// announcement are that event's (D196 point 4): the balloon coalesces, never the event.
+/// announcement are that event's: the balloon coalesces, never the event.
 /// </summary>
 public sealed class BalloonFold(TimeProvider clock, Action<BalloonFacts> show) : IDisposable
 {

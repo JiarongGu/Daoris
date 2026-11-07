@@ -3,15 +3,15 @@ using System.Security.Cryptography;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a person attaches to a conversation (CONV4c), kept under the home for the session it was sent
+/// What a person attaches to a conversation, kept under the home for the session it is sent
 /// to: <c>sessions/&lt;id&gt;/files/&lt;first 12 of the hash&gt;-&lt;name&gt;</c>.
 /// </summary>
 /// <remarks>
-/// <para><b>Transcript-class and machine-local</b> (D47 §4), beside the session's transcript and record.
+/// <para><b>Transcript-class and machine-local</b>, beside the session's transcript and record.
 /// Never written into the tree: the tree is the repository's, and an attachment is the person's.</para>
 ///
 /// <para><b>Read by the agent where it lies</b>, under a read granted at spawn for exactly this folder
-/// (INT4j's rule) — measured on both doors (docs/2026-09-25-message-content-evidence.md).</para>
+/// — measured on both doors (docs/2026-09-25-message-content-evidence.md).</para>
 ///
 /// <para><b>The layout and the name rules are the service's for a quest's files</b> (<c>QuestFiles</c>),
 /// twinned here because the artefacts share no code: the hash keeps two screenshots both called
@@ -77,7 +77,7 @@ public static class ChatFiles
     }
 
     /// <summary>
-    /// A file kept for a session under the name a record gives it (MSG1d3), where <see cref="Keep"/> laid it:
+    /// A file kept for a session under the name a record gives it, where <see cref="Keep"/> laid it:
     /// <c>&lt;first 12 of its hash&gt;-&lt;name&gt;</c>. Of two kept under one name, the newer, which is the one said last. Null
     /// where none is kept by that name, or the id names no session.
     /// </summary>
@@ -97,15 +97,15 @@ public static class ChatFiles
     }
 
     /// <summary>
-    /// The files kept for a session under the names a record gives them (MSG1d3), in order: what a resumed run is handed of
+    /// The files kept for a session under the names a record gives them, in order: what a resumed run is handed of
     /// the words it goes on with. A name nothing keeps any more is left out, never named as a path that is not there.
     /// </summary>
     public static IReadOnlyList<KeptFile> Kept(string home, string sessionId, IReadOnlyList<string> names) =>
         [.. names.Select(name => Find(home, sessionId, name)).OfType<KeptFile>()];
 
     /// <summary>
-    /// A word's files, kept for <paramref name="from"/> under <paramref name="names"/>, kept again for <paramref name="to"/> under the same names
-    /// (FOUNDATION1d-ii): a word said to a record that went on goes to its line's head, whose go-on reads its files there (MSG1d3). One kept
+    /// A word's files, kept for <paramref name="from"/> under <paramref name="names"/>, kept again for <paramref name="to"/> under the same names:
+    /// a word said to a record that went on goes to its line's head, whose go-on reads its files there. One kept
     /// nowhere, or that cannot be read now, is left out, as a resumed run leaves it out; never faults, so the words still go.
     /// </summary>
     public static void Carry(string home, string from, string to, IReadOnlyList<string> names)
@@ -118,14 +118,14 @@ public static class ChatFiles
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
             {
-                // Held open or gone since it was kept: the words go without it.
+                // Held open or gone since its keeping: the words go without it.
             }
         }
     }
 
     /// <summary>
     /// A moved word's files, kept for <paramref name="from"/> under <paramref name="names"/>, copied into <paramref name="to"/>'s folder by
-    /// their kept names (FOUNDATION1d-ii part 4, the foundation design §3.4 rule 3, O6-F8): files are kept per record and a keyed open moves
+    /// their kept names: files are kept per record and a keyed open moves
     /// none, so the delivery copies them before it hands the words, and every later reader at the destination (a go-on, a take-back's offer, a
     /// later move) finds them where the word waits. Idempotent: a name the destination keeps already is passed over, so a copy asked again
     /// changes nothing. One kept nowhere, or that cannot be read now, is left out; never faults, so the words still go.
@@ -147,7 +147,7 @@ public static class ChatFiles
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // Held open or gone since it was kept: the words go without it.
+                // Held open or gone since its keeping: the words go without it.
             }
         }
     }

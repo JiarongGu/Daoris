@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The judge of driving a repository that has not adopted Daoris (D70; the agent-provider design §7 rows 1 and 2), over door ids
+/// The judge of driving a repository that has not adopted Daoris, over door ids
 /// alone: a door may where its servers ride the session's wire, since such a repository has no <c>.mcp.json</c> of Daoris's for a
 /// door that inherits its servers to find. Pure: the doors' abilities are handed in.
 /// </summary>

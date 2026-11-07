@@ -3,16 +3,16 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A door's version question, asked once per binary (PERF3): what was read of the files the question would start is its answer while
-/// they stand as they stood, so a look, a list and a restart start no process. Each start of a harness went through the machine's
-/// file scanners, its own children with it, and cost hundreds of milliseconds.
+/// A door's version question, asked once per binary: what the files the question would start gave is its answer while
+/// they stand unchanged, so a look, a list and a restart start no process. Each start of a harness goes through the machine's
+/// file scanners, its own children with it, and costs hundreds of milliseconds.
 /// </summary>
 internal static class BinaryVersion
 {
     /// <summary>
     /// The answer to <paramref name="info"/>, <paramref name="door"/>'s version question as the probe would start it, said of it as
     /// <paramref name="named"/>: the kept reading of the same files, unless <paramref name="again"/>; else asked, and kept where files
-    /// answered or nothing was there to start. A file there that did not answer, or an answer of no file found, is asked again next time.
+    /// answered or there is nothing to start. A file there that did not answer, or an answer of no file found, is asked again next time.
     /// </summary>
     public static async Task<(bool Ran, string Output, string? Problem)> AskAsync(
         string home, string door, ProcessStartInfo info, string named, bool again, Func<DateTimeOffset> now, CancellationToken ct)
@@ -36,7 +36,7 @@ internal static class BinaryVersion
 
     /// <summary>
     /// The files a start runs: its program, found on the start's own <c>PATH</c>, and its first argument where that is a file, the
-    /// script a runtime is handed (npm's package started as node and its script, LAUNCHCHAIN1). A later argument is the program's own.
+    /// script a runtime is handed (npm's package started as node and its script). A later argument is the program's own.
     /// </summary>
     internal static IReadOnlyList<BinaryFile> FilesOf(ProcessStartInfo info)
     {

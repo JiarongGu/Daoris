@@ -152,7 +152,7 @@ public static class LinePolicyKey
     private static void WriteValue(Utf8JsonWriter writer, LandingIntegrate integrate)
     {
         writer.WriteStartObject();
-        // Each written only when set, in the design's order: absent reads the Absent column (LandingIntegrate.Resolved).
+        // Each written only when set, in this order: absent reads as LandingIntegrate.Resolved resolves it.
         if (integrate.Request is not null) writer.WriteString("request", integrate.Request);
         if (integrate.Commit is not null) writer.WriteString("commit", integrate.Commit);
         if (integrate.Batch is { } batch) writer.WriteNumber("batch", batch);

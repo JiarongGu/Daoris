@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// How a program npm installed starts (LAUNCHCHAIN1): as node, with the package's own script first and the program's arguments
+/// How a program npm installed starts: as node, with the package's own script first and the program's arguments
 /// after, for a session's server and for an agent alike. Never through npm's <c>.cmd</c> shim, which Windows runs in a <c>cmd</c>
 /// with a console of its own before it reaches the same node, and whose <c>cmd</c> reads every argument again.
 /// </summary>
@@ -51,7 +51,7 @@ public static class PackageStarts
 
     /// <summary>
     /// An agent's start whose file is npm's <c>.cmd</c> shim for <paramref name="package"/>, made the node and script that shim runs,
-    /// the arguments after the script as they were. True where it was; a start that is no such shim, or whose package is not beside it,
+    /// the arguments after the script unchanged. True where it is; a start that is no such shim, or whose package is not beside it,
     /// is left as it is.
     /// </summary>
     /// <remarks>

@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// BRW13: Edge's cookies as the protocol carries them. Read from <c>Storage.getCookies</c> while it
+/// Edge's cookies as the protocol carries them. Read from <c>Storage.getCookies</c> while it
 /// runs, and given back to <c>Storage.setCookies</c> when Daoris starts it again — the carry the Edge
-/// evidence measured bringing a session back (§4).
+/// evidence measured bringing a session back.
 /// </summary>
 public sealed class CdpCookiesTests : Bridge
 {

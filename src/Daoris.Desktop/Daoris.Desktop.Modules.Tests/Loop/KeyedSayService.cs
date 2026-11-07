@@ -22,7 +22,7 @@ internal sealed class KeyedSayService : HttpMessageHandler
     private readonly Dictionary<string, string> _settled = [];
 
     /// <summary>
-    /// A producer's key whose word left <paramref name="record"/> (FOUNDATION1 row p, the design §3.4 rule 5): a say that sends <c>settled</c>
+    /// A producer's key whose word left <paramref name="record"/>: a say that sends <c>settled</c>
     /// under it, to any record where no word waits under it, is answered settled, naming <paramref name="record"/>, before any refusal and
     /// with nothing kept, as the say door answers.
     /// </summary>
@@ -35,7 +35,7 @@ internal sealed class KeyedSayService : HttpMessageHandler
     private readonly Dictionary<string, string> _heads = [];
 
     /// <summary>
-    /// The head of <paramref name="record"/>'s line where it is no longer the record itself (FOUNDATION1d-ii, the design §3.4 rule 2): a say to it is
+    /// The head of <paramref name="record"/>'s line where it is no longer the record itself: a say to it is
     /// refused <c>continued</c>, naming <paramref name="head"/>, after the settled answer and before any other refusal, <c>running</c> among them, as a
     /// host with the <c>head</c> mark answers, and nothing is kept. A <paramref name="head"/> of null makes the record its line's head again.
     /// </summary>
@@ -53,7 +53,7 @@ internal sealed class KeyedSayService : HttpMessageHandler
     /// <summary>Whether <c>GET /api/protocol</c> answers the <c>head</c> mark, as a host from row d-ii does; false answers none, as a host before.</summary>
     public bool HeadMark { get; init; }
 
-    /// <summary>Whether <c>GET /api/protocol</c> answers the <c>presses</c> mark (COMMS1e), as a host that checks a person's press does.</summary>
+    /// <summary>Whether <c>GET /api/protocol</c> answers the <c>presses</c> mark, as a host that checks a person's press does.</summary>
     public bool PressMark { get; init; }
 
     /// <summary>Every say to a record, in order, and whether it was refused as <c>running</c>.</summary>

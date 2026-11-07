@@ -7,8 +7,7 @@ using Shenora.Core.Shell;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// ONEINSTANCE2 (D171 point 2): a later launch of the installed Daoris opened no window and wrote nothing, and ONEINSTANCE1's
-/// only proof had been that its wiring's words were in the application's source. Here the options the application hands the
+/// A later launch of the installed Daoris opens no window and writes nothing. Here the options the application hands the
 /// kit (<see cref="LaterLaunch.Options"/>) are run as the kit's WinForms shell runs them: the kit's own single-instance guard
 /// holds the scope on a thread of its own, a later launch hands itself over the guard's channel, and the running side's
 /// callback reaches <see cref="SecondLaunch"/> in a composed container, with only the window stubbed. What a test cannot run is

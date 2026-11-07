@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the home holds, by kind, in bytes (HIST1c, the history-clearing design §2.4): a conversation, a transcript, a
+/// What the home holds, by kind, in bytes: a conversation, a transcript, a
 /// session's files, the kept files of a quest or an ask, and the small files beside them (a conversation id, a marker,
 /// a mark, a choice, the spawn files). Measuring a path is <see cref="Of"/>.
 /// </summary>

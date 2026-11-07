@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// What a failed tick tells the page (UX5 U30). With the machine's service stopped, the shell toasted
-/// the .NET socket's own words on every poll, <i>No connection could be made because the target
+/// What a failed tick tells the page. With the machine's service stopped, the shell does not toast
+/// the .NET socket's own words on a poll, <i>No connection could be made because the target
 /// machine actively refused it. (127.0.0.1:5188)</i>, beside the page's own sentence for the same
 /// fact.
 /// </summary>

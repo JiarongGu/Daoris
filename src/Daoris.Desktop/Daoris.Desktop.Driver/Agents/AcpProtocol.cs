@@ -14,15 +14,15 @@ internal static class AcpProtocol
     internal const int ResourceNotFound = -32002;
 
     /// <summary>
-    /// <c>codex-acp</c>'s <c>data.reason</c> for a thread another Codex client holds (MSG1b, D137 §1.1), read from
+    /// <c>codex-acp</c>'s <c>data.reason</c> for a thread another Codex client holds, read from
     /// <c>@agentclientprotocol/codex-acp</c> 2.1.1's <c>dist/index.js</c>.
     /// </summary>
     internal const string ActiveWriter = "thread_active_writer";
 
     /// <summary>
-    /// How long an adapter is asked to wait, before it answers the open, for the servers it was handed to start (CODEXTOOLS1).
+    /// How long an adapter is asked to wait, before it answers the open, for the servers it is handed to start.
     /// Codex's adapter answers <c>session/new</c> as soon as its own session exists, and the first catalog could omit a connector
-    /// still starting, which only the next turn then had. Read from codex-acp 2.1.1 (<c>request._meta.mcpStartupAwaitTimeoutMs</c>):
+    /// still starting, which only the next turn then has. Read from codex-acp 2.1.1 (<c>request._meta.mcpStartupAwaitTimeoutMs</c>):
     /// it waits for the servers raced against this bound and ANSWERS when the time runs out, never failing. The connector host
     /// answers <c>initialize</c> in a few seconds cold; fifteen leaves room for a slow first start and stays far under the open's
     /// own ceiling, so a connector that never starts costs a session this long and no more. An agent without the key ignores it.
@@ -30,7 +30,7 @@ internal static class AcpProtocol
     internal static readonly TimeSpan McpStartupAwait = TimeSpan.FromSeconds(15);
 
     /// <summary>
-    /// Whether the agent is Claude Code's adapter (CODEXWAKE1), which stamps the origin of a turn it did not prompt on that turn's end
+    /// Whether the agent is Claude Code's adapter, which stamps the origin of a turn it did not prompt on that turn's end
     /// (<see cref="AcpWake"/>): <c>agentCapabilities._meta.claudeCode</c> is an object. Another adapter, <c>codex-acp</c> among them,
     /// says no end for a turn its harness starts.
     /// </summary>
@@ -41,15 +41,15 @@ internal static class AcpProtocol
         && meta.TryGetProperty("claudeCode", out var claudeCode) && claudeCode.ValueKind == JsonValueKind.Object;
 
     /// <summary>
-    /// Whether the agent says it takes a prompt while one runs (STEER1, D136): <c>agentCapabilities._meta.claudeCode
+    /// Whether the agent says it takes a prompt while one runs: <c>agentCapabilities._meta.claudeCode
     /// .promptQueueing</c> as <c>true</c>, which <c>claude-agent-acp</c> declares, and whose words Claude Code folds into
-    /// the running turn at its next step (docs/2026-10-03-steer-evidence.md §1).
+    /// the running turn at its next step.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>Its own word, and nothing else.</b> An agent that does not say so is never sent a second prompt during a turn:
-    /// <c>codex-acp</c> resets its running turn on one (evidence §5), and a door's silence is never a licence to guess (the
-    /// posture's rule, ACP3). The steering extension (<c>_session/steering</c>) is not read as this: it interrupts the step
-    /// in flight (evidence §2).
+    /// <c>codex-acp</c> resets its running turn on one, and a door's silence is never a licence to guess (the
+    /// posture's rule). The steering extension (<c>_session/steering</c>) is not read as this: it interrupts the step
+    /// in flight.
     /// </remarks>
     internal static bool TakesWordsMidTurn(JsonElement initialized) =>
         initialized.ValueKind == JsonValueKind.Object
@@ -59,13 +59,13 @@ internal static class AcpProtocol
         && claudeCode.TryGetProperty("promptQueueing", out var queueing) && queueing.ValueKind == JsonValueKind.True;
 
     /// <summary>
-    /// Whether the person's *Send now* steers into the running turn (STEER2a, D136's 2026-10-16 note): an agent that takes a
+    /// Whether the person's *Send now* steers into the running turn: an agent that takes a
     /// prompt during its turn (<see cref="TakesWordsMidTurn"/>) and offers the steering extension, the top-level
     /// <c>_meta.steering.supported</c> as <c>true</c> (<c>claude-agent-acp</c> 0.84.0, <c>acp-agent.js:1291-1307</c>).
     /// </summary>
     /// <remarks>
     /// Each by its own <c>true</c>. <c>codex-acp</c> offers the extension and not the first, and its <c>turn/steer</c> waits for
-    /// STEER3's measured turn: until then it is a turn-end door, where *Send now* stops the turn keeping the words.
+    /// a measured turn: until then it is a turn-end door, where *Send now* stops the turn keeping the words.
     /// </remarks>
     internal static bool SteersNow(JsonElement initialized) =>
         TakesWordsMidTurn(initialized)
@@ -97,8 +97,8 @@ internal static class AcpProtocol
     }
 
     /// <summary>
-    /// The <c>_meta</c> an open or a resume carries: the adapter's rules (PERM1) as composed, and, where servers are
-    /// handed, the wait for their start (CODEXTOOLS1). Null when neither, and then no <c>_meta</c> goes at all.
+    /// The <c>_meta</c> an open or a resume carries: the adapter's rules as composed, and, where servers are
+    /// handed, the wait for their start. Null when neither, and then no <c>_meta</c> goes at all.
     /// </summary>
     internal static JsonNode? OpenMeta(object? rules, object[] offered)
     {
@@ -108,11 +108,11 @@ internal static class AcpProtocol
         return merged;
     }
 
-    /// <summary>The servers a session is handed (ACP4), in the wire's own shape: on a new session and on a resumed one alike.</summary>
+    /// <summary>The servers a session is handed, in the wire's own shape: on a new session and on a resumed one alike.</summary>
     internal static object[] Offer(ConnectorPlan? plan)
     {
         var servers = plan?.Servers;
-        // 🔴 The session's VOICE (ACP4). The composed target tells every session to claim and
+        // 🔴 The session's VOICE. The composed target tells every session to claim and
         // close its quest over its own connector, and the pipe door only manages that because the
         // repository's own `.mcp.json` wires it — which an adopted repository may not have, and
         // which the driver may never reach in and write. The protocol carries the wiring instead,
@@ -142,23 +142,23 @@ internal static class AcpProtocol
     /// <remarks>
     /// <para>Declared honestly: this client offers the agent no filesystem and no terminal of its own.
     /// The session works in `cwd` with the harness's own tools, under the repository's own checked-in
-    /// configuration — the adapter obligation D46 §5 states.</para>
+    /// configuration — the adapter's obligation.</para>
     ///
-    /// <para><b>A session whose streams are kept asks for them</b> (CONSOLE2), by the spelling that
+    /// <para><b>A session whose streams are kept asks for them</b>, by the spelling that
     /// arrives: AIR's <c>nativeSubagentSessions</c> and <c>asyncTasks</c>. 🔴 The protocol's own
     /// <c>subagents</c> alone switches nothing on at ACP SDK 1.4.0, whose schema drops the key before
     /// the adapter reads it. It is sent too, for when the schema carries it. <c>terminal_output</c> is
     /// never asked for: it streams nothing, and it moves a command's output out of the field the record
-    /// reads (docs/2026-09-28-console2-streams-evidence.md).</para>
+    /// reads.</para>
     ///
-    /// <para><b>Every session asks for its background tasks</b> (BGWAIT3): their frames are what a turn that ends on its own
-    /// background work waits by (BGWAIT1), and the headless loop's sessions, which keep no streams, carried none, so their turns
-    /// parked on work still running. Where no stream takes the frames, the record and the console keep none of them
+    /// <para><b>Every session asks for its background tasks</b>: their frames are what a turn that ends on its own
+    /// background work waits by, and the headless loop's sessions, which keep no streams, would carry none, so their turns
+    /// would park on work still running. Where no stream takes the frames, the record and the console keep none of them
     /// (<see cref="AcpRender.Map"/>, <see cref="AcpRender.Render"/>). A subagent's own session is asked for only where streams route it.</para>
     /// </remarks>
     internal static object Capabilities(bool streams, bool typedFailures = false)
     {
-        // CODEXSTATUS1: asked for only by a door declared to mark a terminal failure for such a client alone (the design §4.3, §10).
+        // Asked for only by a door declared to mark a terminal failure for such a client alone.
         var asked = new List<string>();
         if (streams) asked.Add("nativeSubagentSessions");
         asked.Add("asyncTasks");
@@ -169,7 +169,7 @@ internal static class AcpProtocol
     }
 
     /// <summary>
-    /// The terminal failure a typed client's prompt was answered with (CODEXSTATUS1, the design §4.3): <c>end_turn</c> with
+    /// The terminal failure a typed client's prompt is answered with: <c>end_turn</c> with
     /// <c>_meta.jetbrains.air.sessionFailure</c> at <c>error</c> severity, written as the error frame a refused prompt is, its
     /// <c>category</c> the error's kind and its <c>title</c> the provider's words, as written. Null for any other answer: a warning
     /// is an attempt that failed and another follows, and the agent's own message is never read.

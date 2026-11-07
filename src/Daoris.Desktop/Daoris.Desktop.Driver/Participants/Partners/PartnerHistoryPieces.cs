@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The home's pieces as a clear of finished work reads them (D199 point 3): each reservation on the partners' files, settled once it is
+/// The home's pieces as a clear of finished work reads them: each reservation on the partners' files, settled once it is
 /// taken in, discarded or refused, when nothing of it waits on anyone.
 /// </summary>
 internal sealed class PartnerHistoryPieces : IHistoryPieceReading

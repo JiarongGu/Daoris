@@ -10,15 +10,15 @@ public sealed record CapturedFile(string Path, string Hash, long Size);
 public sealed record CaptureLeftOut(string Path, string Why);
 
 /// <summary>
-/// The asker's work in progress as Daoris read it for a helper (COAGENT1a, D199 point 5; the co-agent design §2.5): the manifest,
+/// The asker's work in progress as Daoris read it for a helper: the manifest,
 /// <c>&lt;askId&gt;.capture.json</c>, the driver's alone. The bytes travel beside it in memory, to the helper's copy, and nowhere else.
 /// </summary>
 /// <param name="Id">The capture's name: the first twelve hex of a SHA-256 over the commit, each file and its hash, and each deletion.</param>
 /// <param name="Commit">The commit the asker's tree stood at, which the helper's copy is checked out at.</param>
-/// <param name="At">When the capture was read.</param>
+/// <param name="At">When the capture is read.</param>
 /// <param name="Files">Every changed tracked file and every untracked one not ignored, by path.</param>
 /// <param name="Deleted">Every tracked path the tree no longer holds.</param>
-/// <param name="LeftOut">What was seen and not carried, with why.</param>
+/// <param name="LeftOut">What is seen and not carried, with why.</param>
 public sealed record HelperCaptured(
     string Id, string Commit, DateTimeOffset At, IReadOnlyList<CapturedFile> Files, IReadOnlyList<string> Deleted, IReadOnlyList<CaptureLeftOut> LeftOut)
 {
@@ -30,7 +30,7 @@ public sealed record HelperCaptured(
 }
 
 /// <summary>
-/// What a capture came to: the captured work, or the code it was refused with (<see cref="HelperWhy"/>'s <c>capture-*</c>, or
+/// What a capture came to: the captured work, or the code it is refused with (<see cref="HelperWhy"/>'s <c>capture-*</c>, or
 /// <see cref="HelperWhy.Unreadable"/> where git could not read the tree) and the path or the fact that refused it.
 /// </summary>
 public sealed record HelperCaptureRead(HelperCaptured? Captured, string? Code = null, string? Detail = null)
@@ -46,7 +46,7 @@ public sealed record HelperCaptureRead(HelperCaptured? Captured, string? Code = 
 public sealed record StatusEntry(char Kind, string Path, bool Submodule, string? From = null);
 
 /// <summary>
-/// The capture's rules and its pure reads (COAGENT1a; the co-agent design §2.5): git's listing parsed, the bounds, the capture's
+/// The capture's rules and its pure reads: git's listing parsed, the bounds, the capture's
 /// name, and the words a helper and its asker read of it. The reading of the tree is <c>HelperCapture</c>'s, which runs git.
 /// </summary>
 /// <remarks>
@@ -55,7 +55,7 @@ public sealed record StatusEntry(char Kind, string Path, bool Submodule, string?
 /// helper that read half the work would answer about work that does not exist. Ignored files are never carried, since git's
 /// listing leaves them out.</para>
 ///
-/// <para><b>The bounds are first values</b> (the design's §11: the capture's cost on this machine is not measured): a helper reads,
+/// <para><b>The bounds are first values</b> (the capture's cost on this machine is not measured): a helper reads,
 /// so a work in progress past them is one no helper should be handed whole.</para>
 /// </remarks>
 public static class HelperCaptures
@@ -69,7 +69,7 @@ public static class HelperCaptures
     /// <summary>The most paths a capture may carry or delete.</summary>
     public const int PathBound = 5000;
 
-    /// <summary>Why a path was left out: a link that stays inside the tree, which a copy is not handed as a link.</summary>
+    /// <summary>Why a path is left out: a link that stays inside the tree, which a copy is not handed as a link.</summary>
     public const string LeftLink = "link";
 
     /// <summary>
@@ -131,7 +131,7 @@ public static class HelperCaptures
     /// <summary>The SHA-256 of <paramref name="bytes"/>, lower-case hex.</summary>
     public static string HashOf(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
 
-    /// <summary>What the capture holds, in a clause: <c>3 changed or new files and 1 deletion</c>, or that nothing was uncommitted.</summary>
+    /// <summary>What the capture holds, in a clause: <c>3 changed or new files and 1 deletion</c>, or that nothing is uncommitted.</summary>
     public static string Counted(HelperCaptured capture) =>
         capture.Clean
             ? "nothing uncommitted"
@@ -142,7 +142,7 @@ public static class HelperCaptures
             }.Where(part => part is not null));
 
     /// <summary>
-    /// The line an answer's delivery carries (the design §2.5 point 5): which capture the helper read, of which commit, when, and
+    /// The line an answer's delivery carries: which capture the helper read, of which commit, when, and
     /// that the work may have moved since.
     /// </summary>
     public static string Named(HelperCaptured capture) =>

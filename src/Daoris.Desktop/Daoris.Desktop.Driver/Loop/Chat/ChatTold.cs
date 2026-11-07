@@ -22,7 +22,7 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
     /// <summary>What a new conversation's standing block is composed from, taken by its first message like its process.</summary>
     public void HoldBlock(string sessionId, StandingFacts block) => _block[sessionId] = block;
 
-    /// <summary>A start that failed, or was cancelled, has no first message to tell it with.</summary>
+    /// <summary>A start that fails, or is cancelled, has no first message to tell it with.</summary>
     public void Forget(string sessionId)
     {
         _process.TryRemove(sessionId, out _);

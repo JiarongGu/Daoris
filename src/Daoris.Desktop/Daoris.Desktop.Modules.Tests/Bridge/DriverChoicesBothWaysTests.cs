@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Each standing choice both ways (PUSH1f2a, D194 points 4 and 6, the alone-path design §3): <c>daoris</c> acting alone,
+/// Each standing choice both ways: <c>daoris</c> acting alone,
 /// through the library's operation, and the same words' press sent to the window's route, its answer said by the same words function,
 /// over one home from the same choices. The bytes written, the text, the refusal's line and the exit are equal: red where a route and
 /// its operation disagree, or where the payload the command writes does not read back through the route as the command judged it.
@@ -122,7 +122,7 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
         await BothWaysAsync(Module(), words);
 
     /// <summary>
-    /// *Try again* both ways (RETRY1b, SESSUX1b): from the same verdicts the operation marks a parked quest at its failures, releases a
+    /// *Try again* both ways: from the same verdicts the operation marks a parked quest at its failures, releases a
     /// stop, and refuses a quest neither parked nor held in the catalogue's code, alone as through <c>RETRY_QUEST</c>.
     /// </summary>
     [Theory]
@@ -146,7 +146,7 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A review's environment put both ways (REVIEWENV1a): its procedure looked for in the registry's checkouts by the same operation,
+    /// A review's environment put both ways: its procedure looked for in the registry's checkouts by the same operation,
     /// a repository's checkout that holds it written and said, a workspace's lacking one named, and one that lacks it refused.
     /// </summary>
     [Theory]
@@ -170,7 +170,7 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// KEEP1d (the cleanup design §9's proof): every keep choice this row adds, both ways, from choices that set none and from choices
+    /// Every keep choice this row adds, both ways, from choices that set none and from choices
     /// that set each kind, so a rule set, replaced and taken back to its default writes the same bytes and says the same words alone as
     /// through <c>SET_KEEP</c>.
     /// </summary>
@@ -187,13 +187,13 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     [InlineData(false, "keep logs 7")]
     [InlineData(true, "keep logs 30")]
     [InlineData(true, "keep logs default")]
-    // KEEP1g: history's age, and `never`, its default again.
+    // History's age, and `never`, its default again.
     [InlineData(false, "keep history 30")]
     [InlineData(false, "keep history never")]
     [InlineData(true, "keep history 3650")]
     [InlineData(true, "keep history never")]
     [InlineData(true, "keep history default")]
-    // KEEP1f: the free-space floor, a size, a share or off, and its default again.
+    // The free-space floor, a size, a share or off, and its default again.
     [InlineData(false, "keep floor 1GB")]
     [InlineData(false, "keep floor 12%")]
     [InlineData(false, "keep floor off")]
@@ -218,7 +218,7 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// KEEP1d: a value out of its kind's bounds sent to the route is refused in the catalogue's code, naming the kind and its bounds, and
+    /// A value out of its kind's bounds sent to the route is refused in the catalogue's code, naming the kind and its bounds, and
     /// nothing is written; the terminal refuses it before it asks the window (<c>fixtures/driver-choices-text.json</c>).
     /// </summary>
     [Fact]
@@ -236,7 +236,7 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
         var young = await RefusalAsync(module, "SET_KEEP", new { kind = "history", days = 7 });
         Assert.StartsWith(Refusals.KeepOutOfRange + " ", young, StringComparison.Ordinal);
         Assert.Contains("min=30", young, StringComparison.Ordinal);
-        // KEEP1f: a floor's share past half the volume, refused with its unit as the page's context.
+        // A floor's share past half the volume, refused with its unit as the page's context.
         var share = await RefusalAsync(module, "SET_KEEP", new { kind = "floor", percent = 51 });
         Assert.StartsWith(Refusals.KeepOutOfRange + " ", share, StringComparison.Ordinal);
         Assert.Contains("context=percent", share, StringComparison.Ordinal);

@@ -5,10 +5,10 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What the step editor reads (WORKFLOWEDIT1a): the saved workflows with the places that choose them and the presets built in
+/// What the step editor reads: the saved workflows with the places that choose them and the presets built in
 /// (<c>WORKFLOW_LIST</c>), one version as saved with its line and problems (<c>WORKFLOW_SHOW</c>), and what a step graph may hold
 /// (<c>WORKFLOW_PALETTE</c>). All three read this machine's home and publish nothing. The list carries each default's id and English name,
-/// its purpose, order, whether the set-up offers it and its delivery with its own id (SETUPUX1a): the page words them from its catalogues by those ids.
+/// its purpose, order, whether the set-up offers it and its delivery with its own id: the page words them from its catalogues by those ids.
 /// </summary>
 public sealed class WorkflowEditRoutes(DriverContext context)
 {
@@ -47,7 +47,7 @@ public sealed class WorkflowEditRoutes(DriverContext context)
                     }
                     : null,
             }).ToArray(),
-            // What WORKFLOW_USE can be asked beside a plain press (SETUPUX1c); a driver before it leaves this out.
+            // What WORKFLOW_USE can be asked beside a plain press; a driver before it leaves this out.
             Use = new[] { "plan" },
         });
     }

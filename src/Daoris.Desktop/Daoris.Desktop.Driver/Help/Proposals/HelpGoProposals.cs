@@ -5,9 +5,9 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>go</c> proposal (HELP6): a place the window has — its target the view, and its own
-/// <c>domain</c>, <c>part</c> and, since ENTRY1f1, <c>item</c> — judged by <see cref="HelpPlaces"/> and, for an item,
-/// against the machine's quests and asks or, since ENTRY1f2, its own sessions. Since ENTRY1d2a a go to Repositories' Add
+/// Ask Daoris's <c>go</c> proposal: a place the window has — its target the view, and its own
+/// <c>domain</c>, <c>part</c> and, <c>item</c> — judged by <see cref="HelpPlaces"/> and, for an item,
+/// against the machine's quests and asks or its own sessions. A go to Repositories' Add
 /// repository or Import a folder may carry the common <c>workspace</c> the drawer opens with. It changes nothing: its Apply
 /// hands the page the place, which navigates as the starters' doors do.
 /// </summary>
@@ -27,7 +27,7 @@ internal sealed class HelpGoProposals : IHelpProposalKind
     };
 
     /// <summary>
-    /// ASKSCOPE1c: the file's workspace and repository. ASKSCOPE1c2: and the record an item on Quests or Sessions names by id, filed
+    /// The file's workspace and repository, and the record an item on Quests or Sessions names by id, filed
     /// under the workspace its record says, as the records its judge reads hold it; a plugin is the machine's, never a workspace's.
     /// </summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
@@ -51,7 +51,7 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         var part = proposal.Part?.Trim().ToLowerInvariant() is { Length: > 0 } p ? p : null;
         HelpPlan Refused(string why) => new(why, "", "", null);
 
-        // UX6i2a: a go spelled as its place was before it moved is judged, said and handed on as the place it is now.
+        // A go spelled with a retired place name is judged, said and handed on as the place that replaced it.
         var asked = new HelpPlace(view, domain, part);
         if (HelpPlaces.Kept.FirstOrDefault(each => each.Was == asked) is { Now: { } now })
         {
@@ -98,8 +98,8 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         var workspace = proposal.Workspace?.Trim() is { Length: > 0 } w ? w : null;
         if (workspace is not null)
         {
-            // ENTRY1d2a (D161's ENTRY1d note): adding or importing a repository needs a folder, which stays the person's pick
-            // (D48 §3/§7), so a go opens the drawer with what Ask Daoris knows filled, the workspace, and never a path.
+            // Adding or importing a repository needs a folder, which stays the person's pick
+            // so a go opens the drawer with what Ask Daoris knows filled, the workspace, and never a path.
             if (item is not null) return Refused(
                 "a go names a workspace or an item, not both — a workspace fills Repositories' Add or Import, and an item opens on its own.");
             if (view != "projects" || part is not ("add" or "import")) return Refused(
@@ -120,8 +120,8 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         var sentence = proposal.Sentence?.Trim() is { Length: > 0 } s ? s : null;
         if (repository is not null || sentence is not null)
         {
-            // NEW1d-a (D162's note): the composer of Sessions' New conversation opens with the repository and the words Ask Daoris
-            // knows; the person still reads and sends them (D162 §1), so a go starts nothing.
+            // The composer of Sessions' New conversation opens with the repository and the words Ask Daoris
+            // knows; the person still reads and sends them, so a go starts nothing.
             if (item is not null) return Refused(
                 "a go names a repository or words, or an item, not both — New conversation takes the first, and an item opens on its own.");
             if (view != "sessions" || part != "new") return Refused(
@@ -142,8 +142,8 @@ internal sealed class HelpGoProposals : IHelpProposalKind
 
         if (item is not null)
         {
-            // ENTRY1f1 (D161's ENTRY1f note): the one that waits is a record of the view's list, judged as the delete kind
-            // judges an id, so a card never hands the page a place that is not there. ENTRY1f2: a session against the
+            // The one that waits is a record of the view's list, judged as the delete kind
+            // judges an id, so a card never hands the page a place that is not there. A session is judged against the
             // machine's own records, since only the desktop knows its sessions.
             if (!HelpPlaces.ItemViews.Contains(view)) return Refused(
                 $"a go names an item only on {Names(HelpPlaces.ItemViews)} — on Sessions a session by its id; on Quests a quest by its "
@@ -164,13 +164,13 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         return new HelpPlan(null, describe + ".", "", null) { Go = new HelpPlace(view, domain, part) { Item = item, Workspace = workspace, Repository = repository, Sentence = sentence } };
     }
 
-    // ENTRY1d2a: a separator, a rooted path, or a drive (`D:`, rooted on Windows alone) is a folder, never a workspace's name;
+    // A separator, a rooted path, or a drive (`D:`, rooted on Windows alone) is a folder, never a workspace's name;
     // the service's box refuses the same, duplicated as a twin's rule is.
     private static bool Folder(string name) =>
         name.IndexOfAny(['/', '\\']) >= 0 || Path.IsPathRooted(name) || (name.Length >= 2 && name[1] == ':' && char.IsAsciiLetter(name[0]));
 
     /// <summary>
-    /// ENTRY1f1: an item on Quests as the machine's records hold it — a quest by its id, an ask as <c>ask:&lt;id&gt;</c>, a
+    /// An item on Quests as the machine's records hold it — a quest by its id, an ask as <c>ask:&lt;id&gt;</c>, a
     /// <c>#</c> before the id stripped and the id matched without case, as the delete kind's — with the words the card says.
     /// The records are every quest and ask, closed ones included, so a closed one is found and said closed.
     /// </summary>
@@ -184,7 +184,7 @@ internal sealed class HelpGoProposals : IHelpProposalKind
             return (null, $"`{item}` is no item of `quests` — a quest by its id, or an ask as `{HelpPlaces.AskItem}<id>`.");
         }
 
-        // ASKDISMISS1: a quest a session has taken is said taken too, and an ask by each quest it became that is, so a card about
+        // A quest a session has taken is said taken too, and an ask by each quest it became that is, so a card about
         // one already taken says so.
         static string Closed(string status) =>
             status.ToLowerInvariant() is var word && word is "done" or "declined" or "closed" or "taken" ? $", {word}" : "";
@@ -215,7 +215,7 @@ internal sealed class HelpGoProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// ENTRY1f2: an item on Sessions as the machine's own records hold it — a session by its bare id, a <c>#</c> before it
+    /// An item on Sessions as the machine's own records hold it — a session by its bare id, a <c>#</c> before it
     /// stripped and the id matched without case — with the words the card says. Any record the Sessions list places may be
     /// named, the one waiting on the person or another, so a go never lands on a list with nothing chosen; Ask Daoris's own
     /// conversation opens in Ask Daoris, and a teammate's runs where nothing here reaches it, so both are refused.
@@ -232,8 +232,8 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         if (WordsNever.IsHelp(record)) return (null, $"`{record.Id}` is Ask Daoris's own conversation; it opens here, not in Sessions.");
         if (record.Teammate) return (null, $"`{record.Id}` is a teammate's session: it runs on their machine, and nothing here reaches it.");
 
-        // Where it ran, an intake by its ask (D65 §1b); and whether it waits on the person by the list's own rule, or ended, a failure
-        // an account's limit made said limited (LIMITRESUME1d2, D206 §3.1).
+        // Where it ran, an intake by its ask; and whether it waits on the person by the list's own rule, or ended, a failure
+        // an account's limit made said limited.
         var where = record.Ask is { } ask ? $" answering ask `#{ask}`" : $" in `{record.Repository}`";
         var stands = SessionGroups.WaitsOnYou(record.Id, record.State, record.Answered) ? ", waiting on you"
             : record.Live ? ""
@@ -242,9 +242,9 @@ internal sealed class HelpGoProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// PLUGUI1h: an item on Plugins as the machine holds it — an installed plugin by its id, or one of the install's offers as
+    /// An item on Plugins as the machine holds it — an installed plugin by its id, or one of the install's offers as
     /// <c>offer:&lt;id&gt;</c>, a <c>#</c> before the id stripped and the id matched without case — with the words the card says.
-    /// An unknown id is refused naming those the machine holds. Health waits on PLUGUI1f, so the card says only on or off.
+    /// An unknown id is refused naming those the machine holds. The card says only on or off.
     /// </summary>
     private static ((string Item, string Said)? Named, string? Refusal) Plugin(string item, HelpMachineFacts facts)
     {
@@ -284,39 +284,39 @@ internal sealed class HelpGoProposals : IHelpProposalKind
             with { Go = applying.Plan.Go });
 }
 
-/// <summary>A place on the window a go takes the person to (HELP6): a view, a Settings domain, a part of it.</summary>
+/// <summary>A place on the window a go takes the person to: a view, a Settings domain, a part of it.</summary>
 public sealed record HelpPlace(string View, string? Domain, string? Part)
 {
     /// <summary>
-    /// The one record of the view's list a go opens (ENTRY1f1), as the page's list names it: a quest's id, or an ask's as
-    /// <c>ask:&lt;id&gt;</c>, or since ENTRY1f2 a session's id, spelled as the machine's record is; null for a go to the place alone.
+    /// The one record of the view's list a go opens, as the page's list names it: a quest's id, or an ask's as
+    /// <c>ask:&lt;id&gt;</c>, or a session's id, spelled as the machine's record is; null for a go to the place alone.
     /// </summary>
     public string? Item { get; init; }
 
     /// <summary>
-    /// The workspace Repositories' Add repository or Import a folder opens with (ENTRY1d2a, D161's ENTRY1d note): one the
+    /// The workspace Repositories' Add repository or Import a folder opens with: one the
     /// registry holds, in its spelling, or a new name as the route stores one; null for any other go, and for those with none.
     /// </summary>
     public string? Workspace { get; init; }
 
     /// <summary>
-    /// The registered repository Sessions' New conversation opens with (NEW1d-a, D162's note), in the registry's spelling and
+    /// The registered repository Sessions' New conversation opens with, in the registry's spelling and
     /// one with a checkout here; null for any other go, and for one that names none.
     /// </summary>
     public string? Repository { get; init; }
 
-    /// <summary>The words New conversation's composer opens with (NEW1d-a), as written, trimmed; null for any other go, and none.</summary>
+    /// <summary>The words New conversation's composer opens with, as written, trimmed; null for any other go, and none.</summary>
     public string? Sentence { get; init; }
 
     /// <summary>
-    /// The quick set-up the Agents place's Setup page opens with (AGENTSPLACE1k): its ask, which the page plans again when it opens; null
+    /// The quick set-up the Agents place's Setup page opens with: its ask, which the page plans again when it opens; null
     /// for any other go. With it, <see cref="Workspace"/> and <see cref="Repository"/> name the place.
     /// </summary>
     public PlaceAsk? Setup { get; init; }
 }
 
 /// <summary>
-/// The places on the window a go may name (HELP6): the views, Settings' domains, and the parts of them a
+/// The places on the window a go may name: the views, Settings' domains, and the parts of them a
 /// door already opens — the groups of Sessions' and Quests' lists that wait on the person, the setup guide's steps, a
 /// domain's cards, Repositories' drawers, a repository's Setup, Branches and History and a workspace's page's tabs and sections, Knowledge's two
 /// modes, an agent's page's sections — and the places a go named before they moved.
@@ -328,16 +328,13 @@ public sealed record HelpPlace(string View, string? Domain, string? Part)
 /// </remarks>
 public static class HelpPlaces
 {
-    // UX6i2a (D150 §2): the bar's eight places and Settings, in the bar's order: Knowledge where Convergence and Search were
-    // (UX6i), Plugins after Agents (PLUGUI1b).
+    // The bar's eight places and Settings, in the bar's order.
     public static readonly IReadOnlyList<(string Id, string Name)> Views =
     [
         ("overview", "Overview"), ("sessions", "Sessions"), ("quests", "Quests"), ("projects", "Repositories"),
         ("map", "Map"), ("knowledge", "Knowledge"), ("agents", "Agents"), ("plugins", "Plugins"), ("settings", "Settings"),
     ];
 
-    // UX6i2a: the guide is Get started since UX6j, and Plugins left Settings for its place. UX6g2b: Workspace and
-    // Permissions left it for a workspace's page with UX6g, and are kept below.
     public static readonly IReadOnlyList<(string Id, string Name)> Domains =
     [
         ("start", "Get started"), ("appearance", "Appearance"), ("ai", "AI features"), ("wiring", "This Daoris"),
@@ -347,38 +344,38 @@ public static class HelpPlaces
     /// <summary>The parts, each within a view (Sessions, Quests, Repositories, Knowledge, Agents) or a Settings domain.</summary>
     public static readonly IReadOnlyList<(string Within, string Id, string Name)> Parts =
     [
-        // ENTRY1b (D161's ENTRY1 note): what waits on the person below Sessions and Quests, a group of the view's list the
+        // What waits on the person below Sessions and Quests, a group of the view's list the
         // page brings into view, named by its heading: Sessions' parked and to-review groups (the reader's `you` and
         // `review`), Quests' asks and the quests held for the person's yes or review. A part names no session or quest in it
-        // (a go's item names one, on Quests since ENTRY1f1 and Sessions since ENTRY1f2); Overview has no part, since what
+        // (a go's item names one, on Quests and Sessions); Overview has no part, since what
         // waits on the person leads it.
-        // NEW1d-a (D162's note): New conversation, the composer; a go to it may carry a repository and words.
+        // New conversation, the composer; a go to it may carry a repository and words.
         ("sessions", "waiting", "Waiting on you"), ("sessions", "review", "To review"), ("sessions", "new", "New conversation"),
         ("quests", "asks", "Asks"), ("quests", "held", "Waiting on you"),
-        // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
+        // A repository's Setup, where its own values are set; a go names no repository.
         ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"), ("projects", "setup", "a repository's Setup"),
-        // UX6h4: a repository's Branches and History tabs (UX6h1), named apart from a workspace's Branches; likewise no repository.
+        // A repository's Branches and History tabs, named apart from a workspace's Branches; likewise no repository.
         ("projects", "branches", "a repository's Branches"), ("projects", "history", "a repository's History"),
-        // UX6g2b (D161 §3, D150 §4.3): a workspace's page's tabs and its two sections, prefixed since a repository's page has
+        // A workspace's page's tabs and its two sections, prefixed since a repository's page has
         // three of the tabs' names; a go to one names no workspace, so the one in view opens.
         ("projects", "workspace-details", "a workspace's Details"), ("projects", "workspace-branches", "a workspace's Branches"),
         ("projects", "workspace-workflow", "a workspace's Workflow"),
         ("projects", "workspace-defaults", "a workspace's Defaults"), ("projects", "workspace-remote", "a workspace's Remote and reach"),
-        // UX6i2a: Knowledge's two modes (UX6i), by the names its list's choice shows.
+        // Knowledge's two modes, by the names its list's choice shows.
         ("knowledge", "search", "Search"), ("knowledge", "convergence", "Convergence"),
         ("start", "agent", "step 1, an agent"), ("start", "helper", "step 2, Ask Daoris's agent"),
         ("start", "repositories", "step 3, a workspace and its repositories"), ("start", "setUp", "step 4, setting a place up"),
         ("start", "rules", "step 5, what agents may do"),
-        // UX6e2: the agent's page's sections a door opens (D150 §5.2); Permissions' Proposals are its What it may do.
+        // The agent's page's sections a door opens; Permissions' Proposals are its What it may do.
         ("agents", "accounts", "Accounts"), ("agents", "rules", "What it may do"), ("agents", "usage", "Usage"),
-        // COMPANYVIEW1b: the Agents place's Roles mode (the company-view design §1), where the working roles are set.
+        // The Agents place's Roles mode, where the working roles are set.
         ("agents", "roles", "Roles"),
     ];
 
     /// <summary>
-    /// The places a go named before they moved, each with the place it is now (UX6i2a, D150 §2): Search and Convergence
-    /// became Knowledge's modes with UX6i, and Settings → Plugins the Plugins place with UX6j. UX6g2b: Settings → Workspace
-    /// and Permissions retired into a workspace's page with UX6g (D150 §3.1), each old spelling with its part a row of its
+    /// The retired places a go may still name, each with the place it is now: Search and Convergence
+    /// are Knowledge's modes, and Settings → Plugins is the Plugins place. Settings → Workspace
+    /// and Permissions are in a workspace's page, each retired spelling with its part a row of its
     /// own, and Permissions alone what agents may do; a part no row names is refused. The room lists none of them, and a go
     /// still spelled so, kept in an earlier conversation or sent by a service that lists it, lands where it went.
     /// </summary>
@@ -397,8 +394,8 @@ public static class HelpPlaces
     ];
 
     /// <summary>
-    /// The views a go may name one item in (ENTRY1f1, D161's ENTRY1f note): Quests, whose list holds quests and asks, and
-    /// since ENTRY1f2 Sessions, whose list holds this machine's sessions, and since PLUGUI1h Plugins, whose catalogue holds
+    /// The views a go may name one item in: Quests, whose list holds quests and asks, and
+    /// Sessions, whose list holds this machine's sessions, and Plugins, whose catalogue holds
     /// its plugins and the install's offers, in the bar's order.
     /// </summary>
     public static readonly IReadOnlyList<string> ItemViews = ["sessions", "quests", "plugins"];

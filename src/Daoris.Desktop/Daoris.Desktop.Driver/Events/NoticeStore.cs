@@ -27,10 +27,10 @@ public enum NoticesImported
 public sealed record NoticesImport(NoticesImported Outcome, string? Why = null);
 
 /// <summary>
-/// The notices in the desktop store (FOUNDATION1 z-v, D212; the design §13.6): <c>data/notices.json</c> imported once into <c>notices</c> and
-/// left in place as the backup, so a build before the store reads the file as it stood. A home keeps its notices in the store from its first
+/// The notices in the desktop store: <c>data/notices.json</c> imported once into <c>notices</c> and
+/// left in place as the backup. A home keeps its notices in the store from its first
 /// import (an <c>imports</c> receipt of this family); before it, and in a home with no store, <see cref="Notices"/> reads and writes the
-/// file as it always did. A file a later build wrote inside a notice keeps no such field in the store, which the file's backup still holds.
+/// file. A field a later build writes inside a notice is not kept in the store, which the file's backup still holds.
 /// </summary>
 internal static class NoticeStore
 {

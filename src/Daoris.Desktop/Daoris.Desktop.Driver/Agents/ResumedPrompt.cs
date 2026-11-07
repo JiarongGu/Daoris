@@ -10,8 +10,8 @@ using Piece = TargetPrompt.Piece;
 internal static class ResumedPrompt
 {
     /// <summary>
-    /// A session resuming a quest its own earlier session took and waited on (D79): the quest again,
-    /// what was asked and what came back, and — the part a claiming instruction would get wrong — that
+    /// A session resuming a quest its own earlier session took and waited on: the quest again,
+    /// what is asked and what came back, and — the part a claiming instruction would get wrong — that
     /// the quest is already this session's, so taking it again is refused and standing down is wrong.
     /// </summary>
     internal static IReadOnlyList<Piece> ResumingPieces(SessionTarget target, QuestView answered) =>
@@ -35,7 +35,7 @@ internal static class ResumedPrompt
     ];
 
     /// <summary>
-    /// A session carrying on a quest its own earlier session took and was cut off from (D80): the
+    /// A session carrying on a quest its own earlier session took and got cut off from: the
     /// quest again, what cut the last one off, and what it left in the tree — so it finishes the work
     /// rather than starting it again, and does not take or stand down from a quest that is its own.
     /// </summary>
@@ -45,8 +45,8 @@ internal static class ResumedPrompt
             $"You are carrying on quest `#{target.QuestId}`, asked by `{target.Asker}`. It is already taken, and\n"
             + "it is yours: do not take it again, and do not stand down."),
         .. TargetPrompt.Beneath(target),
-        // SESSCTX1b: Daoris's brief of its line follows what the session before left, each of its sections counted on its own (§3.4),
-        // the outgoing agent's note among them (MIXAGENT1c); with none, what the tree holds uncommitted and the note, as before.
+        // Daoris's brief of its line follows what the session before left, each of its sections counted on its own,
+        // the outgoing agent's note among them; with none, what the tree holds uncommitted and the note.
         .. target.Brief is { } brief
             ? (IEnumerable<Piece>)
             [
@@ -62,7 +62,7 @@ internal static class ResumedPrompt
                     $"\n{TargetPrompt.Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,\n"
                     + $"and {InFlight(target)}{HandedNote(target)}{AccountChanged(target)}\n"),
             ],
-        // LIMITSWITCH3: Daoris's own words that waited on the session this carry-on goes on from, which its cooling account did not take.
+        // Daoris's own words that waited on the session this carry-on goes on from, which its cooling account did not take.
         new(HandedSections.WrittenTo, WhileItWaited(target)),
         .. TargetPrompt.Tail(target, target.Ready
             ? "\nFinish from there rather than starting again, inside this repository under its own doctrine and\n"
@@ -75,7 +75,7 @@ internal static class ResumedPrompt
     ];
 
     /// <summary>
-    /// Daoris's own words that waited on a record, said to a part that goes on from it (SAYHELD1; LIMITSWITCH3): as Daoris's words and not
+    /// Daoris's own words that waited on a record, said to a part that goes on from it: as Daoris's words and not
     /// the person's, quoted line by line, for the agent to weigh. The one text a resume's instruction, a carry-on's and the ended limit
     /// move's message say them in.
     /// </summary>
@@ -85,8 +85,8 @@ internal static class ResumedPrompt
         + string.Join("\n\n", words.Select(word => TextBounds.Quote(word.Text, indent: "  ")));
 
     /// <summary>
-    /// For a resume (D79), the words said to the session that asked while it waited, which it never took (SAYHELD1): the person's,
-    /// verbatim and quoted line by line, then Daoris's own, said as Daoris's. Nothing where it was handed none.
+    /// For a resume, the words said to the session that asked while it waited, which it never took: the person's,
+    /// verbatim and quoted line by line, then Daoris's own, said as Daoris's. Nothing where it is handed none.
     /// </summary>
     internal static string WhileItWaited(SessionTarget target)
     {
@@ -116,14 +116,14 @@ internal static class ResumedPrompt
           + string.Join("\n", target.InFlight.Select(line => $"    {line}"));
 
     /// <summary>
-    /// The note the agent handed over from left (MIXAGENT1c), as its claim, where no brief carries it (SESSCTX1b puts it in the brief's
-    /// own section); nothing for any other start.
+    /// The note the agent handed over from left, as its claim, where no brief carries it (a brief puts it in its own
+    /// section); nothing for any other start.
     /// </summary>
     internal static string HandedNote(SessionTarget target) =>
         target.HandedOver is not null && AgentCourse.Current.HandOverText(target.HandedNote) is { } said ? "\n\n" + said : "";
 
     /// <summary>
-    /// After an account's limit (TOOL4f, D125 §3.5): the session before ran on another account, which is cooling, so
+    /// After an account's limit: the session before ran on another account, which is cooling, so
     /// nothing of its own conversation carries over. The harness keeps that in the first account's home, which Daoris
     /// never reads, so the tree and what Daoris recorded are all a carry-on has.
     /// </summary>
@@ -158,7 +158,7 @@ internal static class ResumedPrompt
         var text = new StringBuilder();
 
         // Every line ends in LF, as the rest of the instruction does: AppendLine would end these in the platform's own
-        // newline, so the instruction's bytes would differ between machines and no golden could hold it (KNOWUSE1c).
+        // newline, so the instruction's bytes would differ between machines and no golden could hold it.
         void Line(string line = "") => text.Append(line).Append('\n');
 
         // Where it sits in a chain the asker composed: what it follows, and what its close publishes —

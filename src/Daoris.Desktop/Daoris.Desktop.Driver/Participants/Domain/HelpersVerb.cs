@@ -5,14 +5,14 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris place helpers</c> (MIXAGENT2a-i; FOUNDATION1 mod-iii): the participants' own verb, the settings' port
+/// <c>daoris place helpers</c>: the participants' own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rule it edits (<see cref="HelperRules"/>).
 /// </summary>
 public sealed class HelpersVerb : ChoiceVerb
 {
     public override string Word => "helpers";
 
-    /// <summary><c>helpers</c> (MIXAGENT2a-i): what a helper an agent asks for does here now.</summary>
+    /// <summary><c>helpers</c>: what a helper an agent asks for does here now.</summary>
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
         var path = world.ConfigPath;

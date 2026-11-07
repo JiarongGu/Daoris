@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>A line's key and the parts the walk back reached, oldest first.</summary>
-/// <param name="Key">The quest's id where a part is a driven run of a quest, else the line's first part's id; the part itself where the walk was cut.</param>
+/// <param name="Key">The quest's id where a part is a driven run of a quest, else the line's first part's id; the part itself where the walk is cut.</param>
 /// <param name="Parts">The ids the walk reached, oldest first; none for a record not this machine's.</param>
-/// <param name="Cut">Why the walk was cut (<see cref="CycleCut"/>, <see cref="BoundCut"/>), or null: its line counts read at least.</param>
+/// <param name="Cut">Why the walk is cut (<see cref="CycleCut"/>, <see cref="BoundCut"/>), or null: its line counts read at least.</param>
 public sealed record LineKey(string Key, IReadOnlyList<string> Parts, string? Cut = null)
 {
-    /// <summary>The walk met a part it had passed.</summary>
+    /// <summary>The walk meets a part it already passed.</summary>
     public const string CycleCut = "cycle";
 
     /// <summary>The walk went past <see cref="LineKeys.Bound"/> hops.</summary>
@@ -14,9 +14,9 @@ public sealed record LineKey(string Key, IReadOnlyList<string> Parts, string? Cu
 }
 
 /// <summary>
-/// The one key a line is counted by (CONTEXTDRIVE1a, the context-counters design §2.3): pure over the service's records every executor
+/// The one key a line is counted by: pure over the service's records every executor
 /// already reads. It walks back from a part by <c>from</c>; a part that is a driven run of a quest keys the line by that quest, since every
-/// run of the quest here is on the line (the service's walk joins them by its quest hop), so D79's resume with no <c>from</c> carries its
+/// run of the quest here is on the line (the service's walk joins them by its quest hop), so a resume with no <c>from</c> carries its
 /// count. A teammate's record, or a part not this machine's, ends the walk before it.
 /// </summary>
 public static class LineKeys

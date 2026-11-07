@@ -27,24 +27,24 @@ internal sealed class PipeState
     /// <summary>The connection each press's progress is told to, by its request's id: the last that sent it.</summary>
     public Dictionary<string, PipeConnection> Owners { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>RPC1c: a person's press waiting for the window, by its request's id, to the confirmation that shows it (a cancel takes it back).</summary>
+    /// <summary>A person's press waiting for the window, by its request's id, to the confirmation that shows it (a cancel takes it back).</summary>
     public Dictionary<string, string> WaitingFor { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>CONFIRMWAIT1a-i (§4.3): the ids the pipe's own WITHDRAW took back, answered `withdrawn`; the kit's CANCEL is answered as before.</summary>
+    /// <summary>The ids the pipe's own WITHDRAW took back, answered `withdrawn`; the kit's CANCEL is answered as before.</summary>
     public HashSet<string> Withdrawn { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>CONFIRMWAIT1a-ii (§7.2): each waiting press's line answer by its request's id, which the close completes `waiting`.</summary>
+    /// <summary>Each waiting press's line answer by its request's id, which the close completes `waiting`.</summary>
     public Dictionary<string, TaskCompletionSource<string>> Lines { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>CONFIRMWAIT1 (§15.2 item 9): each press whose grounds are being read before its card, by its request's id.</summary>
+    /// <summary>Each press whose grounds are being read before its card, by its request's id.</summary>
     public Dictionary<string, PipeReserved> Reserved { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>RPC1g1 (D238 point 2): each conversation a connection holds, by the conversation's id (<see cref="PipeHolding"/>).</summary>
+    /// <summary>Each conversation a connection holds, by the conversation's id (<see cref="PipeHolding"/>).</summary>
     public Dictionary<string, PipeHold> Holds { get; } = new(StringComparer.Ordinal);
 
     /// <summary>The connections open now.</summary>
     public HashSet<PipeConnection> Connections { get; } = [];
 
-    /// <summary>The ids' journal (§6.1), made once by the restore or the serve.</summary>
+    /// <summary>The ids' journal, made once by the restore or the serve.</summary>
     public PipeJournal? Journal { get; set; }
 }

@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// `daoris wiring [--json] [--measure]` (WIRING1b, the this-Daoris design §6, D50): the terminal's twin of Settings →
+/// `daoris wiring [--json] [--measure]`: the terminal's twin of Settings →
 /// This Daoris, reading the same facts through <see cref="SystemWiring"/>. What only the window knows is said as
 /// <i>the window knows</i>; <c>--json</c> prints the route's shape, so the twins share one test table; <c>--measure</c> walks the
 /// folder's sizes, within the walk's budget, before it answers.

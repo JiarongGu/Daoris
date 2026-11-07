@@ -175,7 +175,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
                             _ => $"— the person added, which reaches the session when its turn ends: {message.Text}",
                         });
 
-                    // Its level beside its reach: what was asked, and what the door gave.
+                    // Its level beside its reach: what is asked, and what the door gave.
                     Event(ChatMessage.Words(message) with { Reaches = SendNowWhy.Spelled(reach), Level = message.LevelSaid });
                 });
 
@@ -237,7 +237,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
             }
             catch (AcpResumeRefused refused) when (resume is not null)
             {
-                // Not a turn that failed: nothing was prompted. The agent's own words stay in this machine's record of the
+                // Not a turn that failed: nothing is prompted. The agent's own words stay in this machine's record of the
                 // conversation, and the reason goes to the resume, which ends the park and carries the answer on. A resume keeps its
                 // conversation under the adapter it ran on, so that is the agent a refusal names; a record that waits for the person
                 // says no carry-on.
@@ -250,7 +250,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
                 // A protocol failure is a fact about this run and belongs in its transcript, and it goes to the conclusion too, beside
                 // the exit code and the quest's state. 🔴 The exit alone cannot carry it: the run closes stdin as it ends and the agent
                 // exits 0, so an account limit that refused the turn mid-edit would read as a clean exit. A failed call is the door
-                // saying the work was cut off, not the session describing its work. 🔴 A stream the timeout ended is said as the
+                // saying the work is cut off, not the session describing its work. 🔴 A stream the timeout ended is said as the
                 // timeout, by its own line.
                 SaidByCode(error is AcpEnded ended ? ended.Why : DoorNotes.Failed(error.Message));
 

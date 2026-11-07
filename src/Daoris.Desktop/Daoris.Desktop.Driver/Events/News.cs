@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>One piece of news that happened: its key, when, and the notice it leaves, if any.</summary>
-/// <param name="Key">The occurrence's one key (§4.5): the store and journal position of a record event, a turn's session, run and moment, a Confirm's press, an account's cool-off.</param>
+/// <param name="Key">The occurrence's one key: the store and journal position of a record event, a turn's session, run and moment, a Confirm's press, an account's cool-off.</param>
 /// <param name="At">When it happened; one older than <see cref="News.Horizon"/> is never told.</param>
 /// <param name="Notice">The notice it keeps in <i>Done and failed</i> or <i>Messages</i>; null for news that leaves none, a park.</param>
 /// <param name="Renew">Whether the notice replaces an older one of its id (a conversation's later answer) and not only adds it.</param>
@@ -16,16 +16,16 @@ public sealed record NewsOccurrence(string Key, DateTimeOffset At, Notice? Notic
 public sealed record NewsClaimed(IReadOnlyList<NewsOccurrence> Told, string? Refused = null);
 
 /// <summary>
-/// The one owner of the news (FOUNDATION1 m-i, the foundation design §4.3, §4.5, §19.6): every process that tells news, the lease's loop for
+/// The one owner of the news: every process that tells news, the lease's loop for
 /// driven work and the shell for its conversations, submits what happened here, and a piece is told at most once. Its key is claimed in the
 /// desktop store's <c>news_said</c>, durably, in the one transaction that keeps its notice and moves the teller's journal cursor, before a
 /// balloon or a toast is shown: a crash between the claim and the showing loses that one announcement and never repeats it, and a claim the
 /// store refuses shows nothing.
 /// </summary>
 /// <remarks>
-/// <para><b>Apart from the visible notices</b>, so a prune or a dismissal never forgets what was told: the said-set is bounded by
+/// <para><b>Apart from the visible notices</b>, so a prune or a dismissal never forgets what is told: the said-set is bounded by
 /// <see cref="Horizon"/> alone, one week as the notices are, and a key older than it is forgotten with it, since nothing that old is told.</para>
-/// <para><b>One cursor for each teller</b> (<c>journal_cursors</c>), with the store identity it was read against.</para>
+/// <para><b>One cursor for each teller</b> (<c>journal_cursors</c>), with the store identity it is read against.</para>
 /// </remarks>
 /// <param name="home">The home whose store this is.</param>
 /// <param name="settled">The reading of the start's confirmation; null reads this install's swap journal.</param>
@@ -42,7 +42,7 @@ public sealed class News(string home, Func<StoreSettled>? settled = null)
 
     private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
 
-    /// <summary>The key of a record event: the store's identity and the journal position, since a position alone carries no store (§4.5).</summary>
+    /// <summary>The key of a record event: the store's identity and the journal position, since a position alone carries no store.</summary>
     public static string KeyOf(string store, long position) => $"journal:{store}:{position.ToString(CultureInfo.InvariantCulture)}";
 
     private DesktopStore Open() => DesktopStore.Open(DesktopStore.LocationIn(home), StoreProcess.Options(settled ?? StartConfirmation.Read));
@@ -85,7 +85,7 @@ public sealed class News(string home, Func<StoreSettled>? settled = null)
                     return shown;
                 });
 
-            // A home whose notices are still the file's (before their import) keeps them as it always did, after the claim.
+            // A home whose notices are still the file's keeps them there, after the claim.
             if (!inStore)
             {
                 foreach (var each in told.Where(each => each.Notice is not null))
@@ -102,11 +102,11 @@ public sealed class News(string home, Func<StoreSettled>? settled = null)
         }
     }
 
-    /// <summary>The key a notice's arrival is claimed by: its id and the moment it was written, so a notice renewed at a later answer is news again.</summary>
+    /// <summary>The key a notice's arrival is claimed by: its id and the moment it is written, so a notice renewed at a later answer is news again.</summary>
     public static string KeyOfNotice(Notice notice) => $"notice:{notice.Id}:{notice.At.UtcTicks.ToString(CultureInfo.InvariantCulture)}";
 
     /// <summary>
-    /// Whether this is the first run of branch <paramref name="branch"/> on this home (§4.5: only a home with no said-set yet takes what stands as
+    /// Whether this is the first run of branch <paramref name="branch"/> on this home (only a home with no said-set yet takes what stands as
     /// said): true once, the call that claims its baseline key, so what stands then is claimed and told to no one, and false for every call after, in
     /// any process. A store that will not take it answers false, which tells what stands rather than swallow it silently.
     /// </summary>
@@ -129,7 +129,7 @@ public sealed class News(string home, Func<StoreSettled>? settled = null)
 
     private static string CoverKey(string session) => "parkcovers:" + session;
 
-    /// <summary>A quest's park said, its last session's end is one piece of news with it: marked in the said-set, so the end is not told again (FOUNDATION1 z-v).</summary>
+    /// <summary>A quest's park said, its last session's end is one piece of news with it: marked in the said-set, so the end is not told again.</summary>
     public void Cover(IEnumerable<string> sessions, DateTimeOffset now)
     {
         try

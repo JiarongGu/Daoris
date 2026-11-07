@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// NOTIFY2g's <i>Messages</i> (D196 points 6 and 7; the notification design §2.4, §2.5, §5): the <c>notices</c> slice's <c>messages</c>
+/// <i>Messages</i>: the <c>notices</c> slice's <c>messages</c>
 /// partition, one entry per ask with the service's own unread count and the newest message an agent or a teammate wrote, and each
 /// urgent message to everyone said once as it arrives, past a watermark per ask whose first judgement is a baseline.
 /// </summary>
@@ -55,7 +55,7 @@ public sealed class AskMessagesTests : DriverModuleBridge
         Written(notices.Slice.Snapshot().Partitions.Single(each => each.Partition == NoticesStateSlice.Messages).Data);
 
     /// <summary>
-    /// §2.5: one entry per ask, a teammate's among them, with the service's own unread and the newest message an agent or a teammate
+    /// One entry per ask, a teammate's among them, with the service's own unread and the newest message an agent or a teammate
     /// wrote, its first line and who; the person's own posts and Daoris's lines are never newest; an ask with none has no newest.
     /// </summary>
     [Fact]
@@ -104,7 +104,7 @@ public sealed class AskMessagesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// §5: an ask's first judgement is a baseline; an urgent message to everyone after it is said once, also when an ordinary one follows
+    /// An ask's first judgement is a baseline; an urgent message to everyone after it is said once, also when an ordinary one follows
     /// before the next judgement; a snapshot read again says nothing; an ordinary one, one to a single repository, one from before the
     /// levels and the person's own are never said; an ask first seen later is a baseline too.
     /// </summary>
@@ -143,7 +143,7 @@ public sealed class AskMessagesTests : DriverModuleBridge
         Assert.Equal(["urgent", "next"], Arrivals().Select(each => each["id"]!.GetValue<string>()));
     }
 
-    /// <summary>§5: a teammate's urgent message to everyone is said too, as a teammate's.</summary>
+    /// <summary>A teammate's urgent message to everyone is said too, as a teammate's.</summary>
     [Fact]
     public async Task A_teammate_s_urgent_message_is_said()
     {
@@ -159,7 +159,7 @@ public sealed class AskMessagesTests : DriverModuleBridge
         Assert.Equal(("teammate", true), (said["who"]!.GetValue<string>(), said["teammate"]!.GetValue<bool>()));
     }
 
-    /// <summary>§5: a restart judges its first read as a baseline, so nothing the channels held then is said again.</summary>
+    /// <summary>A restart judges its first read as a baseline, so nothing the channels held then is said again.</summary>
     [Fact]
     public async Task A_restart_says_nothing_older_than_its_first_judgement()
     {
@@ -242,7 +242,7 @@ public sealed class AskMessagesTests : DriverModuleBridge
         Assert.Equal(4, _reads);
     }
 
-    /// <summary>§2.5: an ask whose channel moved is pushed as that key alone.</summary>
+    /// <summary>An ask whose channel moved is pushed as that key alone.</summary>
     [Fact]
     public async Task A_moved_ask_is_pushed_alone()
     {

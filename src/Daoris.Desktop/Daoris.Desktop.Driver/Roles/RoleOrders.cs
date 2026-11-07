@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one reader of a role's order for everything but a start's own walk (STAFFPOLICY1d, the staff policy design §3.3): the role a line is
+/// The one reader of a role's order for everything but a start's own walk: the role a line is
 /// bound to, and its order as the start plan would arrange it now, nothing reserved and no account asked. A caller that wants the stored
 /// order reads <see cref="ActorChoices.Effective"/> and is named in <c>OrderReadersCensusTests</c>.
 /// </summary>
 public static class RoleOrders
 {
     /// <summary>
-    /// The role a line goes on under: the role its record was bound to while the catalogue holds it, else the role that takes
+    /// The role a line goes on under: the role its record is bound to while the catalogue holds it, else the role that takes
     /// <paramref name="work"/> at <paramref name="place"/> now, as a removed role's record continues; the work's seeded role where the
     /// catalogue holds the start for a reason of its own (the walk says it).
     /// </summary>
@@ -24,7 +24,7 @@ public static class RoleOrders
         }
     }
 
-    /// <summary>Whether <paramref name="role"/> still lists the choice (agent, model, effort) a hand-over was approved on: it is revalidated, never swapped for another.</summary>
+    /// <summary>Whether <paramref name="role"/> still lists the choice (agent, model, effort) a hand-over is approved on: it is revalidated, never swapped for another.</summary>
     /// <exception cref="ActorUnreadableException">The role's stored staffing does not read.</exception>
     public static bool Holds(string role, DriverConfig config, string agent, string? model, string? effort) =>
         ActorChoices.Effective(role, config).Any(entry =>
@@ -50,7 +50,7 @@ public static class RoleOrders
     /// </summary>
     public static IReadOnlyList<ActorEffective> WithinAgents(IReadOnlyList<ActorEffective> order, IReadOnlyList<ActorEffective> arranged)
     {
-        // Nothing arranged: the order stands exactly as it was, interleaved or not.
+        // Nothing arranged: the order stands exactly as it stands, interleaved or not.
         if (arranged.SequenceEqual(order)) return order;
         var agents = order.Select(each => each.Agent).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         return [.. agents.SelectMany(agent => arranged.Where(each => string.Equals(each.Agent, agent, StringComparison.OrdinalIgnoreCase)))];

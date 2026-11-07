@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rules a driven session waiting on its own helper is read by (HELPERWAIT1; D163's and D188's notes). A session whose agent asked a
+/// The rules a driven session waiting on its own helper is read by. A session whose agent asked a
 /// helper and ended its turn so the helper could read waits on that helper, not on the person: it ends <c>completed</c> by
-/// <see cref="EndNoteCodes.EndedAwaitsHelper"/> (<see cref="Observation.Conclude"/>), the helper's answer reopens it once (D188 point 4), and a
+/// <see cref="EndNoteCodes.EndedAwaitsHelper"/> (<see cref="Observation.Conclude"/>), the helper's answer reopens it once, and a
 /// helper that ends with no answer brings it back to the person as its park would have (<see cref="Observation.HelperGone"/>).
 /// </summary>
 /// <remarks>
@@ -34,7 +34,7 @@ public static class HelperWaits
     public static bool Waits(PriorSession record) => HoldsTree(record) && !record.WordsWaiting;
 
     /// <summary>
-    /// Whether <paramref name="record"/> ended waiting on its own helper and so still holds its tree (HELPERWAIT1; Codex's #5 on COWORKUX1):
+    /// Whether <paramref name="record"/> ended waiting on its own helper and so still holds its tree:
     /// completed by that code, a record of this machine's, words waiting or not, since it goes on in that tree with them. What the tidy,
     /// the lock's let-go and the planner's further part read beside the live sessions, so no other part writes there and nothing clears it
     /// while its helper reads.
@@ -45,7 +45,7 @@ public static class HelperWaits
     public static bool Ended(IReadOnlyList<NotePart>? parts) => HelperWaitTrees.Carries(parts, EndNoteCodes.EndedAwaitsHelper);
 
     /// <summary>
-    /// Whether <paramref name="session"/> asked a go-ahead on its work's ask that still waits on the person (KNOWUSE1a, GOAHEAD2): a real
+    /// Whether <paramref name="session"/> asked a go-ahead on its work's ask that still waits on the person: a real
     /// question, which the person's answer wakes. Unread words, or a quest on no ask, read as none.
     /// </summary>
     public static bool AskedGoAhead(string session, IAgentAskWords? words) =>
@@ -53,7 +53,7 @@ public static class HelperWaits
                                         && goAhead.Asked.Any(request => string.Equals(request.Session, session, StringComparison.Ordinal))) == true;
 
     /// <summary>
-    /// Why a session that waited on its helper comes back to the person: the refusal of its newest own ask that was refused, by its code
+    /// Why a session that waited on its helper comes back to the person: the refusal of its newest own ask that is refused, by its code
     /// and agent (<see cref="HelperNotes.Refused"/>); with none of its own on file any more, no answer came.
     /// </summary>
     public static Noted Why(string session, IEnumerable<HelperAsk> asks, Func<string, HelperState?> state)

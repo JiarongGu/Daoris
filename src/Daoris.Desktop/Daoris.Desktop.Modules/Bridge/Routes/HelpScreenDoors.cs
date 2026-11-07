@@ -129,7 +129,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     }
 
     // The Manage drawer's Move to workspace: the local host's `POST /api/registry/{repository}/workspace`, one
-    // field of the row. The loop's registry watch (FG4) tells the page what moved.
+    // field of the row. The loop's registry watch tells the page what moved.
     public Task<(bool Ok, string Message)> WireRepositoryAsync(string repository, string workspace, CancellationToken ct) =>
         (service ?? throw NotReady()).WireRepositoryAsync(repository, workspace, ct);
 
@@ -143,8 +143,8 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
             context.Actions.Relay(harness, action), config, ended);
     }
 
-    // ACCOUNT_USE's own `use`: the same refusals and the same write, then the loop asked to look. The set's one entry since
-    // POOL1b; the `default` door, HARNESS_ACTION's `profile-default`, left with it.
+    // ACCOUNT_USE's own `use`: the same refusals and the same write, then the loop asked to look. The set has one entry,
+    // so there is no `default` door.
     public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
     {
         var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);

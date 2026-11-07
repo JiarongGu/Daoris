@@ -3,15 +3,15 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What rotation says (TOOL4f, D125 §3.3, §3.6, §4): a wait over an order, a pick refused, and the opening line of a
-/// rotated start's record. The driver's own sentences, rendered verbatim like every sentence it writes (D24); the
-/// names follow the glossary (D116): an account, signed in, the tool's own sign-in.
+/// What rotation says: a wait over an order, a pick refused, and the opening line of a
+/// rotated start's record. The driver's own sentences, rendered verbatim like every sentence it writes; the
+/// names follow the glossary: an account, signed in, the tool's own sign-in.
 /// </summary>
 /// <remarks>
 /// These name accounts, so each is said only where this machine reads it: a start's hold, a conversation's refusal, the
-/// conversation record (D76). 🔴 None of them goes into a session's note, which travels, and whose scrubber knows only
-/// the record's own account (§3.6).
-/// <para>What a person reads names an account by the name they gave it (ACCT2b, D125's ACCT2b note), from the owner's names
+/// conversation record. 🔴 None of them goes into a session's note, which travels, and whose scrubber knows only
+/// the record's own account.
+/// <para>What a person reads names an account by the name they gave it, from the owner's names
 /// read as the sentence is said, else by its id: a wait, a hold, a pick refused, what a wait adds. A command in a sentence
 /// keeps the id, which a terminal takes whatever the account is called by then; and the record's opening line
 /// (<see cref="Opened(string, string)"/>, <see cref="CarriedOn(string, string, string, long?, long?)"/>, <see cref="Clause"/>)
@@ -20,10 +20,10 @@ namespace Daoris.Driver;
 public static class RotationWords
 {
     /// <summary>
-    /// Every account a start may use is not ready, and one at least is cooling (§4): the start waits for the first
+    /// Every account a start may use is not ready, and one at least is cooling: the start waits for the first
     /// reset. Every account cooling is said as such; otherwise each account and why.
     /// </summary>
-    /// <param name="names">The owner's names by id, read as the wait is said (ACCT2b); null says each by its id.</param>
+    /// <param name="names">The owner's names by id, read as the wait is said; null says each by its id.</param>
     public static string Wait(
         string agent, IReadOnlyList<AccountState> states, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
     {
@@ -33,12 +33,12 @@ public static class RotationWords
         var every = states.All(state => state.Readiness == AccountReadiness.Cooling)
             ? $"every `{agent}` account this start may use is cooling"
             : $"no `{agent}` account this start may use is ready: {string.Join(", ", states.Select(state => Clause(state, zone, names)))}";
-        // TOOL6g: an account not signed in waits for a person, never for the reset, so its sign-in is said beside the wait.
+        // An account not signed in waits for a person, never for the reset, so its sign-in is said beside the wait.
         return $"{every}; {when}. Daoris starts nothing on them until then." + SignIn(agent, SignedOut(states), "A sign-in starts it sooner");
     }
 
     /// <summary>
-    /// <see cref="Wait"/> by code (ROSTERREFUSE2), its English the same to the byte: the lead, a clause for each account by its id
+    /// <see cref="Wait"/> by code, its English the same to the byte: the lead, a clause for each account by its id
     /// (the page names it), the first reset, and the sign-in that would start it sooner. Null where an account the wait lists
     /// has no id (the tool's own sign-in), which a clause cannot say: the sentence then keeps its words.
     /// </summary>
@@ -62,15 +62,15 @@ public static class RotationWords
     }
 
     /// <summary>
-    /// No account a start may use is ready and none is cooling, over a list of more than one (TOOL6g): nothing comes ready
+    /// No account a start may use is ready and none is cooling, over a list of more than one: nothing comes ready
     /// by itself, so each account is named with why, and every one not signed in with its sign-in.
     /// </summary>
-    /// <param name="names">The owner's names by id, read as the hold is said (ACCT2b); null says each by its id.</param>
+    /// <param name="names">The owner's names by id, read as the hold is said; null says each by its id.</param>
     public static string NoneReady(string agent, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string>? names = null) =>
         $"no `{agent}` account this start may use is ready: {string.Join(", ", states.Select(state => Clause(state, TimeZoneInfo.Utc, names)))}."
         + SignIn(agent, SignedOut(states), "A sign-in starts it");
 
-    /// <summary><see cref="NoneReady"/> by code (ROSTERREFUSE2), its English the same to the byte; null where an account has no id.</summary>
+    /// <summary><see cref="NoneReady"/> by code, its English the same to the byte; null where an account has no id.</summary>
     public static Noted? NoneReadyOf(string agent, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string>? names = null)
     {
         var none = ClausesOf(HeldNoteCodes.HeldWaitSome, $"no `{agent}` account this start may use is ready:", agent, states, TimeZoneInfo.Utc, names);
@@ -108,9 +108,9 @@ public static class RotationWords
             ("logins", (IReadOnlyList<string>)[.. accounts.Select(account => $"daoris agent login {agent} --account {ShellWord.Of(account, ShellWord.Account)}")])));
 
     /// <summary>
-    /// A start whose scope names no account, with no Daoris account of the agent's signed in (OWNSPACE1a, D175 point 2): it waits
-    /// for the person's sign-in, said once as D125 point 6 says a wait, and never falls back to the person's own tool home. One
-    /// coded line, the agent its value; both doors to a sign-in named (D50), the window's and the terminal's.
+    /// A start whose scope names no account, with no Daoris account of the agent's signed in: it waits
+    /// for the person's sign-in, said once as any wait is said, and never falls back to the person's own tool home. One
+    /// coded line, the agent its value; both doors to a sign-in named, the window's and the terminal's.
     /// </summary>
     public static Noted NoAccountOf(string agent) => Noted.Of(
         HeldNoteCodes.HeldNoAccount,
@@ -123,9 +123,9 @@ public static class RotationWords
         [.. states.Where(state => state.Readiness == AccountReadiness.SignedOut && state.Account is not null).Select(state => state.Account!)];
 
     /// <summary>
-    /// The sign-in for each account not signed in, after <paramref name="lead"/>, both doors named (D50): the terminal's for
-    /// each account, and the screen's, the agent's page in the Agents place since UX6e (UX6e2, D150 §5.2). Empty where none is.
-    /// Each id is spelled for any shell (ACCTQUOTE1b).
+    /// The sign-in for each account not signed in, after <paramref name="lead"/>, both doors named: the terminal's for
+    /// each account, and the screen's, the agent's page in the Agents place. Empty where none is.
+    /// Each id is spelled for any shell.
     /// </summary>
     private static string SignIn(string agent, IReadOnlyList<string> accounts, string lead) => accounts.Count == 0
         ? ""
@@ -133,15 +133,15 @@ public static class RotationWords
           + "or Agents → the agent's page → Accounts.";
 
     /// <summary>
-    /// A conversation the person started on an account they picked, which is cooling (§3.3): refused, since the person
+    /// A conversation the person started on an account they picked, which is cooling: refused, since the person
     /// chose it, with the accounts that are ready by name.
     /// </summary>
-    /// <param name="names">The owner's names by id, read as the refusal is said (ACCT2b); null says each by its id.</param>
+    /// <param name="names">The owner's names by id, read as the refusal is said; null says each by its id.</param>
     public static string Picked(
         CoolingEntry cooling, IReadOnlyList<string> ready, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null) =>
         PickedOf(cooling, ready, zone, names).Note;
 
-    /// <summary><see cref="Picked"/> by code (ROSTERREFUSE2): the hold's own parts, then who is ready as a list the page names.</summary>
+    /// <summary><see cref="Picked"/> by code: the hold's own parts, then who is ready as a list the page names.</summary>
     public static Noted PickedOf(
         CoolingEntry cooling, IReadOnlyList<string> ready, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null) =>
         CoolingWords.HoldOf(cooling, zone, names).Then(" ", ready.Count == 0
@@ -150,7 +150,7 @@ public static class RotationWords
                 HeldNoteCodes.HeldPickedReady, $"Ready now: {string.Join(", ", ready.Select(name => $"`{AccountNames.Said(names, name)}`"))}.",
                 ("accounts", (IReadOnlyList<string>)[.. ready])));
 
-    /// <summary>Why an account was not ready, as a clause: the account named, and the time where it waits for one.</summary>
+    /// <summary>Why an account is not ready, as a clause: the account named, and the time where it waits for one.</summary>
     public static string Why(string agent, AccountState state, TimeZoneInfo zone) => state.Readiness switch
     {
         AccountReadiness.Cooling => $"{CoolingWords.Who(state.Cooling!)} is cooling until {CoolingWords.When(state.Cooling!.Until, zone)}, {CoolingWords.Why(state.Cooling)}",
@@ -159,15 +159,15 @@ public static class RotationWords
         _ => $"{Who(agent, state.Account)} is ready",
     };
 
-    /// <summary>The first line of a rotated start's record (§3.3): which account it opened on, and why.</summary>
+    /// <summary>The first line of a rotated start's record: which account it opened on, and why.</summary>
     public static string Opened(string to, RotatedStart rotated) => Opened(to, rotated.Why);
 
     /// <summary>The first line of a start's record: which account it opened on, and the clause that says why.</summary>
     public static string Opened(string to, string why) => $"opened on `{to}`: {why}.";
 
     /// <summary>
-    /// The first line of a rotated carry-on's record (§3.6): the cut-off session it carries on, the account it runs on,
-    /// why its default was not ready, and, after a limit, the turn that was refused and the context it had.
+    /// The first line of a rotated carry-on's record: the cut-off session it carries on, the account it runs on,
+    /// why its default is not ready, and, after a limit, the turn that is refused and the context it has.
     /// </summary>
     /// <param name="turn">The cut-off session's refused turn (the turns its record ended, plus one), where a limit cut it off.</param>
     /// <param name="used">Its context at its high-water, where its door reported one.</param>
@@ -184,14 +184,14 @@ public static class RotationWords
         + (used is { } context ? $" with {context.ToString("N0", CultureInfo.InvariantCulture)} tokens of context" : "");
 
     /// <summary>
-    /// What every start the goal chose says after its step while no account of its list has said what it has left (§16.4):
-    /// near and pace then wait for an agent's word (TOOL6c reads it where a door carries it, and <see cref="Said"/> says it).
+    /// What every start the goal chose says after its step while no account of its list has said what it has left:
+    /// near and pace then wait for an agent's word (read where a door carries it, and <see cref="Said"/> says it).
     /// </summary>
     public const string Unsaid = "No account has said what it has left yet.";
 
     /// <summary>
-    /// What each account of a start's list last said about its windows, as one sentence for the start's first line (TOOL6c,
-    /// D130 §16.4): in the list's order, each with its age and what it said; null where none has said anything, so the
+    /// What each account of a start's list last said about its windows, as one sentence for the start's first line:
+    /// in the list's order, each with its age and what it said; null where none has said anything, so the
     /// start says <see cref="Unsaid"/> instead. An account that said nothing is said so: unknown, never empty or full.
     /// </summary>
     /// <param name="accounts">The accounts the start's walk could use, in the list's order.</param>
@@ -199,7 +199,7 @@ public static class RotationWords
         AccountsSaid(accounts, facts, use, now)?.Note;
 
     /// <summary>
-    /// <see cref="Said"/>'s sentence with its lines by code (UX7d-1): a line per account, its name and when it said it or that
+    /// <see cref="Said"/>'s sentence with its lines by code: a line per account, its name and when it said it or that
     /// it said nothing, and one per thing it said, each line's English inside the sentence, which is unchanged.
     /// </summary>
     public static Noted? AccountsSaid(IReadOnlyList<string> accounts, IReadOnlyDictionary<string, AccountFacts> facts, RotationUse use, DateTimeOffset now)
@@ -211,7 +211,7 @@ public static class RotationWords
 
     /// <summary>
     /// One account in <see cref="Said"/>: its name, how long ago, and what it said, in Daoris's words and by code; and where
-    /// Daoris's own turns since moved its projection (USAGEPROBE1), each window's projected use, said as projected.
+    /// Daoris's own turns since moved its projection, each window's projected use, said as projected.
     /// </summary>
     private static Noted Account(string name, AccountSaid? said, RotationUse use, DateTimeOffset now, AccountProjection? projected = null)
     {
@@ -224,7 +224,7 @@ public static class RotationWords
         }
         else if (said.Windows.FirstOrDefault(each => each.Standing == AccountReadings.WarnedWord) is { } warned)
         {
-            // Its own pace warning, in its own words, never near (USAGEREAD3a): `opening.said-near` said it so before.
+            // Its own pace warning, in its own words, never near: `opening.said-near` said it so before.
             parts.Add(Noted.Of(
                 StartNoteCodes.OpeningSaidWarned, $"ahead of its pace on its {warned.Window} window, by its own word", ("window", warned.Window)));
         }
@@ -235,14 +235,14 @@ public static class RotationWords
                 StartNoteCodes.OpeningSaidUsed, $"{Percent(each.Used!.Value)} of its {each.Window} limit", ("used", Whole(each.Used!.Value)), ("window", each.Window)))
             .ToList();
         if (used.Count > 0) parts.Add(Joined(used, " and ").Then(" used"));
-        // Over its curve on its tightest window, and the curve's value there now (SWITCH1b-ii): `opening.said-near-at`,
+        // Over its curve on its tightest window, and the curve's value there now: `opening.said-near-at`,
         // *near at 90%*, said it by the scope's one number before.
         if (UsageCurves.TightestSaid(use, said, now) is { Room: < 0 } over)
         {
             parts.Add(Noted.Of(
                 StartNoteCodes.OpeningSaidOver, $"over its {over.Window.Window} curve's {Points(over.Curve)}%", ("window", over.Window.Window), ("curve", Points(over.Curve))));
         }
-        // What it is projected to have used by now, where Daoris's turns since moved it a whole percent (USAGEPROBE1).
+        // What it is projected to have used by now, where Daoris's turns since moved it a whole percent.
         foreach (var window in (projected?.Windows ?? []).Where(each => each.How == ProjectedBy.Measured && Whole(each.Projected) > Whole(each.Read))
                      .OrderBy(each => each.Window.ToLowerInvariant() switch { "session" => 0, AccountWindows.Weekly => 1, _ => 2 }))
         {
@@ -267,13 +267,13 @@ public static class RotationWords
     /// <summary>A share as a whole percent: <i>88%</i>.</summary>
     internal static string Percent(double share) => $"{Whole(share).ToString(CultureInfo.InvariantCulture)}%";
 
-    /// <summary>A share as the whole percent <see cref="Percent"/> says, as a value a part carries (UX7d-1): <i>88</i>.</summary>
+    /// <summary>A share as the whole percent <see cref="Percent"/> says, as a value a part carries: <i>88</i>.</summary>
     internal static int Whole(double share) => (int)Math.Round(share * 100, MidpointRounding.AwayFromZero);
 
-    /// <summary>A curve's value or a room, already in percent points, as a whole number a part carries (SWITCH1b-ii): <i>63</i>.</summary>
+    /// <summary>A curve's value or a room, already in percent points, as a whole number a part carries: <i>63</i>.</summary>
     internal static int Points(double points) => UsageCurves.Points(points);
 
-    /// <summary>How long ago something was said: <i>just now</i>, <i>20 min ago</i>, <i>3 h ago</i>, <i>2 d ago</i>.</summary>
+    /// <summary>How long ago something is said: <i>just now</i>, <i>20 min ago</i>, <i>3 h ago</i>, <i>2 d ago</i>.</summary>
     internal static string Age(DateTimeOffset seen, DateTimeOffset now)
     {
         var minutes = (long)Math.Floor((now - seen).TotalMinutes);
@@ -284,20 +284,20 @@ public static class RotationWords
     }
 
     /// <summary>
-    /// Which step chose the account a start ran on, as a clause (§16.4): the step that moved it off where its scope begins
-    /// or ranked it first, and, where the first account was passed for itself, the step that chose among the rest. Near and
-    /// pace say what the account they weighed it against said (TOOL6c).
+    /// Which step chose the account a start ran on, as a clause: the step that moved it off where its scope begins
+    /// or ranked it first, and, where the first account is passed for itself, the step that chose among the rest. Near and
+    /// pace say what the account they weighed it against said.
     /// </summary>
-    /// <param name="workspace">The workspace whose list it was, or null for this machine's.</param>
-    /// <param name="passed">The state the start found the scope's first account in, where it was walked past.</param>
+    /// <param name="workspace">The workspace whose list it is, or null for this machine's.</param>
+    /// <param name="passed">The state the start finds the scope's first account in, where it is walked past.</param>
     public static string Clause(
         WalkChoice choice, string agent, string ran, RotationScope scope, string? workspace, AccountState? passed,
         IReadOnlyDictionary<string, AccountFacts> facts, StartKind kind, DateTimeOffset now, TimeZoneInfo zone) =>
         Text(Steps(choice, agent, ran, scope, workspace, passed, facts, kind, now, zone));
 
     /// <summary>
-    /// <see cref="Clause"/>'s steps one by one, each its English and its reason by code with its own values (UX7d-1, D152's
-    /// UX7d-1 note): the step that chose the account, then, where the first account was passed for itself, the step among
+    /// <see cref="Clause"/>'s steps one by one, each its English and its reason by code with its own values:
+    /// the step that chose the account, then, where the first account is passed for itself, the step among
     /// the rest. <see cref="Text"/> joins them into the clause.
     /// </summary>
     public static IReadOnlyList<StepSaid> Steps(
@@ -326,7 +326,7 @@ public static class RotationWords
             WalkStep.Kept when kind == StartKind.Conversation =>
                 Reason($"`{scope.Begins}` is kept for conversations, which take it last", OpeningWhy.KeptLast, ("over", scope.Begins)),
             WalkStep.Kept => Reason($"`{scope.Begins}` is kept for conversations", OpeningWhy.Kept, ("over", scope.Begins)),
-            // Both near, it the least over (ACCTWALK3): the other's own reason for going last, its numbers against its curve.
+            // Both near, it the least over: the other's own reason for going last, its numbers against its curve.
             WalkStep.Near or WalkStep.Room => Near(over!, facts.GetValueOrDefault(over!)?.Said, scope.Use, now),
             WalkStep.Fewest => Reason("it runs the fewest of Daoris's sessions", OpeningWhy.Fewest),
             WalkStep.Lapsing => Lapses(own.Said, scope.Use, now),
@@ -342,13 +342,13 @@ public static class RotationWords
     private static StepSaid Reason(string text, string? why, params (string Name, object? Value)[] values) => new(text, why, values);
 
     /// <summary>
-    /// The account the scope begins at, walked past (§3.3): <see cref="Why(string, AccountState, TimeZoneInfo)"/>'s clause, with
+    /// The account the scope begins at, walked past: <see cref="Why(string, AccountState, TimeZoneInfo)"/>'s clause, with
     /// whose account, which, and for a cool-off its reset and why it lasts until then. A scope never begins at the tool's own
     /// sign-in, and a ready account is never passed, so neither has a reason, and a line saying one keeps no parts.
     /// </summary>
     private static StepSaid Passed(string agent, AccountState state, TimeZoneInfo zone)
     {
-        // Passed for its lock (LOCKPASSED1) it is still ready, so `Why` would call it ready.
+        // Passed for its lock it is still ready, so `Why` would call it ready.
         if (state is { Readiness: AccountReadiness.Ready, Locked: true, Account: { } locked })
         {
             return Reason(
@@ -368,9 +368,9 @@ public static class RotationWords
     }
 
     /// <summary>
-    /// Why an account went last (§6, D165 point 2): its agent's word that a limit was reached, its credits, or its use over
-    /// its curve on its tightest window, said with the curve's value there now (SWITCH1b-ii); never its pace warning, which
-    /// is not near (USAGEREAD3a). <see cref="OpeningWhy.NearWord"/> and <see cref="OpeningWhy.NearUsed"/> are no longer written.
+    /// Why an account went last: its agent's word that a limit is reached, its credits, or its use over
+    /// its curve on its tightest window, said with the curve's value there now; never its pace warning, which
+    /// is not near.
     /// </summary>
     private static StepSaid Near(string account, AccountSaid? said, RotationUse use, DateTimeOffset now) => AccountReadings.NearWindow(said, use, now) switch
     {
@@ -387,8 +387,8 @@ public static class RotationWords
         OpeningWhy.OverCurve, ("over", account), ("window", over.Window.Window), ("used", Whole(over.Window.Used!.Value)), ("curve", Points(over.Curve)));
 
     /// <summary>
-    /// Why the account it ran on ranked ahead by its room (step 5 under <c>smart</c> and <c>curve</c>, the switch design §3):
-    /// the most room under its curve on its tightest window, where it has room to say; otherwise the account it was weighed
+    /// Why the account it ran on ranked ahead by its room (step 5 under <c>smart</c> and <c>curve</c>):
+    /// the most room under its curve on its tightest window, where it has room to say; otherwise the account it is weighed
     /// against is over its curve, or near by its word, and that is said.
     /// </summary>
     private static StepSaid MostRoom(AccountSaid? own, string over, AccountSaid? other, RotationUse use, DateTimeOffset now) =>
@@ -399,9 +399,8 @@ public static class RotationWords
             : Near(over, other, use, now);
 
     /// <summary>
-    /// Why the account it ran on ranked ahead by what would lapse (step 4, USAGERESET1): the window that won, how much of it is
-    /// unused, when it resets, and how old that reading is. <see cref="OpeningWhy.Lapsing"/>, its reset alone, is no longer
-    /// written. A step this account's reading cannot say keeps the line's English with no parts.
+    /// Why the account it ran on ranked ahead by what would lapse (step 4): the window that won, how much of it is
+    /// unused, when it resets, and how old that reading is. A step this account's reading cannot say keeps the line's English with no parts.
     /// </summary>
     private static StepSaid Lapses(AccountSaid? own, RotationUse use, DateTimeOffset now) =>
         UsageCurves.Lapsing(use, own, now) is { Window: { Used: { } used } week }
@@ -421,8 +420,8 @@ public static class RotationWords
     }
 
     /// <summary>
-    /// Why the account it ran on ranked ahead by its week's pace (§16.3 step 5, under <c>switch: off</c>): it is behind, where
-    /// it said so; otherwise the account it was weighed against is ahead.
+    /// Why the account it ran on ranked ahead by its week's pace (step 5, under <c>switch: off</c>): it is behind, where
+    /// it said so; otherwise the account it is weighed against is ahead.
     /// </summary>
     private static StepSaid Pace(AccountSaid? own, string over, AccountSaid? other, DateTimeOffset now) =>
         AccountReadings.Behind(own, now) is > 0
@@ -438,7 +437,7 @@ public static class RotationWords
         [("used", Whole(said.Of(AccountWindows.Weekly)!.Used!.Value)), ("gone", Whole(AccountReadings.Gone(said, now)!.Value))];
 
     /// <summary>
-    /// The order's first (POOL1c, D197 point 2; the account-pool design §4.3): the set every workspace's start reads, which has no
+    /// The order's first: the set every workspace's start reads, which has no
     /// default beside its order, so its first is said as that, never as this machine's list or default. A workspace's own default
     /// or list's first, which no start reads since the fold, keeps its words for a scope that still names one.
     /// </summary>
@@ -447,26 +446,26 @@ public static class RotationWords
         : Reason("it comes first in the order of Daoris's accounts", OpeningWhy.FirstOrder);
 
     /// <summary>
-    /// What a driven start's wait adds where the one account its kept-for-conversations rule passed is ready (§4.6).
+    /// What a driven start's wait adds where the one account its kept-for-conversations rule passed is ready.
     /// </summary>
-    /// <param name="names">The owner's names by id, read as the wait is said (ACCT2b); null says the id.</param>
+    /// <param name="names">The owner's names by id, read as the wait is said; null says the id.</param>
     public static string KeptAside(string kept, IReadOnlyDictionary<string, string>? names = null) =>
         KeptAsideOf(kept, names).Note;
 
-    /// <summary><see cref="KeptAside"/> by code (ROSTERREFUSE2): the account by its id, which the page names.</summary>
+    /// <summary><see cref="KeptAside"/> by code: the account by its id, which the page names.</summary>
     public static Noted KeptAsideOf(string kept, IReadOnlyDictionary<string, string>? names = null) =>
         Noted.Of(HeldNoteCodes.HeldKeptAside, $"`{AccountNames.Said(names, kept)}` is kept for conversations.", ("account", kept));
 
     /// <summary>
-    /// What a wait adds where the scope names accounts of its own and others are ready (§3.3): the accounts it does not
+    /// What a wait adds where the scope names accounts of its own and others are ready: the accounts it does not
     /// list that are not cooling and not refused, and the door that adds the first, which the person answers and Daoris
     /// never does.
     /// </summary>
     /// <param name="listed">The accounts the scope may use: its list, or its one account where it names no list.</param>
     /// <param name="outside">The agent's other accounts, neither cooling nor refused, in name order.</param>
     /// <param name="names">
-    /// The owner's names by id, read as the wait is said (ACCT2b): the door keeps the ids, each spelled for any shell, as its
-    /// workspace is (ACCTQUOTE1b).
+    /// The owner's names by id, read as the wait is said: the door keeps the ids, each spelled for any shell, as its
+    /// workspace is.
     /// </param>
     public static string Outside(
         string agent, string? workspace, IReadOnlyList<string> listed, IReadOnlyList<string> outside,
@@ -474,7 +473,7 @@ public static class RotationWords
         OutsideOf(agent, workspace, listed, outside, names).Note;
 
     /// <summary>
-    /// <see cref="Outside"/> by code (ROSTERREFUSE2), its English the same to the byte: the accounts a list the page names, the
+    /// <see cref="Outside"/> by code, its English the same to the byte: the accounts a list the page names, the
     /// first the one the door adds, and the door's command, composed of ids and a workspace's name as a shell spells them.
     /// </summary>
     public static Noted OutsideOf(

@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>An instruction as the composer joined it (CONTEXT1): its text, which a session is handed, and its account.</summary>
+/// <summary>An instruction as the composer joins it: its text, which a session is handed, and its account.</summary>
 public sealed record ComposedInstruction(string Text, InstructionAccount Account);
 
 /// <summary>
-/// The sections an instruction is composed of (CONTEXT1), in the order an instruction holds them. A TWIN with the page's
+/// The sections an instruction is composed of, in the order an instruction holds them. A TWIN with the page's
 /// catalogues (<c>work.handed.section.*</c>), held both ways by <c>HandedCodesTests</c> and the page's <c>handed.test.ts</c>.
 /// </summary>
 public static class HandedSections
@@ -17,7 +17,7 @@ public static class HandedSections
 
     public const string Requirements = "requirements";
 
-    /// <summary>The person's words on the ask the quest was asked by.</summary>
+    /// <summary>The person's words on the ask the quest is asked by.</summary>
     public const string Words = "words";
 
     public const string GoAheads = "go-aheads";
@@ -42,7 +42,7 @@ public static class HandedSections
     public const string Reading = "reading";
 
     /// <summary>
-    /// The standing block (CONTEXTONE1c, D230 point 3): where things are, the routing, the person's choices on this machine, the
+    /// The standing block: where things are, the routing, the person's choices on this machine, the
     /// repository's and workspace's facts, and the memory the line read; or the line naming its file where it went through one.
     /// </summary>
     public const string Block = "block";
@@ -59,8 +59,8 @@ public static class HandedSections
     public const string Proposing = "proposing";
 
     /// <summary>
-    /// A set-up step's own instruction (REVIEWENV1c2): the environment it shows its chain's work in, as the review rule set on this
-    /// machine declares it, and how to show it and say it. Counted with what the quest carries before this section was its own.
+    /// A set-up step's own instruction: the environment it shows its chain's work in, as the review rule set on this
+    /// machine declares it, and how to show it and say it. Counted with what the quest carries, ahead of its own section.
     /// </summary>
     public const string SetUp = "set-up";
 
@@ -73,7 +73,7 @@ public static class HandedSections
     /// <summary>An intake's instruction, whose parts are not counted apart.</summary>
     public const string Intake = "intake";
 
-    // ——— The brief a new part is handed of its line (SESSCTX1b, D189 point 4; the session-context design §3.2, §3.4): a
+    // ——— The brief a new part is handed of its line: a
     // conversation's first prompt, or a section of a driven carry-on's instruction, counted by its own sections.
 
     /// <summary>The brief's opening: the session it continues, its agent, why it moved, and the request as first written.</summary>
@@ -85,7 +85,7 @@ public static class HandedSections
     /// <summary>Each turn's outcome: its last message and what it did.</summary>
     public const string BriefTurns = "brief-turns";
 
-    /// <summary>The work's state as the brief was composed: the tree, the plan, the last checks, what is still asked.</summary>
+    /// <summary>The work's state as the brief is composed: the tree, the plan, the last checks, what is still asked.</summary>
     public const string BriefState = "brief-state";
 
     /// <summary>The outgoing agent's own note, as its claim.</summary>
@@ -94,17 +94,17 @@ public static class HandedSections
     /// <summary>The session's other parts, beside its line.</summary>
     public const string BriefParts = "brief-parts";
 
-    /// <summary>The line's course as Daoris counts it (CONTEXTDRIVE1b): a brief's item, or a start's where its line counted something.</summary>
+    /// <summary>The line's course as Daoris counts it: a brief's item, or a start's where its line counts something.</summary>
     public const string BriefCourse = "brief-course";
 
-    /// <summary>What the brief's bound left out, by count.</summary>
+    /// <summary>What the brief's bound leaves out, by count.</summary>
     public const string BriefLeft = "brief-left";
 }
 
-/// <summary>Where a section came from (CONTEXT1): <c>work.handed.source.*</c>.</summary>
+/// <summary>Where a section comes from: <c>work.handed.source.*</c>.</summary>
 public static class HandedSources
 {
-    /// <summary>The quest, as the service answered it.</summary>
+    /// <summary>The quest, as the service answers it.</summary>
     public const string Quest = "quest";
 
     /// <summary>The ask's record on the service: the person's words and the go-aheads.</summary>
@@ -119,7 +119,7 @@ public static class HandedSources
     /// <summary>The person's words to an earlier session on the quest.</summary>
     public const string Written = "written";
 
-    /// <summary>The earlier session's record on this quest, and the tree it worked in.</summary>
+    /// <summary>The earlier session's record on this quest, and the tree it works in.</summary>
     public const string Record = "record";
 
     /// <summary>The session's own tree: its code map, its indexes.</summary>
@@ -132,7 +132,7 @@ public static class HandedSources
     public const string Checkouts = "checkouts";
 
     /// <summary>
-    /// The driver's own words, the same for every session of its kind. Named apart from the <c>Driver</c> class (LOOPOUT1):
+    /// The driver's own words, the same for every session of its kind. Named apart from the <c>Driver</c> class:
     /// the structure gate reads names, and nothing outside the loop names the loop.
     /// </summary>
     public const string DriverWords = "driver";
@@ -144,7 +144,7 @@ public static class HandedSources
     public const string Machine = "machine";
 }
 
-/// <summary>Why nothing of a section was handed (CONTEXT1): <c>work.handed.none.*</c>.</summary>
+/// <summary>Why nothing of a section is handed: <c>work.handed.none.*</c>.</summary>
 public static class HandedNones
 {
     /// <summary>Its source held nothing to hand: a quest with no requirement, a tree with no code map.</summary>
@@ -159,12 +159,12 @@ public static class HandedNones
     /// <summary>The person set none on this machine.</summary>
     public const string NotSet = "not-set";
 
-    /// <summary>The session's agent takes no rules from Daoris, so none were handed.</summary>
+    /// <summary>The session's agent takes no rules from Daoris, so none are handed.</summary>
     public const string Agent = "agent";
 }
 
 /// <summary>
-/// What was left out of a section, and why (CONTEXT1): <c>work.handed.cut.*</c>, each entry saying exactly the values
+/// What is left out of a section, and why: <c>work.handed.cut.*</c>, each entry saying exactly the values
 /// <see cref="Values"/> names for it.
 /// </summary>
 public static class HandedCuts
@@ -178,7 +178,7 @@ public static class HandedCuts
     /// <summary>Words each cut at the bound on one word.</summary>
     public const string WordsLong = "words-long";
 
-    /// <summary>The words could not be read for this start.</summary>
+    /// <summary>The words cannot be read for this start.</summary>
     public const string WordsUnread = "words-unread";
 
     /// <summary>Words said before Daoris kept them on the ask, which nothing back-fills.</summary>
@@ -202,28 +202,28 @@ public static class HandedCuts
     /// <summary>Files not on this machine, named without a path.</summary>
     public const string FilesElsewhere = "files-elsewhere";
 
-    /// <summary>This machine's rules file could not be read, so only the defaults were handed.</summary>
+    /// <summary>This machine's rules file cannot be read, so only the defaults are handed.</summary>
     public const string RulesUnread = "rules-unread";
 
-    /// <summary>A brief's words past the bound on them, the oldest after the request first (SESSCTX1b).</summary>
+    /// <summary>A brief's words past the bound on them, the oldest after the request first.</summary>
     public const string BriefWordsOlder = "brief-words-older";
 
-    /// <summary>A brief's turns' outcomes past what its bound leaves them, the oldest first (SESSCTX1b).</summary>
+    /// <summary>A brief's turns' outcomes past what its bound leaves them, the oldest first.</summary>
     public const string BriefTurnsOlder = "brief-turns-older";
 
-    /// <summary>A brief's items each clipped at its own bound (SESSCTX1b): a word, a message, the request, a plan step, an output.</summary>
+    /// <summary>A brief's items each clipped at its own bound: a word, a message, the request, a plan step, an output.</summary>
     public const string BriefClipped = "brief-clipped";
 
-    /// <summary>Entries of a brief's lists left out past their bound (SESSCTX1b): what is uncommitted, the commits.</summary>
+    /// <summary>Entries of a brief's lists left out past their bound: what is uncommitted, the commits.</summary>
     public const string BriefList = "brief-list";
 
-    /// <summary>The session's other parts past the bound on them (SESSCTX1b).</summary>
+    /// <summary>The session's other parts past the bound on them.</summary>
     public const string BriefPartsBound = "brief-parts-bound";
 
-    /// <summary>A line's counts past the bound on the course's item (CONTEXTDRIVE1b).</summary>
+    /// <summary>A line's counts past the bound on the course's item.</summary>
     public const string BriefCourseBound = "brief-course-bound";
 
-    /// <summary>The standing block went through the door's file channel, past the bound on the whole first prompt (CONTEXTONE1c).</summary>
+    /// <summary>The standing block goes through the door's file channel, past the bound on the whole first prompt.</summary>
     public const string BlockFiled = "block-filed";
 
     /// <summary>The values each cut's entry says, by name: <c>n</c> and <c>limit</c> numbers, <c>from</c> and <c>to</c> moments.</summary>

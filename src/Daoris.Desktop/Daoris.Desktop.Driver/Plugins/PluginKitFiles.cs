@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The plugin kit's files on this machine (PLUG8, D101; STRUCT3a): the folder a new plugin is written into, the templates
+/// The plugin kit's files on this machine: the folder a new plugin is written into, the templates
 /// the build carries under their pinned names, and a trial's scratch under the home.
 /// </summary>
 internal static class PluginKitFiles
@@ -33,7 +33,7 @@ internal static class PluginKitFiles
         }
     }
 
-    /// <summary>Write a plan's files, each whole or not at all. The folder is judged again first: a plan is what the disk said when it was made.</summary>
+    /// <summary>Write a plan's files, each whole or not at all. The folder is judged again first: a plan holds what the disk showed at planning.</summary>
     /// <returns>The names written, in the plan's order.</returns>
     public static IReadOnlyList<string> Write(ScaffoldPlan plan)
     {

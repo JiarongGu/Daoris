@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A conversation's line as the supervisor's rules read it (CONTEXTDRIVE1n; the context counters design §4.5): the tries its transient episode
+/// A conversation's line as the supervisor's rules read it: the tries its transient episode
 /// makes, what follows past them, what its account's limit does, and the bound of its moves, each from the line's effective rules for its role
 /// at its place, as a driven line's are (<see cref="StaffCourse"/>). The course decides over the fact this reads; a rule's act is said, kept
 /// and logged (<see cref="SupervisorRuleActs"/>).
@@ -12,7 +12,7 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
     public static ConversationRules Of(ChatContext context) =>
         new(Staff(context), new SupervisorRuleActs(context.Home, context.Events), context.Harnesses.Clock is { } read ? new ReadClock(read) : null);
 
-    /// <summary>The tries a conversation's transient episode makes: the lowest <c>at</c> of its line's effective tries rules, else D210's five.</summary>
+    /// <summary>The tries a conversation's transient episode makes: the lowest <c>at</c> of its line's effective tries rules, else five.</summary>
     public int Tries(string role, string? repository, string? workspace) =>
         StaffCourse.Tries(staff, role, new StaffPlace(repository, workspace));
 
@@ -122,7 +122,7 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
 }
 
 /// <summary>
-/// What the rules made of a conversation's line at one condition (CONTEXTDRIVE1n): its role and place, the policy the rules make, the action
+/// What the rules made of a conversation's line at one condition: its role and place, the policy the rules make, the action
 /// read, the course's answer, and its moves in the window.
 /// </summary>
 internal sealed record ConversationRuled(string Role, string Line, StaffPlace Place, StaffPolicy Policy, StaffAction Action, LineCourse Course, StaffMoved Moved);

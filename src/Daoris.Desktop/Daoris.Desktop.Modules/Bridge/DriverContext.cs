@@ -4,27 +4,27 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What the driver bridge's domains share beyond the loop (PART10d, D166): the event bus, the file manager and the file picker
+/// What the driver bridge's domains share beyond the loop: the event bus, the file manager and the file picker
 /// the host hands <see cref="DriverModule"/>, a standing choice written to <c>driver.json</c>, and the wire the configured
 /// adapter's sessions run on. A domain's handler class is handed this where it uses more than the loop, and the loop alone
 /// where it does not.
 /// </summary>
 /// <param name="events">
-/// The bus the module answers on, held as well because a domain raises news of its own (D49 §3): a conversation ending is
+/// The bus the module answers on, held as well because a domain raises news of its own: a conversation ending is
 /// news the page wants without asking.
 /// </param>
 /// <param name="openFolder">
-/// The file manager, for a plugin's and a session's Open folder (PLUGUI1e, SESSUX1d): the window kit's launcher. Null where the
+/// The file manager, for a plugin's and a session's Open folder: the window kit's launcher. Null where the
 /// host carries none: then nothing opens, and the answer says so.
 /// </param>
 /// <param name="pickFile">
-/// The system's file picker, for a tool's *Browse…* (TOOLS7): the window's dialog. Null where the host carries none, and the
+/// The system's file picker, for a tool's *Browse…*: the window's dialog. Null where the host carries none, and the
 /// answer says so.
 /// </param>
 public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder? openFolder, PickFile? pickFile, IAccountEnvironment? account = null)
 {
     /// <summary>
-    /// The person's account's variables, which This Daoris's set-up presses change (WIRING1e); null where the host keeps none, and every
+    /// The person's account's variables, which This Daoris's set-up presses change; null where the host keeps none, and every
     /// such press then answers that as a refusal. The application hands in the Windows account's; a test hands a stand-in, so no test
     /// reads or writes the machine's.
     /// </summary>
@@ -39,27 +39,27 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     public PickFile? PickFile { get; } = pickFile;
 
     /// <summary>
-    /// The one harness action running on this machine and the path that starts it (PART10f): Agents' routes and Ask Daoris's
+    /// The one harness action running on this machine and the path that starts it: Agents' routes and Ask Daoris's
     /// doors share this instance, so they share its one slot.
     /// </summary>
     public AgentActions Actions { get; } = new(events, loop);
 
     /// <summary>
-    /// The reads a page may stop (GITAPP1a-iii, the git-app design P1.6): the module's router opens each shared read's <c>read</c> id
+    /// The reads a page may stop: the module's router opens each shared read's <c>read</c> id
     /// here, and the trees domain's <c>READ_LEAVE</c> cancels one.
     /// </summary>
     public ReadLeaves Reads { get; } = new();
 
-    /// <summary>The window's landing presses, each run once per session under the loop's lifetime and always answered (LANDPRESS1).</summary>
+    /// <summary>The window's landing presses, each run once per session under the loop's lifetime and always answered.</summary>
     public LandPresses Presses { get; } = new(loop, events);
 
     /// <summary>The acts the git domains run, journaled in the home's store; one object, so a run's reconciler knows its own acts.</summary>
     public ActRuns GitActs { get; } = new(new ActJournal(loop.Home));
 
     /// <summary>
-    /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press (PLUG9 d, D103).
+    /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press.
     /// Null finds them beside the running application, else beside the home; a test names its own, since every test's home
-    /// shares one parent. Set by <see cref="DriverModule"/>'s initializer after the handlers are built (PART10e), so a domain
+    /// shares one parent. Set by <see cref="DriverModule"/>'s initializer after the handlers are built, so a domain
     /// reads <see cref="OffersFolder"/> at each request, never a value copied at build.
     /// </summary>
     public string? Offers { get; set; }
@@ -68,21 +68,21 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     public string OffersFolder => Offers ?? PluginOffers.FolderFor(Loop.Home, AppContext.BaseDirectory);
 
     /// <summary>
-    /// The world a set-up press reads (LAYOUT8), over the service a request was handed: null is the real one, which reads each
+    /// The world a set-up press reads, over the service a request is handed: null is the real one, which reads each
     /// line with git and starts <c>node</c> and <c>daoris</c> for their versions, as the terminal's press does; a test names a
-    /// stand-in, since the fast half starts no process (MOD8). Set by <see cref="DriverModule"/>'s initializer, as
+    /// stand-in, since the fast half starts no process. Set by <see cref="DriverModule"/>'s initializer, as
     /// <see cref="Offers"/> is, so a domain reads it at each request.
     /// </summary>
     public Func<ServiceClient, ISetupWorld>? SetupWorlds { get; set; }
 
     /// <summary>
-    /// A plugin's tools found and checked (ADOSIGNIN1): null is the real one, which starts each tool's checks; a test names a
+    /// A plugin's tools found and checked: null is the real one, which starts each tool's checks; a test names a
     /// stand-in, since the fast half starts no process. Set by <see cref="DriverModule"/>'s initializer, as <see cref="Offers"/> is.
     /// </summary>
     public Func<string, IReadOnlyList<PluginTool>, CancellationToken, Task<IReadOnlyList<PluginToolFound>>>? ToolChecks { get; set; }
 
     /// <summary>
-    /// A plugin tool's fix run in the person's console (ADOSIGNIN1): null is the real one, which opens a window; a test names a
+    /// A plugin tool's fix run in the person's console: null is the real one, which opens a window; a test names a
     /// stand-in that starts none. Set as <see cref="ToolChecks"/> is.
     /// </summary>
     public Func<string, IReadOnlyList<PluginTool>, string, int, CancellationToken, Task<ToolSetUp>>? ToolSetUps { get; set; }
@@ -91,7 +91,7 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     public ISetupWorld SetupWorldOf(ServiceClient service) => SetupWorlds?.Invoke(service) ?? new SetupWorld(service, Loop.Home);
 
     /// <summary>
-    /// The owner's mark's and a role's act's reads (STEWARDROLE1a-ii, D209 §5.4): a session's quest, an ask's quests, a quest's repository,
+    /// The owner's mark's and a role's act's reads: a session's quest, an ask's quests, a quest's repository,
     /// a workspace's repositories and a quest's records, from the service the loop holds; a test names a stand-in. Set by
     /// <see cref="DriverModule"/>'s initializer, as <see cref="Offers"/> is.
     /// </summary>
@@ -103,7 +103,7 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     private IOwnerScopes? _ownerScopes;
 
     /// <summary>
-    /// What the steward's acts read and change (STEWARDROLE1b, D209 §3.1): the bridge's own loop and service; a test names a stand-in,
+    /// What the steward's acts read and change: the bridge's own loop and service; a test names a stand-in,
     /// so no act starts a process. Set by <see cref="DriverModule"/>'s initializer, as <see cref="OwnerScopes"/> is.
     /// </summary>
     public IStewardWorld? StewardWorld { get; set; }
@@ -114,14 +114,14 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     private IStewardWorld? _stewardWorld;
 
     /// <summary>
-    /// What This Daoris's read is handed (WIRING1b), changed: null is the window's own; a test hands the account's and the
+    /// What This Daoris's read is handed, changed: null is the window's own; a test hands the account's and the
     /// machine's variables of its own and sizes of its own, so it reads nothing of the machine it runs on. Set by
     /// <see cref="DriverModule"/>'s initializer, as <see cref="SetupWorlds"/> is.
     /// </summary>
     public Func<WiringWorld, WiringWorld>? WiringWorlds { get; set; }
 
     /// <summary>
-    /// What *Free up space…* is handed (KEEP1e), changed: null is the window's own; a test hands a browser host and a clock of its own, so it
+    /// What *Free up space…* is handed, changed: null is the window's own; a test hands a browser host and a clock of its own, so it
     /// clears nothing of the machine it runs on. Set by <see cref="DriverModule"/>'s initializer, as <see cref="WiringWorlds"/> is.
     /// </summary>
     public Func<SpaceFreeWorld, SpaceFreeWorld>? SpaceFreeWorlds { get; set; }
@@ -169,7 +169,7 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
 
     /// <summary>
     /// A standing choice: an edit to <c>driver.json</c> under the home and a nudge, because the file is the truth and the loop
-    /// re-reads it every tick, the same file the terminal's verbs edit (D50).
+    /// re-reads it every tick, the same file the terminal's verbs edit.
     /// </summary>
     public void Change(Func<DriverConfig, DriverConfig> change)
     {
@@ -178,14 +178,14 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     }
 
     /// <summary>
-    /// Whether any entry of Build's order rides the protocol, as the loop plans by it (D70, <see cref="BuildDoor"/>); the pipe, the stricter
+    /// Whether any entry of Build's order rides the protocol, as the loop plans by it (<see cref="BuildDoor"/>); the pipe, the stricter
     /// door, when Build's order does not read; a door this build does not know is refused (<see cref="UnknownDoorException"/>).
     /// </summary>
     public bool Unadopted(DriverConfig config) => UnadoptedOf(Loop, config);
 
     /// <summary>
     /// <see cref="Door"/> for an owner with a loop and no context: the groups' pushed slice takes the look <c>SESSION_GROUPS</c> takes
-    /// (PUSH1c3a), so both read one door.
+    /// so both read one door.
     /// </summary>
     public static bool UnadoptedOf(DriverLoop loop, DriverConfig config) =>
         BuildDoor.Drives(loop.Home, config, loop.Harnesses.Adapters);

@@ -6,7 +6,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
-/// <summary>How a request a set-up step's tab makes is answered (REVIEWENV1d).</summary>
+/// <summary>How a request a set-up step's tab makes is answered.</summary>
 public enum ReviewAnswerKind
 {
     /// <summary>A file of the build, by its path.</summary>
@@ -26,7 +26,7 @@ public enum ReviewAnswerKind
 public sealed record ReviewAnswer(ReviewAnswerKind Kind, string? Path = null);
 
 /// <summary>
-/// What a set-up step's tab is answered for each request it makes under the served pattern (REVIEWENV1d; design §2.3 step 3):
+/// What a set-up step's tab is answered for each request it makes under the served pattern:
 /// a request whose path names a file of the build gets that file; any other page request gets the build's <c>index.html</c>; and
 /// every other request, the app's calls among them, goes where it would go for the person. Pure, so each case is a test.
 /// </summary>
@@ -52,7 +52,7 @@ public static class ReviewRequests
         if (!path.StartsWith(serve.Base, StringComparison.Ordinal)) return new(ReviewAnswerKind.Pass);
 
         var rest = Uri.UnescapeDataString(path[serve.Base.Length..]);
-        // One trailing slash asks for a page (below); what is left is a path joined to the disk (DEDUP6's rule).
+        // One trailing slash asks for a page (below); what is left is a path joined to the disk.
         var named = rest.EndsWith('/') ? rest[..^1] : rest;
         if (named.Length > 0 && !SafeNames.IsRepositoryPath(named))
         {
@@ -131,7 +131,7 @@ public static class ReviewRequests
 }
 
 /// <summary>
-/// The shell's half of the review's showing (REVIEWENV1d, D154 point 5; design §2.3 steps 1–4): a set-up step's tab in Daoris's
+/// The shell's half of the review's showing: a set-up step's tab in Daoris's
 /// browser, and its build served to that tab alone, over the shell's own CDP connection to its own browser, at the rule's address
 /// and the build's base only. Held here, not by the session, so it lasts through reloads and the app's own navigation until the
 /// verdict lets it go: a session's own interception ends with it, and a reload would then load the person's own server
@@ -139,7 +139,7 @@ public static class ReviewRequests
 /// </summary>
 /// <remarks>
 /// <para><b>Beside a session's browser server, never instead of it.</b> Interceptions chain on one tab, the session's first
-/// (measured, §1 rows 2–2c): what the session fulfils while it lives is what it shows, and what it lets go on is answered here,
+/// (measured): what the session fulfils while it lives is what it shows, and what it lets go on is answered here,
 /// before the network. Nothing here stops, restarts or takes over a process or a port of the person's: a request this lets go
 /// reaches their server as it would have, and one this answers never does.</para>
 ///
@@ -219,7 +219,7 @@ public sealed class ReviewTabs(IInAppBrowser browser) : IReviewTabs, IDisposable
                     session, ct)
                 .ConfigureAwait(false);
             // A service worker of the person's at the address answers a tab before any interception sees its request, with their
-            // own build (measured, the evidence's §1 row 7). Bypassed for this tab alone while it is served; their own tabs keep
+            // own build (measured). Bypassed for this tab alone while it is served; their own tabs keep
             // it, and this one has it back once the serving is let go.
             await channel.CallAsync("Network.enable", new { }, session, ct).ConfigureAwait(false);
             await channel.CallAsync("Network.setBypassServiceWorker", new { bypass = true }, session, ct).ConfigureAwait(false);

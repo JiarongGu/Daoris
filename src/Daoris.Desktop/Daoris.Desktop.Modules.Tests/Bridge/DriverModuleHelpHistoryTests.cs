@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Ask Daoris's history over the bridge (ASKHIST1, `HelpRoutes.cs`): its conversations listed and searched, named,
+/// Ask Daoris's history over the bridge (`HelpRoutes.cs`): its conversations listed and searched, named,
 /// pinned, deleted through the one delete the window uses, and gone on in with the person's words through the one box's door.
 /// Kept on this machine only: the records the local host already keeps, the words this machine's own record, and what the
 /// person keeps of each a file beside them under the home. A local host stands in; nothing is spawned.
@@ -64,7 +64,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ASKSCOPE1d (D158's ASKSCOPE1 note, point 6): <c>workspace</c> lists that workspace's conversations, whatever its letters'
+    /// <c>workspace</c> lists that workspace's conversations, whatever its letters'
     /// case, its search run over them before the page is taken; none named lists every workspace's, as before. Each row says the
     /// workspace its record keeps, and a record from before keeps none, so it is `default`'s.
     /// </summary>
@@ -93,7 +93,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         Assert.Equal(new Dictionary<string, string?> { ["h1"] = "games", ["h2"] = "default", ["h3"] = "work" }, Rows(every));
     }
 
-    /// <summary>The page's row is the terminal's <c>--json</c>, field for field, in order (D50: two doors, one answer).</summary>
+    /// <summary>The page's row is the terminal's <c>--json</c>, field for field, in order: two doors, one answer.</summary>
     [Fact]
     public void A_row_is_the_terminals_json_field_for_field()
     {
@@ -109,7 +109,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ASKHIST1d: the route answers a page, as the terminal does: <c>limit</c> how many, <c>offset</c> where it starts, with how
+    /// The route answers a page, as the terminal does: <c>limit</c> how many, <c>offset</c> where it starts, with how
     /// many there are and where the next page starts, and <c>cut</c> read as it was, whether this answer left some out. A search
     /// pages the same way, each find with the line it found its words on.
     /// </summary>
@@ -191,7 +191,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Deleting one is the window's one delete (SESSUX1f): the ledger takes the record, and this machine's files go with it,
+    /// Deleting one is the window's one delete: the ledger takes the record, and this machine's files go with it,
     /// its name and pin among them; another conversation's stay.
     /// </summary>
     [Fact]
@@ -215,7 +215,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 Going on in one is the person's words to it (D137 §2.2, ASKHIST1): an ended Ask Daoris conversation is no never any
+    /// 🔴 Going on in one is the person's words to it: an ended Ask Daoris conversation is no never any
     /// more, so its words are kept on its record through the say door, shown at once with the reach <c>resume</c>, and the loop
     /// is nudged, as a chat's are; its runner takes them up and resumes its own conversation.
     /// </summary>
@@ -245,7 +245,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         Assert.Contains("is no Ask Daoris conversation of this machine's", await RefusalAsync(module, "HELP_START_FROM", new { id = "c1" }));
     }
 
-    /// <summary>The lines and the exit code a route answered as <c>said</c> (RPC1e), which the terminal prints, joined.</summary>
+    /// <summary>The lines and the exit code a route answered as <c>said</c>, which the terminal prints, joined.</summary>
     private static (string Out, int Code) SaidOf(JsonElement answer)
     {
         var said = answer.GetProperty("said");
@@ -263,7 +263,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1e: asked for its words (<c>said: true</c>) by <c>help list</c>, <c>rename</c>, <c>pin</c> and <c>delete --yes</c> sent over the
+    /// Asked for its words (<c>said: true</c>) by <c>help list</c>, <c>rename</c>, <c>pin</c> and <c>delete --yes</c> sent over the
     /// pipe, each route answers the lines and the exit code the alone path prints over the same records, a refusal among them as an
     /// answer, never thrown: a list, a search as its JSON, a conversation that is not Ask Daoris's, one no record holds, and a name too
     /// long. Nothing is kept or deleted, and the page's answers keep their shape.
@@ -298,7 +298,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         Assert.False((await AnswerAsync(module, "HELP_PIN", new { id = "h1", pinned = false })).TryGetProperty("said", out _));
     }
 
-    /// <summary>RPC1e: a terminal's rename, pin, unpin and delete run here, kept and deleted as the window's are, in the verb's words.</summary>
+    /// <summary>A terminal's rename, pin, unpin and delete run here, kept and deleted as the window's are, in the verb's words.</summary>
     [Fact]
     public async Task A_terminal_s_rename_pin_and_delete_run_here_in_the_verb_s_words()
     {

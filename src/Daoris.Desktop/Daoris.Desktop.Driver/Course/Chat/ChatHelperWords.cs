@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A helper's answer reaches a conversation that asked (MIXAGENT2a-iii, D163 and its MIXAGENT2a-ii note; the mixed agents design
-/// §3): the driver kept it on the asker's record marked as the helper's and left an event this runner hears. A conversation open
+/// A helper's answer reaches a conversation that asked: the driver kept it on the asker's record marked as the helper's and left an event this runner hears. A conversation open
 /// here says it as its next turn, or at its turn's end where it is talking; one that ended goes on with it through its own going-on
 /// (<see cref="ChatRunner.GoOnAsync"/>), which is the path for any word waiting on an ended record. A registered executor.
 /// </summary>
@@ -11,14 +10,14 @@ internal sealed class ChatHelperWords(IExecutorWiring wiring) : IExecutor
 {
     private ChatContext context => wiring.Context;
 
-    /// <summary>What the course answered a helper's answer held at the bound, by session (FOUNDATION1h branch 7): a test hears it; no person reads it.</summary>
+    /// <summary>What the course answered a helper's answer held at the bound, by session: a test hears it; no person reads it.</summary>
     internal event Action<string, LineCourse>? Decided;
 
     // The helper words this runner is already saying, by id: the event and the shell's come-up may both hear one.
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _helperSaying = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// Say the helper's answers waiting on an open conversation as its turns, once each (MIXAGENT2a-iii): in the order they were
+    /// Say the helper's answers waiting on an open conversation as its turns, once each: in the order they are
     /// kept, each its own turn, queued behind a turn in flight by the turns' own queue. A word is taken off the record only once
     /// its turn is on the wire, so one that never went stays for the next try. Nothing for a record this runner does not hold.
     /// </summary>
@@ -29,7 +28,7 @@ internal sealed class ChatHelperWords(IExecutorWiring wiring) : IExecutor
         record ??= await context.ReadAgainAsync(sessionId, CancellationToken.None).ConfigureAwait(false);
         if (record is not { Kind: "chat" } || record.Teammate) return;
 
-        // COWORK1e: an answer the answers-alone bound holds for the person, or that they kept, is said only once they let it go on.
+        // An answer the answers-alone bound holds for the person, or that they kept, is said only once they let it go on.
         var mark = context.Marks.Read(sessionId);
         foreach (var word in record.Waiting.Where(word => word.Helper is not null && word.Id is not null && !Kept(mark, word)))
         {
@@ -57,13 +56,13 @@ internal sealed class ChatHelperWords(IExecutorWiring wiring) : IExecutor
     /// door has no turns, so it is sent at once and recorded here, as a hand-over's first message is.
     /// </summary>
     /// <remarks>
-    /// 🔴 COWORK1c (the message-urgency design §6's trap): its take-off is awaited and in order, never fired and forgotten. On the
+    /// 🔴 Its take-off is awaited and in order, never fired and forgotten. On the
     /// structured doors it is the turns' own, kept under the record's id, after every take-off before it; on a text-only door it is
     /// awaited here before the next answer is said.
     /// </remarks>
     private async Task<bool> SayHelperWordAsync(string sessionId, SaidWordView word)
     {
-        // COWORK1d: ordinary unless its ask was urgent, which its word on the record says.
+        // Ordinary unless its ask is urgent, which its word on the record says.
         var message = new ChatMessage(word.Text, [])
         {
             Helped = word, Id = word.Id, Kept = true, Level = word.Level == MessageLevel.Urgent ? MessageLevel.Urgent : MessageLevel.Ordinary,
@@ -71,7 +70,7 @@ internal sealed class ChatHelperWords(IExecutorWiring wiring) : IExecutor
         if (context.Turned.TryGetValue(sessionId, out var chat))
         {
             chat.Turns.Keeps(new SaidDoor(context.Service, sessionId));
-            // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): the turns judge each answer as its turn comes, against its line
+            // 🔴 The turns judge each answer as its turn comes, against its line
             // as the turns before it left it, so two answers said at once never both pass as the second.
             chat.Turns.Bounds(answer => HeldAloneAsync(sessionId, answer));
             return chat.Turns.Take(message) is not null;
@@ -85,12 +84,12 @@ internal sealed class ChatHelperWords(IExecutorWiring wiring) : IExecutor
         return true;
     }
 
-    /// <summary>Whether a word is among those the answers-alone bound holds for the person, or they kept (COWORK1e).</summary>
+    /// <summary>Whether a word is among those the answers-alone bound holds for the person, or they kept.</summary>
     private static bool Kept(GoOnMark? mark, SaidWordView word) =>
         mark is { Why: GoOnMarks.AnswersAlone or GoOnMarks.NotNow } && mark.Said.Contains(word.Id!, StringComparer.Ordinal);
 
     /// <summary>
-    /// The answers-alone bound on an open conversation's turn (COWORK1e): its record and its line read now, as the turns before this one
+    /// The answers-alone bound on an open conversation's turn: its record and its line read now, as the turns before this one
     /// left them. Held, the answer is marked for the person (<see cref="AnswersAloneHold"/>), and said again only once they let it go on.
     /// </summary>
     private async Task<bool> HeldAloneAsync(string sessionId, ChatMessage answer)
@@ -99,7 +98,7 @@ internal sealed class ChatHelperWords(IExecutorWiring wiring) : IExecutor
         var json = await context.Service.SessionRecordsJsonAsync(CancellationToken.None).ConfigureAwait(false);
         if (ServiceClient.ReadRecord(json, sessionId) is not { } record) return false;
         var lines = ServiceClient.ReadRecords(json);
-        // FOUNDATION1h branch 7 (the foundation design §3.1): the helper's answer at the bound is the course's hold for an answer, the count
+        // The helper's answer at the bound is the course's hold for an answer, the count
         // `AnswersAloneHold` read being the fact; a live conversation's own turn takes the word, so the hold is the one answer it can have.
         // It is heard before the hold marks the answer or says so.
         void Held(int? at) => Decided?.Invoke(

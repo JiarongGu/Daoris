@@ -6,9 +6,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// ENTRY1d1: a move proposal's Apply is the Manage drawer's own door, the local host's
+/// A move proposal's Apply is the Manage drawer's own door, the local host's
 /// <c>POST /api/registry/{repository}/workspace</c>, which edits one field of the registry's row, and the host's answer comes
-/// back as its sentence. A service stood in, and nothing starts a process: the fast half (MOD8), beside
+/// back as its sentence. A service stood in, and nothing starts a process: the fast half, beside
 /// <see cref="HelpDoorsTests"/>, whose update runs a script.
 /// </summary>
 public sealed class HelpRepositoryDoorTests : DriverModuleBridge

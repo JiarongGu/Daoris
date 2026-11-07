@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A steward's act that is a person's route of the driver module in one exact form of its own (STEWARDROLE1d): within the acts the
+/// A steward's act that is a person's route of the driver module in one exact form of its own: within the acts the
 /// person granted, its handler runs that route inside the role's door, so the owner's marks pass it by, and records it as the steward's;
 /// outside them it asks the person as that same press. The route's own judges stand: one it refuses is refused with its code, nothing
 /// recorded. Only a route that writes no one's words is such an act.

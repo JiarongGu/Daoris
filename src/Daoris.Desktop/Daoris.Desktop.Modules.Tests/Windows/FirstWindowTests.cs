@@ -9,12 +9,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// LOG2b: the browser's first window, made over the engine's port (CHR3), and what it leaves when that
-/// fails. The first real log's one <c>error</c> in the <c>browser</c> source was an exception from a task
-/// nobody observed: a WebSocket to the engine's port closed without its close handshake, rethrown by the
-/// finalizer with nothing to say where. The browser's own tasks are observed now, and a failure is a
-/// line naming where it happened, and it stops the browser, as before, rather than leave a process with
-/// no window.
+/// The browser's first window, made over the engine's port, and what it leaves when that
+/// fails. A WebSocket to the engine's port closed without its close handshake must not become an exception
+/// from a task nobody observed, rethrown by the finalizer with nothing to say where. The browser's own
+/// tasks are observed, and a failure is a line naming where it happened, and it stops the browser rather
+/// than leave a process with no window.
 /// </summary>
 public sealed class FirstWindowTests : IDisposable
 {

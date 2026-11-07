@@ -8,9 +8,8 @@ namespace Daoris.Desktop;
 /// <remarks>
 /// <para><b>A thrown exception's message never reaches anybody.</b> The host maps an unhandled
 /// exception to a generic <c>UNKNOWN_ERROR</c> carrying only the exception TYPE, so every carefully
-/// written refusal sentence in these modules was being dropped on the floor — the page showed a
-/// generic failure and the person learned nothing. Found by the first tests this half ever had; it
-/// survived because the page's own suite mocks the bridge and asserts against a string it invented.</para>
+/// written refusal sentence in these modules would be dropped on the floor — the page would show a
+/// generic failure and the person would learn nothing.</para>
 ///
 /// <para><b>The framework's own shape is a code plus parameters</b>, translated client-side
 /// (`errors.&lt;CODE&gt;`), with the message kept as the developer's fallback. So a refusal is declared
@@ -22,16 +21,16 @@ namespace Daoris.Desktop;
 /// </remarks>
 public static class Refusals
 {
-    /// <summary>A word on an update with no install, or nothing staged beside it (UPDATE1, D139 §3): there is nothing to install.</summary>
+    /// <summary>A word on an update with no install, or nothing staged beside it: there is nothing to install.</summary>
     public const string UpdateNothingStaged = "UPDATE_NOTHING_STAGED";
 
-    /// <summary>A word on an update that is not one of when-idle, now and not-now (UPDATE1).</summary>
+    /// <summary>A word on an update that is not one of when-idle, now and not-now.</summary>
     public const string UpdateModeUnknown = "UPDATE_MODE_UNKNOWN";
 
     /// <summary>A remote with an address but no key, or the reverse — no remote in any loader.</summary>
     public const string RemoteHalfDeclared = Daoris.Driver.HomeFileCodes.RemoteHalfDeclared;
 
-    /// <summary>A remote's address with no `http://` or `https://`, which every sync would fail at the service's door (REV3).</summary>
+    /// <summary>A remote's address with no `http://` or `https://`, which every sync would fail at the service's door.</summary>
     public const string RemoteNotAnAddress = Daoris.Driver.HomeFileCodes.RemoteNotAnAddress;
 
     /// <summary>A declaration form pointed at a folder that has not adopted Daoris.</summary>
@@ -51,49 +50,49 @@ public static class Refusals
     public const string HarnessActionIdle = "HARNESS_ACTION_IDLE";
 
     /// <summary>
-    /// A harness action started while another still runs (REV3). One at a time: two installers racing
+    /// A harness action started while another still runs. One at a time: two installers racing
     /// over one PATH is not a thing to make easy, and a second login under the same name took the
     /// first's place in the map, so the first could no longer be answered or stopped.
     /// </summary>
     public const string HarnessActionBusy = "HARNESS_ACTION_BUSY";
 
-    /// <summary>An account action this build does not have (TOOL4g): not one of order, use, ready, said (POOL1a took <c>inherit</c>).</summary>
+    /// <summary>An account action this build does not have: not one of order, use, ready, said.</summary>
     public const string AccountActionUnknown = "ACCOUNT_ACTION_UNKNOWN";
 
-    /// <summary>A list naming an account that is not on this machine (D125 §3.1, TOOL4g), compared exactly as a default is.</summary>
+    /// <summary>A list naming an account that is not on this machine, compared exactly as a default is.</summary>
     public const string AccountOrderUnknown = "ACCOUNT_ORDER_UNKNOWN";
 
-    /// <summary>A list naming one account twice, in any case (D125 §3.1, TOOL4g).</summary>
+    /// <summary>A list naming one account twice, in any case.</summary>
     public const string AccountOrderTwice = "ACCOUNT_ORDER_TWICE";
 
-    /// <summary>A kept account that the list does not hold (D130 §4.6, TOOL4g).</summary>
+    /// <summary>A kept account that the list does not hold.</summary>
     public const string AccountScopeKeep = "ACCOUNT_SCOPE_KEEP";
 
-    /// <summary>A kept account alone in its list, which would leave driven work none (D130 §4.6, TOOL4g).</summary>
+    /// <summary>A kept account alone in its list, which would leave driven work none.</summary>
     public const string AccountScopeAlone = "ACCOUNT_SCOPE_ALONE";
 
     /// <summary>
-    /// What one set of Daoris's accounts leaves nothing to name (POOL1a, D197; the account-pool design §5.2): a workspace on an order or
+    /// What one set of Daoris's accounts leaves nothing to name: a workspace on an order or
     /// a use, a list to join, a default to set. Every account signed in for Daoris serves every workspace, and the order says where
     /// starts begin.
     /// </summary>
     public const string AccountsOneSet = "ACCOUNTS_ONE_SET";
 
     /// <summary>
-    /// A trust hold whose file is the person's own sign-in's (POOL1a3, D197 point 3; the account-pool design §3 point 4): Daoris
+    /// A trust hold whose file is the person's own sign-in's: Daoris
     /// writes nothing there, so <c>TRUST_FOLDER</c> refuses it before anything is written; the tool itself trusts it, at their
     /// terminal.
     /// </summary>
     public const string TrustOwnHome = "TRUST_OWN_HOME";
 
     /// <summary>
-    /// A setting's value this build does not take (D130 §16.6, TOOL4g): a way to use accounts, when to switch (SWITCH1d), or a near
+    /// A setting's value this build does not take: a way to use accounts, when to switch, or a near
     /// out of range.
     /// </summary>
     public const string AccountUseValue = "ACCOUNT_USE_VALUE";
 
     /// <summary>
-    /// A curve that breaks a rule (D165 point 2; the switch design §2, SWITCH1d): its <c>context</c> the rule
+    /// A curve that breaks a rule: its <c>context</c> the rule
     /// (<see cref="Daoris.Driver.CurveProblem.Kind"/>), with the window, point and numbers it names, and <c>said</c> the
     /// terminal's sentence, which a page with no form for a newer rule says as it is.
     /// </summary>
@@ -113,7 +112,7 @@ public static class Refusals
     public const string DriverRefused = "DRIVER_REFUSED";
 
     /// <summary>
-    /// A move on a parked session that is not one of the person's three (design §4). The ledger
+    /// A move on a parked session that is not one of the person's three. The ledger
     /// allows a fourth — back to `working` — and that one is the driver's observation rather than a
     /// button: answering a session so it carries on is a message, not a move.
     /// </summary>
@@ -122,87 +121,87 @@ public static class Refusals
     /// <summary>A decline with nothing in it. The same rule the quest door holds, for its reason.</summary>
     public const string SessionDeclineNeedsReason = "SESSION_DECLINE_NEEDS_REASON";
 
-    /// <summary>A session asked to be archived that no record here is (SESSUX1a, D126 §5.2).</summary>
+    /// <summary>A session asked to be archived that no record here is.</summary>
     public const string SessionUnknown = "SESSION_UNKNOWN";
 
-    /// <summary>A session asked to be archived that still runs or waits (D126 §5.2): it is stopped first, and then it has ended.</summary>
+    /// <summary>A session asked to be archived that still runs or waits: it is stopped first, and then it has ended.</summary>
     public const string SessionLive = "SESSION_LIVE";
 
     /// <summary>
-    /// A session asked to be archived that waits on you or has work to review (D126 §5.2): archive never hides what needs
+    /// A session asked to be archived that waits on you or has work to review: archive never hides what needs
     /// the person. Its <c>group</c> says which, and travels as the catalogue's <c>context</c>, so the sentence names it.
     /// </summary>
     public const string SessionNeedsYou = "SESSION_NEEDS_YOU";
 
     /// <summary>
-    /// A delete asked of a teammate's record (SESSUX1f, D126 §5.4): it ran on their machine, and its record is theirs, so
+    /// A delete asked of a teammate's record: it ran on their machine, and its record is theirs, so
     /// it may only be archived here. Its <c>machine</c> names where it ran.
     /// </summary>
     public const string SessionNotOurs = "SESSION_NOT_OURS";
 
     /// <summary>
-    /// A delete asked of a session that served a quest (SESSUX1f): its record is that work's, and the quest's strikes and
+    /// A delete asked of a session that served a quest: its record is that work's, and the quest's strikes and
     /// carry-ons are read from it, so archive is how it is cleared. Its <c>quest</c> names the work.
     /// </summary>
     public const string SessionServedQuest = "SESSION_SERVED_QUEST";
 
     /// <summary>
-    /// A delete asked of a session something names (SESSUX1f): an ask as its intake, a quest it published, or a landing.
+    /// A delete asked of a session something names: an ask as its intake, a quest it published, or a landing.
     /// Which travels as the catalogue's <c>context</c> (<c>ask</c>, <c>quest</c>, <c>landing</c>), with the id it names.
     /// </summary>
     public const string SessionNamed = "SESSION_NAMED";
 
-    /// <summary>A delete asked of a conversation whose own tree is still on this machine (SESSUX1f): discarded or cleaned up first.</summary>
+    /// <summary>A delete asked of a conversation whose own tree is still on this machine: discarded or cleaned up first.</summary>
     public const string SessionTreeHere = "SESSION_TREE_HERE";
 
     /// <summary>
-    /// A delete asked of a record pushed to a workspace's remote (SESSUX1f): a session record does not travel as a
+    /// A delete asked of a record pushed to a workspace's remote: a session record does not travel as a
     /// deletion, so the team's copy would stay. Its <c>workspace</c> names whose remote holds it.
     /// </summary>
     public const string SessionOnRemote = "SESSION_ON_REMOTE";
 
     /// <summary>
     /// *Try again* asked of a quest the driver's last look neither parked on its failed sessions nor held by the person's
-    /// stop (SESSUX1b, D126 §3.4): nothing to mark and no stop to release, and forgiving it would let it run past its
-    /// strikes (D110). Its <c>id</c> names the quest.
+    /// stop: nothing to mark and no stop to release, and forgiving it would let it run past its
+    /// strikes. Its <c>id</c> names the quest.
     /// </summary>
     public const string QuestNotHeld = Daoris.Driver.ChoiceCodes.QuestNotHeld;
 
     /// <summary>
-    /// *Try again* asked of a quest a pause holds (PAUSE1b, D132 §6.1): the pause is the reason before a stop and the strikes,
+    /// *Try again* asked of a quest a pause holds: the pause is the reason before a stop and the strikes,
     /// and *Resume* is the one press that moves it. Its <c>id</c> names the quest and <c>pause</c> the ask whose pause holds
     /// it; a quest paused on its own travels as the catalogue's <c>context</c> <c>quest</c>.
     /// </summary>
     public const string QuestPaused = Daoris.Driver.ChoiceCodes.QuestPaused;
 
     /// <summary>
-    /// A keep rule out of its kind's bounds, or a choice its kind does not take (KEEP1d, the cleanup design §2.2): said under the row's
+    /// A keep rule out of its kind's bounds, or a choice its kind does not take: said under the row's
     /// editor, the editor kept open. Its <c>kind</c>, <c>min</c> and <c>max</c> name the bounds.
     /// </summary>
     public const string KeepOutOfRange = Daoris.Driver.ChoiceCodes.KeepOutOfRange;
 
     /// <summary>
-    /// A second opinion switched off, or a look required, for a place whose saved workflow's node decides it (WORKFLOWCLEAN1 1h): the node
+    /// A second opinion switched off, or a look required, for a place whose saved workflow's node decides it: the node
     /// is where it is changed. Its <c>repository</c> and <c>node</c> name them.
     /// </summary>
     public const string GraphDecides = Daoris.Driver.ChoiceCodes.GraphDecides;
 
     /// <summary>
-    /// A work asked of an ask this machine has no record of, or a quest not here (PAUSE1b, D132 §7.3): nothing to plan, pause
+    /// A work asked of an ask this machine has no record of, or a quest not here: nothing to plan, pause
     /// or resume. Its <c>id</c> names it; a quest's travels as the catalogue's <c>context</c> <c>quest</c>.
     /// </summary>
     public const string WorkUnknown = "WORK_UNKNOWN";
 
     /// <summary>
-    /// An abandon's second press with no reason (PAUSE1d, D132 §7.3): each declined quest keeps the person's reason, verbatim,
+    /// An abandon's second press with no reason: each declined quest keeps the person's reason, verbatim,
     /// and the ask's close keeps it too, so an abandon without one is refused before anything is asked or written.
     /// </summary>
     public const string WorkReason = "WORK_REASON";
 
-    // HIST1c (D153 point 2; the history-clearing design §1.2): why a clear of finished history keeps a unit, or a piece of one.
+    // Why a clear of finished history keeps a unit, or a piece of one.
     // Each is a unit's code in HISTORY_PLAN's and HISTORY_CLEAR's answers, and the refusal of a clear of one quest, one ask or
     // one quest's failed sessions; which of a code's sentences is meant travels as the catalogue's `context`. Declared as the
-    // driver library's codes (HIST1d), which `daoris history --json` prints from the same projection, so the two doors
+    // driver library's codes, which `daoris history --json` prints from the same projection, so the two doors
     // cannot spell one differently.
 
     /// <summary>No such quest or ask on this machine. Its <c>quest</c> or <c>ask</c> names it; a quest's travels as <c>context</c> <c>quest</c>.</summary>
@@ -210,7 +209,7 @@ public static class Refusals
 
     /// <summary>
     /// A quest of the work is open, or taken (<c>context</c> <c>taken</c>): its record is work in progress. A failed-sessions clear
-    /// of a quest still open or taken (<c>context</c> <c>failed</c>): its strikes are counted from them (D58).
+    /// of a quest still open or taken (<c>context</c> <c>failed</c>): its strikes are counted from them.
     /// </summary>
     public const string HistoryOpen = Daoris.Driver.HistoryCodes.Open;
 
@@ -249,18 +248,17 @@ public static class Refusals
     public const string HistoryNotOurs = Daoris.Driver.HistoryCodes.NotOurs;
 
     /// <summary>
-    /// *Open folder* or *Open a terminal here* asked of a session whose folder this machine no longer holds (SESSUX1d, D126
-    /// §3.5): a tidy or the clean-up took its tree, or it names no tree this home opened and no checkout here, or it is a
+    /// *Open folder* or *Open a terminal here* asked of a session whose folder this machine no longer holds: a tidy or the clean-up took its tree, or it names no tree this home opened and no checkout here, or it is a
     /// teammate's record. The page offers neither where it knows the folder is gone, so this answers a race. Its
     /// <c>session</c> names it.
     /// </summary>
     public const string SessionFolderGone = "SESSION_FOLDER_GONE";
 
-    /// <summary>The system would not open a session's folder in the file manager; its own reason goes with it (SESSUX1d).</summary>
+    /// <summary>The system would not open a session's folder in the file manager; its own reason goes with it.</summary>
     public const string SessionFolderNotOpened = "SESSION_FOLDER_NOT_OPENED";
 
     /// <summary>
-    /// A review asked for where this machine cannot answer it (SURF6): the record names no tree or no
+    /// A review asked for where this machine cannot answer it: the record names no tree or no
     /// base commit, or the tree is gone. It is INFORMATION rather than a fault — a session whose
     /// record travelled here from another machine has nothing to diff here and never will, and so
     /// does one that predates the base commit being recorded.
@@ -270,22 +268,22 @@ public static class Refusals
     public const string SessionRangeUnreadable = "SESSION_RANGE_UNREADABLE";
 
     /// <summary>
-    /// A review asked for where the session's tree is gone from this machine and no landing of it is recorded here
-    /// (REVIEW2, D113): a tidy after a merge, or a discard, took it. INFORMATION, in the review's class, and its own
+    /// A review asked for where the session's tree is gone from this machine and no landing of it is recorded here:
+    /// a tidy after a merge, or a discard, took it. INFORMATION, in the review's class, and its own
     /// code so the page offers nothing that acts on a tree: there is none to land or to discard. A session whose
     /// landing made a branch is reviewed from that branch instead.
     /// </summary>
     public const string SessionTreeGone = "SESSION_TREE_GONE";
 
     /// <summary>
-    /// The files a person may `@` asked for where git cannot list them (CONV4d): the record names no
+    /// The files a person may `@` asked for where git cannot list them: the record names no
     /// tree here, or the tree is not a repository of its own. INFORMATION, like the review's: a path
     /// typed after `@` still reaches the agent, because both doors expand it as typed.
     /// </summary>
     public const string SessionTreeUnlisted = "SESSION_TREE_UNLISTED";
 
     /// <summary>
-    /// A file asked for its preview (PREVIEW1, D111) that the preview does not read: a path outside the
+    /// A file asked for its preview that the preview does not read: a path outside the
     /// session's tree, a path through a link inside the tree that leads out of it, or a path under `.git`,
     /// which is git's own. Three codes, since each is a different fact about the path.
     /// </summary>
@@ -301,58 +299,58 @@ public static class Refusals
     public const string PreviewNotAFile = "PREVIEW_NOT_A_FILE";
 
     /// <summary>
-    /// A preview read from a session's landed branch, once its tree is gone (REVIEW2, D113), of a path that branch holds
+    /// A preview read from a session's landed branch, once its tree is gone, of a path that branch holds
     /// no file at: deleted or moved there, a folder, or a link. INFORMATION, like <see cref="PreviewNotAFile"/>, whose
     /// sentence speaks of the tree; this one names the branch.
     /// </summary>
     public const string PreviewNotOnBranch = "PREVIEW_NOT_ON_BRANCH";
 
     /// <summary>
-    /// A window name this build does not open (SURF8). Refused rather than sanitised: the name
+    /// A window name this build does not open. Refused rather than sanitised: the name
     /// becomes both an address and a filename, and "nearly a window name" is not one.
     /// </summary>
     public const string WindowUnknown = "WINDOW_UNKNOWN";
 
-    /// <summary>A plugin id this machine has no folder for (D64).</summary>
+    /// <summary>A plugin id this machine has no folder for.</summary>
     public const string PluginUnknown = Daoris.Driver.PluginCodes.Unknown;
 
     /// <summary>A plugin action this build does not have.</summary>
     public const string PluginActionUnknown = "PLUGIN_ACTION_UNKNOWN";
 
-    /// <summary>A remove the system refused, since something holds a file in the plugin's folder (the library's code, PUSH1f2f).</summary>
+    /// <summary>A remove the system refused, since something holds a file in the plugin's folder (the library's code).</summary>
     public const string PluginBusy = Daoris.Driver.PluginCodes.Busy;
 
-    /// <summary>The system would not open a plugin's folder, or the plugins folder, in the file manager; its own reason goes with it (PLUGUI1e).</summary>
+    /// <summary>The system would not open a plugin's folder, or the plugins folder, in the file manager; its own reason goes with it.</summary>
     public const string PluginFolderNotOpened = "PLUGIN_FOLDER_NOT_OPENED";
 
     /// <summary>
-    /// A plugin's data folder asked to open where it never made one (PLUGUI1e, D119 §4.1). INFORMATION, in the review's
-    /// class (D48 §6): the page shows no Open folder then, so this answers a race, a press made as the folder went.
+    /// A plugin's data folder asked to open where it never made one. INFORMATION, in the review's
+    /// class: the page shows no Open folder then, so this answers a race, a press made as the folder went.
     /// </summary>
     public const string PluginNothingKept = "PLUGIN_NOTHING_KEPT";
 
-    /// <summary>A favorite that is no web page: the bar's rule keeps only `http` and `https` pages (CHR5).</summary>
+    /// <summary>A favorite that is no web page: the bar's rule keeps only `http` and `https` pages.</summary>
     public const string BrowserNotAPage = Daoris.Driver.HomeFileCodes.BrowserNotAPage;
 
     /// <summary>A favorites or settings file that could not be read, which an edit will not write over.</summary>
     public const string BrowserFileUnreadable = Daoris.Driver.HomeFileCodes.BrowserFileUnreadable;
 
-    /// <summary>An extensions setting that is neither `offer` nor `refuse` (CHR7).</summary>
+    /// <summary>An extensions setting that is neither `offer` nor `refuse`.</summary>
     public const string BrowserSettingUnknown = Daoris.Driver.HomeFileCodes.BrowserSettingUnknown;
 
-    /// <summary>A browser choice that is neither `daoris` nor `edge` (BRW12).</summary>
+    /// <summary>A browser choice that is neither `daoris` nor `edge`.</summary>
     public const string BrowserChoiceUnknown = Daoris.Driver.HomeFileCodes.BrowserChoiceUnknown;
 
-    /// <summary>A links setting that is neither `system` nor `daoris` (BRW7).</summary>
+    /// <summary>A links setting that is neither `system` nor `daoris`.</summary>
     public const string BrowserLinksUnknown = Daoris.Driver.HomeFileCodes.BrowserLinksUnknown;
 
     /// <summary>
-    /// A link the page asked Daoris's browser to open that is no web page (BRW7): the favorites' rule,
+    /// A link the page asked Daoris's browser to open that is no web page: the favorites' rule,
     /// so a script, a file or a credential in the address never reaches a browser agents drive.
     /// </summary>
     public const string BrowserLinkNotAPage = "BROWSER_LINK_NOT_A_PAGE";
 
-    /// <summary>A terminal asked for a shell this build does not offer (CONSOLE4a): not one of `pwsh`, `powershell`, `cmd`, `bash`.</summary>
+    /// <summary>A terminal asked for a shell this build does not offer: not one of `pwsh`, `powershell`, `cmd`, `bash`.</summary>
     public const string TerminalShellUnknown = "TERMINAL_SHELL_UNKNOWN";
 
     /// <summary>A terminal asked for a shell this build offers and this machine does not have on PATH.</summary>
@@ -365,7 +363,7 @@ public static class Refusals
     public const string TerminalNotStarted = "TERMINAL_NOT_STARTED";
 
     /// <summary>
-    /// A filter the machine log's reader cannot use (LOG1c): a span that is not <c>30m</c>, <c>2h</c> or
+    /// A filter the machine log's reader cannot use: a span that is not <c>30m</c>, <c>2h</c> or
     /// <c>3d</c>, a source no process writes, a level that is not a floor. Refused rather than read as no
     /// filter, which would show lines the person did not ask for as if they had.
     /// </summary>
@@ -375,45 +373,45 @@ public static class Refusals
     public const string LogFolderNotOpened = "LOG_FOLDER_NOT_OPENED";
 
     /// <summary>
-    /// A managed version asked for where it is not downloaded (TOOLS7, D121 §4.1): a delete of one, or what a switch of
+    /// A managed version asked for where it is not downloaded: a delete of one, or what a switch of
     /// git to it would change, which is asked of that git and so needs it here.
     /// </summary>
     public const string ToolNotDownloaded = Daoris.Driver.ToolCodes.NotDownloaded;
 
-    /// <summary>A tool named as a file that is not a whole path, or holds no file (TOOLS7): it is never written.</summary>
+    /// <summary>A tool named as a file that is not a whole path, or holds no file: it is never written.</summary>
     public const string ToolFileMissing = Daoris.Driver.ToolCodes.FileMissing;
 
     /// <summary>
-    /// A tool named as a file that did not start, or started and answered no version (TOOLS7, §4.1: a named file starts
+    /// A tool named as a file that did not start, or started and answered no version (a named file starts
     /// with a version). The system's own reason goes with it, and nothing is written.
     /// </summary>
     public const string ToolFileNoVersion = Daoris.Driver.ToolCodes.FileNoVersion;
 
-    /// <summary>A download or a use of a version no list names for this machine, or one that is no exact version (TOOLS7).</summary>
+    /// <summary>A download or a use of a version no list names for this machine, or one that is no exact version.</summary>
     public const string ToolVersionUnknown = "TOOL_VERSION_UNKNOWN";
 
     /// <summary>
-    /// A version refused before it is fetched (TOOLS7): two lists disagree on it. The check that refused it travels with
+    /// A version refused before it is fetched: two lists disagree on it. The check that refused it travels with
     /// it, and so does the driver's sentence, which names both lists and both values.
     /// </summary>
     public const string ToolDownloadRefused = "TOOL_DOWNLOAD_REFUSED";
 
-    /// <summary>A resource location that is no address Daoris reads from: https://, or http:// to this machine (TOOLS7, rule 5).</summary>
+    /// <summary>A resource location that is no address Daoris reads from: https://, or http:// to this machine.</summary>
     public const string ToolLocationRefused = Daoris.Driver.ToolCodes.LocationRefused;
 
-    /// <summary>A delete of the version a tool runs (TOOLS7, §3.6): another way or version is chosen first.</summary>
+    /// <summary>A delete of the version a tool runs: another way or version is chosen first.</summary>
     public const string ToolInUse = Daoris.Driver.ToolCodes.InUse;
 
     /// <summary>A delete the system refused, since something still holds a file in that version's folder; its reason goes with it.</summary>
     public const string ToolHeld = Daoris.Driver.ToolCodes.Held;
 
-    /// <summary>A download, or a use that downloads, started while that tool already has one running (TOOLS7, §3.6).</summary>
+    /// <summary>A download, or a use that downloads, started while that tool already has one running.</summary>
     public const string ToolBusy = "TOOL_BUSY";
 
-    /// <summary>A git setting on a git older than the one that reads it (TOOLS6, D121): the key, the version and its floor go with it.</summary>
+    /// <summary>A git setting on a git older than the one that reads it: the key, the version and its floor go with it.</summary>
     public const string ToolGitTooOld = Daoris.Driver.ToolCodes.GitTooOld;
 
-    // GIT1d-a (D147): a Git read the driver did not answer. Carried in the answer's `refusal`, not raised, so a page that asks
+    // A Git read the driver did not answer. Carried in the answer's `refusal`, not raised, so a page that asks
     // for a commit this repository lacks words it beside what it drew. One code for each `GitReadRefusal`, and the checkout.
 
     /// <summary>A Git read of a repository with no checkout on this machine.</summary>
@@ -439,7 +437,7 @@ public static class Refusals
 
     /// <summary>
     /// Every code a module here can raise — what the catalogue test enumerates. Read off the
-    /// declarations above (REFUSE1): a list kept by hand let a code left out of it escape the check.
+    /// declarations above: a list kept by hand let a code left out of it escape the check.
     /// </summary>
     public static IReadOnlyList<string> All { get; } = typeof(Refusals)
         .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
@@ -456,9 +454,9 @@ public static class Refusals
         new(code, parameters.ToDictionary(p => p.Key, p => p.Value), message);
 
     /// <summary>
-    /// Refuse in a code the driver library chose (REFAC1): its <c>HistoryCodes</c>, which this class declares as its own, read
+    /// Refuse in a code the driver library chose: its <c>HistoryCodes</c>, which this class declares as its own, read
     /// through its projection so no route here maps a word again. Only a code declared here is raised; any other is
-    /// <see cref="DriverRefused"/> with the sentence, so nothing reaches the page as a bare code, which REFUSE1's scan holds
+    /// <see cref="DriverRefused"/> with the sentence, so nothing reaches the page as a bare code, which the refusal scan holds
     /// for every throw site that names its code.
     /// </summary>
     public static ShenoraException Declared(

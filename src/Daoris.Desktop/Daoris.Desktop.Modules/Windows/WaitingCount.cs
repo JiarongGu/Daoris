@@ -1,13 +1,13 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The count each main window's page last told (NOTIFY1b), by the window's name: what that window wears on its own taskbar button
-/// and in its title (NOTIFY2c, D196 point 6, the notification design §2.4). Kept here, in plain <c>net10.0</c>, so that is tested; the
+/// The count each main window's page last told, by the window's name: what that window wears on its own taskbar button
+/// and in its title. Kept here, in plain <c>net10.0</c>, so that is tested; the
 /// windows only draw what they are told.
 /// </summary>
 /// <remarks>
 /// <para><b>Each its own.</b> Every main window's page tells its own workspace's count (<c>useTaskbarCount</c>), and its window wears
-/// that, whatever workspace another window holds. The first put away (MAINWINDOWS2) takes its button and its count with it, and every
+/// that, whatever workspace another window holds. The first put away takes its button and its count with it, and every
 /// other main window wears its own.</para>
 ///
 /// <para>Kept so a window wears its count again where it is made after its page told it, and forgotten as the window closes, so one

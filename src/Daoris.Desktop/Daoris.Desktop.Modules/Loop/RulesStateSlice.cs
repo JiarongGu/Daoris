@@ -5,13 +5,13 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What an agent Daoris starts may do (PERM1, D72) and what agents proposed about it (PERM2, D74), a pushed slice (FOUNDATION1s part B,
-/// D182 point 2): the rules as <c>RULES</c> answers them (<see cref="RulesRoutes.Answer(string)"/>), judged by the shell's loop from the
+/// What an agent Daoris starts may do and what agents proposed about it, a pushed slice:
+/// the rules as <c>RULES</c> answers them (<see cref="RulesRoutes.Answer(string)"/>), judged by the shell's loop from the
 /// home's files and pushed whole when they move, so no tick, scope or focus asks a window to read them again.
 /// </summary>
 /// <remarks>
 /// <para><b>One partition</b>, <c>rules</c>, the route's answer whole: the permissions file's path under the home rides this bridge as
-/// it always did (desktop-only, D182 point 2).</para>
+/// desktop-only.</para>
 ///
 /// <para><b>Its wakes.</b> A change told to the rules: a press's (<c>RULE_ACTION</c>, <c>RULE_PROPOSAL</c>, a terminal's through the
 /// instance), and a look's where their reading moved (<see cref="RulesReading"/>, which the judgement reads too); and the slice's period,
@@ -41,7 +41,7 @@ public static class RulesStateSlice
 }
 
 /// <summary>
-/// The rules' reading as <c>RULES</c> answers it, and whether it moved since it was last read (FOUNDATION1s part B): shared by the
+/// The rules' reading as <c>RULES</c> answers it, and whether it moved since it is last read: shared by the
 /// rules' slice and the look, so a look tells the rules' scope only where their reading changed, never at each line it says about them
 /// (a retry said again each look), and never again for a change a press already told and the slice already read.
 /// </summary>

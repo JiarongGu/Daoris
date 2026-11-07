@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The roles' terminals (D233 point 2; D209 §2.2, §3.3, §3.4, §5.1a): a role's terminal started and its hold kept, the holds a catalogue
+/// The roles' terminals: a role's terminal started and its hold kept, the holds a catalogue
 /// change ended, and a holder's end. It reaches the standing confirmation's memory (<see cref="StandingState"/>) in one mutation step
 /// under its one lock; a tab is opened, told and closed outside it.
 /// </summary>
@@ -15,9 +15,9 @@ internal sealed class RoleTerminals(StandingConfirmation owner, StandingState st
     /// <summary>
     /// The window's start of a role's terminal (<c>START_ROLE_TERMINAL { role, share? }</c>): the role read from the catalogue as it stands,
     /// staffed by the terminal, held under a new generation by a new holder whose tab <paramref name="open"/> starts with a new key before
-    /// the mutation step installs its hash, or, where the owner chose it, by a living holder the role is added to (§2.2); nothing kept
+    /// the mutation step installs its hash, or, where the owner chose it, by a living holder the role is added to; nothing kept
     /// where the tab could not start or its harness is not Daoris's own (<see cref="HolderHarness.Refused"/>). The generation of a hold it
-    /// replaced is answered for the caller to sweep after this step (§5), never inside it.
+    /// replaced is answered for the caller to sweep after this step, never inside it.
     /// </summary>
     /// <param name="open">Opens a new holder's tab with the key in its harness's environment; called outside the lock.</param>
     public async Task<HoldChange> StartAsync(HoldRequest request, Func<HolderOpen, Task<HolderOpened>> open)
@@ -59,7 +59,7 @@ internal sealed class RoleTerminals(StandingConfirmation owner, StandingState st
         var id = "h" + Guid.NewGuid().ToString("N")[..11];
         if (shared is null)
         {
-            // The key is drawn here, handed to the holder's harness alone, and never kept: only its hash is (§2.2).
+            // The key is drawn here, handed to the holder's harness alone, and never kept: only its hash is.
             key = HolderKey.Draw();
             try
             {
@@ -91,7 +91,7 @@ internal sealed class RoleTerminals(StandingConfirmation owner, StandingState st
         {
             if (opened?.Tab is { } tab && state.EndedTabs.Contains(tab))
             {
-                // §2.2: a tab that ended while its start was still opening it: the hold is never kept.
+                // A tab that ended while its start is still opening it: the hold is never kept.
                 refused = Refuse(StandingConfirmation.Unstarted, $"The {kind}'s terminal ended as it opened, so nothing was kept.");
             }
             else if (shared is not null && !state.Holders.ContainsKey(shared))
@@ -130,7 +130,7 @@ internal sealed class RoleTerminals(StandingConfirmation owner, StandingState st
     /// <summary>
     /// The catalogue changed (a role's press through the role door): every hold whose role no longer reads as held by the terminal, or
     /// as the kind it was started as, ended in one mutation step, its admitted acts, pending operations and bindings cancelled; a holder
-    /// left holding nothing goes, its tab told so. Its generations are answered for the caller to sweep after this step (§5).
+    /// left holding nothing goes, its tab told so. Its generations are answered for the caller to sweep after this step.
     /// </summary>
     public IReadOnlyList<string> RolesChanged()
     {
@@ -152,7 +152,7 @@ internal sealed class RoleTerminals(StandingConfirmation owner, StandingState st
     }
 
     /// <summary>
-    /// A holder's tab ended (D209 §2.2's <c>HolderEnded</c>), by any of its paths: the holder's hash and every hold it holds dropped in one
+    /// A holder's tab ended (<c>HolderEnded</c>), by any of its paths: the holder's hash and every hold it holds dropped in one
     /// mutation step, their acts and operations cancelled; the generations it ended answered for the sweep, and told to
     /// <see cref="StandingConfirmation.Ended"/>. A tab that ends while its start still opens it is remembered, so that hold is never kept.
     /// </summary>

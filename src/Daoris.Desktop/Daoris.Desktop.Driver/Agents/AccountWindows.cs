@@ -6,14 +6,14 @@ using static Daoris.Driver.AccountFileNodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>windows.json</c> under the home (TOOL6b, TOOL6c; D130 §5.2, §16.3 steps 2, 4 and 5, §16.4): what is known of each
-/// account's windows, per agent (the account's owner, AGT7) and account: the weekly reset a limit told, which a start reads
+/// <c>windows.json</c> under the home: what is known of each
+/// account's windows, per agent (the account's owner) and account: the weekly reset a limit told, which a start reads
 /// to spend a week's allowance before it lapses, and what the agent last said about each window on the door its session ran
-/// on, or its own server answered where no door carries it (CODEXUSE1) — its use, its reset, its standing — which near and
+/// on, or its own server answered where no door carries it — its use, its reset, its standing — which near and
 /// pace read.
 /// </summary>
 /// <remarks>
-/// <para><b>A weekly reset, once told, is that account's</b>: the maker fixes it at one time each week (C1), so where the
+/// <para><b>A weekly reset, once told, is that account's</b>: the maker fixes it at one time each week, so where the
 /// agent's toolchain says so (<see cref="AccountAgent.WeekFixed"/>) it is carried a week at a time once it passes, and
 /// otherwise it is dropped at its reset (Codex: not read on any maker's page). Only a reset the agent named counts: a
 /// limit that named none told nothing about its week.</para>
@@ -21,20 +21,19 @@ namespace Daoris.Driver;
 /// <para><b>Beside <c>cooling.json</c>, not in it</b>: a cool-off ends at its reset, and what the reset says about the
 /// week does not. Not in <c>harnesses.json</c> either, which is the person's wiring.</para>
 ///
-/// <para><b>What an agent said is a floor, as of when it said it, and gone at its reset</b> (TOOL6c, §5.2): each window's
+/// <para><b>What an agent said is a floor, as of when it said it, and gone at its reset</b>: each window's
 /// newest reading replaces the older, and once its reset passes the account is unknown for that window until a session says
 /// again. The weekly window's reading is the account's week too, so it is carried on as a limit's is; its use is not.</para>
 ///
-/// <para><b>Missing or unreadable is nothing known</b> (D21's reading): nothing stands in for it, never spent and never
-/// fresh (D57). Names, numbers, times and a session id only — never the agent's words, a key or who signed in. Written by
-/// the driver alone, atomically, LF, keeping what it has no field for; read by the driver alone since the CLI's
-/// <c>windows.ts</c> left with <c>daoris agent list</c> (PUSH1f2e4), which is <c>daoris agent list</c> now;
-/// <c>WindowsTwinTests</c> keeps the table the two held. No HTTP route reaches it (D47 §4).</para>
+/// <para><b>Missing or unreadable is nothing known</b>: nothing stands in for it, never spent and never
+/// fresh. Names, numbers, times and a session id only — never the agent's words, a key or who signed in. Written by
+/// the driver alone, atomically, LF, keeping what it has no field for; read by the driver alone.
+/// No HTTP route reaches it.</para>
 ///
 /// <para>The file's shape: <c>{ "&lt;agent&gt;": { "&lt;account&gt;": { "weekly": { "reset": "…Z", "used": 0.14, "seen": "…Z",
 /// "session": "3f9c2a71" }, "session": { "reset": "…Z", "used": 0.88, "standing": "clear", "seen": "…Z" } } } }</c>, where a
 /// week a limit told has no <c>used</c>, and <c>standing</c> and <c>credits</c> sit on the window the frame named. The tool's
-/// own sign-in's reading, where its agent's server is asked it at a person's press (CODEXUSE3), sits under <see cref="Own"/>.</para>
+/// own sign-in's reading, where its agent's server is asked it at a person's press, sits under <see cref="Own"/>.</para>
 /// </remarks>
 public static class AccountWindows
 {
@@ -42,13 +41,13 @@ public static class AccountWindows
     public const string Weekly = "weekly";
 
     /// <summary>
-    /// The tool's own sign-in's key (CODEXUSE3): <c>""</c>, as <c>cooling.json</c> keys its cool-off (AGT3b's key), since no
+    /// The tool's own sign-in's key: <c>""</c>, as <c>cooling.json</c> keys its cool-off, since no
     /// account's directory is named nothing. A key added beside the accounts', never a new shape: its reading is read as an
     /// account's is, and no list, default or walk names it, so it moves no start.
     /// </summary>
     public const string Own = "";
 
-    /// <summary>A window's <c>source</c> (USAGEREAD2a): asked of its agent's own server, or a session's frame.</summary>
+    /// <summary>A window's <c>source</c>: asked of its agent's own server, or a session's frame.</summary>
     public const string SourceRead = "read", SourceSaid = "said";
 
     /// <summary>How far a fixed weekly reset is carried each time it passes (C1).</summary>
@@ -82,7 +81,7 @@ public static class AccountWindows
     }
 
     /// <summary>
-    /// A weekly reset a limit told (D125 §2): the account's weekly entry replaced by it, and everything else kept as written.
+    /// A weekly reset a limit told: the account's weekly entry replaced by it, and everything else kept as written.
     /// </summary>
     public static void Told(string home, string agent, string account, DateTimeOffset reset, DateTimeOffset seen, string? session)
     {
@@ -100,14 +99,14 @@ public static class AccountWindows
     }
 
     /// <summary>
-    /// What an agent said about an account's windows (TOOL6c, D130 §5.2): each window's entry replaced whole by its newest
+    /// What an agent said about an account's windows: each window's entry replaced whole by its newest
     /// reading — its reset, its use where said, its standing and credits where said, when, and on which session — and
-    /// everything else kept as written. The weekly window's reset is the account's week from then on (§16.3 step 4).
+    /// everything else kept as written. The weekly window's reset is the account's week from then on.
     /// </summary>
     /// <remarks>
-    /// A window already kept as seen later stands (USAGEREAD2a): a session's frame written after a read must not put back an
+    /// A window already kept as seen later stands: a session's frame written after a read must not put back an
     /// older number, nor a read an older one over a frame's. On a tie a read wins, a frame never replacing a read. The
-    /// <paramref name="source"/> is written only for a read: an entry with none reads as said, as every earlier one does.
+    /// <paramref name="source"/> is written only for a read: an entry with none reads as said.
     /// </remarks>
     public static void Said(
         string home, string agent, string account, IReadOnlyList<WindowReading> readings, DateTimeOffset seen, string? session,
@@ -143,11 +142,11 @@ public static class AccountWindows
     }
 
     /// <summary>
-    /// What an account's agent last said about its windows, as of <paramref name="now"/> (TOOL6c, D130 §5.2, §5.3): each
+    /// What an account's agent last said about its windows, as of <paramref name="now"/>: each
     /// window whose reset has not passed and that says a use or a standing, in the file's order; null where none does, which
     /// is unknown — never spent and never fresh. A week a limit told says no use, so it is no reading.
     /// </summary>
-    /// <remarks><c>WindowsTwinTests</c> holds the table this reading keeps, the CLI's <c>windows.ts</c>'s until it left (PUSH1f2e4).</remarks>
+    /// <remarks><c>WindowsTwinTests</c> holds the table this reading keeps.</remarks>
     public static AccountSaid? SaidOf(string home, string agent, string? account, DateTimeOffset now)
     {
         if (account is null || Child(Child(Load(home), agent), account) is not { } held) return null;
@@ -163,7 +162,7 @@ public static class AccountWindows
 
             var used = entry["used"] is JsonValue value && value.TryGetValue<double>(out var number) && double.IsFinite(number) && number >= 0
                 ? number : (double?)null;
-            // A `near` written before USAGEREAD3a was only ever the agent's pace warning, so it reads as `warned`.
+            // A stored `near` is only the agent's pace warning, so it reads as `warned`.
             var standing = Json.NonEmpty(entry, "standing") is var word && word == AccountReadings.NearWord ? AccountReadings.WarnedWord : word;
             if (used is null && standing is null && !Json.Flag(entry, "credits")) continue;
             var source = Json.NonEmpty(entry, "source") == SourceRead ? SourceRead : SourceSaid;

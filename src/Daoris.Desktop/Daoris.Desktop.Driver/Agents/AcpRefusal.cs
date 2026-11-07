@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A choice refused at the open with nothing else to set on the same session (D205 §3.3): the open ends before its prompt.</summary>
+/// <summary>A choice refused at the open with nothing else to set on the same session: the open ends before its prompt.</summary>
 public sealed class AcpChoiceNotOffered(ModelRefusal refusal)
     : DriverException($"the agent did not offer the {refusal.Category} `{refusal.Value}` asked ({refusal.Code}): nothing was prompted.")
 {
@@ -11,7 +11,7 @@ public sealed class AcpChoiceNotOffered(ModelRefusal refusal)
 }
 
 /// <summary>
-/// A word a run was to write whose attempt its record did not acknowledge (FOUNDATION1 row p, the design §3.4 rule 5): it is not written, and
+/// A word a run is to write whose attempt its record does not acknowledge: it is not written, and
 /// waits on its record for the session's next go-on, which sends it once. Thrown before the wire, never after a write.
 /// </summary>
 public sealed class AcpWordsUnmarked(string message) : DriverException(message)
@@ -21,8 +21,8 @@ public sealed class AcpWordsUnmarked(string message) : DriverException(message)
 }
 
 /// <summary>
-/// A word turned away at a run's door (RUNENDS1 after review, finding 2): the run had ended, or left a silent turn of a closed quest, before
-/// it was written, so it never reached the wire and went back to the driver with the run's other words (<see cref="AcpSession.HandedBack"/>).
+/// A word turned away at a run's door: the run has ended, or left a silent turn of a closed quest, before
+/// it is written, so it never reaches the wire and goes back to the driver with the run's other words (<see cref="AcpSession.HandedBack"/>).
 /// Thrown before the wire, never after a write, and never the door's failure: nothing more is said of it.
 /// </summary>
 public sealed class AcpTurnedAway() : DriverException(Sentence)
@@ -33,21 +33,21 @@ public sealed class AcpTurnedAway() : DriverException(Sentence)
 
 /// <summary>
 /// The agent's refusal of a call: a JSON-RPC error, said as a sentence, with what its <c>data</c> carried kept beside
-/// it (ACPDATA1, D125 §1.2).
+/// it.
 /// </summary>
 /// <remarks>
 /// 🔴 <b>An adapter may put the words that matter in <c>data</c>, not in the message.</b> <c>codex-acp</c> answers a usage
 /// limit with the message <c>Internal error</c> and nothing after it, and the limit's sentence in <c>data.message</c>; Claude
 /// Code's adapter puts its sentence in the message and the SDK's category in <c>data.errorKind</c>
-/// (docs/2026-10-02-limit-signals-evidence.md §3, §4). So the sentence the data carries is said after the message, where
+/// So the sentence the data carries is said after the message, where
 /// the conclusion and the limit reader read the door's failure, and the kind is kept for a reader that reads a field.
 /// </remarks>
 /// <param name="message">The refusal as a sentence: the error's message, then the data's, where it adds one.</param>
-/// <param name="said">The data's <c>message</c>, or null where it carried none.</param>
-/// <param name="errorKind">The data's <c>errorKind</c>, or null where it carried none.</param>
-/// <param name="code">The error's JSON-RPC <c>code</c>, or null where it gave none (ANSWER1a).</param>
-/// <param name="words">The agent's own sentence, without this client's preface (ANSWER1a); the message where unsaid.</param>
-/// <param name="reason">The data's <c>reason</c>, or null where it carried none (MSG1b).</param>
+/// <param name="said">The data's <c>message</c>, or null where it carries none.</param>
+/// <param name="errorKind">The data's <c>errorKind</c>, or null where it carries none.</param>
+/// <param name="code">The error's JSON-RPC <c>code</c>, or null where it gives none.</param>
+/// <param name="words">The agent's own sentence, without this client's preface; the message where unsaid.</param>
+/// <param name="reason">The data's <c>reason</c>, or null where it carries none.</param>
 public sealed class AcpRefusal(
     string message, string? said = null, string? errorKind = null, int? code = null, string? words = null, string? reason = null)
     : DriverException(message)
@@ -56,7 +56,7 @@ public sealed class AcpRefusal(
     public string? Said => said;
 
     /// <summary>
-    /// The error's <c>data.reason</c> (MSG1b, D137 §1.1): <c>codex-acp</c> says <c>thread_active_writer</c> there when another
+    /// The error's <c>data.reason</c>: <c>codex-acp</c> says <c>thread_active_writer</c> there when another
     /// Codex client holds the conversation. A field a reader acts on, where the sentence beside it is only for a person.
     /// </summary>
     public string? Reason => reason;
@@ -65,8 +65,8 @@ public sealed class AcpRefusal(
     public string? ErrorKind => errorKind;
 
     /// <summary>
-    /// The error's <c>code</c> (ANSWER1a): a resume refused <c>resource_not_found</c> is a conversation the agent no longer
-    /// has, any other a refusal. Null where the error gave none.
+    /// The error's <c>code</c>: a resume refused <c>resource_not_found</c> is a conversation the agent no longer
+    /// has, any other a refusal. Null where the error gives none.
     /// </summary>
     public int? Code => code;
 
@@ -74,11 +74,11 @@ public sealed class AcpRefusal(
     public string Words => words ?? message;
 
     /// <summary>
-    /// The refusal a JSON-RPC <c>error</c> member says, read without trusting its shape (REV3): a message that is not
+    /// The refusal a JSON-RPC <c>error</c> member says, read without trusting its shape: a message that is not
     /// text is the error as written, and a <c>data</c> that is not an object, or fields in it that are not text, add
-    /// nothing. The data's message is said after the error's only where it adds words the error's did not already say.
-    /// <c>claude-agent-acp</c> puts its sentence in <c>data.details</c> instead (<c>Invalid value for config option model: …</c>,
-    /// MODELROLE1a's evidence), read where the data has no message.
+    /// nothing. The data's message is said after the error's only where it adds words the error's does not already say.
+    /// <c>claude-agent-acp</c> puts its sentence in <c>data.details</c> instead (<c>Invalid value for config option model: …</c>),
+    /// read where the data has no message.
     /// </summary>
     internal static AcpRefusal Of(JsonElement error)
     {

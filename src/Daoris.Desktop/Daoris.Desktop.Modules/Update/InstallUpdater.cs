@@ -3,7 +3,7 @@ using Shenora.Core.Events;
 
 namespace Daoris.Desktop;
 
-/// <summary>What the drain waits on (D139 §2): driven sessions this loop runs, and conversations with a turn in flight.</summary>
+/// <summary>What the drain waits on: driven sessions this loop runs, and conversations with a turn in flight.</summary>
 public sealed record UpdateWork(int Driven, int Turns);
 
 /// <summary>The staged build, as the banner names it: no path of this machine's.</summary>
@@ -12,7 +12,7 @@ public sealed record UpdateBuild(string Id, string Version, string? Commit, Date
 /// <summary>Why the staged build is not being installed: the check's code, which the page words, and the driver's sentence.</summary>
 public sealed record UpdateProblem(string Code, string Message);
 
-/// <summary>How a swap ended (D139 §6): its phase — installed, rolled back or refused — the build, and the reason.</summary>
+/// <summary>How a swap ended: its phase — installed, rolled back or refused — the build, and the reason.</summary>
 public sealed record UpdateOutcome(string Phase, string? Build, string? Version, string? Commit, string? Reason, string? Detail);
 
 /// <summary>Where an install's update stands, whole — what the banner renders and <c>UPDATE_STATE</c> carries.</summary>
@@ -20,11 +20,11 @@ public sealed record UpdateOutcome(string Phase, string? Build, string? Version,
 /// <param name="Mode">The mode that holds for the staged build (<see cref="UpdateMode"/>), or null when none is staged.</param>
 /// <param name="Outcome">The last swap, said once at the start after it and kept until the banner's *Dismiss*.</param>
 /// <param name="Last">
-/// The last swap as the journal records it, told or not, on every state (UPDATE1d): what Settings → Driver's row says
-/// and the terminal's plain <c>daoris update</c> says (D50). Null with no journal, and while a swap is under way.
+/// The last swap as the journal records it, told or not, on every state: what Settings → Driver's row says
+/// and the terminal's plain <c>daoris update</c> says. Null with no journal, and while a swap is under way.
 /// </param>
 /// <param name="Since">
-/// When the drain for the staged build began (DRAINHOLD1), while it drains and as it applies: beside <paramref name="Driven"/> and
+/// When the drain for the staged build began, while it drains and as it applies: beside <paramref name="Driven"/> and
 /// <paramref name="Turns"/>, what lets the page say how long it has waited. No end is said, since the drain ends only when the work does.
 /// Null with no drain, and for *Update now* asked before any.
 /// </param>
@@ -52,7 +52,7 @@ public static class UpdateStates
 }
 
 /// <summary>
-/// The application's half of an install's update (UPDATE1, D139 §2–§4, §6): it watches what is staged and what the person
+/// The application's half of an install's update: it watches what is staged and what the person
 /// said of it, holds the loop's starts while it drains, and once no driven session runs and no turn is in flight — or at
 /// once on *Update now* — checks the build, starts the launcher with <c>--update --after &lt;pid&gt;</c> and closes the
 /// application the way the person's close does. At the next start it says once how the swap ended.
@@ -62,11 +62,11 @@ public static class UpdateStates
 /// scratch install and close nothing. The loop looks every <see cref="Pace"/> and at every word, and the page hears each
 /// change once as <c>UPDATE_STATE</c>.</para>
 ///
-/// <para><b>A look is awaited</b> (UPDATERELAUNCH1): the launcher it may start goes through the start gate, off the thread
+/// <para><b>A look is awaited</b>: the launcher it may start goes through the start gate, off the thread
 /// that asked, the window's for *Update now*. What it decides, the drain and *applying* included, is decided before its
 /// first wait, and one relaunch is asked however many looks meet the moment.</para>
 ///
-/// <para><b>Said in the window and the machine log</b> (D139 §2): <c>update.staged</c>, <c>update.draining</c>,
+/// <para><b>Said in the window and the machine log</b>: <c>update.staged</c>, <c>update.draining</c>,
 /// <c>update.requested</c>, <c>update.applying</c>, <c>update.refused</c>, and at the next start <c>update.installed</c> or
 /// <c>update.rolled-back</c>. A name or a count each, never a path: the launcher writes no log, so its journal is turned into
 /// these lines here.</para>
@@ -80,7 +80,7 @@ public sealed class InstallUpdater(
     Func<UpdateWork> work,
     // Starts the launcher with `--update --after <pid>`, through the start gate: false when it could not be started.
     Func<CancellationToken, Task<bool>> relaunch,
-    // Closes the application after ClosingForUpdate has handed the shell its reason and build (D206).
+    // Closes the application after ClosingForUpdate has handed the shell its reason and build.
     Action close,
     IEventBus? bus = null,
     Func<DateTimeOffset>? clock = null,
@@ -111,11 +111,11 @@ public sealed class InstallUpdater(
     public const string Deliveries = "deliveries";
 
     private DateTimeOffset Now => (clock ?? (() => DateTimeOffset.UtcNow))();
-    /// <summary>Hand the close its staged build before closing any window (D206 §3.9).</summary>
+    /// <summary>Hand the close its staged build before closing any window.</summary>
     public Action<string>? ClosingForUpdate { get; init; }
 
     /// <summary>
-    /// Whether the loop's starts are held for the update: the driver watch asks at every look (D139 §2). True while it drains and while
+    /// Whether the loop's starts are held for the update: the driver watch asks at every look. True while it drains and while
     /// it applies, which <see cref="Applying"/> tells apart.
     /// </summary>
     public bool Draining
@@ -127,7 +127,7 @@ public sealed class InstallUpdater(
     }
 
     /// <summary>
-    /// Whether the drain is over and the application closes for the update (DRAINHOLD1): from the moment a look finds the work allows it,
+    /// Whether the drain is over and the application closes for the update: from the moment a look finds the work allows it,
     /// before it says <see cref="UpdateStates.Applying"/>, until a swap that did not take is put away. The pipe holds every press from here,
     /// as at a close; while it only drains, it lets through what starts nothing the drain waits on. The build is checked and the work read
     /// again under this hold, and work begun since the first read withdraws it, the drain going on.
@@ -150,7 +150,7 @@ public sealed class InstallUpdater(
     }
 
     /// <summary>
-    /// At the application's start (D139 §5, §6): a swap waiting for this start is confirmed, and said once as installed; a
+    /// At the application's start: a swap waiting for this start is confirmed, and said once as installed; a
     /// swap the launcher rolled back or refused, or one it finished without a word from the application, is said once and
     /// marked told. Then it looks, as <see cref="LookAsync"/>: the confirmation and the drain are done before its first wait.
     /// </summary>
@@ -189,7 +189,7 @@ public sealed class InstallUpdater(
 
         try
         {
-            // D233 choice 6: a start nothing can roll back is the home's newest build, which the launcher refuses an older one by.
+            // A start nothing can roll back is the home's newest build, which the launcher refuses an older one by.
             if (StartConfirmation.Read(install).Is) HomeLastBuild.Keep(home, Running);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
@@ -203,7 +203,7 @@ public sealed class InstallUpdater(
 
     /// <summary>
     /// One look: what is staged, what holds for it, what runs — and the update applied when its moment has come, its launcher
-    /// started through the start gate (UPDATERELAUNCH1).
+    /// started through the start gate.
     /// </summary>
     public async Task<UpdateState> LookAsync()
     {
@@ -217,10 +217,10 @@ public sealed class InstallUpdater(
             _applying = false;
         }
 
-        // The build a finished swap left behind (UPDATE1): the launcher cannot delete its own running launcher inside it.
+        // The build a finished swap left behind: the launcher cannot delete its own running launcher inside it.
         StagedBuild.ClearPrevious(install);
 
-        // Read at every look, as the terminal reads it at every `update` (UPDATE1d): a dismissal puts away the outcome only.
+        // Read at every look, as the terminal reads it at every `update`: a dismissal puts away the outcome only.
         var last = Ended(StagedBuild.ReadJournal(install));
         lock (_gate) _last = last;
 
@@ -285,7 +285,7 @@ public sealed class InstallUpdater(
     }
 
     /// <summary>
-    /// The person's word, from the screen (D139 §3), written to the request the terminal writes, for the build staged now,
+    /// The person's word, from the screen, written to the request the terminal writes, for the build staged now,
     /// and looked at at once — so *Update now* applies before this answers.
     /// </summary>
     /// <exception cref="Shenora.Core.Ipc.ShenoraException">
@@ -312,7 +312,7 @@ public sealed class InstallUpdater(
         return await LookAsync().ConfigureAwait(false);
     }
 
-    /// <summary>The outcome the banner shows, said and put away; the last swap stays, as the journal keeps it (UPDATE1d).</summary>
+    /// <summary>The outcome the banner shows, said and put away; the last swap stays, as the journal keeps it.</summary>
     public Task<UpdateState> DismissAsync()
     {
         lock (_gate) _outcome = null;
@@ -320,7 +320,7 @@ public sealed class InstallUpdater(
     }
 
     /// <summary>
-    /// How often the loop looks while nothing is staged or draining (FABRIC-EVENT4): the reconciliation behind the watch of the staged
+    /// How often the loop looks while nothing is staged or draining: the reconciliation behind the watch of the staged
     /// folder and the request, which wake it at once. A drain looks every <see cref="Pace"/>, since it waits on sessions no file says ended.
     /// </summary>
     public TimeSpan Idle { get; init; } = TimeSpan.FromSeconds(30);
@@ -334,7 +334,7 @@ public sealed class InstallUpdater(
     private HomeWatch? _files;
 
     /// <summary>
-    /// Look at the loop's pace, and at once when poked or when the staged folder or the request moves (FABRIC-EVENT4), until stopped.
+    /// Look at the loop's pace, and at once when poked or when the staged folder or the request moves, until stopped.
     /// A build staged or a word said by the terminal is heard within the watch's debounce, not at the next pace.
     /// </summary>
     public void Start()
@@ -403,17 +403,17 @@ public sealed class InstallUpdater(
         {
             // Another look met the moment first, and its relaunch is under way: one launcher, however many looks.
             if (_applying) return _state;
-            // DRAINHOLD1: the presses are held from here (Applying), before the build is checked and the work read again.
+            // The presses are held from here (Applying), before the build is checked and the work read again.
             _applying = true;
         }
 
         UpdateProblem? refused = null;
         try
         {
-            // Checked by the application before it closes for it (D139 §4), as `daoris update --now` checks it; the launcher checks again
+            // Checked by the application before it closes for it, as `daoris update --now` checks it; the launcher checks again
             // before it moves a file.
             if (UpdateRefusal.Of(install!, home, staged?.Version, Running) is var (code, why)) refused = new UpdateProblem(code, why);
-            // DRAINHOLD1, a review's finding: what began after the look read no work (a turn a press let through opened, a helper the look
+            // What began after the look read no work (a turn a press let through opened, a helper the look
             // started, a conversation the window began) is read again now that no press passes, and the drain goes on for it. *Update now*
             // closes whatever runs, so it reads nothing.
             else if (by == "idle" && work() is var again && !InstallUpdate.Idle(again.Driven, again.Turns))
@@ -453,7 +453,7 @@ public sealed class InstallUpdater(
         bool started;
         try
         {
-            // 🔴 UPDATERELAUNCH1: awaited through the start gate. *Update now*'s SET started it in its synchronous part, on the
+            // Awaited through the start gate. *Update now*'s SET started it in its synchronous part, on the
             // window's thread. Given up only as the application stops.
             started = await relaunch(_stopping.Token).ConfigureAwait(false);
         }
@@ -506,9 +506,9 @@ public sealed class InstallUpdater(
         new(record.Phase, record.Id, record.Version, record.Commit, record.Reason, record.Detail);
 
     /// <summary>
-    /// A line about how a swap ended, with what it found held (SWAP2): the launcher writes no log, so its journal's holds are
+    /// A line about how a swap ended, with what it found held: the launcher writes no log, so its journal's holds are
     /// said here, a count and the longest in milliseconds, and nothing of them when it met none. The longest hold's entry, by
-    /// its name alone, and the processes found holding it, where the swap found them (DEPLOYBUSY1).
+    /// its name alone, and the processes found holding it, where the swap found them.
     /// </summary>
     private static (string Key, object? Value)[] Ending(SwapRecord record, params (string Key, object? Value)[] data)
     {
@@ -519,7 +519,7 @@ public sealed class InstallUpdater(
     }
 
     /// <summary>
-    /// How the journal's swap ended, told or not (UPDATE1d): installed, rolled back or refused as written; confirmed by this
+    /// How the journal's swap ended, told or not: installed, rolled back or refused as written; confirmed by this
     /// start, installed, as <see cref="Started"/> says it before the launcher finishes; and none while one is under way or
     /// there is no journal, since the page words only an ending.
     /// </summary>

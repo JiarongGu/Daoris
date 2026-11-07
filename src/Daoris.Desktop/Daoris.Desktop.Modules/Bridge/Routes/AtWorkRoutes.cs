@@ -3,15 +3,15 @@ using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
 
-/// <summary>Who is at work on a session, the page's `bridge/sessions/atWork.ts` (COWORKVIEW1a).</summary>
+/// <summary>Who is at work on a session, the page's `bridge/sessions/atWork.ts`.</summary>
 public sealed class AtWorkRoutes(DriverContext context)
 {
     private readonly DriverLoop _loop = context.Loop;
 
     /// <summary>
-    /// Who is at work on a session (COWORKVIEW1a, the design §4.1): its entry's parts and the attended part's subagents, composed from
+    /// Who is at work on a session: its entry's parts and the attended part's subagents, composed from
     /// the groups, sessions and quests slices in memory and each part's lineage file, this window's tokens read where it issued them, and
-    /// what its line waits on and its co-workers from the home's helper, piece and hand-over files (COMMS1i). Numbered,
+    /// what its line waits on and its co-workers from the home's helper, piece and hand-over files. Numbered,
     /// so a failure is answered with its words and an older delivery never replaces a newer one.
     /// </summary>
     [DriverRoute("SESSION_AT_WORK", PipeClass.Open)]

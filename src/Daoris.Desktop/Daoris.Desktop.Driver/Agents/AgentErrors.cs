@@ -2,27 +2,27 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>The four kinds every agent's failure is read into at the agent interface (AGENTERRORS1a, D210, the agent-errors design §3.1).</summary>
+/// <summary>The four kinds every agent's failure is read into at the agent interface.</summary>
 public enum AgentErrorKind
 {
-    /// <summary>The account's usage is spent and comes back at a reset: D206's.</summary>
+    /// <summary>The account's usage is spent and comes back at a reset.</summary>
     Limit,
 
     /// <summary>The account or its credential cannot be used until a person acts: signed out, refused, not permitted.</summary>
     Access,
 
-    /// <summary>The provider, or the way to it, failed for a moment: tried again in the same conversation (§5.1).</summary>
+    /// <summary>The provider, or the way to it, failed for a moment: tried again in the same conversation.</summary>
     Transient,
 
-    /// <summary>The request cannot succeed by repeating it, or Daoris cannot tell: fails with its reason, as today.</summary>
+    /// <summary>The request cannot succeed by repeating it, or Daoris cannot tell: fails with its reason.</summary>
     Fatal,
 }
 
 /// <summary>
-/// The reader's answer (the design §4.1): the kind, the failure it read, and <see cref="By"/>, the table entry that decided it, which
+/// The reader's answer: the kind, the failure it read, and <see cref="By"/>, the table entry that decided it, which
 /// the machine log names with where it came from (<c>own:code:-32000</c>, <c>owner:kind:overloaded</c>, <c>owner:words:transient-1</c>).
 /// </summary>
-/// <param name="Limit">A limit's reading: the table's, or, read by its code with no sentence, D125's unstated reset (§3.1).</param>
+/// <param name="Limit">A limit's reading: the table's, or, read by its code with no sentence, the unstated reset.</param>
 /// <param name="Access">An access failure's disposition, from the entry that matched; null for every other kind. No reader reads policy from <see cref="By"/>.</param>
 public sealed record AgentError(AgentErrorKind Kind, DoorFailure Failure, string By, LimitSeen? Limit = null, AccessDisposition? Access = null)
 {
@@ -31,31 +31,31 @@ public sealed record AgentError(AgentErrorKind Kind, DoorFailure Failure, string
 }
 
 /// <summary>
-/// One error an agent's door was seen failing with, or its source shows (the design §4.4): the evidence an entry in
+/// One error an agent's door has failed with, or its source shows: the evidence an entry in
 /// <see cref="ErrorWords"/> stands on, as <see cref="RecordedLimit"/> is a limit's.
 /// </summary>
 /// <param name="Sentence">As recorded, a part elided written <c>…</c>.</param>
-/// <param name="Seen">The day it was recorded, <c>yyyy-MM-dd</c>.</param>
-/// <param name="Channel">Where it arrived, and how, or the source it was read in.</param>
-/// <param name="SourceDerived">Whether it was read from the adapter's source rather than captured on the real door (§3.3).</param>
+/// <param name="Seen">The day it is recorded, <c>yyyy-MM-dd</c>.</param>
+/// <param name="Channel">Where it arrived, and how, or the source it is read in.</param>
+/// <param name="SourceDerived">Whether it is read from the adapter's source rather than captured on the real door.</param>
 public sealed record RecordedError(string Sentence, string Seen, string Channel, bool SourceDerived = false);
 
-/// <summary>A range of HTTP statuses and the kind they read as (the design §3.1).</summary>
+/// <summary>A range of HTTP statuses and the kind they read as.</summary>
 public sealed record StatusKind(int From, int To, AgentErrorKind Kind);
 
 /// <summary>
-/// One agent's map from its door's codes, kind words and statuses to a kind, with its recorded transient sentences (AGENTERRORS1a, the
-/// design §4.1): declared on its toolchain as <see cref="AccountAgent.ErrorWords"/>, beside <c>Limits</c> and <c>SignIn</c>.
+/// One agent's map from its door's codes, kind words and statuses to a kind, with its recorded transient sentences:
+/// declared on its toolchain as <see cref="AccountAgent.ErrorWords"/>, beside <c>Limits</c> and <c>SignIn</c>.
 /// </summary>
 /// <remarks>
-/// <para><b>Read own, then owner</b> (§4.1, round 3): the adapter's own entry and its owner's, each step of the order over both
+/// <para><b>Read own, then owner</b>: the adapter's own entry and its owner's, each step of the order over both
 /// before the next step, a door's own entry winning where the two name the same word. The provider's entries sit on the owner, so
 /// both of its doors read them.</para>
 ///
 /// <para><b><see cref="AuthRequiredCode"/> is never inherited</b>: a JSON-RPC code means what that server says, and an owner's
-/// declaration says nothing about another door (§3.1, §4.1). The protocol stub answers every failed turn <c>-32000</c>.</para>
+/// declaration says nothing about another door. The protocol stub answers every failed turn <c>-32000</c>.</para>
 ///
-/// <para><b>An entry grows only with a recorded sentence or frame held both ways</b> (§3.3): <c>AgentErrorsTests</c> holds each.</para>
+/// <para><b>An entry grows only with a recorded sentence or frame held both ways</b>: <c>AgentErrorsTests</c> holds each.</para>
 /// </remarks>
 /// <param name="Kinds">The wire's kind words (<c>data.errorKind</c>) and the kind each reads as, case-blind.</param>
 /// <param name="Statuses">HTTP statuses the wire names, by range.</param>
@@ -64,7 +64,7 @@ public sealed record StatusKind(int From, int To, AgentErrorKind Kind);
 /// <param name="AuthRequiredCode">The JSON-RPC code this door's own server says means authentication required, or null.</param>
 /// <param name="TypedFailures">
 /// Whether this door's server marks a terminal failure, by a category in <see cref="Kinds"/>, only for a client that asked for AIR's
-/// typed session failures (CODEXSTATUS1, §4.3): the client then asks, for this door alone.
+/// typed session failures: the client then asks, for this door alone.
 /// </param>
 public sealed record ErrorWords(
     IReadOnlyDictionary<string, AgentErrorKind> Kinds,
@@ -75,14 +75,13 @@ public sealed record ErrorWords(
     bool TypedFailures = false);
 
 /// <summary>
-/// The one reader of an agent's failure at the agent interface (AGENTERRORS1a, D210, the design §3.2, §4.1): a door's failure read
+/// The one reader of an agent's failure at the agent interface: a door's failure read
 /// into one of four kinds from the adapter's own tables and its owner's, in a fixed order that stops at the first that holds.
 /// </summary>
 /// <remarks>
-/// <para><b>The order</b> (§3.2): a limit where the <c>Limits</c> table reads one in the words, whatever the code says, then where
-/// the code or kind is a limit's, with D125's unstated reset; then access; then transient, by code and then by the recorded
-/// sentences; anything unread is fatal, as today. A misreading errs toward today: a transient error read as fatal is today's
-/// strike.</para>
+/// <para><b>The order</b>: a limit where the <c>Limits</c> table reads one in the words, whatever the code says, then where
+/// the code or kind is a limit's, with the unstated reset; then access; then transient, by code and then by the recorded
+/// sentences; anything unread is fatal. A misreading errs toward fatal: a transient error read as fatal costs a strike.</para>
 ///
 /// <para><b>Pure but for its tables</b>: the moment seen and the machine's zone are arguments, as <see cref="AccountLimits.Read"/>'s are.</para>
 /// </remarks>
@@ -98,11 +97,11 @@ public static class AgentErrors
     public const string Unread = "unread";
 
     /// <summary>
-    /// <paramref name="failure"/> read as one kind (§3.2), from <paramref name="adapter"/>'s tables and, resolved through
+    /// <paramref name="failure"/> read as one kind, from <paramref name="adapter"/>'s tables and, resolved through
     /// <paramref name="adapters"/>, its owner's.
     /// </summary>
     /// <param name="seen">When the failure arrived: a limit's reset is read from it.</param>
-    /// <param name="zone">This machine's zone, for a limit's sentence (D125 §2.1).</param>
+    /// <param name="zone">This machine's zone, for a limit's sentence.</param>
     public static AgentError Read(
         ProviderRegistry adapters, AgentDoor adapter, DoorFailure failure, DateTimeOffset seen, TimeZoneInfo zone)
     {
@@ -114,8 +113,8 @@ public static class AgentErrors
             .. owner?.Tables.ErrorWords is { } theirs ? [(Owner, theirs)] : Array.Empty<(string, ErrorWords)>(),
         ];
 
-        // 🔴 The source before any kind (Codex's owed read of D210, finding 8): the harness's own lines are read for its credential's
-        // refusal alone (§3.3). Read after the limit, a weekly limit's sentence on stderr was a limit, and would cool an account.
+        // 🔴 The source before any kind: the harness's own lines are read for its credential's
+        // refusal alone. Read after the limit, a weekly limit's sentence on stderr would be a limit, and would cool an account.
         if (failure.Where == DoorWhere.Lines)
         {
             return (own?.Tables.Refused ?? owner?.Tables.Refused) is { Length: > 0 } words
@@ -124,7 +123,7 @@ public static class AgentErrors
                 : new AgentError(AgentErrorKind.Fatal, failure, Unread);
         }
 
-        // 1. A limit by its sentence, whatever the code says (D125, D206 unchanged), then by its code or kind with the unstated reset.
+        // 1. A limit by its sentence, whatever the code says, then by its code or kind with the unstated reset.
         if (AccountLimits.Read(own?.Tables.Limits ?? owner?.Tables.Limits, failure.Words, seen, zone) is { } limit)
         {
             return new AgentError(AgentErrorKind.Limit, failure, $"{(own?.Tables.Limits is not null ? Own : Owner)}:words:limit", limit);
@@ -154,7 +153,7 @@ public static class AgentErrors
                 AgentErrorKind.Access, failure, $"{(own?.Tables.SignIn is not null ? Own : Owner)}:words:sign-in", Access: AccessDisposition.SignedOutByWords);
         }
 
-        // AGT3b's refused credential, which AccountRefused reads with no owner's fallback today (§1.2): closed here.
+        // The refused credential, which AccountRefused reads with no owner's fallback: closed here.
         if ((own?.Tables.Refused ?? owner?.Tables.Refused) is { Length: > 0 } refused
             && failure.Words?.Contains(refused, StringComparison.OrdinalIgnoreCase) == true)
         {
@@ -179,12 +178,12 @@ public static class AgentErrors
             }
         }
 
-        // 4. Fatal: anything no table reads, as today.
+        // 4. Fatal: anything no table reads.
         return new AgentError(AgentErrorKind.Fatal, failure, ByCode(tables, failure, AgentErrorKind.Fatal) ?? Unread);
     }
 
     /// <summary>
-    /// A bound kind's failure, which arrives already read (the agent-lyntai design §5.3): its own reading, with no table and no word read
+    /// A bound kind's failure, which arrives already read: its own reading, with no table and no word read
     /// again, its access disposition the opening's reading of the evidence kept apart.
     /// </summary>
     public static AgentError OfNormalized(NormalizedFailure failure) =>
@@ -233,7 +232,7 @@ public static class AgentErrors
     }
 
     /// <summary>
-    /// The owner's toolchain (AGT7, the design §4.1): <see cref="AccountAgent.AccountOf"/>'s adapter in this set, or null where it
+    /// The owner's toolchain: <see cref="AccountAgent.AccountOf"/>'s adapter in this set, or null where it
     /// names none, itself, or an agent this set has no door for.
     /// </summary>
     private static AccountAgent? OwnerOf(ProviderRegistry adapters, AgentDoor adapter)
@@ -261,8 +260,8 @@ public static class AgentErrors
 }
 
 /// <summary>
-/// Claude Code's error words (AGENTERRORS1a, the design §4.4): its provider's kind words, statuses and recorded transient sentences,
-/// on the owner, <c>claude-code</c>, so both of its doors read them. <c>rate_limit</c> and a 429 are a limit, never transient (§3.1).
+/// Claude Code's error words: its provider's kind words, statuses and recorded transient sentences,
+/// on the owner, <c>claude-code</c>, so both of its doors read them. <c>rate_limit</c> and a 429 are a limit, never transient.
 /// </summary>
 public static class ClaudeErrors
 {
@@ -302,14 +301,14 @@ public static class ClaudeErrors
         ]);
 
     /// <summary>
-    /// The kind words and statuses alone, which the stub mirrors (AGENTERRORS1a): a stand-in's failure is read by the code it names,
-    /// and one that names none keeps today's end.
+    /// The kind words and statuses alone, which the stub mirrors: a stand-in's failure is read by the code it names,
+    /// and one that names none is fatal.
     /// </summary>
     public static ErrorWords Codes { get; } = Words with { Transient = [] };
 }
 
 /// <summary>
-/// <c>claude-code-acp</c>'s own error words (the design §4.4): its server's word that <c>-32000</c> means authentication required
+/// <c>claude-code-acp</c>'s own error words: its server's word that <c>-32000</c> means authentication required
 /// (<i>Please run /login</i>, <c>claude-agent-acp</c> 0.84.0's <c>acp-agent.js:4170-4171</c>), read from its own table alone.
 /// </summary>
 public static class ClaudeAcpErrors
@@ -330,10 +329,10 @@ public static class ClaudeAcpErrors
 }
 
 /// <summary>
-/// <c>codex-acp</c>'s error words (CODEXSTATUS1, the design §4.3): the categories of AIR's typed session failure, which its server marks
+/// <c>codex-acp</c>'s error words: the categories of AIR's typed session failure, which its server marks
 /// a terminal failure with only for a client that asked (<see cref="ErrorWords.TypedFailures"/>). The category is the adapter's own
 /// field, never the agent's words, so only it is read: <c>service</c> and <c>connection</c> are the provider's or the way to it, for a
-/// moment; <c>limit</c> is read first by <see cref="CodexLimits"/>'s sentences and else is a limit with D125's unstated reset;
+/// moment; <c>limit</c> is read first by <see cref="CodexLimits"/>'s sentences and else is a limit with the unstated reset;
 /// <c>access</c> needs the person; <c>request</c> cannot succeed by repeating it.
 /// </summary>
 public static class CodexErrors

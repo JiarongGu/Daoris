@@ -18,7 +18,7 @@ public sealed class SessionStoreDoors
     internal SessionStoreDoors(ServiceClient service) => _service = service;
 
     /// <summary>
-    /// History's age applied to the finished trees' records no session names (KEEPSIZE1b, <c>POST /api/trees/record/age</c>): each kept at or
+    /// History's age applied to the finished trees' records no session names (<c>POST /api/trees/record/age</c>): each kept at or
     /// before <paramref name="before"/> goes; how many. A service with no such door answers none.
     /// </summary>
     internal async Task<int> AgeWorkRecordsAsync(DateTimeOffset before, CancellationToken ct = default)
@@ -43,7 +43,7 @@ public sealed class SessionStoreDoors
 
     /// <summary>
     /// What the line ending at <paramref name="session"/> read of memory, each entry in one line as the service rechecked it now
-    /// (<c>POST /api/sessions/{id}/memory/read</c>, KNOWCENTRAL2f); none where the service has no such door or answers none.
+    /// (<c>POST /api/sessions/{id}/memory/read</c>); none where the service has no such door or answers none.
     /// </summary>
     public async Task<IReadOnlyList<string>> LineMemoryAsync(string session, CancellationToken ct = default)
     {
@@ -54,7 +54,7 @@ public sealed class SessionStoreDoors
     }
 
     /// <summary>
-    /// A session's memory rows as the service answers them for its page (KNOWCENTRAL2e; the memory coordinator design §1, §4): its writes, ends
+    /// A session's memory rows as the service answers them for its page: its writes, ends
     /// and proposals, an end's reason without the row's token. Null from a host with no door.
     /// </summary>
     public async Task<string?> MemoryAsync(string session, CancellationToken ct = default)
@@ -66,7 +66,7 @@ public sealed class SessionStoreDoors
     }
 
     /// <summary>
-    /// Every session with a memory change waiting on the person (KNOWCENTRAL2e), as the service reads them: ends and replacements awaiting, a
+    /// Every session with a memory change waiting on the person, as the service reads them: ends and replacements awaiting, a
     /// stopped session's staged rows. None from a host with no door.
     /// </summary>
     public async Task<IReadOnlyList<JsonElement>> MemoryWaitsAsync(CancellationToken ct = default)
@@ -81,7 +81,7 @@ public sealed class SessionStoreDoors
     }
 
     /// <summary>
-    /// The person's decision on a session's memory (KNOWCENTRAL2e): an awaiting end approved or declined by its row where
+    /// The person's decision on a session's memory: an awaiting end approved or declined by its row where
     /// <paramref name="op"/> names one, else the ended session's staged changes kept or dropped. A refusal is an answer, in the service's words.
     /// </summary>
     public async Task<(bool Ok, string Message)> DecideMemoryAsync(string session, string? op, bool yes, CancellationToken ct = default)
@@ -94,7 +94,7 @@ public sealed class SessionStoreDoors
     }
 
     /// <summary>
-    /// The ledger's judgement of deleting a session's record (SESSUX1f, D126 §5.4), deleting nothing: whether it would, and if not, its
+    /// The ledger's judgement of deleting a session's record, deleting nothing: whether it would, and if not, its
     /// sentence, its word and the facts the word names.
     /// </summary>
     /// <exception cref="DriverException">A host older than the door, which answers no judgement.</exception>
@@ -102,7 +102,7 @@ public sealed class SessionStoreDoors
         DeleteAnsweredAsync(new JudgeSessionDelete(id), ct);
 
     /// <summary>
-    /// Delete a session's record (SESSUX1f): the ledger judges it again as it deletes, so a record that moved since is refused as it now
+    /// Delete a session's record: the ledger judges it again as it deletes, so a record that moved since is refused as it now
     /// stands. A refusal is an answer, not an exception.
     /// </summary>
     /// <exception cref="DriverException">A host older than the door, which answers no judgement.</exception>

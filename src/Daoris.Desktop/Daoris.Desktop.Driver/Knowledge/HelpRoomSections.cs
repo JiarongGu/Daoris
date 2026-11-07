@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One section of Ask Daoris's room (MOD6): the facts it says, described from what the driver holds, and
+/// One section of Ask Daoris's room: the facts it says, described from what the driver holds, and
 /// its text, rendered in its place.
 /// </summary>
 /// <remarks>
@@ -19,7 +19,7 @@ internal interface IHelpRoomSection
 }
 
 /// <summary>
-/// The room's sections, in the order it renders them (MOD6). A new section is a file under <c>Knowledge/Room/</c>
+/// The room's sections, in the order it renders them. A new section is a file under <c>Knowledge/Room/</c>
 /// and a line here, where the helper should read it.
 /// </summary>
 internal static class HelpRoomSections
@@ -32,18 +32,18 @@ internal static class HelpRoomSections
         new HelpRoomMakingAPlugin(),
         new HelpRoomOwnPlugins(),
         new HelpRoomDoors(),
-        // D233 point 1: the acts done at a terminal that no proposal takes, read beside the doors that exist.
+        // The acts done at a terminal that no proposal takes, read beside the doors that exist.
         new HelpRoomTerminalActs(),
         new HelpRoomLanding(),
         new HelpRoomPlaces(),
         new HelpRoomWindow(),
         new HelpRoomMachineNow(),
-        // FABRIC-MILESTONE1b: where each unit's work has got to, read beside the machine now.
+        // Where each unit's work has got to, read beside the machine now.
         new HelpRoomWork(),
         new HelpRoomExchanges(),
         new HelpRoomWorkspaces(),
         new HelpRoomAgents(),
-        // STAFFPOLICY1g (D226): each role's policy and its last 7 days, beside the agents they spend.
+        // Each role's policy and its last 7 days, beside the agents they spend.
         new HelpRoomRoles(),
         new HelpRoomRules(),
         new HelpRoomAsks(),

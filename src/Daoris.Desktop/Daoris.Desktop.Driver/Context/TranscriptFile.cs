@@ -3,13 +3,12 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session's transcript file (D46 §4), on the disk as it is said (TRANSCRIPT1): the one writer every door's capture
+/// A session's transcript file, on the disk as it is said: the one writer every door's capture
 /// opens, the protocol doors', the native door's and the pipe door's alike.
 /// </summary>
 /// <remarks>
-/// <para>🔴 The transcript was a <see cref="StreamWriter"/> nobody flushed, so it held 0 bytes while its session worked and
-/// everything once it ended: nothing reading a live session's transcript saw a line it had said (DEV3d, where a rehearsal
-/// waited out its whole bound on a line its stub had already said).</para>
+/// <para>The transcript is a <see cref="StreamWriter"/> flushed as lines ask, since one nobody flushed would hold 0 bytes while its session works and
+/// everything once it ends: nothing reading a live session's transcript would see a line it had said.</para>
 ///
 /// <para><b>A line asks for a flush, and the lines written before it runs share it.</b> The flush runs on the thread pool,
 /// never on the thread that wrote the line: a pump hands its line to the buffer and goes back to its stream, and the lines
@@ -17,7 +16,7 @@ namespace Daoris.Driver;
 /// with no wait for the disk itself: a reader on this machine sees them, which is what a live transcript is for.</para>
 ///
 /// <para>Every door writes here from more than one thread (stdout's pump and stderr's, the wire and the driver), so each
-/// write and the flush take one lock. The file is opened as it always was: shared for reading, and a reader that shares
+/// write and the flush take one lock. The file is opened as it always is: shared for reading, and a reader that shares
 /// it for writing too reads it while it is open.</para>
 /// </remarks>
 internal sealed class TranscriptFile : TextWriter
@@ -112,8 +111,8 @@ internal sealed class TranscriptFile : TextWriter
             }
             catch (Exception)
             {
-                // On the pool, a throw would end the application, for a file that is diagnostic and never the record
-                // (D46 §4). The bytes stay with the writer: the next line's flush tries again, and the close says why.
+                // On the pool, a throw would end the application, for a file that is diagnostic and never the record.
+                // The bytes stay with the writer: the next line's flush tries again, and the close says why.
             }
         }
     }

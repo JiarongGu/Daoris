@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>driver.json</c> that does not read, said as the driver says a refusal (CONFIGREAD1): the file, and where in it when
+/// A <c>driver.json</c> that does not read, said as the driver says a refusal: the file, and where in it when
 /// the parser knows, in a sentence every door meets. It is a <see cref="DriverException"/>, so the headless host's one catch
-/// says it and exits 2 (REV3), the modules' route answers it as the driver's refusal, and every console's catch already takes
-/// it. Thrown by <see cref="DriverConfig.Load"/> alone, the one reader (CONFIGSEAM1).
+/// says it and exits 2, the modules' route answers it as the driver's refusal, and every console's catch already takes
+/// it. Thrown by <see cref="DriverConfig.Load"/> alone, the one reader.
 /// </summary>
 /// <param name="path">The file that did not read, as the door resolved it.</param>
 /// <param name="message">The sentence.</param>

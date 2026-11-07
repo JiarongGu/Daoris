@@ -4,10 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What the knowledge index holds of each repository, as the service lists it (<c>/api/repositories</c>), read at each look (FOUNDATION1s
-/// part B): its signature moves while the index feeds, so the look tells the <c>repositories</c> scope and the status bar's size is read
-/// again, and it is quiet once the index has fed. The tick's refetch of the repositories used to cover it (D182's part A note: a summary
-/// read mid-feed said 555 entries of 1,050).
+/// What the knowledge index holds of each repository, as the service lists it (<c>/api/repositories</c>), read at each look:
+/// its signature moves while the index feeds, so the look tells the <c>repositories</c> scope and the status bar's size is read
+/// again, and it is quiet once the index has fed. A summary read mid-feed undercounts the entries.
 /// </summary>
 public sealed class IndexFeed
 {

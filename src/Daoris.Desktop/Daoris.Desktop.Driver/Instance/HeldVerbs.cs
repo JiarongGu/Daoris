@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The verbs that open or take a conversation the running Daoris runs and hold it (RPC1g2 and RPC1g3, D238 point 5, the
-/// terminal-conversation design §3.3): <c>daoris chat --repository</c> and <c>--session</c>, <c>session start-from</c> and
+/// The verbs that open or take a conversation the running Daoris runs and hold it:
+/// <c>daoris chat --repository</c> and <c>--session</c>, <c>session start-from</c> and
 /// <c>session hand-over</c>. Each sends the route the window presses, with <c>hold: true</c> where it opens one, or <c>HOLD</c> where it
 /// takes one already open, then keeps the connection as the conversation (<see cref="HeldChat"/>). With no Daoris running it runs nothing.
 /// </summary>

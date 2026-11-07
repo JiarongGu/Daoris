@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The standing choices from a terminal: <c>daoris settings</c>, <c>role</c>, and the place, workflow and retry words the tree routes
 /// here. Each change is its route through <see cref="IChoiceTerminal.PressAsync"/> where the running Daoris answers, confirmed in its
-/// window; else the choice's own operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). A change no
+/// window; else the choice's own operation, on the terminal's word, refused from a session's terminal. A change no
 /// route takes acts alone even beside a running Daoris (<see cref="ChoiceRoutes"/>): <c>brainstorms</c>; the workflows' writes are routes (<see cref="DriverWorkflowsCommand"/>). Its words are one function per verb on
 /// both paths (<c>fixtures/driver-choices-text.json</c>, <c>fixtures/driver-workflows-text.json</c>). The settings' own keys' verbs are
 /// here; a rule a subdomain above owns has its verb beside the rule (<see cref="ChoiceVerb"/>), which Loop wires into the world
@@ -68,11 +68,11 @@ public static class DriverChoicesCommand
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 
-    /// <summary>The marker a shell Daoris started carries (D194 point 5): its session's record id.</summary>
+    /// <summary>The marker a shell Daoris started carries: its session's record id.</summary>
     public const string SessionVariable = ChildMarks.SessionVariable;
 
     /// <summary>
-    /// The refusal of a person's press acting in this process from a session's terminal (D194 point 5, the alone-path design §2): advice,
+    /// The refusal of a person's press acting in this process from a session's terminal: advice,
     /// since its absence grants nothing; an agent's honest attempt is not passed as the person's.
     /// </summary>
     public const string SessionsTerminal =
@@ -83,7 +83,7 @@ public static class DriverChoicesCommand
 
     /// <summary>
     /// Whether the words change the home: a verb this program has that is not <c>list</c>, and no plan or usage asked; <c>brainstorms</c>
-    /// only where it sets or clears, and a workflow's only where it writes (PUSH1f2b).
+    /// only where it sets or clears, and a workflow's only where it writes.
     /// </summary>
     public static bool Changes(IReadOnlyList<string> args)
     {
@@ -94,9 +94,9 @@ public static class DriverChoicesCommand
             "list" => false,
             "workflow" => ChoiceGrammar.WorkflowChanges([.. args.Skip(1)]),
             "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || ChoiceGrammar.BrainstormMinuteFlags.Contains(arg)),
-            // `keep` naming no kind says each rule, a read (KEEP1d).
+            // `keep` naming no kind says each rule, a read.
             "keep" => args.Count > 1,
-            // `role` naming one role, or none, says it, a read (FOUNDATION1y-i).
+            // `role` naming one role, or none, says it, a read.
             "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy" or "rules",
             _ => Verbs.Contains(verb, StringComparer.Ordinal),
         };
@@ -169,7 +169,7 @@ public static class DriverChoicesCommand
             }
             catch (DriverException refused)
             {
-                // One line on both paths (D194 point 6): the route's refusal is `{verb}: {sentence} ({code})`, and so is the operation's.
+                // One line on both paths: the route's refusal is `{verb}: {sentence} ({code})`, and so is the operation's.
                 await error.WriteLineAsync($"{Prefix}: {refused.Message} ({ChoiceCodes.Of(refused)})").ConfigureAwait(false);
                 return 2;
             }
@@ -249,7 +249,7 @@ public static class DriverChoicesCommand
                         Say(on ? $"daoris: sessions in `{repository}` open their own worktree (D51)." : $"daoris: sessions in `{repository}` run in its registered root again.");
                         if (on)
                         {
-                            // TREEDEPS1: npm's dependencies are copied in where the tree's lockfile matches the checkout's.
+                            // npm's dependencies are copied in where the tree's lockfile matches the checkout's.
                             Say("  A fresh tree holds nothing git does not track but the npm dependencies copied");
                             Say("  from your checkout where the tree's lockfile matches — no build outputs, no other");
                             Say("  installs — so a session pays the rest of that repository's own setup cost per tree.");
@@ -474,7 +474,7 @@ public static class DriverChoicesCommand
     /// <summary><c>list</c>: what this machine drives, as <c>daoris place list</c> always said it.</summary>
     private static int List(DriverConfig choices, DriverChoicesWorld world) => DriverChoicesList.List(choices, world);
 
-    /// <summary><c>across</c> (READ1, D107): whether a checkout is read by agents outside it, and the writes declared into another.</summary>
+    /// <summary><c>across</c>: whether a checkout is read by agents outside it, and the writes declared into another.</summary>
     private static ChoicePress Across(IReadOnlyList<string> args, DriverChoicesWorld world) => DriverChoicesAcross.Across(args, world);
 
     /// <summary>Whether the file sets a key, read where it holds a whole number, as the CLI reads a choice set rather than defaulted.</summary>

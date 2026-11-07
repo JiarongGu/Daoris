@@ -4,8 +4,8 @@ using Microsoft.Win32;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The Windows account's variables, kept in the registry's <c>HKCU\Environment</c>: never the machine's (WIRING1e, the this-Daoris
-/// design §4). A value is read and written unexpanded, since the account's <c>PATH</c> holds <c>%USERPROFILE%</c> references that an
+/// The Windows account's variables, kept in the registry's <c>HKCU\Environment</c>: never the machine's.
+/// A value is read and written unexpanded, since the account's <c>PATH</c> holds <c>%USERPROFILE%</c> references that an
 /// expanded write would lose, and a <c>PATH</c> is stored as an expandable string as Windows stores it.
 /// </summary>
 public sealed class WindowsAccountEnvironment : IAccountEnvironment

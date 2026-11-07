@@ -4,14 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// This machine's plugins over the bridge (`PluginsRoutes.cs`, MOD5): the catalogue and offers,
+/// This machine's plugins over the bridge (`PluginsRoutes.cs`): the catalogue and offers,
 /// the switch and removal, an update, an install, and the kit's New and Try.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class DriverModulePluginsTests : DriverModuleBridge
 {
     /// <summary>
-    /// The plugins (D64) as the page reads them: the same catalogue the driver reads each tick, each
+    /// The plugins as the page reads them: the same catalogue the driver reads each tick, each
     /// with what it declares and speaks on, and the two doors' switch over the same row.
     /// </summary>
     [Fact]
@@ -75,8 +75,8 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A plugin whose folder something on the machine still holds is not half-removed (REV3 modules
-    /// F5). On Windows the folder of a running hook process — its working directory — cannot go, and
+    /// A plugin whose folder something on the machine still holds is not half-removed.
+    /// On Windows the folder of a running hook process — its working directory — cannot go, and
     /// the recursive delete took every file it could first, leaving a folder with no manifest: a
     /// plugin stranded, neither there nor gone. Removal moves the folder aside whole, or refuses whole.
     /// </summary>
@@ -102,7 +102,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PLUG9 (c): each installed plugin says where it came from — a folder, an offer, or no record, which is
+    /// Each installed plugin says where it came from — a folder, an offer, or no record, which is
     /// said rather than guessed — and Update is asked first for what it would change, then pressed. The
     /// install folder is swapped whole and what the plugin kept stays.
     /// </summary>
@@ -157,7 +157,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PLUG9 (d): the install's own plugins are answered beside the catalogue, each with what it declares and
+    /// The install's own plugins are answered beside the catalogue, each with what it declares and
     /// needs, and Install copies one in with the offer recorded. 🔴 Nothing it declares runs at the press.
     /// </summary>
     [Fact]
@@ -204,7 +204,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LANDPIN3 (D119): an installed copy of an example older than the one the install ships is answered with both versions and
+    /// An installed copy of an example older than the one the install ships is answered with both versions and
     /// what the newer one brings, and its update is the person's press, taken from the offer though the copy has no record. A
     /// copy the person changed is said as changed and its press is refused.
     /// </summary>
@@ -231,7 +231,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
             var said = (await AnswerAsync(module, "PLUGINS")).GetProperty("plugins").EnumerateArray().Single().GetProperty("shipped");
             Assert.Equal(("older", "1.2.0", "1.3.0", "Pushes the commit judged."),
                 (said.GetProperty("state").GetString(), said.GetProperty("installed").GetString(), said.GetProperty("shipped").GetString(), said.GetProperty("changes").GetString()));
-            // No record says what its install copied, so whether it was edited is not told (LANDPIN3b).
+            // No record says what its install copied, so whether it is edited is not told.
             Assert.True(said.GetProperty("unjudged").GetBoolean());
 
             // Asked first: what it would change, from the install's offer, with no press made.
@@ -262,7 +262,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LANDPIN3b (D119): an example installed from the offer records what its install copied, so once the install ships a newer
+    /// An example installed from the offer records what its install copied, so once the install ships a newer
     /// one, a copy edited since is said as changed, with both versions, and neither update door replaces it.
     /// </summary>
     [Fact]
@@ -301,7 +301,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PLUG8: the plugin kit's screen half. The catalogue says where a new plugin may speak; New writes a
+    /// The plugin kit's screen half. The catalogue says where a new plugin may speak; New writes a
     /// plugin's folder where the person named and installs nothing; Try starts a folder or an installed
     /// plugin as the driver would. The kit's refusals arrive in its own words.
     /// </summary>

@@ -1,7 +1,7 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What the pipe forwards to the connection that holds a conversation (D238 point 3, the terminal-conversation design §3.2), in the order
+/// What the pipe forwards to the connection that holds a conversation, in the order
 /// told, through a queue of its own: the bus never waits on a connection. Past <c>bound</c> lines waiting, the oldest is dropped and a
 /// <see cref="PipeHolding.GapType"/> naming the last console sequence dropped goes before the next line, so the terminal reads the backlog
 /// again from its last printed line.

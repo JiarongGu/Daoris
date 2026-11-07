@@ -6,8 +6,8 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A repository's integration, the page's `bridge/repositories/integration.ts` (INTEGRATE1h; the integration design §5.8): the read the
-/// Integration view and `daoris integrate` draw, and the owner's acts, which are Person routes (D156), a card in the window.
+/// A repository's integration, the page's `bridge/repositories/integration.ts`: the read the
+/// Integration view and `daoris integrate` draw, and the owner's acts, which are Person routes, a card in the window.
 /// </summary>
 public sealed class IntegrateRoutes(DriverContext context)
 {
@@ -17,7 +17,7 @@ public sealed class IntegrateRoutes(DriverContext context)
 
     /// <summary>
     /// A repository's integration (`repository`): the queue in its order, the standing candidates with what holds each, what went back, the
-    /// superseded commits awaiting a disposition, the promoted history, and (INTEGRATE1h) the landed branches waiting for the owner's card, as
+    /// superseded commits awaiting a disposition, the promoted history, and the landed branches waiting for the owner's card, as
     /// the runtime last judged them. `unit` alone answers that unit's one line, its head.
     /// </summary>
     [DriverRoute("INTEGRATION", PipeClass.Open)]
@@ -33,7 +33,7 @@ public sealed class IntegrateRoutes(DriverContext context)
 
     /// <summary>
     /// The owner's act on a repository's integration: `request` a branch (`landed` for a recorded landing, else a records branch), `drop` a
-    /// request that stands in no candidate, `recheck` to have the line looked at now; and (INTEGRATE1h) `decide` a candidate held for one
+    /// request that stands in no candidate, `recheck` to have the line looked at now; and `decide` a candidate held for one
     /// (`candidate`, `decide`: split, hand-back or land, the owner's alone), `order` a queued request (`request`, `place`: first or last) and
     /// `answer` a superseded commit (`request`, `commit`, `answer`: superseded, or rebase, which tells its session). Answered
     /// `{ done, why?, message }`, a refusal as data.

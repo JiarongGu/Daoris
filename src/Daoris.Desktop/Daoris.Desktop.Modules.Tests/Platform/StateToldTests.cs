@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A press from the terminal reaches an open window (STATEHUB1e, D169 point 8): `daoris tree …` runs in another process with
+/// A press from the terminal reaches an open window: `daoris tree …` runs in another process with
 /// no bus, tells its press in the request folder, and the shell's loop, hearing it at its watch's next look, publishes the same
 /// <c>STATE_CHANGED</c> the window's press of that route publishes.
 /// </summary>
@@ -48,7 +48,7 @@ public sealed class StateToldTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ACCEPTALL1e: an entry's or an ask's landing from a terminal (<c>trees land --entry|--ask</c>) is told as the window's Accept of it
+    /// An entry's or an ask's landing from a terminal (<c>trees land --entry|--ask</c>) is told as the window's Accept of it
     /// is: every part's landing's scopes, about no one session, so an open window reads each plan and review again.
     /// </summary>
     [Theory]

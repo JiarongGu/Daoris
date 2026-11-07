@@ -11,9 +11,8 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
     private readonly Driver _driver = driver;
 
     /// <summary>
-    /// A voice's start plan (the foundation design §2.4's table, FOUNDATION1j part ii; D205's round-2 note and §4.4): Brainstorm's, its order
-    /// the voice's own entry alone, frozen with the brainstorm's plan, so a voice that cannot run has nothing to be replaced by; its workspace
-    /// the request's, for the version that workspace pins.
+    /// A voice's start plan: Brainstorm's, its order the voice's own entry alone, frozen with the brainstorm's plan, so a voice that
+    /// cannot run has nothing to be replaced by; its workspace the request's, for the version that workspace pins.
     /// </summary>
     internal static StartPlan Voice(BrainstormTurn turn, DriverConfig config, HarnessRoster roster) =>
         new(ParticipantWork.Brainstorm, config, roster, roster.Adapters, new PassMemory(), order: [turn.Entry ?? new ActorEffective(turn.Agent, null, null, "before")],
@@ -24,7 +23,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
 
     /// <summary>
     /// The account a voice's turn runs on: its plan's one ask for its one entry, each account judged by its reading for the voice's model, the
-    /// ones it already passed left out (D205 §4.4), counted where it chooses one. Not allowed, the voice is dropped, never replaced.
+    /// ones it already passed left out, counted where it chooses one. Not allowed, the voice is dropped, never replaced.
     /// </summary>
     internal static Task<HarnessSelection> VoiceAsync(BrainstormTurn turn, DriverConfig config, HarnessRoster roster, CancellationToken ct)
     {
@@ -32,11 +31,11 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
         return plan.AccountsAsync(turn.Agent, plan.Order[0].Model, turn.Passed, ct);
     }
 
-    /// <summary>The minutes a room measurement's one pass may take (BRAINSTORM1c): the policy's default for a pass, the first run's to read again.</summary>
+    /// <summary>The minutes a room measurement's one pass may take: the policy's default for a pass, the first run's to read again.</summary>
     internal const int MeasureMinutes = 10;
 
     /// <summary>
-    /// A room measurement of <paramref name="agent"/> (BRAINSTORM1c, D176 point 2, D53): one probe pass through the same walk, posture,
+    /// A room measurement of <paramref name="agent"/>: one probe pass through the same walk, posture,
     /// connector and usage as a brainstorm's generator, judged by what its run shows (<see cref="BrainstormRoomProbe"/>), and kept as evidence
     /// under <see cref="BrainstormFiles.MeasureId"/>. Not <paramref name="spend"/>, it only walks: the account it would run on, nothing started.
     /// </summary>
@@ -101,23 +100,23 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
     }
 
     /// <summary>
-    /// The code a pass is <c>unavailable</c> with where its voice's walk found no ready account (BRAINSTORM1c, D176 point 7): the walk's own,
+    /// The code a pass is <c>unavailable</c> with where its voice's walk found no ready account: the walk's own,
     /// read from its facts and never its words (<see cref="StartPasses.Of"/>), the one vocabulary every walk over an entry says: <c>unavailable</c>
     /// where nothing of the agent can run here, <c>not-offered</c>, <c>cooling</c>, <c>signed-out</c>, else <c>held</c>.
     /// </summary>
     internal static string PassCode(HarnessSelection selection) => StartPasses.Of(selection);
 
     /// <summary>
-    /// One real turn (BRAINSTORM1a, BRAINSTORM1a2): the agent's account by the walk, its spawn prepared as any session's, the
+    /// One real turn: the agent's account by the walk, its spawn prepared as any session's, the
     /// <c>brainstorm</c> posture held to its room, one turn framed as one prompt, its connector its only one and carrying the turn so
     /// its result tool writes the answer file, and its own minutes. Its record is the brainstorm's own, under the home's data: no
-    /// session record is opened on the service, and nothing of it syncs. A limit its door reports cools the account (D125,
-    /// BRAINSTORM1b), and the pass starts once more on the next.
+    /// session record is opened on the service, and nothing of it syncs. A limit its door reports cools the account,
+    /// and the pass starts once more on the next.
     /// </summary>
     internal async Task<BrainstormTurnRun> TurnAsync(BrainstormTurn turn, CancellationToken ct)
     {
         var sessionId = $"brainstorm-{turn.Id}-{turn.Turn}";
-        // Its connector, and no plugin's server beside it (D176 point 2): the turn whole on it, so `brainstorm_give` or
+        // Its connector, and no plugin's server beside it: the turn whole on it, so `brainstorm_give` or
         // `brainstorm_synthesize` writes the file the driver reads and judges it against the room. A pass answers through that tool
         // alone, so on a machine with no connector it is not started, and no account is spent on a turn that cannot answer.
         var scope = BrainstormVariables.Scope(turn);
@@ -170,7 +169,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
             BrainstormAnswer = turn.Answer,
             Session = sessionId,
             Prompt = turn.Instruction,
-            // CONTEXTONE1c: in no repository and reading only its room, its standing block is the workspace's part alone.
+            // In no repository and reading only its room, its standing block is the workspace's part alone.
             Block = new StandingFacts { Knowledge = false },
         };
         var (info, notice) = _driver.Prepare(adapter, target, selection);
@@ -189,7 +188,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
                 {
                     if (used is not null)
                     {
-                        // The usage is the brainstorm's own (D176 point 7): the reading names it, and its account counts it.
+                        // The usage is the brainstorm's own: the reading names it, and its account counts it.
                         _context.Usage?.Record(new UsageEntry(sessionId, "", adapter.Id.Value, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow)
                         {
                             Brainstorm = turn.Id,
@@ -202,7 +201,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
                         return Task.FromResult(new BrainstormTurnRun(true, selection.Profile, AgentOffers.NotOffered, $"{AgentOffers.NotOffered}  brainstorm turn {turn.Turn}"));
                     }
 
-                    // A voice's provider that kept failing within its minutes drops it with that reason, never timed out (AGENTERRORS1d).
+                    // A voice's provider that kept failing within its minutes drops it with that reason, never timed out.
                     var code = turnFailed is { Length: > 0 } failure && Cooled(adapter, selection, failure, sessionId, ended.Refusal) ? Limit
                         : TransientEnded.Of(ended, timedOut: exitCode is null) is not null ? TransientEnded.Voice + "-transient"
                         : turnFailed is { Length: > 0 } ? "turn-failed"
@@ -213,7 +212,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
                 ct, scope: scope, handedPlan: ConnectorPlans.For(sessionId, null, [], ConnectorPlans.ConnectorOnly), minutes: turn.Minutes,
                 transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
                 said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter),
-                // D205 §4.4: its agent's refusal of the voice's model at the open is kept as the account's reading, and the turn ends with
+                // Its agent's refusal of the voice's model at the open is kept as the account's reading, and the turn ends with
                 // it (above) for the pass's one bounded restart on the next account; a voice has no other entry to move to on this account.
                 offers: new OpenOffers(selection.Version, selection.Profile, _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
                 noConnector: "— this machine has no connector, so this pass cannot give its answer.", movedFirst: true)
@@ -226,13 +225,13 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
     }
 
     /// <summary>
-    /// A limit the turn's door reported, read as the roster reads one (D125 §2): the account cools for the time the agent named or
+    /// A limit the turn's door reported, read as the roster reads one: the account cools for the time the agent named or
     /// the machine's cool-off, and no strike is counted. False where the words are no limit, or the cool-off could not be kept.
     /// </summary>
     /// <remarks>
-    /// FOUNDATION1g part b: the failure is also read by the one reader (<see cref="AgentErrors.Read"/>), from the refusal the door carried with
-    /// its code, so a limit it says by its code alone cools the account as a driven run's and a conversation's do (§3.1). The pass is handed
-    /// no transient retry, which would open an episode the design has not decided for a voice (row 1d), so it reads the refusal itself, once.
+    /// The failure is also read by the one reader (<see cref="AgentErrors.Read"/>), from the refusal the door carried with
+    /// its code, so a limit it says by its code alone cools the account as a driven run's and a conversation's do. The pass is handed
+    /// no transient retry, which would open an episode not yet decided for a voice, so it reads the refusal itself, once.
     /// </remarks>
     private bool Cooled(AgentDoor adapter, HarnessSelection selection, string failure, string sessionId, AcpRefusal? refusal)
     {

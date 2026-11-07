@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The agent would not resume the conversation an answer continues (ANSWER1a, D131 §2): nothing was prompted, and the
+/// The agent would not resume the conversation an answer continues: nothing is prompted, and the
 /// answer is carried on in a new session, saying <see cref="Why"/>.
 /// </summary>
 /// <remarks>

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The person's Edge as Daoris's browser (BRW12): where it is looked for, what it is started with,
+/// The person's Edge as Daoris's browser: where it is looked for, what it is started with,
 /// and how an Edge Daoris started before is found again rather than started twice.
 /// </summary>
 public sealed class EdgeBrowserTests : Bridge

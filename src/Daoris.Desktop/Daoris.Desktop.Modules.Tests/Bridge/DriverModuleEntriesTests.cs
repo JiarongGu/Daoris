@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// ACCEPTALL1 (D167's 2026-10-15 amendment points 1 and 4): the entry's Accept and the ask's, <c>ENTRY_LANDING</c> and
+/// The entry's Accept and the ask's, <c>ENTRY_LANDING</c> and
 /// <c>LAND_ENTRY</c>, <c>ASK_LANDING</c> and <c>LAND_ASK</c>. Which parts an entry's Accept lands (those whose tree offers work, in the
 /// entry's order), which entries an ask's lands (its own, one per repository, never its intake), and what goes on the wire. The
 /// landing over real git is the driver's <c>EntryLandingTests</c>.
@@ -94,7 +94,7 @@ public sealed class DriverModuleEntriesTests
         new(id, "engine", "completed") { Entry = entry, Created = new DateTimeOffset(2026, 10, 16, 9, minute, 0, TimeSpan.Zero) };
 
     /// <summary>
-    /// ACCEPTALL1b (D167's amendment point 2): a part's own Accept is its entry's for that part alone, so <c>LANDING</c> and
+    /// A part's own Accept is its entry's for that part alone, so <c>LANDING</c> and
     /// <c>LAND_SESSION_TREE</c> name its landing for the entry's first part, oldest by its record's <c>created</c> then id.
     /// </summary>
     [Fact]
@@ -114,7 +114,7 @@ public sealed class DriverModuleEntriesTests
     [Fact]
     public void A_session_alone_in_its_entry_or_with_none_has_no_lead()
     {
-        // A record from a host before the key is its own line of work (SESSONE1b), as is one the records no longer hold.
+        // A record from a host before the key is its own line of work, as is one the records no longer hold.
         IReadOnlyList<SessionRecord> records = [Record("s1", "ask:a3/engine", 1), Record("s2", null, 2), Record("s3", null, 3)];
 
         Assert.Null(TreesRoutes.EntryLead(records, "s1"));

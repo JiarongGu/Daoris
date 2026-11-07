@@ -4,12 +4,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// An account's name and where it runs, over the bridge (ACCT1, ACCT2; D125's ACCT1 and ACCT2 notes): the routes the agent's
+/// An account's name and where it runs, over the bridge: the routes the agent's
 /// page will call — <c>profile-rename</c>, <c>profile-join</c>, and a sign-in's <c>join</c> and <c>name</c> — and the
 /// roster's and <c>ACCOUNTS</c>' facts for each account: the person's name for it, and the lists and defaults that hold it.
 /// </summary>
 /// <remarks>
-/// The fast half (MOD8): each answer is a file read or written under the test's home, and each refusal comes before any
+/// The fast half: each answer is a file read or written under the test's home, and each refusal comes before any
 /// process starts. A sign-in that runs is the Process half's (<c>HarnessProfileTests</c>, <c>DriverModuleAgentsTests</c>).
 /// </remarks>
 public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
@@ -26,7 +26,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
             .GetProperty("accounts").EnumerateArray().Single(each => each.GetProperty("name").GetString() == name);
 
     /// <summary>
-    /// ACCT2: a rename writes the person's name beside the account and nothing else, so the rotation, the defaults and the
+    /// A rename writes the person's name beside the account and nothing else, so the rotation, the defaults and the
     /// workspace's list — all naming its id — keep it; <c>ACCOUNTS</c> answers the name beside the id.
     /// </summary>
     [Fact]
@@ -55,7 +55,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ACCTNAME1: the sign-in's end says who signed in and what the machine lists it as; where the name is the email (the
+    /// The sign-in's end says who signed in and what the machine lists it as; where the name is the email (the
     /// screen offers it), the email is said once, folded as the page and the terminal fold it.
     /// </summary>
     [Fact]
@@ -72,7 +72,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ACCOUNTID1c: where the email is already another sign-in's id or name, the end says the organisation (else the plan)
+    /// Where the email is already another sign-in's id or name, the end says the organisation (else the plan)
     /// after it, and "by that name" where the account is named with it beside the email; as the terminal's twin says it.
     /// </summary>
     [Fact]
@@ -89,7 +89,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ACCT2: Daoris's session records name an account by its id, so the sessions running on it are counted for it across a
+    /// Daoris's session records name an account by its id, so the sessions running on it are counted for it across a
     /// rename, beside its new name.
     /// </summary>
     [Fact]
@@ -112,7 +112,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         Assert.Equal(1, account.GetProperty("Running").GetInt32());
     }
 
-    /// <summary>ACCT2: its own id, or no name at all, gives it none again; another account's name or id is refused, writing nothing.</summary>
+    /// <summary>Its own id, or no name at all, gives it none again; another account's name or id is refused, writing nothing.</summary>
     [Fact]
     public async Task A_rename_to_its_own_id_clears_it_and_another_account_s_name_is_refused()
     {
@@ -131,7 +131,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// One set of Daoris's accounts (POOL1a, D197; the account-pool design §5.2): there is no list to join, so the page's
+    /// One set of Daoris's accounts: there is no list to join, so the page's
     /// <c>profile-join</c> is refused in its code, naming the order instead, and nothing is written.
     /// </summary>
     [Fact]
@@ -149,7 +149,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 ACCT1: a sign-in into an account that is not here is refused before anything starts, naming the accounts there,
+    /// A sign-in into an account that is not here is refused before anything starts, naming the accounts there,
     /// and no folder is made — the install's owner signed in to bring a signed-out account back and got a new account no
     /// list held. None named and no default is refused the same way.
     /// </summary>
@@ -157,7 +157,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     public async Task A_sign_in_into_an_account_that_is_not_here_is_refused_and_makes_no_folder()
     {
         // A refusal this test expects that comes no more starts a sign-in: named for a command no machine has, it starts nothing,
-        // never the agent on PATH, which would open the person's browser on their real account (docs/development.md, LIVELOGIN1).
+        // never the agent on PATH, which would open the person's browser on their real account (docs/development.md).
         File.WriteAllText(DriverConfigPath, """
             { "drivable": [], "holds": [], "cap": 1, "adapter": "claude-code", "commands": { "claude-code": ["daoris-no-such-sign-in"] } }
             """);
@@ -177,7 +177,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ACCT1, ACCT2: a new account's join, which names a list there is no longer any of (POOL1a, D197: the account joins Daoris's
+    /// A new account's join, which names a list there is no longer any of (the account joins Daoris's
     /// accounts by itself), or a name another account has, is refused before anything starts.
     /// </summary>
     [Fact]
@@ -197,9 +197,8 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ACCT1, ACCT2: one account on the roster says its id and the person's name for it. Rewritten by POOL1a2 (D197; the account-pool
-    /// design §5.2): it said where the account ran, its <c>places</c>, and <c>nowhere</c> where no list held it; every account of
-    /// Daoris's serves every workspace now, so neither is answered.
+    /// One account on the roster says its id and the person's name for it. Every account of
+    /// Daoris's serves every workspace, so it answers no <c>places</c> and no <c>nowhere</c>.
     /// </summary>
     [Fact]
     public void An_account_on_the_roster_says_its_name_and_no_place()
@@ -217,7 +216,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ACCOUNTID1: an account on the roster says the organisation and the plan its agent named beside who signed in, read
+    /// An account on the roster says the organisation and the plan its agent named beside who signed in, read
     /// fresh and kept nowhere, what tells two sign-ins of one email apart; null where it named none, as before.
     /// </summary>
     [Fact]

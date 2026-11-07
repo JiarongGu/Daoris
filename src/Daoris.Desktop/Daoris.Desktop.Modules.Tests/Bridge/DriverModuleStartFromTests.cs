@@ -9,8 +9,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// MSG1f2 (D137 §5.3's <c>SESSION_START_FROM</c>): *Start a conversation with these words* over the bridge, one press the
-/// page's start and first message used to compose. The route hands the loop's chat runner the session and answers
+/// <c>SESSION_START_FROM</c>: *Start a conversation with these words* over the bridge, one press that does the
+/// page's start and first message in one. The route hands the loop's chat runner the session and answers
 /// <c>{sessionId, sent, why, message}</c>; the new conversation's end reaches the page as any start's does. The judgement
 /// and the act are the driver's <c>StartFromTests</c>'; the runner's adapter here spawns nothing, so a conversation that
 /// opens ends <c>failed</c> at its spawn.
@@ -62,7 +62,7 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// NEW1a (D162): <c>START_CHAT</c> with opening words answers <c>{sessionId, sent, why, message}</c>, the two fields older
+    /// <c>START_CHAT</c> with opening words answers <c>{sessionId, sent, why, message}</c>, the two fields older
     /// callers read kept. Here the adapter spawns nothing, so the conversation ends at its spawn and the answer says why.
     /// </summary>
     [Fact]
@@ -92,7 +92,7 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1j part iii (the foundation design §2.4's third row): a new conversation, from a start and from a record's words, starts on Chat's
+    /// A new conversation, from a start and from a record's words, starts on Chat's
     /// order, never the machine's <c>adapter</c> key, which here names no agent this machine has: the open that reaches the agent's spawn is
     /// <c>talk</c>'s, Chat's.
     /// </summary>
@@ -130,8 +130,8 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
         service.Chat("c1", root, words);
         var loop = Loop();
         // Its words already judged unable to go on, as an earlier look leaves a chat that kept no conversation: the line the
-        // press stands under. The loop's own look as it comes up (MSG1c2) then leaves them waiting, so the press is judged
-        // alone (FLAKE2). Waiting for that look's line was not enough: it holds the chat until after its line is kept, and a
+        // press stands under. The loop's own look as it comes up then leaves them waiting, so the press is judged
+        // alone. Waiting for that look's line is not enough: it holds the chat until after its line is kept, and a
         // press inside that hold was answered that the conversation is going on with its words already.
         if (words) new GoOnMarks(loop.Home).Mark("c1", ["w1"], ContinueWhy.Of(ContinueWhy.Unkept), DateTimeOffset.UtcNow);
         var adapters = TestDoors.Registry([Talk()]);

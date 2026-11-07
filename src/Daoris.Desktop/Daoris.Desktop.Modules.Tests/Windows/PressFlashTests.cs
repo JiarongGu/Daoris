@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// NOTIFY2b (D196 point 4, the notification design §3.3): while a terminal's press waits unshown with no main window of Daoris in
+/// While a terminal's press waits unshown with no main window of Daoris in
 /// front, the taskbar button of the main window last in front is lit, and stays lit for the ten minutes a press waits to be found,
 /// which the balloon's few seconds do not; it is stopped when a main window comes forward, or when the last press waiting unshown
 /// ends or is shown. What is here is that judgement, held apart from the windows, which flash in the application.

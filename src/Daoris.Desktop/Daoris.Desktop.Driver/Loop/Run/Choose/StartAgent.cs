@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The agent a start runs on, and the roles it answers to: the one a hand-over named, held until the quest leaves this machine; else a
-/// continuation's record's own, the agent its asked choice was asked of, never the machine's adapter key, so a part that ran on a
+/// continuation's record's own, the agent its asked choice is asked of, never the machine's adapter key, so a part that ran on a
 /// role's second choice goes on there; else the work's, which the walk may replace. Starts run side by side, so it is the run's alone.
 /// </summary>
 [RunStage("agent", RunPhase.Choose)]
@@ -18,7 +18,7 @@ internal sealed class StartAgent(IRunWiring wiring) : IRunStage
         var stepRole = await wiring.StepRoleAsync(quest, start.Workspace, ct).ConfigureAwait(false);
         state.StepRole = stepRole;
 
-        // Its step's role, else the role its line was bound to, else the work's at its place: never the seeded Build's by default.
+        // Its step's role, else the role its line is bound to, else the work's at its place: never the seeded Build's by default.
         state.PolicyRole = stepRole ?? RuledLine.OfQuest(context.Home, quest, start.Resumes, start.Workspace).Role;
         state.Agent = StartPlan.AgentFor(
             Driver.StartWork(quest), context.Config, handed: handedQuest?.Agent, catalogue: wiring.CatalogueForReport(),
@@ -37,7 +37,7 @@ internal sealed class StartAgent(IRunWiring wiring) : IRunStage
             }
         }
 
-        // The session the quest was handed over from, whose instruction and note this start carries on from.
+        // The session the quest is handed over from, whose instruction and note this start carries on from.
         state.HandedFrom = handedQuest is not null && start.Resumes is { } earlier
                            && string.Equals(earlier.Session, handedQuest.From, StringComparison.Ordinal);
         return null;

@@ -12,7 +12,7 @@ public sealed class RelayWorld
     /// <summary>Every wait the relay measures: the first line's, the batch's gathering and the bound.</summary>
     public TimeProvider Clock { get; init; } = TimeProvider.System;
 
-    /// <summary>The home's lease, read: its live holder, and whether the read was a doubt (busy, or a newer build's), which counts as held.</summary>
+    /// <summary>The home's lease, read: its live holder, and whether the read is a doubt (busy, or a newer build's), which counts as held.</summary>
     public Func<string, (LeaseHolder? Holder, bool Doubt)> Lease { get; init; } = home => (HomeLease.HeldBy(home, out var doubt), doubt);
 
     /// <summary>Whether the holder's agents' job holds the client's process: null where the job or the process would not open.</summary>
@@ -27,12 +27,12 @@ public sealed class RelayWorld
     /// <summary>How long a batch gathers once its first line is kept.</summary>
     public TimeSpan Gather { get; init; } = TimeSpan.FromSeconds(30);
 
-    /// <summary>How long the relay waits with no client connected before it reads the lease (§6.1 step 6).</summary>
+    /// <summary>How long the relay waits with no client connected before it reads the lease.</summary>
     public TimeSpan Bound { get; init; } = TimeSpan.FromMinutes(15);
 }
 
 /// <summary>
-/// One relay's life (EVENTHOOK1c; the event hook design §6.1 steps 1 to 6): its subscriber's file put in place whole, its pipe served, each
+/// One relay's life: its subscriber's file put in place whole, its pipe served, each
 /// client checked (a stranger the holder's agents' job does not hold refused, one it cannot check taken untold, the first line's schema
 /// always), one plugin connected and a second that passes ending it, every frame checked by the grammar into the batch, and an end for
 /// every reason, each said: the batch gathered, the connection ended, three bad frames, another build, a second client, the bound while an
@@ -273,7 +273,7 @@ public sealed class RelayRun
         }
     }
 
-    // Step 3: the strangers it can see. The lease names an instance, and that instance's agents' job holds the client; where it cannot
+    // The strangers it can see. The lease names an instance, and that instance's agents' job holds the client; where it cannot
     // be asked, the client is taken untold, its first line still checked.
     private bool Checked(RelayClient client)
     {
@@ -314,7 +314,7 @@ public sealed class RelayRun
         }
     }
 
-    // Step 4: every frame checked by the grammar; three bad in a row close the connection, which ends the relay with the gap line.
+    // Every frame checked by the grammar; three bad in a row close the connection, which ends the relay with the gap line.
     private async Task FramesAsync(RelayLines lines, CancellationToken ct)
     {
         var bad = 0;
@@ -374,7 +374,7 @@ public sealed class RelayRun
         }
     }
 
-    // Step 6's bound: with no client connected, the lease read once each bound; an instance holding the home, or a doubt, ends the relay
+    // The bound: with no client connected, the lease read once each bound; an instance holding the home, or a doubt, ends the relay
     // saying why no events reached it, and a closed Daoris costs one read and no wake.
     private async Task BoundAsync(CancellationToken ct)
     {

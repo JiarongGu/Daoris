@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// FOUNDATION1 row p (D212's note of the row; the foundation design §3.4 rule 5, §19.2): a keyed say the service answers <b>settled</b>, a retry of a
+/// A keyed say the service answers <b>settled</b>, a retry of a
 /// word kept and taken whose answer was lost, is handled by the shell before it reads a word. Its record path shows no <c>User</c> event and
 /// nudges nothing; its held words go off the held file with nothing shown; the forward of a held word to a live successor's inbox and a say to a
 /// driven session's inbox hold, send and keep nothing on the ask. Each case holds the answer the service's say door gives to a client that asks,
@@ -54,7 +54,7 @@ public sealed class SessionWordsSettledTests : DriverModuleBridge
         Assert.Empty(loop.Events.Page("c1").Events);
         Assert.Empty(service.Added());
 
-        // A key this line never settled is kept and shown, as before.
+        // A key this line never settled is kept and shown.
         var kept = await loop.Words.SayAsync("c2", Words, [], preface: null, "screen", CancellationToken.None, key: "another/key-2");
         Assert.True(kept!.Sent);
         Assert.NotNull(kept.Word);

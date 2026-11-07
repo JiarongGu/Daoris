@@ -24,13 +24,13 @@ public sealed class PseudoConsoleTerminals : ITerminalFactory
     static PseudoConsoleTerminals() => PseudoConsole.ToolsEnvironment = ChildTools;
 
     /// <summary>
-    /// What the tools add to a shell's environment (TOOLS5, D121 §2.6): the install's launchers and each tool's folders first on its
+    /// What the tools add to a shell's environment: the install's launchers and each tool's folders first on its
     /// <c>PATH</c> (<see cref="Tools.ChildEnvironment"/>), over the <c>PATH</c> the block holds so far, from <paramref name="home"/>'s file.
     /// </summary>
     internal static IReadOnlyDictionary<string, string> ChildTools(string home, IReadOnlyDictionary<string, string> variables) =>
         Tools.ChildEnvironment(Tools.Read(home), home, variables.TryGetValue(Tools.PathVariable, out var path) ? path : null);
 
-    /// <summary>The shells as Tools answers them (TOOLS5, D121 §2.6), read from the home's file now; with no home, PATH's.</summary>
+    /// <summary>The shells as Tools answers them, read from the home's file now; with no home, PATH's.</summary>
     public IReadOnlyList<TerminalShell> Shells() =>
         DaorisHome.Resolve() is { } home
             ? TerminalShells.For(Tools.Read(home), home, Environment.GetEnvironmentVariable(Tools.PathVariable))
@@ -41,7 +41,7 @@ public sealed class PseudoConsoleTerminals : ITerminalFactory
 }
 
 /// <summary>
-/// Which shells a terminal offers (D96): PowerShell 7 when it is installed, else Windows PowerShell, then
+/// Which shells a terminal offers: PowerShell 7 when it is installed, else Windows PowerShell, then
 /// Command Prompt and Git Bash where the machine has them.
 /// </summary>
 /// <remarks>
@@ -72,10 +72,10 @@ public static class TerminalShells
     }
 
     /// <summary>
-    /// The shells as Tools answers them (TOOLS5, D121 §2.6), with <paramref name="inherited"/> the PATH this process
+    /// The shells as Tools answers them, with <paramref name="inherited"/> the PATH this process
     /// holds: PowerShell 7 is the file Tools resolves, and none where its way cannot run, never PATH's instead; Windows
     /// PowerShell and Command Prompt are the system's, found on the tools' PATH; Git Bash is the bash beside the git
-    /// Tools resolves, else the one beside the system's git — a minimal git carries none (§3.2) — else none.
+    /// Tools resolves, else the one beside the system's git — a minimal git carries none — else none.
     /// </summary>
     public static IReadOnlyList<TerminalShell> For(ToolsRead read, string home, string? inherited)
     {

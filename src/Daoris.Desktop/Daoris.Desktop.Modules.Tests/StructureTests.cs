@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The structure gate for the desktop modules library (D166; the code-structure design §5): every source sits in its module's
+/// The structure gate for the desktop modules library: every source sits in its module's
 /// folder, which is its module; the library keeps no <c>Application</c>, <c>Infrastructure</c> or <c>Domain</c> folder; a test
 /// folder is a module's; a bridge domain's handler class is a <c>*Routes.cs</c> in <c>Bridge/Routes/</c> and the only file that
 /// marks a route. The rules are held on sources made in memory, one case each, and then run over the library's own tree.

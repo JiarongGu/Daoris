@@ -5,10 +5,9 @@ using System.Text;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// BRW13 (first BRW10's): a sign-in in the person's Edge survives Edge restarting. An identity server's
-/// session cookie ends with the browser process, and Edge restores none (the Edge evidence, §3), as the
-/// WebView2 window restored none before it, when the owner's sign-in was gone after every republish
-/// (FG5). Daoris keeps Edge's session cookies under the home, sealed to the Windows account, and puts
+/// A sign-in in the person's Edge survives Edge restarting. An identity server's
+/// session cookie ends with the browser process, and Edge restores none.
+/// Daoris keeps Edge's session cookies under the home, sealed to the Windows account, and puts
 /// them back over CDP when it starts Edge again.
 /// </summary>
 /// <remarks>
@@ -113,7 +112,7 @@ public sealed class BrowserSessionCookiesTests : Bridge
     /// <summary>
     /// Nothing kept, a file this account cannot open (copied from another machine or account), or one
     /// that is not what was written, restores nothing and says why. A browser that cannot put a sign-in
-    /// back still opens, signed out, which is where it was before BRW10.
+    /// back still opens, signed out.
     /// </summary>
     [Fact]
     public void A_file_that_is_missing_foreign_or_broken_restores_nothing_and_says_why()

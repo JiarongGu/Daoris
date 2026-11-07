@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// How long each step of <see cref="SessionGroups.LookAsync"/> took (HELPROOM1): the records, the quests, the planner's verdicts,
+/// How long each step of <see cref="SessionGroups.LookAsync"/> took: the records, the quests, the planner's verdicts,
 /// the marks read from the home, and the git check of the trees to judge. Handed in by a caller that wants them said, in the
 /// machine log's <c>help.room.look</c> line, so the step that made a look take 25 s on an installed machine is read, not guessed.
 /// </summary>
@@ -23,7 +23,7 @@ public sealed class LookTimes
 
     private readonly List<(string Tree, string Step, long Ms)> _treeSteps = [];
 
-    /// <summary>Each tree's step of the trees read (TREELOOK2): <c>status</c>, <c>holds</c> or <c>walk</c>, by the tree's folder name.</summary>
+    /// <summary>Each tree's step of the trees read: <c>status</c>, <c>holds</c> or <c>walk</c>, by the tree's folder name.</summary>
     public IReadOnlyList<(string Tree, string Step, long Ms)> TreeSteps
     {
         get
@@ -37,7 +37,7 @@ public sealed class LookTimes
         lock (_gate) _treeSteps.Add((Path.GetFileName(tree.TrimEnd('\\', '/')), step, ms));
     }
 
-    /// <summary>How many trees the git check was asked about.</summary>
+    /// <summary>How many trees the git check is asked about.</summary>
     public int Trees { get; set; }
 
     /// <summary>Run <paramref name="run"/>, saying how long it took as <paramref name="step"/>.</summary>

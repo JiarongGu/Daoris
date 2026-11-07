@@ -4,11 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Settings → Tools asking real programs (TOOLS7, D121 §4.1): the version a named file answers before it is written, the
+/// Settings → Tools asking real programs: the version a named file answers before it is written, the
 /// version each tool runs at in the list, and what a switch of git changes from each git's own
 /// <c>config --system --list</c>. Stub programs, written by the test as batch files, stand in for the makers'.
 /// </summary>
-/// <remarks>In the suite's Process half (MOD8): each case starts programs. A batch file is Windows', where an install runs.</remarks>
+/// <remarks>In the suite's Process half: each case starts programs. A batch file is Windows', where an install runs.</remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class DriverModuleToolProgramsTests : DriverModuleBridge
 {

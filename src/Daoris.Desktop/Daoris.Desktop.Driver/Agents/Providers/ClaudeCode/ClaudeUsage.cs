@@ -4,23 +4,22 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's windows, asked of the native CLI (USAGEREAD2a, D165 point 1; the usage-read evidence): <c>claude</c> in
+/// Claude Code's windows, asked of the native CLI: <c>claude</c> in
 /// stream-json mode under the account's <c>CLAUDE_CONFIG_DIR</c> answers a <c>get_usage</c> control request with the plan's
 /// whole use, with no prompt and no model request. Read into the same <see cref="WindowReading"/> a session's frame fills, so
 /// the walk, the page and the rest read an account's real use, not the part a session of Daoris's last said.
 /// </summary>
 /// <remarks>
-/// <para><b>Absent is never zero</b> (D57): a binary not there, a home not signed in (<c>rate_limits_available: false</c>), an
+/// <para><b>Absent is never zero</b>: a binary not there, a home not signed in (<c>rate_limits_available: false</c>), an
 /// error reply, a CLI silent past <see cref="Patience"/> and an answer of another shape all leave the account unknown, and
 /// nothing is kept. The request is declared experimental, so the answer is read defensively, field by field.</para>
 /// <para><b>Never the server's judgement or the account's money</b>: <c>limits[].severity</c>, usage credits and the session's
-/// own totals are not read (design §1.3: the maker's word is recorded, never acted on alone).</para>
-/// <para><b>Whether a read disturbs a session already running on the account is unmeasured</b> (evidence, what this does not
-/// establish), so <see cref="HarnessRoster"/> asks it only while none of Daoris's runs there, as it does Codex's.</para>
+/// own totals are not read (the maker's word is recorded, never acted on alone).</para>
+/// <para><b>Whether a read disturbs a session already running on the account is unmeasured</b> (not established), so <see cref="HarnessRoster"/> asks it only while none of Daoris's runs there, as it does Codex's.</para>
 /// </remarks>
 public static class ClaudeUsage
 {
-    /// <summary>How long one read may take, the start included: the evidence's answers took 1.5 to 2.6 s.</summary>
+    /// <summary>How long one read may take, the start included: measured answers take 1.5 to 2.6 s.</summary>
     public static readonly TimeSpan Patience = TimeSpan.FromSeconds(10);
 
     /// <summary>The least time between two reads of one account: a floor, beside Codex's five-minute freshness.</summary>
@@ -32,7 +31,7 @@ public static class ClaudeUsage
     private const string InitializeLine = """{"type":"control_request","request_id":"init","request":{"subtype":"initialize"}}""";
     private const string UsageLine = """{"type":"control_request","request_id":"usage","request":{"subtype":"get_usage","skip_behaviors":true}}""";
 
-    /// <summary>The question Claude's native door declares for its owner (usage-read evidence, the request and its answer).</summary>
+    /// <summary>The question Claude's native door declares for its owner.</summary>
     public static UsageQuestion Question { get; } = new ClaudeUsageQuestion(
         "claude-code",
         ["claude", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--strict-mcp-config"],
@@ -44,23 +43,23 @@ public static class ClaudeUsage
                 "2.1.296"),
         ]);
 
-    /// <summary>The question's name as the usage history writes a reading's source (USAGECAP1a1).</summary>
+    /// <summary>The question's name as the usage history writes a reading's source.</summary>
     public const string Source = "get_usage";
 
-    /// <summary>The version of <see cref="Read"/>'s history parse, which each reading it keeps carries (USAGECAP1a1).</summary>
+    /// <summary>The version of <see cref="Read"/>'s history parse, which each reading it keeps carries.</summary>
     public const int HistoryReader = 1;
 
     /// <summary>
-    /// What the answer's body says (evidence's field table): <c>rate_limits.five_hour</c> as <c>session</c> and
+    /// What the answer's body says: <c>rate_limits.five_hour</c> as <c>session</c> and
     /// <c>.seven_day</c> as <c>weekly</c>, each <c>utilization</c> (a whole percent) as a fraction and each <c>resets_at</c>
     /// (ISO 8601). A window not yet opened answers a null reset at 0%: it is 0 used and resets a window's length after
     /// <paramref name="now"/>, the soonest it could turn over, so it is dropped then like any reading. Nothing where the home is
     /// not signed in, or a window is not said whole.
     /// </summary>
     /// <remarks>
-    /// Beside the walk's, what the usage history keeps (USAGECAP1a1, D179 point 2): every window of <c>rate_limits</c> said in
+    /// Beside the walk's, what the usage history keeps: every window of <c>rate_limits</c> said in
     /// part or whole, the scoped weeks among them (<c>seven_day_opus</c>), each reset marked said or made up; the server's
-    /// rows (<c>limits[]</c>: <c>kind</c>, <c>scope</c>, <c>percent</c>, <c>resets_at</c>, the evidence's field table) by their
+    /// rows (<c>limits[]</c>: <c>kind</c>, <c>scope</c>, <c>percent</c>, <c>resets_at</c>) by their
     /// kind and scope, never their severity; and the plan's word (<c>subscription_type</c>). Usage credits and spend
     /// (<c>extra_usage</c>, <c>spend</c>) stay unread.
     /// </remarks>
@@ -154,7 +153,7 @@ public static class ClaudeUsage
         }
     }
 
-    /// <summary>A whole percent from 0 to 100 as a fraction, with the precision it was written to; nulls where it is not one.</summary>
+    /// <summary>A whole percent from 0 to 100 as a fraction, with the precision it is written to; nulls where it is not one.</summary>
     private static (double? Used, double? Precision) Percent(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
         && value.TryGetDouble(out var percent) && double.IsFinite(percent) && percent is >= 0 and <= 100
@@ -162,7 +161,7 @@ public static class ClaudeUsage
             : (null, null);
 
     /// <summary>
-    /// The read over the CLI's lines (evidence, the request): <c>initialize</c>, its reply, then <c>get_usage</c>, whose reply
+    /// The read over the CLI's lines: <c>initialize</c>, its reply, then <c>get_usage</c>, whose reply
     /// is read past whatever else the CLI writes. Unknown (null) where either is an error reply, the CLI ends, or is silent
     /// past <paramref name="patience"/> on <paramref name="clock"/>, the machine's unless a test hands one; <paramref name="ct"/> is
     /// the caller's own stop, and throws.

@@ -13,7 +13,7 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
     private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> _pending = new();
 
     /// <summary>
-    /// What a request's answer does on the reader's thread, before anything after it is read (STEER1): a prompt's turn
+    /// What a request's answer does on the reader's thread, before anything after it is read: a prompt's turn
     /// event, and the words behind it taken, keep the order the wire said them in.
     /// </summary>
     private readonly ConcurrentDictionary<int, Action<JsonElement>> _answered = new();
@@ -54,10 +54,9 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
             }
             catch (Exception error) when (error is not OperationCanceledException)
             {
-                // 🔴 One frame this client could not read is shown, and the reading goes on. A
-                // throw here used to end the reader, and its `finally` then said the agent's
-                // stream had ended — a false sentence over a lost exception, which is how the
-                // first real run died at its first tool call (ACP2, 2026-09-24).
+                // 🔴 One frame this client cannot read is shown, and the reading goes on. A
+                // throw here would end the reader, and its `finally` would then say the agent's
+                // stream had ended — a false sentence over a lost exception.
                 unreadable(error, frame);
             }
         }
@@ -68,14 +67,14 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
     {
         if (!id.TryGetInt32(out var key) || !_pending.TryRemove(key, out var waiting)) return;
 
-        // CODEXSTATUS1: a typed client's prompt answered with a terminal failure fails as a prompt answered with an error does (§4.3).
+        // A typed client's prompt answered with a terminal failure fails as a prompt answered with an error does.
         if (typedFailures() && _answered.ContainsKey(key) && frame.TryGetProperty("result", out var ended)
             && AcpProtocol.TypedFailure(ended) is { } failed)
         {
             frame = failed;
         }
 
-        // What the answer does here, on the reader's thread, before the next frame is read (STEER1).
+        // What the answer does here, on the reader's thread, before the next frame is read.
         if (_answered.TryRemove(key, out var answered))
         {
             try
@@ -90,8 +89,8 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
 
         if (frame.TryGetProperty("error", out var error))
         {
-            // Read without trusting the shape (REV3): a throw here left the call it answers waiting. Its `data` is
-            // kept beside its message (ACPDATA1): an adapter may say the words that matter there.
+            // Read without trusting the shape: a throw here would leave the call it answers waiting. Its `data` is
+            // kept beside its message: an adapter may say the words that matter there.
             waiting.TrySetException(AcpRefusal.Of(error));
             return;
         }
@@ -101,23 +100,23 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
 
     /// <param name="sent">
     /// Told once the request is on the wire, before its answer is awaited, and always before <paramref name="answered"/>: by the
-    /// reader, where the answer was read before the write returned.
+    /// reader, where the answer is read before the write returns.
     /// </param>
     /// <param name="answered">
     /// Told the answer's frame on the reader's thread, before the answer is handed back and before anything after it is
-    /// read (STEER1) — never once the caller has stopped waiting for it.
+    /// read — never once the caller has stopped waiting for it.
     /// </param>
     /// <param name="admit">
-    /// Asked under the write lock as the write begins (RUNENDS1): false where the run's door has shut, and the request is not written at all.
+    /// Asked under the write lock as the write begins: false where the run's door has shut, and the request is not written at all.
     /// </param>
-    /// <exception cref="AcpTurnedAway"><paramref name="admit"/> said no: nothing was written.</exception>
+    /// <exception cref="AcpTurnedAway"><paramref name="admit"/> says no: nothing is written.</exception>
     public async Task<JsonElement> RequestAsync(
         string method, object parameters, CancellationToken ct, Action? sent = null, Action<JsonElement>? answered = null,
         Func<bool>? admit = null)
     {
         var id = Interlocked.Increment(ref _nextId);
         var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
-        // 🔴 The answer can be read before the write's return runs `sent` (a carry-on's turn was kept before its note, 2026-10-31): whichever
+        // 🔴 The answer can be read before the write's return runs `sent` (a carry-on's turn can be kept before its note): whichever
         // comes first tells it, once, and the other waits for it to finish.
         var told = false;
         var telling = new object();
@@ -175,7 +174,7 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
         }
         catch (OperationCanceledException)
         {
-            // A caller that stopped waiting is told nothing more about this request, as before its answer was seen.
+            // A caller that stopped waiting is told nothing more about this request.
             _answered.TryRemove(id, out _);
             throw;
         }
@@ -205,7 +204,7 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
         await WriteLock.WaitAsync().ConfigureAwait(false);
         try
         {
-            // RUNENDS1: a prompt is admitted under the lock its write holds, so the run's door shuts between two writes, never in one.
+            // A prompt is admitted under the lock its write holds, so the run's door shuts between two writes, never in one.
             if (admit?.Invoke() == false) throw new AcpTurnedAway();
             await outgoing.WriteLineAsync(frame.ToJsonString()).ConfigureAwait(false);
             await outgoing.FlushAsync().ConfigureAwait(false);

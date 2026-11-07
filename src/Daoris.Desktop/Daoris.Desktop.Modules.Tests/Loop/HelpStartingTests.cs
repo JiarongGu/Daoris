@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Ask Daoris's conversation between its record and its agent (HELPSTART1, <see cref="HelpStarting"/>): the words said to it while
+/// Ask Daoris's conversation between its record and its agent (<see cref="HelpStarting"/>): the words said to it while
 /// it starts wait as its queue, opening, and go to its door in the order said once it opens; what the door does not take, or all
-/// of them where it could not start, is handed back for its record to keep. One starts at a time in each workspace (ASKSCOPE1a).
+/// of them where it could not start, is handed back for its record to keep. One starts at a time in each workspace.
 /// The route's own test is <c>DriverModuleHelpStartTests</c>.
 /// </summary>
 public sealed class HelpStartingTests
@@ -56,7 +56,7 @@ public sealed class HelpStartingTests
     }
 
     /// <summary>
-    /// 🔴 ASKSCOPE1a (D158's ASKSCOPE1 note, point 3): one start at a time in each workspace, not on the machine. Two workspaces'
+    /// One start at a time in each workspace, not on the machine. Two workspaces'
     /// conversations start at once, each with its own press's gate and its own words; one's start ending leaves the other's
     /// starting. A workspace unnamed is <c>default</c>'s, and a name is one workspace whatever its letters' case.
     /// </summary>

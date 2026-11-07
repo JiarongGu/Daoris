@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The context-one design §3 A (D230 point 2): the doctrine tool's own <c>status --json</c>, run over a fixture adopter, read through
+/// The doctrine tool's own <c>status --json</c>, run over a fixture adopter, read through
 /// <c>RECONCILE_PLAN</c>. The adopter is the example engine as this checkout's canon synced it, copied, then moved: its lock written from
 /// another canon at the same version and one file it records left out, and a keep judged against an older canon text. The CLI is this
 /// checkout's, on the <c>node</c> the PATH finds, as an install's program hands it the doctrine commands.

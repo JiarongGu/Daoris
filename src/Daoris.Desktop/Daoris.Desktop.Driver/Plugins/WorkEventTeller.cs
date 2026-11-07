@@ -1,15 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The lease's teller of the quests' moves and the channel's messages (EVENTHOOK1d-i, CHANNELJOIN1d, D244; the event channel design §3.1,
-/// §3.2, §5.7): each <c>quests</c> row of the journal, which the replay's cache writes in the operation's transaction, and each message
+/// The lease's teller of the quests' moves and the channel's messages: each <c>quests</c> row of the journal, which the replay's cache writes in the operation's transaction, and each message
 /// kept, mapped to the kind it says (<see cref="ChannelPosts"/> for a message) and handed to its sink in position order. A take, and a move between <c>Open</c> and <c>Taken</c>, says nothing.
 /// </summary>
 /// <remarks>
 /// <para><b>No kept cursor</b>: an event is a wake, never a replay, so the teller's place is its memory and a restart begins at the
 /// journal's newest position. That place is a gap, so the first the feed hands it is told as one <see cref="WorkEventKinds.Missed"/>, and
 /// so is each batch whose history is incomplete: what moved there is the records' to say.</para>
-/// <para>Its sink never waits, so it is the first of its feed's tellers (§3.2).</para>
+/// <para>Its sink never waits, so it is the first of its feed's tellers.</para>
 /// </remarks>
 /// <param name="tell">Where each event goes, in order.</param>
 /// <param name="clock">When a gap is found.</param>

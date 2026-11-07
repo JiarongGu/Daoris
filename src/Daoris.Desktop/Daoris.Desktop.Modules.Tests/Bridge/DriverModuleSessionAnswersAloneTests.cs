@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// COWORK1e (D188 point 4; the message-urgency design §8.3) over the bridge: the answers the answers-alone bound holds for the person,
+/// Over the bridge: the answers the answers-alone bound holds for the person,
 /// as *What needs you* and the session's page read them, and the person's two acts on one: *Go on with this answer*, which takes the
 /// mark away and keeps the press as their word, and *Not now*, which keeps the answer for them. What waits on nothing of theirs is
 /// refused by code, and nothing is written.

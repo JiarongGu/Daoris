@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// FABRIC-END6c (finding 5): the main window's focus heard before the loop's watch exists is kept, not dropped, so a start whose window
+/// The main window's focus heard before the loop's watch exists is kept, not dropped, so a start whose window
 /// takes the focus first still asks about each open pull request once the moments exist. One pending flag, not a queue.
 /// </summary>
 public sealed class DriverLoopFocusTests : Bridge
@@ -21,7 +21,7 @@ public sealed class DriverLoopFocusTests : Bridge
     }
 
     /// <summary>
-    /// FABRIC-END6a: a later main window's focus is a moment too (§A4.3), as the first one's is. Held on the application's own source, as
+    /// A later main window's focus is a moment too, as the first one's is. Held on the application's own source, as
     /// <see cref="TaskbarIdentityTests"/> holds every window's identity, since no window opens without a desktop session: the first main
     /// window hands its <c>Activated</c> to the loop's <c>Focused</c>, and the host hands each other main window's, once each; a utility
     /// window (the monitor, a detached session) hands nothing, and the form itself never asks the loop. The container makes the host, so

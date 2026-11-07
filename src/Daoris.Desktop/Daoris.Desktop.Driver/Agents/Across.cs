@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a session in one repository may reach outside its own tree (D107): the checkouts it may read, the
+/// What a session in one repository may reach outside its own tree: the checkouts it may read, the
 /// ones it may also write into, and every other checkout here, which it may not read.
 /// </summary>
 /// <param name="Reads">Every checkout it may read, the declared write targets among them.</param>
@@ -18,7 +18,7 @@ public sealed record AcrossReach(
 }
 
 /// <summary>
-/// Reading and writing across repositories (READ1, D107): the setting in <c>driver.json</c> resolved, and the
+/// Reading and writing across repositories: the setting in <c>driver.json</c> resolved, and the
 /// harness rules it becomes.
 /// </summary>
 /// <remarks>
@@ -26,12 +26,11 @@ public sealed record AcrossReach(
 /// workspace's, then on. It is the checkout's rather than the reader's because the reason to switch it off is
 /// a repository whose code should stay its own, and because Ask Daoris belongs to no repository.</para>
 ///
-/// <para><b>Within one workspace</b> (D48): a session reads its own workspace's checkouts, and a declared
+/// <para><b>Within one workspace</b>: a session reads its own workspace's checkouts, and a declared
 /// relationship reaches only into its workspace. Ask Daoris's room for <c>default</c> is the whole machine's and reads every
-/// readable one; a workspace's room reads its own workspace's (ASKSCOPE1c, D158's note).</para>
+/// readable one; a workspace's room reads its own workspace's.</para>
 ///
-/// <para><b>Only the driver resolves.</b> <c>daoris place across</c> edits and lists the same keys (the CLI's
-/// <c>driverconfig.ts</c> did until PUSH1f2b), as it does a landing rule the driver alone chooses.</para>
+/// <para><b>Only the driver resolves.</b> <c>daoris place across</c> edits and lists the same keys, as it does a landing rule the driver alone chooses.</para>
 /// </remarks>
 public static class AcrossRules
 {
@@ -83,7 +82,7 @@ public static class AcrossRules
     /// <param name="own">
     /// The session's own tree and the folder its kept files are in. 🔴 No refusal lands on a checkout that
     /// holds one of them, or a checkout the session may use: deny beats allow, so it would refuse the session
-    /// exactly what it was given.
+    /// exactly what it is given.
     /// </param>
     public static RuleLists Rules(AcrossReach reach, IEnumerable<string> own)
     {

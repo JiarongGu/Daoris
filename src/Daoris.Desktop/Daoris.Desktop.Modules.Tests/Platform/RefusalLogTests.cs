@@ -8,8 +8,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Every refusal the bridge answers, in the machine log by its code and the request it answered (LOG1b,
-/// D94) — never by its sentence, whose parameters can name a folder, a quest or a machine path.
+/// Every refusal the bridge answers, in the machine log by its code and the request it answered
+/// — never by its sentence, whose parameters can name a folder, a quest or a machine path.
 /// </summary>
 /// <remarks>
 /// Composed the way the shell composes its dispatcher: the kit's own <c>UseMessageDispatcher</c>, the
@@ -38,7 +38,7 @@ public sealed class RefusalLogTests : Bridge
 
     /// <summary>
     /// The driver's bridge as far as a refusal reaches: every request refused in the driver's words, which name a person, as a
-    /// sign-in's refusal can (SIGNIN1).
+    /// sign-in's refusal can.
     /// </summary>
     private sealed class Refusing : ModuleBase
     {
@@ -135,7 +135,7 @@ public sealed class RefusalLogTests : Bridge
     }
 
     /// <summary>
-    /// SIGNIN1: a refused harness action says which action on which agent, each a word of a fixed list read from the request, so
+    /// A refused harness action says which action on which agent, each a word of a fixed list read from the request, so
     /// a refused sign-in is told from a refused install. Never the payload's other fields (a name, a key, a code the person
     /// pasted) nor the driver's sentence, and a word outside the list is <c>other</c>.
     /// </summary>

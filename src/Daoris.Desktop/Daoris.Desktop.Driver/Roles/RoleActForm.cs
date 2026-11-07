@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>Why a role's act or appointment is refused (STEWARDROLE1a-i, D209 §3.4), beside <see cref="SupervisorWhy"/>'s codes, which it shares.</summary>
+/// <summary>Why a role's act or appointment is refused, beside <see cref="SupervisorWhy"/>'s codes, which it shares.</summary>
 public static class RoleWhy
 {
     /// <summary>The act is not in the role's table: the owner's to do.</summary>
@@ -15,7 +15,7 @@ public static class RoleWhy
     public const string HolderConfig = "holder-config";
 
     /// <summary>
-    /// The owner acted on the act's target this run, through any of their doors (STEWARDROLE1a-ii, D209 §5.4): it is theirs until
+    /// The owner acted on the act's target this run, through any of their doors: it is theirs until
     /// Daoris restarts.
     /// </summary>
     public const string OwnerSet = "owner-set";
@@ -24,7 +24,7 @@ public static class RoleWhy
     public const string Unread = "unread";
 }
 
-/// <summary>The role's route and its acts (STEWARDROLE1a-i, D209 §3.3): one route, every act a row of its role's table.</summary>
+/// <summary>The role's route and its acts: one route, every act a row of its role's table.</summary>
 public static class RoleRoutes
 {
     /// <summary><c>ROLE_ACT { role, act, generation, form, proof }</c>: <c>Role</c> in the pipe's census.</summary>
@@ -35,7 +35,7 @@ public static class RoleRoutes
 }
 
 /// <summary>
-/// <c>ROLE_ACT</c>'s exact form (D209 §3.3): <c>{ role, act, generation, form, proof }</c>, every field named once (ignoring case, as the
+/// <c>ROLE_ACT</c>'s exact form: <c>{ role, act, generation, form, proof }</c>, every field named once (ignoring case, as the
 /// bridge reads names) and nothing else; <c>form</c> the act's own exact form, an object its role's table judges. The proof is the
 /// holder's HMAC over the hello's nonce and <see cref="Canonical"/>, every field but <c>proof</c>.
 /// </summary>

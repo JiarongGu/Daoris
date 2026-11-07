@@ -5,33 +5,33 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The terminal that asks, as the operating system names the pipe's client (RPC1c): its process's name and id, never a word the
+/// The terminal that asks, as the operating system names the pipe's client: its process's name and id, never a word the
 /// asker wrote. Null where the system would not say.
 /// </summary>
 public sealed record PipeAsker(string? Process, int? Pid);
 
 /// <summary>
-/// One value a press carries, as the card shows it (RPC1c, as PERSONDOOR1b's card shows a body's): <see cref="Name"/> its JSON
+/// One value a press carries, as the card shows it (as the card shows a body's): <see cref="Name"/> its JSON
 /// pointer (<c>/ids/0</c>; <c>~0</c> and <c>~1</c> escape a name's <c>~</c> and <c>/</c>), <see cref="Type"/> its JSON type, so a
 /// string <c>"3"</c> and a number <c>3</c> read apart, and <see cref="Value"/> a string as it is and anything else as its JSON.
 /// </summary>
 public sealed record PipeConfirmationField(string Name, string Type, string Value);
 
 /// <summary>
-/// A person's press a terminal sent over the pipe, waiting for the window (RPC1c): shown by its module and route, the names the
+/// A person's press a terminal sent over the pipe, waiting for the window: shown by its module and route, the names the
 /// census and the bridge give it, every value its payload carries, and the terminal that asks. Never its request's id or key.
-/// <see cref="ShownAt"/> is when a window first said its card was in front of the person (CONFIRMSEEN1), null until then; it moves no
-/// clock. <see cref="Expires"/> is always null (CONFIRMWAIT1a-i): a terminal's press waits until the person answers, and the field
+/// <see cref="ShownAt"/> is when a window first said its card is in front of the person, null until then; it moves no
+/// clock. <see cref="Expires"/> is always null: a terminal's press waits until the person answers, and the field
 /// stays for the page's card, which draws the service door's presses by the same shape. <see cref="Named"/> is the values its
-/// sentence names by role (NOTIFY2b, <see cref="PipeWording"/>), a field added beside <see cref="Fields"/>, which still holds every
-/// value. <see cref="WaitedOn"/> is whether a terminal still waits on its line for it (the confirm-wait design §8.1);
-/// <see cref="Checking"/> that its Confirm is being judged against the grounds it was asked on (§5.2), its buttons replaced while it
-/// is; <see cref="CheckWithin"/> the longest that judgement may take, in milliseconds, which the page's Confirm waits for (§5.2).
-/// <see cref="Keyed"/> that it carries a key, so it is not kept across a restart (CONFIRMWAIT1a-ii, §7.1); <see cref="Restored"/> that it
-/// was asked before Daoris restarted and waits again from its record, its <see cref="Asker"/> the record's word, never the system's (§8.1).
-/// <see cref="Hold"/> that its Confirm also lets its terminal speak for the person in the conversation until it lets go (RPC1g1, D238).
+/// sentence names by role (<see cref="PipeWording"/>), a field added beside <see cref="Fields"/>, which still holds every
+/// value. <see cref="WaitedOn"/> is whether a terminal still waits on its line for it;
+/// <see cref="Checking"/> that its Confirm is being judged against the grounds it is asked on, its buttons replaced while it
+/// is; <see cref="CheckWithin"/> the longest that judgement may take, in milliseconds, which the page's Confirm waits for.
+/// <see cref="Keyed"/> that it carries a key, so it is not kept across a restart; <see cref="Restored"/> that it
+/// is asked before Daoris restarted and waits again from its record, its <see cref="Asker"/> the record's word, never the system's.
+/// <see cref="Hold"/> that its Confirm also lets its terminal speak for the person in the conversation until it lets go.
 /// <see cref="Standing"/> the code that says why the place its terminal runs in is not told as outside, or why the standing confirmation
-/// did not cover it (<see cref="StandingWhy"/>); null where nothing is to be said, which the card's words then leave out (CHANNELJOIN1c).
+/// did not cover it (<see cref="StandingWhy"/>); null where nothing is to be said, which the card's words then leave out.
 /// </summary>
 public sealed record PipeConfirmation(
     string Id, string Module, string Route, IReadOnlyList<PipeConfirmationField> Fields, PipeAsker Asker,
@@ -45,29 +45,29 @@ public sealed record PipeConfirmationsNow(long Seq, IReadOnlyList<PipeConfirmati
 /// <summary>How a confirmation ended: only <see cref="Confirmed"/> runs its press.</summary>
 public enum PipeConfirmationEnd
 {
-    /// <summary>The person pressed <b>Confirm</b> in the window, and every ground it was asked on still held (CONFIRMWAIT1a-i).</summary>
+    /// <summary>The person pressed <b>Confirm</b> in the window, and every ground it is asked on still held.</summary>
     Confirmed,
 
     /// <summary>The person pressed <b>Refuse</b>.</summary>
     Refused,
 
-    /// <summary>The person pressed <b>Confirm</b>, and a ground it was asked on no longer held (the confirm-wait design §5): nothing ran.</summary>
+    /// <summary>The person pressed <b>Confirm</b>, and a ground it is asked on no longer held: nothing ran.</summary>
     Changed,
 
     /// <summary>Taken back by its terminal: the pipe's <c>WITHDRAW</c>, or the kit's <c>CANCEL</c> from a terminal from before.</summary>
     Withdrawn,
 
     /// <summary>
-    /// Not kept across a restart (CONFIRMWAIT1a-ii, the confirm-wait design §7.1, §7.2): a press carrying a key at the close, or a record
+    /// Not kept across a restart: a press carrying a key at the close, or a record
     /// the restore could not bring back. Nothing ran.
     /// </summary>
     Lost,
 }
 
 /// <summary>
-/// What the pipe already made of a press it asks (CONFIRMWAIT1a-ii, the confirm-wait design §7.1): its id, minted before its record is
+/// What the pipe already made of a press it asks: its id, minted before its record is
 /// written; when it was asked and shown, where it is restored from its record; whether it carries a key; whether it is restored; and
-/// whether a terminal waits on its line for it; whether its Confirm also makes a hold (RPC1g1).
+/// whether a terminal waits on its line for it; whether its Confirm also makes a hold.
 /// </summary>
 public sealed record PipeAsAsked(
     string Id, DateTimeOffset? Asked = null, DateTimeOffset? ShownAt = null, bool Keyed = false, bool Restored = false, bool WaitedOn = true,
@@ -76,7 +76,7 @@ public sealed record PipeAsAsked(
 /// <summary>How a confirmation ended, and where a ground moved, which one and how (<see cref="PipeConfirmationEnd.Changed"/> alone).</summary>
 public sealed record PipeEnding(PipeConfirmationEnd End, PipeGroundChange? Change = null);
 
-/// <summary>What the grounds read at the Confirm said (the confirm-wait design §5.2).</summary>
+/// <summary>What the grounds read at the Confirm said.</summary>
 public enum PipeJudged
 {
     /// <summary>Every ground the press was asked on holds: it runs.</summary>
@@ -110,18 +110,18 @@ public enum PipeAnswered
     /// <summary>Confirmed, and its grounds could not be read just now: it still waits.</summary>
     Unread,
 
-    /// <summary>Confirmed while Daoris closes or an update drains it (CONFIRMWAIT1a-ii, §7.2): nothing was taken, and it still waits.</summary>
+    /// <summary>Confirmed while Daoris closes or an update drains it: nothing is taken, and it still waits.</summary>
     Draining,
 
     /// <summary>
-    /// Its ending could not be written to its record (CONFIRMWAIT1, the confirm-wait design §15.2 item 8): nothing was taken, nothing ran,
+    /// Its ending could not be written to its record: nothing is taken, nothing ran,
     /// and it still waits, its buttons back.
     /// </summary>
     Unrecorded,
 }
 
 /// <summary>
-/// How a press's ending was put to its record before it is taken (CONFIRMWAIT1, the confirm-wait design §15.2 item 8; DRAINHOLD1): what
+/// How a press's ending is put to its record before it is taken: what
 /// <see cref="PipeConfirmations.Persisting"/> answers.
 /// </summary>
 public enum PipePersisted
@@ -142,7 +142,7 @@ public enum PipePersisted
 /// <summary>The person's answer as taken, with the ground that moved where it was <see cref="PipeAnswered.Changed"/>.</summary>
 public sealed record PipeAnswer(PipeAnswered Outcome, PipeGroundChange? Change = null);
 
-/// <summary>How a withdrawal by a press's asker was taken (the confirm-wait design §4.3).</summary>
+/// <summary>How a withdrawal by a press's asker is taken.</summary>
 public enum PipeWithdrawal
 {
     /// <summary>It waited, and is taken back: its card is gone and nothing ran.</summary>
@@ -154,13 +154,13 @@ public enum PipeWithdrawal
     /// <summary>It no longer waits.</summary>
     Gone,
 
-    /// <summary>Its ending could not be written to its record (§15.2 item 8): nothing is taken back, and it still waits.</summary>
+    /// <summary>Its ending could not be written to its record: nothing is taken back, and it still waits.</summary>
     Unrecorded,
 }
 
 /// <summary>
-/// A place among the <see cref="PipeConfirmations.Bound"/> held for a press whose grounds are being read (the confirm-wait design
-/// §5.2): counted as waiting, told to no window, made the card by <see cref="PipeConfirmations.Ask(PipePlace, string, string, IReadOnlyList{PipeConfirmationField}, PipeAsker, string?, Func{CancellationToken, Task{PipeJudgement}}?, TimeSpan?)"/>
+/// A place among the <see cref="PipeConfirmations.Bound"/> held for a press whose grounds are being read:
+/// counted as waiting, told to no window, made the card by <see cref="PipeConfirmations.Ask(PipePlace, string, string, IReadOnlyList{PipeConfirmationField}, PipeAsker, string?, Func{CancellationToken, Task{PipeJudgement}}?, TimeSpan?)"/>
 /// or given back by <see cref="PipeConfirmations.Let"/>, once.
 /// </summary>
 public sealed class PipePlace
@@ -173,8 +173,8 @@ public sealed class PipePlace
 }
 
 /// <summary>
-/// The window's confirmations of the person's presses a terminal sent (RPC1c, D156 point 4, the person-door design §4.2, the
-/// terminal RPC design §4.2): held in memory, never in the store (the pipe keeps each in a record of its own, CONFIRMWAIT1a-ii), at most <see cref="Bound"/> waiting at once, each answered once.
+/// The window's confirmations of the person's presses a terminal sent:
+/// held in memory, never in the store (the pipe keeps each in a record of its own), at most <see cref="Bound"/> waiting at once, each answered once.
 /// The pipe's connection is what a confirmation answers, so there is no secret and no second request: the press the terminal sent
 /// runs on <b>Confirm</b>, its grounds still holding, and on nothing else.
 /// </summary>
@@ -182,23 +182,23 @@ public sealed class PipePlace
 /// <para><b>Told to every window</b>: each change raises <c>DAORIS</c> <see cref="Event"/> with what waits, whole, as
 /// <c>UNDER_WAY</c> is told, and the bridge's <c>PERSON_CONFIRMATIONS</c> reads it for a window that opens mid-wait.</para>
 ///
-/// <para><b>Said by codes</b> (design §5.1): <see cref="LogEvent"/> with the state (<c>asked</c>, <c>shown</c>, <c>checking</c>,
+/// <para><b>Said by codes</b>: <see cref="LogEvent"/> with the state (<c>asked</c>, <c>shown</c>, <c>checking</c>,
 /// <c>unread</c>, <c>draining</c>, <c>confirmed</c>, <c>refused</c>, <c>changed</c>, <c>withdrawn</c>, <c>lost</c>), the route and the terminal's
 /// door. Never a value, an id or the asker.</para>
 ///
-/// <para><b>No clock ends one</b> (CONFIRMWAIT1a-i, D156's CONFIRMWAIT1 note, the confirm-wait design §2): a press waits until the
-/// person confirms or refuses it or its asker withdraws it; a close ends none of them (CONFIRMWAIT1a-ii: the pipe keeps each in its record
-/// across the restart, and a Confirm while Daoris closes or drains takes nothing), but one carrying a key, which is lost. CONFIRMSEEN1's two minutes from its showing and its
-/// ten to be found went with the reason the owner gave on 2026-10-24: they ended presses the person had not refused. The window's word
+/// <para><b>No clock ends one</b>: a press waits until the
+/// person confirms or refuses it or its asker withdraws it; a close ends none of them (the pipe keeps each in its record
+/// across the restart, and a Confirm while Daoris closes or drains takes nothing), but one carrying a key, which is lost. No timer
+/// ends a press the person has not refused. The window's word
 /// that its card is shown (<see cref="Show"/>) is still kept, once, and moves nothing. The person is told where they look: a row of
 /// <i>What needs you</i> (<see cref="NeedsAPerson"/>) and <see cref="AttentionType"/>, one per press, which the balloon coalesces
 /// (<see cref="SessionBalloon"/>).</para>
 ///
-/// <para><b>A Confirm is judged before it runs</b> (§5.2): the press's judge, handed at its ask, reads its grounds again outside the
+/// <para><b>A Confirm is judged before it runs</b>: the press's judge, handed at its ask, reads its grounds again outside the
 /// lock while its card stays, <see cref="PipeConfirmation.Checking"/>; then, under the lock, it is taken and ended confirmed or changed,
 /// or, unread, given back its buttons.</para>
 ///
-/// <para><b>It is not an approval surface for agents</b> (design §4.2, D52): the card's default is no, and a session that asks
+/// <para><b>It is not an approval surface for agents</b>: the card's default is no, and a session that asks
 /// is answered only by the person, in the window.</para>
 /// </remarks>
 public sealed class PipeConfirmations : IDisposable
@@ -210,7 +210,7 @@ public sealed class PipeConfirmations : IDisposable
     public const string LogEvent = "person.confirmation";
 
     /// <summary>
-    /// The event the application's notifier turns into a balloon while nobody looks at its windows (CONFIRMSEEN1): the one a
+    /// The event the application's notifier turns into a balloon while nobody looks at its windows: the one a
     /// session's attention is told by, in its shape, of the kind <see cref="AttentionKind"/>.
     /// </summary>
     public const string AttentionType = "SESSION_ATTENTION";
@@ -221,7 +221,7 @@ public sealed class PipeConfirmations : IDisposable
     /// <summary>The most values a card shows: past it, a press is refused rather than shown in part (the service's own bound).</summary>
     public const int FieldLimit = 256;
 
-    /// <summary>How many may wait at once where none is named (the confirm-wait design §9.2): <see cref="PipeLimits.Waiting"/>'s.</summary>
+    /// <summary>How many may wait at once where none is named: <see cref="PipeLimits.Waiting"/>'s.</summary>
     public const int DefaultBound = 10;
 
     private readonly IEventBus? _bus;
@@ -249,40 +249,40 @@ public sealed class PipeConfirmations : IDisposable
     public int Bound { get; }
 
     /// <summary>
-    /// Told each press the person is told the end of in <i>Done and failed</i>, after every window was told it ended (NOTIFY2f,
-    /// CONFIRMWAIT1a-i): one its asker took back after a window showed it (<see cref="PipeConfirmationEnd.Withdrawn"/>; one nobody showed
-    /// goes with no notice, the confirm-wait design §6), and one lost as Daoris closed (<see cref="PipeConfirmationEnd.Lost"/>,
-    /// CONFIRMWAIT1a-ii). None keeps nothing.
+    /// Told each press the person is told the end of in <i>Done and failed</i>, after every window has been told it ended:
+    /// one its asker took back after a window showed it (<see cref="PipeConfirmationEnd.Withdrawn"/>; one nobody showed
+    /// goes with no notice), and one lost as Daoris closed (<see cref="PipeConfirmationEnd.Lost"/>).
+    /// None keeps nothing.
     /// </summary>
     public Action<PipeConfirmation, PipeConfirmationEnd>? Noticed { get; set; }
 
     /// <summary>
-    /// Told each press no terminal waits on its line for as it settles, after its record says how it ended, whichever of the five
-    /// (EVENTHOOK1d-ii, D244): the wake of a press whose verb gave up. One a line waits on hears it there.
+    /// Told each press no terminal waits on its line for as it settles, after its record says how it ended, whichever of the five:
+    /// the wake of a press whose verb gave up. One a line waits on hears it there.
     /// </summary>
     public Action<PipeConfirmation, PipeEnding>? Settled { get; set; }
 
     /// <summary>
-    /// Whether a Confirm of a press of this module's route takes nothing now, and the press waits (CONFIRMWAIT1a-ii, §7.2): every press while
-    /// Daoris closes or an update applies, and while an update drains, the presses that would add to what it waits on (DRAINHOLD1). Asked
+    /// Whether a Confirm of a press of this module's route takes nothing now, and the press waits: every press while
+    /// Daoris closes or an update applies, and while an update drains, the presses that would add to what it waits on. Asked
     /// before the grounds are read and again after, inside this one's lock.
     /// </summary>
     public Func<string, string, bool>? Holding { get; set; }
 
     /// <summary>
-    /// Asked to write a press's ending to its record before anyone is told it or it runs (CONFIRMWAIT1, the confirm-wait design §15.2 item
-    /// 8): <c>begun</c> for a Confirm whose grounds hold, <c>ended</c> with its answer for any other. <see cref="PipePersisted.Unrecorded"/>
+    /// Asked to write a press's ending to its record before anyone is told it or it runs:
+    /// <c>begun</c> for a Confirm whose grounds hold, <c>ended</c> with its answer for any other. <see cref="PipePersisted.Unrecorded"/>
     /// where it could not be written, and the press waits on, nothing taken; <see cref="PipePersisted.Held"/> where a Confirm is held by
-    /// then (DRAINHOLD1), which is where the hold is judged last, so a press told it is confirmed always runs. None writes nothing and takes
+    /// then, which is where the hold is judged last, so a press told it is confirmed always runs. None writes nothing and takes
     /// every ending.
     /// </summary>
     public Func<PipeConfirmation, PipeEnding, PipePersisted>? Persisting { get; set; }
 
-    /// <summary>Told a press's card the first time a window shows it (CONFIRMWAIT1a-ii): the pipe keeps <see cref="PipeConfirmation.ShownAt"/> in its record.</summary>
+    /// <summary>Told a press's card the first time a window shows it: the pipe keeps <see cref="PipeConfirmation.ShownAt"/> in its record.</summary>
     public Action<PipeConfirmation>? ShownFirst { get; set; }
 
     /// <summary>
-    /// Told once after a restart's restore (CONFIRMWAIT1a-ii, §7.2 step 7) how many records it could not bring back and how many a newer
+    /// Told once after a restart's restore how many records it could not bring back and how many a newer
     /// Daoris wrote, where either is any: one notice each.
     /// </summary>
     public Action<int, int>? Restarted { get; set; }
@@ -300,7 +300,7 @@ public sealed class PipeConfirmations : IDisposable
     }
 
     /// <summary>
-    /// A place for one more press while its grounds are read (the confirm-wait design §5.2): null where <see cref="Bound"/> already
+    /// A place for one more press while its grounds are read: null where <see cref="Bound"/> already
     /// wait or are held, and nothing is asked. Told to no window.
     /// </summary>
     public PipePlace? Hold()
@@ -329,10 +329,10 @@ public sealed class PipeConfirmations : IDisposable
     /// <paramref name="asker"/>: the confirmation, and how it ends; null where <see cref="Bound"/> already wait, and nothing is asked.
     /// </summary>
     /// <param name="standing">
-    /// Why the person's standing confirmation, on and naming this press, did not cover it (TERMTRUST1a, the terminal-trust design §7.2):
+    /// Why the person's standing confirmation, on and naming this press, did not cover it:
     /// written on the <c>asked</c> line as <c>standing</c>; null while it is off or names no such press, which writes no field.
     /// </param>
-    /// <param name="judge">Reads the press's grounds again at a Confirm (§5.2); none runs it on the Confirm alone.</param>
+    /// <param name="judge">Reads the press's grounds again at a Confirm; none runs it on the Confirm alone.</param>
     /// <param name="checkWithin">The longest <paramref name="judge"/> may take, told to the window as <see cref="PipeConfirmation.CheckWithin"/>.</param>
     public (PipeConfirmation Shown, Task<PipeEnding> Ended)? Ask(
         string module, string route, IReadOnlyList<PipeConfirmationField> fields, PipeAsker asker, string? standing = null,
@@ -341,8 +341,8 @@ public sealed class PipeConfirmations : IDisposable
 
     /// <summary>The press asked on the <paramref name="place"/> held for it (<see cref="Hold"/>): its card, told to every window.</summary>
     /// <param name="as">
-    /// What the pipe already made of it (CONFIRMWAIT1a-ii, §7.1): its id, minted before its record is written; when it was asked and shown,
-    /// for one restored from its record; whether it carries a key; whether it is restored, which raises no balloon of its own (§7.2 step 7),
+    /// What the pipe already made of it: its id, minted before its record is written; when it is asked and shown,
+    /// for one restored from its record; whether it carries a key; whether it is restored, which raises no balloon of its own,
     /// and whether a terminal waits on its line. None where the confirmations mint it.
     /// </param>
     public (PipeConfirmation Shown, Task<PipeEnding> Ended) Ask(
@@ -374,15 +374,15 @@ public sealed class PipeConfirmations : IDisposable
         }
 
         Tell(told);
-        // A press restored from its record raises no balloon of its own: the restart says one for all of them (§7.2 step 7).
+        // A press restored from its record raises no balloon of its own: the restart says one for all of them.
         if (!held.Shown.Restored) Attend(held.Shown);
         return (held.Shown, held.Ended.Task);
     }
 
     /// <summary>
-    /// A window says <paramref name="id"/>'s card is in front of the person (CONFIRMSEEN1): the first time, kept as when it was shown,
+    /// A window says <paramref name="id"/>'s card is in front of the person: the first time, kept as when it is shown,
     /// logged <c>shown</c> and told to every window; true where it waits, shown now or before, false where it no longer waits. It moves
-    /// no clock (CONFIRMWAIT1a-i): a press waits until the person answers.
+    /// no clock: a press waits until the person answers.
     /// </summary>
     public bool Show(string id)
     {
@@ -406,7 +406,7 @@ public sealed class PipeConfirmations : IDisposable
     }
 
     /// <summary>
-    /// Whether a terminal still waits on its line for <paramref name="id"/> (the confirm-wait design §8.1): re-told to every window where
+    /// Whether a terminal still waits on its line for <paramref name="id"/>: re-told to every window where
     /// it changed. False where it no longer waits.
     /// </summary>
     public bool WaitedOn(string id, bool waited)
@@ -427,7 +427,7 @@ public sealed class PipeConfirmations : IDisposable
     }
 
     /// <summary>
-    /// The person's answer in the window (§5.2). A refusal ends it at once. A Confirm marks it checking, told to every window, reads its
+    /// The person's answer in the window. A refusal ends it at once. A Confirm marks it checking, told to every window, reads its
     /// grounds again outside every lock, then ends it confirmed (it runs) or changed (nothing runs), or, unread, gives its buttons back.
     /// One no longer waiting, or already being judged, is <see cref="PipeAnswered.Gone"/>.
     /// </summary>
@@ -439,8 +439,8 @@ public sealed class PipeConfirmations : IDisposable
         {
             held = _waiting.Find(each => each.Shown.Id == id);
             if (held is null || held.Shown.Checking || held.Settling) return new PipeAnswer(PipeAnswered.Gone);
-            // CONFIRMWAIT1a-ii (§7.2): Daoris closing or an update draining takes no Confirm, and the press waits on, kept across the restart;
-            // DRAINHOLD1: a drain holds only the presses its census names.
+            // Daoris closing or an update draining takes no Confirm, and the press waits on, kept across the restart;
+            // A drain holds only the presses its census names.
             if (confirm && Holding?.Invoke(held.Shown.Module, held.Shown.Route) == true) return new PipeAnswer(PipeAnswered.Draining);
             if (!confirm || held.Judge is null)
             {
@@ -469,7 +469,7 @@ public sealed class PipeConfirmations : IDisposable
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
-            // A judge that throws read nothing it could compare: the press waits on, as one whose read failed (§5.2).
+            // A judge that throws read nothing it could compare: the press waits on, as one whose read failed.
             judged = new PipeJudgement(PipeJudged.Unread);
         }
 
@@ -478,7 +478,7 @@ public sealed class PipeConfirmations : IDisposable
         {
             // A close may have lost it meanwhile (a press carrying a key): its terminal was told so, and this answer takes nothing.
             if (!_waiting.Contains(held)) return new PipeAnswer(PipeAnswered.Gone);
-            // A drain begun while it was judged: nothing is taken, and it waits on, its buttons back (§7.2).
+            // A drain begun while it is judged: nothing is taken, and it waits on, its buttons back.
             draining = Holding?.Invoke(held.Shown.Module, held.Shown.Route) == true;
             if (judged.Judged == PipeJudged.Unread || draining)
             {
@@ -514,9 +514,9 @@ public sealed class PipeConfirmations : IDisposable
     }
 
     /// <summary>
-    /// A press marked settling, ended as <paramref name="ending"/> once its record says so (§15.2 item 8): taken, told and answered; or,
+    /// A press marked settling, ended as <paramref name="ending"/> once its record says so: taken, told and answered; or,
     /// where the record could not be written, nothing taken, its buttons back, <see cref="PipeAnswered.Unrecorded"/>; or, a Confirm held
-    /// by then (DRAINHOLD1), nothing taken, its buttons back, <see cref="PipeAnswered.Draining"/>.
+    /// by then, nothing taken, its buttons back, <see cref="PipeAnswered.Draining"/>.
     /// </summary>
     private PipeAnswer Finish(Held held, PipeEnding ending, PipeAnswer taken)
     {
@@ -564,7 +564,7 @@ public sealed class PipeConfirmations : IDisposable
 
     /// <summary>
     /// Take one back for its terminal (the pipe's <c>WITHDRAW</c>, the kit's <c>CANCEL</c>): only while it still waits; one the person
-    /// confirmed, whose grounds are being judged, is <see cref="PipeWithdrawal.Checking"/> and nothing is taken back (§4.3).
+    /// confirmed, whose grounds are being judged, is <see cref="PipeWithdrawal.Checking"/> and nothing is taken back.
     /// </summary>
     public PipeWithdrawal Withdraw(string id)
     {
@@ -578,7 +578,7 @@ public sealed class PipeConfirmations : IDisposable
             held.Settling = true;
         }
 
-        // CONFIRMWAIT1 (§15.2 item 8): its record says it was taken back before anyone is told; where it cannot, it waits on.
+        // Its record says it is taken back before anyone is told; where it cannot, it waits on.
         var ending = new PipeEnding(PipeConfirmationEnd.Withdrawn);
         if (Persisted(held, ending) != PipePersisted.Written)
         {
@@ -598,7 +598,7 @@ public sealed class PipeConfirmations : IDisposable
     }
 
     /// <summary>
-    /// Nothing waits on a clock, and a close ends nothing here (CONFIRMWAIT1a-ii, the confirm-wait design §7.2): what waits is kept in its
+    /// Nothing waits on a clock, and a close ends nothing here: what waits is kept in its
     /// record across the restart, and the pipe answers each line waiting on one.
     /// </summary>
     public void Dispose()
@@ -606,7 +606,7 @@ public sealed class PipeConfirmations : IDisposable
     }
 
     /// <summary>
-    /// End <paramref name="id"/> <see cref="PipeConfirmationEnd.Lost"/>, whatever it waits on (CONFIRMWAIT1a-ii, §7.2): a press carrying a key
+    /// End <paramref name="id"/> <see cref="PipeConfirmationEnd.Lost"/>, whatever it waits on: a press carrying a key
     /// as Daoris closes. False where it no longer waits.
     /// </summary>
     public bool Lose(string id)
@@ -620,7 +620,7 @@ public sealed class PipeConfirmations : IDisposable
             told = Take(held);
         }
 
-        // Written where it can be; where it cannot, the keyed record ends lost at the next start all the same (§15.2 item 8).
+        // Written where it can be; where it cannot, the keyed record ends lost at the next start all the same.
         var ending = new PipeEnding(PipeConfirmationEnd.Lost);
         Persisted(held, ending);
         Settle(held, ending, told);
@@ -628,7 +628,7 @@ public sealed class PipeConfirmations : IDisposable
     }
 
     /// <summary>
-    /// The restore's one word to the person (CONFIRMWAIT1a-ii, §7.2 step 7): one notice for the presses it could not bring back and one
+    /// The restore's one word to the person: one notice for the presses it could not bring back and one
     /// for the records a newer Daoris wrote (<see cref="Restarted"/>), and one balloon for those waiting again while no window is in front,
     /// naming how many (<see cref="RestoredKind"/>). Nothing where there is nothing to say.
     /// </summary>
@@ -707,7 +707,7 @@ public sealed class PipeConfirmations : IDisposable
     }
 
     // A JSON pointer's escapes (RFC 6901), as the HTTP host's card names a body's values: an empty name and one holding a slash are
-    // each their own pointer (PERSONDOOR1b's review found a value whose empty name vanished from its path).
+    // each their own pointer, so an empty name does not vanish from its path.
     private static string Escape(string name) => name.Replace("~", "~0", StringComparison.Ordinal).Replace("/", "~1", StringComparison.Ordinal);
 
     /// <summary>Takes <paramref name="held"/> from what waits, under the lock: what every window is told next.</summary>
@@ -723,8 +723,8 @@ public sealed class PipeConfirmations : IDisposable
     {
         Write(ending.End.ToString().ToLowerInvariant(), held.Shown);
         Tell(told);
-        // A card nobody was shown goes with its row and no notice (§6), so an asker that loops ask-then-withdraw floods nothing; one lost
-        // as Daoris closes is said (§7.2).
+        // A card nobody is shown goes with its row and no notice, so an asker that loops ask-then-withdraw floods nothing; one lost
+        // as Daoris closes is said.
         if (ending.End == PipeConfirmationEnd.Lost || (ending.End == PipeConfirmationEnd.Withdrawn && held.Shown.ShownAt is not null))
         {
             Noticed?.Invoke(held.Shown, ending.End);
@@ -739,13 +739,13 @@ public sealed class PipeConfirmations : IDisposable
     private void Tell(PipeConfirmationsNow told) => _bus?.Emit(StatePublisher.Module, Event, told);
 
     /// <summary>
-    /// The person told where they look (CONFIRMSEEN1), in the shape the application's notifier reads: a balloon while none of its
+    /// The person told where they look, in the shape the application's notifier reads: a balloon while none of its
     /// windows is in front, quiet while one is, whose card already shows it. The terminal as the system names it, never the route's
-    /// constant (NOTIFY2a: a person reading 中文 met <c>SESSION_INPUT</c> in English), a value or a word the asker wrote; no session,
+    /// constant (a person reading 中文 would meet <c>SESSION_INPUT</c> in English), a value or a word the asker wrote; no session,
     /// so the balloon's click brings the window forward alone. <c>Id</c>, a field added, is the press's own, which the window's
-    /// announcement keys on (the notification design §3.3), so an event told twice is said once. <c>Module</c> and <c>Route</c>, fields
-    /// added (NOTIFY2d), name its act for the notifier, which says it in the window's words by the route's catalogue key and never says
-    /// the route itself. One per press (the confirm-wait design §8.2): the balloon coalesces, never the event.
+    /// announcement keys on, so an event told twice is said once. <c>Module</c> and <c>Route</c>, fields
+    /// added, name its act for the notifier, which says it in the window's words by the route's catalogue key and never says
+    /// the route itself. One per press: the balloon coalesces, never the event.
     /// </summary>
     private void Attend(PipeConfirmation confirmation) => _bus?.Emit(StatePublisher.Module, AttentionType, new
     {
@@ -765,7 +765,7 @@ public sealed class PipeConfirmations : IDisposable
         _ => "a terminal",
     };
 
-    // Codes only (design §5.1): what happened, the route, and the door it came in by.
+    // Codes only: what happened, the route, and the door it came in by.
     private void Write(string state, PipeConfirmation confirmation, string? standing = null)
     {
         if (standing is null)
@@ -774,14 +774,14 @@ public sealed class PipeConfirmations : IDisposable
         }
         else
         {
-            // TERMTRUST1a (the terminal-trust design §7.2): a press the standing confirmation names that asked anyway, and why, by code.
+            // A press the standing confirmation names that asked anyway, and why, by code.
             _log.Info(
                 LogEvent, ("state", state), ("route", $"{confirmation.Module}.{confirmation.Route}"), ("door", PipeDoor.Terminal),
                 ("standing", standing));
         }
     }
 
-    /// <summary>The kind of the restart's one balloon (§7.2 step 7): <see cref="BalloonFacts.Count"/> presses wait again.</summary>
+    /// <summary>The kind of the restart's one balloon: <see cref="BalloonFacts.Count"/> presses wait again.</summary>
     public const string RestoredKind = "ConfirmingRestored";
 
     private sealed class Held(PipeConfirmation shown, Func<CancellationToken, Task<PipeJudgement>>? judge)
@@ -791,7 +791,7 @@ public sealed class PipeConfirmations : IDisposable
 
         public Func<CancellationToken, Task<PipeJudgement>>? Judge { get; } = judge;
 
-        /// <summary>That its ending is being written to its record (§15.2 item 8): a second answer meanwhile is gone, a withdrawal checking.</summary>
+        /// <summary>That its ending is being written to its record: a second answer meanwhile is gone, a withdrawal checking.</summary>
         public bool Settling { get; set; }
 
         public TaskCompletionSource<PipeEnding> Ended { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);

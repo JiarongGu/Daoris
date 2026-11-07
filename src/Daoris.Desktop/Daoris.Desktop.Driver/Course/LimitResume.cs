@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A driven line a limit or update cut off resumes its own conversation once its account is ready (LIMITRESUME1b/1i, D206; the
-/// limit-resume design §3.3 step 1): decided inside the carry-on's own start, never beside the look, and carried by Daoris's word kept
+/// A driven line a limit or update cut off resumes its own conversation once its account is ready: decided inside the carry-on's own start, never beside the look, and carried by Daoris's word kept
 /// on the ended record through the say door just before the record goes on, so the conversation, whole, is told to go on.
 /// </summary>
 /// <remarks>
@@ -20,9 +19,9 @@ internal static class LimitResume
 
     /// <summary>
     /// The limited record a start would resume in its own conversation: the last part of an open or taken quest that waits on nothing,
-    /// ended by an account's limit or an update, and not the record its quest was handed over from (step 0: a hand-over names the agent it goes on
-    /// with). Also a record ended past its transient bound (AGENTERRORS1a2, the agent-errors design §5.1): the planner plans one only once
-    /// <i>Try again</i> released that end, so its start takes this step 1 too, the go-on kept under <see cref="DaorisKeys.TransientRelease"/>.
+    /// ended by an account's limit or an update, and not the record its quest is handed over from (a hand-over names the agent it goes on
+    /// with). Also a record ended past its transient bound: the planner plans one only once
+    /// <i>Try again</i> released that end, so its start takes this step too, the go-on kept under <see cref="DaorisKeys.TransientRelease"/>.
     /// Null for every other start.
     /// </summary>
     public static PriorSession? Line(QuestView quest, PriorSession? resumes, bool handedFrom) =>
@@ -34,7 +33,7 @@ internal static class LimitResume
             : null;
 
     /// <summary>
-    /// Whether <paramref name="last"/> ended past its transient bound (AGENTERRORS1a, <see cref="EndNoteCodes.EndedTransient"/>): <c>failed</c>,
+    /// Whether <paramref name="last"/> ended past its transient bound (<see cref="EndNoteCodes.EndedTransient"/>): <c>failed</c>,
     /// by its note's code, never its English and never a mark, so no write beside the conclusion can fail the hold open.
     /// </summary>
     internal static bool EndedTransient(PriorSession last) =>
@@ -42,7 +41,7 @@ internal static class LimitResume
         && last.NoteParts?.Any(part => part.Code == EndNoteCodes.EndedTransient.Code) == true;
 
     /// <summary>
-    /// Daoris's word at a released transient record's step 1 (AGENTERRORS1a2): the episode's go-on (<c>retry.go-on</c>) with the provider's
+    /// Daoris's word at a released transient record's resume: the episode's go-on (<c>retry.go-on</c>) with the provider's
     /// sentence the record's end quotes, and its key, the record's session and the end released.
     /// </summary>
     public static (string Text, string Key) TransientWord(PriorSession record) =>
@@ -66,19 +65,19 @@ internal static class LimitResume
         [.. words.Where(word => word.Daoris && DaorisKeys.IsResume(word.Key)).Select(word => word.Id).OfType<string>()];
 
     /// <summary>
-    /// The line's own hold where no account it may run on is ready (the design §3.3 step 3, <c>held.limit-waits</c>): the earliest
-    /// moment one is ready again, the cool-off's <c>until</c> with its margin (§3.2), and whose account, by the person's name in the
-    /// English and by its id in the values. At the first look past it, step 1 or step 2 takes the line.
+    /// The line's own hold where no account it may run on is ready (<c>held.limit-waits</c>): the earliest
+    /// moment one is ready again, the cool-off's <c>until</c> with its margin, and whose account, by the person's name in the
+    /// English and by its id in the values. At the first look past it, the resume steps above take the line.
     /// </summary>
-    /// <param name="lead">What leads the English, part of its text: a record's words waiting lead with <see cref="ResumeWords.NotYet"/> (LIMITSWITCH1).</param>
-    /// <param name="signedOut">The accounts that need the person's sign-in, named apart from those cooling (LIMITPICK1).</param>
+    /// <param name="lead">What leads the English, part of its text: a record's words waiting lead with <see cref="ResumeWords.NotYet"/>.</param>
+    /// <param name="signedOut">The accounts that need the person's sign-in, named apart from those cooling.</param>
     public static Noted Waits(
         CoolingEntry earliest, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null, string lead = "",
         IReadOnlyList<string>? signedOut = null) =>
         ResumeWords.LimitWaits(earliest, zone, names, lead, signedOut);
 
     /// <summary>
-    /// The line where a reset did not lift the limit (<c>limit.not-lifted</c>, the design §3.3's bound): the account's last cool-off
+    /// The line where a reset did not lift the limit (<c>limit.not-lifted</c>): the account's last cool-off
     /// among <paramref name="ended"/>, read before <paramref name="now"/>'s replaced it, ended within the margin before now with the same
     /// kind of limit as <paramref name="cooled"/>. Null for every other limit.
     /// </summary>

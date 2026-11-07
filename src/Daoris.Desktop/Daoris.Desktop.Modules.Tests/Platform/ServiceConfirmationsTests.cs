@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The presses waiting at the service's door, told to the windows (NOTIFY2j, D196 point 4, the notification design §2.5): the
+/// The presses waiting at the service's door, told to the windows: the
 /// desktop's host holds one wait on the service and tells every window what waits at each change, beside the pipe's, so no window
 /// polls. An answer that holds what was told tells nothing; an older service, with no held door, has its list read here.
 /// </summary>
@@ -85,7 +85,7 @@ public sealed class ServiceConfirmationsTests : Bridge
     }
 
     /// <summary>
-    /// ONEWAY1n-i (the oneway design §4 M4): the person's Confirm or Refuse is posted at the service's own door by its escaped id, and
+    /// The person's Confirm or Refuse is posted at the service's own door by its escaped id, and
     /// read back as it went: taken with the door's sentence, or not, with the host's code and sentence, never thrown.
     /// </summary>
     [Fact]

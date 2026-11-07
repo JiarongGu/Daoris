@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A conversation's pending start (MODELROLE1d2, D205 §3.5(b), round 4): the owner of a Chat's or Ask Daoris's attempt from its
+/// A conversation's pending start: the owner of a Chat's or Ask Daoris's attempt from its
 /// placement until it is dispatched or exhausted, keyed by the issued id, the id the press answered. Placement keeps its early return;
 /// the asynchronous half that opens the door holds this. Refused at the open, that half ends the refused record
 /// <c>choice-not-offered</c>, re-asks the walk with the refusing account passed and opens the replacement, in the same call: one press.
@@ -16,8 +16,7 @@ namespace Daoris.Driver;
 /// (<see cref="ChatTurns.MoveOut"/>) before the replacement opens, and a word said meanwhile joins it (<see cref="Join"/>), so it reaches
 /// the replacement exactly once. Re-keyed (<see cref="Moved"/>), the issued id answers for the current one.</para>
 ///
-/// <para><b>Those kept on the refused record move with the replacement's open</b> (FOUNDATION1d-ii part 5, the foundation design §3.4 rule
-/// 3): its keyed open names them (<see cref="KeptIds"/>) and moves them in its own step, and each goes to the replacement as that record's
+/// <para><b>Those kept on the refused record move with the replacement's open</b>: its keyed open names them (<see cref="KeptIds"/>) and moves them in its own step, and each goes to the replacement as that record's
 /// own word under its id there; a producer's retry joined under one's key is that word, and goes nowhere again.</para>
 /// </remarks>
 internal sealed class ChatPending
@@ -60,7 +59,7 @@ internal sealed class ChatPending
 
     public IReadOnlyList<ActorEffective> Order { get; }
 
-    /// <summary>The entry its current attempt asks: moved by the same-account move (D205 §3.3) and by a replacement.</summary>
+    /// <summary>The entry its current attempt asks: moved by the same-account move and by a replacement.</summary>
     public ActorEffective Entry { get; set; }
 
     public string? Pinned { get; }
@@ -70,7 +69,7 @@ internal sealed class ChatPending
     /// <summary>How a replacement opens: Ask Daoris's run sets it, since only its run holds the machine's reading and its end's listener.</summary>
     public Func<ChatPending, CancellationToken, Task<ChatStart>> Open { get; set; }
 
-    /// <summary>A pick, which is never walked afresh: only the picked agent's entries are tried (§3.5(d)).</summary>
+    /// <summary>A pick, which is never walked afresh: only the picked agent's entries are tried.</summary>
     public bool Pick => Entry.From == "pick";
 
     /// <summary>The entry and account the last open refused, passed by the replacement's walk as if known before its spawn.</summary>
@@ -79,7 +78,7 @@ internal sealed class ChatPending
     /// <summary>What the re-ask answered where its answer is not the same session's: the replacement to open, or the wait's sentence.</summary>
     public ConversationWalk? Next { get; set; }
 
-    /// <summary>Dispatched or exhausted: refusals are no longer this start's.</summary>
+    /// <summary>Dispatched or exhausted: refusals are not this start's any more.</summary>
     public bool Over { get; private set; }
 
     /// <summary>Each entry passed so far in this press, the refused ones with their reason, which the replacement's actor line says.</summary>
@@ -115,8 +114,8 @@ internal sealed class ChatPending
     }
 
     /// <summary>
-    /// The moving words the refused record keeps, by their ids there, in the order said (FOUNDATION1d-ii part 5): what the replacement's keyed
-    /// open names, so they move onto it in the open's own step. A word held in this process alone is none of them; it goes as before.
+    /// The moving words the refused record keeps, by their ids there, in the order said: what the replacement's keyed
+    /// open names, so they move onto it in the open's own step. A word held in this process alone is none of them; it goes by the hand.
     /// </summary>
     public IReadOnlyList<string> KeptIds
     {
@@ -154,8 +153,8 @@ internal sealed class ChatPending
     /// <remarks>
     /// <para>A replacement already refused in its turn takes its words onward into this same pending start (<see cref="Join"/>): they stay moving,
     /// for its own replacement, as they do wherever another replacement is owed (<see cref="Next"/>).</para>
-    /// <para>A producer's retry that joined them under the key of a word the refused record keeps among them is that word said again
-    /// (FOUNDATION1d-ii part 5, the design §3.4 rule 5): it is handed nowhere, and the kept word goes once.</para>
+    /// <para>A producer's retry that joined them under the key of a word the refused record keeps among them is that word said again:
+    /// it is handed nowhere, and the kept word goes once.</para>
     /// </remarks>
     public IReadOnlyList<ChatMessage> Moved(string to, Func<ChatMessage, bool> say)
     {
@@ -194,9 +193,9 @@ internal sealed class ChatPending
     public void Dispatched() => Over = true;
 
     /// <summary>
-    /// A pick's order for its every attempt (§3.5(d), round 4, Codex 2): the picked entry, then the actor's other entries for the same
+    /// A pick's order for its every attempt: the picked entry, then the actor's other entries for the same
     /// agent, each still a pick. Any other order as it is. The alternatives are the <paramref name="role"/>'s (the work's role where none is
-    /// bound), in the order its set policy arranges them (STAFFPOLICY1d).
+    /// bound), in the order its set policy arranges them.
     /// </summary>
     public static IReadOnlyList<ActorEffective> Recovering(
         string actor, IReadOnlyList<ActorEffective> order, DriverConfig config, StaffLedger? staff = null, string? role = null)
@@ -222,7 +221,7 @@ internal sealed class ChatPending
 }
 
 /// <summary>
-/// The pending starts by id (MODELROLE1d2): each made at placement under its issued id, and each replacement it moved to linked to it, so a
+/// The pending starts by id: each made at placement under its issued id, and each replacement it moved to linked to it, so a
 /// door asked by the issued id is answered for the current one, as a conversation that went on in another is today
 /// (<see cref="WordsNever.ContinuedIn"/>).
 /// </summary>

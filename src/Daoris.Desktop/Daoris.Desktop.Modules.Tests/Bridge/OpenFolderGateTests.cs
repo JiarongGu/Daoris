@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The file manager is opened through the start gate, never on the caller's thread (PROCSTART2, UIFREEZE1): the window kit's
+/// The file manager is opened through the start gate, never on the caller's thread: the window kit's
 /// launcher starts the file manager's process, and the plugins' and the log's Open folder called it in the route's
 /// synchronous part, which runs on the window's thread.
 /// </summary>

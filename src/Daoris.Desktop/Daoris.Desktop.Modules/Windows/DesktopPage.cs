@@ -1,7 +1,7 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Where the shell's page lives on the Chromium it ships, and what each window opens (D92, CHR2).
+/// Where the shell's page lives on the Chromium it ships, and what each window opens.
 /// </summary>
 /// <remarks>
 /// <para>A <c>ChromiumView</c> serves the platform bundle from a folder at <c>https://{VirtualHost}/</c>,

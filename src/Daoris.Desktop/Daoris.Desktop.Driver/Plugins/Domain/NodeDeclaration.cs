@@ -2,30 +2,30 @@ using System.Collections.Immutable;
 
 namespace Daoris.Driver;
 
-/// <summary>How a node starts (the fabric events design §E2's <c>reach</c>; §D4, with <c>waited</c> added by §E1).</summary>
+/// <summary>How a node starts.</summary>
 public static class NodeReach
 {
-    /// <summary>Git or a plugin reports it: every built-in proof (§C2), a plugin's events (§C4).</summary>
+    /// <summary>Git or a plugin reports it: every built-in proof, a plugin's events.</summary>
     public const string Observed = "observed";
 
-    /// <summary>Daoris asks a plugin to do it (§D6), or does it itself (<c>quest.close</c>, §E5).</summary>
+    /// <summary>Daoris asks a plugin to do it, or does it itself (<c>quest.close</c>).</summary>
     public const string Performed = "performed";
 
-    /// <summary>A person reaches it at D156's doors (§D5).</summary>
+    /// <summary>A person reaches it.</summary>
     public const string Pressed = "pressed";
 
-    /// <summary>It waits on other work through its adapter (<c>wait.unit</c>, §E6).</summary>
+    /// <summary>It waits on other work through its adapter (<c>wait.unit</c>).</summary>
     public const string Waited = "waited";
 
     public static readonly IReadOnlyList<string> All = [Observed, Performed, Pressed, Waited];
 }
 
-/// <summary>A node's declared retry (§D4, §D6): how many attempts it may take on one binding, and the delay before each new one.</summary>
+/// <summary>A node's declared retry: how many attempts it may take on one binding, and the delay before each new one.</summary>
 /// <param name="MaxAttempts">Attempts on one binding, the first included; a person's new attempt or a fresh binding counts afresh.</param>
-/// <param name="DelaysSeconds">The delay before the second attempt, the third, and so on; the last repeats. A copy of what was set.</param>
+/// <param name="DelaysSeconds">The delay before the second attempt, the third, and so on; the last repeats. A copy of what is set.</param>
 public sealed record NodeRetry(int MaxAttempts, IReadOnlyList<int> DelaysSeconds)
 {
-    // FABRIC-NODE1d: copied when set, so a caller's list changing later moves neither the retry nor its declaration's Problem.
+    // Copied when set, so a caller's list changing later moves neither the retry nor its declaration's Problem.
     private readonly IReadOnlyList<int> delaysSeconds = Copied(DelaysSeconds);
 
     public IReadOnlyList<int> DelaysSeconds { get => delaysSeconds; init => delaysSeconds = Copied(value); }
@@ -33,7 +33,7 @@ public sealed record NodeRetry(int MaxAttempts, IReadOnlyList<int> DelaysSeconds
     private static ImmutableArray<int> Copied(IReadOnlyList<int> delays) =>
         ImmutableArray.CreateRange(delays ?? throw new ArgumentNullException(nameof(delays)));
 
-    // FABRIC-UNIT1d: equal by what it says, so a manifest's declaration is the one built by hand.
+    // Equal by what it says, so a manifest's declaration is the one built by hand.
     public bool Equals(NodeRetry? other) =>
         other is not null && MaxAttempts == other.MaxAttempts && DelaysSeconds.SequenceEqual(other.DelaysSeconds);
 
@@ -41,19 +41,19 @@ public sealed record NodeRetry(int MaxAttempts, IReadOnlyList<int> DelaysSeconds
 }
 
 /// <summary>
-/// How a plugin's performed node is performed (FABRIC-UNIT1d; the fabric events design §D6, <i>the performer's contract</i>): what the
-/// kit promises and PERFORM1 dispatches by. Only a plugin's own <c>performed</c> node declares one; a manifest spells it in the step's
+/// How a plugin's performed node is performed: what the
+/// kit promises and the performer dispatches by. Only a plugin's own <c>performed</c> node declares one; a manifest spells it in the step's
 /// <c>perform</c>, its point <c>work/perform</c>.
 /// </summary>
 /// <param name="Idempotent">The plugin deduplicates a redelivered idempotency key durably: the same key never makes a second external effect.</param>
 /// <param name="Reconcile">The plugin answers <c>work/reconcile</c>: what became of an attempt whose outcome is unknown.</param>
 /// <param name="Transient">
 /// The failure codes worth retrying, under the node's <see cref="NodeDeclaration.Retry"/>; any other code stops it for the person. A
-/// copy of what was set.
+/// copy of what is set.
 /// </param>
 public sealed record NodePerform(bool Idempotent, bool Reconcile, IReadOnlyList<string> Transient)
 {
-    /// <summary>A failure code's shape (§D6's <c>unavailable</c>, <c>rate-limited</c>): lowercase letters, digits and dashes, at most 40.</summary>
+    /// <summary>A failure code's shape (<c>unavailable</c>, <c>rate-limited</c>): lowercase letters, digits and dashes, at most 40.</summary>
     public static readonly System.Text.RegularExpressions.Regex CodeShape =
         new(@"^[a-z0-9][a-z0-9-]{0,39}\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
@@ -73,7 +73,7 @@ public sealed record NodePerform(bool Idempotent, bool Reconcile, IReadOnlyList<
 }
 
 /// <summary>
-/// One node (FABRIC-NODE1; the fabric events design §E2): <c>{ id, kind, version, reach, inputs, outputs, evidence, retry?,
+/// One node: <c>{ id, kind, version, reach, inputs, outputs, evidence, retry?,
 /// timeoutSeconds?, options? }</c>. Its <c>kind</c> chooses an adapter and its <c>reach</c> says how it starts; its lifecycle is
 /// <see cref="NodeLifecycle"/>'s, the same for every kind. The unit it acts on is its run's binding (<see cref="NodeStatus.Unit"/>).
 /// </summary>
@@ -86,18 +86,18 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     /// <summary>No ports: a declaration's inputs or outputs before any are named.</summary>
     public static readonly IReadOnlyDictionary<string, string> NoPorts = ImmutableSortedDictionary.Create<string, string>(StringComparer.Ordinal);
 
-    // FABRIC-NODE1d: each collection is copied when it is set, in name order, so a graph's digest over declarations never moves with a
+    // Each collection is copied when it is set, in name order, so a graph's digest over declarations never moves with a
     // caller's dictionary.
     private readonly IReadOnlyDictionary<string, string> inputs = NoPorts;
     private readonly IReadOnlyDictionary<string, string> outputs = NoPorts;
 
     /// <summary>
-    /// Its inputs by name, each with the schema it takes: filled by <c>data</c> wires with references, never payloads. Each is mandatory
-    /// (§E3). A copy of what was set.
+    /// Its inputs by name, each with the schema it takes: filled by <c>data</c> wires with references, never payloads. Each is mandatory.
+    /// A copy of what is set.
     /// </summary>
     public IReadOnlyDictionary<string, string> Inputs { get => inputs; init => inputs = Frozen(value); }
 
-    /// <summary>Its declared outputs by name, each with its schema: a reached node exposes each as a <see cref="NodePort"/>. A copy of what was set.</summary>
+    /// <summary>Its declared outputs by name, each with its schema: a reached node exposes each as a <see cref="NodePort"/>. A copy of what is set.</summary>
     public IReadOnlyDictionary<string, string> Outputs { get => outputs; init => outputs = Frozen(value); }
 
     private static IReadOnlyDictionary<string, string> Frozen(IReadOnlyDictionary<string, string> ports) =>
@@ -108,49 +108,49 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
 
     public NodeRetry? Retry { get; init; }
 
-    /// <summary>A persisted deadline (§D4), delivered as an event: it never means success, failure, or a deletion.</summary>
+    /// <summary>A persisted deadline, delivered as an event: it never means success, failure, or a deletion.</summary>
     public int? TimeoutSeconds { get; init; }
 
     /// <summary>
-    /// The option a plugin's own node declares to let a person reject it (§E2: <i>only where the node declares it</i>). A built-in
+    /// The option a plugin's own node declares to let a person reject it (<i>only where the node declares it</i>). A built-in
     /// kind's judgement is the kind's, never a declaration's.
     /// </summary>
     public bool Rejectable { get; init; }
 
     /// <summary>
-    /// Whether the person may pass a plugin's own node over (D157's skip): a plugin's declaration may forbid it with <c>false</c>
-    /// (FABRIC-NODE1c). A built-in kind's skip is the kind's, never a declaration's.
+    /// Whether the person may pass a plugin's own node over: a plugin's declaration may forbid it with <c>false</c>.
+    /// A built-in kind's skip is the kind's, never a declaration's.
     /// </summary>
     public bool Skippable { get; init; } = true;
 
     /// <summary>
-    /// How a plugin's own <c>performed</c> node is performed (FABRIC-UNIT1d, §D6), or null: none declared, which is dispatched and never
+    /// How a plugin's own <c>performed</c> node is performed, or null: none declared, which is dispatched and never
     /// redelivered by itself. Every other node declares none.
     /// </summary>
     public NodePerform? Perform { get; init; }
 
     /// <summary>
-    /// A plugin's step's name as a person reads it (SETUPUX1f), or null: none declared. Words for reading only, so they are left out of
+    /// A plugin's step's name as a person reads it, or null: none declared. Words for reading only, so they are left out of
     /// equality, the hash and a graph's digest, and changing them lapses no acceptance.
     /// </summary>
     public AuthoredText? Title { get; init; }
 
-    /// <summary>A sentence of what the step does (SETUPUX1f), or null; read like <see cref="Title"/>.</summary>
+    /// <summary>A sentence of what the step does, or null; read like <see cref="Title"/>.</summary>
     public AuthoredText? About { get; init; }
 
     private readonly IReadOnlyDictionary<string, string> options = NoPorts;
 
     /// <summary>
-    /// Its adapter's options by name (§E2's <c>options</c>, as a human node's <c>brief</c>), each its JSON value's text as written: what
-    /// the adapter reads, never a condition (FABRIC-GRAPH1). A copy of what was set, in name order, so a graph's digest holds it.
+    /// Its adapter's options by name (as a human node's <c>brief</c>), each its JSON value's text as written: what
+    /// the adapter reads, never a condition. A copy of what is set, in name order, so a graph's digest holds it.
     /// </summary>
     public IReadOnlyDictionary<string, string> Options { get => options; init => options = Frozen(value); }
 
     private readonly IReadOnlyList<string> outcomes = ImmutableArray<string>.Empty;
 
     /// <summary>
-    /// The outcomes it may be reached with, in order (DECIDE1a): a decision's named routes, each followed by a <c>when</c> wire. Empty, as on
-    /// every built-in kind, means it is no decision. Its names keep <see cref="NodeOutcomes.Problem"/>. A copy of what was set.
+    /// The outcomes it may be reached with, in order: a decision's named routes, each followed by a <c>when</c> wire. Empty, as on
+    /// every built-in kind, means it is no decision. Its names keep <see cref="NodeOutcomes.Problem"/>. A copy of what is set.
     /// </summary>
     public IReadOnlyList<string> Outcomes
     {
@@ -165,9 +165,9 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     private readonly IReadOnlyDictionary<string, IReadOnlyList<string>> outputsOn = NoneCarriedOn;
 
     /// <summary>
-    /// A decision's outputs each carried on some of its outcomes alone, with those outcomes (DECIDE1d): a reach with another outcome may leave
+    /// A decision's outputs each carried on some of its outcomes alone, with those outcomes: a reach with another outcome may leave
     /// it out. An output not named is carried on every reach. Its names keep <see cref="NodeOutcomes.OutputsOnProblem"/>. A copy of what
-    /// was set, by output, each one's outcomes in name order.
+    /// is set, by output, each one's outcomes in name order.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> OutputsOn
     {
@@ -179,14 +179,14 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     }
 
     /// <summary>
-    /// Made by decoding a D157 version (a sink, a person's task or a join, §E7), never authored: counted apart from a graph's 24-node
-    /// bound (FABRIC-GRAPH1, <see cref="NodeGraphs.MaxNodes"/>). A graph read from a person's file declares none.
+    /// Made by decoding a version (a sink, a person's task or a join), never authored: counted apart from a graph's 24-node
+    /// bound (<see cref="NodeGraphs.MaxNodes"/>). A graph read from a person's file declares none.
     /// </summary>
     public bool Synthetic { get; init; }
 
     /// <summary>
-    /// FABRIC-UNIT1d: two declarations are equal where they say the same, whoever built their collections, so a manifest's step is the
-    /// declaration built by hand and a graph compares declarations by what they say (GRAPH1's options and synthetic mark included).
+    /// Two declarations are equal where they say the same, whoever built their collections, so a manifest's step is the
+    /// declaration built by hand and a graph compares declarations by what they say (options and synthetic mark included).
     /// </summary>
     public bool Equals(NodeDeclaration? other) =>
         other is not null
@@ -230,14 +230,14 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         return hash.ToHashCode();
     }
 
-    // Both are ordinal-sorted copies (FABRIC-NODE1d), so the same ports are in the same order.
+    // Both are ordinal-sorted copies, so the same ports are in the same order.
     private static bool Same(IReadOnlyDictionary<string, string> ports, IReadOnlyDictionary<string, string> others) =>
         ports.Count == others.Count && ports.Zip(others).All(pair =>
             string.Equals(pair.First.Key, pair.Second.Key, StringComparison.Ordinal)
             && string.Equals(pair.First.Value, pair.Second.Value, StringComparison.Ordinal));
 }
 
-/// <summary>The bounds of the words a manifest gives (SETUPUX1f): a step's <c>title</c> or <c>about</c> is <see cref="AuthoredText"/>, each text within them.</summary>
+/// <summary>The bounds of the words a manifest gives: a step's <c>title</c> or <c>about</c> is <see cref="AuthoredText"/>, each text within them.</summary>
 public static class StepWords
 {
     /// <summary>The longest title, in characters: one line a graph's card can hold.</summary>
@@ -247,7 +247,7 @@ public static class StepWords
     public const int AboutMost = 240;
 }
 
-/// <summary>The names a decision's outcomes keep (DECIDE1a), and whether a reach's outcome fits its node.</summary>
+/// <summary>The names a decision's outcomes keep, and whether a reach's outcome fits its node.</summary>
 public static class NodeOutcomes
 {
     /// <summary>The fewest outcomes a decision names: one route is no decision.</summary>
@@ -284,7 +284,7 @@ public static class NodeOutcomes
         node.Outcomes.Count == 0 ? outcome is null : outcome is not null && node.Outcomes.Contains(outcome, StringComparer.Ordinal);
 
     /// <summary>
-    /// Whether a reach of <paramref name="node"/> with <paramref name="outcome"/> must carry <paramref name="output"/> (DECIDE1d): a reach with
+    /// Whether a reach of <paramref name="node"/> with <paramref name="outcome"/> must carry <paramref name="output"/>: a reach with
     /// no outcome, or with one its <see cref="NodeDeclaration.OutputsOn"/> names for it, does, as does every reach where it names none.
     /// </summary>
     public static bool Carries(NodeDeclaration node, string output, string? outcome) =>

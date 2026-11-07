@@ -3,17 +3,15 @@ using static Daoris.Driver.LineCourse;
 
 namespace Daoris.Driver;
 
-// FOUNDATION1e part 2 (the foundation design §3.1, §3.2, §10 row 1e): the one decision of how a line goes on, read by nothing until rows h
-// and i adopt it one path per branch. It answers every path A to N as that path answers today (LineCourseTests' pinned table, ported from
-// the paths' own suites); where two paths answer the same facts two ways it tells them apart by the trigger or a fact and keeps both, each
-// difference a decision for the row that adopts it (D212's FOUNDATION1e part 2 note). It reads the account rule's answer once, as the
+// The one decision of how a line goes on. It answers every path as that path answers (LineCourseTests' pinned table); where two paths
+// answer the same facts two ways it tells them apart by the trigger or a fact and keeps both. It reads the account rule's answer once, as the
 // executor handed it, and never walks.
 
 public static class CourseDecision
 {
     /// <summary>
-    /// How the line goes on, given what pulled the course and the facts the executor read (the foundation design §3.1): what never goes on
-    /// first, then the trigger's path, each answer carrying the preconditions it was read on. A part that is a standing move's destination
+    /// How the line goes on, given what pulled the course and the facts the executor read: what never goes on
+    /// first, then the trigger's path, each answer carrying the preconditions it is read on. A part that is a standing move's destination
     /// takes no move of its own until that move ends, and nothing opens while the application winds up.
     /// </summary>
     public static LineCourse Decide(CourseFacts facts, CourseTrigger trigger)
@@ -26,8 +24,8 @@ public static class CourseDecision
 
     // ——— What never goes on, and a line a press holds.
 
-    // D137 §2.2's three nevers, a record a later part supersedes (WordsNever's superseded and continued), and the old part of a standing
-    // move, whose words are the move's (O-2). A stand-down's lost take the person brought forward is carried on all the same (SYNCMERGE1b).
+    // The three nevers, a record a later part supersedes (WordsNever's superseded and continued), and the old part of a standing
+    // move, whose words are the move's. A stand-down's lost take the person brought forward is carried on all the same.
     internal static Never? NeverOf(CourseFacts facts, CourseTrigger trigger)
     {
         var head = facts.Head;
@@ -47,9 +45,9 @@ public static class CourseDecision
                 ? Refused(facts, HandOver.Waiting)
                 : Held(facts, CourseHoldWhy.Stays);
 
-    // STAFFPOLICY1e (the staff policy design §4): the role policy's met condition decides what follows a part's end, in the one decision. Only
-    // an automatic trigger is judged (a press, a stop or a pause keeps today's answer), and an action that is today's, or that today's walk
-    // already is (`retry`, `hold`; a limit's `next` and `weighted`, whose arrangement is the executor's), answers nothing here.
+    // The role policy's met condition decides what follows a part's end, in the one decision. Only
+    // an automatic trigger is judged (a press, a stop or a pause keeps the unpolicied answer), and an action that is that answer, or that the
+    // plain walk already is (`retry`, `hold`; a limit's `next` and `weighted`, whose arrangement is the executor's), answers nothing here.
     internal static LineCourse? Policied(CourseFacts facts, CourseTrigger trigger)
     {
         if (facts.Policy is not { } policy || facts.Press is { Kind: not CoursePressKind.None }) return null;
@@ -101,18 +99,18 @@ public static class CourseDecision
         CourseTrigger.TransientPastBound => PastBound(facts),
         CourseTrigger.ConversationLost => Lost(facts),
         CourseTrigger.LimitEnd or CourseTrigger.LimitWake => Limit(facts, trigger),
-        // A workflow's send-back is no decision of its own (path L): an ended conversation's go-on from it is path B's.
+        // A workflow's send-back is no decision of its own: an ended conversation's go-on from it is a words-kept go-on.
         _ => GoOn(facts, trigger),
     };
 
-    // ——— Paths A and B: words kept, an answer, the come-up.
+    // ——— Words kept, an answer, the come-up.
 
     internal static LineCourse GoOn(CourseFacts facts, CourseTrigger trigger)
     {
         var head = facts.Head;
         var words = head.Words;
 
-        // A part that runs takes its words through its own dispatcher, its own conversation: a turn's next prompt, or a step's (path L).
+        // A part that runs takes its words through its own dispatcher, its own conversation: a turn's next prompt, or a step's.
         if (facts.Boundary is CourseBoundary.TurnRunning or CourseBoundary.BetweenTurns)
         {
             return AloneHeld(facts, trigger) ?? (words.Count == 0 ? Held(facts, CourseHoldWhy.Stays) : Resumed(facts, All(words)));
@@ -120,7 +118,7 @@ public static class CourseDecision
 
         if (words.Count == 0) return Held(facts, CourseHoldWhy.Stays);
 
-        // AGENTERRORS1a: past its transient bound a record goes on only with a word of the person's said after it ended (RoundReading.TransientHolding and WordsOn).
+        // Past its transient bound a record goes on only with a word of the person's said after it ended (RoundReading.TransientHolding and WordsOn).
         if (facts.Failure is { PastBound: true } && facts.Press?.Kind != CoursePressKind.TryAgain && !words.Any(word => word.Persons && word.AfterEnd))
         {
             return Held(facts, CourseHoldWhy.TransientBound, [CourseDoor.TryAgain, CourseDoor.Say]);
@@ -128,7 +126,7 @@ public static class CourseDecision
 
         if (AloneHeld(facts, trigger) is { } alone) return alone;
 
-        // MODELROLE1d2 (D205 §3.5(b)): a conversation its agent refused at the open began no conversation: a fresh start of its actor.
+        // A conversation its agent refused at the open begins no conversation: a fresh start of its actor.
         if (head.Conversation && head.NotOffered) return Fresh(facts);
 
         if (head.AgentGone)
@@ -144,8 +142,8 @@ public static class CourseDecision
     }
 
     // The resume judge's reason (Continuations.Judge, read by its code alone): a conversation goes on by itself only where its own
-    // conversation is proven lost (D189 point 3), else waits for the person; a driven record's fall-back carries on in a new part, `retry`,
-    // but where another client holds its conversation (D189's amendment), and a closed quest's session only as a conversation in its tree.
+    // conversation is proven lost, else waits for the person; a driven record's fall-back carries on in a new part, `retry`,
+    // but where another client holds its conversation, and a closed quest's session only as a conversation in its tree.
     internal static LineCourse Judged(CourseFacts facts, string code)
     {
         var head = facts.Head;
@@ -162,9 +160,9 @@ public static class CourseDecision
         return FallBack(facts, facts.Account?.Answer is LineAnswer.Elsewhere { } walked ? walked.Selection : null, switched: false);
     }
 
-    // The account rule's answer, read once (§3.2): its own account resumes; the switch moves the words off a cooling own account to a new
-    // part now (LIMITSWITCH1-3); an own account that cannot carry them walks for a driven record (D137 point 7) and is a conversation's
-    // *cannot go on* (§8's second question); the words wait for the earliest reset; or nothing carries them and nothing resets.
+    // The account rule's answer, read once: its own account resumes; the switch moves the words off a cooling own account to a new
+    // part now; an own account that cannot carry them walks for a driven record and is a conversation's
+    // *cannot go on*; the words wait for the earliest reset; or nothing carries them and nothing resets.
     internal static LineCourse Account(CourseFacts facts)
     {
         var head = facts.Head;
@@ -192,9 +190,9 @@ public static class CourseDecision
     {
         var head = facts.Head;
         var words = head.Words;
-        // LIMITSWITCH2: a closed quest's session goes on as a conversation in its tree through the runner's ended move, the reason `account`.
+        // A closed quest's session goes on as a conversation in its tree through the runner's ended move, the reason `account`.
         // Words wait and none of them goes (another agent's findings, a helper's answer, Daoris's own): they go to the person (Driver.cs:2524).
-        // A limited line with no words left goes on as the carry-on planned for it (LIMITRESUME1b).
+        // A limited line with no words left goes on as the carry-on planned for it.
         var carried = switched ? words.Where(word => word.NewPartCarries) : words.Where(word => word.Persons);
         if (words.Count > 0 && !carried.Any()) return CannotGoOn(facts, switched ? ContinueWhy.Account : head.Judged ?? ContinueWhy.Account);
 
@@ -203,11 +201,11 @@ public static class CourseDecision
         return Moved(facts, CourseWhen.Now, where, why, by, Ids(carried));
     }
 
-    // ——— Paths A and N's bound: the answers-alone hold, and a conversation refused at the open.
+    // ——— The answers-alone hold, and a conversation refused at the open.
 
-    // COWORK1e (D188 point 4): answers alone that would take the line on a third time in a row with nobody between wait for the person; a
+    // Answers alone that would take the line on a third time in a row with nobody between wait for the person; a
     // word of theirs or their *Go on with this answer* lets them go, and their *Not now* keeps them for a word of theirs. The supervisor's
-    // route refuses its word at the keeping while the line stands at the bound (SUPERVISOR1b), so nothing is kept to be held.
+    // route refuses its word at the keeping while the line stands at the bound, so nothing is kept to be held.
     internal static LineCourse? AloneHeld(CourseFacts facts, CourseTrigger trigger)
     {
         var alone = facts.Alone;
@@ -222,7 +220,7 @@ public static class CourseDecision
         return Held(facts, CourseHoldWhy.AnswersAlone, [CourseDoor.LetAnswerGoOn, CourseDoor.NotNow, CourseDoor.Say], code: GoOnMarks.AnswersAlone);
     }
 
-    // MODELROLE1d2 (BriefedMove.NotOfferedAsync): a fresh start of its actor, its words the person's, a pick trying its own agent's entries
+    // BriefedMove.NotOfferedAsync: a fresh start of its actor, its words the person's, a pick trying its own agent's entries
     // on its own account; with none of the person's words, or its tree gone, nothing opens.
     internal static LineCourse Fresh(CourseFacts facts)
     {
@@ -236,10 +234,10 @@ public static class CourseDecision
         return Moved(facts, CourseWhen.Now, where, CourseFromWhy.NotOffered, CourseFromBy.Daoris, Ids(persons));
     }
 
-    // ——— Paths B and J: a conversation proven lost, and the briefed move.
+    // ——— A conversation proven lost, and the briefed move.
 
-    // SESSCTX1c part B (ChatGoOn.LostAsync): a conversation its limit held, or a restart's, goes on by the limit's ended move, its own
-    // account allowed since its conversation is lost, a pick waiting for its account (PICKLOST1); else, with the person's words, by the
+    // ChatGoOn.LostAsync: a conversation its limit held, or a restart's, goes on by the limit's ended move, its own
+    // account allowed since its conversation is lost, a pick waiting for its account; else, with the person's words, by the
     // briefed move; nothing opening, it cannot go on. A driven record's lost conversation is its fall-back, or a closed quest's conversation.
     internal static LineCourse Lost(CourseFacts facts)
     {
@@ -269,10 +267,10 @@ public static class CourseDecision
         return Briefed(facts, CourseFromBy.Daoris);
     }
 
-    // D189 (BriefedMove.MovingAsync): a new part of the line, why `resume`, Daoris's brief and the person's words alone, on the walk with
-    // its own account first where ready (FOUNDATION1a-iii, §3.2 step 6), an account the person picked the one account. The person's press
+    // BriefedMove.MovingAsync: a new part of the line, why `resume`, Daoris's brief and the person's words alone, on the walk with
+    // its own account first where ready, an account the person picked the one account. The person's press
     // is refused where it does not apply; Daoris's on a lost conversation that nothing opens for cannot go on. A closed quest's session whose
-    // tree is gone goes on by the person's press in a fresh tree (TREEGONE2, ONEWAY1's design §3 C5); a conversation's has nothing to go on in.
+    // tree is gone goes on by the person's press in a fresh tree; a conversation's has nothing to go on in.
     internal static LineCourse Briefed(CourseFacts facts, CourseFromBy by)
     {
         var head = facts.Head;
@@ -306,7 +304,7 @@ public static class CourseDecision
         }
     }
 
-    // SWITCH1c-ii (CurveMove.MoveAsync): judged once at a turn's end with nothing running, a conversation's alone, never Ask Daoris's nor one
+    // CurveMove.MoveAsync: judged once at a turn's end with nothing running, a conversation's alone, never Ask Daoris's nor one
     // on the tool's own home; the scope's switch admits Daoris's move, and the decision names the account it moves to as a pick.
     internal static LineCourse Curve(CourseFacts facts)
     {
@@ -318,10 +316,10 @@ public static class CourseDecision
         return Moved(facts, CourseWhen.TurnEnd, new CourseWhere(CourseAccountSource.Pick, head.Role, head.Choice, account), CourseFromWhy.Curve, CourseFromBy.Daoris, Ids([]));
     }
 
-    // MIXAGENT1a, D163: a hand-over pressed or asked. An agent's ask goes through the hand-over rule's consent first (DriverHandOvers.cs:
+    // A hand-over pressed or asked. An agent's ask goes through the hand-over rule's consent first (DriverHandOvers.cs:
     // 208-214): `on` admits it, `ask` puts it to the person, `off` refuses it. A conversation's is taken at its turn's end, the brief only,
-    // none of the person's words (HandOver.cs:271); a quest's session's is stopped at once for the person's press as their stop (D163 point
-    // 1, D188 point 1) and taken at the turn's end for an agent's ask (DriverHandOvers.cs:227-235).
+    // none of the person's words (HandOver.cs:271); a quest's session's is stopped at once for the person's press as their stop
+    // and taken at the turn's end for an agent's ask (DriverHandOvers.cs:227-235).
     internal static LineCourse HandOverOf(CourseFacts facts)
     {
         var head = facts.Head;
@@ -333,7 +331,7 @@ public static class CourseDecision
 
         if (!head.Conversation)
         {
-            // HANDOVERSAID1: what the take would refuse is refused at the ask, before any consent: a quest no longer open or taken.
+            // What the take would refuse is refused at the ask, before any consent: a quest no longer open or taken.
             if (!head.Carried) return Refused(facts, HandOver.QuestClosed);
             if (head.State == "awaiting-person" && by == CourseFromBy.Person && !head.AgentGone) return Refused(facts, HandOver.Parked);
         }
@@ -379,7 +377,7 @@ public static class CourseDecision
         return new CourseWhere(CourseAccountSource.Settled, head.Role, head.Choice, walked, agent);
     }
 
-    // ——— Path C: go on in a new session; start a conversation with these words.
+    // ——— Go on in a new session; start a conversation with these words.
 
     // GoOnNew.AskAsync: refused by its code where it does not apply; else the next look's go-on takes the walk's pick for the person's words.
     internal static LineCourse GoOnNewOf(CourseFacts facts)
@@ -410,7 +408,7 @@ public static class CourseDecision
     }
 
     // StartFrom.RunAsync: a fresh conversation with no `from`, the person's words as its first, keyed by the press's own intent key so a
-    // second press opens a second line and none supersedes the source (X-3.2).
+    // second press opens a second line and none supersedes the source.
     internal static LineCourse StartFromOf(CourseFacts facts)
     {
         var head = facts.Head;
@@ -447,7 +445,7 @@ public static class CourseDecision
 
     // A conversation's words that nothing carries on by itself (ChatGoOn.CannotGoOn), or a driven record's held for the person: its doors
     // the presses that apply, *Start a conversation with these words* and *Go on with Daoris's brief*, each only with the person's words.
-    // A closed quest's session whose tree is gone is offered the brief too, its new part in a fresh tree (TREEGONE2).
+    // A closed quest's session whose tree is gone is offered the brief too, its new part in a fresh tree.
     internal static Hold CannotGoOn(CourseFacts facts, string code, LineRepair repair = LineRepair.None)
     {
         var head = facts.Head;
@@ -468,7 +466,7 @@ public static class CourseDecision
         return why == NextHold.Cooling ? [CourseDoor.GoOnNew] : [];
     }
 
-    // What the answer was read on (§3.1, X): named apart from the answers' own `Needs`, which a member of the base would hide.
+    // What the answer is read on: named apart from the answers' own `Needs`, which a member of the base would hide.
     internal static CoursePreconditions ReadOn(CourseFacts facts, CoolingEntry? cooling = null) =>
         new(facts.Head.Revision, [.. facts.Head.Words.Select(word => word.Id)], facts.Head.QuestStatus, cooling, facts.Standing?.Phase);
 
@@ -476,25 +474,25 @@ public static class CourseDecision
 
     internal static CourseWords Ids(IEnumerable<CourseWord> words) => All(words);
 
-    // The walk's settled selection, on the agent the walk took where it took another (WALKAGENT1).
+    // The walk's settled selection, on the agent the walk took where it took another.
     internal static CourseWhere Settled(CourseFacts facts, HarnessSelection selection) =>
         new(CourseAccountSource.Settled, facts.Head.Role, facts.Head.Choice, selection.Profile, facts.Account?.Agent);
 
-    // The line's own account: kept for a resume's new part where it is a Daoris account, the walk's where it was the tool's own home
-    // (OWNSPACE1a, HarnessRoster.CarriedOnAsync).
+    // The line's own account: kept for a resume's new part where it is a Daoris account, the walk's where it is the tool's own home
+    // (HarnessRoster.CarriedOnAsync).
     internal static CourseWhere OwnOrWalk(CourseFacts facts) =>
         facts.Head.Profile is { } own
             ? new CourseWhere(CourseAccountSource.Own, facts.Head.Role, facts.Head.Choice, own)
             : new CourseWhere(CourseAccountSource.Settled, facts.Head.Role, facts.Head.Choice);
 
     // A fresh part the person pressed for, or one whose own conversation is lost, takes its own account where ready; one the person picked
-    // takes it as the one account and keeps the pick (PICKCARRY1).
+    // takes it as the one account and keeps the pick.
     internal static CourseWhere OwnOrPick(CourseFacts facts) =>
         facts.Account?.Picked == true
             ? new CourseWhere(CourseAccountSource.Pick, facts.Head.Role, facts.Head.Choice, facts.Head.Profile, Kept: true)
             : OwnOrWalk(facts);
 
-    // The role's later choice on another agent (LIMITGOON2), never for an agent's pick (LimitMove.cs:576).
+    // The role's later choice on another agent, never for an agent's pick (LimitMove.cs:576).
     internal static CourseWhere? Later(CourseFacts facts) =>
         facts.Head.Choice != "pick" && facts.Account?.Later is { } later
             ? new CourseWhere(CourseAccountSource.Settled, facts.Head.Role, later.Choice, later.Account, later.Agent)

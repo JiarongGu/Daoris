@@ -8,9 +8,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// HELPSTART1 (D89's note): <c>START_HELP</c> answers once Ask Daoris's conversation is placed, its record open, and the room is
+/// <c>START_HELP</c> answers once Ask Daoris's conversation is placed, its record open, and the room is
 /// read and its agent spawned after, off the request; the person's words said to it meanwhile wait for it as its queue, opening.
-/// On a loaded machine the room's session look took 24.9 s and the page stopped waiting at 30 s (SENDLOST1), its words lost. The
+/// On a loaded machine the room's session look took 24.9 s and the page stopped waiting at 30 s, its words lost. The
 /// room's reading is held here by the loop's <c>DescribeHelp</c>, the seam the module hands it; the runner's adapter spawns
 /// nothing, so the conversation ends <c>failed</c> at its spawn, which is said in it, its words kept there as the person's.
 /// </summary>
@@ -65,7 +65,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// HELPSTART1b: starting from an earlier conversation answers as <c>START_HELP</c> does, the new conversation placed with its
+    /// Starting from an earlier conversation answers as <c>START_HELP</c> does, the new conversation placed with its
     /// record open, while the room's reading is held; the earlier one's words are kept for it, and once the room is read it starts.
     /// </summary>
     [Fact]
@@ -94,11 +94,11 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 ASKSCOPE1a (D158's ASKSCOPE1 note, points 1 and 3): the press names the workspace its window is on, captured there.
+    /// The press names the workspace its window is on, captured there.
     /// Two workspaces' presses each place their own conversation, the other's still starting, and a second press in one is
-    /// handed that one's; each answer names its workspace, so a late one is known for the workspace it was asked in. Since
-    /// ASKSCOPE1b each starts in its own workspace's room folder, written for that workspace, each reaching its own spawn; none
-    /// named is <c>default</c>'s, sends none and starts in <c>help</c>, as before.
+    /// handed that one's; each answer names its workspace, so a late one is known for the workspace that asked it. Each
+    /// starts in its own workspace's room folder, written for that workspace, each reaching its own spawn; none
+    /// named is <c>default</c>'s, sends none and starts in <c>help</c>.
     /// </summary>
     [Fact]
     public async Task Each_workspace_s_press_places_its_own_conversation_and_a_second_is_handed_its_own()
@@ -133,7 +133,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         await UntilAsync(() => Raised.Count(m => m.Type == "SESSION_ENDED") == 3);
         Assert.All(new[] { "h1", "h2", "h3" }, id => Assert.Contains("this test spawns nothing", service.Note(id)));
         Assert.True(File.Exists(Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md")));
-        // ASKSCOPE1b: each workspace's room in its own folder, saying its workspace; `default`'s is `help`, saying none.
+        // Each workspace's room in its own folder, saying its workspace; `default`'s is `help`, saying none.
         Assert.All(new[] { "alpha", "beta" }, workspace => Assert.Contains(
             $"This conversation is workspace `{workspace}`'s", File.ReadAllText(Path.Combine(HelpRoom.PathOf(loop.Home, workspace), "AGENTS.md"))));
         Assert.DoesNotContain("This conversation is workspace", File.ReadAllText(Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md")));
@@ -159,7 +159,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Starting from an earlier conversation is placed in the workspace its press names (ASKSCOPE1a), as <c>START_HELP</c> is,
+    /// Starting from an earlier conversation is placed in the workspace its press names, as <c>START_HELP</c> is,
     /// whatever workspace the earlier one was in.
     /// </summary>
     [Fact]
@@ -198,7 +198,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PARALLEL1a's proof through the module (D181 point 1): the press reads the facts the judges keep as last judged, so Ask Daoris
+    /// Through the module: the press reads the facts the judges keep as last judged, so Ask Daoris
     /// starts at once while one repository's line never answers. Its room says that repository not read yet and the other's line,
     /// its conversation says first that some of the machine is not read yet, and the start's path starts no git.
     /// </summary>
@@ -212,8 +212,8 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
             [{"repository":"engine","workspace":"default","adopted":true,"root":"{{Root("engine")}}"},
              {"repository":"site","workspace":"default","adopted":true,"root":"{{Root("site")}}"}]
             """;
-        // The lines' judge stands in for git: engine's checkout says `main`, site's never answers, and is never cut off at a bound
-        // (TESTCLOCK3): a start that waited for its line would never end, where at the rules' 30 s it ended late.
+        // The lines' judge stands in for git: engine's checkout says `main`, site's never answers, and is never cut off at a bound:
+        // a start that waited for its line would never end, where at the rules' 30 s it ended late.
         var never = HelpFacts.LinesRules with { Bound = Timeout.InfiniteTimeSpan };
         loop.Facts.Topic(HelpFacts.Lines, never, (repository, _) => repository == "site"
             ? new TaskCompletionSource<object?>().Task
@@ -241,7 +241,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// HELPNEWCHAT1 (the owner's report, 2026-10-24): on the install the room's session look and its trees took 7 to 15 s against
+    /// On the install the room's session look and its trees took 7 to 15 s against
     /// their 500 ms bound. A new conversation never waits on either: with both never answering, or both failing, the press answers
     /// at once and the conversation starts, on the room as the machine's facts hold it.
     /// </summary>
@@ -268,9 +268,9 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The room's sessions are the facts' judgement of them (PARALLEL1a), which reads the look this shell took a moment ago, the
+    /// The room's sessions are the facts' judgement of them, which reads the look this shell took a moment ago, the
     /// Sessions list's, rather than read the service again, and says so in its log line; where the one kept is older than the span
-    /// it takes a fresh one, and keeps that in turn. Since FACTSPLIT1b what is kept is the look without its trees, which each
+    /// it takes a fresh one, and keeps that in turn. What is kept is the look without its trees, which each
     /// repository's part judges with git, saying its own time; neither the look nor a part whose tree is gone starts git.
     /// </summary>
     [Fact]
@@ -307,7 +307,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         // The kept look's trees are none of the room's: its part judged the tree gone, so nothing waits to review.
         Assert.Equal(0, read.Sessions.Review);
         Assert.Contains(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":true"));
-        // FACTSPLIT1b: a part that walked a tree says its own time and how many; HELPNEWCHAT1: a gone tree is asked, holding nothing,
+        // A part that walked a tree says its own time and how many; a gone tree is asked, holding nothing,
         // and never walked, so this part says no walk at all.
         Assert.DoesNotContain(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"treesMs\":")
             && !line.Contains("recordsMs"));
@@ -317,7 +317,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         var fresh = await loop.DescribeHelp!(CancellationToken.None);
 
         Assert.DoesNotContain(fresh!.Sessions!.Listed, each => each.Id == ended.Id);
-        // HELPROOM1: a fresh look says where its time went; a kept one took no steps and says none. The look judges no tree itself.
+        // A fresh look says where its time went; a kept one took no steps and says none. The look judges no tree itself.
         Assert.Contains(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":false")
             && line.Contains("\"recordsMs\":") && line.Contains("\"questsMs\":") && line.Contains("\"verdictsMs\":")
             && line.Contains("\"marksMs\":") && line.Contains("\"waitingMs\":") && line.Contains("\"treesMs\":") && line.Contains("\"trees\":0"));
@@ -365,7 +365,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
         public int Opened { get; private set; }
 
-        /// <summary>The workspace each open named in its body, in order: null where it named none (ASKSCOPE1a).</summary>
+        /// <summary>The workspace each open named in its body, in order: null where it named none.</summary>
         public List<string?> Asked { get; } = [];
 
         /// <summary>What <c>/api/registry</c> answers: none registered unless a test says otherwise.</summary>
@@ -425,7 +425,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
                         return (HttpStatusCode.OK, "[]");
                     case ("POST", "/api/sessions/help"):
                     {
-                        // One running per workspace, as the ledger holds it (ASKSCOPE1a); none named is `default`'s.
+                        // One running per workspace, as the ledger holds it; none named is `default`'s.
                         var named = JsonNode.Parse(body)!["workspace"]?.GetValue<string>();
                         Asked.Add(named);
                         var workspace = named ?? "default";

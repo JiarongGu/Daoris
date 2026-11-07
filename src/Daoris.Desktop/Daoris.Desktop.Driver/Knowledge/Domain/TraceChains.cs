@@ -3,7 +3,7 @@ using static Daoris.Driver.TraceLookups;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The chain, read from the stores' facts (TRACE1b): each link from the store that keeps it, a link nothing keeps with why, and
+/// The chain, read from the stores' facts: each link from the store that keeps it, a link nothing keeps with why, and
 /// what stood at each start by the moments kept. Both doors word what this returns.
 /// </summary>
 internal static class TraceChains
@@ -76,10 +76,10 @@ internal static class TraceChains
         return new TraceChain(found.Kind, found.Id) { Found = found.Found, Unread = unread, Links = links };
     }
 
-    /// <summary>A tree's last segment: the name Daoris gave it (D51 §2), never the path, which is machine-local.</summary>
+    /// <summary>A tree's last segment: the name Daoris gave it, never the path, which is machine-local.</summary>
     internal static string? FolderOf(string? tree) => TraceLookups.FolderOf(tree);
 
-    /// <summary>The ask, from its door: the person's words verbatim with how and when each was given, and its go-aheads.</summary>
+    /// <summary>The ask, from its door: the person's words verbatim with how and when each is given, and its go-aheads.</summary>
     private static TraceAskLink Ask(TraceAskRead read, TraceNamedBy namedBy, TraceFacts facts)
     {
         if (read.Unread is { } why) return new TraceAskLink(read.Id) { Missing = TraceLinkGaps.Unread, Problem = why, NamedBy = namedBy };

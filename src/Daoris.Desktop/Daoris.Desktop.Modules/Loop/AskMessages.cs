@@ -12,7 +12,7 @@ namespace Daoris.Desktop;
 public sealed record AskChannel(string Ask, string Workspace, bool Teammate, ChannelView View);
 
 /// <summary>
-/// <i>Messages</i> judged (NOTIFY2g, D196 points 6 and 7; the notification design §2.4, §2.5, §5): the <c>messages</c> partition of the
+/// <i>Messages</i> judged: the <c>messages</c> partition of the
 /// <c>notices</c> slice, one entry per ask, and each urgent message to everyone said once as it arrives.
 /// </summary>
 /// <remarks>
@@ -20,14 +20,14 @@ public sealed record AskChannel(string Ask, string Workspace, bool Teammate, Cha
 /// which passes over the person's own posts and Daoris's lines. <c>newest</c> is the newest message an agent or a teammate wrote, read
 /// or not, never the person's own nor a line: its first line, who wrote it, its level and whether it is to everyone.</para>
 ///
-/// <para><b>A watermark per ask</b> (§5): the messages of an ask its last judgement saw, by id, so one mirrored late with an older moment
+/// <para><b>A watermark per ask</b>: the messages of an ask its last judgement saw, by id, so one mirrored late with an older moment
 /// is still new. An ask's first judgement records what it holds and says nothing, whether it was there at the start or came after, so a
 /// restart repeats nothing and an ask is never a backlog. Each later judgement says each message past it that is urgent, to everyone,
 /// and an agent's or a teammate's, then moves it; an urgent one followed by an ordinary one before the next judgement is still said, and
-/// a judgement that sees nothing new says nothing. A message from before D188's levels reads as ordinary. An ask no longer listed is
+/// a judgement that sees nothing new says nothing. A message with no level reads as ordinary. An ask no longer listed is
 /// forgotten.</para>
 ///
-/// <para><b>Never the desktop.</b> An arrival is the page's toast alone (§5's table); nothing here reaches a system notification.</para>
+/// <para><b>Never the desktop.</b> An arrival is the page's toast alone; nothing here reaches a system notification.</para>
 /// </remarks>
 public sealed class AskMessages
 {
@@ -112,7 +112,7 @@ public sealed class AskMessages
     /// <summary>A message an agent or a teammate wrote: never the person's own on this machine, nor one of Daoris's lines.</summary>
     public static bool Theirs(ChannelItemView item) => item.IsMessage && (!item.Person || item.Origin is not null);
 
-    /// <summary>What is said as it arrives (§5): urgent, and to everyone. One from before the levels is ordinary.</summary>
+    /// <summary>What is said as it arrives: urgent, and to everyone. One from before the levels is ordinary.</summary>
     private static bool Said(ChannelItemView item) => item.Urgent == true && item.To is null;
 
     private static JsonObject Newest(ChannelItemView item)

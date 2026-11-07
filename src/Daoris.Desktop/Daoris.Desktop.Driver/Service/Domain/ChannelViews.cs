@@ -7,11 +7,11 @@ using Daoris.Contracts.Asks;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One item of an ask's channel (SESSONE2a, D167 point 6), as the service answers it: a message the person or one of the ask's
+/// One item of an ask's channel, as the service answers it: a message the person or one of the ask's
 /// sessions wrote, or one of Daoris's lines read from the ask's quests.
 /// </summary>
 /// <param name="Kind"><see cref="Message"/> or <see cref="Line"/>, as the wire spells it.</param>
-/// <param name="At">When it was posted, or when the quest reached the state its line says.</param>
+/// <param name="At">When it is posted, or when the quest reaches the state its line says.</param>
 public sealed record ChannelItemView(string Kind, DateTimeOffset At)
 {
     public const string Message = "message";
@@ -30,10 +30,10 @@ public sealed record ChannelItemView(string Kind, DateTimeOffset At)
     /// <summary>The poster's repository, for a session's message.</summary>
     public string? Repository { get; init; }
 
-    /// <summary>The poster's harness adapter, a name and never a model (D24), for a session's message.</summary>
+    /// <summary>The poster's harness adapter, a name and never a model, for a session's message.</summary>
     public string? Agent { get; init; }
 
-    /// <summary>The poster's entry (D167 point 2), for a session's message: whose line of work wrote it.</summary>
+    /// <summary>The poster's entry, for a session's message: whose line of work wrote it.</summary>
     public string? Entry { get; init; }
 
     /// <summary>The one repository a message is addressed to; null for everyone. A line's receiving repository.</summary>
@@ -45,21 +45,21 @@ public sealed record ChannelItemView(string Kind, DateTimeOffset At)
     /// <summary>Whether its poster marked it a question.</summary>
     public bool Question { get; init; }
 
-    /// <summary>Whether it is a question no message answers yet (SESSONE2c): the page marks it, as the terminal does.</summary>
+    /// <summary>Whether it is a question no message answers yet: the page marks it, as the terminal does.</summary>
     public bool Open { get; init; }
 
     /// <summary>A message's words as written.</summary>
     public string? Text { get; init; }
 
     /// <summary>
-    /// The teammate's machine a message came from, where not this one (SESSONE2d); null for this machine's own. What tells the person's
-    /// own words from a teammate's (NOTIFY2g), both <see cref="Person"/>.
+    /// The teammate's machine a message came from, where not this one; null for this machine's own. What tells the person's
+    /// own words from a teammate's, both <see cref="Person"/>.
     /// </summary>
     public string? Origin { get; init; }
 
     /// <summary>
     /// Whether this machine's person wrote it, so a part takes it as their words. A teammate's person's message, posted to an ask held
-    /// here from their machine (SESSONE2i), is a claim, as an agent's is.
+    /// here from their machine, is a claim, as an agent's is.
     /// </summary>
     public bool ByThisPerson => Person && Origin is null;
 
@@ -76,42 +76,42 @@ public sealed record ChannelItemView(string Kind, DateTimeOffset At)
     public string? From { get; init; }
 
     /// <summary>
-    /// A message's level (COWORK1d, D188 point 2): true urgent, false ordinary; null on one from before, which keeps its old reach,
+    /// A message's level: true urgent, false ordinary; null on one that names none, which reaches
     /// the next step where the door takes words then. Null never means ordinary.
     /// </summary>
     public bool? Urgent { get; init; }
 
     /// <summary>
-    /// The reading entry's acknowledgment of a message by its id (COWORK1d, the design §6; <see cref="ChannelAcks"/>), or null where it
+    /// The reading entry's acknowledgment of a message by its id (<see cref="ChannelAcks"/>), or null where it
     /// holds none: what decides whether a part of the entry is handed it.
     /// </summary>
     public string? Ack { get; init; }
 
-    /// <summary>The part's session that wrote <see cref="Ack"/>, where one did.</summary>
+    /// <summary>The part's session that wrote <see cref="Ack"/>, where one does.</summary>
     public string? AckSession { get; init; }
 
     /// <summary>
-    /// For the person's read (COWORK1d, the design §8.4): what the message reached in each repository it addresses, as the service
-    /// judged it; null for an entry's read, a line, and a host from before.
+    /// For the person's read: what the message reached in each repository it addresses, as the service
+    /// judges it; null for an entry's read, a line, and an older host.
     /// </summary>
     public IReadOnlyList<ChannelReceiptView>? Receipts { get; init; }
 
     /// <summary>
-    /// The part a message is to alone (COMMS1k, the comms design §4.4), a session whose line's head takes it; null for a message to a
+    /// The part a message is to alone, a session whose line's head takes it; null for a message to a
     /// repository or to everyone.
     /// </summary>
     public string? Part { get; init; }
 
     /// <summary>
-    /// The origin whose channel a message is kept on where it is kept apart from an ask's channel (COMMS1k): <c>ask:&lt;id&gt;</c> for one
+    /// The origin whose channel a message is kept on where it is kept apart from an ask's channel: <c>ask:&lt;id&gt;</c> for one
     /// to a part, <c>session:&lt;id&gt;</c> or <c>quest:&lt;id&gt;</c> for a line's own; null for an ask's message.
     /// </summary>
     public string? Channel { get; init; }
 
-    /// <summary>For the person's read (COMMS1k): what a message to one part reached in that part's line, as the service spells it.</summary>
+    /// <summary>For the person's read: what a message to one part reached in that part's line, as the service spells it.</summary>
     public string? Receipt { get; init; }
 
-    /// <summary>Whether an agent outside Daoris posted it, a channel's member (CHANNELJOIN1): an agent's claim, never the person's.</summary>
+    /// <summary>Whether an agent outside Daoris posts it, a channel's member: an agent's claim, never the person's.</summary>
     public bool Outside { get; init; }
 
     /// <summary>A message with words: what reaches a session. A line, or a message the wire answered without words, is not.</summary>
@@ -119,22 +119,22 @@ public sealed record ChannelItemView(string Kind, DateTimeOffset At)
 }
 
 /// <summary>
-/// What a message reached in one repository it addresses (COWORK1d): <c>waiting</c>, <c>held</c>, <c>sent</c>, <c>taken</c>, <c>read</c>,
+/// What a message reached in one repository it addresses: <c>waiting</c>, <c>held</c>, <c>sent</c>, <c>taken</c>, <c>read</c>,
 /// <c>partly</c>, <c>answered</c> or <c>not-reached</c>, as the service spells it; the page words it.
 /// </summary>
 public sealed record ChannelReceiptView(string Repository, string State);
 
-/// <summary>An ask's channel as one entry reads it (SESSONE2a's <c>GET /api/asks/{id}/channel?entry=</c>), which moves no mark.</summary>
+/// <summary>An ask's channel as one entry reads it (<c>GET /api/asks/{id}/channel?entry=</c>), which moves no mark.</summary>
 /// <param name="Ask">The ask's id.</param>
-/// <param name="Entry">The entry it was read for: the key whose mark <paramref name="Mark"/> is.</param>
+/// <param name="Entry">The entry it is read for: the key whose mark <paramref name="Mark"/> is.</param>
 /// <param name="Items">Every item, or those after the read's <c>since</c>, in time order.</param>
 /// <param name="Unread">How many items are after the entry's mark.</param>
 /// <param name="Mark">The moment the entry has read up to; null when it never has.</param>
 public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<ChannelItemView> Items, int Unread, DateTimeOffset? Mark)
 {
     /// <summary>
-    /// For the person's read (COMMS1k): the messages to one part each, oldest first, with their receipts; never among
-    /// <see cref="Items"/>. Empty for an entry's read and from a host before them.
+    /// For the person's read: the messages to one part each, oldest first, with their receipts; never among
+    /// <see cref="Items"/>. Empty for an entry's read and from an older host.
     /// </summary>
     public IReadOnlyList<ChannelItemView> Addressed { get; init; } = [];
 
@@ -201,7 +201,7 @@ public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<Channel
 }
 
 /// <summary>
-/// The person's post as the service answered it (SESSONE2c): the message kept, or the code that refused it (<c>empty</c>,
+/// The person's post as the service answers it: the message kept, or the code that refused it (<c>empty</c>,
 /// <c>too-long</c>, <c>bad-to</c>, <c>bad-re</c>, <c>not-found</c>), a word each door says in the reader's language.
 /// </summary>
 public sealed record ChannelPosted(bool Ok, ChannelItemView? Message, string? Code);

@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Daoris.Driver;
 
-/// <summary>One part's lineage as a read found it (COWORKVIEW1a, rule 9): no file, read, or unreadable with its kind.</summary>
+/// <summary>One part's lineage as a read found it: no file, read, or unreadable with its kind.</summary>
 public sealed record LineageReading(string Outcome, ChildBindings Bindings)
 {
     public const string Found = "read";
@@ -25,7 +25,7 @@ public sealed record LineageReading(string Outcome, ChildBindings Bindings)
     public static LineageReading Failed(string error) => new(Unreadable, ChildBindings.Fold([])) { Error = error };
 }
 
-/// <summary>A record's fields the read takes from the sessions slice (the design §4.1): never its note, ran or updated.</summary>
+/// <summary>A record's fields the read takes from the sessions slice: never its note, ran or updated.</summary>
 public sealed record AtWorkRecord(string Id, string? State)
 {
     public string? Adapter { get; init; }
@@ -33,7 +33,7 @@ public sealed record AtWorkRecord(string Id, string? State)
     /// <summary>The record's kind, <see cref="ChildBindings.Chat"/> or driven, which the fold reads its history by.</summary>
     public string? Kind { get; init; }
 
-    /// <summary>The quest a chat took through its own connector, its <c>quest</c> staying null (COWORKVIEW1b-i).</summary>
+    /// <summary>The quest a chat took through its own connector, its <c>quest</c> staying null.</summary>
     public string? TookQuest { get; init; }
 
     public string? Repository { get; init; }
@@ -48,7 +48,7 @@ public readonly record struct SliceHealth(bool Judged, string? Failing = null);
 public sealed record AtWorkWhy(string Why);
 
 /// <summary>
-/// What the composition answers (the design §3.8, <c>AtWorkHeld</c> less its number): pending with what it waits on, failed with an
+/// What the composition answers (<c>AtWorkHeld</c> less its number): pending with what it waits on, failed with an
 /// input slice's words, or the answer, stale where a slice judged once is failing now.
 /// </summary>
 public sealed record AtWorkHeld
@@ -68,11 +68,11 @@ public sealed record AtWorkHeld
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public AtWorkWhy? Stale { get; init; }
 
-    /// <summary>An ask's answer (COWORKVIEW1d): a branch of its own, with no attended part, beside the session's <see cref="Answer"/>.</summary>
+    /// <summary>An ask's answer: a branch of its own, with no attended part, beside the session's <see cref="Answer"/>.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public AtWorkAskAnswer? AskAnswer { get; init; }
 
-    /// <summary>What the composition read, each input with the version it read (the design §4.1): kept beside it, never sent.</summary>
+    /// <summary>What the composition read, each input with the version it read: kept beside it, never sent.</summary>
     [JsonIgnore]
     public object? Dependencies { get; init; }
 }
@@ -85,7 +85,7 @@ public sealed record AtWorkAnswer(AtWorkOf Of, string Attended, IReadOnlyList<At
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, int>? MoreParts { get; init; }
 
-    /// <summary>Ended parts that wait on nothing, past the newest three, which the list leaves out (COWORKVIEW1b-i).</summary>
+    /// <summary>Ended parts that wait on nothing, past the newest three, which the list leaves out.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? Earlier { get; init; }
 
@@ -93,7 +93,7 @@ public sealed record AtWorkAnswer(AtWorkOf Of, string Attended, IReadOnlyList<At
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? Published { get; init; }
 
-    /// <summary>The quests the entry's parts asked that opened no part of it, a chain's steps after each (COWORKVIEW1b-ii); null where none.</summary>
+    /// <summary>The quests the entry's parts asked that opened no part of it, a chain's steps after each; null where none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<AtWorkAskedQuest>? Quests { get; init; }
 
@@ -106,7 +106,7 @@ public sealed record AtWorkAnswer(AtWorkOf Of, string Attended, IReadOnlyList<At
     public AtWorkAsker? AskedBy { get; init; }
 
     /// <summary>
-    /// The attended line's requests (COMMS1i): those that hold are its <i>Waiting on</i>, the head's and this view's one line; its helpers,
+    /// The attended line's requests: those that hold are its <i>Waiting on</i>, the head's and this view's one line; its helpers,
     /// partners and successors are its co-workers. Null where it asked none, and where the exchanges half is not read.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -117,8 +117,8 @@ public sealed record AtWorkAnswer(AtWorkOf Of, string Attended, IReadOnlyList<At
     public IReadOnlyList<string>? Unread { get; init; }
 
     /// <summary>
-    /// Where the attended part's newest generation started at least two subagents and the repository's routing standing is not open
-    /// (COWORKVIEW1e-iii, the design §6.4 point 3): <c>not-driven</c>, <c>no-lanes</c> or <c>one-at-a-time</c>.
+    /// Where the attended part's newest generation started at least two subagents and the repository's routing standing is not open:
+    /// <c>not-driven</c>, <c>no-lanes</c> or <c>one-at-a-time</c>.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Hint { get; init; }
@@ -142,7 +142,7 @@ public sealed record AtWorkPart(string Key, AtWorkCounts Children)
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? Number { get; init; }
 
-    /// <summary>What it waits on, as the strip places it (COWORKVIEW1b-i); null where it waits on nothing.</summary>
+    /// <summary>What it waits on, as the strip places it; null where it waits on nothing.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public AtWorkWait? Waits { get; init; }
 
@@ -176,7 +176,7 @@ public sealed record AtWorkCounts
     public bool? Elsewhere { get; init; }
 }
 
-/// <summary>The attended part's subagents (the design §3.8, <c>AtWorkSubagents</c>).</summary>
+/// <summary>The attended part's subagents (<c>AtWorkSubagents</c>).</summary>
 public sealed record AtWorkSubagents(string Read, int Working, IReadOnlyList<AtWorkChild> Children)
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -212,7 +212,7 @@ public sealed record AtWorkLabel(string Text)
     public bool Claim => true;
 }
 
-/// <summary>One child's row: its latest run's state and moments (the design §3.8, <c>AtWorkChild</c>).</summary>
+/// <summary>One child's row: its latest run's state and moments (<c>AtWorkChild</c>).</summary>
 public sealed record AtWorkChild(string Key, string State, bool StartSaid)
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -238,13 +238,13 @@ public sealed record AtWorkChild(string Key, string State, bool StartSaid)
 }
 
 /// <summary>
-/// Who is at work on a session (COWORKVIEW1a, the design §3.8 and §4.1): the one function the window's read and the terminal's verb
+/// Who is at work on a session: the one function the window's read and the terminal's verb
 /// share. Its inputs are plain values (the entry's parts, each record's read fields, each part's lineage reading with this window's
 /// token readings already in it, and the two input slices' health), so it reads nothing itself and asks no service.
 /// </summary>
 public static class AtWork
 {
-    /// <summary>At most this many rows a list (the design §4.1, <i>the bound</i>).</summary>
+    /// <summary>At most this many rows a list.</summary>
     public const int Bound = 40;
 
     /// <summary>Pending: the groups or sessions slice has not judged.</summary>
@@ -262,7 +262,7 @@ public static class AtWork
     /// <param name="entry">Its entry's parts in the strip's order; null where it is in no entry, an ended intake's among them.</param>
     /// <param name="record">A record's read fields as the sessions slice holds them; null where it holds none.</param>
     /// <param name="lineage">A part's lineage reading; never asked for a teammate's part.</param>
-    /// <param name="routing">The routing half's inputs (COWORKVIEW1b-i); null reads none of it, and no part is folded.</param>
+    /// <param name="routing">The routing half's inputs; null reads none of it, and no part is folded.</param>
     public static AtWorkHeld Compose(
         string session, IReadOnlyList<string>? entry, Func<string, AtWorkRecord?> record, Func<AtWorkRecord, LineageReading> lineage,
         SliceHealth groups, SliceHealth sessions, AtWorkRouting? routing = null)
@@ -325,7 +325,7 @@ public static class AtWork
                 MoreQuests = asked?.More is > 0 and var more ? more : null,
                 AskedBy = asked?.By,
                 Hint = Hint(routing, attended, Teammate(session) ? null : attendedReading),
-                // A quest waited on is worded with its lanes, as the strip words it (COMMS1i).
+                // A quest waited on is worded with its lanes, as the strip words it.
                 Exchanges = exchanges is { Rows.Count: > 0 }
                     ? [.. exchanges.Rows.Select(each => each.Id.StartsWith("quest:", StringComparison.Ordinal)
                         ? each with { Lanes = routing!.Quest(each.Id["quest:".Length..])?.LaneList }
@@ -338,7 +338,7 @@ public static class AtWork
     }
 
     /// <summary>
-    /// The routing half over one composition (COWORKVIEW1b-i): the waits the strip places, which ended parts fold, and what each part
+    /// The routing half over one composition: the waits the strip places, which ended parts fold, and what each part
     /// gains. The parts are numbered and judged in the strip's order, whichever the answer lists first.
     /// </summary>
     private sealed class Routed
@@ -434,7 +434,7 @@ public static class AtWork
     }
 
     /// <summary>
-    /// The rows within the bound (the design §4.1): the open runs, then the not known, then the lost and those whose agent ended, then the
+    /// The rows within the bound: the open runs, then the not known, then the lost and those whose agent ended, then the
     /// newest three of the rest, each only with its whole chain of ancestors among the children where that chain fits; the rest of the
     /// ended folded, and every candidate passed over for want of room counted by its state.
     /// </summary>
@@ -523,7 +523,7 @@ public static class AtWork
         LastSeen = child.LastSeen,
     };
 
-    /// <summary>The last moment a child was known at: its end, else its last line, else its start.</summary>
+    /// <summary>The last moment a child is known at: its end, else its last line, else its start.</summary>
     private static DateTimeOffset? Seen(ChildBinding child) => child.EndedAt ?? child.LastSeen ?? child.Since;
 
     /// <summary>Newest first by <paramref name="moment"/>, a tie to the newest start, then to the id.</summary>

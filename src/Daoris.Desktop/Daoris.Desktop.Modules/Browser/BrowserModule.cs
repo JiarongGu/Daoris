@@ -5,9 +5,9 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Daoris's browser, as a Settings domain (CHR5, CHR7, D50): its favorites, which it shows in a
+/// Daoris's browser, as a Settings domain: its favorites, which it shows in a
 /// <i>Daoris</i> folder on its bookmarks bar, whether other software's Chrome extensions are offered
-/// or refused, which browser it is (BRW12), and where the page's links open (BRW7). The page asks,
+/// or refused, which browser it is, and where the page's links open. The page asks,
 /// this edits <c>favorites.json</c> and <c>settings.json</c> under the home: the same files
 /// <c>daoris browser</c> edits and <c>daoris-browser</c> reads each time it starts.
 /// </summary>
@@ -16,10 +16,10 @@ namespace Daoris.Desktop;
 /// the browser the next time it starts, which the page says. The links setting is the page's own, read
 /// back from this answer, so it holds at once.</para>
 ///
-/// <para><b>Shell-only, like every machine domain</b> (D47 §4): the service has no door onto these
+/// <para><b>Shell-only, like every machine domain</b>: the service has no door onto these
 /// files, and a browser over a keyed remote learns nothing of them.</para>
 ///
-/// <para><b>Each change is one method</b> (HELP10) that its route and Ask Daoris's door both call, so the
+/// <para><b>Each change is one method</b> that its route and Ask Daoris's door both call, so the
 /// two cannot drift: the same check, the same refusal for a file it could not read, the same write.</para>
 /// </remarks>
 [WindowModule]
@@ -71,7 +71,7 @@ public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
                 SetBrowser(home, PayloadHelper.GetRequiredValue<string>(request.Payload, "browser"));
                 return Task.FromResult<object?>(State(home));
 
-            // Where the page's links open (BRW7): the page reads the answer back and routes each click
+            // Where the page's links open: the page reads the answer back and routes each click
             // by it, so this one holds at once rather than at the browser's next start.
             case "SET_LINKS":
                 SetLinks(home, PayloadHelper.GetRequiredValue<string>(request.Payload, "links"));
@@ -82,38 +82,38 @@ public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
         }
     }
 
-    /// <summary>Keep a page: <c>ADD_FAVORITE</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
+    /// <summary>Keep a page: <c>ADD_FAVORITE</c>'s check and write, and Ask Daoris's door's.</summary>
     public static void AddFavorite(string home, string address, string? title)
     {
         Refused(() => BrowserFavorites.Add(home, address, title));
     }
 
-    /// <summary>Stop keeping a page: <c>REMOVE_FAVORITE</c>'s write, and Ask Daoris's door's (HELP10).</summary>
+    /// <summary>Stop keeping a page: <c>REMOVE_FAVORITE</c>'s write, and Ask Daoris's door's.</summary>
     public static void RemoveFavorite(string home, string address)
     {
         Refused(() => BrowserFavorites.Remove(home, address));
     }
 
-    /// <summary>Offer or refuse other software's extensions: <c>SET_EXTENSIONS</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
+    /// <summary>Offer or refuse other software's extensions: <c>SET_EXTENSIONS</c>'s check and write, and Ask Daoris's door's.</summary>
     public static void SetExtensions(string home, string extensions)
     {
         Refused(() => BrowserSettings.SetExtensions(home, extensions));
     }
 
-    /// <summary>Choose the browser (BRW12): <c>SET_BROWSER</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
+    /// <summary>Choose the browser: <c>SET_BROWSER</c>'s check and write, and Ask Daoris's door's.</summary>
     public static void SetBrowser(string home, string browser)
     {
         Refused(() => BrowserSettings.SetBrowser(home, browser));
     }
 
-    /// <summary>Choose where the page's links open (BRW7): <c>SET_LINKS</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
+    /// <summary>Choose where the page's links open: <c>SET_LINKS</c>'s check and write, and Ask Daoris's door's.</summary>
     public static void SetLinks(string home, string links)
     {
         Refused(() => BrowserSettings.SetLinks(home, links));
     }
 
     /// <summary>
-    /// What Ask Daoris judges a browser proposal by (HELP10): the two files as <c>STATE</c> reads them, why either could
+    /// What Ask Daoris judges a browser proposal by: the two files as <c>STATE</c> reads them, why either could
     /// not be read, and whether an Edge is installed.
     /// </summary>
     public static HelpBrowserFacts HelpFacts(string home)

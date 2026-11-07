@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// <para><b>It reads, and it advises</b>: handed the knowledge connector on either door, the room's allow-list and the person's denies,
 /// and none of the plugins' servers, since a browser brought up for a tool it is not allowed would be a window for nothing.</para>
 ///
-/// <para><b>Its tools load with the first request</b>, as every session's do, so the first answer is not a search for the tools it was
+/// <para><b>Its tools load with the first request</b>, as every session's do, so the first answer is not a search for the tools it is
 /// handed.</para>
 ///
 /// <para><b>One at a time in each workspace</b>: the ledger refuses a second while one runs, naming it, and the caller hands the person the
@@ -18,9 +18,8 @@ namespace Daoris.Driver;
 internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
 {
     /// <summary>
-    /// How long a start waits for the machine's reading before the room as last written serves. The reading once walked git across every
-    /// tree and repository and, on a loaded machine, did not answer for minutes while the conversation sat at <c>queued</c>; it is now the
-    /// facts as last judged, which answer at once, so this bounds only a home whose facts were never judged and with no room written.
+    /// How long a start waits for the machine's reading before the room as last written serves. The room reads the facts as last judged, which answer at once,
+    /// so this bounds only a home whose facts were never judged and with no room written.
     /// </summary>
     public static readonly TimeSpan DefaultReadBound = TimeSpan.FromSeconds(30);
 
@@ -49,7 +48,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
     /// waits for; <see cref="RunHelpAsync"/> reads the machine, writes the room and spawns the agent after.
     /// </summary>
     /// <param name="workspace">
-    /// The workspace the person's window was on at the press, captured there, so a window that moves meanwhile moves nothing here: its record
+    /// The workspace the person's window showed at the press, captured there, so a window that moves meanwhile moves nothing here: its record
     /// keeps it and its account is that workspace's. Null is a press that named none, which opens in <c>default</c>.
     /// </param>
     /// <param name="carries">
@@ -100,7 +99,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
     /// <summary>
     /// Run the conversation <see cref="PlaceHelpAsync"/> placed: the room written from the machine as the facts the judges keep say it, at
     /// once, then the agent spawned as any conversation's. A reading or a room that fails ends the record <c>failed</c> saying why, so a
-    /// conversation the person was handed says what became of it rather than waiting at <c>queued</c>. Where no fact was ever judged, the
+    /// conversation handed to the person says what became of it rather than waiting at <c>queued</c>. Where no fact has ever been judged, the
     /// room as last written serves, said first in its conversation; with none written before, the first judgement is waited for within
     /// <see cref="ReadBound"/>, and past it the conversation ends <c>failed</c> saying so.
     /// </summary>
@@ -124,9 +123,9 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
             IReadOnlyList<HelpRead> reads;
             try
             {
-                // 🔴 The room is the facts the judges keep, as last judged, which answer at once: a reading of its own walked git across
-                // every tree and repository and, on a loaded machine, did not answer for minutes while this conversation sat at `queued`.
-                // Only a home whose facts were never judged waits, and only where no room was written before, within the bound; else it
+                // 🔴 The room is the facts the judges keep, as last judged, which answer at once; a reading of its own would walk git across
+                // every tree and repository and, on a loaded machine, not answer for minutes while this conversation sat at `queued`.
+                // Only a home whose facts were never judged waits, and only where no room has been written before, within the bound; else it
                 // starts on the room as last written, said first in its conversation; with none written and no answer in the bound, it
                 // ends below saying why.
                 var (read, late, waited) = await ReadAsync(machine, placed.Workspace, ct).ConfigureAwait(false);
@@ -274,7 +273,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
     /// The workspace whose room it is for: its room's being written decides the wait, and the reading left behind writes that room, from the
     /// machine projected to it. The reading answered is the whole machine's.
     /// </param>
-    /// <exception cref="OperationCanceledException"><paramref name="ct"/> was cancelled while it waited.</exception>
+    /// <exception cref="OperationCanceledException"><paramref name="ct"/> is cancelled while it waits.</exception>
     public async Task<(HelpMachine? Read, bool Late, bool Waited)> ReadAsync(
         Func<CancellationToken, Task<HelpMachine?>> machine, string? workspace, CancellationToken ct)
     {
@@ -327,7 +326,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
     private static int Seconds(TimeSpan bound) => Math.Max(1, (int)Math.Ceiling(bound.TotalSeconds));
 
     /// <summary>
-    /// The line a conversation is told first where it starts on the room as last written: the machine was not read within the bound, and
+    /// The line a conversation is told first where it starts on the room as last written: the machine is not read within the bound, and
     /// checkouts outside the room are not read until the next conversation.
     /// </summary>
     public static Noted AsWritten(TimeSpan bound) => Noted.Of(
@@ -338,7 +337,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
 
     /// <summary>
     /// The line a conversation is told first where it starts on facts that leave a part of the machine not read yet, or on the room as last
-    /// written before any was judged: it started at once, and its room says what is not read yet.
+    /// written before any is judged: it starts at once, and its room says what is not read yet.
     /// </summary>
     public static Noted NotReadYet() => Noted.Of(
         PeerNoteCodes.HelpRoomNotReadYet,
@@ -346,7 +345,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
         + "again as each part is read.");
 
     /// <summary>
-    /// What a start says where the machine was not read within the bound and no room was ever written: nothing can serve, so it ends failed.
+    /// What a start says where the machine is not read within the bound and no room has ever been written: nothing can serve, so it ends failed.
     /// </summary>
     public static Noted NotRead(TimeSpan bound) => Noted.Of(
         PeerNoteCodes.HelpRoomUnread,

@@ -15,7 +15,7 @@ internal static class StandingConfirmationTests
         public StandingPlace Place(PipeClientProcess? client) => Answer;
     }
 
-    /// <summary>A walk that answers one thing for every act (STEWARDROLE1a-i): null admits; the walk itself is <c>PipeStandingTests</c>' and <c>HolderWalkTests</c>'.</summary>
+    /// <summary>A walk that answers one thing for every act: null admits; the walk itself is <c>PipeStandingTests</c>' and <c>HolderWalkTests</c>'.</summary>
     internal sealed class Walked(string? why = null) : IHolderWalk
     {
         public string? Why { get; set; } = why;

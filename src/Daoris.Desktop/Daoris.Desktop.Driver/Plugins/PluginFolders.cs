@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The home's plugin folders on this machine (STRUCT3a): what the catalogue reads, and how the placeholders a manifest
+/// The home's plugin folders on this machine: what the catalogue reads, and how the placeholders a manifest
 /// writes become this machine's paths. The module reads and writes the home only through here.
 /// </summary>
 internal static class PluginFolders
@@ -63,12 +63,12 @@ internal static class PluginFolders
         AtomicFile.WriteText(path, text);
     }
 
-    /// <summary>A file inside a staged copy, which moves whole; written beside and renamed all the same, as UTF-8 with no byte-order mark (DEDUP3a).</summary>
+    /// <summary>A file inside a staged copy, which moves whole; written beside and renamed all the same, as UTF-8 with no byte-order mark.</summary>
     public static void WriteFile(string path, string text) => AtomicFile.WriteText(path, text);
 
     /// <summary>
     /// Whether two folders hold the same files, byte for byte, by relative path, leaving out the install's own record of where it came
-    /// from (<see cref="PluginSource.FileName"/>), which an install writes and an offer never has (LANDPIN3).
+    /// from (<see cref="PluginSource.FileName"/>), which an install writes and an offer never has.
     /// </summary>
     public static bool SameFiles(string left, string right)
     {
@@ -80,13 +80,13 @@ internal static class PluginFolders
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // What cannot be read cannot be said the same: the copy is said as changed, and never replaced unread.
+            // What cannot be read cannot be said the same: the copy is said as changed, and never overwritten unread.
             return false;
         }
     }
 
     /// <summary>
-    /// A folder's files as one digest (LANDPIN3b): <c>sha256:</c> and the SHA-256, in lowercase hex, of a line per file in ordinal
+    /// A folder's files as one digest: <c>sha256:</c> and the SHA-256, in lowercase hex, of a line per file in ordinal
     /// order of its relative path, its own SHA-256 then the path (<c>sha256sum</c>'s shape), the install's record left out as
     /// <see cref="SameFiles"/> leaves it out. A file that cannot be read throws.
     /// </summary>
@@ -102,7 +102,7 @@ internal static class PluginFolders
         return "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(lines.ToString())));
     }
 
-    /// <summary>Whether a folder's files are still those a <see cref="Digest"/> was taken of; one that cannot be read is not.</summary>
+    /// <summary>Whether a folder's files are still those a <see cref="Digest"/> is taken of; one that cannot be read is not.</summary>
     public static bool HoldsDigest(string folder, string digest)
     {
         try
@@ -154,7 +154,7 @@ internal static class PluginFolders
         }
     }
 
-    /// <summary>When a folder was made, or null where it is not there or cannot be asked: an install and an update each make one whole (D103).</summary>
+    /// <summary>A folder's creation time, or null where it is not there or cannot be asked: an install and an update each make one whole.</summary>
     public static DateTimeOffset? MadeAt(string folder)
     {
         try

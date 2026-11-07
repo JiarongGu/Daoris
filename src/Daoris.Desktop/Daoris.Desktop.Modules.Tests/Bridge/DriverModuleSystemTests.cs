@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// This Daoris's read over the bridge (`SystemRoutes.cs`, WIRING1b, the this-Daoris design §6): the driver library's one
+/// This Daoris's read over the bridge (`SystemRoutes.cs`): the driver library's one
 /// reader as the window answers it, the window's own facts from its loop and supervisor, a null kept as a field, sizes
 /// measured only when asked, and no secret in the answer. The account's and the machine's variables are this test's own, so
 /// nothing of the machine running it is read.
@@ -87,7 +87,7 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
         Assert.Equal(Home, wiring.GetProperty("folder").GetProperty("path").GetString());
         // This loop's supervisor has neither started nor adopted a host.
         Assert.Equal("none", wiring.GetProperty("service").GetProperty("held").GetString());
-        // 🔴 A null survives the bridge as a field with its why, which the page reads (design §6): the bridge leaves a null out
+        // 🔴 A null survives the bridge as a field with its why, which the page reads: the bridge leaves a null out
         // of an object it serializes, so the answer is handed as the reader's own JSON.
         var bytes = wiring.GetProperty("folders").EnumerateArray().First(row => row.GetProperty("id").GetString() == "data")
             .GetProperty("bytes");
@@ -112,7 +112,7 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FABRIC-EVENT5b: a walk that started and a walk that ended each tell the windows <c>wiring</c>, in place of the page's 2 s read: a
+    /// A walk that started and a walk that ended each tell the windows <c>wiring</c>, in place of the page's 2 s read: a
     /// size lands once, as the walk's reading is kept, and the end is told after the walk has left the home, so the read that follows
     /// says it is no longer measuring. A measure asked while one is under way starts nothing and tells nothing more.
     /// </summary>
@@ -138,7 +138,7 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PROVED1 (the this-Daoris design §3.2): a host this window started and handed the person key proves it holds it on the
+    /// A host this window started and handed the person key proves it holds it on the
     /// readiness probe, and the window's answer says <c>proved: true</c>; one that answers no proof says <c>false</c>. The
     /// key itself is in no answer.
     /// </summary>
@@ -164,7 +164,7 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A stand-in for the HTTP host as PERSONDOOR1a reads its key: asked by the variable, it reads the key on its input's
+    /// A stand-in for the HTTP host as the person door reads its key: asked by the variable, it reads the key on its input's
     /// first line before it listens, answers <c>proof</c> for a <c>prove</c> nonce where <paramref name="proves"/>, and stops
     /// when its input ends.
     /// </summary>

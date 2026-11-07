@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The machine's wiring, as the page actually reaches it (D48 §5, D50).
+/// The machine's wiring, as the page actually reaches it.
 /// </summary>
 /// <remarks>
 /// This module holds the only credential anywhere in the desktop, so the tests that matter most here
@@ -67,7 +67,7 @@ public sealed class RemotesModuleTests : Bridge
     }
 
     /// <summary>
-    /// Half a pair is no remote in every loader (D48 §5), so writing one would put an entry in the
+    /// Half a pair is no remote in every loader, so writing one would put an entry in the
     /// file that silently does nothing. Refused at the door instead, with a sentence saying why.
     /// </summary>
     [Theory]
@@ -84,7 +84,7 @@ public sealed class RemotesModuleTests : Bridge
         Assert.False(File.Exists(RemotesPath), "a refused wiring still wrote the file");
     }
 
-    /// <summary>ONEWAY1u: an address with no http or https scheme is refused where it is typed, in the sentence <c>daoris remote add</c> gives.</summary>
+    /// <summary>An address with no http or https scheme is refused where it is typed, in the sentence <c>daoris remote add</c> gives.</summary>
     [Fact]
     public async Task An_address_with_no_scheme_is_refused_rather_than_written()
     {
@@ -120,8 +120,8 @@ public sealed class RemotesModuleTests : Bridge
     }
 
     /// <summary>
-    /// KEEPALL1e: the page's edit is made onto the file as it stands. Rebuilt from the remotes read, the map lost every key no reader
-    /// reads, and one that did not read was written over with the page's entry alone, every other circle's key gone.
+    /// The page's edit is made onto the file as it stands. Rebuilt from the remotes read, the map would lose every key no reader
+    /// reads, and one that does not read would be written over with the page's entry alone, every other circle's key gone.
     /// </summary>
     [Fact]
     public async Task Wiring_keeps_what_the_page_does_not_own_and_never_writes_over_a_torn_map()
@@ -154,7 +154,7 @@ public sealed class RemotesModuleTests : Bridge
     }
 
     /// <summary>
-    /// With the environment pair set, no loader reads the file (D48 §5) — so the surface must say which
+    /// With the environment pair set, no loader reads the file — so the surface must say which
     /// source decided. Otherwise it reports its own last edit as though it were the machine's wiring.
     /// </summary>
     [Fact]

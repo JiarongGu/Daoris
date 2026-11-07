@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the course's executors and the chat runner ask of a conversation's turns (CONV3b, CONV4a): the one dispatcher a word goes through, the
+/// What the course's executors and the chat runner ask of a conversation's turns: the one dispatcher a word goes through, the
 /// hold a hand-over or a limit takes while it moves a conversation, and the queue the page reads. Course declares it and the chat runner's
-/// <c>ChatTurns</c> in Loop implements it, as it did before it was a port; the members are exactly those named across the boundary.
+/// <c>ChatTurns</c> in Loop implements it; the members are exactly those named across the boundary.
 /// </summary>
 internal interface IChatTurns
 {
@@ -16,7 +16,7 @@ internal interface IChatTurns
     /// <summary>The door the turns keep their words through, named once.</summary>
     void Keeps(ISaidDoor door);
 
-    /// <summary>The answers-alone bound's judge, named once by whoever says a helper's answer (COWORK1e).</summary>
+    /// <summary>The answers-alone bound's judge, named once by whoever says a helper's answer.</summary>
     void Bounds(Func<ChatMessage, Task<bool>> alone);
 
     /// <summary>A word kept on the record through its one dispatcher, then taken.</summary>
@@ -28,7 +28,7 @@ internal interface IChatTurns
     /// <summary>Whether a turn is in flight.</summary>
     bool Running { get; }
 
-    /// <summary>Whether the turn in flight was stopped.</summary>
+    /// <summary>Whether the turn in flight is stopped.</summary>
     bool Stopped { get; }
 
     /// <summary>Whether the account's limit refused the last turn and the words wait.</summary>
@@ -41,8 +41,8 @@ internal interface IChatTurns
     Task<QueueEdit> EditQueuedAsync(string id, string? text, MessageLevel? level = null, CancellationToken ct = default);
 
     /// <summary>
-    /// Hold the turns for a take; false where one is running. With <paramref name="keeps"/>, the host's open moves the old part's words
-    /// (FOUNDATION1o), so a word said meanwhile is kept on the record and queued rather than taking nothing.
+    /// Hold the turns for a take; false where one is running. With <paramref name="keeps"/>, the host's open moves the old part's words,
+    /// so a word said meanwhile is kept on the record and queued rather than taking nothing.
     /// </summary>
     bool Hold(bool keeps = false);
 
@@ -80,7 +80,7 @@ internal interface IChatTurns
     TurnReach? Take(ChatMessage message);
 
     /// <summary>
-    /// A word a keyed open moved onto the record, taken as the record's own word under its id there, through its door (FOUNDATION1d-ii part 5):
+    /// A word a keyed open moved onto the record, taken as the record's own word under its id there, through its door:
     /// where it reaches, or null where nothing took it.
     /// </summary>
     TurnReach? TakeMoved(ISaidDoor door, ChatMessage message);

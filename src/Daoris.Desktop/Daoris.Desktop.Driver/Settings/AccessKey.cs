@@ -3,19 +3,19 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One pause a repository's sessions may stop for (AUTONOMY1a, D184 point 3): its name as the driver's file keeps it, its values in
+/// One pause a repository's sessions may stop for: its name as the driver's file keeps it, its values in
 /// the order a person is offered them, the value that is today's behaviour (<see cref="Default"/>) and the one full access takes
 /// (<see cref="Open"/>).
 /// </summary>
 public sealed record AccessPause(string Name, IReadOnlyList<string> Values, string Default, string Open);
 
 /// <summary>
-/// One level's access setup as the driver's file keeps it (AUTONOMY1a, D184 points 1-3): full access, or the pauses it names, each
+/// One level's access setup as the driver's file keeps it: full access, or the pauses it names, each
 /// with its value. A pause it does not name is the next level's. Never both: a pause set over full access writes every pause.
 /// </summary>
 public sealed record AccessSetting
 {
-    /// <summary>Every pause off (D184 point 2): what the file's <c>"full"</c> says.</summary>
+    /// <summary>Every pause off: what the file's <c>"full"</c> says.</summary>
     public static AccessSetting FullAccess { get; } = new() { Full = true };
 
     /// <summary>Whether this level is full access: every pause at its <see cref="AccessPause.Open"/> value.</summary>
@@ -26,8 +26,7 @@ public sealed record AccessSetting
 }
 
 /// <summary>
-/// The access setup as <c>driver.json</c> keeps it, <c>access</c>, <c>workspaceAccess</c> and <c>machineAccess</c> (AUTONOMY1a, D184
-/// points 1-3; FOUNDATION1 mod-iii): the pauses and their values, and the key's reading and writing by the settings' own parser. How a
+/// The access setup as <c>driver.json</c> keeps it, <c>access</c>, <c>workspaceAccess</c> and <c>machineAccess</c>: the pauses and their values, and the key's reading and writing by the settings' own parser. How a
 /// level resolves, is said and is edited stays with the rule (<see cref="AccessRules"/>), which answers through this for what it shares.
 /// </summary>
 /// <remarks>
@@ -49,10 +48,10 @@ public static class AccessKey
     /// <summary>Permission prompts: the harness's asking mode.</summary>
     public const string Asking = "asking";
 
-    /// <summary>Permission prompts: the harness's auto mode, today's (D81).</summary>
+    /// <summary>Permission prompts: the harness's auto mode, today's.</summary>
     public const string Auto = "auto";
 
-    /// <summary>Permission prompts: the harness's unrestricted mode (D183's full postures).</summary>
+    /// <summary>Permission prompts: the harness's unrestricted mode.</summary>
     public const string Unrestricted = "unrestricted";
 
     /// <summary>Routing and landing: the person's press, today's.</summary>
@@ -67,10 +66,10 @@ public static class AccessKey
     /// <summary>Go-aheads: asked before the acts the repository names, today's.</summary>
     public const string Named = "named";
 
-    /// <summary>Go-aheads: never asked, save what the ask itself demands (D184 point 5).</summary>
+    /// <summary>Go-aheads: never asked, save what the ask itself demands.</summary>
     public const string Never = "never";
 
-    /// <summary>Questions: as the console asks them (D184 point 4), today's behaviour until AUTONOMY1e; its value is the console provider's id, which that provider's declaration takes as its own.</summary>
+    /// <summary>Questions: as the console asks them; its value is the console provider's id, which that provider's declaration takes as its own.</summary>
     public static string ConsoleAsks => ConsoleProviderId.Value;
 
     /// <summary>The pauses, in the order every door and the record say them.</summary>

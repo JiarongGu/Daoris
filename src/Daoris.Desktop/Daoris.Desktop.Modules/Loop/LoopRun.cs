@@ -41,7 +41,7 @@ internal sealed class LoopRun(
         using var conversation = new EventRelay(loop.Events, (session, events) =>
             eventBus.EmitAsync("DAORIS", "SESSION_EVENTS", new { Session = session, Events = events.ToArray() }));
         // After the client, so it is disposed before it: disposing the runner ends each conversation and writes its record through this
-        // client, and a chat open at the close was otherwise recorded nowhere. It shares the loop's registry, console, roster and usage.
+        // client, and a chat open at the close would otherwise be recorded nowhere. It shares the loop's registry, console, roster and usage.
         using var chat = new ChatRunner(
             service, loop.Harnesses.Adapters, homeDirectory, loop.Processes, loop.Output, loop.Harnesses, loop.Events, loop.Usage, browser,
             plugins: new PluginLog(log, loop.Health));
@@ -97,9 +97,9 @@ internal sealed class LoopRun(
             () => JournalFeed.RunAsync(
                 service,
                 [
-                    // EV-F: the quests' moves first, its sink never waiting, so no wake waits on the news teller's reads of the service.
+                    // The quests' moves first, its sink never waiting, so no wake waits on the news teller's reads of the service.
                     new WorkEventTeller(told => shared.Hooks?.Tell(told), () => DateTimeOffset.UtcNow).Teller,
-                    // EVENTHOOK1b (D244's note): the driven work's parks and ends told at `work/event` as they are claimed, and the teller's gaps.
+                    // The driven work's parks and ends told at `work/event` as they are claimed, and the teller's gaps.
                     WorkEventNews.Gapped(
                         NewsFeed("lease", news, service, row => !row.Marks.Contains("chat", StringComparer.Ordinal), ct, told => shared.Hooks?.Tell(told)),
                         told => shared.Hooks?.Tell(told), () => DateTimeOffset.UtcNow),
@@ -237,7 +237,7 @@ internal sealed class LoopRun(
         {
             // A press taken back after it was shown, or lost at the close, is kept in Done and failed.
             served.Confirmations.Noticed = loop.Notices.Ended;
-            // EV-F: a press no terminal waits on, told at `work/event` as it settles, after its record says how.
+            // A press no terminal waits on, told at `work/event` as it settles, after its record says how.
             served.Confirmations.Settled = SettledTelling.Of(() => shared.Hooks, () => DateTimeOffset.UtcNow);
             served.Grounds = new LoopGrounds(loop, served);
             // A restart forgets every steward's release, so what an earlier run left in the file is withdrawn before the first look;

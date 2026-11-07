@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// What a route changed reaches every window as <c>STATE_CHANGED</c> (STATEHUB1b, D169): published by the dispatcher's
+/// What a route changed reaches every window as <c>STATE_CHANGED</c>: published by the dispatcher's
 /// middleware after the route answered, from what the route declares beside its mark, never by the handler.
 /// </summary>
 /// <remarks>
@@ -52,7 +52,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
         }
     }
 
-    /// <summary>A route that says which step it has reached (PRESSSTEP1), and waits for the test between them.</summary>
+    /// <summary>A route that says which step it has reached, and waits for the test between them.</summary>
     private sealed class Stepping : ModuleBase
     {
         private readonly TaskCompletionSource _gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -77,7 +77,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A route whose landing waits behind another's hold (LANDHOLD2), said as the hold says it, and ends when the test lets it.
+    /// A route whose landing waits behind another's hold, said as the hold says it, and ends when the test lets it.
     /// </summary>
     private sealed class Queued : ModuleBase
     {
@@ -103,7 +103,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LANDHOLD2b: an Accept waiting for the pass that lands it says the <c>pass</c> step, and the page words the wait's bound beside the
+    /// An Accept waiting for the pass that lands it says the <c>pass</c> step, and the page words the wait's bound beside the
     /// button as twenty seconds, which is the pass's bound.
     /// </summary>
     [Fact]
@@ -194,7 +194,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// D169 point 5: a refusal answered as data publishes as an answer does (a landing refused for a conflict fetched the line
+    /// A refusal answered as data publishes as an answer does (a landing refused for a conflict fetched the line
     /// its plan reads against); one thrown publishes nothing; and a route that declares nothing, a read, publishes nothing.
     /// </summary>
     [Fact]
@@ -216,7 +216,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STATEHUB1c (D169 point 7): a declared press is under way from its dispatch until it answers, and every window is told what
+    /// A declared press is under way from its dispatch until it answers, and every window is told what
     /// is, whole and numbered at each change, with the session its payload named; so *落地中…* is shown by every view of that
     /// session, whichever window pressed. One refused as an error ends as one that answered does; a read is never under way.
     /// </summary>
@@ -255,7 +255,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PRESSSTEP1 (D169 point 3): the handler of a declared press says the step it has reached, and every window is told the press
+    /// The handler of a declared press says the step it has reached, and every window is told the press
     /// whole with it, beside its route and session; the same step again tells nothing, and a step said outside a press (a read, or
     /// no press at all) is said to nobody. The step ends with the press.
     /// </summary>
@@ -286,7 +286,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LANDHOLD2 (D145 point 2, D173's LANDRACE1 note): a press whose landing waits behind another's hold says the waiting step before it
+    /// A press whose landing waits behind another's hold says the waiting step before it
     /// waits, and the step it was at when it has the hold; the waiting reaches the page's telling like any step, and ends with the press.
     /// </summary>
     [Fact]
@@ -308,7 +308,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ACCEPTALL1e (D169 point 3): a press whose declaration names a payload field as its subject carries it, so an entry's or an
+    /// A press whose declaration names a payload field as its subject carries it, so an entry's or an
     /// ask's Accept under way is shown by every window that shows that entry or ask; it names no session of its own.
     /// </summary>
     [Fact]
@@ -329,7 +329,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STATEHUB1c2 (D169's STATEHUB1c2 note): a window opened, or a page reloaded, while a press runs has heard none of its
+    /// A window opened, or a page reloaded, while a press runs has heard none of its
     /// tellings, so it reads the list the publisher holds, the loop's, through the driver's route: whole, numbered as the last
     /// telling, so the window keeps whichever is newer. The read is no press: never under way, and it tells nothing.
     /// </summary>
@@ -367,7 +367,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// D169's first slice, the landing family: what each press declares it changes, and which payload field names the session
+    /// The landing family: what each press declares it changes, and which payload field names the session
     /// where the change is one session's; the plans, gates and lists beside them declare nothing.
     /// </summary>
     [Theory]
@@ -405,8 +405,8 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// D169's rest of the routes, domain by domain (STATEHUB1d): sessions, conversations, work, rules, history, sync and plugins
-    /// each declare what their presses change, the scopes their hooks used to ask again by hand; the looks beside them, the git
+    /// The rest of the routes, domain by domain: sessions, conversations, work, rules, history, sync and plugins
+    /// each declare what their presses change, the scopes a hook would otherwise ask again by hand; the looks beside them, the git
     /// domain's every route and a look that fetches (<c>TREES_SYNC_PLAN</c>, above) declare nothing.
     /// </summary>
     [Theory]
@@ -414,42 +414,42 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_DELETE", "sessions,help", "id")]
     [InlineData("STOP_SESSION", "sessions,driver", "id")]
     [InlineData("RESOLVE_SESSION", "sessions,quests,driver", "id")]
-    // MIXAGENT2b: the person's ask of a helper and their yes to an agent's, each a file the loop's next look takes; the asks' read.
+    // The person's ask of a helper and their yes to an agent's, each a file the loop's next look takes; the asks' read.
     [InlineData("SESSION_HELPER_ASK", "sessions,driver", "id")]
     [InlineData("SESSION_HELPER_APPROVE", "sessions,driver", "session")]
-    // HELPERNO1: the person's no, the ask refused and the asker's note written at once.
+    // The person's no, the ask refused and the asker's note written at once.
     [InlineData("SESSION_HELPER_DECLINE", "sessions,driver", "session")]
-    // COWORKUX1d: the person's pass of an answer kept for them.
+    // The person's pass of an answer kept for them.
     [InlineData("SESSION_HELPER_PASS", "sessions,driver", "session")]
     [InlineData("SESSION_HELPERS", "", null)]
-    // COAGENT1b: the person's ask of a piece, a file the loop's next look takes; the pieces' read.
+    // The person's ask of a piece, a file the loop's next look takes; the pieces' read.
     [InlineData("SESSION_PARTNER_ASK", "sessions,driver", "id")]
     [InlineData("SESSION_PARTNER_ACT", "sessions,driver", "id")]
     [InlineData("SESSION_PARTNERS", "", null)]
-    // MIXAGENT1c: the person's yes and no to a session's agent's own ask to hand it over, and the ask's read.
+    // The person's yes and no to a session's agent's own ask to hand it over, and the ask's read.
     [InlineData("SESSION_HAND_OVER_APPROVE", "sessions,driver", "session")]
     [InlineData("SESSION_HAND_OVER_DECLINE", "sessions,driver", "session")]
     [InlineData("SESSION_QUIET_CARRY_ON", "sessions,driver", "id")]
     [InlineData("SESSION_QUIET_LEAVE", "sessions", "id")]
     [InlineData("SESSION_HAND_OVER_ASK", "", null)]
-    // PARKVIEW1: a parked session's question, a read of the file its agent asked it in.
+    // A parked session's question, a read of the file its agent asked it in.
     [InlineData("SESSION_QUESTION", "", null)]
-    // MIXAGENT2c: what of the agents' asks waits on the person, *What needs you*'s read.
+    // What of the agents' asks waits on the person, *What needs you*'s read.
     [InlineData("HELPER_WAITS", "", null)]
-    // COWORK1e: the person's answer to a third answer alone held for them, the mark taken away or kept; and the waits' read.
+    // The person's answer to a third answer alone held for them, the mark taken away or kept; and the waits' read.
     [InlineData("SESSION_ANSWER_ALONE", "sessions,driver", "session")]
     [InlineData("ANSWER_WAITS", "", null)]
     [InlineData("SESSION_OPENINGS", "", null)]
-    // SESSCTX1d: what each part spent, the *Parts* strip's read.
+    // What each part spent, the *Parts* strip's read.
     [InlineData("SESSION_SPENT", "", null)]
     [InlineData("SESSION_WHERE", "", null)]
-    // COWORKVIEW1a: who is at work on a session, told by its own judge.
+    // Who is at work on a session, told by its own judge.
     [InlineData("SESSION_AT_WORK", "", null)]
     [InlineData("SESSION_RELATED", "", null)]
-    // KNOWCENTRAL2e: a session's memory rows, and the person's decision on them.
+    // A session's memory rows, and the person's decision on them.
     [InlineData("SESSION_MEMORY", "", null)]
     [InlineData("SESSION_MEMORY_DECIDE", "sessions", "session")]
-    // LINESTOGETHER1d: the operation bringing sessions together, and the head's presses on it.
+    // The operation bringing sessions together, and the head's presses on it.
     [InlineData("TOGETHER", "", null)]
     [InlineData("TOGETHER_PRESS", "sessions", "session")]
     [InlineData("TOGETHER_ASK_AGAIN", "sessions", "session")]
@@ -460,7 +460,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("WORK_RECORDS_FOLDER", "", null)]
     [InlineData("START_CHAT", "sessions,driver", null)]
     [InlineData("SESSION_START_FROM", "sessions,driver", "id")]
-    // LIMITRESUME1d: *Stop waiting*, a conversation held by its limit marked to wait for the person's next word.
+    // *Stop waiting*, a conversation held by its limit marked to wait for the person's next word.
     [InlineData("SESSION_STOP_WAITING", "sessions,driver", "id")]
     [InlineData("SESSION_HAND_OVER", "sessions,driver", "id")]
     [InlineData("END_CHAT", "sessions", "id")]
@@ -486,24 +486,24 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("GIT_COMPARE", "", null)]
     [InlineData("GIT_CHANGES", "", null)]
     [InlineData("GIT_HUNKS", "", null)]
-    // GITAPP2h: a person's stage, unstage and Undo move the checkout's index, which the Changes tab reads.
+    // A person's stage, unstage and Undo move the checkout's index, which the Changes tab reads.
     [InlineData("GIT_STAGE", "checkouts", null)]
     [InlineData("GIT_UNSTAGE", "checkouts", null)]
     [InlineData("GIT_UNDO", "checkouts", null)]
-    // GITAPP2j: a conflict is read, and a resolve and a mark move the file and the index the tab reads.
+    // A conflict is read, and a resolve and a mark move the file and the index the tab reads.
     [InlineData("GIT_CONFLICT", "", null)]
     [InlineData("GIT_RESOLVE", "checkouts", null)]
     [InlineData("GIT_MARK_RESOLVED", "checkouts", null)]
     [InlineData("GIT_COMMIT_PLAN", "", null)]
-    // GITAPP2i: a commit moves the checkout's index and the branch it has out, which the Changes tab and the branch list read.
+    // A commit moves the checkout's index and the branch it has out, which the Changes tab and the branch list read.
     [InlineData("GIT_MAKE_COMMIT", "driver,checkouts", null)]
     [InlineData("GIT_AMEND", "driver,checkouts", null)]
     [InlineData("GIT_SWITCH_PLAN", "", null)]
     [InlineData("GIT_STASH_PLAN", "", null)]    [InlineData("GIT_FETCH_PLAN", "", null)]
-    // GITAPP2k: a switch moves HEAD and the checkout's files, a Save the shared stash and the tracked files; the branch list and the Changes tab read both.
+    // A switch moves HEAD and the checkout's files, a Save the shared stash and the tracked files; the branch list and the Changes tab read both.
     [InlineData("GIT_SWITCH", "driver,checkouts", null)]
     [InlineData("GIT_STASH", "driver,checkouts", null)]
-    [InlineData("GIT_STASH_APPLY", "driver,checkouts", null)]    // HELPMODE1c3: and the driver's, whose helpGrants draws the browser's grant from the plugin's approval.
+    [InlineData("GIT_STASH_APPLY", "driver,checkouts", null)]    // And the driver's, whose helpGrants draws the browser's grant from the plugin's approval.
     [InlineData("PLUGIN_ACTION", "driver,plugins,harnesses", null)]
     [InlineData("PLUGIN_UPDATE", "driver,plugins,harnesses", null)]
     [InlineData("PLUGIN_TOOLS", "plugins", null)]
@@ -527,11 +527,11 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The presses still told only to the window that pressed (STATEHUB1h, D169's STATEHUB1h note): the driver's standing
+    /// The presses still told only to the window that pressed: the driver's standing
     /// choices, a go-ahead, a turn stopped and a word taken back, and what the accounts, agents, asks, across, registry, tools
     /// and help domains press, each the families its hook asked again by hand, or the window wrote its own answer into. The
     /// looks beside them, the workflow domain's every route, and the presses whose change an event already tells whole or no
-    /// window reads declare nothing; the roster's read declares nothing, and *Read again* is its own route, which does (HARNESSREFRESH1).
+    /// window reads declare nothing; the roster's read declares nothing, and *Read again* is its own route, which does.
     /// </summary>
     [Theory]
     [InlineData("SET_DRIVABLE", "driver", null)]
@@ -549,7 +549,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_HEAVY_GATES", "driver", null)]
     [InlineData("SET_KEEP", "driver,wiring", null)]
     [InlineData("SET_SESSION_CHECKS", "driver", null)]
-    // HEAVYSLOT1: who holds a repository's heavy-run slot and who waits, a read.
+    // Who holds a repository's heavy-run slot and who waits, a read.
     [InlineData("HEAVY_SLOT", "", null)]
     [InlineData("SET_NOTIFY", "driver", null)]
     [InlineData("SET_COOLOFF", "driver", null)]
@@ -607,7 +607,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("CHANNEL_MARK", "asks", null)]
     [InlineData("NOTICES_READ", "notices", null)]
     [InlineData("NOTICE_DISMISS", "notices", null)]
-    // NOTIFY2i: the terminal's read of what came to the person, which changes nothing.
+    // The terminal's read of what came to the person, which changes nothing.
     [InlineData("NOTIFICATIONS", "", null)]
     [InlineData("CHANNEL_READ", "", null)]
     [InlineData("ASKS_ELSEWHERE", "", null)]
@@ -627,54 +627,54 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("TOOLS_PICK", "", null)]
     [InlineData("WORKFLOW_CURRENT", "", null)]
     [InlineData("WORKFLOW_RUN", "", null)]
-    // FABRIC-PIPELINE1a: the landed route set, which the page reads again by its own query, as every workflow route is read.
+    // The landed route set, which the page reads again by its own query, as every workflow route is read.
     [InlineData("WORKFLOW_LANDED", "", null)]
-    // INTEGRATE1d: the integration's own acceptance, the driver's standing choice, which every window's driver-keyed reads read again.
+    // The integration's own acceptance, the driver's standing choice, which every window's driver-keyed reads read again.
     [InlineData("INTEGRATION_GATES", "driver", null)]
-    // FABRIC-CUTOVER1f: the person's skip or stop of a run's node, kept on its record, which the run's view reads again under the driver's key.
+    // The person's skip or stop of a run's node, kept on its record, which the run's view reads again under the driver's key.
     [InlineData("WORKFLOW_NODE", "driver", null)]
-    // AGENTSPLACE1c: a workflow saved, a place's choice and a workspace's kinds, which the workflow page's reads ask again under the driver's key.
+    // A workflow saved, a place's choice and a workspace's kinds, which the workflow page's reads ask again under the driver's key.
     [InlineData("WORKFLOW_SAVE", "driver", null)]
     [InlineData("WORKFLOW_USE", "driver", null)]
     [InlineData("WORKFLOW_KIND", "driver", null)]
-    // FABRIC-PIPELINE1d: a verification bound for the running driver, which the Workflow tab's and the run's reads ask again under the driver's key.
+    // A verification bound for the running driver, which the Workflow tab's and the run's reads ask again under the driver's key.
     [InlineData("WORKFLOW_VERIFY", "driver", null)]
     [InlineData("START_HELP", "sessions", null)]
     [InlineData("HELP_RENAME", "sessions,help", "id")]
     [InlineData("HELP_PIN", "sessions,help", "id")]
     [InlineData("HELP_START_FROM", "sessions,help", "id")]
     [InlineData("HELP_DISMISS", "help", null)]
-    // LAYOUT8: a set-up's Apply adds the repository's rule, so an Apply may move the rules too.
+    // A set-up's Apply adds the repository's rule, so an Apply may move the rules too.
     [InlineData("HELP_APPLY", "sessions,quests,asks,driver,rules,history,registry,plugins,harnesses,help,browser", null)]
     [InlineData("HELP_PROPOSALS", "", null)]
     [InlineData("HELP_CONVERSATIONS", "", null)]
-    // HELPWIRED1: what each start handed, read from the home; it changes nothing.
+    // What each start handed, read from the home; it changes nothing.
     [InlineData("HELP_WIRED", "", null)]
-    // ASKQUESTS1: what a conversation's Applies published, read from the home; it changes nothing.
+    // What a conversation's Applies published, read from the home; it changes nothing.
     [InlineData("HELP_PUBLISHED", "", null)]
     [InlineData("STOP_TASK", "", null)]
     [InlineData("TAIL_SESSION", "", null)]
     [InlineData("TRACE", "", null)]
-    // WIRING1b: This Daoris's read; asking it to measure starts a walk and moves no state a window shows.
+    // This Daoris's read; asking it to measure starts a walk and moves no state a window shows.
     [InlineData("SYSTEM_WIRING", "", null)]
-    // CACHECLEAR1: the Downloads row's list reads; its press removes versions the agents' and tools' pages and the sizes say.
+    // The Downloads row's list reads; its press removes versions the agents' and tools' pages and the sizes say.
     [InlineData("SYSTEM_DOWNLOADS", "", null)]
     [InlineData("SYSTEM_DOWNLOADS_CLEAR", "harnesses,tools,wiring", null)]
-    // WIRING1e: the account's PATH and service address, which This Daoris's read shows; opening a folder changes nothing.
+    // The account's PATH and service address, which This Daoris's read shows; opening a folder changes nothing.
     [InlineData("SYSTEM_PATH", "wiring", null)]
     [InlineData("SYSTEM_SERVICE_ADDRESS", "wiring", null)]
     [InlineData("SYSTEM_OPEN_FOLDER", "", null)]
-    // KEEP1c: the Disk space card's read; asking it to count starts walks, each kind's end telling `wiring` by itself.
+    // The Disk space card's read; asking it to count starts walks, each kind's end telling `wiring` by itself.
     [InlineData("SYSTEM_SPACE", "", null)]
-    // KEEP1e: Free up space's press removes what the sizes, the agents' and the tools' pages say; each kind's end tells `wiring` by itself.
+    // Free up space's press removes what the sizes, the agents' and the tools' pages say; each kind's end tells `wiring` by itself.
     [InlineData("SYSTEM_SPACE_FREE", "harnesses,tools,wiring", null)]
-    // RPC1c: what waits for the window is told by its own event (`CONFIRMATIONS`), and a confirmed press publishes what it changes
-    // as it runs; the answer itself moves no scope. PERSONDOOR1f: the key is a read.
+    // What waits for the window is told by its own event (`CONFIRMATIONS`), and a confirmed press publishes what it changes
+    // as it runs; the answer itself moves no scope. The key is a read.
     [InlineData("PERSON_CONFIRMATIONS", "", null)]
     [InlineData("PERSON_CONFIRM", "", null)]
     [InlineData("PERSON_CONFIRM_SHOWN", "", null)]
     [InlineData("PERSON_KEY", "", null)]
-    // NOTIFY2j: what waits at the service's door is told by its own event (`SERVICE_CONFIRMATIONS`); the read moves nothing.
+    // What waits at the service's door is told by its own event (`SERVICE_CONFIRMATIONS`); the read moves nothing.
     [InlineData("SERVICE_CONFIRMATIONS", "", null)]
     public void The_remaining_presses_declare_what_they_change(string route, string scopes, string? session)
     {
@@ -686,8 +686,8 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A press named in the wire's words a page reads: the scopes STATEHUB1d added sit after the first slice's, and STATEHUB1h's
-    /// after those, in their declared order, so a scope is added and none is renumbered (D169 point 3).
+    /// A press named in the wire's words a page reads: later scopes sit after the first slice's,
+    /// in their declared order, so a scope is added and none is renumbered.
     /// </summary>
     [Fact]
     public void Every_scope_has_its_word_on_the_wire_in_its_declared_order() =>
@@ -697,7 +697,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
             string.Join(",", StatePublisher.Names((StateScopes)~0)));
 
     /// <summary>
-    /// FABRIC-EVENT5: a change the driver itself makes, with no press behind it (words taken up, a proposal written, a size landed), is
+    /// A change the driver itself makes, with no press behind it (words taken up, a proposal written, a size landed), is
     /// told to every window as a press's is: the scopes in the page's words, and the one session it was about where there is one.
     /// </summary>
     [Fact]
@@ -715,7 +715,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// HELPWIREDLIVE1b (D183 point 4): the loop tells the help scope, with the session, when a conversation's start receipt is written,
+    /// The loop tells the help scope, with the session, when a conversation's start receipt is written,
     /// so an open What it has reads a resume's new receipt rather than the old one.
     /// </summary>
     [Fact]
@@ -728,7 +728,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// BROWSERPUBLISH1: the browser module's edits declare the browser, so every window's Settings → Browser and link opener ask it
+    /// The browser module's edits declare the browser, so every window's Settings → Browser and link opener ask it
     /// again; its read declares nothing. Published on the wire as the driver's marks are, through the shell's own middleware.
     /// </summary>
     [Theory]

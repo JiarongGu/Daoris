@@ -3,21 +3,21 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a helper an agent asks for does (MIXAGENT2a-i, D163 point 5; the mixed agents design §5): <c>ask</c> waits for the person's
+/// What a helper an agent asks for does: <c>ask</c> waits for the person's
 /// yes, <c>on</c> starts it at once within the limits, <c>off</c> offers no tool. <see cref="Agents"/> are the adapters the person
-/// lets be asked, in the order they are tried; none named is any other maker's first (D155 point 4).
+/// lets be asked, in the order they are tried; none named is any other maker's first.
 /// </summary>
 public sealed record HelperRule(string Mode, IReadOnlyList<string> Agents)
 {
     /// <summary>
-    /// What stands where nothing is set (HELPERDEFAULT1, D163's 2026-10-24 note): <c>on</c> for Daoris's own agents, those it has set
+    /// What stands where nothing is set: <c>on</c> for Daoris's own agents, those it has set
     /// up and signed in on this machine (<see cref="SetUp"/>), which the driver reads from its accounts at each judgement
     /// (<see cref="Over"/>). Never written to <c>driver.json</c>: a rule the person sets there replaces it whole.
     /// </summary>
     public static HelperRule Default { get; } = new(HelperKey.On, []) { SetUp = true };
 
     /// <summary>
-    /// The default's agents are this machine's set-up ones (HELPERDEFAULT1): an agent's ask naming another is refused
+    /// The default's agents are this machine's set-up ones: an agent's ask naming another is refused
     /// <see cref="HelperWhy.NotSetUp"/>, and one naming none with none set up <see cref="HelperWhy.NoneSetUp"/>.
     /// </summary>
     public bool SetUp { get; init; }
@@ -27,7 +27,7 @@ public sealed record HelperRule(string Mode, IReadOnlyList<string> Agents)
 }
 
 /// <summary>
-/// The helpers rule as <c>driver.json</c> keeps it, <c>helpers</c> and <c>workspaceHelpers</c> (FOUNDATION1 mod-iii): the key's shape,
+/// The helpers rule as <c>driver.json</c> keeps it, <c>helpers</c> and <c>workspaceHelpers</c>: the key's shape,
 /// read and written by the settings' own parser. What the rule means, its resolution, edit and words, stays with the rule
 /// (<see cref="HelperRules"/>), which answers through this for what it shares.
 /// </summary>

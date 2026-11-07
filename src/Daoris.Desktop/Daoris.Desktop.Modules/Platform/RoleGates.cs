@@ -1,7 +1,7 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// One scope a gate is held on (STEWARDROLE1a-ii, D209 §5.4): a workspace, a repository or a quest, by its name. The fixed order
+/// One scope a gate is held on: a workspace, a repository or a quest, by its name. The fixed order
 /// every holder takes several in is <see cref="Order"/>: workspace, then repository, then quest, each by its name, ordinally and
 /// ignoring case, so no two holders ever wait on each other in a circle.
 /// </summary>
@@ -28,11 +28,11 @@ public sealed record RoleScope(string Kind, string Name)
 }
 
 /// <summary>
-/// The run's gates (STEWARDROLE1a-ii, D209 §5.4): one per workspace, repository and quest, the run's memory's own and never the judge's
+/// The run's gates: one per workspace, repository and quest, the run's memory's own and never the judge's
 /// lock. A role's act, and each consumer of its pending operations, holds the gates of its target and its dependencies
 /// <b>alone</b> across its check and its handler; an owner's press holds the gates of every scope it resolves to <b>beside the owner's
 /// other presses</b> across its mark and its handler. So an owner's act and a role's never interleave on a scope, either way round,
-/// while the owner's own presses never wait on each other, as they did not before the gates (a reading of §5.4, whose gate exists to
+/// while the owner's own presses never wait on each other, (the gate exists to
 /// order the owner against a role).
 /// </summary>
 /// <remarks>Every scope is taken in <see cref="RoleScope.Order"/>; a waiter that is cancelled takes nothing and leaves the queue.</remarks>

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// **One conversation's model and effort, over the bridge** (AGT6b, D98): what the conversation's agent
+/// **One conversation's model and effort, over the bridge**: what the conversation's agent
 /// offered on the protocol door, asked for by the page, and a change to one of them.
 /// </summary>
 /// <remarks>

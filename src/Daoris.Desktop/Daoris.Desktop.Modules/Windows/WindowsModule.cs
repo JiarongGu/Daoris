@@ -8,7 +8,7 @@ namespace Daoris.Desktop;
 /// Opening a window on this machine — the shell's half, since a page cannot open one for itself.
 /// </summary>
 /// <remarks>
-/// <para><b>What this is for</b> (D55 §b): the list of running things should be available while the
+/// <para><b>What this is for</b>: the list of running things should be available while the
 /// main window is in Manage, on another screen. That is a <b>monitor</b> window; and one session,
 /// detached, is the same idea aimed at a single conversation.</para>
 ///
@@ -20,34 +20,34 @@ namespace Daoris.Desktop;
 /// <para><b>The name is the whole contract, and it is checked here.</b> It becomes the URL the new
 /// window navigates to AND the filename its geometry is remembered in, so an unchecked name would be
 /// a page choosing where a window points and what the shell overwrites. Only the names this build
-/// knows are opened (the monitor, a session, and another main window, ONEINSTANCE1); anything else
+/// knows are opened (the monitor, a session, and another main window); anything else
 /// is refused with a sentence rather than sanitised into something adjacent.</para>
 ///
 /// <para><b>There is no CLOSE route, deliberately.</b> Secondary windows keep their native frame
-/// (D55 §b: a monitor is a utility, and OS chrome is what a utility should wear), so the close
+/// (a monitor is a utility, and OS chrome is what a utility should wear), so the close
 /// button is already there and is the one every application has taught people to use. A second door
 /// onto it would be a route that exists to be symmetrical.</para>
 /// </remarks>
 [WindowModule]
 public sealed class WindowsModule(
     IEventBus events, ISecondaryWindows windows, PlatformAddress platform,
-    // Daoris's own browser (D78): a window the person opens to sign in and to watch. Null where the
+    // Daoris's own browser: a window the person opens to sign in and to watch. Null where the
     // host carries none, which is only a test that does not care.
     Daoris.Driver.IInAppBrowser? browser = null,
-    // Each main window's taskbar button and title (NOTIFY1b, NOTIFY2c). Null where there is no main window to badge.
+    // Each main window's taskbar button and title. Null where there is no main window to badge.
     ShowWaiting? badge = null,
-    // The workspace each main window's title wears (MAINWINDOWS3b). Null where there is no window to title.
+    // The workspace each main window's title wears. Null where there is no window to title.
     ShowWorkspace? workspace = null,
-    // Which workspace each main window holds, from which a notification's click picks its window (NOTIFY2c). Null where none is kept.
+    // Which workspace each main window holds, from which a notification's click picks its window. Null where none is kept.
     MainWindowScopes? scopes = null,
-    // The words the shell's notifier says each notification in, as a main window's page handed them (NOTIFY2d). Null where none is kept.
+    // The words the shell's notifier says each notification in, as a main window's page handed them. Null where none is kept.
     NoticeWords? notices = null)
     : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.WINDOWS";
 
     /// <summary>
-    /// The order of the count each main window wears, as its own page told it (SESSBADGE1), by the window's name (NOTIFY2c): each page
+    /// The order of the count each main window wears, as its own page told it, by the window's name: each page
     /// orders by its own clock, so one order kept for all refused one window's count for being told before another's. And the lock.
     /// </summary>
     private readonly Lock _badgeGate = new();
@@ -59,9 +59,9 @@ public sealed class WindowsModule(
         switch (request.Type)
         {
             // Not a route into the bundle like the others: the browser shows pages that are not
-            // Daoris's, in a process of its own that holds no bridge (D78 §3.1, D85). Opening it
+            // Daoris's, in a process of its own that holds no bridge. Opening it
             // again brings it forward, as every window here does. With a `url`, a link on the page is
-            // opened there (BRW7) — only a web page, by the favorites' rule, since whatever it opens
+            // opened there — only a web page, by the favorites' rule, since whatever it opens
             // is a page agents can drive.
             case "OPEN_BROWSER":
             {
@@ -82,7 +82,7 @@ public sealed class WindowsModule(
                 return Task.FromResult<object?>(State(opened: browser is not null));
             }
 
-            // A window's page telling its own frame the theme it is in (WINDOW2), so its native caption
+            // A window's page telling its own frame the theme it is in, so its native caption
             // follows the viewer's choice. By name, the same checked name it was opened with.
             case "SET_THEME":
             {
@@ -91,7 +91,7 @@ public sealed class WindowsModule(
                 return Task.FromResult<object?>(new { Applied = windows.SetTheme(name, dark) });
             }
 
-            // A main window's page telling its own frame how much waits on the person in its workspace (NOTIFY1b, NOTIFY2c): its
+            // A main window's page telling its own frame how much waits on the person in its workspace: its
             // *What needs you*, worn as its taskbar button's overlay and in its title. By name as SET_TITLE is, no name the first
             // main window's; a utility window wears none. A count below none is none, and blank words are none.
             case "SET_BADGE":
@@ -100,7 +100,7 @@ public sealed class WindowsModule(
                 var count = Math.Max(0, PayloadHelper.GetRequiredValue<int>(request.Payload, "count"));
                 var description = PayloadHelper.GetOptionalValue<string>(request.Payload, "description");
                 if (!MainWindows.IsMain(window)) return Task.FromResult<object?>(new { Applied = false });
-                // SESSBADGE1: the page tells each count without waiting, so two may arrive here in either order and the window
+                // The page tells each count without waiting, so two may arrive here in either order and the window
                 // posts each to its thread as it comes: the title once kept 5 over a band reading 4. Each carries the order its page
                 // told it in, kept per window, and one told before the count that window wears is never worn over it; a page that
                 // tells none is worn.
@@ -119,9 +119,9 @@ public sealed class WindowsModule(
                 return Task.FromResult<object?>(new { Applied = badge is not null });
             }
 
-            // A main window's page handing the shell's notifier the notices' words in its language (NOTIFY2d, the notification design
-            // §3.3), at its load and at each change of language, the way SET_BADGE takes its description: the notifier has no
-            // catalogue, and a balloon in English over a window in 中文 was the defect. `{ words: { key: words } }`, kept whole as told.
+            // A main window's page handing the shell's notifier the notices' words in its language, at its load and at each
+            // change of language, the way SET_BADGE takes its description: the notifier has no
+            // catalogue, and a balloon in English over a window in 中文 would be wrong. `{ words: { key: words } }`, kept whole as told.
             case "SET_NOTICE_WORDS":
             {
                 var words = request.Payload is { } payload && payload.ValueKind == System.Text.Json.JsonValueKind.Object
@@ -130,7 +130,7 @@ public sealed class WindowsModule(
                 return Task.FromResult<object?>(new { Applied = notices is not null });
             }
 
-            // A main window's page telling its frame its own title (MAINWINDOWS3b), so two windows on two workspaces read apart
+            // A main window's page telling its frame its own title, so two windows on two workspaces read apart
             // in the taskbar and Alt-Tab. Only the workspace is taken from it, by `WaitingBadge.Workspace`; the frame keeps the
             // application's name. No name is the first main window, whose page is not opened under one.
             case "SET_TITLE":
@@ -138,7 +138,7 @@ public sealed class WindowsModule(
                 var name = PayloadHelper.GetOptionalValue<string>(request.Payload, "name") is { } named ? Known(named) : null;
                 var title = PayloadHelper.GetOptionalValue<string>(request.Payload, "title");
                 workspace?.Invoke(name, WaitingBadge.Workspace(title));
-                // NOTIFY2c: and the workspace the window holds, as data beside the title, for the registry a notification's click
+                // And the workspace the window holds, as data beside the title, for the registry a notification's click
                 // reads; never the title's words. None is every workspace.
                 scopes?.Told(name ?? MainWindows.First, PayloadHelper.GetOptionalValue<string>(request.Payload, "workspace"));
                 return Task.FromResult<object?>(new { Applied = workspace is not null });
@@ -151,7 +151,7 @@ public sealed class WindowsModule(
                 // False is not a failure: one window per name is the framework's contract, and the
                 // second press of "open the monitor" brings the monitor forward. That is what a
                 // person means by pressing it again.
-                // Its page on the engine's app origin, told where the host is (D92).
+                // Its page on the engine's app origin, told where the host is.
                 var opened = windows.Open(name, DesktopPage.PathFor(platform.Url, name));
                 return Task.FromResult<object?>(State(opened));
             }

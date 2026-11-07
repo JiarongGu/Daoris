@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// AGENTSPLACE1a (the Agents-place design §2, §3 and §7 row 4): <c>PLACES</c>, each place's driving, its works and the values of its head's
+/// <c>PLACES</c>, each place's driving, its works and the values of its head's
 /// line with where each was set, equal to the readers a start uses; and <c>ROLE_STRUCTURE</c> asked for a chosen place's chain alone.
 /// </summary>
 public sealed class DriverModulePlacesTests : DriverModuleBridge
@@ -172,7 +172,7 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
     private static string SetUpQuest(string repository, string status) =>
         $$"""{"id":"q{{repository}}","from":"work","to":"{{repository}}","title":"{{SetupQuests.Title(SetupQuests.SetUp, new DateOnly(2026, 11, 1))}}","body":"","status":"{{status}}"}""";
 
-    /// <summary>SETUPUX1d: <c>detail</c> answers a place whole, driven or not, by the readers a start uses, and asks nothing beyond the registry and quests.</summary>
+    /// <summary><c>detail</c> answers a place whole, driven or not, by the readers a start uses, and asks nothing beyond the registry and quests.</summary>
     [Fact]
     public async Task A_detail_answers_one_place_whole_equal_to_its_row_and_its_readers_and_probes_nothing()
     {
@@ -216,7 +216,7 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
         Assert.Equal(["/api/quests", "/api/registry"], service.Asked.Distinct().Order(StringComparer.Ordinal));
     }
 
-    /// <summary>SETUPUX1d: an adoption running is read from its quest and listed with the driven; <c>members</c> is the workspace's whole list.</summary>
+    /// <summary>An adoption running is read from its quest and listed with the driven; <c>members</c> is the workspace's whole list.</summary>
     [Fact]
     public async Task An_adoption_running_is_listed_with_the_driven_and_the_members_are_the_whole_workspace()
     {

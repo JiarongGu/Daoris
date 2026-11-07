@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Daoris's browser plays H.264, AAC and HEVC video (D234). The real browser is started as the shell starts
+/// Daoris's browser plays H.264, AAC and HEVC video. The real browser is started as the shell starts
 /// it, the application's own executable with the browser's arguments, and shown a page on loopback with a
 /// clip of each: each must reach <c>readyState</c> 2, move <c>currentTime</c> and decode a video frame, read over CDP. The engine
 /// plays HEVC through the machine's decoder, so that half is skipped on a machine with none.

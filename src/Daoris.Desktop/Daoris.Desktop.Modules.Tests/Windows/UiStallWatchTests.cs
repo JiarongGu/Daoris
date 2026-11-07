@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// How late the window's own thread answers, and what held it (FREEZE1, D56's note): the frameless window's caption is
+/// How late the window's own thread answers, and what held it: the frameless window's caption is
 /// moved, maximised and closed on that thread, so a late thread is a frozen bar while the page goes on working.
 /// </summary>
 /// <remarks>

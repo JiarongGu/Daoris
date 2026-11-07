@@ -5,8 +5,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The service's doors over HTTP:<see cref="IServiceDoors"/> as the driver speaks it to a host, the key its bearer,
-/// through <see cref="DriverHttp"/>'s client and reads. The HTTP <see cref="ServiceClient"/> held before its doors had a port,
-/// moved as it was.
+/// through <see cref="DriverHttp"/>'s client and reads.
 /// </summary>
 public sealed class ServiceHttp : IServiceDoors
 {
@@ -24,19 +23,19 @@ public sealed class ServiceHttp : IServiceDoors
         }
     }
 
-    /// <summary>The refusal for no service at all, where nothing else was looked for.</summary>
+    /// <summary>The refusal for no service at all, where nothing else is looked for.</summary>
     public const string NoService =
         $"no {ServiceClient.UrlVariable} — the driver watches a service, and needs to know where one is. "
         + "A local host is usually http://localhost:5177.";
 
-    /// <summary>URL and key from the environment — the same two names `connect` reads (design §5b) — for this process.</summary>
+    /// <summary>URL and key from the environment — the same two names `connect` reads — for this process.</summary>
     public static ServiceHttp FromEnvironment() =>
         FromEnvironment(
             Environment.GetEnvironmentVariable, AppContext.BaseDirectory,
             (url, timeout) => RunningService.Status(url, timeout: timeout), waiting: Console.Error.WriteLine);
 
     /// <summary>
-    /// The service, in the order a terminal finds it (FINDDAORIS1, D171 point 1): the variable, which still wins; else, for a
+    /// The service, in the order a terminal finds it: the variable, which still wins; else, for a
     /// program the install carries, the address the running desktop left in the home (<see cref="RunningService"/>); else the
     /// refusal, which then says Daoris is not running there and how to start it.
     /// </summary>
@@ -46,9 +45,9 @@ public sealed class ServiceHttp : IServiceDoors
     /// install's running service and act on it. The dev loop and every gate name the service themselves.
     /// </remarks>
     /// <param name="baseDirectory">Where this program runs from, which says whether an install carries it.</param>
-    /// <param name="answers">What an address's status door answers as a Daoris host, or null (HOMEID1: its home is checked).</param>
-    /// <param name="retryAfter">The wait before a status door that did not answer is asked again (SERVICESTALL1); null is <see cref="RunningService.RetryAfter"/>.</param>
-    /// <param name="waiting">Told once where the home's process runs and its status door has not answered yet (SERVICEPROBE1).</param>
+    /// <param name="answers">What an address's status door answers as a Daoris host, or null (its home is checked).</param>
+    /// <param name="retryAfter">The wait before a status door that did not answer is asked again; null is <see cref="RunningService.RetryAfter"/>.</param>
+    /// <param name="waiting">Told once where the home's process runs and its status door has not answered yet.</param>
     /// <param name="total">How long a running service is waited for in all; null is <see cref="RunningService.WaitFor"/>.</param>
     public static ServiceHttp FromEnvironment(
         Func<string, string?> environment, string baseDirectory, Func<string, ServiceStatus?> answers,
@@ -69,7 +68,7 @@ public sealed class ServiceHttp : IServiceDoors
                 throw new DriverException(NoService);
             }
 
-            // An address the home left that nothing answered at is not a missing variable: its sentence says what was seen, alone.
+            // An address the home left that nothing answered at is not a missing variable: its sentence says what is seen, alone.
             url = RunningService.Find(home, install, answers, out var why, out var unanswered, retryAfter ?? RunningService.RetryAfter, waiting, total)
                 ?? throw new DriverException(unanswered ? why : $"{NoService} {why}");
         }
@@ -80,12 +79,12 @@ public sealed class ServiceHttp : IServiceDoors
     public string BaseUrl { get; }
 
     // Through DriverHttp, so a refused read carries the service's own sentence — a bare
-    // EnsureSuccessStatusCode threw it away, and the driver's log said less than the service said.
+    // EnsureSuccessStatusCode would throw it away, and the driver's log would say less than the service said.
     /// <summary>
-    /// The wait before a read that met the client's own bound is asked once more, and the switch for saying a stall as one
-    /// (SERVICESTALL1, SERVICESTALL1b): set where this client's bound is its own, which is the default for the client the driver
+    /// The wait before a read that met the client's own bound is asked once more, and the switch for saying a stall as one:
+    /// set where this client's bound is its own, which is the default for the client the driver
     /// makes; null where the caller handed in its client, whose timeout is then the caller's deadline and ends a request as the
-    /// cancellation it is, as the loop's look names it (DEV3b).
+    /// cancellation it is, as the loop's look names it.
     /// </summary>
     public TimeSpan? RetryAfter { get; init; }
 
@@ -109,7 +108,7 @@ public sealed class ServiceHttp : IServiceDoors
         }, ct);
 
     /// <summary>
-    /// One request, said as what it saw where the client's own bound ran out (SERVICESTALL1, SERVICESTALL1b): a read is asked once more
+    /// One request, said as what it saw where the client's own bound ran out: a read is asked once more
     /// after <see cref="RetryAfter"/>, since asking again changes nothing; a press that changes state is never asked again blindly, since
     /// the service may have done it before it stopped answering. Nothing else is retried or reworded: a refusal is an answer, a service
     /// that could not be reached is said as itself, and a cancellation the caller asked for, by its token or by the timeout of the

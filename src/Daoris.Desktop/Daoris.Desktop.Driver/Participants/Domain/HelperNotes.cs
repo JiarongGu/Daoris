@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The lines a helper writes into the two sessions' records (MIXAGENT2a-ii, D163 point 2), each by its code with facts only: the
-/// agent, the session and why, never an account's name or a path (D125 section 3.6).
+/// The lines a helper writes into the two sessions' records, each by its code with facts only: the
+/// agent, the session and why, never an account's name or a path.
 /// </summary>
 public static class HelperNotes
 {
-    /// <summary>On the asker: a helper was asked, and where it reads.</summary>
+    /// <summary>On the asker: a helper is asked, and where it reads.</summary>
     public static Noted Asked(string agent, string helper) =>
         Noted.Of(PeerNoteCodes.HelperAsked, $"A helper was asked: {agent} reads in session {helper} and answers the question.", ("agent", agent), ("session", helper));
 
@@ -22,15 +22,15 @@ public static class HelperNotes
                 $"Helper {agent} (session {helper}) answered; its answer is this session's next turn, marked as the helper's.",
                 ("agent", agent), ("session", helper));
 
-    /// <summary>On the asker: no helper answered, with the agent where one was chosen.</summary>
+    /// <summary>On the asker: no helper answered, with the agent where one is chosen.</summary>
     public static Noted Refused(string why, string? agent = null) =>
         agent is null
             ? Noted.Of(PeerNoteCodes.HelperRefused, $"No helper answered this question: {HelperWhy.Said(why)}.", ("why", why))
             : Noted.Of(PeerNoteCodes.HelperRefusedBy, $"Helper {agent} did not answer this question: {HelperWhy.Said(why)}.", ("agent", agent), ("why", why));
 
     /// <summary>
-    /// On the asker: an account's limit cut its helper off and the session no longer waits on it, so it is not run again (LIMITRESUME1h,
-    /// D206 design §3.8), with when that account is ready again where a cool-off this machine holds says so. Never which account.
+    /// On the asker: an account's limit cut its helper off and the session no longer waits on it, so it is not run again,
+    /// with when that account is ready again where a cool-off this machine holds says so. Never which account.
     /// </summary>
     public static Noted Limited(string agent, DateTimeOffset? until, TimeZoneInfo zone) =>
         until is { } ready
@@ -45,7 +45,7 @@ public static class HelperNotes
                 ("agent", agent));
 
     /// <summary>
-    /// On the asker: the person asked a helper about its work, and the answer comes to it (COWORKUX1d, the co-worker design §7). Their
+    /// On the asker: the person asked a helper about its work, and the answer comes to it. Their
     /// word on the line, so the answers-alone count starts again.
     /// </summary>
     public static Noted PersonAsked() =>

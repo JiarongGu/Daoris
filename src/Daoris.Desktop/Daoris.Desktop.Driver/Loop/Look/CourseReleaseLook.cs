@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The supervisor's go-on on a quest's referred point (CONTEXTDRIVE1j; the context counters design §4.6 point 3), released after the plan: the
+/// The supervisor's go-on on a quest's referred point, released after the plan: the
 /// counts only a driven quest has, parked by its failed sessions or asking at a part's end, are read from the planner's verdicts, so each
 /// held go-on whose moment came is released through the quest's own door, its <i>Try again</i>, between sessions. The same judgement the
 /// person's press makes (<see cref="QuestRetry.Decide"/>), written as it is: a park's mark, or a policy's one approval.

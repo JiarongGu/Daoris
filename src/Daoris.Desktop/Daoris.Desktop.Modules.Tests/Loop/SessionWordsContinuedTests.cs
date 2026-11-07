@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// FOUNDATION1d-ii part 1 (the foundation design §3.4 rules 1 and 2, §19.12): a host with the <c>head</c> mark refuses a word said to a record that
+/// A host with the <c>head</c> mark refuses a word said to a record that
 /// is not its line's head as <c>continued</c>, naming the head, and the shell says it there through its whole judgement, once, whole: its producer's
 /// key, its level, its files and its display choice. The box's record path, a stale driven inbox and the pump each land the word on the head; a
 /// second <c>continued</c> follows the next head, and a planted cycle ends the walk with the word said lost. A host without the mark keeps the

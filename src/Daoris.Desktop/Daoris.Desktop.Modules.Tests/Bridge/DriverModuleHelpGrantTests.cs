@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Restricted mode's configured access over the bridge (HELPMODE1c2b, D183's note): <c>SET_HELP_GRANT</c>, the person's press of one
+/// Restricted mode's configured access over the bridge: <c>SET_HELP_GRANT</c>, the person's press of one
 /// housekeeping operation on Ask Daoris's screen, written to the home's <c>configured-access.json</c>, which each start and each tool
 /// call read; the state answering it as <c>helpGrants</c>, pushed with the choices. Edits to the home only, so no service and no process.
 /// </summary>
@@ -34,7 +34,7 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// HELPMODE1c3: the chosen settings are a grant of their own, chosen one setting at a time beside housekeeping, and the state answers
+    /// The chosen settings are a grant of their own, chosen one setting at a time beside housekeeping, and the state answers
     /// what it holds and the five it acts on.
     /// </summary>
     [Fact]
@@ -55,7 +55,7 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// HELPMODE1c3 (the modes design §4.1's decided note): the browser's row is drawn from its plugin's own record, read only: its state
+    /// The browser's row is drawn from its plugin's own record, read only: its state
     /// and the plugin whose tab changes it, never a choice made here. With no plugin attaching to Daoris's browser, it names none.
     /// </summary>
     [Fact]
@@ -91,7 +91,7 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 HELPMODE1c4: the checkouts' row is on by default. It answers each checkout here that D107 lets agents outside read as built,
+    /// 🔴 The checkouts' row is on by default. It answers each checkout here that the across rule lets agents outside read as built,
     /// from the machine's facts as last judged (none before they are), and each the person has not turned off as chosen; the route turns
     /// one off and on again by its repository's name, the record keeping only those turned off.
     /// </summary>
@@ -161,7 +161,7 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 ACCESSSWAP1 (D183 point 2): the state says what has not reached a running conversation yet: each grant's <c>pending</c>, while
+    /// The state says what has not reached a running conversation yet: each grant's <c>pending</c>, while
     /// an Ask Daoris conversation running here was handed another choice of it, and <c>helpSwapping</c>, the conversations running under
     /// another access than the one chosen, pushed with what runs. With none running, nothing is pending, before and after a choice.
     /// </summary>

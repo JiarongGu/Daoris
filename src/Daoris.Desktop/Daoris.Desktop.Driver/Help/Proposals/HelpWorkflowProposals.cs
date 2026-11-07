@@ -8,49 +8,49 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>workflow</c> proposal (WORKFLOW1h-b, D157 point 13, the workflow design §8): a whole version of a named workflow,
+/// Ask Daoris's <c>workflow</c> proposal: a whole version of a named workflow,
 /// new or an edit on its newest, for a repository or a workspace (<c>scope</c>), and optionally its choice there (<c>choose</c>). The
 /// file names no door: one with no <c>base</c> is a <c>new</c> workflow, one with a base an <c>edit</c>, and <c>choose</c> is the
-/// <c>use</c> door. It is judged as the editor judges a version (<see cref="WorkflowNamed"/>, §2.5, §3.9), and applied by saving
+/// <c>use</c> door. It is judged as the editor judges a version (<see cref="WorkflowNamed"/>), and applied by saving
 /// it through <see cref="WorkflowStore.Add"/> with the door <c>ask-daoris:&lt;proposal&gt;</c>, then the choice through the
 /// driver's file, as <c>daoris workflow use</c> makes it.
 /// </summary>
 /// <remarks>
-/// <para><b>Stale is refused, never applied over</b> (§8.1, §2.6): a new workflow takes an id no workflow here has, and an edit's
-/// base is the newest version, else the card is refused with the newest number in the terminal's words. The press judges it again
-/// (§8.4), so a version saved between the card and the press refuses it the same way.</para>
+/// <para><b>Stale is refused, never applied over</b>: a new workflow takes an id no workflow here has, and an edit's
+/// base is the newest version, else the card is refused with the newest number in the terminal's words. The press judges it again,
+/// so a version saved between the card and the press refuses it the same way.</para>
 ///
-/// <para><b>The card</b> (§8.2) leads with the person's part, then the steps by id, then what leaves the machine with no press, as
+/// <para><b>The card</b> leads with the person's part, then the steps by id, then what leaves the machine with no press, as
 /// <see cref="WorkflowDiff"/> says them (the CLI's twin), then what each step needs first where it applies, and what it applies to.
-/// Its data rides on <see cref="HelpPlan.Workflow"/>, its words the page's (WORKFLOW1h-d).</para>
+/// Its data rides on <see cref="HelpPlan.Workflow"/>, its words the page's.</para>
 ///
-/// <para><b>Needs first make a draft</b> (§8.1): a declaration a step needs that is not declared in a repository it reaches (the
+/// <para><b>Needs first make a draft</b>: a declaration a step needs that is not declared in a repository it reaches (the
 /// gate's own <see cref="WorkflowProcess.Of"/>), a landing plugin that cannot land here, and a kind this build does not run. A
 /// draft is shown with no Apply, and an Apply pressed anyway is refused before anything is saved, leaving it standing.</para>
 ///
-/// <para><b>Routes and verification pipelines</b> (FABRIC-PIPELINE1i, D192 point 2, the pipeline design §1.3): a <c>route</c> (<c>default</c>,
+/// <para><b>Routes and verification pipelines</b>: a <c>route</c> (<c>default</c>,
 /// <c>landed</c> or <c>kind:&lt;id&gt;</c>) chooses the workflow for that route, and with no version it is the <c>use</c> door alone,
 /// saving nothing. A <c>graph</c> beside <c>steps</c> is a verification pipeline's version, judged by the store's reader under its mark,
 /// and a new workflow proposed as one is made a verification pipeline; a development pipeline's graph is not proposed, since its part
 /// for the person is read nowhere yet. What the change lowers (<see cref="InvolvementRoutes"/>) is said on the card, which applies only
-/// at the person's press; a landed route's gates are left to their own <i>Accept the gates</i> (D156).</para>
+/// at the person's press; a landed route's gates are left to their own <i>Accept the gates</i>.</para>
 ///
-/// <para><b>Left for WORKFLOW1h2</b>: changes against a base, a kind, and an import; the box refuses them by name. A new workflow's
-/// name is the person's words where the box carries them (WORKFLOW1h-name), else its id; an edit keeps its workflow's name.</para>
+/// <para><b>Not handled</b>: changes against a base, a kind, and an import; the box refuses them by name. A new workflow's
+/// name is the person's words where the box carries them, else its id; an edit keeps its workflow's name.</para>
 /// </remarks>
 internal sealed class HelpWorkflowProposals : IHelpProposalKind
 {
     public string Kind => "workflow";
 
-    // WORKFLOW1h-b: a whole version, new or an edit, and its choice; changes, kinds and imports are WORKFLOW1h2's.
+    // A whole version, new or an edit, and its choice; changes, kinds and imports are left out.
     public string Tool => "workflow_propose";
 
-    // FLOWCHART2e: `draft`, a change to the draft open in the person's editor, which saves and chooses nothing.
+    // `draft`, a change to the draft open in the person's editor, which saves and chooses nothing.
     public IReadOnlyList<string> Doors { get; } = ["new", "edit", "use", Drafts];
 
     private const string Drafts = "draft";
 
-    /// <summary>ASKSCOPE1c: its scope is one word, a repository's name or a workspace's, which its judge finds which of.</summary>
+    /// <summary>Its scope is one word, a repository's name or a workspace's, which its judge finds which of.</summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
         new([proposal.Workspace], [proposal.Repository]) { Either = [proposal.Scope] };
 
@@ -73,8 +73,8 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
             Draft = Text(file, "draft"),
         };
 
-        // The box writes no door: a draft's fingerprint makes it a change to that draft (FLOWCHART2e), a base an edit, none a new workflow
-        // (D157's WORKFLOW1h-b note), and a route with no version the use door alone (FABRIC-PIPELINE1i).
+        // The box writes no door: a draft's fingerprint makes it a change to that draft, a base an edit, none a new workflow,
+        // and a route with no version the use door alone.
         var door = read.Draft is not null ? Drafts
             : baseVersion is not null ? "edit" : read.Steps is null && read.Graph is null && read.Route is not null ? "use" : "new";
         return proposal.Kind == Kind && proposal.Door.Length == 0 ? read with { Door = door } : read;
@@ -82,7 +82,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
-        // FLOWCHART2e (the flowchart design §8.4): judged before any save or use, so a draft never reaches a save's path.
+        // Judged before any save or use, so a draft never reaches a save's path.
         if (proposal.Door == Drafts) return HelpWorkflowDrafts.Plan(proposal, facts);
         var id = proposal.Workflow?.Trim() ?? "";
         if (WorkflowNamed.IdProblem(id) is { } idProblem) return Refused(idProblem);
@@ -113,14 +113,14 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var saves = proposal.Steps is not null || proposal.Graph is not null;
         if (!saves && UseProblem(id, proposal, found) is { } unsaved) return Refused(unsaved);
 
-        // FABRIC-PIPELINE1i (the pipeline design §2.1): the workflow's mark says which version it takes. A new workflow proposed as a graph
-        // that lands its work (a `land`) is a development pipeline, as the person's part in its graph is read since CUTOVER1e;
+        // The workflow's mark says which version it takes. A new workflow proposed as a graph
+        // that lands its work (a `land`) is a development pipeline, as the person's part in its graph is read;
         // one that lands nothing is a verification pipeline.
         var verifies = found?.Read.Verifies ?? (proposal.Graph is { } proposed && !HoldsLanding(proposed));
 
         if (saves && BaseProblem(id, proposal.Base, found) is { } stale) return Refused(stale);
 
-        // WORKFLOWCLEAN1 1b: a list of steps is no longer saved, by this door as by every other.
+        // A list of steps is not saved, by this door or any other.
         if (proposal.Steps is not null) return Refused(WorkflowNamed.StepsRefused(id));
 
         var newest = found?.Read.Versions is [.., var last] ? last : null;
@@ -129,13 +129,13 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         NodeGraph? graph = null;
         if (proposal.Graph is { } drawn)
         {
-            // Judged as the store judges a save under the mark (§2.1): the graph reader, then the pipeline's own rule.
+            // Judged as the store judges a save under the mark: the graph reader, then the pipeline's own rule.
             var read = WorkflowNamed.ReadVersion(GraphVersion(drawn, version), version, [], verifies ? WorkflowPipelines.Verification : WorkflowPipelines.Development, onSave: true, id: id);
             if (read.Graph is null) return Refused(read.Problem!);
             graph = read.Graph;
         }
 
-        // An edit keeps its workflow's name; a new workflow takes the person's words, else its id (WORKFLOW1h-name).
+        // An edit keeps its workflow's name; a new workflow takes the person's words, else its id.
         var given = proposal.Base is null ? proposal.Name?.Trim() : null;
         if (!string.IsNullOrEmpty(given) && WorkflowNamed.NameProblem(given) is { } nameProblem) return Refused(nameProblem);
         var name = found?.Read.Name ?? (string.IsNullOrEmpty(given) ? id : given);
@@ -169,7 +169,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var applies = AppliesTo(id, reached, kept, use is not null ? workspace : null);
         var needs = new List<string>();
 
-        // INTEGRATE1r part r2 (the integration design §17.7): a graph chosen with no save integrates its landing in each repository it reaches, so
+        // A graph chosen with no save integrates its landing in each repository it reaches, so
         // each that cannot carry it is a need, and each whose rule integrates with no gates is said (F42).
         var integrates = new List<string>();
         var noGates = new List<string>();
@@ -193,7 +193,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
 
         var nodes = graph is not null ? GraphLines(before?.Graph, graph) : [];
 
-        // D157 point 10 (the pipeline design §1.3): what the change asks less of the person. An agent's choice that lowers anything is
+        // What the change asks less of the person. An agent's choice that lowers anything is
         // kept as this proposal, never applied on its own; only the person's press applies it.
         var lowers = new List<string>();
         if (graph is not null && before?.Graph is { } was && !unchanged) lowers.AddRange(InvolvementRoutes.LowersVerification(graph, was));
@@ -236,7 +236,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
 
         if (landed && use is not null)
         {
-            // D156: the declaration is accepted by the person's own door, never by a proposal.
+            // The declaration is accepted by the person's own door, never by a proposal.
             said.Add(repository is not null
                 ? $"Its gates wait for your *Accept the gates* on `{repository}`'s Workflow tab, which reads `daoris.gates.json` at its line's tip."
                 : "Each repository's gates wait for your *Accept the gates* on its Workflow tab, which reads `daoris.gates.json` at its line's tip.");
@@ -250,8 +250,8 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
             said.AddRange(needs.Select(need => $"  {need}"));
         }
 
-        // §4.7: a repository's choice replaces its workspace's whole, as the terminal's `use` says it.
-        // The landed route resolves on its own and replaces nothing (FABRIC-PIPELINE1a).
+        // A repository's choice replaces its workspace's whole, as the terminal's `use` says it.
+        // The landed route resolves on its own and replaces nothing.
         if (use is { Repository: { } chooser, Landed: false } && OwnOf(config, chooser) is null)
         {
             said.Add($"This replaces the workspace's for every kind: `{chooser}` follows its own kinds and its own default, and this machine's "
@@ -298,10 +298,10 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var plan = applying.Plan;
         var card = plan.Workflow ?? throw new DriverException($"the card for `#{applying.Id}` was not judged as a workflow's.");
 
-        // FLOWCHART2e: a draft's Apply, before any save or choice is looked at, writes neither.
+        // A draft's Apply, before any save or choice is looked at, writes neither.
         if (applying.Proposal.Door == Drafts || card.Draft is not null) return Task.FromResult(HelpWorkflowDrafts.Apply(applying, card));
 
-        // §8.1: a draft offers no Apply. One pressed anyway is refused before anything is saved, and the card stands.
+        // A draft offers no Apply. One pressed anyway is refused before anything is saved, and the card stands.
         if (card.Needs.Count > 0)
         {
             throw new DriverException($"the card for `#{applying.Id}` is a draft: what it needs first is met before it applies — "
@@ -316,12 +316,12 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var said = new List<string>();
         if (card.Saves)
         {
-            // §8.4: judged again at the press, so a version saved since the card was drawn makes it stale, never applied over.
+            // Judged again at the press, so a version saved after the card is drawn makes it stale, never applied over.
             var stale = BaseProblem(card.Id, card.Base, WorkflowStore.Load(applying.Home, card.Id));
             if (stale is not null) return Task.FromResult(applying.Settled(false, $"Not applied: `#{applying.Id}` — {stale}", stale));
             try
             {
-                // A verification pipeline is made so at its first save, and every later save names the mark its file keeps (§2.1).
+                // A verification pipeline is made so at its first save, and every later save names the mark its file keeps.
                 var saved = WorkflowStore.Add(applying.Home, new WorkflowVersionAdded(
                     card.Id, card.Base is null ? card.Name : null, $"ask-daoris:{applying.Id}", Moment(), card.Steps, card.Graph)
                 {
@@ -337,7 +337,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
 
         if (card.Use is { } use)
         {
-            // A route with no version chooses a workflow saved here: one removed since the card was drawn is chosen by nothing.
+            // A route with no version chooses a workflow saved here: one removed after the card is drawn is chosen by nothing.
             if (!card.Saves && WorkflowStore.Load(applying.Home, card.Id) is null)
             {
                 var gone = $"there is no workflow `{card.Id}` on this machine now, so nothing is chosen.";
@@ -360,7 +360,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// Why the base no longer stands (§2.6, the terminal's <c>--base</c>): a new workflow's id taken, an edit's workflow gone or
+    /// Why the base no longer stands (the terminal's <c>--base</c>): a new workflow's id taken, an edit's workflow gone or
     /// unreadable, or a newer version than its base saved. Null where it stands.
     /// </summary>
     private static string? BaseProblem(string id, int? @base, WorkflowFileFound? found)
@@ -391,7 +391,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         return document.RootElement.Clone();
     }
 
-    /// <summary>The repositories whose landed work the workflow would verify (§1.2): each whose landed route resolves to it.</summary>
+    /// <summary>The repositories whose landed work the workflow would verify: each whose landed route resolves to it.</summary>
     private static List<string> ReachedLanded(DriverConfig config, HelpMachineFacts facts, string id) =>
     [
         .. facts.Repositories
@@ -423,7 +423,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         return lines;
     }
 
-    /// <summary>A verification graph's part for the person (the pipeline design §4.5): each check whose failure waits for their press.</summary>
+    /// <summary>A verification graph's part for the person: each check whose failure waits for their press.</summary>
     private static List<string> Part(NodeGraph? graph) =>
     [
         .. (graph?.Nodes ?? []).Where(node => node.Kind == NodeKinds.Check && (Failed(node) ?? InvolvementRoutes.FailedWait) == InvolvementRoutes.FailedWait)
@@ -451,7 +451,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         return value.RootElement.ValueKind == JsonValueKind.String ? value.RootElement.GetString() : null;
     }
 
-    /// <summary>The repositories whose new work would follow the workflow (§4.1): each whose own choice names it, else whose workspace's does.</summary>
+    /// <summary>The repositories whose new work would follow the workflow: each whose own choice names it, else whose workspace's does.</summary>
     private static List<string> Reached(DriverConfig config, HelpMachineFacts facts, string id) =>
     [
         .. facts.Repositories
@@ -469,7 +469,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
                 .Where(each => Same(RemoteTarget.Workspace(WorkspaceOf(facts, each)), workspace!) && OwnOf(config, each) is null)
                 .Order(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>§8.2's *Applies to*: new work only, where, and how many runs keep the version they started on.</summary>
+    /// <summary>The *Applies to*: new work only, where, and how many runs keep the version they started on.</summary>
     private static string AppliesTo(string id, IReadOnlyList<string> reached, int kept, string? chosenWorkspace)
     {
         var runs = kept switch
@@ -491,8 +491,8 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         map.FirstOrDefault(pair => Same(pair.Key, name)).Value;
 
     /// <summary>
-    /// A repository's own development routes, which replace its workspace's (§4.1), or null: an entry naming only its landed route
-    /// names none, so its workspace's reach it (FABRIC-PIPELINE1a).
+    /// A repository's own development routes, which replace its workspace's, or null: an entry naming only its landed route
+    /// names none, so its workspace's reach it.
     /// </summary>
     private static WorkflowChoice? OwnOf(DriverConfig config, string repository) =>
         ChoiceOf(config.Workflows, repository) is { NamesDevelopment: true } own ? own : null;

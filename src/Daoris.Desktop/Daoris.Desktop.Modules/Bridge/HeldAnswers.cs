@@ -5,7 +5,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The answers of the reads marked <see cref="ByEventAttribute"/> (NOBLOCK1, D56's NOBLOCK1 note): an ask is answered at once from
+/// The answers of the reads marked <see cref="ByEventAttribute"/>: an ask is answered at once from
 /// what is held, its work runs on a .NET task of its own, and what the work answers reaches the page as <c>DAORIS.ANSWERED</c>.
 /// </summary>
 /// <remarks>
@@ -26,7 +26,7 @@ namespace Daoris.Desktop;
 /// never chase each other. The event names the page's own query (the payload's <c>held</c>, its key's hash), never the payload,
 /// whose trees are machine paths: the page sends <c>held</c>, and an ask without one is answered and told nothing.</para>
 ///
-/// <para><b>Or by its inputs' versions</b> (FOUNDATION1s, D182's part B note): an ask handed its route's versions (the scopes and slices
+/// <para><b>Or by its inputs' versions</b>: an ask handed its route's versions (the scopes and slices
 /// its answer is made of, <see cref="ByEventAttribute"/>) is answered with no work while they are those of the answer held, and works
 /// again once one moved; a work under way at those versions is joined. Null versions work at every ask, as above.</para>
 /// </remarks>
@@ -59,7 +59,7 @@ public sealed class HeldAnswers
 
     public HeldAnswers(IEventBus bus) => _bus = bus;
 
-    /// <summary>How many asks were answered from what was held with no work begun, its inputs standing (FOUNDATION1s).</summary>
+    /// <summary>How many asks were answered from what is held with no work begun, its inputs standing.</summary>
     public long Served => Interlocked.Read(ref _served);
 
     /// <summary>How many works were begun.</summary>
@@ -83,10 +83,10 @@ public sealed class HeldAnswers
     /// <summary>
     /// Answer <paramref name="key"/> from what is held, and start its <paramref name="work"/> on a task of its own, or join the
     /// one under way. <paramref name="held"/> is the page's query the event names; null tells nothing. <paramref name="versions"/>
-    /// reads the route's inputs' versions now: while they are the held answer's, no work begins (FOUNDATION1s); null works.
+    /// reads the route's inputs' versions now: while they are the held answer's, no work begins; null works.
     /// </summary>
     /// <param name="numbered">
-    /// A numbered read (COWORKVIEW1a, the design §4.1): never a refusal, every reply and event carrying <c>at</c>, its
+    /// A numbered read: never a refusal, every reply and event carrying <c>at</c>, its
     /// <see cref="Epoch"/> and its landing's number, a failure answered with its words, failed or over the held answer stale.
     /// </param>
     public async Task<object?> AskAsync(
@@ -140,7 +140,7 @@ public sealed class HeldAnswers
         return flight.IsCompletedSuccessfully ? Numbered(flight.Result, begun) : Failure(WhyOf(flight.Exception), begun);
     }
 
-    /// <summary>This module's life (COWORKVIEW1a): a numbered read's number is within it.</summary>
+    /// <summary>This module's life: a numbered read's number is within it.</summary>
     public string Epoch { get; } = Guid.NewGuid().ToString("N")[..12];
 
     // Under the gate: what is held, as an ask is answered it; a numbered read's with its number, stale where a failure is kept.
@@ -203,7 +203,7 @@ public sealed class HeldAnswers
 
     /// <summary>
     /// Told each answer that lands as the one held, its key beside it, whether it moved or not, never one a newer landing superseded: what
-    /// a read's own judge registers its dependencies by (COWORKVIEW1a, the design §4.1).
+    /// a read's own judge registers its dependencies by.
     /// </summary>
     public event Action<string, object?>? Landed;
 
@@ -289,7 +289,7 @@ public sealed class HeldAnswers
         public Task<object?>? Flight;
         public Task Landing = Task.CompletedTask;
 
-        // The versions the work under way began at, and those the answer held was made at (FOUNDATION1s); null where none was read.
+        // The versions the work under way began at, and those the answer held is made at; null where none is read.
         public string? FlightAt;
         public string? Made;
         public long Begun;
@@ -297,7 +297,7 @@ public sealed class HeldAnswers
         public long Asked;
         public readonly HashSet<string> Pages = new(StringComparer.Ordinal);
 
-        // COWORKVIEW1a: a numbered read, and the words of a failure kept over its held answer.
+        // A numbered read, and the words of a failure kept over its held answer.
         public bool Numbered;
         public string? Kept;
     }

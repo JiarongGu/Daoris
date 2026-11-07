@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The routes a workflow proposal chooses its workflow for (FABRIC-PIPELINE1i, the pipeline design §1.3): <c>default</c>, <c>landed</c>
+/// The routes a workflow proposal chooses its workflow for: <c>default</c>, <c>landed</c>
 /// or <c>kind:&lt;id&gt;</c>, how they are judged, the edit that chooses, and the words that say them.
 /// </summary>
 internal static class HelpWorkflowRoutes
@@ -25,7 +25,7 @@ internal static class HelpWorkflowRoutes
         route is not null && route.StartsWith(Routes.KindPrefix, StringComparison.Ordinal) ? route[Routes.KindPrefix.Length..] : null;
 
     /// <summary>
-    /// Why a route with no version cannot choose its workflow (FABRIC-PIPELINE1i), or null: the workflow is saved here and its newest
+    /// Why a route with no version cannot choose its workflow, or null: the workflow is saved here and its newest
     /// version reads, and the proposal names no base and no name, which only a save takes.
     /// </summary>
     public static string? UseProblem(string id, HelpProposal proposal, WorkflowFileFound? found)
@@ -54,7 +54,7 @@ internal static class HelpWorkflowRoutes
 
     /// <summary>
     /// The edit choosing the workflow for the route, as the terminal's <c>use</c> makes it: a repository's kind checked against its
-    /// workspace's kinds, and a landed route with no gates accepted, which only the person's <i>Accept the gates</i> does (D156).
+    /// workspace's kinds, and a landed route with no gates accepted, which only the person's <i>Accept the gates</i> does.
     /// </summary>
     public static WorkflowUse UseOf(string id, string route, string? repository, string? workspace, string? inWorkspace)
     {

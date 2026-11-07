@@ -4,8 +4,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A proved holder's act outside the acts the person granted its role (STEWARDROLE1d; D209 point 2, D201's four presses the steward's
-/// acts): it asks the person as its route's own press, a card in <i>Notifications</i> like any terminal's, and confirmed it runs as the
+/// A proved holder's act outside the acts the person granted its role: it asks the person as its route's own press, a card in <i>Notifications</i> like any terminal's, and confirmed it runs as the
 /// person's. Within the acts the role's standing confirms it; an unproved process never reaches here, refused before its act is read.
 /// </summary>
 /// <remarks>

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The second-opinion rule over the bridge (XAGENT1a, D155 point 3, the second-agent design §2.5): the screens' half of
+/// The second-opinion rule over the bridge: the screens' half of
 /// `daoris place opinion`, over the same file, for a repository or a workspace; each edit judged by the twin's table in its
 /// words; the state answering what is set as rows, each rule naming the reviewers of the working agent's own family; and the
 /// lines answering what each repository resolves to and from where, which only the driver resolves. Declared only.
@@ -85,7 +85,7 @@ public sealed class DriverModuleOpinionTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The family sentence over the loop's agents (XAGENT1b3, D155's XAGENT1b2 note): a plugin's agent that declares the working
+    /// The family sentence over the loop's agents: a plugin's agent that declares the working
     /// agent's maker is of its family on the screen, as the terminal and Ask Daoris judge it, and one declaring another maker is
     /// not. Both the state's rows and the lines say so.
     /// </summary>

@@ -3,7 +3,7 @@ using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
 
-/// <summary>The supervisor's course on a referred point (CONTEXTDRIVE1j), the role's third act.</summary>
+/// <summary>The supervisor's course on a referred point, the role's third act.</summary>
 public sealed class SupervisorCourseRoutes(DriverContext context)
 {
     private readonly DriverLoop _loop = context.Loop;

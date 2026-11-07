@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// How work is committed in a repository (PROCESS1a, D164's amendment point 1): <c>as-you-go</c> (the default) commits each piece
+/// How work is committed in a repository: <c>as-you-go</c> (the default) commits each piece
 /// that passes its checks, <c>ask</c> waits for the person's yes before each commit, <c>at-end</c> makes one commit when the work
 /// is done. <see cref="Convention"/> is the person's words on how a commit is written: one paragraph, trimmed, none where blank.
 /// </summary>
@@ -14,8 +14,7 @@ public sealed record CommitRule(string Mode, string? Convention)
 }
 
 /// <summary>
-/// The commit rule as <c>driver.json</c> keeps it, <c>commits</c> and <c>workspaceCommits</c> (PROCESS1a, D164's amendment point 1;
-/// FOUNDATION1 mod-iii): the key's shape, its limits and the sentences that say what does not read, read and written by the settings'
+/// The commit rule as <c>driver.json</c> keeps it, <c>commits</c> and <c>workspaceCommits</c>: the key's shape, its limits and the sentences that say what does not read, read and written by the settings'
 /// own parser. What the rule means, its resolution, edit and words, stays with the commit rule (<see cref="CommitRules"/>), which
 /// answers through this for what it shares.
 /// </summary>

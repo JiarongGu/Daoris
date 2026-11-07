@@ -76,7 +76,7 @@ internal static class TraceQuestLinks
         };
     }
 
-    /// <summary>One item a requirement names, with what the quest's last verdict read of it (EVID1b); unread where it read none.</summary>
+    /// <summary>One item a requirement names, with what the quest's last verdict read of it; unread where it read none.</summary>
     private static TraceEvidenceItem EvidenceItem(int requirement, QuestEvidenceItem item, EvidenceVerdict? verdict) =>
         verdict?.Items.FirstOrDefault(read => read.Requirement == requirement && read.Path == item.Path && read.Gate == item.Gate) is { } read
             ? new TraceEvidenceItem(item.Kind, item.Named) { Result = read.Result, Object = read.Object, Changed = read.Changed, Spelled = read.Spelled }

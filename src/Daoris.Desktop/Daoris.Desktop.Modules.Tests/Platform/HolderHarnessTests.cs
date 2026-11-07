@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// STEWARDROLE1a-i (D209 §6.1, the steward design §10 row 1a-i's <c>HolderHarnessTests</c>): the programs a role's key is handed to are
+/// The programs a role's key is handed to are
 /// Daoris's choice, not a file's or a variable's. The holder's tab process is Daoris's managed, pinned <c>claude-code</c> by its absolute
 /// path, with no shell between; a binary whose hash is not the one its verified install recorded, a pin with no record, or no pin, is
 /// refused <see cref="HolderHarness.Refused"/> with nothing started, and never PATH's <c>claude</c> instead; the environment is the one
@@ -118,8 +118,8 @@ public sealed class HolderHarnessTests : Bridge
     }
 
     /// <summary>
-    /// AGENTPROVIDER1 row u: a holder's start is outside the plan, so a harness whose provider is not opened to the machine's room is refused
-    /// before anything starts, saying so; every provider today reaches everywhere, so the built agents' reach starts it as before.
+    /// A holder's start is outside the plan, so a harness whose provider is not opened to the machine's room is refused
+    /// before anything starts, saying so; every provider today reaches everywhere, so the built agents' reach starts it.
     /// </summary>
     [Fact]
     public async Task A_holder_s_harness_whose_provider_is_not_opened_to_the_machine_s_room_is_refused_before_anything_starts()
@@ -185,7 +185,7 @@ public sealed class HolderHarnessTests : Bridge
         Assert.StartsWith(Path.Combine(Home, "install", "app") + ";", launch.Environment["PATH"], StringComparison.Ordinal);
     }
 
-    /// <summary>D209 §6.1: wherever a role's tab is a shell, the system's own Windows PowerShell, never the tools file's nor PATH's.</summary>
+    /// <summary>Wherever a role's tab is a shell, the system's own Windows PowerShell, never the tools file's nor PATH's.</summary>
     [Fact]
     public void Where_a_role_s_tab_is_a_shell_it_is_the_system_s_Windows_PowerShell()
     {

@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 public sealed record RoleUseMoved(string Condition, int Moves);
 
 /// <summary>
-/// A role's moves between choices in the week (STAFFPOLICY1f), summed from the machine log's <c>actor.moved</c> lines, which a part the course
+/// A role's moves between choices in the week, summed from the machine log's <c>actor.moved</c> lines, which a part the course
 /// moved to another choice writes with the role and the condition that moved it. Names and counts only.
 /// </summary>
 public static class RoleUseMoves

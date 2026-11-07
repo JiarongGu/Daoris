@@ -8,22 +8,22 @@ using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
 
-/// <summary>One partition as a judgement made it (PUSH1a, D182 point 1): its name, and its projection, an allow-listed DTO.</summary>
+/// <summary>One partition as a judgement made it: its name, and its projection, an allow-listed DTO.</summary>
 /// <param name="Partition">The partition's name within its slice, in the page's words.</param>
 /// <param name="Data">What the window holds of it: never a credential, an arbitrary payload, or a machine path outside a desktop-only slice.</param>
 public sealed record SliceJudged(string Partition, object Data);
 
-/// <summary>What wakes a slice's judge on the kit's bus (D182 point 2): a Daoris event's type, and which of its payloads do.</summary>
+/// <summary>What wakes a slice's judge on the kit's bus: a Daoris event's type, and which of its payloads do.</summary>
 /// <param name="Type">The event's type under <see cref="StateSlice.Module"/>.</param>
 /// <param name="When">Which payloads wake it; null is every one.</param>
 public sealed record SliceWake(string Type, Func<object?, bool>? When = null);
 
 /// <summary>
-/// <c>STATE_PUSH</c> on the wire (PUSH1a, D182 point 3): one partition of a slice as it now stands, numbered within the slice's
+/// <c>STATE_PUSH</c> on the wire: one partition of a slice as it now stands, numbered within the slice's
 /// epoch. A whole replacement carries no <see cref="BaseSeq"/> and may skip numbers; a delta names the number it applies to and
 /// the keys it takes away, and a window holding another number reads the partition again.
 /// </summary>
-/// <remarks>A wire shape: a field is added, never changed in place (D169 point 3).</remarks>
+/// <remarks>A wire shape: a field is added, never changed in place.</remarks>
 /// <param name="Slice">The slice, as its owner names it.</param>
 /// <param name="Epoch">The owner's life: a number from another epoch is no number of this one.</param>
 /// <param name="Partition">The partition, as the owner names it.</param>
@@ -41,26 +41,26 @@ public sealed record SlicePush(
 public sealed record SlicePartition(string Partition, long Seq, string Status, object? Data);
 
 /// <summary>
-/// A slice's snapshot (PUSH1a, D182 point 3), read from memory by the route a window asks after it subscribes: every partition as
+/// A slice's snapshot, read from memory by the route a window asks after it subscribes: every partition as
 /// last judged, or <see cref="StateSlice.NotJudged"/> with none before the first judgement, never a judgement made for the asking.
 /// </summary>
 public sealed record SliceSnapshot(string Slice, string Epoch, string Status, IReadOnlyList<SlicePartition> Partitions);
 
-/// <summary>A slice's health (COWORKVIEW1a): whether it has judged, whether its last judgement failed, and with what words.</summary>
+/// <summary>A slice's health: whether it has judged, whether its last judgement failed, and with what words.</summary>
 public sealed record SliceHealthReading(bool Judged, bool Failing, string? Why);
 
 /// <summary>A partition's number in a manifest.</summary>
 public sealed record SliceVersion(string Partition, long Seq);
 
 /// <summary>
-/// <c>STATE_MANIFEST</c> on the wire (PUSH1a, D182 point 3): each partition's number, told at the slice's period through the same
+/// <c>STATE_MANIFEST</c> on the wire: each partition's number, told at the slice's period through the same
 /// bus and after the pushes it covers, so a window that missed a push (a batch dropped, its final update among them) reads that
 /// partition again once.
 /// </summary>
 public sealed record SliceManifest(string Slice, string Epoch, IReadOnlyList<SliceVersion> Partitions);
 
 /// <summary>
-/// One slice of the machine's state, judged once and pushed with its data to every window (PUSH1a, D182 points 1 to 4).
+/// One slice of the machine's state, judged once and pushed with its data to every window.
 /// </summary>
 /// <remarks>
 /// <para><b>One owner, one judgement at a time.</b> A wake only asks (<see cref="Wake"/>): the bus's subscribers and the loop's look
@@ -73,7 +73,7 @@ public sealed record SliceManifest(string Slice, string Epoch, IReadOnlyList<Sli
 /// manifest by its slice, and never a delta (<see cref="EventMessage.CoalesceKey"/>). The snapshot is swapped under a short lock
 /// that no judgement or bus call is made under.</para>
 ///
-/// <para><b>Shell-only</b> (D47, D169 point 4): the bus is this machine's, forwarded to its windows and to nothing else, so a
+/// <para><b>Shell-only</b>: the bus is this machine's, forwarded to its windows and to nothing else, so a
 /// desktop slice may carry what only this machine's windows may read.</para>
 /// </remarks>
 public sealed class StateSlice
@@ -122,7 +122,7 @@ public sealed class StateSlice
     /// <param name="bus">Where its pushes and manifests are raised, the kit's bus each window's pump forwards.</param>
     /// <param name="judge">
     /// One judgement of the slice's partitions, from the truth (files, git, the database, the machine's facts); null where what it is
-    /// judged from has not landed yet (PUSH1b1), which judges nothing: a slice never judged stays <see cref="NotJudged"/>, so a window
+    /// judged from has not landed yet, which judges nothing: a slice never judged stays <see cref="NotJudged"/>, so a window
     /// never installs an empty slice as the truth, and one judged keeps what it holds.
     /// </param>
     /// <param name="epoch">This owner's life; a fresh one where none is named.</param>
@@ -147,7 +147,7 @@ public sealed class StateSlice
     public IReadOnlyList<SliceWake> WakesOn { get; init; } = [];
 
     /// <summary>
-    /// Whether each partition is keyed (PUSH1d2, D182 point 3): its data written as an object of keys, each one record, so a judgement
+    /// Whether each partition is keyed: its data written as an object of keys, each one record, so a judgement
     /// that moved fewer than half of them pushes those alone as a delta on the number held (<see cref="SlicePush.BaseSeq"/>, the keys
     /// gone in <see cref="SlicePush.Removed"/>), which the pump never coalesces. A first push, a return from gone and a delta that would
     /// carry half the partition or more are pushed whole; the snapshot is always whole.
@@ -155,7 +155,7 @@ public sealed class StateSlice
     public bool Keyed { get; init; }
 
     /// <summary>
-    /// Where the slice hears of a move no bus event tells (PUSH1b1: the machine's facts landing), while the worker runs: each is
+    /// Where the slice hears of a move no bus event tells (the machine's facts landing), while the worker runs: each is
     /// handed the slice's <see cref="Wake"/> and answers what stops it hearing, disposed when the worker stops.
     /// </summary>
     public IReadOnlyList<Func<Action, IDisposable>> Hears { get; init; } = [];
@@ -186,7 +186,7 @@ public sealed class StateSlice
     }
 
     /// <summary>
-    /// The slice's own version (FOUNDATION1s): its epoch and the sum of its partitions' numbers, a gone one's among them, which every push
+    /// The slice's own version: its epoch and the sum of its partitions' numbers, a gone one's among them, which every push
     /// raises; what a held answer that reads this slice is versioned by.
     /// </summary>
     public string Version
@@ -226,7 +226,7 @@ public sealed class StateSlice
             catch (Exception error) when (error is not OperationCanceledException || !ct.IsCancellationRequested)
             {
                 // Said once until a judgement succeeds again: a file that stays unreadable is not a line at every look. A read's own
-                // timeout is a cancellation too (the service client's, SLICESTALL1), and only the worker's stop is not a failure.
+                // timeout is a cancellation too (the service client's), and only the worker's stop is not a failure.
                 if (!_failing) Failed?.Invoke(error);
                 _failing = true;
                 lock (_gate) _why = error.Message;
@@ -242,7 +242,7 @@ public sealed class StateSlice
             // Nothing to judge from yet: what is held stands, and a slice never judged stays not judged.
             if (judged is null) return;
 
-            // Written and compared outside the lock (PUSH1d2: a keyed partition may be megabytes): a judgement's turn is the one writer of
+            // Written and compared outside the lock (a keyed partition may be megabytes): a judgement's turn is the one writer of
             // what is held, so it reads it here unlocked, and the lock is held only to swap.
             var moves = new List<(Held Held, SlicePush Push)>();
             var named = new HashSet<string>(StringComparer.Ordinal);
@@ -277,7 +277,7 @@ public sealed class StateSlice
     }
 
     /// <summary>
-    /// The slice's health (COWORKVIEW1a, the design §4.1), from memory: whether it has judged, whether its last judgement failed, and
+    /// The slice's health, from memory: whether it has judged, whether its last judgement failed, and
     /// that failure's words.
     /// </summary>
     public SliceHealthReading Health
@@ -361,7 +361,7 @@ public sealed class StateSlice
     }
 
     /// <summary>
-    /// One turn of the worker (SLICESTALL1): anything it throws but the worker's own stop is said, once until a turn succeeds again,
+    /// One turn of the worker: anything it throws but the worker's own stop is said, once until a turn succeeds again,
     /// and the worker goes on to its next wake. A throw that left the worker ended the slice for the window's life: nothing observed
     /// the task, so nothing said it, and every view kept what it last held.
     /// </summary>
@@ -413,7 +413,7 @@ public sealed class StateSlice
         _bus.Emit(new EventMessage { Module = Module, Type = type, Payload = payload, CoalesceKey = coalesce });
 
     /// <summary>
-    /// Told after a judgement that pushed something, once its snapshot holds it (PUSH1e): another slice judged from this one's memory
+    /// Told after a judgement that pushed something, once its snapshot holds it: another slice judged from this one's memory
     /// (the accounts' running counts from the records) hears it, never a judgement that moved nothing. Each hearer's failure is its own.
     /// </summary>
     public event Action? Pushed;
@@ -437,8 +437,8 @@ public sealed class StateSlice
 }
 
 /// <summary>
-/// The slices this Daoris pushes (PUSH1a, D182), by name: what the snapshot route finds, and what the shell's loop runs. A slice not
-/// held here is one the page keeps pulling (capability per slice, D182 point 7).
+/// The slices this Daoris pushes, by name: what the snapshot route finds, and what the shell's loop runs. A slice not
+/// held here is one the page keeps pulling (capability per slice).
 /// </summary>
 public sealed class StateSlices(params StateSlice[] slices)
 {

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// FLOWCHART2e (D223; the flowchart design §4, §8.4): a change to the draft open in the person's editor, over the bridge. The card is judged
+/// A change to the draft open in the person's editor, over the bridge. The card is judged
 /// against the draft the conversation's record says it was told, and carries the changes, what a save would refuse and the candidate graph;
 /// its Apply opens the place's Workflow and stands, and the editor's press naming each change taken or left settles it. Neither writes a
 /// workflow or a choice: the workflow store and the driver's file are as they were, byte for byte.
@@ -68,7 +68,7 @@ public sealed class HelpDraftDoorTests : DriverModuleBridge
         lock (_service.Asked) Assert.All(_service.Asked, asked => Assert.StartsWith("GET ", asked));
     }
 
-    /// <summary>The conversation's record holding the draft as told, as its message's turn records it (FLOWCHART2d).</summary>
+    /// <summary>The conversation's record holding the draft as told, as its message's turn records it.</summary>
     private void Told(string graph)
     {
         using var draft = JsonDocument.Parse($$"""{"fingerprint":"{{Fingerprint}}","place":"engine","graph":{{graph}}}""");

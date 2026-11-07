@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Why the person's ask of a piece was not written, by code: what the page words and the verb says (COAGENT1b).</summary>
+/// <summary>Why the person's ask of a piece is not written, by code: what the page words and the verb says.</summary>
 public static class PartnerAskWhy
 {
     /// <summary>The piece is blank.</summary>
@@ -27,14 +27,14 @@ public static class PartnerAskWhy
     public static readonly IReadOnlyList<string> All = [Blank, TooLong, Agent, Path, NotHeld, Unfit, NoCommit];
 }
 
-/// <summary>Where a lead's tree stood at the ask: its commit, or null where none was read, and its uncommitted paths.</summary>
+/// <summary>Where a lead's tree stood at the ask: its commit, or null where none is read, and its uncommitted paths.</summary>
 public sealed record PieceBase(string? Head, IReadOnlyList<string> Uncommitted);
 
-/// <summary>What the person's ask came to: the piece's id where it was written, or the code and sentence of why not.</summary>
+/// <summary>What the person's ask came to: the piece's id where it is written, or the code and sentence of why not.</summary>
 public sealed record PartnerAsked(string? Asked, string? Why, string Message);
 
 /// <summary>
-/// The person's own ask of a piece (COAGENT1b, D199 point 2; the co-agent design §2.3 step 1, §6.1, §6.4): the one judge and writer the
+/// The person's own ask of a piece: the one judge and writer the
 /// terminal's <c>daoris session partner</c> and the page's <i>Ask another agent to work on a piece…</i> share. It judges what a
 /// reader of the file cannot know (the words, the agent named, the paths, the session's record and its tree's commit), then writes the
 /// piece's ask once, at the exact commit the lead's tree stands at and with its uncommitted paths, asked by the person. Everything else

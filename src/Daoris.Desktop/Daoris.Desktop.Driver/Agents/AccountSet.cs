@@ -3,32 +3,32 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// An agent's accounts signed in for Daoris as one set (POOL1a, D197; <c>docs/2026-10-21-account-pool-design.md</c> §2, §6): every
+/// An agent's accounts signed in for Daoris as one set: every
 /// account serves every workspace, in one order with one entry of settings. <c>harnesses.json</c> is read and written raw
 /// (<see cref="HarnessSettings.Load"/>); <see cref="Of"/> answers the set to every reader, and <see cref="Fold"/>, which
 /// <see cref="HarnessSettings.Change"/> runs under the file's lock before every edit, writes it so, with a receipt of what changed.
 /// </summary>
 /// <remarks>
-/// <para>Both are one rule (design §6.1): per agent, the order is the union of every scope (the machine's, then each workspace's by
+/// <para>Both are one rule: per agent, the order is the union of every scope (the machine's, then each workspace's by
 /// name, each as its first as its starts read it and then its list, then every other account by id), nothing signed in dropped; the
 /// settings are the machine's entry where it sets a field, else the one value every workspace entry a start read agrees on, else the
 /// default; a machine scope that named one account and no list is used <c>order</c>, so its starts keep beginning there; the
 /// defaults and the workspace sections go. A folded file folds to itself.</para>
-/// <para>The person's own sign-in is never one of the accounts (design §3): an account is a folder under the home's account homes.</para>
+/// <para>The person's own sign-in is never one of the accounts: an account is a folder under the home's account homes.</para>
 /// </remarks>
 public static class AccountSet
 {
-    /// <summary>How many said receipts an agent keeps beyond its unsaid ones (design §6.3).</summary>
+    /// <summary>How many said receipts an agent keeps beyond its unsaid ones.</summary>
     public const int SaidKept = 5;
 
     /// <summary>
-    /// <paramref name="settings"/> folded to one set per agent (design §6.1), each fold that had anything to say appended to
+    /// <paramref name="settings"/> folded to one set per agent, each fold that had anything to say appended to
     /// <see cref="HarnessSettings.Pooled"/> as a receipt; and, per agent folded, its counts for the machine log's line. The migration's
     /// (<see cref="HarnessesStep"/>): every other reader and writer takes the file as one set per agent.
     /// </summary>
     /// <param name="accounts">Each agent's accounts on this machine, sorted.</param>
     /// <param name="now">When the receipts were written.</param>
-    /// <param name="newId">A fresh receipt id, unique among the agent's (design §6.3).</param>
+    /// <param name="newId">A fresh receipt id, unique among the agent's.</param>
     public static (HarnessSettings Settings, IReadOnlyList<FoldCount> Folded) Fold(
         HarnessSettings settings, IReadOnlyDictionary<string, IReadOnlyList<string>> accounts, DateTimeOffset now, Func<string> newId) =>
         Fold(settings, accounts, now, newId, receipts: true);
@@ -45,8 +45,8 @@ public static class AccountSet
             .Order(StringComparer.Ordinal)];
 
     /// <summary>
-    /// The agents the wiring's <c>rotation</c> or <c>pooled</c> names that are none of <paramref name="agents"/> (POOLSTRAY1), by name:
-    /// what a fold that read a stray folder as an agent wrote, each with how many accounts its order named and how many receipts it held.
+    /// The agents the wiring's <c>rotation</c> or <c>pooled</c> names that are none of <paramref name="agents"/>, by name:
+    /// what a fold that reads a stray folder as an agent writes, each with how many accounts its order names and how many receipts it holds.
     /// </summary>
     public static IReadOnlyList<StrayAgent> Strays(HarnessSettings settings, IReadOnlyCollection<string> agents) =>
         [.. settings.Rotation.Keys.Concat(settings.Pooled.Keys)
@@ -57,7 +57,7 @@ public static class AccountSet
                 agent, settings.Rotation.GetValueOrDefault(agent)?.Count ?? 0, settings.Pooled.GetValueOrDefault(agent)?.Count ?? 0))];
 
     /// <summary>
-    /// Whether <paramref name="agent"/>'s wiring has anything to fold (design §6.1 rule 1): a default, any workspace entry, no stored
+    /// Whether <paramref name="agent"/>'s wiring has anything to fold: a default, any workspace entry, no stored
     /// order while it has accounts, or a stored order that leaves out an account or names one that is gone. The migration's fold reads it.
     /// </summary>
     private static bool Unfolded(HarnessSettings settings, string agent, IReadOnlyList<string> accounts)
@@ -73,7 +73,7 @@ public static class AccountSet
     }
 
     /// <summary>
-    /// Each agent's order made whole after an edit (design §2.2, §5.1): the order as edited, then the accounts it did not name in the
+    /// Each agent's order made whole after an edit: the order as edited, then the accounts it did not name in the
     /// order before the edit, then any other by id, a name that is no account left out. An order the edit cleared is the ids' order.
     /// So a new account goes last whatever its id, and the order is written whole at every change of the set.
     /// </summary>
@@ -104,7 +104,7 @@ public static class AccountSet
     {
         var folded = settings;
         var counts = new List<FoldCount>();
-        // Only an agent the accounts name is folded (POOLSTRAY1): one they do not is none Daoris knows, and its wiring is not its.
+        // Only an agent the accounts name is folded: one they do not is none Daoris knows, and its wiring is not its.
         foreach (var agent in AgentsOf(settings, accounts))
         {
             if (!accounts.TryGetValue(agent, out var mine) || !Unfolded(settings, agent, mine)) continue;
@@ -123,7 +123,7 @@ public static class AccountSet
         return (folded, counts);
     }
 
-    /// <summary>One agent folded (design §6.1 rules 2 to 5): the settings without its scopes, its receipt where anything is said.</summary>
+    /// <summary>One agent folded: the settings without its scopes, its receipt where anything is said.</summary>
     private static (HarnessSettings Settings, PoolReceipt? Receipt, FoldCount Count) FoldAgent(
         HarnessSettings settings, string agent, IReadOnlyList<string> accounts)
     {
@@ -163,7 +163,7 @@ public static class AccountSet
         {
             Place(scope.Begins);
             foreach (var name in scope.List) Place(name);
-            // A default its own list does not hold was never where its starts began: placed as every other account is, unless gone.
+            // A default its own list does not hold is not where its starts begin: placed as every other account is, unless gone.
             if (scope.Default is { } named && !Here(named)) Place(named);
         }
 
@@ -270,7 +270,7 @@ public static class AccountSet
         entry.Fields.Where(field => !RotationUse.Retired.Contains(field.Key, StringComparer.Ordinal))
             .Select(field => (field.Key, field.Value));
 
-    /// <summary>A setting's value as a start reads it, for comparing two entries (design §6.1 rule 3): a value this build knows normalized.</summary>
+    /// <summary>A setting's value as a start reads it, for comparing two entries: a value this build knows normalized.</summary>
     private static string Normal(string field, JsonElement raw) => field switch
     {
         "use" when RotationUse.ModeOf(raw) is { } mode => mode,
@@ -291,8 +291,8 @@ public static class AccountSet
     }
 }
 
-/// <summary>One scope a fold read, as the raw file named it (design §6.3).</summary>
-/// <param name="Workspace">The workspace whose scope it was, or null for the machine's.</param>
+/// <summary>One scope a fold reads, as the raw file names it.</summary>
+/// <param name="Workspace">The workspace whose scope it is, or null for the machine's.</param>
 /// <param name="Default">Its default, or none.</param>
 /// <param name="List">Its list, empty for none.</param>
 /// <param name="Begins">Its first as its starts read it: its default where its list holds it, else its list's first; with no list its default.</param>
@@ -308,31 +308,31 @@ public sealed record MovedFirst(string? Workspace, string Account, int Place);
 /// <summary>An account a stored order left out, and the place the fold gave it, from one.</summary>
 public sealed record PlacedAccount(string Account, int Place);
 
-/// <summary>A setting a fold did not keep: whose it was (a workspace, or null for the machine's entry), its name and its value as written.</summary>
+/// <summary>A setting a fold does not keep: whose it is (a workspace, or null for the machine's entry), its name and its value as written.</summary>
 public sealed record NotKeptSetting(string? Workspace, string Setting, JsonElement Value);
 
 /// <summary>
-/// An agent Daoris does not know that the wiring names (POOLSTRAY1), for the machine log's <c>accounts.strayDropped</c> line: never an
+/// An agent Daoris does not know that the wiring names, for the machine log's <c>accounts.strayDropped</c> line: never an
 /// account's name.
 /// </summary>
 public sealed record StrayAgent(string Agent, int Accounts, int Receipts);
 
-/// <summary>A fold's counts for the machine log's <c>accounts.pooled</c> line (design §6.2): never a name.</summary>
+/// <summary>A fold's counts for the machine log's <c>accounts.pooled</c> line: never a name.</summary>
 public sealed record FoldCount(string Agent, int Accounts, int Scopes, int NotKept);
 
 /// <summary>
-/// What one fold changed for an agent, kept in <c>harnesses.json</c>'s <c>pooled</c> until the person presses <i>Got it</i>
-/// (design §6.3): appended, never replaced unsaid, marked said by its id.
+/// What one fold changed for an agent, kept in <c>harnesses.json</c>'s <c>pooled</c> until the person presses <i>Got it</i>:
+/// appended, never replaced unsaid, marked said by its id.
 /// </summary>
 /// <param name="Id">A random id, written once and unique among the agent's receipts.</param>
-/// <param name="At">When it was written.</param>
-/// <param name="Scopes">Each scope folded, as it was.</param>
+/// <param name="At">When it is written.</param>
+/// <param name="Scopes">Each scope folded, as it is.</param>
 /// <param name="Order">The order written.</param>
 /// <param name="Moved">Each first moved, with its new place.</param>
 /// <param name="Joined">Each account the stored order left out, with its place.</param>
 /// <param name="InOrder">The account the machine scope named alone, where the fold set <c>use: order</c> for it.</param>
 /// <param name="NotKept">Each setting not kept.</param>
-/// <param name="Gone">Each name that was no account here, left out.</param>
+/// <param name="Gone">Each name that is no account here, left out.</param>
 /// <param name="Said">Whether the person has pressed <i>Got it</i> on it.</param>
 public sealed record PoolReceipt(
     string Id, DateTimeOffset At, IReadOnlyList<FoldedScope> Scopes, IReadOnlyList<string> Order, IReadOnlyList<MovedFirst> Moved,

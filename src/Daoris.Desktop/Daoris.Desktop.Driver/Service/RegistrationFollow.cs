@@ -4,23 +4,23 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What following reads and writes (WSSETUP5): the registry door, the line, and where each outcome is kept.</summary>
+/// <summary>What following reads and writes: the registry door, the line, and where each outcome is kept.</summary>
 /// <remarks>An interface so every case is held without a service or git; <see cref="RegistrationWorld"/> is the real one.</remarks>
 public interface IRegistrationWorld
 {
-    /// <summary>Whether the service is on this machine, so the root travels (D46, as <c>connect</c>'s <c>isLocalService</c>).</summary>
+    /// <summary>Whether the service is on this machine, so the root travels (as <c>connect</c>'s <c>isLocalService</c>).</summary>
     bool LocalService { get; }
 
     /// <summary>Every row this machine's host holds, with its declaration.</summary>
     Task<IReadOnlyList<RegistrationRow>> RegistrationsAsync(CancellationToken ct);
 
-    /// <summary>The two files on the row's line (D86), as git objects at the line's commit.</summary>
+    /// <summary>The two files on the row's line, as git objects at the line's commit.</summary>
     Task<LineFiles> ReadLineAsync(RegistrationRow row, CancellationToken ct);
 
     /// <summary>The main tree a root is a linked worktree of, or null for a main tree (<c>connect</c>'s <c>linkedWorktreeMain</c>).</summary>
     string? WorktreeMain(string root);
 
-    /// <summary>The branch a set-up's landing made and that still waits for review, where one is recorded (D102); else null.</summary>
+    /// <summary>The branch a set-up's landing made and that still waits for review, where one is recorded; else null.</summary>
     string? SetupWaiting(string repository);
 
     /// <summary>Send a registration through the registry door, as <c>connect</c> sends one: taken, or the service's words.</summary>
@@ -34,22 +34,22 @@ public interface IRegistrationWorld
 }
 
 /// <summary>
-/// Registration follows the line (WSSETUP5, D124 §3): the driver registers a repository from <c>daoris.json</c> and
+/// Registration follows the line: the driver registers a repository from <c>daoris.json</c> and
 /// <c>daoris.lanes.json</c> read on its line as git objects, sending what <c>connect</c> would send
 /// (<see cref="LineRegistration"/>), for the checkout's root and never a tree, and only where the row holds something
 /// else.
 /// </summary>
 /// <remarks>
-/// <para><b>Three moments, never every tick</b> (§3.1): after Daoris moves a line (a landing under <c>merge</c>, a
+/// <para><b>Three moments, never every tick</b>: after Daoris moves a line (a landing under <c>merge</c>, a
 /// fast-forward of <i>Bring up to date</i>, both recorded by <see cref="SessionTrees"/> in <see cref="RegistryFollowing"/>),
 /// once as a watch starts, and when the person asks (<c>daoris repository register</c>, the row's <i>Refresh</i>).</para>
 ///
-/// <para><b>Every refusal is said</b> (§3.4): on the row (<see cref="RegistryFollowing"/> keeps each outcome's sentence),
+/// <para><b>Every refusal is said</b>: on the row (<see cref="RegistryFollowing"/> keeps each outcome's sentence),
 /// in the machine log (<c>registry.followed</c>, a name and a word), and, for what changed or what the person must fix,
 /// in the tick's report or the terminal. A standing state (not set up, no line) is kept and logged, and not said at
 /// every start.</para>
 ///
-/// <para><b>Registering does not re-index</b> (§3.3): once anything was sent, the service is asked for the refresh every
+/// <para><b>Registering does not re-index</b>: once anything is sent, the service is asked for the refresh every
 /// door already has, once per pass.</para>
 /// </remarks>
 public static class RegistrationFollow
@@ -90,7 +90,7 @@ public static class RegistrationFollow
     }
 
     /// <summary>
-    /// What a tick's report or a terminal says of one outcome: what was sent, and what the person must fix. Null for a
+    /// What a tick's report or a terminal says of one outcome: what is sent, and what the person must fix. Null for a
     /// standing state, which the row and the log keep: unchanged, not set up, no line, no checkout here.
     /// </summary>
     public static string? EventLine(RegistrationFollowed followed) =>
@@ -122,7 +122,7 @@ public static class RegistrationFollow
         if (files.Line is null || files.Commit is null)
         {
             return new(name, RegistryOutcome.NoLine,
-                // HELPSETUP1: a repository's line is set on its Setup since UX6f (D150 §4.2).
+                // A repository's line is set on its Setup.
                 $"`{name}` has no line here to register from: {files.Problem ?? "git names none"}. Set one with "
                 + $"`daoris place line {name} <branch>`, or on Repositories → the repository's page → Setup → Line and landing.");
         }

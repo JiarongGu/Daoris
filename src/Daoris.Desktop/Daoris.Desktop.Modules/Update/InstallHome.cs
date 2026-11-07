@@ -5,19 +5,19 @@ namespace Daoris.Desktop;
 /// <summary>What establishing an install's home did — for the person, once, on the channel they act on.</summary>
 /// <param name="Home">The home: the install's `data/`, beside its launcher.</param>
 /// <param name="SetForUser">True when the user's environment gained the variable — this start, not any earlier one.</param>
-/// <param name="Moved">The entries that moved in from a `~/.daoris` of before D63, by name.</param>
+/// <param name="Moved">The entries that moved in from an earlier `~/.daoris`, by name.</param>
 /// <param name="Failed">The entries that should have moved and could not — still where they were, named with the reason.</param>
 /// <param name="Notice">One sentence for the person, naming the home and anything that moved, could not, or was overridden.</param>
 /// <param name="Overrode">
-/// The home this start inherited from the account and did not use (HOME1, D105): another install's
+/// The home this start inherited from the account and did not use: another install's
 /// `data/`, or this one's before it moved. Null when nothing was inherited, or it was this install's own.
 /// </param>
-/// <param name="Placing">What this start's move into D172's places did (HOMELAYOUT3), or null where none was tried.</param>
+/// <param name="Placing">What this start's move into the home's places did, or null where none ran.</param>
 public sealed record HomeEstablished(
     string Home, bool SetForUser, IReadOnlyList<string> Moved, IReadOnlyList<string> Failed, string Notice,
     string? Overrode = null, HomePlaced? Placing = null)
 {
-    /// <summary>The entries this start renamed into their D172 places (HOMELAYOUT3).</summary>
+    /// <summary>The entries this start renamed into the home's places.</summary>
     public IReadOnlyList<HomeMove> Placed => Placing?.Moved ?? [];
 
     /// <summary>The entries that should have moved into their places and could not, each still read where it was, with why.</summary>
@@ -37,19 +37,19 @@ public sealed record HomeEstablished(
 
 /// <summary>
 /// How the home this process runs on stands to the account's <c>DAORIS_HOME</c>, which is the folder a terminal's
-/// <c>daoris</c> reads (LEFT2) — what Settings → Driver's home hint says of a terminal, from a field rather than
+/// <c>daoris</c> reads — what Settings → Driver's home hint says of a terminal, from a field rather than
 /// from the notice's English.
 /// </summary>
 /// <remarks>
 /// Named for the relation rather than for one of its outcomes, because there are three: a start named for itself
-/// alone is neither the account's home nor an override of it, and D105 writes no notice for it.
+/// alone is neither the account's home nor an override of it, and no notice is written for it.
 /// </remarks>
 public static class HomeAccount
 {
     /// <summary>The account's variable names this home, so a terminal's daoris reads it too.</summary>
     public const string Same = "same";
 
-    /// <summary>This install's own <c>data/</c> replaced another folder the account's variable names (D105); the notice says which.</summary>
+    /// <summary>This install's own <c>data/</c> replaced another folder the account's variable names; the notice says which.</summary>
     public const string Overridden = "overridden";
 
     /// <summary>
@@ -60,7 +60,7 @@ public static class HomeAccount
 }
 
 /// <summary>
-/// The installed application's own home (D63). The install's `data` folder, beside its launcher, is the Daoris
+/// The installed application's own home. The install's `data` folder, beside its launcher, is the Daoris
 /// home: this process and everything it spawns read it from <c>DAORIS_HOME</c>, and the user's
 /// environment is offered the same variable so a terminal's <c>daoris</c> and a session's MCP host
 /// meet the same machine. <b>Nothing goes under the user profile</b> — not a file, not a pointer.
@@ -69,7 +69,7 @@ public static class HomeAccount
 /// <para>Runs before anything else the shell constructs, because <see cref="DriverConfig"/> and the
 /// harness roster capture their path at construction — the home has to exist before they ask.</para>
 ///
-/// <para><b>The install's own `data/` wins over a home inherited from the account</b> (HOME1, D105): a
+/// <para><b>The install's own `data/` wins over a home inherited from the account</b>: a
 /// second or moved install runs on its own, leaves the account's variable as it is, and says so. A
 /// home named for this start alone — not the account's — is still respected whole.</para>
 ///
@@ -87,16 +87,16 @@ public static class InstallHome
     /// <summary>The home's name, beside the executable.</summary>
     public const string Folder = DaorisHome.InstallData;
 
-    /// <summary>What a `~/.daoris` of before D63 keeps: the CLI's own service install (`publish:service --install`), which the CLI moves when it is asked to.</summary>
+    /// <summary>What an earlier `~/.daoris` keeps: the CLI's own service install (`publish:service --install`), which the CLI moves when it is asked to.</summary>
     private static readonly HashSet<string> Stays = new(StringComparer.OrdinalIgnoreCase) { "bin" };
 
-    /// <summary>The folder the shell runs from inside an install (D93), beside `data/`.</summary>
+    /// <summary>The folder the shell runs from inside an install, beside `data/`.</summary>
     public const string AppFolder = DaorisHome.InstallApp;
 
     /// <summary>
     /// What the install's own runtime writes under `data/` before Daoris has: the engine's profile
-    /// (`chromium`, and `webview2` from before D92) and the window's geometry; and what a verb the install carries may leave
-    /// before the first start, the home's id and its lease (HOMEID1, HOMELEASE1). Their presence does not make the home a
+    /// (`chromium`, and an earlier install's `webview2`) and the window's geometry; and what a verb the install carries may leave
+    /// before the first start, the home's id and its lease. Their presence does not make the home a
     /// home that has state.
     /// </summary>
     private static readonly HashSet<string> Runtime = new(StringComparer.OrdinalIgnoreCase)
@@ -105,7 +105,7 @@ public static class InstallHome
     };
 
     /// <summary>
-    /// The install a shell runs in (D93): its own folder when that holds the marker, the folder above
+    /// The install a shell runs in: its own folder when that holds the marker, the folder above
     /// when the shell runs from a marked install's `app/`, where the launcher at the root starts it —
     /// and its own folder otherwise, which is no install.
     /// </summary>
@@ -121,7 +121,7 @@ public static class InstallHome
     }
 
     /// <summary>
-    /// The folder a shell running from an install's <c>app/</c> stands in instead (APPCWD1, D139 §5): the install's root, while
+    /// The folder a shell running from an install's <c>app/</c> stands in instead: the install's root, while
     /// it stands in <c>app/</c> or below it, as the launcher started it. Null otherwise — a workspace build, or a start given a
     /// working folder elsewhere — which is left as it was.
     /// </summary>
@@ -146,14 +146,14 @@ public static class InstallHome
     /// Establish the home for an install, or answer null when this is not one, when the environment
     /// already names this install's own home, or when it names a home for this start alone — which is
     /// respected whole. A home the environment only inherited from the account, naming another folder,
-    /// is overridden: the install's own `data/` wins (HOME1, D105).
+    /// is overridden: the install's own `data/` wins.
     /// </summary>
     /// <param name="leaseWait">
-    /// How long the move waits for the home's lease while another act holds it (HOMELEASE1); <see cref="HomeLease.Wait"/>.
+    /// How long the move waits for the home's lease while another act holds it; <see cref="HomeLease.Wait"/>.
     /// </param>
     /// <param name="othersRunning">
-    /// The processes of the install's folder other than this one and its launcher, which hold the move into D172's places off
-    /// (HOMELAYOUT3); <see cref="HomePlacing.OthersRunningFrom"/>.
+    /// The processes of the install's folder other than this one and its launcher, which hold the move into the home's places off;
+    /// <see cref="HomePlacing.OthersRunningFrom"/>.
     /// </param>
     public static HomeEstablished? Establish(
         string baseDirectory,
@@ -173,8 +173,8 @@ public static class InstallHome
         string? overrode = null;
         if (DaorisHome.Resolve(processEnvironment) is { } named)
         {
-            // The install's own home, as the account names it: nothing to establish, and its move into D172's places runs on it
-            // all the same (HOMELAYOUT3), said where it moved or could not.
+            // The install's own home, as the account names it: nothing to establish, and its move into the home's places runs on it
+            // all the same, said where it moved or could not.
             if (SamePath(named, home))
             {
                 var placing = HomePlacing.Place(root, home, othersRunning ?? HomePlacing.OthersRunningFrom);
@@ -183,7 +183,7 @@ public static class InstallHome
                     : null;
             }
 
-            // 🔴 HOME1: the account's variable reaches every process the person starts, so a second or
+            // The account's variable reaches every process the person starts, so a second or
             // moved install inherited the first one's home and ran on it without a word. A value that
             // equals the account's was inherited, and the install's own `data/` wins over it. A value
             // that differs was named for this start alone — a gate's scratch home, a terminal's
@@ -197,7 +197,7 @@ public static class InstallHome
 
         // Once, and never over one the person set themselves: a user variable is theirs to change,
         // and a shell that reset it on every start would make the setting impossible to keep. That
-        // holds for an overridden one too (D105): rewriting it would move every terminal to whichever
+        // holds for an overridden one too: rewriting it would move every terminal to whichever
         // install was opened last, so it is left, and the notice says a terminal still reads it.
         var setForUser = false;
         if (string.IsNullOrWhiteSpace(account))
@@ -208,7 +208,7 @@ public static class InstallHome
 
         var (moved, failed) = HasState(home) ? ([], []) : Migrate(legacy, home, leaseWait ?? HomeLease.Wait);
 
-        // Then the move into D172's places (HOMELAYOUT3, the design §7.6): what D63's move-in laid at the old places is moved on
+        // Then the move into the home's places: what the move-in laid at the old places is moved on
         // with the rest, under the same rules.
         var placed = HomePlacing.Place(root, home, othersRunning ?? HomePlacing.OthersRunningFrom);
 
@@ -226,7 +226,7 @@ public static class InstallHome
         return new HomeEstablished(home, setForUser, moved, failed, notice + ".", overrode, placed.Any ? placed : null);
     }
 
-    /// <summary>The notice with what the move into D172's places did added, once (the design §7.5), as D63's move-in is said.</summary>
+    /// <summary>The notice with what the move into the home's places did added, once, as the move-in is said.</summary>
     private static string Said(string notice, HomePlaced placed)
     {
         if (placed.Moved.Count > 0)
@@ -244,7 +244,7 @@ public static class InstallHome
     }
 
     /// <summary>
-    /// What the move into D172's places did, into the machine log (the design §7.5, the machine log design §4): a
+    /// What the move into the home's places did, into the machine log: a
     /// <c>home.moved</c> line for each rename, a <c>home.move-failed</c> line for each that could not be, a
     /// <c>home.move-recovered</c> line for each a stopped start left and this one put back, and <c>home.move-held</c> where
     /// nothing was tried. Written once the log is open, which the move ran before, since the log is one of the entries it moves.
@@ -259,7 +259,7 @@ public static class InstallHome
     }
 
     /// <summary>
-    /// The window's memory, the UI kit's data area (D172 point 4, the design §6.2), for a kit rooted at <paramref name="root"/>:
+    /// The window's memory, the UI kit's data area, for a kit rooted at <paramref name="root"/>:
     /// where that root is an install, its home's <see cref="HomeEntry.Window"/>, <c>profiles/window/</c> once moved and the
     /// install's <c>data/</c> while its <c>chromium/</c> or <c>config/</c> is still there; elsewhere null, the kit's own.
     /// </summary>
@@ -267,7 +267,7 @@ public static class InstallHome
         File.Exists(Path.Combine(root, Marker)) ? DaorisHome.Entry(root, HomeEntry.Window) : null;
 
     /// <summary>
-    /// The window's memory for a run whose one root was named with <c>--app-root</c> (HOMELAYOUT4, the design §6.1): a
+    /// The window's memory for a run whose one root is named with <c>--app-root</c>: a
     /// development run's scratch Daoris folder, which is no install and is its own home, so the same entry as an install's.
     /// </summary>
     public static string WindowMemoryOfRun(string root) => DaorisHome.Entry(root, HomeEntry.Window);
@@ -289,7 +289,7 @@ public static class InstallHome
 
     /// <summary>
     /// How <paramref name="home"/>, the home this process runs on once established, stands to <paramref name="account"/>,
-    /// the account's variable as it now stands (LEFT2) — a <see cref="HomeAccount"/> value.
+    /// the account's variable as it now stands — a <see cref="HomeAccount"/> value.
     /// </summary>
     /// <remarks>
     /// An override is said as one, since the notice then names the folder a terminal reads. Otherwise the two
@@ -303,7 +303,7 @@ public static class InstallHome
 
     /// <summary>
     /// The account's own <c>DAORIS_HOME</c>, which every process the person starts inherits — or null off Windows,
-    /// where the user-level store is not a notion (the shell is Windows-only, D63).
+    /// where the user-level store is not a notion (the shell is Windows-only).
     /// </summary>
     public static string? AccountVariable() => OperatingSystem.IsWindows()
         ? Environment.GetEnvironmentVariable(DaorisHome.Variable, EnvironmentVariableTarget.User)
@@ -352,7 +352,7 @@ public static class InstallHome
             .Any(name => name is not null && !Runtime.Contains(name));
 
     /// <summary>
-    /// The move, under the home's lease (HOMELEASE1, the terminal RPC design §5): taken for the move alone, so no verb acting
+    /// The move, under the home's lease: taken for the move alone, so no verb acting
     /// alone writes beside it, and waited for up to <paramref name="within"/> where another act holds it; still held then,
     /// nothing moves, and the holder is said as what could not move and why. Judged again under the lease, since another start
     /// may have moved it meanwhile.

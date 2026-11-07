@@ -2,12 +2,12 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A change of <c>harnesses.json</c> under its keep lock, and the fold that makes each agent's order whole with the accounts on this
-/// machine (the account-pool design §2.4, §6.2).
+/// machine.
 /// </summary>
 internal static class HarnessSettingsChange
 {
     /// <summary>
-    /// One change of the wiring under its keep lock (PUSH1f2e, the alone-path design §1.4): the lock, the file read, the edit decided
+    /// One change of the wiring under its keep lock: the lock, the file read, the edit decided
     /// from it as it stands, the whole write, so a change another writer lands meanwhile, the window's or a terminal's, waits its turn
     /// rather than being decided against. Every writer of <c>harnesses.json</c> goes through it: the window's routes, Ask Daoris's apply,
     /// and the terminal's account verbs.
@@ -15,11 +15,11 @@ internal static class HarnessSettingsChange
     /// <param name="edit">The change, from the wiring as read under the lock; it may throw to refuse it, nothing written.</param>
     /// <param name="read">Called once the file is read, before the edit is written: a test's other writer, held off by the lock.</param>
     /// <returns>The wiring as written.</returns>
-    /// <exception cref="DriverException">The file does not read, or the edit is refused; nothing was written.</exception>
-    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing was written.</exception>
+    /// <exception cref="DriverException">The file does not read, or the edit is refused; nothing is written.</exception>
+    /// <exception cref="IOException">Another writer holds the file's lock for the whole of the wait; nothing is written.</exception>
     /// <remarks>
-    /// Each agent's order is made whole after the edit (POOL1a, D197 point 7; <see cref="AccountSet.Whole"/>), so a new account goes last.
-    /// An agent the wiring's <c>rotation</c> or <c>pooled</c> names that Daoris does not know (POOLSTRAY1) is dropped from both, and its
+    /// Each agent's order is made whole after the edit (<see cref="AccountSet.Whole"/>), so a new account goes last.
+    /// An agent the wiring's <c>rotation</c> or <c>pooled</c> names that Daoris does not know is dropped from both, and its
     /// <c>accounts.strayDropped</c> line is the receipt; its other sections are the person's and stay.
     /// </remarks>
     /// <param name="account">
@@ -56,7 +56,7 @@ internal static class HarnessSettingsChange
     }
 
     /// <summary>
-    /// A new account placed last in its agent's order (the account-pool design §2.2), whatever its id, by the write its sign-in or key
+    /// A new account placed last in its agent's order, whatever its id, by the write its sign-in or key
     /// makes; nothing is said of it. Never the reason the account is not kept: a file that does not read, or a lock held, leaves it
     /// for the next change, which places it and says so.
     /// </summary>
@@ -73,7 +73,7 @@ internal static class HarnessSettingsChange
     }
 
     /// <summary>
-    /// The wiring as every reader takes it (POOL1a, the account-pool design §2.4): the file at <paramref name="path"/>, each agent's order
+    /// The wiring as every reader takes it: the file at <paramref name="path"/>, each agent's order
     /// made whole with the accounts on this machine (<see cref="AccountSet.Whole"/>), nothing written.
     /// </summary>
     public static HarnessSettings LoadSet(string path, IReadOnlyCollection<string>? agents = null)
@@ -85,12 +85,12 @@ internal static class HarnessSettingsChange
     }
 
     /// <summary>
-    /// The driver's come-up write (the account-pool design §6.2): <see cref="Change"/> with no edit, for a file whose orders are not whole
+    /// The driver's come-up write: <see cref="Change"/> with no edit, for a file whose orders are not whole
     /// or that names a stray, so a file nobody edits is made whole too. True when the file is written now, or had nothing to write; false
-    /// where its lock was held for the whole wait, which is logged once and tried again at the next look (Fable's F11).
+    /// where its lock is held for the whole wait, which is logged once and tried again at the next look.
     /// </summary>
     /// <remarks>
-    /// A folder under the account homes no known agent names is said once to the machine log (<c>accounts.stray</c>, POOLSTRAY1) and
+    /// A folder under the account homes no known agent names is said once to the machine log (<c>accounts.stray</c>) and
     /// never folded; a wiring that names such an agent in <c>rotation</c> or <c>pooled</c> has something to fold, and drops it.
     /// </remarks>
     public static bool FoldNow(string path, MachineLog? log = null, TimeSpan? within = null, IReadOnlyCollection<string>? agents = null)
@@ -121,13 +121,13 @@ internal static class HarnessSettingsChange
 
     /// <summary>
     /// This machine's pin of <paramref name="harness"/> at <paramref name="version"/>, written through <see cref="Change"/> once the version's
-    /// folder is found there again under the file's lock (KEEP1b, the cleanup design §3.5; Fable F2.2, F2.3): the downloads' rule judges a
-    /// version under the same lock and renames it before letting go, so a pin that waited on it finds its version gone and is refused,
+    /// folder is found there again under the file's lock: the downloads' rule judges a
+    /// version under the same lock and renames it before letting go, so a pin that waits on it finds its version gone and is refused,
     /// rather than written naming nothing every later start refuses.
     /// </summary>
     /// <param name="home">The home whose managed versions the pin names.</param>
-    /// <param name="workspace">The workspace whose own pin it is (PUSH1f2e: <c>agent pin --workspace</c>), or null for the machine's.</param>
-    /// <exception cref="DriverException">Nothing is installed at that version now, or the file does not read; nothing was written.</exception>
+    /// <param name="workspace">The workspace whose own pin it is (<c>agent pin --workspace</c>), or null for the machine's.</param>
+    /// <exception cref="DriverException">Nothing is installed at that version now, or the file does not read; nothing is written.</exception>
     public static HarnessSettings Pin(
         string path, string home, string harness, string version, string? workspace = null, IReadOnlyCollection<string>? agents = null) =>
         Change(path, read => Directory.Exists(HarnessAccountFolders.ManagedHome(home, harness, version))
@@ -136,7 +136,7 @@ internal static class HarnessSettingsChange
                 $"`{harness}` {version} is no longer installed where Daoris keeps it — it was removed as the pin waited — so the pin was "
                 + $"not written. `daoris agent pin {harness} {version}` installs it again."), agents: agents);
 
-    /// <summary>Each stray folder already said to the machine log in this process, by home and name: said once (POOLSTRAY1).</summary>
+    /// <summary>Each stray folder already said to the machine log in this process, by home and name: said once.</summary>
     private static readonly HashSet<string> StraysSaid = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The stray folders under <paramref name="home"/> not yet said in this process, each marked said.</summary>
@@ -157,7 +157,7 @@ internal static class HarnessSettingsChange
     }
 
     /// <summary>
-    /// The machine log's lines of one fold (design §6.2, POOLSTRAY1): each stray folder not said before (<c>accounts.stray</c>), each
+    /// The machine log's lines of one fold: each stray folder not said before (<c>accounts.stray</c>), each
     /// stray agent dropped from the wiring with what it held, by count (<c>accounts.strayDropped</c>, the drop's receipt), and each
     /// agent folded (<c>accounts.pooled</c>). Nothing to say opens no log.
     /// </summary>

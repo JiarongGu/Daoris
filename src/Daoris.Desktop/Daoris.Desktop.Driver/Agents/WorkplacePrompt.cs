@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 internal static class WorkplacePrompt
 {
     /// <summary>
-    /// What to ask another repository for (D79). Where the session may read across (D107), reading is no
+    /// What to ask another repository for. Where the session may read across, reading is no
     /// longer forbidden: what stays asked is a change, and what its code cannot tell.
     /// </summary>
     internal static string Needs(SessionTarget target) => target.ReadsAcross.Count == 0
@@ -23,7 +23,7 @@ internal static class WorkplacePrompt
           """;
 
     /// <summary>
-    /// The other checkouts this session may read and not write (D107), each by name and path, and how: their
+    /// The other checkouts this session may read and not write, each by name and path, and how: their
     /// files where they lie, and two read-only git commands. Empty when there are none, so the target reads
     /// exactly as it did before.
     /// </summary>
@@ -47,7 +47,7 @@ internal static class WorkplacePrompt
     }
 
     /// <summary>
-    /// Never write outside this repository — except, where the person declared it (D107), in the checkouts
+    /// Never write outside this repository — except, where the person declared it, in the checkouts
     /// this repository may also change, which the boundary names with how to commit there.
     /// </summary>
     internal static string Boundary(SessionTarget target) => target.WritesAcross.Count == 0
@@ -74,7 +74,7 @@ internal static class WorkplacePrompt
         string.Join("\n", checkouts.Select(checkout => $"- `{checkout.Repository}` — `{AcrossRules.GitPath(checkout.Path)}`"));
 
     /// <summary>
-    /// A set-up step's section (REVIEWENV1c, D154 points 4–6; the review environment design §2.2–§2.6, §3.4): the environment, its
+    /// A set-up step's section: the environment, its
     /// kind and its address; the repository's procedure, read first and never gone past; that the tree holds the chain's work and
     /// the step adds none; never a process or a port of the person's; what needs a go-ahead and what never happens; proof; the
     /// set-up said through <c>review_ready</c> before the done; and how the person's <i>not yet</i> comes back. Nothing for every
@@ -99,7 +99,7 @@ internal static class WorkplacePrompt
             .Append("makes, such as a build's output, stays where the procedure keeps it.\n")
             .Append("- Never stop, restart or take over a process or a port of the person's. That needs their go-ahead at the least, and ")
             .Append("showing the work needs none.\n")
-            // REVIEWENV1d (design §2.3 steps 1–4): the tab the driver opened before this session, by the title it gave it, and
+            // The tab the driver opened before this session, by the title it gave it, and
             // what Daoris does with the folder once the session ends. The service's `review_serve` answers for the moment itself.
             .Append(local
                 ? $"- Daoris opened a tab of its browser for you, titled `{ReviewTabNames.Title(target.QuestId)}` until you navigate it. "
@@ -126,9 +126,9 @@ internal static class WorkplacePrompt
     }
 
     /// <summary>
-    /// How the work lands and is committed (D87, PROCESS1d-i): the branch the pull request comes from and that the session makes
+    /// How the work lands and is committed: the branch the pull request comes from and that the session makes
     /// no move of its own on it, then the commit rule standing for its repository, said only for a tree of its own
-    /// (<see cref="ProcessWords"/>). Under a rule that accepts automatically (LAND2b), that its quest's done lands it, so its work
+    /// (<see cref="ProcessWords"/>). Under a rule that accepts automatically, that its quest's done lands it, so its work
     /// is committed by then.
     /// </summary>
     internal static string Landing(SessionTarget target) => AgentWorkplace.Current.ProcessWords(target.Commits, target.LandsOn) ?? "";

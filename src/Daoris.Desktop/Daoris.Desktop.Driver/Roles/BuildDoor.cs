@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Whether this machine's starts may drive a repository that has not adopted Daoris, the one answer the loop's planner, the window, the
-/// terminal's two and set-up all read (AGENTPROVIDER1 s-i): where any entry of Build's order may (<see cref="Adoption"/>), against the adapters
+/// terminal's two and set-up all read: where any entry of Build's order may (<see cref="Adoption"/>), against the adapters
 /// of the look asking, so a plugin's harness counts. A door nobody knows is refused to every surface that asks (the window, set-up, the
 /// terminal); only the loop's plan reads it as a door that may not drive, so a tick still reports.
 /// </summary>

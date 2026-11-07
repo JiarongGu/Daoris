@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The terminal the setting verbs are said on and pressed from (FOUNDATION1 mod-iii, the design §14.2: each verb stays in its own
+/// The terminal the setting verbs are said on and pressed from (each verb stays in its own
 /// subdomain and reaches the instance through the instance's door): the settings declare this port, the instance's world
 /// (<see cref="InstanceWorld"/>) implements it with the door, and every host and test that builds a <see cref="DriverChoicesWorld"/>
 /// hands it one, so the settings' command names neither the world nor the door.
@@ -24,7 +24,7 @@ public interface IChoiceTerminal
 
     /// <summary>
     /// A person's press sent to the running Daoris while it answers, confirmed in its window, and acted alone (<paramref name="alone"/>)
-    /// where none runs (RPC1b, the terminal RPC design §7); the route's answer said in the verb's words (<paramref name="words"/>).
+    /// where none runs; the route's answer said in the verb's words (<paramref name="words"/>).
     /// </summary>
     Task<int> PressAsync(InstanceRoute route, object? payload, Func<Task<int>> alone, Func<JsonElement, int> words, CancellationToken ct);
 }

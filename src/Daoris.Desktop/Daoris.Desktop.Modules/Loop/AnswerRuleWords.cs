@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The rule behind a held answer (CONTEXTDRIVE1h; the context counters design §7.5): the person's rule that acted on the line as the last act of
+/// The rule behind a held answer: the person's rule that acted on the line as the last act of
 /// its answers-alone count read back from the line's decision record, so the head, the foot and <i>What needs you</i> say one hold in one
 /// sentence, with the place whose rule it is and the count it watched. None where no rule acted (a hold marked before the rules).
 /// </summary>

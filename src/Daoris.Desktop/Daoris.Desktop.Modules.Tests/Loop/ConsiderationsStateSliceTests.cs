@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Why each open quest is sitting, the holds for the agent's trust and the starts held on accounts, a pushed slice (FOUNDATION1s, D182):
+/// Why each open quest is sitting, the holds for the agent's trust and the starts held on accounts, a pushed slice:
 /// one owner in the shell's loop judging what its last look kept, pushed when it moves, so a tick writes none of it into a window.
 /// </summary>
 public sealed class ConsiderationsStateSliceTests : DriverModuleBridge

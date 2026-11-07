@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An agent's id among providers (AGENTPROVIDER1, the agent-provider design §2.2): unique among providers, compared without case as
+/// An agent's id among providers: unique among providers, compared without case as
 /// the adapters' own table compares a name. Typed, so one passed where a <see cref="DoorId"/> or an <see cref="AccountKey"/> is
 /// wanted does not compile; opaque outside the providers, carried, stored, compared for identity and shown, never read for behaviour.
 /// </summary>
@@ -19,7 +19,7 @@ public readonly record struct ProviderId
 }
 
 /// <summary>
-/// A way into an agent (an adapter's name, today) among doors (the design §2.2): unique among doors. It may equal its own provider's
+/// A way into an agent (an adapter's name, today) among doors: unique among doors. It may equal its own provider's
 /// id (<c>claude-code</c>, <c>dsh</c>, <c>stub</c>), never another provider's.
 /// </summary>
 public readonly record struct DoorId
@@ -36,7 +36,7 @@ public readonly record struct DoorId
 }
 
 /// <summary>
-/// The string every account record holds (the design §2.2, §5): today's <c>AccountAgent.Owner(name)</c>, an id of a kind of its
+/// The string every account record holds: today's <c>AccountAgent.Owner(name)</c>, an id of a kind of its
 /// own. A door's is its harness's <c>accountOf</c> verbatim, where it declares one, else its provider's id; never followed past that
 /// one level. It resolves to a pool (<see cref="AccountPool"/>), never to one provider.
 /// </summary>

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's standing choices, machine-local by nature (D46 §6/§7): which repositories THIS machine
+/// The person's standing choices, machine-local by nature: which repositories THIS machine
 /// may drive, what is held, how wide the loop runs, and which adapter spawns. Read by <see cref="DriverConfigReader"/>, written by
 /// <see cref="DriverConfigWriter"/>, loaded and edited onto the file as it stands by <see cref="DriverConfigDisk"/>.
 /// </summary>
@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// <param name="Cap">Concurrent sessions across all repositories.</param>
 /// <param name="PollSeconds">How often the watch loop ticks.</param>
 /// <param name="Commands">Per-adapter command configuration — what the stub runs.</param>
-/// <param name="Trees">Repositories whose sessions open their OWN worktree instead of the registered root (D51). Empty is the default.</param>
+/// <param name="Trees">Repositories whose sessions open their OWN worktree instead of the registered root. Empty is the default.</param>
 /// <param name="Notify">
 /// Whether this machine interrupts the person when a session parks or ends unasked. <b>On by default</b>: a driver that ran
 /// silently would leave parked sessions sitting until somebody thinks to look.
@@ -51,7 +51,7 @@ public sealed record DriverConfig(
         Commands: new Dictionary<string, IReadOnlyList<string>>(),
         Trees: []);
 
-    /// <summary>The failure count this quest was last restarted at — zero when it never was.</summary>
+    /// <summary>The failure count at this quest's last restart — zero when it has not been restarted.</summary>
     public int ForgivenAt(string questId) =>
         Forgiven.TryGetValue(questId, out var mark) ? mark : 0;
 
@@ -124,7 +124,7 @@ public sealed record DriverConfig(
     public DriverConfig WithoutRoleRelease(string questId) => DriverConfigEdits.WithoutRoleRelease(this, questId);
 
     /// <summary>
-    /// The set-up quests admitted alone, each against the repository it was published to: a set-up pressed where its repository is not
+    /// The set-up quests admitted alone, each against the repository it is published to: a set-up pressed where its repository is not
     /// driven starts by its own id, while every other quest of that repository stays held as not driven (<c>SetupAdmission.Admits</c>).
     /// </summary>
     public IReadOnlyDictionary<string, string> Admitted { get; init; } =
@@ -171,7 +171,7 @@ public sealed record DriverConfig(
     public DriverConfig WithPausedQuest(string quest, WorkPause? pause) =>
         this with { PausedQuests = DriverConfigEdits.WithPause(PausedQuests, quest, pause) };
 
-    /// <summary>The person's standing answer for every session in a repository, in their words with when it was set, handed beneath its quest.</summary>
+    /// <summary>The person's standing answer for every session in a repository, in their words with when it is set, handed beneath its quest.</summary>
     public IReadOnlyDictionary<string, StandingAnswer> Standing { get; init; } =
         new Dictionary<string, StandingAnswer>(StringComparer.OrdinalIgnoreCase);
 
@@ -302,7 +302,7 @@ public sealed record DriverConfig(
             : this with { DefaultWorkflow = workflow };
 
     /// <summary>
-    /// How each repository's line is integrated, by repository: the line's policy that was a landing rule's <c>integrate</c>, beside
+    /// How each repository's line is integrated, by repository: the line's policy, beside
     /// the unit's process, which is the workflow's. A repository's policy replaces its workspace's whole. Edited by <c>SET_LINE</c> alone.
     /// </summary>
     public IReadOnlyDictionary<string, LandingIntegrate> LinePolicies { get; init; } =
@@ -501,13 +501,13 @@ public sealed record DriverConfig(
     public static string FileName => Path.GetFileName(HomeEntry.DriverConfig.New);
 
     /// <summary>
-    /// The conventional home, under the Daoris home (D63). A machine with no home is refused, naming what to set. The file is the home's
-    /// <see cref="HomeEntry.DriverConfig"/>, asked here alone (CONFIGSEAM1); a run that wants other choices runs on a home of its own.
+    /// The conventional home, under the Daoris home. A machine with no home is refused, naming what to set. The file is the home's
+    /// <see cref="HomeEntry.DriverConfig"/>, asked here alone; a run that wants other choices runs on a home of its own.
     /// </summary>
     public static string DefaultPath => DaorisHome.Require(HomeEntry.DriverConfig);
 
     /// <summary>
-    /// The one resolution of the person's choices (D63, CONFIGSEAM1): the home's <c>driver.json</c>, and null on a machine that names no
+    /// The one resolution of the person's choices: the home's <c>driver.json</c>, and null on a machine that names no
     /// home. Every reader comes here, through this or a <c>ResolvePath</c>, and <c>ConfigSeamTests</c> scans for one that does not.
     /// </summary>
     public static string? FindPath(Func<string, string?> environment) => DaorisHome.File(environment, HomeEntry.DriverConfig);
@@ -531,12 +531,12 @@ public sealed record DriverConfig(
     public static string HomeOf(string configPath) => DaorisHome.HomeOf(configPath, HomeEntry.DriverConfig);
 
     /// <summary>
-    /// The text this config was read from, or null for one built in memory: the writer keeps from it every key it does not own, in its
+    /// The text this config came from, or null for one built in memory: the writer keeps from it every key it does not own, in its
     /// place, and every value no edit changed, as written (<see cref="ToJson"/>).
     /// </summary>
     public string? Source { get; init; }
 
-    /// <summary>The file <see cref="Source"/> was read from, or null for a text parsed in memory: a save makes its edit onto that file as it stands.</summary>
+    /// <summary>The file <see cref="Source"/> came from, or null for a text parsed in memory: a save makes its edit onto that file as it stands.</summary>
     public string? SourceFile { get; init; }
 
     /// <summary>
@@ -557,8 +557,8 @@ public sealed record DriverConfig(
     public static readonly IReadOnlyList<string> Sets = ["drivable", "holds", "trees", "writeAcross.*"];
 
     /// <summary>Write the choices back, the edit made onto the file as it stands and under its lock (<see cref="DriverConfigDisk.Save"/>).</summary>
-    /// <exception cref="DriverConfigUnreadableException">The file now does not read, holds a key twice, or no longer holds an object this edit changes inside; nothing was written.</exception>
-    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait, or took it before the rename; nothing was written.</exception>
+    /// <exception cref="DriverConfigUnreadableException">The file now does not read, holds a key twice, or no longer holds an object this edit changes inside; nothing is written.</exception>
+    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait, or took it before the rename; nothing is written.</exception>
     public void Save(string path) => Save(path, null);
 
     internal void Save(string path, KeepSeams? seams) => DriverConfigDisk.Save(this, path, seams);
@@ -583,7 +583,7 @@ public sealed record DriverConfig(
         Holds = DriverConfigEdits.Toggle(Holds, repository, held),
     };
 
-    /// <summary>Whether this repository's sessions open their own worktree (D51).</summary>
+    /// <summary>Whether this repository's sessions open their own worktree.</summary>
     public DriverConfig WithTrees(string repository, bool ownTree) => this with
     {
         Trees = DriverConfigEdits.Toggle(Trees, repository, ownTree),

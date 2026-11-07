@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A child's label as its lineage keeps it (COWORKVIEW1a, D173): a name to 120 characters, a task's first line to 200. The readings carry the
+/// A child's label as its lineage keeps it: a name to 120 characters, a task's first line to 200. The readings carry the
 /// wire's own words; the lineage bounds them as it writes.
 /// </summary>
 public static class LineageLabels

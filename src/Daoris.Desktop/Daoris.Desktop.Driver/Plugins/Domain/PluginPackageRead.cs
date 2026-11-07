@@ -2,9 +2,9 @@ using System.Xml.Linq;
 
 namespace Daoris.Driver;
 
-/// <summary>What a package file says it is, read before anything is extracted (the distribution design §5.7 step 1).</summary>
+/// <summary>What a package file says it is, read before anything is extracted.</summary>
 /// <param name="Package">Its package id: the publisher's, global on a package source, never the plugin's id.</param>
-/// <param name="Version">Its version, which must be its plugin's (§5.1).</param>
+/// <param name="Version">Its version, which must be its plugin's.</param>
 /// <param name="ApiVersion">The plugin API it speaks: the major number of its <c>DaorisPlugin</c> type's version.</param>
 /// <param name="Sha512">The SHA-512 of the whole file in standard base64, as a NuGet catalog leaf's <c>packageHash</c> is.</param>
 public sealed record PluginPackageRead(string Package, string Version, int ApiVersion, string Sha512);
@@ -12,18 +12,18 @@ public sealed record PluginPackageRead(string Package, string Version, int ApiVe
 /// <summary>A package installed: its plugin's manifest as written, and the record of where it came from.</summary>
 public sealed record PluginPackageInstalled(PluginManifest Manifest, PluginPackageOrigin Origin);
 
-/// <summary>A refusal of a package as it stands; the caller says whether anything was installed.</summary>
+/// <summary>A refusal of a package as it stands; the caller says whether anything has been installed.</summary>
 internal sealed class PluginPackageRefusal(string message) : Exception(message);
 
 /// <summary>
-/// A Daoris plugin package's words judged (PLUGDIST1a, D120; the distribution design §5.1 and §5.7 step 1): its one nuspec
+/// A Daoris plugin package's words judged: its one nuspec
 /// at the root, the nuspec's id, version, type and dependencies, and every entry under <see cref="Root"/>, each refused by
-/// name, before anything is written. Pure (STRUCT3a): the file is opened, hashed and read by
+/// name, before anything is written. Pure: the file is opened, hashed and read by
 /// <see cref="PluginPackageFile"/>, which hands its entries' names and its nuspec here.
 /// </summary>
 internal static class PluginPackageRules
 {
-    /// <summary>The package type a Daoris plugin is (D120 §4). NuGet compares type names without case.</summary>
+    /// <summary>The package type a Daoris plugin is. NuGet compares type names without case.</summary>
     public const string Type = "DaorisPlugin";
 
     /// <summary>Where a package keeps its plugin folder.</summary>
@@ -51,7 +51,7 @@ internal static class PluginPackageRules
     }
 
     /// <summary>
-    /// §5.1 and §5.7 step 1, once the nuspec is read: what the package says it is, then every entry under <see cref="Root"/>,
+    /// Once the nuspec is read: what the package says it is, then every entry under <see cref="Root"/>,
     /// its path inside the plugin folder in <c>/</c> form and whether it is a folder, by its place among the entries.
     /// </summary>
     /// <param name="nuspecName">The nuspec's name, for a refusal.</param>
@@ -85,7 +85,7 @@ internal static class PluginPackageRules
         var others = types.Where(type => !string.Equals(type.Name, Type, StringComparison.OrdinalIgnoreCase)).Select(type => type.Name).ToList();
         if (others.Count > 0) throw new PluginPackageRefusal($"{said} is of the type `{Type}` and {Names(others)} — a Daoris plugin package is of that type alone.");
 
-        // The type's version is the plugin API (D120 §4), read before anything is extracted: D64's rule, both numbers named.
+        // The type's version is the plugin API, read before anything is extracted, both numbers named.
         var typeVersion = own[0].Version;
         if (string.IsNullOrWhiteSpace(typeVersion))
         {
@@ -105,7 +105,7 @@ internal static class PluginPackageRules
 
         if (api.Major < 1) throw new PluginPackageRefusal($"{said}: its type's version `{typeVersion}` names no plugin API — its first number is the API, like `1.0`.");
 
-        // No dependencies (§5.1): a plugin carries everything it runs, and Daoris installs nothing else.
+        // No dependencies: a plugin carries everything it runs, and Daoris installs nothing else.
         var dependencies = (Child(metadata, "dependencies")?.Descendants() ?? [])
             .Where(element => element.Name.LocalName == "dependency")
             .Select(element => element.Attribute("id")?.Value ?? "")

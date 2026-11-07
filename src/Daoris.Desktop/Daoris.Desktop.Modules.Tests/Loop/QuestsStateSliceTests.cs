@@ -9,7 +9,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The quests, a pushed slice (PUSH1d3, D182 points 2 to 4): one owner in the shell's loop reading what the service answers of every
+/// The quests, a pushed slice: one owner in the shell's loop reading what the service answers of every
 /// quest, closed ones and every workspace's included, allow-listed to the page's fields, a partition per workspace keyed by quest, so a
 /// quest's move pushes that quest alone, whoever wrote it, and an attachment's path is never pushed.
 /// </summary>

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A plugin's answer at a decision point (D64 §4): allow, or hold with the sentence a person reads.</summary>
+/// <summary>A plugin's answer at a decision point: allow, or hold with the sentence a person reads.</summary>
 public sealed record HookDecision(bool Allowed, string? Reason = null)
 {
     public static readonly HookDecision Allow = new(true);
@@ -10,15 +10,15 @@ public sealed record HookDecision(bool Allowed, string? Reason = null)
 
 
 /// <summary>
-/// What <see cref="HookPoints.StateChanged"/> is told (STATEHUB1g): the shell's <c>STATE_CHANGED</c>, as every window hears it
-/// (D169 point 3). What moved, never what it is now: no words, no answer, no machine path.
+/// What <see cref="HookPoints.StateChanged"/> is told: the shell's <c>STATE_CHANGED</c>, as every window hears it.
+/// What moved, never what it is now: no words, no answer, no machine path.
 /// </summary>
 /// <param name="Scopes">The families of state that moved, in the screen's words (<c>sessions</c>, <c>landing</c>, …).</param>
-/// <param name="Sessions">The sessions the change was about, or null where it was not one session's: any.</param>
+/// <param name="Sessions">The sessions the change is about, or null where it is not one session's: any.</param>
 public sealed record StateChangedFrame(IReadOnlyList<string> Scopes, IReadOnlyList<string>? Sessions);
 
 /// <summary>
-/// What each point is sent, built in one place (PLUG8): the loop and the landing send these, and the
+/// What each point is sent, built in one place: the loop and the landing send these, and the
 /// plugin kit's sample frames are built by the same functions, so a sample cannot say what the driver
 /// does not. Every name is spelled here rather than left to a serializer's policy.
 /// </summary>
@@ -49,9 +49,9 @@ public static class HookFrames
     };
 
     /// <summary>
-    /// <see cref="HookPoints.State"/>: a landed branch, asked about (PLUGHOOK1a, design §2.2): where it is, the line, and the pull
+    /// <see cref="HookPoints.State"/>: a landed branch, asked about: where it is, the line, and the pull
     /// request and the commit the record holds, so a plugin finds the pull request by its address, else by its source branch; and
-    /// <c>origin</c> (GITAUTH1b).
+    /// <c>origin</c>.
     /// </summary>
     public static object State(StateFrame frame) => new
     {
@@ -67,8 +67,8 @@ public static class HookFrames
     };
 
     /// <summary>
-    /// <see cref="HookPoints.StateChanged"/>: what moved (STATEHUB1g), the event's own two fields, <c>sessions</c> null where the
-    /// change was about no one session.
+    /// <see cref="HookPoints.StateChanged"/>: what moved, the event's own two fields, <c>sessions</c> null where the
+    /// change is about no one session.
     /// </summary>
     public static object Changed(StateChangedFrame frame) => new
     {
@@ -77,7 +77,7 @@ public static class HookFrames
     };
 
     /// <summary>
-    /// <c>work/event</c>'s frame (EVENTHOOK1b, the event hook design §4.3), every name spelled here and each field checked against
+    /// <c>work/event</c>'s frame, every name spelled here and each field checked against
     /// <see cref="WorkEventGrammar"/> as it is built: an optional field that fails, or whose source holds none, is left out; an event whose
     /// required field fails is an <see cref="WorkEventKinds.Missed"/> frame in its place, naming that field as unsent.
     /// </summary>

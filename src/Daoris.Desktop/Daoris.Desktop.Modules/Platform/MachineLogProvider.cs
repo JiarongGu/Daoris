@@ -5,13 +5,13 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The logging framework's warnings and errors, from every category, into the machine log as the
-/// <c>log</c> event (LOG1a, D94).
+/// <c>log</c> event.
 /// </summary>
 /// <remarks>
 /// The kit, the engine and the modules log through <see cref="ILogger"/>, and an installed application
 /// has no console, so what they warned about went nowhere a person could read. Information and below
 /// stay out: the log records what happened to the machine, not the framework's running commentary.
-/// The categories named in <c>informationFrom</c> are written at information too (ONEINSTANCE2): the kit
+/// The categories named in <c>informationFrom</c> are written at information too: the kit
 /// says a later launch handed over at that level, and it is a fact about the machine, not commentary.
 /// It makes no loggers alone: <see cref="MachineLogging.AddMachineLog"/> puts it in a container.
 /// </remarks>

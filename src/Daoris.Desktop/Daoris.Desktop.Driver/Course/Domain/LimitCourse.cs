@@ -3,10 +3,10 @@ using static Daoris.Driver.LineCourse;
 
 namespace Daoris.Driver;
 
-/// <summary>The course of a limit's end and its wake, a carry-on and a transient past its bound (paths D, E, F and their driven forms), read by <see cref="CourseDecision"/>.</summary>
+/// <summary>The course of a limit's end and its wake, a carry-on and a transient past its bound, read by <see cref="CourseDecision"/>.</summary>
 internal static class LimitCourse
 {
-    // ——— Paths D, E and F: a limit's end and its wake.
+    // ——— A limit's end and its wake.
 
     internal static LineCourse Limit(CourseFacts facts, CourseTrigger trigger)
     {
@@ -31,20 +31,20 @@ internal static class LimitCourse
             return Resumed(facts, new CourseWords(All(head.Words).Ids, CourseDaorisWord.LimitReset, key));
         }
 
-        // FOUNDATION1a-ii (D205 §3.5(d)): an account the person picked is never moved off; it waits for that account's reset.
+        // An account the person picked is never moved off; it waits for that account's reset.
         if (account?.Picked == true && answer is LineAnswer.Wait picked)
         {
             return Waited(facts, picked.Earliest, CourseWaitWhy.LimitReset, [picked.Earliest.Account ?? ""]);
         }
 
         var persons = Ids(head.Words.Where(word => word.Persons));
-        // LIMITGOON1: another account of its agent with room, never its own (LimitMove.cs:107, :298-299): a new part there, by the limit.
+        // Another account of its agent with room, never its own (LimitMove.cs:107, :298-299): a new part there, by the limit.
         if (answer is LineAnswer.Elsewhere elsewhere && !Same(elsewhere.Selection.Profile, head.Profile))
         {
             return Moved(facts, CourseWhen.Now, Settled(facts, elsewhere.Selection), CourseFromWhy.Limit, CourseFromBy.Daoris, persons);
         }
 
-        // LIMITGOON2 (D205 §3.5(e)): none of its agent's has room, so its actor's next choice on another agent, never for an agent's pick.
+        // None of its agent's has room, so its actor's next choice on another agent, never for an agent's pick.
         if (Later(facts) is { } later) return Moved(facts, CourseWhen.Now, later, CourseFromWhy.Limit, CourseFromBy.Daoris, persons);
 
         // Nothing has room: it waits for the earliest reset of any account of its agent (LimitWaits.cs:236-237).
@@ -54,7 +54,7 @@ internal static class LimitCourse
             : Waited(facts, earliest, CourseWaitWhy.LimitReset, (answer as LineAnswer.Wait)?.Accounts ?? [earliest]);
     }
 
-    // LIMITRESUME1b (the limit-resume design §3.3): step 0, a hand-over made from it decides; step 1, its own account ready (its maker's
+    // The resume steps: step 0, a hand-over made from it decides; step 1, its own account ready (its maker's
     // reading asked), the protocol door and the judge passing, its own conversation resumes with Daoris's word; step 2, another account it
     // may run on: a briefed part there, `limit` on another account, else `carry-on`; step 3, none ready: it waits for the earliest reset.
     internal static LineCourse DrivenLimit(CourseFacts facts)
@@ -65,7 +65,7 @@ internal static class LimitCourse
         var answer = facts.Account?.Answer;
         if (answer is LineAnswer.Resume && head.Protocol && head.Judged is null)
         {
-            // AGENTERRORS1a2: a released transient record's words go on alone, as the go-on's; only Try again's start with none takes the word.
+            // A released transient record's words go on alone, as the go-on's; only Try again's start with none takes the word.
             if (facts.Failure is { PastBound: true } && head.Words.Count > 0) return Resumed(facts, All(head.Words));
             return Resumed(facts, new CourseWords(All(head.Words).Ids, WordKind(facts), WordKey(facts)));
         }
@@ -93,7 +93,7 @@ internal static class LimitCourse
     }
 
     // Daoris's word at step 1, by what ended the record (DriverContinuations.KeepLimitWordAsync): a released transient end's go-on, an
-    // update's restart, else the limit word, keyed by the cool-off's `until` as the record's note said it (DaorisKeys, LimitResume.Until).
+    // update's restart, else the limit word, keyed by the cool-off's `until` as the record's note says it (DaorisKeys, LimitResume.Until).
     internal static CourseDaorisWord WordKind(CourseFacts facts) =>
         facts.Failure is { PastBound: true } ? CourseDaorisWord.TransientRetry
         : facts.Limit?.Build is not null ? CourseDaorisWord.Restart
@@ -110,7 +110,7 @@ internal static class LimitCourse
         };
     }
 
-    // ——— Paths K and N: the planner's carry-ons, and what follows a transient bound.
+    // ——— The planner's carry-ons, and what follows a transient bound.
 
     internal static LineCourse CarryOnOf(CourseFacts facts)
     {
@@ -149,7 +149,7 @@ internal static class LimitCourse
         }
     }
 
-    // AGENTERRORS1a (D210 point 3; Planner.TransientHeld): the retries are the run's; past their bound the line waits for the person's word
+    // Planner.TransientHeld: the retries are the run's; past their bound the line waits for the person's word
     // or *Try again*, which releases that end into the limit resume's step 1 (LimitResume.Line, LimitResume.cs:28-34).
     internal static LineCourse PastBound(CourseFacts facts)
     {
@@ -173,5 +173,5 @@ internal static class LimitCourse
         return (CourseFromWhy.CarryOn, pressed ? CourseFromBy.Person : CourseFromBy.Daoris);
     }
 
-    // ——— Paths G, H and I: the curve and the hand-overs.
+    // ——— The curve and the hand-overs.
 }

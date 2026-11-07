@@ -4,7 +4,7 @@ using static Daoris.Driver.HelpSettingWords;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>git-use</c> (GITAUTH1e, D198 point 15; the git-auth design §9), as <c>daoris git use</c> reads it: a repository's remote
+/// <c>git-use</c>, as <c>daoris git use</c> reads it: a repository's remote
 /// (<c>origin</c> unless <c>--remote</c> names one) or, with <c>--host</c> and the target a workspace, a workspace's host pointed at an
 /// identity that exists on this machine, or cleared with <c>--clear</c>. Never <c>own</c>: the person's own sign-ins are a widening
 /// only the person's press makes; never an identity created, tested or removed.

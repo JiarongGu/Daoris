@@ -1,18 +1,18 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a door can do, as its callers read it (the agent-provider design §2.3, §2.6): each ability the door declares, else what its
+/// What a door can do, as its callers read it: each ability the door declares, else what its
 /// transport gives every door of it. A caller asks the ability it acts on, never which transport the door rides.
 /// </summary>
 /// <remarks>
-/// Interactive is always the door's declaration, never the transport's (C2-1.1): <c>dsh</c> declares none and is refused a conversation.
-/// The rest are the transport's today (O1-F13); a door that states one of them is read as it states it once the part declares it.
+/// Interactive is always the door's declaration, never the transport's: <c>dsh</c> declares none and is refused a conversation.
+/// The rest are the transport's; a door that states one of them is read as it states it once the part declares it.
 /// </remarks>
 /// <param name="Transport">The transport the door rides; read by the transports alone.</param>
 /// <param name="Interactive">It holds a conversation (the door's declaration).</param>
 /// <param name="Resumes">A resume is eligible to be negotiated on it (declared, else the protocol's).</param>
 /// <param name="TakesSettings">It takes a rules file, so the person's denies reach it.</param>
-/// <param name="Structured">It reports a conversation's structure: protocol frames, or a native dialect's lines (D76 §1).</param>
+/// <param name="Structured">It reports a conversation's structure: protocol frames, or a native dialect's lines.</param>
 /// <param name="ServersOnWire">Its servers ride the session's wire; else they are handed in a file on its command line.</param>
 /// <param name="RulesOnWire">Its rules ride the open's <c>_meta</c>; else they are handed by its own flag.</param>
 /// <param name="SetAtOpen">Its posture, model and effort are set on the session once it opens; else on the command line.</param>
@@ -35,7 +35,7 @@ public sealed record DoorAbilities(
 {
     /// <summary>
     /// Its servers inherit its environment: a native door driving an adopted repository by the repository's own <c>.mcp.json</c>, the session's
-    /// identity arriving with the process's variables (D70, O1-F19). A door that states it absent cannot drive by a repository's own servers.
+    /// identity arriving with the process's variables. A door that states it absent cannot drive by a repository's own servers.
     /// </summary>
     public bool ServersInherit { get; init; }
 
@@ -47,12 +47,12 @@ public sealed record DoorAbilities(
         Declared(door.Abilities.TakesSettings, false),
         door.Dialect.IsKnown && door.Dialect.Required is INativeDialect) with
     {
-        // A native door's servers inherit its environment as every one did before the ability was stated; a provider says otherwise.
+        // A native door's servers inherit its environment unless its provider says otherwise.
         ServersInherit = Declared(door.Abilities.ServersInherit, door.Transport == Transport.Native),
     };
 
     /// <summary>
-    /// A door's abilities from its declarations and its transport's: what every door of the transport is given (§2.6), the protocol's
+    /// A door's abilities from its declarations and its transport's: what every door of the transport is given, the protocol's
     /// on the wire and the native's on the command line.
     /// </summary>
     /// <param name="nativeDialect">A native door reads its program's structured lines.</param>

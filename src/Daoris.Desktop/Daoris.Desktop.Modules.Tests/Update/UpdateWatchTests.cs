@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The staged update's folder and the request on the change watch (FABRIC-EVENT4, row 12): a build staged or a request said is
+/// The staged update's folder and the request on the change watch: a build staged or a request said is
 /// looked at when its file moves, within the debounce, instead of at a two-second pace; the topic's deadline finds it when the
 /// source is silent; and the updater's own request write wakes no second look.
 /// </summary>
@@ -18,7 +18,7 @@ public sealed class UpdateWatchTests : IDisposable
     public UpdateWatchTests()
     {
         Directory.CreateDirectory(Path.Combine(_install, "app"));
-        // An install's mark, which makes its data/ the install's home (D172 point 2, HOMEFIX1): unmarked, data/ is a root of its
+        // An install's mark, which makes its data/ the install's home: unmarked, data/ is a root of its
         // own, the request is placed in its data/data/, and the watch never opens the folder this class says a change in.
         File.WriteAllText(Path.Combine(_install, InstallHome.Marker), "# Daoris — installed desktop\n");
         Directory.CreateDirectory(Path.Combine(_install, "update"));

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// FOUNDATION1y-i (the foundation design §2.7): <c>ROLES</c>, the catalogue as Agents → <i>Roles</i> shows it, and
+/// <c>ROLES</c>, the catalogue as Agents → <i>Roles</i> shows it, and
 /// <c>SET_ROLE</c>, the person's press that adds, changes, removes or gives back a working role through the role door, whose judge
 /// refuses with nothing written.
 /// </summary>
@@ -66,7 +66,7 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
         }
     }
 
-    /// <summary>DEFAULTCONFIG1b: <c>SET_ROLE</c> <c>default-all</c> gives every seeded role its default and keeps the added roles.</summary>
+    /// <summary><c>SET_ROLE</c> <c>default-all</c> gives every seeded role its default and keeps the added roles.</summary>
     [Fact]
     public async Task Restoring_every_default_through_the_press_returns_the_seeded_roles_and_keeps_an_added_one()
     {
@@ -99,7 +99,7 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// AGENTSPLACE1g2 (the Agents-place design §4): <c>SET_ROLES</c> makes several role changes as one. A batch with one refused change, or one
+    /// <c>SET_ROLES</c> makes several role changes as one. A batch with one refused change, or one
     /// made against a revision that moved, refuses with that change's own sentence and writes neither the catalogue nor the staffing; a batch
     /// that is judged whole writes every role with its choices.
     /// </summary>
@@ -152,7 +152,7 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
         }
     }
 
-    /// <summary>MODELROLE1f: <c>ROLES</c> carries each role's last seven days beside its rows; a home with no start lists none.</summary>
+    /// <summary><c>ROLES</c> carries each role's last seven days beside its rows; a home with no start lists none.</summary>
     [Fact]
     public async Task The_roles_answer_carries_each_role_s_week_of_starts_and_none_with_no_history()
     {
@@ -187,7 +187,7 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COMPANYVIEW1c (the company-view design §4): <c>ROLE_STRUCTURE</c>, each place's role per work as a start finds it, its rule with
+    /// <c>ROLE_STRUCTURE</c>, each place's role per work as a start finds it, its rule with
     /// where it was set, and each choice's state from the last readings alone, by name and never a path.
     /// </summary>
     [Fact]
@@ -248,7 +248,7 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
         }
     }
 
-    /// <summary>COMPANYVIEW1c: asked for nothing, this machine's every work; a part that does not read is said on its own item.</summary>
+    /// <summary>Asked for nothing, this machine's every work; a part that does not read is said on its own item.</summary>
     [Fact]
     public async Task Asked_for_nothing_it_answers_this_machine_s_every_work_and_says_a_failure_where_it_is()
     {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The roles' terminals' door as its routes share it (SUPERVISOR1a-ii, D208, D233 point 2; the supervisor design §2.2, §3.1, §5): the
+/// The roles' terminals' door as its routes share it: the
 /// holder's terminal's start, the sweep an ended hold runs after the judge's step, and the park as the holder's answer is kept on it.
 /// The routes are the person's <c>START_ROLE_TERMINAL</c> (<see cref="PersonRoutes"/>), the role door's presses, and the sessions'
 /// <c>SUPERVISOR_ANSWER</c> and <c>SUPERVISOR_WAITING</c> (<see cref="SessionsRoutes"/>).
@@ -23,7 +23,7 @@ public static class SupervisorDoor
     private static (DriverLoop Loop, InstancePipe Pipe)? _attached;
 
     /// <summary>
-    /// The judge's tabs and sweep wired to this loop (STEWARDROLE1a-i): a holder's end, the walk's ending of a holder and a role added
+    /// The judge's tabs and sweep wired to this loop: a holder's end, the walk's ending of a holder and a role added
     /// to a holder each reach the panel and the decisions through here. Made at the first start, before its tab opens.
     /// </summary>
     public static void Attach(DriverLoop loop, InstancePipe pipe)
@@ -36,7 +36,7 @@ public static class SupervisorDoor
     }
 
     /// <summary>
-    /// A holder's tab ended (D209 §2.2's <c>HolderEnded</c>), told by the terminal module on every path it ends by: the judge drops the
+    /// A holder's tab ended, told by the terminal module on every path it ends by: the judge drops the
     /// holder and its holds in one step, and the decisions under them are swept after it (<see cref="StandingConfirmation.Ended"/>).
     /// </summary>
     public static void HolderEnded(string tab)
@@ -45,9 +45,9 @@ public static class SupervisorDoor
     }
 
     /// <summary>
-    /// The owner's start of a role's terminal (§2.3; D209 §2.2), made by the judge in one step, a new holder's tab opened with the key
+    /// The owner's start of a role's terminal, made by the judge in one step, a new holder's tab opened with the key
     /// first or the role added to a living holder; then every decision kept under a generation the step ended is swept, each under its
-    /// own decision's lock (§5).
+    /// own decision's lock.
     /// </summary>
     public static async Task<StandingChange> StartAsync(DriverLoop loop, InstancePipe pipe, HoldRequest request, CancellationToken ct)
     {
@@ -72,7 +72,7 @@ public static class SupervisorDoor
         if (ended.Count > 0) await SweepAsync(loop, ended, ct).ConfigureAwait(false);
     }
 
-    /// <summary>Every decision kept under <paramref name="generations"/> swept, each under its own decision's lock (§5), and the loop told.</summary>
+    /// <summary>Every decision kept under <paramref name="generations"/> swept, each under its own decision's lock, and the loop told.</summary>
     private static async Task SweepAsync(DriverLoop loop, IReadOnlyList<string> generations, CancellationToken ct)
     {
         var service = loop.Service;
@@ -83,18 +83,18 @@ public static class SupervisorDoor
             await loop.Supervisor.RevokedAsync(generation, takeBack, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
         }
 
-        // STEWARDROLE1b (§5.1a): the steward's releases the ended hold cancelled are withdrawn from the driver's file, the owner's kept.
+        // The steward's releases the ended hold cancelled are withdrawn from the driver's file, the owner's kept.
         if (loop.Pipe is { } pipe) RoleStarts.Sweep(pipe.StandingConfirmation, loop.ConfigPath);
         loop.Nudge();
     }
 
     /// <summary>
-    /// <c>ROLE_ACT</c>'s handler (STEWARDROLE1a-i, D209 §3.3, §3.4 step 8), on the role's door alone: the act admitted under the judge's
+    /// <c>ROLE_ACT</c>'s handler, on the role's door alone: the act admitted under the judge's
     /// lock is checked once more, still admitted, its holder's hash present and its appointment live, and moved to running; only then
-    /// does its table's handler run. Refused as data. Its answer names the holder's roles and the brief's revision (§2.2).
+    /// does its table's handler run. Refused as data. Its answer names the holder's roles and the brief's revision.
     /// </summary>
     /// <remarks>
-    /// STEWARDROLE1a-ii (§3.4 step 8, §5.4): before that step the act's target is resolved to its dependencies (a quest's repository, a
+    /// Before that step the act's target is resolved to its dependencies (a quest's repository, a
     /// repository's workspace) and every one of their gates is taken alone in the fixed order; under them the target's records are read
     /// for a person's door's write this run (<see cref="OwnerRecords"/>), the step refuses an <c>owner-set</c> target, and the act's
     /// dependent conditions are judged again (<see cref="IRoleAct.UnderGatesAsync"/>). A dependency or a record that cannot be read
@@ -107,7 +107,7 @@ public static class SupervisorDoor
         var judge = pipe.StandingConfirmation;
         var target = judge.ActTarget(id);
 
-        // STEWARDROLE1b (§5.4: a session resolved to its quest): a session's act is its quest's, its gates and `owner-set` the quest's;
+        // A session's act is its quest's, its gates and `owner-set` the quest's;
         // a session that names no quest is no quest's own session, refused before any gate.
         if (target is { Kind: OwnerKinds.Session } session)
         {
@@ -152,7 +152,7 @@ public static class SupervisorDoor
 
             if (wrote is not false)
             {
-                // §5.4's service doors mark by the record: a person's write on the quest this run makes it theirs, as a mark does.
+                // The service's doors mark by the record: a person's write on the quest this run makes it theirs, as a mark does.
                 if (wrote is true) judge.MarkOwner(new OwnerResolved([quest], [], false));
                 judge.ActDone(id);
                 return Acted(false, wrote is true ? RoleWhy.OwnerSet : RoleWhy.Unread, judged.Roles);
@@ -188,12 +188,12 @@ public static class SupervisorDoor
     }
 
     /// <summary>
-    /// An act's target and its dependencies (§5.4): a quest, its repository and that repository's workspace; a repository and its
+    /// An act's target and its dependencies: a quest, its repository and that repository's workspace; a repository and its
     /// workspace. Null where one could not be read; a target with no scopes to read by is its own alone.
     /// </summary>
     public static async Task<IReadOnlyList<RoleScope>?> DependenciesAsync(RoleScope target, IOwnerScopes? scopes, CancellationToken ct)
     {
-        // STEWARDROLE1c: a desk request, and an update (STEWARDROLE1d), is no repository's nor quest's, and depends on nothing.
+        // A desk request, and an update, is no repository's nor quest's, and depends on nothing.
         if (scopes is null || target.Kind == StewardDesk.Kind || target.Kind == StewardUpdateAct.Kind) return [target];
         try
         {
@@ -220,7 +220,7 @@ public static class SupervisorDoor
         new { Done = done, Why = why, Answer = (object?)null, Roles = roles ?? [], Brief = RolesBrief.Revision };
 
     /// <summary>
-    /// The holder's answer (§3.1), on the role's door alone: the session's repository the supervisor's, the park read, and the decision
+    /// The holder's answer, on the role's door alone: the session's repository the supervisor's, the park read, and the decision
     /// kept in memory, held for the supervisor's role's window. Refused as data, keeping nothing.
     /// </summary>
     public static async Task<KeptAnswer> AnswerAsync(DriverLoop loop, System.Text.Json.JsonElement? payload, CancellationToken ct)
@@ -237,13 +237,13 @@ public static class SupervisorDoor
             park, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
         if (!kept.Kept) return Refused(kept.Why ?? SupervisorWhy.NotParked);
 
-        // The loop waits for the soonest decision's moment (§3.4's nudge): told of this one now.
+        // The loop waits for the soonest decision's moment: told of this one now.
         loop.Nudge();
         return new KeptAnswer(true, kept.Decision, kept.GoesOnAt is { } at ? Moments.Write(at) : null, null);
     }
 
     /// <summary>
-    /// The holder's leaving a question to the owner (SUPERVISOR1b; §3.1 <c>SUPERVISOR_DEFER</c>), on the role's door alone as the answer
+    /// The holder's leaving a question to the owner (<c>SUPERVISOR_DEFER</c>), on the role's door alone as the answer
     /// is: kept as a decision of state <c>left</c>, final at once, nothing said to the session. Refused as data, keeping nothing.
     /// </summary>
     public static async Task<KeptAnswer> DeferAsync(DriverLoop loop, System.Text.Json.JsonElement? payload, CancellationToken ct)
@@ -262,7 +262,7 @@ public static class SupervisorDoor
     }
 
     /// <summary>
-    /// What waits for the holder (§3.1, §3.2): the parked sessions here with a recorded question and no decision on it, in a repository a
+    /// What waits for the holder: the parked sessions here with a recorded question and no decision on it, in a repository a
     /// live supervisor's hold covers, each with that hold's generation. Names no key.
     /// </summary>
     public static async Task<IReadOnlyList<object>> WaitingAsync(DriverLoop loop, CancellationToken ct)
@@ -275,7 +275,7 @@ public static class SupervisorDoor
         {
             if (record.Repository is not { } repository || admission.Admit(repository) is not { Why: null, Generation: { } generation }) continue;
             var asked = await Task.Run(() => new QuestionFiles(loop.Home).Read(record.Session), ct).ConfigureAwait(false);
-            // A question its agent marked the owner's (SUPERVISOR1b, §4.1) is never the holder's to look at.
+            // A question its agent marked the owner's is never the holder's to look at.
             if (asked is null || asked.Owner is not null || loop.Supervisor.Decided(record.Session, asked.Id)) continue;
             waiting.Add(new
             {
@@ -288,9 +288,9 @@ public static class SupervisorDoor
     }
 
     /// <summary>
-    /// The park as the keeping reads it (§3.1's checks the driver makes): its repository, whether it is parked here and holds a quest, the
+    /// The park as the keeping reads it (the checks the driver makes): its repository, whether it is parked here and holds a quest, the
     /// question on file, whether a word of the owner's waits, whether its ask's go-aheads are open or cannot be read, whether its line
-    /// is at D188's answers-alone bound (SUPERVISOR1b), and its line's counts (CONTEXTDRIVE1i). Null where no record of this machine has the id.
+    /// is at its answers-alone bound, and its line's counts. Null where no record of this machine has the id.
     /// </summary>
     public static async Task<SupervisedPark?> ParkAsync(DriverLoop loop, ServiceClient service, string id, CancellationToken ct)
     {
@@ -313,10 +313,10 @@ public static class SupervisorDoor
             }
         }
 
-        // SUPERVISOR1b (§4.3): D188's one count, the line's admission (COMMS1g), as the look's hold reads it.
+        // The one count, the line's admission, as the look's hold reads it.
         var atBound = record.Parked && new AnswersAloneHold(loop.Events, new GoOnMarks(loop.Home), new ContinuationAdmissions(loop.Home), SupervisorRuleBook.Read(loop.Home))
             .AtBound(id, await AnswersAloneHold.RecordsAsync(service, ct).ConfigureAwait(false));
-        // CONTEXTDRIVE1i (§5): the line's counts as the print hands them, which a reason's `count:` source names and the decision keeps.
+        // The line's counts as the print hands them, which a reason's `count:` source names and the decision keeps.
         var counts = (await LineCountsRead.FactsAsync(service, loop.Home, id, ct).ConfigureAwait(false)).Counts;
         return new SupervisedPark(record.Repository ?? "", record.Parked, record.Quest is not null, filed, ownerWaits, open, unread, atBound)
         {
@@ -331,8 +331,8 @@ public static class SupervisorDoor
         loop.Pipe?.StandingConfirmation is { } judge ? judge.Covers(generation, repository) : SupervisorWhy.NotStaffed;
 
     /// <summary>
-    /// The answer's answer (§3.1): kept with the decision and when it goes on, or refused with why, keeping nothing; with the roles the
-    /// holder holds now and the brief's revision (STEWARDROLE1a-i, D209 §2.2).
+    /// The answer's answer: kept with the decision and when it goes on, or refused with why, keeping nothing; with the roles the
+    /// holder holds now and the brief's revision.
     /// </summary>
     public sealed record KeptAnswer(bool Kept, string? Decision, string? GoesOnAt, string? Why)
     {
@@ -342,7 +342,7 @@ public static class SupervisorDoor
     }
 }
 
-/// <summary>The panel's door for the holders' tabs (STEWARDROLE1a-i): open one, tell one a line, close one.</summary>
+/// <summary>The panel's door for the holders' tabs: open one, tell one a line, close one.</summary>
 public interface IHolderPanel
 {
     Task<HolderOpened> OpenAsync(string home, HolderOpen open, CancellationToken ct);

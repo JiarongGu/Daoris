@@ -3,7 +3,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// A test's scratch folder removed once what held it lets go: a killed stand-in host's files while Windows releases
 /// them, a module's machine log for a moment after the test, git's read-only objects. Asked again a bounded number of
-/// times, and a folder still held after the last is left behind rather than failing the test it served (HOSTCLEAN1).
+/// times, and a folder still held after the last is left behind rather than failing the test it served.
 /// </summary>
 internal static class ScratchFolders
 {

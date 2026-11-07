@@ -3,17 +3,17 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// An edit written over the file it was read from (FABRIC-GRAPH1's review, finding 1; FIX-LOG 2026-10-17). A writer that rebuilt
+/// An edit written over the file it came from. A writer that rebuilt
 /// <c>driver.json</c> from the fields it knows deleted every setting it did not, so an edit at Setup or from Ask Daoris erased what a
 /// newer build, the terminal or the person had put there. Three texts make the edit instead: the file as it stands, the file as its reader
 /// understood it written again, and the edited choices written. What the edit did not change is written as the file has it; what it
 /// changed is written as the edit has it, an object the three hold alike merged key by key, so a rule's own unknown keys stay; a key
 /// the edit adds goes after the one before it in the writer's order. The CLI's twin is <c>jsonkeep.ts</c> (<c>keepEdits</c>), and
 /// both are held to the CLI's <c>test/fixtures/home-files-keep.json</c>; <c>driver.json</c>'s rows, this suite's
-/// <c>fixtures/driver-config-keeps.json</c>, are this side's alone since its CLI writer left (PUSH1f2b).
+/// <c>fixtures/driver-config-keeps.json</c>, are this side's alone.
 /// <para>🔴 An edit is the set of key paths it changed (a value set, a key added, a key removed), from the text read and the edited choices,
-/// and making it touches those paths alone (the second re-check, finding 1): merged over the file as it stands, an object another writer
-/// had taken out came back whole with every key the edit never touched, and one another writer had made a string was overwritten by the
+/// and making it touches those paths alone: merged over the file as it stands, an object another writer
+/// had taken out would come back whole with every key the edit never touched, and one another writer had made a string would be overwritten by the
 /// stale edited object. An object missing now is made again with only the edit's own keys under it; one that is no longer an object
 /// refuses the edit (<see cref="JsonEditRefusedException"/>); a key the edit took that is already gone is nothing.</para>
 /// </summary>
@@ -24,10 +24,9 @@ public static class JsonKeeping
     /// <summary>
     /// <paramref name="edited"/> written over <paramref name="original"/>, where <paramref name="read"/> is the file as its reader understood
     /// it when it read it, written by the same writer as <paramref name="edited"/>. No edit is <paramref name="original"/>'s own bytes.
-    /// <paramref name="original"/> is the file as it stands when the edit is written, which may be another writer's since the read (the
-    /// re-check's finding 1): what that writer changed and this edit did not stays as it is. Its lines end as its first line does (finding 3:
-    /// an edit wrote LF over a file in CRLF).
-    /// <para><paramref name="sets"/> names the arrays that are sets (CONFIGMERGE1, D173's CONFIG1 note; <see cref="DriverConfig.Sets"/>), each
+    /// <paramref name="original"/> is the file as it stands when the edit is written, which may be another writer's since the read:
+    /// what that writer changed and this edit did not stays as it is. Its lines end as its first line does.
+    /// <para><paramref name="sets"/> names the arrays that are sets (<see cref="DriverConfig.Sets"/>), each
     /// a key path, <c>*</c> any one name: an edit of one is the names it added and took, compared without case, made onto the file's array
     /// as it stands (<see cref="Merged"/>), so two writers each adding a name keep both. Every other array is a value, written whole.</para>
     /// </summary>
@@ -53,7 +52,7 @@ public static class JsonKeeping
 
     /// <summary>
     /// <paramref name="original"/> with the top-level keys <paramref name="values"/> names each set to its JSON text whole, or taken out where
-    /// the text is null, and every other key as <see cref="Kept"/> keeps it (FOUNDATION1w-s part 2): the file step's edit of the staffing's four
+    /// the text is null, and every other key as <see cref="Kept"/> keeps it: the file step's edit of the staffing's four
     /// paths. Each value is written as given, never merged into the value the file holds, so what the file shows at the path afterwards is
     /// the text and not that text's keys laid over another's; a key the file lacks is added after the key before it in
     /// <paramref name="values"/>' order that the file holds, else before the one after it, else last. Lines end as the first line's do.
@@ -95,20 +94,20 @@ public static class JsonKeeping
     }
 
     /// <summary>
-    /// An edit of a home file made onto the file as it stands, and written (KEEPALL1): every file a door edits keeps what its writer does
+    /// An edit of a home file made onto the file as it stands, and written: every file a door edits keeps what its writer does
     /// not own, as <c>driver.json</c> does through <see cref="DriverConfig.Save"/>. <paramref name="understood"/> is the file as its reader
     /// understood it when it read it, and <paramref name="edited"/> the edited choices, both written by one writer; only the key paths that
     /// differ between them are made, under <see cref="Kept"/>'s rules, onto the file read again here. No edit writes nothing.
-    /// <paramref name="found"/> says a file was there at the read: where there was none then and is none now, <paramref name="edited"/> is
+    /// <paramref name="found"/> says a file existed at the read: where none did then and none does now, <paramref name="edited"/> is
     /// written whole in the writer's own layout, since there is nothing to keep. The CLI's twin is <c>jsonkeep.ts</c>' <c>writeKeeping</c>.
-    /// <para>🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; <see cref="KeepLock"/>), which
-    /// the CLI's <c>writeKeeping</c> takes too: with none, another writer's change landing between them was lost.</para>
+    /// <para>🔴 The re-read and the rename are made holding the file's lock (<see cref="KeepLock"/>), which
+    /// the CLI's <c>writeKeeping</c> takes too: with none, another writer's change landing between them would be lost.</para>
     /// </summary>
     /// <exception cref="DriverException">
     /// The file there now does not read, holds a key twice in one object, or holds no object where this edit changes something inside one;
-    /// nothing was written.
+    /// nothing is written.
     /// </exception>
-    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing was written.</exception>
+    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing is written.</exception>
     public static void Save(string path, bool found, string understood, string edited)
     {
         if (understood == edited) return;
@@ -117,8 +116,7 @@ public static class JsonKeeping
     }
 
     /// <summary>
-    /// <see cref="Save"/> for a writer that already holds the file's <see cref="KeepLock"/> over its own read (PUSH1f2c, the alone-path
-    /// design §1.4: <c>tools.json</c>'s writers decide their edit from the file as they read it, so the read and the write are one hold).
+    /// <see cref="Save"/> for a writer that already holds the file's <see cref="KeepLock"/> over its own read (<c>tools.json</c>'s writers decide their edit from the file as they read it, so the read and the write are one hold).
     /// </summary>
     internal static void SaveHolding(string path, bool found, string understood, string edited)
     {
@@ -173,7 +171,7 @@ public static class JsonKeeping
 
     /// <summary>
     /// The first key written twice in one object of <paramref name="text"/>, a JSON text, in the order the second is written; or null (the
-    /// re-check's finding 3; the CLI's <c>twice</c>). An edit cannot tell which of the two it changes: this writer kept both and edited
+    /// CLI's <c>twice</c>). An edit cannot tell which of the two it changes: this writer kept both and edited
     /// each, the CLI's kept the last, so neither edits a file holding one.
     /// </summary>
     public static string? Twice(string text)
@@ -263,7 +261,7 @@ public static class JsonKeeping
     /// entries its reader read; one its reader did not read and the edit set is the edit's, a map merged into the file's key by key and
     /// refused where the file's is no longer an object; one the edit left as read is the file's, as
     /// written; an object the edit changed is merged, refused where the file's is no longer an object; else the edit's. A key the edit
-    /// set that the file no longer holds is added, an object with only the edit's own keys under it (the second re-check, finding 1).
+    /// set that the file no longer holds is added, an object with only the edit's own keys under it.
     /// A set of <paramref name="sets"/> is merged by its names (<see cref="Merged"/>), never written whole.
     /// </summary>
     private static List<(string Name, Action<Utf8JsonWriter> Value)> Plan(
@@ -293,14 +291,14 @@ public static class JsonKeeping
             }
             else if (set && now.ValueKind == JsonValueKind.Array && !(wasRead && was.GetRawText() == now.GetRawText()))
             {
-                // CONFIGMERGE1: the names this edit added and took, made onto the set as it stands; one no longer an array refuses it.
+                // The names this edit added and took, made onto the set as it stands; one no longer an array refuses it.
                 if (kept.ValueKind != JsonValueKind.Array) throw new JsonEditRefusedException(path, path, list: true);
                 plan.Add((property.Name, Merged(kept, wasRead ? was : null, now, keepEmpty: true)!));
             }
             else if (!wasRead && now.ValueKind == JsonValueKind.Object)
             {
                 // A map its reader never saw is no whole value: its keys are the edit's paths, made into what another writer wrote
-                // meanwhile (the re-check of round 3: written whole, it deleted that writer's entries, or overwrote its string).
+                // meanwhile: written whole, it would delete that writer's entries, or overwrite its string.
                 if (kept.ValueKind != JsonValueKind.Object) throw new JsonEditRefusedException(Changed(Nothing.RootElement, now, path) ?? path, path);
                 var merged = Plan(kept, Nothing.RootElement, now, path, top: false, sets);
                 plan.Add((property.Name, writer => Write(writer, merged)));
@@ -363,7 +361,7 @@ public static class JsonKeeping
     }
 
     /// <summary>
-    /// A set made (CONFIGMERGE1, D173's CONFIG1 note): <paramref name="file"/>'s array as it stands, null for none, with every name the edit
+    /// A set made: <paramref name="file"/>'s array as it stands, null for none, with every name the edit
     /// from <paramref name="was"/> to <paramref name="now"/> took gone in any spelling and every name it added that is not there in any case
     /// put at the end in the edit's order; every other element, another writer's names and a value of any other kind, stays where it
     /// stands. Names compare as <c>OrdinalIgnoreCase</c> compares them, as the CLI's <c>casefold.ts</c> does. Null, written as no key,
@@ -430,9 +428,9 @@ public static class JsonKeeping
 
 /// <summary>
 /// An edit refused, nothing written: it changes <see cref="EditPath"/>, and <see cref="Holder"/>, the value that path lies under, is no
-/// longer an object in the file as it stands (FABRIC-GRAPH1's second re-check, finding 1). Another writer made it a string, a number or
+/// longer an object in the file as it stands. Another writer made it a string, a number or
 /// an array since this one read it; writing the stale object over it would undo that writer's change. The CLI's twin is
-/// <c>EditRefused</c> in <c>jsonkeep.ts</c>. A set (<paramref name="list"/>, CONFIGMERGE1) is refused where it is no longer an array.
+/// <c>EditRefused</c> in <c>jsonkeep.ts</c>. A set (<paramref name="list"/>) is refused where it is no longer an array.
 /// </summary>
 public sealed class JsonEditRefusedException(string editPath, string holder, bool list = false)
     : Exception(holder.Length == 0

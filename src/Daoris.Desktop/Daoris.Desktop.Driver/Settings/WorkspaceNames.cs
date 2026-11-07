@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A workspace's name as the settings key and compare it (D48 §2): trimmed, and the default one where it is unstated. The settings'
+/// A workspace's name as the settings key and compare it: trimmed, and the default one where it is unstated. The settings'
 /// own reading of a name, which the service's workspace map answers through (<see cref="RemoteTarget.Workspace"/>), so a name is
 /// spelled the same in both files.
 /// </summary>

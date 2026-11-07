@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The work of an ask or a quest over the bridge (PAUSE1b, D132 §7.3): <c>WORK_PLAN</c> answers every piece and what a pause
+/// The work of an ask or a quest over the bridge: <c>WORK_PLAN</c> answers every piece and what a pause
 /// would do with it, <c>WORK_PAUSE</c> stops what of it runs here as the person's stop and keeps everything else, and
 /// <c>WORK_RESUME</c> releases what the pause made and names what still holds. One implementation with the terminal's
 /// (<c>WorkPausingTests</c>); these hold what the page receives, and that nothing of this machine's paths comes back.
@@ -35,7 +35,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
         ledger.Serve("/api/sessions/w0rk1ng0/state", Bytes("""{"session":{"id":"w0rk1ng0","state":"stopped"},"message":"Session is now stopped."}"""));
         ledger.Serve("/api/asks/a1", Bytes("""{"id":"a1","workspace":"aurora","sentence":"Add the note field","state":"Published","tier":"named"}"""));
         ledger.Serve("/api/registry", Bytes($$"""[{"repository":"engine","adopted":true,"registered":true,"root":"{{Home.Replace('\\', '/')}}/engine","workspace":"aurora"}]"""));
-        // Whose take each taken quest is (PAUSE1d): q2 this machine's, with no record that took it; q3 another machine's.
+        // Whose take each taken quest is: q2 this machine's, with no record that took it; q3 another machine's.
         ledger.Serve("/api/quests/q2/claim", Bytes("""{"quest":"q2","claim":"held"}"""));
         ledger.Serve("/api/quests/q3/claim", Bytes("""{"quest":"q3","claim":"none"}"""));
         return ledger;
@@ -68,7 +68,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
             plan.GetProperty("sessions").EnumerateArray().Select(s => $"{s.GetProperty("session").GetString()}:{s.GetProperty("pause").GetString()}"));
         var tree = Assert.Single(plan.GetProperty("trees").EnumerateArray());
         Assert.Equal(("engine", "daoris/s-1a2b3c4d"), (tree.GetProperty("repository").GetString(), tree.GetProperty("branch").GetString()));
-        // A tree by its repository and branch only: the page never learns a path on this machine (the platform language §4).
+        // A tree by its repository and branch only: the page never learns a path on this machine.
         Assert.DoesNotContain("trees/aurora", plan.GetRawText());
         Assert.DoesNotContain(Home.Replace('\\', '/'), plan.GetRawText().Replace("\\\\", "/"));
     }
@@ -129,7 +129,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CARRY2d: a resume's holds carried the verdict and the driver's English alone, so 中文 showed English for a stop, a pause,
+    /// A resume's holds carried the verdict and the driver's English alone, so 中文 showed English for a stop, a pause,
     /// a park and a take elsewhere. Each hold now carries its facts beside the unchanged sentence, by the tick's own names and
     /// shapes (<c>heldBy</c>, <c>pausedBy</c>, <c>strikes</c>, <c>takenBy</c>), so the page says it as it says a sitting quest;
     /// each fact is null for every verdict but its own, and nothing is reshaped.
@@ -163,7 +163,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
             (shown.GetProperty("code").GetString(), shown.GetProperty("environment").GetString(), shown.GetProperty("address").GetString()));
         Assert.Equal(Null, held.GetProperty("cannotShow").ValueKind.ToString());
         Assert.Equal(Null, taken.GetProperty("cannotShow").ValueKind.ToString());
-        // OVERVIEWNOISE1c: a hold the page had no words for names its sentence by code.
+        // A hold the page had no words for names its sentence by code.
         var unregistered = Shown(new WorkHold("q13", StartVerdict.NotAdopted, "`Far` is not registered on this machine, so there is nowhere to start it.")
         {
             Said = new SittingFact(SittingFact.Unregistered),
@@ -190,7 +190,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CARRY2d, through the route: a stop the person made before the pause still holds its quest once the work resumes, and the
+    /// A stop the person made before the pause still holds its quest once the work resumes, and the
     /// page is handed whose stop it is by its session, beside the driver's sentence, so 中文 says it from that fact.
     /// </summary>
     [Fact]
@@ -218,7 +218,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
         Assert.Contains("session `b3f0re00`", hold.GetProperty("reason").GetString());
     }
 
-    /// <summary>A resume of what is not paused is said, never refused (D48 §6), and writes nothing.</summary>
+    /// <summary>A resume of what is not paused is said, never refused, and writes nothing.</summary>
     [Fact]
     public async Task A_resume_of_what_is_not_paused_is_said_and_writes_nothing()
     {
@@ -272,7 +272,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The plan answers the abandon's half too (PAUSE1d, design §3.1, §3.2): each piece's key and act, why it keeps what it
+    /// The plan answers the abandon's half too: each piece's key and act, why it keeps what it
     /// keeps, the keys the second press sends back, and a tree by its repository and branch, never a path.
     /// </summary>
     [Fact]
@@ -346,9 +346,9 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The second press sends the list it held, with the reason (design §3.1, §7.3): the open quest declined with the reason,
+    /// The second press sends the list it held, with the reason: the open quest declined with the reason,
     /// only while open, the ask closed with it, and what went said from facts; the record is written and the machine log
-    /// counts it as the screen's. An empty list abandons nothing, said as information (D48 §6).
+    /// counts it as the screen's. An empty list abandons nothing, said as information.
     /// </summary>
     [Fact]
     public async Task The_second_press_declines_closes_and_records_what_went()
@@ -389,7 +389,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
         Assert.Contains("\"declined\":1", line);
     }
 
-    /// <summary>The lines and the exit code a route answered as <c>said</c> (RPC1e), which the terminal prints.</summary>
+    /// <summary>The lines and the exit code a route answered as <c>said</c>, which the terminal prints.</summary>
     private static (string[] Out, int Code) SaidOf(System.Text.Json.JsonElement answer)
     {
         var said = answer.GetProperty("said");
@@ -407,7 +407,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1e: asked for its words (<c>said: true</c>) by <c>ask --pause|--resume|--abandon</c> and <c>quest pause|resume|abandon</c> sent
+    /// Asked for its words (<c>said: true</c>) by <c>ask --pause|--resume|--abandon</c> and <c>quest pause|resume|abandon</c> sent
     /// over the pipe, each work route answers the lines and the exit code the alone path prints over the same ledger, as an answer and
     /// never a refusal: an unknown work, a resume of what is not paused, an abandon's list, and an abandon with no reason. The page asks
     /// for no words, and its answers keep their shape.
@@ -441,7 +441,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1e: a terminal's pause runs here as the person's press from the terminal: what runs of the work is stopped by this Daoris's own
+    /// A terminal's pause runs here as the person's press from the terminal: what runs of the work is stopped by this Daoris's own
     /// registry, the lines are the verb's, and the machine log says the terminal's door.
     /// </summary>
     [Fact]

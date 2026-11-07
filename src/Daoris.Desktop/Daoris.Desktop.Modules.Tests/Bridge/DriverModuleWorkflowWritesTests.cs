@@ -5,13 +5,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The workflow writes as routes (AGENTSPLACE1c; D194 point 4): <c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c> and <c>WORKFLOW_KIND</c> run the
+/// The workflow writes as routes: <c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c> and <c>WORKFLOW_KIND</c> run the
 /// typed operations the terminal's <c>workflow new|use|kind</c> run, so a version is made under a fresh id or appended against the base the
-/// caller read, a choice is one change, a kind is declared, and each answer says the integration design's §17.7 reach.
+/// caller read, a choice is one change, a kind is declared, and each answer says its reach.
 /// </summary>
 public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
 {
-    /// <summary>Two graphs that differ (WORKFLOWCLEAN1 1b: a workflow is saved as a graph; a list of steps is refused).</summary>
+    /// <summary>Two graphs that differ (a workflow is saved as a graph; a list of steps is refused).</summary>
     private static readonly string Steps = WorkflowDefaults.Of("merge-after-accept")!.GraphJson;
 
     private static readonly string OtherSteps = WorkflowDefaults.Of("release")!.GraphJson;
@@ -52,7 +52,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
         Assert.Equal(1, NewestOnDisk("docs"));
     }
 
-    /// <summary>WORKFLOWCLEAN1 1b: the window's save refuses a list of steps, and a copy of a step preset, with the one judge's words and writes nothing.</summary>
+    /// <summary>The window's save refuses a list of steps, and a copy of a step preset, with the one judge's words and writes nothing.</summary>
     [Fact]
     public async Task A_save_of_steps_is_refused_with_the_steps_code_and_writes_nothing()
     {
@@ -272,7 +272,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
     private static string[] Strings(JsonElement list) => [.. list.EnumerateArray().Select(each => each.GetString()!)];
 
     /// <summary>
-    /// SETUPUX1c (D221; the setup UX design §2.3): <c>plan: true</c> reads a choice as a plan of one and writes nothing. It answers the reach, what
+    /// <c>plan: true</c> reads a choice as a plan of one and writes nothing. It answers the reach, what
     /// lowers the person's part, each place whose workflow changes (a workspace's choice reaching its repositories), and a token.
     /// </summary>
     [Fact]
@@ -305,7 +305,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SETUPUX1c: a press carrying the plan's token acts where nothing moved, and is refused <c>moved</c>, writing nothing, where anything did;
+    /// A press carrying the plan's token acts where nothing moved, and is refused <c>moved</c>, writing nothing, where anything did;
     /// a press without one acts as it did, and <c>stale</c> still answers a version that moved.
     /// </summary>
     [Fact]
@@ -336,7 +336,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
         Assert.True(plain.GetProperty("done").GetBoolean());
     }
 
-    /// <summary>SETUPUX1c (the reads' Codex 2): clearing a default says what the kinds the place still maps keep.</summary>
+    /// <summary>Clearing a default says what the kinds the place still maps keep.</summary>
     [Fact]
     public async Task A_plan_that_clears_a_default_says_what_the_kinds_the_place_still_maps_keep()
     {

@@ -1,24 +1,24 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the landing record keeps of the review that let the work go (REVIEWENV1c, design §3.5): <c>reviewed</c>, with the
+/// What the landing record keeps of the review that let the work go: <c>reviewed</c>, with the
 /// environment, the set-up's commit and when; or <c>skipped</c>, with the person's words.
 /// </summary>
 /// <param name="Said"><c>reviewed</c> or <c>skipped</c>.</param>
-/// <param name="Quest">The quest the verdict was given on: the set-up step, or the quest a skip was given on.</param>
+/// <param name="Quest">The quest the verdict is given on: the set-up step, or the quest a skip is given on.</param>
 public sealed record LandingReview(string Said, string? Environment, string? Quest)
 {
     /// <summary>The commit of the set-up the person reviewed; null for a skip.</summary>
     public string? Commit { get; init; }
 
-    /// <summary>When the verdict was given, as the service kept it; null where it kept none.</summary>
+    /// <summary>When the verdict is given, as the service kept it; null where it kept none.</summary>
     public DateTimeOffset? At { get; init; }
 
     /// <summary>The person's words with it, where they gave any.</summary>
     public string? Words { get; init; }
 }
 
-/// <summary>The verdicts a person gives a review, as the service spells them (REVIEWENV1b).</summary>
+/// <summary>The verdicts a person gives a review, as the service spells them.</summary>
 public static class ReviewVerdicts
 {
     public const string Reviewed = "reviewed";
@@ -27,9 +27,9 @@ public static class ReviewVerdicts
 }
 
 /// <summary>
-/// Where the second opinion's part of the landing gate stands (XAGENT1f, D155 points 9 and 10; the second-agent design §8.5), as
+/// Where the second opinion's part of the landing gate stands, as
 /// a code a log line and a page can carry. Five let the work go: nothing to wait for, settled, and the person's three answers.
-/// An opinion that is unavailable lets it go only where the rule does not require one (§8.4).
+/// An opinion that is unavailable lets it go only where the rule does not require one.
 /// </summary>
 public static class OpinionGateStates
 {
@@ -69,24 +69,24 @@ public static class OpinionGateStates
     /// <summary>The person's <i>I looked myself…</i>: their own reading, an opinion of tier <c>person</c>.</summary>
     public const string Myself = "myself";
 
-    /// <summary>The press that came next answered what was unsettled: <i>Accept…</i> with it shown, or D154's <i>Reviewed</i> after it.</summary>
+    /// <summary>The press that came next answered what is unsettled: <i>Accept…</i> with it shown, or <i>Reviewed</i> after it.</summary>
     public const string Answered = "answered";
 
     /// <summary>Whether it waits could not be read: the service or git did not answer, where a rule says one is asked.</summary>
     public const string Unread = "unread";
 
     /// <summary>
-    /// The run's named workflow asks for a second opinion by reviewers its repository does not declare (WORKFLOW1f, the workflow
-    /// design §2.3, §3.7): it sits saying why, until they are declared or the person goes on, or looks, themselves.
+    /// The run's named workflow asks for a second opinion by reviewers its repository does not declare:
+    /// it sits saying why, until they are declared or the person goes on, or looks, themselves.
     /// </summary>
     public const string CannotStart = "cannot-start";
 
-    /// <summary>The states in which another agent, or the working session, is still at work on the opinion: what sits a set-up step (§7).</summary>
+    /// <summary>The states in which another agent, or the working session, is still at work on the opinion: what sits a set-up step.</summary>
     public static bool AtWork(string state) => state is NotAsked or Reading or WithSession or ReadAgain;
 }
 
 /// <summary>
-/// What the landing record keeps of the second opinion (XAGENT1f, design §8.6): what let the work go, the reviewer and its label,
+/// What the landing record keeps of the second opinion: what let the work go, the reviewer and its label,
 /// the candidate, the passes, the findings counted by weight and by answer, the person's adjudication, and the commits unread;
 /// or <c>none</c> with its code.
 /// </summary>
@@ -127,7 +127,7 @@ public sealed record LandingOpinion(string Said)
     public string? Code { get; init; }
 }
 
-/// <summary>How a reviewer stands to the work's families (§3.4): what every opinion carries on its face.</summary>
+/// <summary>How a reviewer stands to the work's families: what every opinion carries on its face.</summary>
 public static class ReviewerLabels
 {
     /// <summary>Its maker is declared, and is not the maker of any family that wrote the work: tried first.</summary>
@@ -140,8 +140,8 @@ public static class ReviewerLabels
     public const string SameAgent = "same-agent";
 }
 
-/// <summary>A rule as it resolves for a repository, and where it was set (<see cref="ReviewSource"/>).</summary>
+/// <summary>A rule as it resolves for a repository, and where it is set (<see cref="ReviewSource"/>).</summary>
 public sealed record ResolvedReview(ReviewRule Rule, string Source);
 
-/// <summary>A rule as it resolves for a repository, and where it was set (<see cref="OpinionSource"/>).</summary>
+/// <summary>A rule as it resolves for a repository, and where it is set (<see cref="OpinionSource"/>).</summary>
 public sealed record ResolvedOpinion(OpinionRule Rule, string Source);

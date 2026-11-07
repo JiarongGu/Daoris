@@ -8,10 +8,10 @@ namespace Daoris.Driver;
 internal static class AgentTrustVerb
 {
     /// <summary>
-    /// <c>trust &lt;agent&gt; &lt;folder&gt; [--profile &lt;account&gt;] --yes</c> (D73): the agent's trust in a folder, asked, then written on
+    /// <c>trust &lt;agent&gt; &lt;folder&gt; [--profile &lt;account&gt;] --yes</c>: the agent's trust in a folder, asked, then written on
     /// the person's word. Without <c>--yes</c> the question is the command: it names the folder, each account's file and what
     /// trusting means, grants nothing, and exits 1. The account is the one named; with none named, every account of Daoris's for the
-    /// agent, each in its own file (POOL1a3, D197 point 3: one set serves every workspace, so a folder trusted for Daoris is trusted
+    /// agent, each in its own file (one set serves every workspace, so a folder trusted for Daoris is trusted
     /// for each account that may run its work); with none at all, refused. 🔴 Never the tool's own trust file, which is the person's.
     /// </summary>
     internal static AgentPress? Trust(IReadOnlyList<string> args, AgentsWorld world, out int exit)
@@ -33,7 +33,7 @@ internal static class AgentTrustVerb
         var owner = roster.Adapters.OwnerOfAgent(name).Value;
         if (owner != name) Say($"{AgentsCommand.Prefix}: `{name}` runs as `{owner}`'s accounts — this is one of them.");
         var profile = AgentsCommand.FlagValue(args, "--account") is { } named ? AgentsCommand.AccountNamed(home, owner, named) : null;
-        // With no account named, the set in its order (the account-pool design §5.1): the order's accounts that are here, then the rest.
+        // With no account named, the set in its order: the order's accounts that are here, then the rest.
         IReadOnlyList<string> accounts = profile is not null ? [profile] : SetOf(path, home, owner);
         if (accounts.Count == 0)
         {
@@ -83,7 +83,7 @@ internal static class AgentTrustVerb
     }
 
     /// <summary>
-    /// <paramref name="owner"/>'s accounts of Daoris's in the set's order (POOL1a, the account-pool design §2.2): the order's that are on
+    /// <paramref name="owner"/>'s accounts of Daoris's in the set's order: the order's that are on
     /// this machine, then the rest by id. None where it has none.
     /// </summary>
     internal static List<string> SetOf(string path, string home, string owner)
@@ -95,7 +95,7 @@ internal static class AgentTrustVerb
     }
 
     /// <summary>
-    /// The folder granted in each file, one after another: changed where any was written, verified where every re-read shows it.
+    /// The folder granted in each file, one after another: changed where any took the write, verified where every re-read shows it.
     /// A file this build cannot read refuses as <see cref="ClaudeTrust.Grant"/> does, the ones before it written.
     /// </summary>
     internal static TrustGrant Granted(IReadOnlyList<string> files, string folder)

@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The loop's readers over a real repository in the test's scratch home (CONFIRMWAIT1, the confirm-wait design §15.1 items 1 and 2): a
+/// The loop's readers over a real repository in the test's scratch home: a
 /// discarded tree named by its path is bound by its head and its index, so a clean new commit and staged bytes changed under the same
 /// working file each move it; and every branch's full tip is read at once.
 /// </summary>

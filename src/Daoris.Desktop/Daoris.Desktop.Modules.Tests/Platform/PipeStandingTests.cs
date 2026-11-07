@@ -8,8 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// TERMTRUST1a part (ii) over the real pipe (D201 points 5 and 7, the terminal-trust design §5 and §8 case 5; <c>PipeConfirmTests</c>'
-/// neighbour): a press the person's standing confirmation covers runs with no card, the terminal told <c>STANDING</c> and the log
+/// Over the real pipe: a press the person's standing confirmation covers runs with no card, the terminal told <c>STANDING</c> and the log
 /// <c>person.confirmation</c> <c>state: standing</c>; it is admitted once, so a revoke after its admission lets it run and makes the next
 /// ask; a press asked before a grant keeps its card; and one the grant names that asks anyway says why, to the terminal and in the log.
 /// </summary>
@@ -50,7 +49,7 @@ public sealed class PipeStandingTests : Bridge
         each.GetProperty("module").GetString() == InstancePipe.Module && each.GetProperty("type").GetString() == type;
 
     /// <summary>
-    /// INTEGRATE1d (D215 point 10: the owner accepts each declaration's blob): an agent's press accepting a repository's integration
+    /// An agent's press accepting a repository's integration
     /// declaration, from its own job and with the standing confirmation granted, is never covered. It waits for the person's Confirm,
     /// runs nothing meanwhile, and the person's no refuses it, so an agent never accepts the commands and the scratch it would run under.
     /// </summary>
@@ -81,7 +80,7 @@ public sealed class PipeStandingTests : Bridge
     }
 
     /// <summary>
-    /// AGENTSPLACE1b3 (the Agents-place design §7 row 8): applying a place's plan is the person's alone. The census marks it Person; from an
+    /// Applying a place's plan is the person's alone. The census marks it Person; from an
     /// agent's job with the standing confirmation granted it is never covered, so it waits for the person's Confirm, runs nothing meanwhile and
     /// is refused by their no; and no role's act reaches it, the steward's table naming none and a <c>ROLE_ACT</c> for it refused as no act.
     /// </summary>
@@ -114,7 +113,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.Equal(0, driver.Ran);
     }
 
-    /// <summary>AGENTSPLACE1b3: a steward's <c>ROLE_ACT</c> naming <c>PLACE_APPLY</c> is no act of its table, so it is refused and runs nothing.</summary>
+    /// <summary>A steward's <c>ROLE_ACT</c> naming <c>PLACE_APPLY</c> is no act of its table, so it is refused and runs nothing.</summary>
     [Fact]
     public async Task A_role_act_naming_a_place_apply_is_refused_as_no_act_and_runs_nothing()
     {
@@ -165,7 +164,7 @@ public sealed class PipeStandingTests : Bridge
         ];
     }
 
-    // SUPERVISOR1a-ii over the real pipe (D208 point 2; the supervisor design §2.2 and §11 row 1a-ii): the hello draws a nonce for its
+    // Over the real pipe: the hello draws a nonce for its
     // connection; a `Role` route the judge's role method covers runs with no card, its handler reading the role's door; one it does
     // not cover is refused, never asked, with no press granted as with one; and a proof missing, wrong, over another connection's nonce,
     // replayed or over an altered form is refused `not-holder`. The key never crosses the pipe: the client sends a proof alone.
@@ -318,8 +317,7 @@ public sealed class PipeStandingTests : Bridge
         }
     }
 
-    // STEWARDROLE1a-i over the real pipe and the judge (D209 §3.3, §3.4, §5.1a, §6.1; the steward design §10 row 1a-i's PipeStandingTests):
-    // ROLE_ACT judged as the supervisor's answer is, admitted once, checked again at its gate; the run's memory of pending operations by
+    // Over the real pipe and the judge: ROLE_ACT judged as the supervisor's answer is, admitted once, checked again at its gate; the run's memory of pending operations by
     // their stages, each consumer taking its own once, bindings read by later starts, the execution cutoff after a consumer's awaits, all
     // of which a revoke cancels; and the configuration walk for every route of the Role class.
 
@@ -355,7 +353,7 @@ public sealed class PipeStandingTests : Bridge
 
     public static TheoryData<string> WrongActs => ["none", "key", "other-role", "replayed"];
 
-    /// <summary>§3.4: a ROLE_ACT with no proof, a wrong key, a holder's key for a role it does not hold, or a replay, each refused, nothing run.</summary>
+    /// <summary>A ROLE_ACT with no proof, a wrong key, a holder's key for a role it does not hold, or a replay, each refused, nothing run.</summary>
     [Theory]
     [MemberData(nameof(WrongActs))]
     public async Task A_role_act_that_is_not_its_holder_s_for_this_connection_is_refused_and_runs_nothing(string wrong)
@@ -407,7 +405,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.Contains(Lines("role.refused"), line => line.GetProperty("data").GetProperty("why").GetString() == SupervisorWhy.NotHolder);
     }
 
-    /// <summary>§3.4: an act outside the role's <c>authority</c> is refused <c>not-granted</c>.</summary>
+    /// <summary>An act outside the role's <c>authority</c> is refused <c>not-granted</c>.</summary>
     [Fact]
     public async Task An_act_outside_the_role_s_authority_is_refused_not_granted_over_the_pipe()
     {
@@ -430,7 +428,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.Equal(0, probe.Ran);
     }
 
-    /// <summary>§3.4 step 8: the role changed between an act's admission and its gate: refused <c>role-changed</c> under the gate, nothing run.</summary>
+    /// <summary>The role changed between an act's admission and its gate: refused <c>role-changed</c> under the gate, nothing run.</summary>
     [Fact]
     public async Task A_role_change_between_admission_and_the_gate_refuses_the_act_under_the_gate_and_runs_nothing()
     {
@@ -455,7 +453,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.Equal(0, probe.Ran);
     }
 
-    /// <summary>§3.4: a role's change after the act moved to running does not recall it: it completes, and the pending operation it left is cancelled.</summary>
+    /// <summary>A role's change after the act moved to running does not recall it: it completes, and the pending operation it left is cancelled.</summary>
     [Fact]
     public async Task A_role_change_after_running_lets_the_act_complete_and_cancels_its_pending_operation()
     {
@@ -506,7 +504,7 @@ public sealed class PipeStandingTests : Bridge
 
     private static void Revoke(StandingConfirmation judge) => Assert.Single(judge.Unstaffed());
 
-    /// <summary>§5.1a, finding 4: three stages taken by three stand-in consumers in turn, each once; a second take of a stage refused.</summary>
+    /// <summary>Three stages taken by three stand-in consumers in turn, each once; a second take of a stage refused.</summary>
     [Fact]
     public void An_operation_s_stages_are_taken_by_their_consumers_in_turn_each_once()
     {
@@ -531,7 +529,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.Null(early.FindOperation("engine", "boxed"));
     }
 
-    /// <summary>§5.1a, finding 4: a revoke between each pair of stages ends every later one.</summary>
+    /// <summary>A revoke between each pair of stages ends every later one.</summary>
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
@@ -554,7 +552,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.Null(judge.Binding("engine"));
     }
 
-    /// <summary>§5.1a: a hand-over's last stage is a binding, read by later starts this run, and ended by a revoke between them.</summary>
+    /// <summary>A hand-over's last stage is a binding, read by later starts this run, and ended by a revoke between them.</summary>
     [Fact]
     public void A_binding_is_read_by_later_starts_and_ended_by_a_revoke_between_them()
     {
@@ -568,7 +566,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.Null(judge.Binding("engine"));
     }
 
-    /// <summary>§5.1a, finding 5: a revoke while a consumer's await is suspended between its two steps: the cutoff then refuses, and nothing executes.</summary>
+    /// <summary>A revoke while a consumer's await is suspended between its two steps: the cutoff then refuses, and nothing executes.</summary>
     [Fact]
     public async Task A_revoke_while_a_consumer_s_await_is_suspended_refuses_its_cutoff()
     {
@@ -599,7 +597,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.Equal(RoleOperationStates.Executed, live.TakeOperation(kept.Id, "released")!.State);
     }
 
-    // ——— The configuration walk (§6.1, finding 13), for every route of the Role class, through one guard.
+    // ——— The configuration walk, for every route of the Role class, through one guard.
 
     /// <summary>A process tree as the system would say it: the verb, the shell the Bash tool ran it in, the harness, and above it Daoris.</summary>
     private sealed class Tree : IProcessTable
@@ -637,7 +635,7 @@ public sealed class PipeStandingTests : Bridge
     };
 
     /// <summary>
-    /// §6.1: a process tree whose harness image is not the managed binary (PATH's <c>claude</c>, a <c>.cmd</c> shim, a node running a
+    /// A process tree whose harness image is not the managed binary (PATH's <c>claude</c>, a <c>.cmd</c> shim, a node running a
     /// script), whose argument vector differs by one element, whose <c>CLAUDE_CONFIG_DIR</c> names another directory, whose directory holds
     /// a changed <c>settings.json</c> or a file that loads something, or a verb outside the holder's harness: refused <c>holder-config</c>
     /// for every route of the class, and the holder ended.
@@ -688,7 +686,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.False(judge.JudgeRole(RoleKit.Driver, route, Proved(judge, route, again, key).Payload(key), null, again).Covered);
     }
 
-    /// <summary>§6.1: the walk admits a harness whose configuration directory also holds the harness's own state, as the real harness writes it.</summary>
+    /// <summary>The walk admits a harness whose configuration directory also holds the harness's own state, as the real harness writes it.</summary>
     [Theory]
     [InlineData(RoleRoutes.Act)]
     [InlineData(SupervisorRoutes.Answer)]

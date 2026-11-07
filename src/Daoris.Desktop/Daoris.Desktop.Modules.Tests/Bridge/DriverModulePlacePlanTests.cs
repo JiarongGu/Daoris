@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// AGENTSPLACE1a2 (the Agents-place design §4): <c>PLACE_PLAN</c> over the bridge, a place's quick set-up planned on a copy of driver.json
+/// <c>PLACE_PLAN</c> over the bridge, a place's quick set-up planned on a copy of driver.json
 /// and read before and after; its terminal twin's lines from the same code; and nothing written, published or probed: the service is asked
 /// for its registry and quests alone, and the checkouts are not on this disk, so no git runs.
 /// </summary>

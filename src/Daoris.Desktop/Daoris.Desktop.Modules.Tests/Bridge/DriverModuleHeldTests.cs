@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Nothing the window asks for waits on work (NOBLOCK1, D56's NOBLOCK1 note): a read marked <c>[ByEvent]</c> is answered at once
+/// Nothing the window asks for waits on work: a read marked <c>[ByEvent]</c> is answered at once
 /// from what is held, its work runs on a task of its own, and its answer is told as <c>DAORIS.ANSWERED</c>, naming the page's query.
 /// </summary>
 /// <remarks>
@@ -70,7 +70,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
     private static JsonElement Of(object? answer) => JsonSerializer.SerializeToElement(answer, Wire);
 
     /// <summary>
-    /// An answer less a numbered read's number (COWORKVIEW1a): a reply carries the newest landing's, which a work landing unchanged
+    /// An answer less a numbered read's number: a reply carries the newest landing's, which a work landing unchanged
     /// after the event still moves, so the two are compared by what they say.
     /// </summary>
     private static string Unnumbered(string json)
@@ -81,7 +81,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COWORKVIEW1a's numbered read (the design §4.1, C4-2.3, C4-3.1): a work's failure is answered, never thrown, as the failed value
+    /// A numbered read: a work's failure is answered, never thrown, as the failed value
     /// with the refusal's words at every ask until a landing replaces it, told so too; every reply and event carries its epoch and number.
     /// </summary>
     [Fact]
@@ -103,7 +103,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The design §4.1 (O4-F3, O4-F12a): a failure over a held answer keeps it, answered and told stale with the refusal's words, and
+    /// A failure over a held answer keeps it, answered and told stale with the refusal's words, and
     /// the first landing after it is told even where it equals the held answer, which clears the stale; the numbers only grow.
     /// </summary>
     [Fact]
@@ -137,7 +137,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COWORKVIEW1a rule 14: an ask is answered within the window's bound while a 40-member answer is composed beside three other held
+    /// An ask is answered within the window's bound while a 40-member answer is composed beside three other held
     /// reads, the 40 rows are told once when they land, and the same composition again tells nothing.
     /// </summary>
     [Fact]
@@ -231,7 +231,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
 
     /// <summary>
     /// SESSION_WHERE's look: a landing recorded after the first answer is held is told by event, and the ask after it answers it
-    /// at once; the window was held 65.9 s by this read before (the install's <c>ui.stalled</c>).
+    /// at once.
     /// </summary>
     [Fact]
     public async Task Where_a_session_landed_since_is_told_by_event_and_then_answered_at_once()
@@ -254,7 +254,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
 
         var at = DateTimeOffset.Parse("2026-10-01T08:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
         trees.Recorded.Record(new LandedBranch("engine", "aurora", "feature/42-streamer", "main", "abc123", "landed1", "42", null, at));
-        // The landing's press tells its scope, one of the inputs the route declares (FOUNDATION1s).
+        // The landing's press tells its scope, one of the inputs the route declares.
         StatePublisher.Publish(Bus, StateScopes.Landing);
         // What was held, at once; the look's answer, by event.
         var stale = JsonSerializer.SerializeToElement((await module.HandleMessageAsync(Request("SESSION_WHERE", payload, "where"), CancellationToken.None)).Data, Wire);
@@ -270,7 +270,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1s: an answer held at its inputs' versions is served with no work while they stand, and made again once one moves; a
+    /// An answer held at its inputs' versions is served with no work while they stand, and made again once one moves; a
     /// version unknown (null) works at every ask, as a route declaring nothing does.
     /// </summary>
     [Fact]
@@ -301,7 +301,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1s: <c>SESSION_WHERE</c> declares the sessions, the landings and the clean-up as what its answer reads, so a change to
+    /// <c>SESSION_WHERE</c> declares the sessions, the landings and the clean-up as what its answer reads, so a change to
     /// one of them makes it again, and any other change serves it held with no work.
     /// </summary>
     [Fact]

@@ -32,7 +32,7 @@ internal enum RunPhase
     Cleared,
 
     /// <summary>
-    /// The record opens through the ledger and says how it was chosen: a refusal of the open is an answer, and the repository's trees
+    /// The record opens through the ledger and says how it is chosen: a refusal of the open is an answer, and the repository's trees
     /// are let go once it is open.
     /// </summary>
     Opened,

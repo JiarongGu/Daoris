@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The rows and records <i>What needs you</i>'s judge is tested on (PUSH1d4), shared by <see cref="AttentionStateSliceTests"/> and
+/// The rows and records <i>What needs you</i>'s judge is tested on, shared by <see cref="AttentionStateSliceTests"/> and
 /// <see cref="AccountAttentionSliceTests"/>: a record made from a basis with fields changed, the judge's rows, and two rows compared
 /// key order apart.
 /// </summary>

@@ -1,17 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's skill layout (HELPPLUG1b, D170 point 4): for each plugin handing skills, a harness plugin of its own under the home's
+/// Claude Code's skill layout: for each plugin handing skills, a harness plugin of its own under the home's
 /// <c>spawn/&lt;session&gt;.plugins/&lt;id&gt;/</c>, holding a copy of each skill's folder and the harness plugin's manifest. Its native door
 /// names each by <c>--plugin-dir</c>, its protocol door in its <c>session/new</c> meta; the folder goes when the session does.
 /// </summary>
 /// <remarks>
-/// <para><b>The tier, measured</b> (D170's HELPPLUG1b note): Claude Code 2.1.299, in an untrusted folder with a fresh config
+/// <para><b>The tier, measured</b>: Claude Code 2.1.299, in an untrusted folder with a fresh config
 /// directory, loads a <c>--plugin-dir</c> plugin's skills as <c>&lt;plugin&gt;:&lt;skill&gt;</c>, and a dotted plugin name with them.
 /// It also loads the folder's own <c>.claude/skills</c> and an <c>--add-dir</c>'s, but the first is a repository's checkout for a
 /// session (<c>repository-owns-its-work</c>) and the second grants its files too; the plugin door is the one for a spawn.</para>
 ///
-/// <para><b>A copy, never the plugin's folder.</b> The harness would load all of a folder it is pointed at, skills it was not
+/// <para><b>A copy, never the plugin's folder.</b> The harness would load all of a folder it is pointed at, skills it is not
 /// declared for and anything else its own plugin shape carries; a copy holds the declared skills for this start alone.</para>
 /// </remarks>
 public sealed class ClaudeSkills : ISkillLayout

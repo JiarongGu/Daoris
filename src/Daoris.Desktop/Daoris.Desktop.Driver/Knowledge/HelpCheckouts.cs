@@ -4,8 +4,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's reading of the checkouts, the driver's half (HELPMODE1c4, D183's note; the Ask Daoris modes design §4.1): each request
-/// its connector's <c>checkout_read</c> wrote is judged here at the call, then answered with what was read: a file's text, a folder's
+/// Ask Daoris's reading of the checkouts, the driver's half: each request
+/// its connector's <c>checkout_read</c> wrote is judged here at the call, then answered with what is read: a file's text, a folder's
 /// entries, <c>git status</c> or <c>git branch --list</c>. One mechanism for every agent: it replaces the <c>Read</c> and git rules
 /// restricted mode handed Claude, which held no agent that takes no rules (Codex). What the loop running the conversation answers its
 /// <see cref="SessionRequestWatch.Checkout"/> with.
@@ -13,18 +13,18 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Judged at every call, whatever the agent</b>, in housekeeping's order (<see cref="HelpHousekeeping"/>): the record named is an
 /// Ask Daoris conversation's; the repository is registered in the conversation's workspace, read from its record
-/// (<see cref="HelpCircle.OfRecord"/>), with a checkout here; D107 lets agents outside it read that checkout now; the person has not
-/// turned it off in <see cref="ConfiguredAccess"/> now, so a narrowing refuses the next call; and it was handed at this start (its newest
-/// receipt, <see cref="HelpWired"/>), so one turned on since takes the conversation's next turn (ACCESSSWAP1).</para>
+/// (<see cref="HelpCircle.OfRecord"/>), with a checkout here; the repository lets agents outside it read that checkout; the person has not
+/// turned it off in <see cref="ConfiguredAccess"/> now, so a narrowing refuses the next call; and it is handed at this start (its newest
+/// receipt, <see cref="HelpWired"/>), so one turned on since takes the conversation's next turn.</para>
 ///
-/// <para><b>Never a path beyond the checkout</b> (the design's trap of a typed tool that takes a path): the tool takes a repository and a
+/// <para><b>Never a path beyond the checkout</b> (the trap of a typed tool that takes a path): the tool takes a repository and a
 /// path relative to its checkout, and the path is walked here a name at a time, each name as the disk spells it: <c>..</c>, a rooted
 /// path, a drive or a stream, a pattern and git's own folder are refused before anything is opened, and a link on the way whose final
 /// target lies outside the checkout is refused. Only the names found on disk are opened, never the agent's spelling.</para>
 ///
 /// <para><b>Never what git ignores</b> (<c>local/</c>, build output, secrets kept ignored), by git's own answer through the driver's git
 /// (<c>check-ignore</c>, each folder on the way asked too); a read git cannot judge is refused, never let through as though nothing
-/// were ignored. Never <c>git log</c>, <c>diff</c> or <c>show</c>: their output options write files (D107 §2). Nothing is written: the
+/// were ignored. Never <c>git log</c>, <c>diff</c> or <c>show</c>: their output options write files. Nothing is written: the
 /// status takes no optional lock.</para>
 /// </remarks>
 /// <param name="service">The loop's service once it answers; null before, when every request is refused saying so.</param>
@@ -131,8 +131,8 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
     }
 
     /// <summary>
-    /// Why the grant does not reach this checkout now, or null where it does: D107's reading by agents outside it, the person's
-    /// narrowing now, and what this start was handed.
+    /// Why the grant does not reach this checkout now, or null where it does: the repository's reading by agents outside it, the person's
+    /// narrowing now, and what this start is handed.
     /// </summary>
     private CheckoutAnswer? Granted(string operation, RepoView row, string session)
     {
@@ -303,7 +303,7 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
 }
 
 /// <summary>
-/// A path the agent wrote, walked inside a checkout (HELPMODE1c4): what <see cref="HelpCheckouts"/> opens is only ever the names the
+/// A path the agent wrote, walked inside a checkout: what <see cref="HelpCheckouts"/> opens is only ever the names the
 /// disk holds, found one at a time from the checkout's top, never the agent's spelling.
 /// </summary>
 internal static class CheckoutPath

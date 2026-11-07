@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Daoris.Driver;
 
-/// <summary>The Course's side of the workplace's delete port (FOUNDATION1f-i): the move store over a home, the one production path that reaches it until its rows adopt it.</summary>
+/// <summary>The Course's side of the workplace's delete port: the move store over a home.</summary>
 internal sealed class WorkplaceMoveRecordStoreOperations : IWorkplaceMoveRecordStores
 {
     [ModuleInitializer]

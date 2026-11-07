@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The plugins, read fresh each look like the config (D64): a harness declared since the last look is spawnable now, a server
+/// The plugins, read fresh each look like the config: a harness declared since the last look is spawnable now, a server
 /// declared since is handed now, a hook process disabled since is stopped now. The catalogue refuses a name this build carries
 /// before anything of that plugin is taken.
 /// </summary>

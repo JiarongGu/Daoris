@@ -3,16 +3,16 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A conversation over the bridge where a real process holds the session (MOD8): what a tracked session that takes no
+/// A conversation over the bridge where a real process holds the session: what a tracked session that takes no
 /// person's line answers, and a driven session's inbox beside its process. Apart from
-/// <see cref="DriverModuleConversationTests"/> so that class, which starts none, runs in the fast half (MSG1d).
+/// <see cref="DriverModuleConversationTests"/> so that class, which starts none, runs in the fast half.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
 {
     /// <summary>
     /// 🔴 A session that takes no input — an intake, one turn, whose stdin on the protocol door
-    /// carries the driver's own frames (INT4h) — is REFUSED in the driver's words, never answered
+    /// carries the driver's own frames — is REFUSED in the driver's words, never answered
     /// false. False means "it ended while you were typing", and a page that read it so would tell the
     /// person something untrue about a session that is running fine. Finishing it is refused too:
     /// closing that stream would end the protocol's turn, not a conversation.
@@ -50,8 +50,8 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESS3: a driven session on the protocol door hears what the person adds — its inbox holds the
-    /// words ahead of INT4i's refusal, the queue says it is listening and what waits, and the stop sends
+    /// A driven session on the protocol door hears what the person adds — its inbox holds the
+    /// words, the queue says it is listening and what waits, and the stop sends
     /// what is held now, withdrawing nothing. A finish is still refused: its stream is the driver's.
     /// </summary>
     [Fact]
@@ -102,10 +102,10 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MSG1e2 (D137 §5.2): a terminal's words reach a conversation the window runs, as the box's do. Its turns take them
+    /// A terminal's words reach a conversation the window runs, as the box's do. Its turns take them
     /// through the loop's chat runner, here a text door's process taking the person's line, and the asker is told it takes
     /// them as its next turn; nothing is posted to the say door, since the conversation is running. The conversation is the
-    /// window's own start: its line reaches the process through its run's input alone (D243), so a process merely tracked under
+    /// window's own start: its line reaches the process through its run's input alone, so a process merely tracked under
     /// its id is no conversation the window runs.
     /// </summary>
     [Fact]
@@ -156,7 +156,7 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1b (D137, D188; the foundation design §10): the shell restarts while a record winds up, before the take. A real process
+    /// The shell restarts while a record winds up, before the take. A real process
     /// holds the session whose record the service still answers as working, so the person's word is refused <c>running</c> and held with
     /// its key; the process ends, the shell is replaced on the same home, the record ends, and the word is delivered once, under its key:
     /// the producer's retry afterwards is answered with it. After the take it is row p's settlement, not this case's.

@@ -1,18 +1,18 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a driven turn's end reads of its quest and its tree (LANDBACK1 part 2, D87's note): whether the quest stands closed, with how many
+/// What a driven turn's end reads of its quest and its tree: whether the quest stands closed, with how many
 /// uncommitted paths its tree holds, and the words that ask its session to commit them by its repository's conventions. The driver
 /// takes the look (<c>TurnCarries</c>); the protocol door only reads it.
 /// </summary>
 /// <param name="Eligible">
 /// The quest is done, or taken and submitted, and the person did not stop the session: only that is carried on. A parked quest asks
-/// the person, an ask-and-wait waits on another repository (D79), a stand-down or a failure is no work to commit.
+/// the person, an ask-and-wait waits on another repository, a stand-down or a failure is no work to commit.
 /// </param>
 /// <param name="Paths">How many paths the tree holds uncommitted; none where the tree could not be read (an unread tree is not a yes).</param>
 /// <param name="Words">Daoris's own prompt, written in the session's conversation as the go-on is.</param>
 /// <param name="Holds">
-/// Read again under the write lock as the prompt is written: false where the person stopped the session since the look was taken, and
+/// Read again under the write lock as the prompt is written: false where the person has stopped the session since the look is taken, and
 /// nothing is written (<see cref="AcpTurnedAway"/>). Null always holds.
 /// </param>
 /// <param name="Limit">
