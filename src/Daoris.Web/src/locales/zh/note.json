@@ -230,7 +230,7 @@
   "note.moved.from": "接续前一段 {{session}}（由 {{agent}} 以账户 `{{account}}` 运行），因为{{why}}：其上下文为 {{tokens}} 个 token，它收到了 Daoris 对它的简报，{{count}} 个字符。",
   "note.moved.carried-on": "以本会话的新一段 {{session}} 继续，由 {{agent}}（账户 `{{account}}`）运行，因为{{why}}：它自己的对话（上下文 {{tokens}} 个 token）已带到该账户，在那里继续。",
   "note.moved.carried-from": "接续前一段 {{session}}（由 {{agent}} 以账户 `{{account}}` 运行），因为{{why}}：它自己的对话（上下文 {{tokens}} 个 token）已完整带到这里继续，没有简报。",
-  "note.moved.compacted-from": "接续前一段 {{session}}（由 {{agent}} 以账户 `{{account}}` 运行），因为{{why}}：它自己的对话（上下文 {{tokens}} 个 token）已带到这里，超过其代理完整携带的 {{bound}} 个 token，因此代理先压缩它再继续，没有简报。",
+  "note.moved.compacted-from": "接续前一段 {{session}}（由 {{agent}} 以账户 `{{account}}` 运行），因为{{why}}：它自己的对话（上下文 {{tokens}} 个 token）已带到这里，超过其智能体完整携带的 {{bound}} 个 token，因此智能体先压缩它再继续，没有简报。",
   "note.moved.not-carried": "它自己的对话未能带到这个账户（{{reason}}），因此它收到了 Daoris 的简报。",
   "note.chat.moved": "在这一轮结束时转到账户 `{{to}}`：`{{from}}` 的{{window}}上限已用 {{used}}，超出其曲线此刻的 {{curve}}；`{{to}}` 还有余量。",
   "note.chat.limit-not-moved": "它的账户已达上限，也无法在下一个账户上继续：等有账户有余量时再给它写一句。",
