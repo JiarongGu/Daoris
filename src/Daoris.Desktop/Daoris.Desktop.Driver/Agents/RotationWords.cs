@@ -328,6 +328,7 @@ public static class RotationWords
             WalkStep.Kept => Reason($"`{scope.Begins}` is kept for conversations", OpeningWhy.Kept, ("over", scope.Begins)),
             // Both near, it the least over: the other's own reason for going last, its numbers against its curve.
             WalkStep.Near or WalkStep.Room => Near(over!, facts.GetValueOrDefault(over!)?.Said, scope.Use, now),
+            WalkStep.Headroom => Headroom(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, scope.Use, now),
             WalkStep.Fewest => Reason("it runs the fewest of Daoris's sessions", OpeningWhy.Fewest),
             WalkStep.Lapsing => Lapses(own.Said, scope.Use, now),
             WalkStep.Pace when scope.Use.Switch == "off" => Pace(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, now),
@@ -393,10 +394,18 @@ public static class RotationWords
     /// </summary>
     private static StepSaid MostRoom(AccountSaid? own, string over, AccountSaid? other, RotationUse use, DateTimeOffset now) =>
         UsageCurves.TightestSaid(use, own, now) is { Room: > 0 } mine
-            ? Reason(
-                $"it has the most room under its curve, {Points(mine.Room)} points on its {mine.Window.Window} window",
-                OpeningWhy.MostRoom, ("room", Points(mine.Room)), ("window", mine.Window.Window))
+            ? MostRoomSaid(mine.Room, mine.Window.Window)
             : Near(over, other, use, now);
+
+    /// <summary>Why it ranked ahead by the room its tightest window leaves (<see cref="RoomLeft"/>), else by the other's being near.</summary>
+    private static StepSaid Headroom(AccountSaid? own, string over, AccountSaid? other, RotationUse use, DateTimeOffset now) =>
+        RoomLeft.Tightest(use, own, now) is { Room: > 0 } mine
+            ? MostRoomSaid(mine.Room, mine.Window.Window)
+            : Near(over, other, use, now);
+
+    private static StepSaid MostRoomSaid(double room, string window) => Reason(
+        $"it has the most room under its curve, {Points(room)} points on its {window} window",
+        OpeningWhy.MostRoom, ("room", Points(room)), ("window", window));
 
     /// <summary>
     /// Why the account it ran on ranked ahead by what would lapse (step 4): the window that won, how much of it is

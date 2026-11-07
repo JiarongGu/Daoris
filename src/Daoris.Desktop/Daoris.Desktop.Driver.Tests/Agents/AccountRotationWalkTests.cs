@@ -173,8 +173,8 @@ public sealed class AccountRotationWalkTests
     [InlineData("account-1 account-2 account-3", "account-1:r1", "account-2 account-3 account-1")]
     [InlineData("account-1 account-2 account-3", "account-1:r2 account-2:r1 account-3:r1", "account-2 account-3 account-1")]
     [InlineData("account-1 account-2 account-3", "account-2:r1 account-3:r1", "account-1 account-2 account-3")]
-    // It outranks a week lapsing: the five-hour window is kept below its limit by spreading.
-    [InlineData("account-1 account-2 account-3", "account-3:r1,W60@+5h", "account-1 account-2 account-3")]
+    // It outranks a week lapsing where their room is alike.
+    [InlineData("account-1 account-2 account-3", "account-3:r1,W97@+12h", "account-1 account-2 account-3")]
     // Six accounts, one free: nothing counts them.
     [InlineData("account-1 account-2 account-3 account-4 account-5 account-6",
         "account-1:r1 account-2:r1 account-3:r1 account-4:r1 account-5:r1", "account-6 account-1 account-2 account-3 account-4 account-5")]
@@ -215,8 +215,8 @@ public sealed class AccountRotationWalkTests
     [InlineData("account-1 account-2 account-3", "account-3:S80,W40@+3h", "account-3 account-1 account-2")]
     [InlineData("account-1 account-2 account-3", "account-3:S89,W40@+3h", "account-3 account-1 account-2")]
     [InlineData("account-1 account-2 account-3", "account-3:S91,W40@+3h", "account-1 account-2 account-3")]
-    // The five-hour window's own reset, three hours off, earns nothing: 80 points there would be 27 an hour.
-    [InlineData("account-1 account-2 account-3", "account-2:S10 account-3:W40@+20h", "account-3 account-2 account-1")]
+    // The five-hour window's own reset earns nothing as a lapse; its room ranks.
+    [InlineData("account-1 account-2 account-3", "account-2:S10 account-3:W40@+20h", "account-2 account-3 account-1")]
     public void The_five_hour_window_beside_a_week_about_to_reset(string scope, string facts, string order)
     {
         Assert.Equal(order, Order(scope, facts));
@@ -227,7 +227,7 @@ public sealed class AccountRotationWalkTests
     // 97% is spent on, where the old cap at 95 passed it, and 99% still goes last.
     [Theory]
     [InlineData("account-1 account-2 account-3", "account-1:W85@+3d account-2:W20@+3d", "account-2 account-3 account-1")]
-    [InlineData("account-1 account-2 account-3", "account-1:W97@+12h account-2:W20@+3d", "account-1 account-2 account-3")]
+    [InlineData("account-1 account-2 account-3", "account-1:W97@+12h account-2:W20@+3d", "account-2 account-1 account-3")]
     [InlineData("account-1 account-2 account-3", "account-1:W99@+12h account-2:W20@+3d", "account-2 account-3 account-1")]
     public void The_week_s_tail_spends_what_would_lapse_and_a_week_far_off_is_spared(string scope, string facts, string order)
     {
@@ -380,11 +380,10 @@ public sealed class AccountRotationWalkTests
     // A person's curve ranks by its own line: the session flat at 60 leaves account-1 ten points where the smart 90 left forty.
     [InlineData("account-1 account-2", "account-1:S50,W10@+84h account-2:W40@+84h", "account-1 account-2")]
     [InlineData("account-1 account-2 switch=curve curve=session=60", "account-1:S50,W10@+84h account-2:W40@+84h", "account-2 account-1")]
-    // Below a week lapsing within the day; above least recently started.
-    [InlineData("account-1 account-2 account-3", "account-1:W89@+20h account-2:W10@+4d", "account-1 account-2 account-3")]
+    [InlineData("account-1 account-2 account-3", "account-1:W89@+20h account-2:W10@+4d", "account-2 account-1 account-3")]
     [InlineData("account-1 account-2", "account-1:W10@+4d,s-1m account-2:s-5h", "account-1 account-2")]
-    // Below fewest running.
-    [InlineData("account-1 account-2", "account-1:W5@+4d,r1 account-2:W60@+4d", "account-2 account-1")]
+    // Above fewest running.
+    [InlineData("account-1 account-2", "account-1:W5@+4d,r1 account-2:W60@+4d", "account-1 account-2")]
     // Under `order` room ranks nothing.
     [InlineData("account-1 account-2 order", "account-1:W50@+4d account-2:W10@+4d", "account-1 account-2")]
     public void Most_room_under_its_curve_first(string scope, string facts, string order)
@@ -491,8 +490,8 @@ public sealed class AccountRotationWalkTests
         { "account-1 account-2 account-3", "account-1:r1 account-2:r1", StartKind.Driven, "", "account-3", WalkStep.Fewest, null },
         { "account-1 account-2 account-3", "account-2:r1", StartKind.Driven, "", "account-1", WalkStep.List, null },
         { "account-1 account-2 account-3", "account-2:r1 account-3:r1", StartKind.Driven, "", "account-1", WalkStep.Fewest, null },
-        { "account-1 account-2 account-3", "account-3:W60@+5h", StartKind.Driven, "", "account-3", WalkStep.Lapsing, null },
-        { "account-1 account-2 account-3", "account-1:W60@+5h", StartKind.Driven, "", "account-1", WalkStep.Lapsing, null },
+        { "account-1 account-2 account-3", "account-3:W97@+12h", StartKind.Driven, "", "account-3", WalkStep.Lapsing, null },
+        { "account-1 account-2 account-3", "account-1:W97@+12h", StartKind.Driven, "", "account-1", WalkStep.Lapsing, null },
         { "account-1 account-2 account-3", "account-1:s-1h", StartKind.Driven, "", "account-2", WalkStep.LeastRecent, null },
         { "account-1 account-2 account-3", "account-1:c1", StartKind.Driven, "", "account-2", WalkStep.LeastRecent, null },
         { "account-1 account-2 account-3", "", StartKind.Driven, "account-1=Cooling", "account-2", WalkStep.Cooling, null },
@@ -583,7 +582,7 @@ public sealed class AccountRotationWalkTests
         { "account-1 account-2 account-3", "account-1:S95", "", "account-2", WalkStep.Near, "account-1", null, null },
         { "account-1 account-2", "account-2:S95", "", "account-1", WalkStep.Near, "account-2", null, null },
         { "account-1 account-2 account-3", "account-2:S95", "", "account-1", WalkStep.List, null, null, null },
-        { "account-1 account-2 account-3", "account-1:W40@+4d account-2:W10@+4d", "", "account-2", WalkStep.Pace, "account-1", null, null },
+        { "account-1 account-2 account-3", "account-1:W40@+4d account-2:W10@+4d", "", "account-2", WalkStep.Headroom, "account-1", null, null },
         { "account-1 account-2 account-3", "account-2:S95", "account-1=Cooling", "account-3", WalkStep.Cooling, null, WalkStep.Near, "account-2" },
         { "account-1 account-2 account-3 order", "account-1:S95", "", "account-2", WalkStep.Near, "account-1", null, null },
         // Over its curve (SWITCH1b-ii): the smart one on its week and on its session, a person's, and the smart one under `off`.
@@ -600,13 +599,12 @@ public sealed class AccountRotationWalkTests
         { "gmail account-1 account-3", "gmail:W99@+4d account-1:W60@+4d,N account-3:X", "", "account-1", WalkStep.Near, "gmail", null, null },
         // Most room under its curve (step 5): where the list begins, ahead of the next by its room; ahead of one that said
         // nothing, which sits between; and under `off`, D130's pace.
-        { "account-1 account-2 account-3", "account-1:W10@+4d account-2:W40@+4d", "", "account-1", WalkStep.Pace, "account-2", null, null },
-        { "account-1 account-2", "account-2:W10@+4d", "", "account-2", WalkStep.Pace, "account-1", null, null },
-        { "account-1 account-2 account-3", "account-1:W50@+4d account-3:W10@+4d", "", "account-3", WalkStep.Pace, "account-1", null, null },
-        { "account-1 account-2 switch=off", "account-1:S70,W10@+4d account-2:W40@+4d", "", "account-1", WalkStep.Pace, "account-2", null, null },
+        { "account-1 account-2 account-3", "account-1:W10@+4d account-2:W40@+4d", "", "account-1", WalkStep.Headroom, "account-2", null, null },
+        { "account-1 account-2", "account-2:W10@+4d", "", "account-2", WalkStep.Headroom, "account-1", null, null },
+        { "account-1 account-2 account-3", "account-1:W50@+4d account-3:W10@+4d", "", "account-3", WalkStep.Headroom, "account-1", null, null },        { "account-1 account-2 switch=off", "account-1:S70,W10@+4d account-2:W40@+4d", "", "account-1", WalkStep.Pace, "account-2", null, null },
         { "account-1 account-2 account-3 switch=off", "account-1:W50@+4d account-3:W10@+4d", "", "account-3", WalkStep.Pace, "account-1", null, null },
         // A tie on what would lapse goes on to the tightest room (USAGERESET1): account-1's five-hour window leaves it 10 points.
-        { "account-1 account-2 account-3", "account-1:S80,W60@+8h account-2:W60@+8h", "", "account-2", WalkStep.Pace, "account-1", null, null },
+        { "account-1 account-2 account-3", "account-1:S80,W60@+8h account-2:W60@+8h", "", "account-2", WalkStep.Headroom, "account-1", null, null },
         // Over its curve while the account where the list begins cools: the step among the rest names it.
         { "account-1 account-2 account-3", "account-2:S30,W70@+4d", "account-1=Cooling", "account-3", WalkStep.Cooling, null, WalkStep.Near, "account-2" },
     };

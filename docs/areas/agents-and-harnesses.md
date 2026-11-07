@@ -197,9 +197,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     machine or workspace lists. The person's pick at a start is the one exception. (from D197)
 28. The person's own sign-in is outside the set. Daoris never signs it in or out, never asks it anything and never starts work
     in it. (from D197, D175)
-29. The walk: under `goal` (the default) a near account goes last, then fewest of Daoris's sessions running, then a week about to
-    lapse, then most room under the curve, then least recently started, then the order. Under `order` the first ready
-    account runs. The cap stays one number per machine. (from D130, D165, D197)
+29. The walk: under `goal` (the default) a near account goes last, then the most room in the tightest window the account's
+    provider reported (any window it declares, by what is left under the curve, or of the window where the curve table has none;
+    rooms within a five-point band tie; an account with no number ranks as one with no room; not under `switch: off`), then
+    fewest of Daoris's sessions running, then a week about to lapse, then most room under the curve, then least recently
+    started, then the order. Under `order` the first ready account runs. The cap stays one number per machine.
+    (from D130, D165, D197)
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model
     names that family as a word of its id (`opus`, `claude-opus-4-5`), or one at account default, and passes a start naming
     another, its hold naming the family's limit (`held.cooling-model`). Every reader that knows a line's model reads it the
@@ -374,11 +377,6 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
 
 ## Open
 
-- A start's account by the allowance left on its five-hour window: the smart curve holds that window flat at 90% (D165 point 2),
-  so an account at 75% of it is not near, and rule 29 puts fewest before room, so concurrent starts spread onto it while another
-  stands at 10%. Weighing it waits on a choice against D165: a pace-aware smart session curve, as the week's is, which moves the
-  shared curve table (`fixtures/usage-curves.json`, read by the driver, the modules and the page), the page's words for the smart
-  curve and every running conversation's switch; or a walk step that ranks session room before fewest for a start alone.
 - A model family's cool-off: no sentence naming a family's limit is recorded yet (`ClaudeLimits.Words.Recorded`), and
   `get_usage` has answered the families' weeks null on every account read so far (`docs/2026-10-12-usage-read-evidence.md`).
   The listings and counts that show every cool-off of an account (`AccountsRoutes`, the terminal's agent list, `Offered`) read

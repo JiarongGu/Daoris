@@ -722,13 +722,12 @@ public sealed class AccountRotationGoalTests : IDisposable
 
         Assert.Equal("account-3", first.Profile);
         Assert.Equal(
-            new AccountChoice(WalkStep.Pace, "it has the most room under its curve, 53 points on its weekly window"),
+            new AccountChoice(WalkStep.Headroom, "it has the most room under its curve, 53 points on its weekly window"),
             first.Choice);
-        // The second start: account-3 runs one now; of the two that run none, the one with thirteen points of room goes ahead
-        // of the one that said nothing.
-        Assert.Equal("account-1", second.Profile);
+        // The second start: account-3 runs one now, yet room comes before the sessions it runs, so account-3 goes again.
+        Assert.Equal("account-3", second.Profile);
         Assert.Equal(
-            new AccountChoice(WalkStep.Pace, "it has the most room under its curve, 13 points on its weekly window"),
+            new AccountChoice(WalkStep.Headroom, "it has the most room under its curve, 53 points on its weekly window"),
             second.Choice);
     }
 
@@ -763,16 +762,16 @@ public sealed class AccountRotationGoalTests : IDisposable
     {
         Accounts("account-1", "account-2", "account-3");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2", "account-3"]));
-        // account-3: half its week unused, resetting in 20 hours; account-2: 3 points, resetting in 2. By its time alone
-        // account-2's went first and account-3's half lapsed (USAGERESET1).
-        Said("account-3", 0.10, weekly: 0.50, weekHours: 20);
-        Said("account-2", 0.10, weekly: 0.97, weekHours: 2);
+        // Both leave under five points of room, so the room is alike: account-3 has 4% of its week unused to lapse in 20 hours,
+        // account-2 3%.
+        Said("account-3", 0.10, weekly: 0.96, weekHours: 20);
+        Said("account-2", 0.10, weekly: 0.97, weekHours: 20);
 
         var selection = await Present().SelectAsync("fake", Config, null, null);
 
         Assert.Equal("account-3", selection.Profile);
         Assert.Equal(
-            new AccountChoice(WalkStep.Lapsing, "its weekly window resets in 20 h with 50% of it unused, read 20 min ago"), selection.Choice);
+            new AccountChoice(WalkStep.Lapsing, "its weekly window resets in 20 h with 4% of it unused, read 20 min ago"), selection.Choice);
     }
 
     [Fact]
