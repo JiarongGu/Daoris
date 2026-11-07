@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { placeSaid, ruleSaid } from '../agents/roles/SupervisorRulesFold';
-import { list } from '../locales/format';
+import { placeSaid, ruleSaid } from '../../agents/roles/SupervisorRulesFold';
+import { list } from '../../locales/format';
 
 /** One supervisor rule as a card carries it: the rules' own fields, which the page words from its catalogue. */
 export type HelpRuleShown = { count: string; at: number; do: string; upTo?: number | null; roles?: string[] | null };

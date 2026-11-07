@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
-import i18n from '../locales/i18n';
-import { code } from '../test/code';
-import { type HelpProposal, ProposalCard } from './ProposalCard';
+import i18n from '../../locales/i18n';
+import { code } from '../../test/code';
+import { type HelpProposal, ProposalCard } from '../ProposalCard';
 
 // CONTEXTDRIVE1k: the card of a place's supervisor rules is worded from the catalogue, not carried as the driver's English sentence.
 
