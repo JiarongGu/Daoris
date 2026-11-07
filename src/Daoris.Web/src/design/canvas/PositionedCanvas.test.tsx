@@ -11,7 +11,7 @@ import { layoutScene } from './layoutScene';
 import { PositionedCanvas } from './PositionedCanvas';
 import { buildModel, displayOf, edgesAmong, GROUP } from './sceneModel';
 
-// CANVAS1d (D224; the canvas design §4, traps 11, 13, 14): the reader's side of a large world. jsdom lays nothing out, so the canvas
+// The reader's side of a large world. jsdom lays nothing out, so the canvas
 // is below its floor here and a graph is its grouped list; the viewport, the cull and the tiers are `measured/large.spec.ts`'s.
 
 afterEach(() => localStorage.clear());

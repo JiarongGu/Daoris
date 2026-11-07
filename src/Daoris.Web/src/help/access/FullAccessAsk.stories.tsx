@@ -4,7 +4,7 @@ import { InTheme } from '../../plugins/storyIcons';
 import type { Answered } from '../../work/InlineConfirm';
 import { FullAccessAsk } from './HelpModePicker';
 
-// Ask Daoris's full access asked once (ACCESSASK1, the UI/UX design §3.4): the one `InlineConfirm` in its warning tone, naming the
+// Ask Daoris's full access asked once: the one `InlineConfirm` in its warning tone, naming the
 // servers it would add and when it takes effect; waiting for the driver's answer with its presses kept; and a refusal said inside
 // it. In the side bar at its 300 px floor and at the 45% a wide window gives it, in both themes and in 中文.
 

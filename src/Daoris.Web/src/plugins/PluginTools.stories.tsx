@@ -4,7 +4,7 @@ import type { ToolShown } from './catalog';
 import { PluginTools } from './PluginTools';
 import { InTheme } from './storyIcons';
 
-// A plugin's tools on its page (ADOSIGNIN1, D150 point 7), a plugin's `ship` command line: as its manifest says it
+// A plugin's tools on its page, a plugin's `ship` command line: as its manifest says it
 // before anyone has asked, after the person's Check with two unmet checks, a tool not found, a console open, and a press the
 // driver turned down; at the page's width (80rem), a window's main area (39rem) and the 400 px floor (25rem), in 中文 and in dark.
 

@@ -6,16 +6,16 @@ import { PageHead, PageSection, ViewMain } from '../work/frame/ViewMain';
 import { type ChannelAnswered, ChannelSection } from './ChannelSection';
 
 /**
- * **A teammate's ask's page** (SESSONE2h; the co-working design §2.4, D167's SESSONE2g note): an ask held on another machine, of
+ * **A teammate's ask's page**: an ask held on another machine, of
  * which this one has only the channel messages the sync mirrored. There is no ask record here, so the page has no request, no
  * proposal, no quests and no work, and offers none of an ask's acts (publish, close, delete, pause): it names the ask by its id,
  * says it is a teammate's and held on their machine, gives the circle, the machines its messages came from and the latest, and
- * draws the channel with its composer (SESSONE2i): a post is kept here at its level and the sync carries it to the holder, whose
+ * draws the channel with its composer: a post is kept here at its level and the sync carries it to the holder, whose
  * agents take it as this person's claim, never their own person's words. There is no *Send to its session*: no part of it is here.
  *
  * @remarks
  * A molecule over `ChannelSection`: the channel arrives as the shell answered it (null while it is read). The unread count is
- * against the person's mark, which the service keeps on a teammate's ask its mirror holds (NOTIFY2g): reading the page moves it
+ * against the person's mark, which the service keeps on a teammate's ask its mirror holds: reading the page moves it
  * through the newest item once (`onRead`), as an ask's own page does, so its item leaves *Messages*. Absent, no mark moves.
  */
 export function TeammateAskPage({ ask, channel, onPost, onRead }: {
@@ -23,7 +23,7 @@ export function TeammateAskPage({ ask, channel, onPost, onRead }: {
   channel: Channel | null;
   /** The person's post (`CHANNEL_POST`), as on an ask of theirs. */
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
-  /** The person's mark moved through the newest item shown (`CHANNEL_MARK`), once what was unread is on the page. */
+  /** The person's mark moves through the newest item shown (`CHANNEL_MARK`), once what is unread is on the page. */
   onRead?: (through: string) => void;
 }) {
   const { t } = useTranslation();

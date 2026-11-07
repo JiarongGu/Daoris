@@ -7,7 +7,7 @@ import { storyWidths } from '../storyWidths';
 import { SuppliedCanvas, type SuppliedWorld } from './SuppliedCanvas';
 import { lineDrawn } from './suppliedCull';
 
-// A large supplied world (CANVAS1e; D224, the canvas design §2.6, §4): the maps' canvas at 2,000 and 5,000 cards, culled past 400 and
+// A large supplied world: the maps' canvas at 2,000 and 5,000 cards, culled past 400 and
 // drawn as dots below 4 px of `text-meta`, at the main area's 80, 39 and 25rem, in English and 中文 and both themes. Opened fitted, the
 // world is a field of dots on the canvas2D layer with the Tab stop and the selected still cards; opened at 100%, only the cards near
 // the view are mounted. Keyboard: the arrows walk to a card that is not mounted, which is mounted and focused, and the view follows.

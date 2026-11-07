@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { storyWidths } from '../../design/storyWidths';
 import { StandingAnswer } from './StandingAnswer';
 
-// A repository's standing answer on this machine (KNOWUSE1b, D135 §3): the person's words, handed to every session there,
-// a row of the repository's Setup tab (UX6f), its terminal twin as its hint.
+// A repository's standing answer on this machine: the person's words, handed to every session there,
+// a row of the repository's Setup tab, its terminal twin as its hint.
 
 const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toISOString();
 
@@ -11,7 +11,7 @@ const meta = {
   title: 'Projects/StandingAnswer',
   component: StandingAnswer,
   args: { repository: 'engine', says: null, onSave: () => {} },
-  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  // The main area at its wide width, as the frame gives it.
   decorators: [storyWidths.wide],
 } satisfies Meta<typeof StandingAnswer>;
 export default meta;

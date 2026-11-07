@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { boxSelect, edgeDrift, worldRect } from './gesture';
 import { placeChips } from './marks';
 
-// CANVAS1b (D224): the arithmetic of the box drawn to select, the pan at the edge, and where a mark's chip stands.
+// The arithmetic of the box drawn to select, the pan at the edge, and where a mark's chip stands.
 
 describe('a box drawn to select', () => {
   it('is the world rectangle the two points cover, whichever corner is first and at whatever scale', () => {

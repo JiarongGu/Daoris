@@ -9,7 +9,7 @@ import { moment } from '../locales/format';
 import { DECLINED, DONE, OPEN, TAKEN } from './fixtures';
 import { QUEST_MOVES, QUEST_STATUSES, questFlow } from './questLife';
 
-// FLOWCHART1a1 (the flowchart design §2.1, §7 traps 8, 11 and 19): a quest's four statuses and the moves between them,
+// A quest's four statuses and the moves between them,
 // drawn on its page. The moves are a page constant, so this holds them to the code's own table, `QuestTransitions.Allows`,
 // read from the service's source (`.claude/knowledge/twins.md`): a second copy no test holds drifts.
 
@@ -91,7 +91,7 @@ describe('the flow a quest\'s page draws (§2.1)', () => {
     const reached = (quest: typeof OPEN) => Object.fromEntries(questFlow(t, quest).nodes.map((node) => [node.id, node.reached]));
     expect(reached(OPEN)).toEqual({ Open: true, Taken: false, Done: false, Declined: false });
     expect(reached(TAKEN)).toEqual({ Open: true, Taken: true, Done: false, Declined: false });
-    // A done quest may have been taken or not: without its moves (FLOWCHART1a2) the page cannot say, so it says neither.
+    // A done quest may have been taken or not: without its moves the page cannot say, so it says neither.
     expect(reached(DONE)).toEqual({ Open: true, Taken: undefined, Done: true, Declined: false });
     expect(reached(DECLINED)).toEqual({ Open: true, Taken: undefined, Done: false, Declined: true });
   });

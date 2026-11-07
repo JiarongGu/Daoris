@@ -4,7 +4,7 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { FetchOrigin } from './FetchOrigin';
 
-// Fetch origin (GITAPP2f, D204, D198, the git-writes design §9) on a repository's Branches: one press, what will move confirmed, what was
+// Fetch origin on a repository's Branches: one press, what will move confirmed, what is
 // made, moved and removed said, refused in the driver's sentence, and the line it says where origin's settings refuse it. At the main
 // area's three widths (80, 39 and 25rem) in English and 中文, in both themes.
 
@@ -45,7 +45,7 @@ export const ConfirmNarrowChineseDark: Story = { args: { initial: { step: 'confi
 
 const SAID = 'Fetched origin’s branches. Made `origin/feature/a-long-branch-name`. Moved `origin/main`. Removed `origin/old`, which origin no longer has.';
 
-/** Said: what was made, moved and removed, wrapping anywhere at the floor. */
+/** Said: what is made, moved and removed, wrapping anywhere at the floor. */
 export const Fetched: Story = { args: { initial: { step: 'said', sentence: SAID } } };
 export const FetchedNarrow: Story = { args: { initial: { step: 'said', sentence: SAID } }, decorators: [storyWidths.narrow] };
 export const FetchedNarrowChineseDark: Story = {

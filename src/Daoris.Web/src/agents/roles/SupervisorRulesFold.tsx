@@ -27,7 +27,7 @@ export function placeSaid(t: TFunction, place: string): string {
 }
 
 /**
- * **A place's supervisor rules** (CONTEXTDRIVE1g, the context counters design §7.1): *when this count reaches n here, do this*, as rows in
+ * **A place's supervisor rules**: *when this count reaches n here, do this*, as rows in
  * the role editor's form, written whole at the revision read. Each rule set here says the wider place's rule it replaces; an inherited rule is
  * drawn under its place with *Set here instead…*. A molecule: it reads no bridge, and the press goes out; the driver judges and its sentence
  * stands under *Save*, the draft kept.

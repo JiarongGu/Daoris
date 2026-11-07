@@ -4,7 +4,7 @@ import type { Notice } from '../bridge/notices';
 import type { Confirmation } from '../person/Confirmations';
 import { useAnsweredRead, useMessageAnnouncements, usePressAnnouncements } from './announce';
 
-// A press announced in the window in front (NOTIFY2b, the notification design §3.3, §5, Fable's F1.1): a toast with *Open*, said
+// A press announced in the window in front: a toast with *Open*, said
 // once in the focused main window on the press's own event by its id (a service's on its told list's first sight), and staying until
 // the view opens or the press ends; never in a window not focused, and never while the view is open.
 
@@ -68,7 +68,7 @@ describe('announcing a press', () => {
     expect(result.current.close(12345)).toBe(false);
   });
 
-  // CONFIRMWAIT1a-i (the confirm-wait design §8.2, §10's two-asks row): two presses within a minute are two toasts in the focused main
+  // Two presses within a minute are two toasts in the focused main
   // window, one per press, each by its id; only the balloon behind the window folds them (the modules' `BalloonFold`).
   it('says two presses asked within a minute as two toasts, one per press, each by its id', () => {
     const { result } = announce({ presses: [PIPE, { ...PIPE, id: 'c2', route: 'SET_DRIVABLE' }], viewOpen: false });
@@ -80,7 +80,7 @@ describe('announcing a press', () => {
     expect(result.current.toasts.map((toast) => toast.text)).toEqual(['asks: c1', 'asks: c2']);
   });
 
-  // NOTIFY2j: the shell tells every window one list at once, so the window focused as it is told says it, and no other.
+  // The shell tells every window one list at once, so the window focused as it is told says it, and no other.
   it("says a service's press once across two windows told it, in the one focused as they are", () => {
     focused.mockReturnValue(false);
     const behind = announce({ presses: [], viewOpen: false });
@@ -132,7 +132,7 @@ describe('announcing a press', () => {
   });
 });
 
-// An agent's or a teammate's urgent message to everyone (NOTIFY2g, the notification design §5): the shell's `MESSAGE`, said by a toast
+// An agent's or a teammate's urgent message to everyone: the shell's `MESSAGE`, said by a toast
 // with *Open* in the focused window alone, once per message, an event heard twice said once; a secondary window's with no door.
 describe('announcing an urgent message', () => {
   let focused: ReturnType<typeof vi.spyOn>;
@@ -200,7 +200,7 @@ describe('announcing an urgent message', () => {
   });
 });
 
-// A conversation's answer is read when its conversation is the one attended in a window visible and focused (NOTIFY2g, §2.4).
+// A conversation's answer is read when its conversation is the one attended in a window visible and focused.
 describe('reading an answer where its conversation is on screen', () => {
   let focused: ReturnType<typeof vi.spyOn>;
   beforeEach(() => { focused = vi.spyOn(document, 'hasFocus').mockReturnValue(true); });

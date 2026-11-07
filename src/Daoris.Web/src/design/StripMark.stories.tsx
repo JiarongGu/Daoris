@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { StripMark } from './ui';
 
-// One item on a list closed to its 56px strip (D118 §5): the first character of its name and its mark,
+// One item on a list closed to its 56px strip: the first character of its name and its mark,
 // with the words as its name and tip. Sessions' strip is its first user and Plugins' its second.
 
 const meta: Meta<typeof StripMark> = {
@@ -33,10 +33,10 @@ export const Waiting: Story = {
 /** Idle: a conversation between turns, a quiet mark in no outcome's hue. */
 export const Idle: Story = { args: { label: 'Cap the hydration per frame · engine · idle', tone: 'idle' } };
 
-/** On, with no mark: a plugin that is simply running (D119). */
+/** On, with no mark: a plugin that is simply running. */
 export const Unmarked: Story = { args: { label: 'lint-on-save · on', initialOf: 'lint-on-save', tone: undefined } };
 
-/** Off: a plugin switched off, its initial faint and no mark (D119). */
+/** Off: a plugin switched off, its initial faint and no mark. */
 export const Off: Story = { args: { label: 'lint-on-save · off', initialOf: 'lint-on-save', tone: undefined, dimmed: true } };
 
 /** A name in 中文: its first character, whole. */

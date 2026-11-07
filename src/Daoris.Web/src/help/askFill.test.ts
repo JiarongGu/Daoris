@@ -2,7 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { fillAskDaoris, registerAskFill, useCanFillAsk } from './askFill';
 
-// FLOWCHART2c (D223 §3): a page fills Ask Daoris's box with words for the person to finish, through the door the window registers.
+// A page fills Ask Daoris's box with words for the person to finish, through the door the window registers.
 
 describe('filling Ask Daoris', () => {
   it('hands the words to the registered door and says whether it did', () => {

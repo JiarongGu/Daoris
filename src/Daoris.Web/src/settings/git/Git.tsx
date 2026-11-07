@@ -7,10 +7,10 @@ import {
   Button, Card, CardHeader, Dot, EmptyState, Inline, MonoWell, Pill, Prose, SelectField, SettingList, SettingRow,
 } from '../../design/ui';
 
-/** The way an identity signs in: an SSH key of Daoris's own, or an HTTPS token kept beside the keys (D198, D241). */
+/** The way an identity signs in: an SSH key of Daoris's own, or an HTTPS token kept beside the keys. */
 export type GitWay = 'ssh' | 'https';
 
-/** An identity's last test as `TOOLS_LIST`'s `identities` answers it (GITAUTH1e, the git-auth design §3.1). */
+/** An identity's last test as `TOOLS_LIST`'s `identities` answers it. */
 export type GitTestShown = { result: string; user?: string | null; at: string };
 
 /** One git identity: who Daoris's git acts as on a host. Holds no secret; the public key and the fingerprint are the most. */
@@ -75,7 +75,7 @@ export type GitAddInput = {
 /** What a new identity answers: its id, and the public key to give the host (SSH). */
 export type GitAdded = { identity: string; label: string; host: string; way: GitWay; publicKey?: string | null };
 
-/** The page's presses. Each answers or rejects; a rejection is said where it was pressed (R3). */
+/** The page's presses. Each answers or rejects; a rejection is said where it is pressed. */
 export type GitActs = {
   add: (input: GitAddInput) => Promise<GitAdded>;
   test: (identity: GitIdentityShown, options: { trust?: string; repository?: string }) => Promise<GitTestAnswer>;

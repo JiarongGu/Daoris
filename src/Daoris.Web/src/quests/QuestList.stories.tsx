@@ -5,7 +5,7 @@ import { ListMore, ListPane } from '../work/frame/ListPane';
 import { CHAINED, CJK, CONFLICTED, DECLINED, DONE, HELD, HELD_BY_PERSON, LANED, OPEN, SITTING, TAKEN, WAITING } from './fixtures';
 import { type AskRowFacts, QuestList, type QuestRowFacts } from './QuestList';
 
-// Quests' list (FRAME1d, D118 §2) on its list pane, in every state the design names: the asks then the quests by
+// Quests' list on its list pane, in every state the design names: the asks then the quests by
 // state, a row chosen, the closed group, a receiver filter said, a held repository's row with its resume, a row
 // waiting on a question and one a session works, only asks, empty, loading, an error with no answer ever, 中文 titles,
 // the strip, and laid over the main area.
@@ -105,7 +105,7 @@ export const AsksThenQuests: Story = {};
 export const AnAskChosen: Story = { args: { chosen: `ask:${PROPOSED.id}` } };
 
 /**
- * One piece of work, one row (QUESTLISTS1): the first two asks each became one quest, so they are their quests' rows, named
+ * One piece of work, one row: the first two asks each became one quest, so they are their quests' rows, named
  * by the ask's short title with the ask on the route line; the asks group keeps only what waits on something of its own.
  * Switch the toolbar's locale for 中文.
  */
@@ -127,11 +127,11 @@ export const ClosedIncluded: Story = { args: { closed: true, quests: [...QUESTS,
 /** Filtered to one receiver from the ⋯: said at the list's head, since the ⋯ that set it is a press away. */
 export const FilteredToOneReceiver: Story = { args: { filteredTo: 'engine', quests: QUESTS.filter(({ quest }) => quest.to === 'engine') } };
 
-/** A held repository's quest says why it waits, and its resume sits beside its row's door (USE1). */
+/** A held repository's quest says why it waits, and its resume sits beside its row's door. */
 export const HeldWithItsResume: Story = { args: { quests: [{ quest: OPEN, sitting: HELD_BY_PERSON }, ...QUESTS.slice(1)], chosen: null } };
 
 /**
- * A done a departure holds for the person's yes (DRIFT1d2): first among the quests, with closed quests not shown, its row
+ * A done a departure holds for the person's yes: first among the quests, with closed quests not shown, its row
  * saying it awaits them and never dimmed as ended.
  */
 export const AwaitingYourYes: Story = { args: { quests: [{ quest: HELD }, ...QUESTS], chosen: HELD.id } };

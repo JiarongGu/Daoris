@@ -6,7 +6,7 @@ import {
   buildStructure, heldMarks, litOf, NO_FILTERS, nodeOfRow, placesToAsk, type StructureFilters, usedByAgent,
 } from './roleStructure';
 
-// COMPANYVIEW1d (the company-view design §3.3 to §3.5, §4): the rows of Work, Accounts and By repository, built once over the driver's
+// The rows of Work, Accounts and By repository, built once over the driver's
 // answer, with one id each. A row says the driver's answer; it resolves nothing itself.
 
 const build = (filters: Partial<StructureFilters> = {}) => buildStructure({
@@ -205,7 +205,7 @@ describe('buildStructure', () => {
   });
 });
 
-// COMPANYVIEW1f (the company-view design §4): the diagram's nodes and edges, built by the same function over the same answer, each with
+// The diagram's nodes and edges, built by the same function over the same answer, each with
 // the id its row has. Three columns: places, roles and agents; an edge only from a record.
 describe('the diagram', () => {
   const APPOINTED = {

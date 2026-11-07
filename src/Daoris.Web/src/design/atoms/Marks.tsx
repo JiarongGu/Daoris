@@ -8,7 +8,7 @@ import { Tip } from './Tip';
 export const DOT_TONE: Record<string, { mark: string; word: string }> = {
   live: { mark: 'bg-accent motion-safe:animate-pulse', word: 'text-accent' },
   // Waiting on a person is the status palette's waiting hue, the one `WaitingCard` and the map wear.
-  // It wore declined's red, and a session waiting on its person read as one that had failed (UX5 U1).
+  // Declined's red would read a session waiting on its person as one that had failed.
   parked: { mark: 'bg-st-open', word: 'text-ink-open' },
   // A failure is an outcome, and red is its hue: a tool call that failed, never a session's liveness.
   failed: { mark: 'bg-st-declined', word: 'text-ink-danger' },
@@ -16,18 +16,18 @@ export const DOT_TONE: Record<string, { mark: string; word: string }> = {
   // green put a success mark beside a failed session in the rail. The pill beside it names the outcome.
   ended: { mark: 'bg-ink-faint', word: 'text-ink-soft' },
   idle: { mark: 'bg-line', word: 'text-ink-faint' },
-  // A fact's mark (the UI/UX design §4, MILESTONEUX1): what is reached or kept wears done's hue, the one the status palette's
+  // A fact's mark: what is reached or kept wears done's hue, the one the status palette's
   // done already is; what waits on another is a neutral, neither the person's open hue nor an outcome's.
   done: { mark: 'bg-st-done', word: 'text-ink-done' },
   waits: { mark: 'bg-ink-soft', word: 'text-ink-soft' },
-  // Work under way at a place of the activity bar (BADGEUX1, the UI/UX design §3.10): taken's hue, the status palette's *in progress*,
+  // Work under way at a place of the activity bar: taken's hue, the status palette's *in progress*,
   // which a working session's pill and a taken quest's wear. Not done's green, an outcome's, and not the accent, which reads as open's
-  // amber at badge size beside a wait's number (UX5 U24); still, since it stands for as long as the work runs.
+  // amber at badge size beside a wait's number; still, since it stands for as long as the work runs.
   running: { mark: 'bg-st-taken', word: 'text-ink-taken' },
 };
 
 /**
- * A liveness mark and the word for it — one component, because the label is not optional (D41 §6).
+ * A liveness mark and the word for it — one component, because the label is not optional.
  *
  * @remarks
  * The mark is `aria-hidden`: the label already IS the accessible name, and a screen reader that
@@ -50,22 +50,22 @@ export function Dot({ tone = 'idle', label, className }: {
 }
 
 /**
- * The mark alone, for a surface too narrow for the word — the rail's strip (FRAME6). The word goes
- * where the mark's control names itself, so it is never hue alone (D41 §6); anywhere with room for the
+ * The mark alone, for a surface too narrow for the word — the rail's strip. The word goes
+ * where the mark's control names itself, so it is never hue alone; anywhere with room for the
  * word, `Dot` is the component.
  */
 export function DotMark({ tone = 'idle', className, ...data }: {
   tone?: keyof typeof DOT_TONE; className?: string;
-  /** A mark a test or a measure finds it by (`data-running`, BADGEUX1). */
+  /** A mark a test or a measure finds it by (`data-running`). */
   [attribute: `data-${string}`]: string | undefined;
 }) {
   return <span aria-hidden {...data} className={cn('inline-block size-1.5 shrink-0 rounded-full', DOT_TONE[tone].mark, className)} />;
 }
 
 /**
- * One item on a list closed to its strip (FRAME6's session strip row, made general by D118 §5): the first
+ * One item on a list closed to its strip: the first
  * character of its name, or the letters it is given, and its mark, one press away. What it is and how it stands are its accessible
- * name and its tip, since the strip has no room for the words and a mark is never hue alone (D41 §6).
+ * name and its tip, since the strip has no room for the words and a mark is never hue alone.
  *
  * @remarks
  * A row of its list (`data-list-row`), so the list's arrows move along the strip too (`work/frame/listKeys`).
@@ -79,17 +79,17 @@ export function StripMark({ label, initialOf, letters, face, tone, dimmed = fals
   initialOf: string;
   /**
    * A short mark drawn as written in place of that character, its case kept, where neighbours' first characters would be
-   * one: an agent's *CC* beside *Cx* (ACCTUX2, the UX7 design §4.6).
+   * one: an agent's *CC* beside *Cx*.
    */
   letters?: string;
   /**
-   * What it is drawn as instead of its initial, decoration its label names: a plugin's icon (PLUGUI2, D140 §2). The
+   * What it is drawn as instead of its initial, decoration its label names: a plugin's icon. The
    * face is drawn faint itself where it is dimmed.
    */
   face?: ReactNode;
-  /** Its mark; absent, it wears none, as a plugin that is simply on does (D119). */
+  /** Its mark; absent, it wears none, as a plugin that is simply on does. */
   tone?: keyof typeof DOT_TONE;
-  /** Its initial drawn faint: a plugin switched off (D119). */
+  /** Its initial drawn faint: a plugin switched off. */
   dimmed?: boolean;
   /** The one chosen in the list, marked as the activity bar marks its current place. */
   current?: boolean;
@@ -139,8 +139,8 @@ export function StripMark({ label, initialOf, letters, face, tone, dimmed = fals
 export function MonoWell({ text, label, live = false, dropped = 0, tall = false, fill = false }: {
   text: string; label?: ReactNode; live?: boolean; dropped?: number; tall?: boolean;
   /**
-   * Fill the height the caller gives instead of capping at one. What a growable output panel needs
-   * (D55): a well with a maximum of its own can be put in a taller box and simply not use it.
+   * Fill the height the caller gives instead of capping at one. What a growable output panel needs:
+   * a well with a maximum of its own can be put in a taller box and simply not use it.
    */
   fill?: boolean;
 }) {
@@ -183,7 +183,7 @@ export function MonoWell({ text, label, live = false, dropped = 0, tall = false,
  * **A pair with no value is absent, never blank.** On a session record every absence means something
  * real — no profile means the harness's own configuration home, no version means the record predates
  * the toolchain, no tree means a browser is reading over a remote — and a dash in the value slot
- * reads as a bug in all three. The caller says what it knows; this renders what it was given.
+ * reads as a bug in all three. The caller says what it knows; this renders what it is given.
  */
 export function MetaLine({ items, className }: {
   items: { label: string; value: ReactNode; mono?: boolean }[]; className?: string;
@@ -206,14 +206,14 @@ export function MetaLine({ items, className }: {
 
 /**
  * A path or a URL that may have to wrap: it breaks after a separator, and inside a name only when
- * that one name is wider than the line. `break-all` broke anywhere, so a session's tree read
- * `family\g` over `ame` (UX5 U8). The text is unchanged: a `<wbr>` adds a place to break and no
+ * that one name is wider than the line. `break-all` breaks anywhere, so a session's tree would read
+ * `family\g` over `ame`. The text is unchanged: a `<wbr>` adds a place to break and no
  * character, so a copy is still the path.
  */
 export function PathText({ path, className }: { path: string; className?: string }) {
   const parts = path.split(/(?<=[\\/])/);
   return (
-    // A right-click copies the path whole (CTX1, D138).
+    // A right-click copies the path whole.
     <span data-copy={path} className={cn('font-mono wrap-anywhere', className)}>
       {parts.map((part, index) => (
         <Fragment key={index}>{part}{index < parts.length - 1 && <wbr />}</Fragment>

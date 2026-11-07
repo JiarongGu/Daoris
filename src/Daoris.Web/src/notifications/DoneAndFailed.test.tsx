@@ -8,7 +8,7 @@ import { PressArea } from '../person/Confirmations';
 import { watchScreen } from '../test/onScreen';
 import { DoneAndFailed, noticeWords } from './DoneAndFailed';
 
-// *Done and failed* (NOTIFY2f, D196 point 6, the notification design §2.2's fourth group, §2.3, §2.4): what the person need not answer,
+// *Done and failed*: what the person need not answer,
 // newest first, each one line in the reader's language with its age, the unread marked; read once it is shown in a window in front;
 // *Open*, *Dismiss* and *Mark all read*. jsdom lays nothing out, so each box is the test's, and an `IntersectionObserver` stand-in wakes
 // the judgement as the window would.
@@ -110,7 +110,7 @@ describe('Done and failed', () => {
     expect(screen.queryByRole('button', { name: 'Mark all read' })).not.toBeInTheDocument();
   });
 
-  // CONFIRMWAIT1a-i (the confirm-wait design §6, §8.3): a press its terminal took back once shown, and one Daoris's close ended.
+  // A press its terminal took back once shown, and one Daoris's close ended.
   it.each([
     ['en', 'withdrawn', 'A terminal took back its press to stop a session'],
     ['en', 'closed', "Daoris closed while a terminal's press to stop a session waited, and it was not done"],
@@ -122,7 +122,7 @@ describe('Done and failed', () => {
     await i18n.changeLanguage('en');
   });
 
-  // CONFIRMWAIT1a-ii (the confirm-wait design §7.2, §8.3): presses a restart could not bring back, by their count; one carrying a key a
+  // Presses a restart could not bring back, by their count; one carrying a key a
   // close ended, by its act; and presses a newer Daoris kept.
   it.each([
     ['en', { count: 1 }, 'A press from a terminal could not be restored after Daoris restarted, and was not done'],
@@ -158,7 +158,7 @@ describe('Done and failed', () => {
   });
 
   /**
-   * NOTIFY2h (D196 point 7, the notification design §5.1): a look's news is said by its code in the reader's language, never the
+   * A look's news is said by its code in the reader's language, never the
    * driver's English line; it opens its session where it names one; a code a later build says reads as something ended.
    */
   it.each([
@@ -184,7 +184,7 @@ describe('Done and failed', () => {
   });
 
   /**
-   * NOTIFY2h2 (D196's NOTIFY2h note): the news its deeper producers class, each said by its code in the reader's language; a reopen whose
+   * The news its deeper producers class, each said by its code in the reader's language; a reopen whose
    * tree is gone names its session and opens it, a plugin stopped as unsound names none.
    */
   it.each([

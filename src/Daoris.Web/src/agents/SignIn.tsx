@@ -17,7 +17,7 @@ import { type SignInPhase, SignInSteps, type SignInWay } from './SignInSteps';
  * brackets; the prompt never arrived at all, and nothing could have answered it — so the flow could
  * not complete, and every control on the page stayed disabled until the window closed.
  *
- * The steps are `SignInSteps`' (SIGNIN1, the UI/UX design §3.2): the driver's phases, each written with its start into the
+ * The steps are `SignInSteps`': the driver's phases, each written with its start into the
  * relay the tool's output takes, drawn as a list standing open, or as the line alone under a row of *What needs you*; the
  * link, the code and the ask are read from the tool's lines by their shape. The tool's own output is one disclosure away and never the surface,
  * the same rule the setting rows follow for their why; a phase line is the driver's and never shown there.
@@ -26,8 +26,8 @@ import { type SignInPhase, SignInSteps, type SignInWay } from './SignInSteps';
  * it, from one subscription rather than two — and the two mutations, and renders only where a shell
  * is attached, because only a driver has a process to answer.
  *
- * `login-new` is signing in to ANOTHER account (D66 §3): the same steps, with no account to name yet — who it is, is what
- * the sign-in finds out. A device code (CODEXACCT2) is Codex's: it opens no page and asks nothing on its input, and prints a
+ * `login-new` is signing in to ANOTHER account: the same steps, with no account to name yet — who it is, is what
+ * the sign-in finds out. A device code is Codex's: it opens no page and asks nothing on its input, and prints a
  * link and a one-time code the person enters on that page, with the code's own bound.
  */
 export function SignIn({
@@ -38,14 +38,14 @@ export function SignIn({
   harness: string;
   profile?: string;
   action?: 'login' | 'login-new';
-  /** What a person calls the tool (AGT1) — the id when it does not say. */
+  /** What a person calls the tool — the id when it does not say. */
   tool?: string;
   /**
-   * The driver's sentence where it refused to start this sign-in (CODEXSIGNIN2): said here, whole, where the press was, with
+   * The driver's sentence where it refused to start this sign-in: said here, whole, where the press is, with
    * *Try again* and *Close*, rather than as a toast with the panel gone. Nothing runs then, so no cancel.
    */
   refused?: string | null;
-  /** The sentence of a sign-in that ended without signing in, and when (SIGNIN1): the phase it was in failed. */
+  /** The sentence of a sign-in that ended without signing in, and when: the phase that failed. */
   failed?: string | null;
   failedAt?: number | null;
   /** The list standing open, its own surface; or the line alone, under a row of *What needs you* (§3.2). */
@@ -53,7 +53,7 @@ export function SignIn({
   onRetry?: () => void;
   onClose?: () => void;
   /**
-   * The way this sign-in's agent has beside the one running, and the press that switches to it (CODEXLOGIN1): the running
+   * The way this sign-in's agent has beside the one running, and the press that switches to it: the running
    * one is stopped and the other starts in this panel. Absent where the agent has one way.
    */
   other?: SignInWay | null;
@@ -67,7 +67,7 @@ export function SignIn({
   const [copied, setCopied] = useState<'link' | 'code' | null>(null);
 
   // The driver's phases and the tool's own lines, apart: a phase line is never the tool's words. The steps read the latest
-  // run's lines, those after its own start, since a panel that stayed up through *Try again* or a switch of ways (CODEXLOGIN1)
+  // run's lines, those after its own start, since a panel that stayed up through *Try again* or a switch of ways
   // holds both runs, and the first run's link is not the second's; the disclosure keeps them all.
   const phases: SignInPhase[] = [];
   const texts: string[] = [];

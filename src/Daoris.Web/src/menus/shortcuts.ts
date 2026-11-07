@@ -7,12 +7,12 @@ export type Pressed = Pick<KeyboardEvent, 'key' | 'code' | 'ctrlKey' | 'shiftKey
 const PLACE: Record<string, string> = { '`': 'Backquote', ',': 'Comma' };
 
 /**
- * Whether a press is the key a menu prints (UX7a, D152 §3.4): every modifier it names held and no other, Ctrl standing
+ * Whether a press is the key a menu prints: every modifier it names held and no other, Ctrl standing
  * for ⌘ too, and the key by what it says or by its place, since under Shift and Alt what `key` says differs by layout
- * (Quick Ask's L, DOCK1d) and Shift turns ` into ~ and 1 into !.
+ * (Quick Ask's L) and Shift turns ` into ~ and 1 into !.
  *
  * @remarks
- * **The plus is the one key printed after a `+`** (`Ctrl++`, zoom in's second key, ZOOM1), and it is read by what it says
+ * **The plus is the one key printed after a `+`** (`Ctrl++`, zoom in's second key), and it is read by what it says
  * whether Shift is held or not: a US board types it as Shift+=, another layout and the numpad without Shift.
  */
 export function isPress(event: Pressed, combo: string): boolean {
@@ -33,10 +33,10 @@ export function isPress(event: Pressed, combo: string): boolean {
 /**
  * The frame's key for a press wherever the focus is — a field, a message box, the terminal — or null: the id of the
  * table's command whose key it is and that is the frame's everywhere (the places, Settings, the regions, the terminal,
- * the console, Ask Daoris and Quick Ask, D152 §3.4).
+ * the console, Ask Daoris and Quick Ask).
  *
  * @remarks
- * Read by the terminal's renderer (CONSOLE4b), which leaves these to the frame as VS Code's terminal leaves its commands
+ * Read by the terminal's renderer, which leaves these to the frame as VS Code's terminal leaves its commands
  * to the workbench: a renderer that took them would send the shell a ^B and the view's list would never close. And by
  * the detached and monitor windows, which answer one each.
  */
@@ -52,8 +52,8 @@ export function frameShortcut(event: Pressed): string | null {
 }
 
 /**
- * The command a press runs, from the table as this window reads it, or null to leave the press where it was going
- * (D152 §3.4). A field keeps what a field means, the terminal that and a shell's next line, and a command that does not
+ * The command a press runs, from the table as this window reads it, or null to leave the press where it is going.
+ * A field keeps what a field means, the terminal that and a shell's next line, and a command that does not
  * apply takes no key, so Ctrl+B on a view with no list, or Ctrl+F with no box to find in, does what it did before.
  */
 export function commandForKey(

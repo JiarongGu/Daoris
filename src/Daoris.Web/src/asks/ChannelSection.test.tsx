@@ -5,7 +5,7 @@ import i18n from '../locales/i18n';
 import type { Channel, ChannelItem } from '../work/channel';
 import { ChannelPanel, ChannelSection } from './ChannelSection';
 
-// An ask's Channel and a session's panel of it (SESSONE2c, D167 points 6 to 8; the co-working design §2.4): messages and Daoris's
+// An ask's Channel and a session's panel of it: messages and Daoris's
 // coded lines in the reader's language, an open question marked, the person's composer with To and Reply to, the unread count
 // and the mark. Props only, like every molecule here: every state is reached by passing a channel.
 
@@ -56,7 +56,7 @@ describe('an ask’s channel', () => {
     expect(within(row('Read the figure published to db')).getByText('Daoris')).toBeInTheDocument();
   });
 
-  /** SESSONE2i: a message a teammate's person wrote, from their machine, names them and never says You; the person's own still does. */
+  /** A message a teammate's person wrote, from their machine, names them and never says You; the person's own still does. */
   it('names a teammate’s person by their machine, never as You', async () => {
     const theirs: ChannelItem = { kind: 'message', id: 'bob/t1', at: '2026-10-14T09:09:00Z', person: true, origin: 'bob-laptop', text: 'Keep the old column.' };
     render(<ChannelSection channel={CHANNEL({ items: [...ITEMS, theirs] })} onPost={() => {}} onRead={() => {}} />);
@@ -244,7 +244,7 @@ describe('what is unread', () => {
     expect(screen.getByText('3 unread')).toBeInTheDocument();
     expect(within(row('Noted.')).getByText('new')).toBeInTheDocument();
     expect(within(row('The v3 one.')).queryByText('new')).toBeNull();
-    // BADGEUX1: news waits on nobody, so its count wears a neutral ink, never open's, the person's waits' alone.
+    // News waits on nobody, so its count wears a neutral ink, never open's, the person's waits' alone.
     expect(screen.getByText('3 unread').className).not.toMatch(/st-open|ink-open/);
   });
 
@@ -322,7 +322,7 @@ describe('a session’s panel', () => {
     expect(onOpenAsk).toHaveBeenCalledOnce();
   });
 
-  /** COWORKVIEW1c: the at-work view's *All messages* asks the panel open by a number, and a number seen is not opened again. */
+  /** The at-work view's *All messages* asks the panel open by a number, and a number seen is not opened again. */
   it('opens when asked open from elsewhere, once for each new number', async () => {
     const { rerender } = render(<ChannelPanel channel={CHANNEL()} only={ONLY} onPost={() => {}} opened={0} />);
     const toggle = screen.getByRole('button', { name: /Channel/ });
@@ -339,8 +339,8 @@ describe('a session’s panel', () => {
   });
 });
 
-// COWORK1d (D188; the message-urgency design §7, §8.4): each message names its level where it is urgent, says what it reached in each
-// repository it addresses, never more than was observed, and offers *Send to its session* where it waits or never reached one.
+// Each message names its level where it is urgent, says what it reached in each
+// repository it addresses, never more than is observed, and offers *Send to its session* where it waits or never reached one.
 describe('what a message reached', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
@@ -406,7 +406,7 @@ describe('what a message reached', () => {
   });
 });
 
-// COMMS1k (the comms design §4.4, §7): the messages to one part each, kept apart from the channel and read-only, with their receipts.
+// The messages to one part each, kept apart from the channel and read-only, with their receipts.
 describe('an ask’s messages to one part alone', () => {
   afterEach(async () => {
     await i18n.changeLanguage('en');

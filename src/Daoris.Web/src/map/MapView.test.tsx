@@ -9,7 +9,7 @@ import { buildTopology } from './topology';
 import { WorkspaceScopeProvider } from '../data/scope';
 import { columnsFollow } from '../test/mainSplit';
 
-// MAP2 (D67 §3): the workspace map, over a stubbed service — a view of its own, the owner's choice.
+// The workspace map, over a stubbed service — a view of its own, the owner's choice.
 
 let REGISTRY: unknown[] = [];
 const QUESTS = [
@@ -24,7 +24,7 @@ const SESSIONS = [
   { id: 's1', repository: 'engine', door: 'stub', state: 'working', created: '', updated: '' },
 ];
 
-// MAP3a: what `/api/code-map/{repository}` answers — the engine keeps a map, the game keeps none.
+// What `/api/code-map/{repository}` answers — the engine keeps a map, the game keeps none.
 let CODE_MAPS: Record<string, unknown> = {};
 
 function respond(url: string): Response {
@@ -85,13 +85,13 @@ describe('the workspace map', () => {
     expect(screen.getByRole('button', { name: 'game, 1 open' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '2 quests from game to engine' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'engine and game learned the same thing once' })).toBeTruthy();
-    // The ask is not a repository: it is drawn from the asks, the person's (MAP4b), and not counted off the map.
+    // The ask is not a repository: it is drawn from the asks, the person's, and not counted off the map.
     expect(screen.getByRole('button', { name: '1 quest your asks became on game' })).toBeTruthy();
     expect(screen.getByRole('img', { name: '1 ask' })).toBeTruthy();
     expect(screen.queryByText(/somewhere off this map/)).toBeNull();
-    // The key says each line's meaning in words, not by hue alone (D41).
+    // The key says each line's meaning in words, not by hue alone.
     expect(screen.getByText(/dashed line: the same thing learned in both/)).toBeTruthy();
-    // 🔴 Seen on the window (POLISH4): the number inside a repository was in no key.
+    // 🔴 Seen on the window: the number inside a repository must be in the key.
     expect(screen.getByText('the number in a repository: quests to it still open')).toBeTruthy();
   });
 
@@ -102,8 +102,8 @@ describe('the workspace map', () => {
       expect(await screen.findByRole('button', { name: 'engine, 1 open, a session waiting on you' })).toBeTruthy();
       const word = screen.getByText('waiting on you');
       expect(screen.queryByText('working')).toBeNull();
-      // UX5 U1: the hue the rail's dot and the band's card give the same fact, not the notice tone; the word in that
-      // hue's ink and the ring in the hue itself (UXFIX5c).
+      // The hue the rail's dot and the band's card give the same fact, not the notice tone; the word in that
+      // hue's ink and the ring in the hue itself.
       expect(word.getAttribute('class')).toContain('text-ink-open');
       expect(word.closest('button')!.querySelector('[data-session]')!.getAttribute('class')).toContain('border-st-open');
     } finally {
@@ -125,14 +125,14 @@ describe('the workspace map', () => {
   });
 
   /**
-   * UX5 U45: the detail's marks are the canvas's, in the status hues the rail gives the same facts —
-   * never the accent, which is not a status (§3). They were accent chips beside the canvas's amber.
+   * The detail's marks are the canvas's, in the status hues the rail gives the same facts —
+   * never the accent, which is not a status.
    */
   it('says a session there in the hue the canvas and the rail give it', async () => {
     show();
     await userEvent.click(await screen.findByRole('button', { name: /^engine, 1 open/ }));
     const detail = screen.getByText('quests to it').closest('div')!.parentElement!;
-    // The pill's line in the hue, its word in that hue's ink (UXFIX5c).
+    // The pill's line in the hue, its word in that hue's ink.
     expect(within(detail).getByText('working').getAttribute('class')).toContain('border-st-taken');
     expect(within(detail).getByText('working').getAttribute('class')).toContain('text-ink-taken');
 
@@ -152,8 +152,8 @@ describe('the workspace map', () => {
   });
 
   /**
-   * UX5 U46: a quest named in the detail is a door to its drawer, where acting on it lives (design
-   * §1). It was text, so a person read a quest here and had to find it again on Quests (U26's rule).
+   * A quest named in the detail is a door to its drawer, where acting on it lives. As text, a
+   * person would read a quest here and have to find it again on Quests.
    */
   it('opens a quest named in the detail in its drawer', async () => {
     const open = vi.fn();
@@ -178,7 +178,7 @@ describe('the workspace map', () => {
     expect(screen.getByText('done')).toBeTruthy();
   });
 
-  // ——— MAP4b: asks and chains, each its own kind of line, and a person chooses which are drawn.
+  // ——— Asks and chains, each its own kind of line, and a person chooses which are drawn.
 
   const lines = async () => {
     const button = await screen.findByRole('button', { name: /^Connections: / });
@@ -306,7 +306,7 @@ describe('the workspace map', () => {
   });
 
   /**
-   * UX5 U47: a choice is a toggle, as its `aria-pressed` says — a second press releases it, and so
+   * A choice is a toggle, as its `aria-pressed` says — a second press releases it, and so
    * does Escape — and the detail goes back to saying what a choice would show.
    */
   it('releases a choice on a second press, and on Escape', async () => {
@@ -341,8 +341,8 @@ describe('the workspace map', () => {
   });
 
   /**
-   * U47: a chosen line stands forward and the others step back. It was told apart only by two more
-   * units on a stroke already four and a half wide.
+   * A chosen line stands forward and the others step back. Two more
+   * units on a stroke already four and a half wide would not tell it apart.
    */
   it('steps back every other line while one is chosen', async () => {
     show();
@@ -356,8 +356,8 @@ describe('the workspace map', () => {
   });
 
   /**
-   * UX5 U44: the drawing is framed on what it draws and drawn one unit a pixel, centred. It was a
-   * fixed 600-unit square: a blank lower third, the card's left edge, and names scaled with it.
+   * The drawing is framed on what it draws and drawn one unit a pixel, centred. A
+   * fixed 600-unit square leaves a blank lower third, the card's left edge, and names scaled with it.
    */
   it('is drawn at its own size, framed on what it draws', async () => {
     show();
@@ -370,8 +370,8 @@ describe('the workspace map', () => {
   });
 
   /**
-   * D118 §3b (audit MA3): the detail sat beside the canvas from the viewport's 1024 px, so at 1280 px with
-   * the side bar open the canvas kept a 20rem column beside it in a main area of about 650 px. The detail
+   * A detail beside the canvas from the viewport's 1024 px would, at 1280 px with
+   * the side bar open, keep a 20rem column beside the canvas in a main area of about 650 px. The detail
    * goes beside the canvas by the main area's own width, and under it in a narrow one.
    */
   it('lays its detail beside the canvas by the main area\'s own width, never the viewport\'s', async () => {
@@ -383,8 +383,8 @@ describe('the workspace map', () => {
   });
 
   /**
-   * UX5 U49: scoped to every workspace, the map says so, as its empty state already did, and a
-   * repository's detail names its circle. It said "this workspace" over every circle's repositories.
+   * Scoped to every workspace, the map says so, as its empty state does, and a
+   * repository's detail names its circle. It must not say "this workspace" over every circle's repositories.
    */
   it('says it spans every workspace, and names a repository’s own', async () => {
     REGISTRY = [
@@ -431,7 +431,7 @@ describe('the workspace map', () => {
     expect(screen.getByText('Choose a repository or a line to see what it carries.')).toBeTruthy();
   });
 
-  // FABRIC-CLOSE1d2: a line's quests read as the quest's page does; a quest no closure holds reads as before.
+  // A line's quests read as the quest's page does; a quest no closure holds reads by its own status.
   it('says submitted and source reopened on a line\'s quests, and taken for a quest no closure holds', () => {
     const base = { from: 'game', to: 'engine', body: '', status: 'Taken', filed: '', updated: '' };
     const quests = [
@@ -450,7 +450,7 @@ describe('the workspace map', () => {
     expect(rows[2]).toHaveTextContent(/^takenPlain one/);
   });
 
-  // ——— One level in: a repository's own code map (MAP3a).
+  // ——— One level in: a repository's own code map.
 
   const openCode = async (repository: 'engine' | 'game') => {
     await userEvent.click(await screen.findByRole('button', { name: new RegExp(`^${repository}, 1 open`) }));
@@ -480,7 +480,7 @@ describe('the workspace map', () => {
     expect(await screen.findByRole('heading', { name: 'Map' })).toBeTruthy();
   });
 
-  // UX6h3d: the way back returns the focus to the press that opened the code map.
+  // The way back returns the focus to the press that opened the code map.
   it('goes back to the workspace with the focus on the Open code map button', async () => {
     CODE_MAPS = {
       engine: { repository: 'engine', file: 'docs/code-map.json', problem: null, modules: [], dependencies: [] },
@@ -491,7 +491,7 @@ describe('the workspace map', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Open code map' })).toHaveFocus());
   });
 
-  // MAPUX1c: the way back chooses and reveals the repository, whichever door opened its code map.
+  // The way back chooses and reveals the repository, whichever door opened its code map.
   it('goes back from the detail\'s door with the repository chosen and its line said', async () => {
     CODE_MAPS = { engine: { repository: 'engine', file: 'docs/code-map.json', problem: null, modules: [], dependencies: [] } };
     show();
@@ -511,7 +511,7 @@ describe('the workspace map', () => {
     await waitFor(() => expect(card).toHaveFocus());
   });
 
-  // MAPUX1b: the choice's line is the one live region; the detail has a door to the repository's page.
+  // The choice's line is the one live region; the detail has a door to the repository's page.
   it('says the choice in one polite line, the hint when nothing is chosen', async () => {
     show();
     await screen.findByRole('button', { name: /^engine, 1 open/ });
@@ -536,7 +536,7 @@ describe('the workspace map', () => {
     expect(onOpenRepository).toHaveBeenCalledWith('engine');
   });
 
-  /** D118 §3b: one level in, the module's detail goes beside the code map by the main area's width too. */
+  /** One level in, the module's detail goes beside the code map by the main area's width too. */
   it('lays a code map\'s detail beside it by the main area\'s own width', async () => {
     CODE_MAPS = {
       engine: {
@@ -563,7 +563,7 @@ describe('the workspace map', () => {
     expect(screen.getByText(/docs\/code-map\.json/)).toBeTruthy();
   });
 
-  /** MAP3e: a teammate's commit that keeps no map says so by that commit, not with the advice for a checkout here. */
+  /** A teammate's commit that keeps no map says so by that commit, not with the advice for a checkout here. */
   it('says a teammate\'s held commit keeps no code map', async () => {
     CODE_MAPS = {
       game: {

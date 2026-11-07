@@ -9,12 +9,12 @@ import type { ListPanes } from '../work/frame/listPanes';
 import type { ViewLayout } from '../work/frame/ViewFrame';
 
 /**
- * Knowledge's mode as the application holds it (UX6i, D150 §2.2): the one it was left in, remembered for the place, and
+ * Knowledge's mode as the application holds it: the one it is left in, remembered for the place, and
  * a change of it.
  *
  * @remarks
- * **A switch is a door that names no item** (UX6b, D150 §1 rule 6): the other mode's remembered choice is read again
- * before it is shown, so a finding that went while Search was in front opens nothing chosen, never its gone state. The
+ * **A switch is a door that names no item**: the other mode's remembered choice is read again
+ * before it is shown, so a finding that went while Search is in front opens nothing chosen, never its gone state. The
  * mode in front, chosen again, reads nothing, as a press on the place you are on reopens nothing.
  */
 export function useKnowledgeMode(lists: ListPanes): [KnowledgeMode, (mode: KnowledgeMode) => void] {
@@ -31,18 +31,18 @@ export function useKnowledgeMode(lists: ListPanes): [KnowledgeMode, (mode: Knowl
 }
 
 /**
- * **The Knowledge place** (UX6i, D150 §2.2): Search and Convergence, two views of one index, as one place whose list's
- * head switches between them. What it hands the frame (D118 §5) is the mode's own list and main area, on Knowledge's pane.
+ * **The Knowledge place**: Search and Convergence, two views of one index, as one place whose list's
+ * head switches between them. What it hands the frame is the mode's own list and main area, on Knowledge's pane.
  *
  * @remarks
- * **Each mode keeps today's list, main area, filters and memory** (D118 §3f, FRAME1f): the mode's view hands its list
+ * **Each mode keeps today's list, main area, filters and memory**: the mode's view hands its list
  * whole, its rows, its labels (the result list, the finding list), its chosen item and how that item stands, and the
  * place puts it on its pane, named *Knowledge*, under the two-way choice (`KnowledgeModes`), with the choice's marks on its
  * strip. The chosen item and the filters stay the mode's list's (`chosenIn`, `daoris.list.search.*` and
  * `daoris.list.convergence.*`), so nothing remembered before the two were one place is lost; the pane's closing and width
  * are the place's (`daoris.list.knowledge.*`).
  *
- * **Both modes are held on every view**, as each was: what was typed in Search lasts while Convergence is in front, and
+ * **Both modes are held on every view**, as each is: what is typed in Search lasts while Convergence is in front, and
  * neither asks the service anything until it is in front. An empty search's way to Convergence is the other mode.
  */
 export function useKnowledgeView({ active, mode, onMode, lists, notify, semantic, handed, onHanded }: {
@@ -54,9 +54,9 @@ export function useKnowledgeView({ active, mode, onMode, lists, notify, semantic
   /** The application's list memory: each mode's chosen item and filters are its own list's. */
   lists: ListPanes;
   notify: Notify;
-  /** Whether this deployment matches meaning too (D24): each mode words its answers by it. */
+  /** Whether this deployment matches meaning too: each mode words its answers by it. */
   semantic: boolean;
-  /** Words another door asked Search for (CTX1), once per `id`. */
+  /** Words another door asked Search for, once per `id`. */
   handed?: { text: string; id: number } | null;
   onHanded?: () => void;
 }): ViewLayout {

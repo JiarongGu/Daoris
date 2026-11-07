@@ -4,7 +4,7 @@ import type { Box } from '../../design/canvas/viewMath';
 import { layerModules } from './codeLayout';
 import { createRouter } from './codeRoute';
 
-// The code map as a positioned world (CANVAS1f; D224; the canvas design §3.4). Pure. Folders come from each module's path and are drawn as
+// The code map as a positioned world. Pure. Folders come from each module's path and are drawn as
 // nested boxes packed by name; the modules of a folder are laid by `layerModules`; a cycle is condensed to one card and whole when
 // opened. A folder is no evidence of an import: the only lines are the supplied dependencies, each kind as written, and those between
 // closed groups are aggregated by pair and direction and counted until one opens. Each line is routed around the cards (`codeRoute`).

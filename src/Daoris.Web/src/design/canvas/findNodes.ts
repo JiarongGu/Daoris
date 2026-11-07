@@ -1,11 +1,11 @@
-// Find on a large canvas (CANVAS1d; the canvas design §4): every item is searched, folded or culled, by its title; the matches keep the
-// scene's order, and stepping wraps. An item may also be found by what it declares (MAPUX1d): each such text carries the words that say
+// Find on a large canvas: every item is searched, folded or culled, by its title; the matches keep the
+// scene's order, and stepping wraps. An item may also be found by what it declares: each such text carries the words that say
 // so in the result.
 
 /** From this many nodes the toolbar offers find. */
 export const FIND_FROM = 40;
 
-/** What an item is found by besides its title, and how a result says it was. */
+/** What an item is found by besides its title, and how a result says so. */
 export type FoundBy = { text: string; said: string };
 export type Findable = { id: string; title: string; also?: readonly FoundBy[] };
 

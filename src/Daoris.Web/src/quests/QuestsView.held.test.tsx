@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// USE1: why the driver leaves a quest waiting, on its row of the list, with the bridge present — the hold is
+// Why the driver leaves a quest waiting, on its row of the list, with the bridge present — the hold is
 // this machine's driver's, so the row's resume exists only where one is attached.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
@@ -95,7 +95,7 @@ describe('a waiting quest says why on its row', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HOLD', {
       payload: { repository: 'engine', held: false },
     }));
-    // The press was the button's, beside the row's door: the quest's page did not open under it.
+    // The press is the button's, beside the row's door: the quest's page does not open under it.
     expect(within(questMain()).getByText('Choose a quest or an ask')).toBeInTheDocument();
     expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
   });

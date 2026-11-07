@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '../design/ui';
 
-/** The person's word on a staged build (UPDATE1, D139 §3), as `DAORIS.UPDATE` · `SET` takes it. */
+/** The person's word on a staged build, as `DAORIS.UPDATE` · `SET` takes it. */
 export type UpdateMode = 'when-idle' | 'now' | 'not-now';
 
-/** How a swap ended (D139 §6): installed, rolled back or refused, the build it was, and the check's or the roll-back's reason. */
+/** How a swap ended: installed, rolled back or refused, the build concerned, and the check's or the roll-back's reason. */
 export type UpdateOutcome = {
   phase: string; build?: string | null; version?: string | null; commit?: string | null; reason?: string | null; detail?: string | null;
 };
@@ -22,18 +22,18 @@ export type UpdateState = {
   /** How the last swap ended, said once at the start after it, until dismissed: what this banner shows. */
   outcome: UpdateOutcome | null;
   /**
-   * The last swap as the install's journal records it, told or not, on every state (UPDATE1d): what Settings' row says
-   * after a dismissal, as the terminal's plain `daoris update` says it (D50). Null with no journal, and while a swap
+   * The last swap as the install's journal records it, told or not, on every state: what Settings' row says
+   * after a dismissal, as the terminal's plain `daoris update` says it. Null with no journal, and while a swap
    * is under way. The banner reads `outcome`, never this.
    */
   last: UpdateOutcome | null;
-  /** When the drain began (DRAINHOLD1): what a held Confirm's card says it waits since. Null with no drain; absent where the answer has none. */
+  /** When the drain began: what a held Confirm's card says it waits since. Null with no drain; absent where the answer has none. */
   since?: string | null;
 };
 
 /**
  * The codes a refusal or a roll-back is said by; anything else keeps the driver's own sentence. `move` and `error` are
- * SWAP2's (D139's SWAP2 note): a move that failed other than by a hold, and the launcher's error with nothing under way.
+ * A move that failed other than by a hold, and the launcher's error with nothing under way.
  */
 const WHY = new Set([
   'manifest', 'schema', 'path', 'missing', 'size', 'hash', 'unlisted', 'required', 'host', 'launcher', 'busy', 'previous',
@@ -41,12 +41,12 @@ const WHY = new Set([
 ]);
 
 /**
- * The install's update, as a quiet strip under the app strip (UPDATE1, D139 §2, §3): a build staged and waiting, the drain
+ * The install's update, as a quiet strip under the app strip: a build staged and waiting, the drain
  * counting down what runs, the swap under way, a refusal, and — once, at the start after — how the last swap ended. Its
  * words are the banner's half of the two doors; `daoris update` is the terminal's.
  *
  * @remarks
- * A molecule: drawn from props, so every state is reachable without a shell (D52 as amended). Nothing when nothing is
+ * A molecule: drawn from props, so every state is reachable without a shell. Nothing when nothing is
  * staged and nothing is left to say. A version is named with its commit where the build carries one, since a build at
  * `0.0.x` keeps its version across many builds.
  */

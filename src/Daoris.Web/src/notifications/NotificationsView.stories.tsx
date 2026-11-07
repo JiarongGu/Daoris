@@ -5,9 +5,9 @@ import type { AskMessages, Notice } from '../bridge/notices';
 import type { Confirmation, PressNames } from '../person/Confirmations';
 import { NotificationsView } from './NotificationsView';
 
-// *Notifications* (NOTIFY2b, D196 point 3, the notification design §2): the presses waiting for confirmation first, each its whole
+// *Notifications*: the presses waiting for confirmation first, each its whole
 // card, then *What needs you* (here a stand-in for the band's rows, which `work/attention/attention.stories.tsx` draws whole); with
-// nothing in any, *Nothing needs you*. At the side bar's 300 px floor and at 45% of the install's window (R6), in English and 中文,
+// nothing in any, *Nothing needs you*. At the side bar's 300 px floor and at 45% of the install's window, in English and 中文,
 // light and dark.
 
 
@@ -70,7 +70,7 @@ export const WideChinese: Story = { decorators: [sideAt(696), chinese] };
 /** What needs you alone, no press waiting. */
 export const NoPress: Story = { args: { presses: [] } };
 
-/** *Done and failed* (NOTIFY2f): a session that failed and a press that ran out of time unread, a session that completed read. */
+/** *Done and failed*: a session that failed and a press that ran out of time unread, a session that completed read. */
 const NOTICES: Notice[] = [
   { id: 'expired-p1', kind: 'expired', at: new Date(Date.now() - 2 * 60_000).toISOString(), read: false, route: 'SESSION_INPUT' },
   {
@@ -90,7 +90,7 @@ export const DoneAndFailedWide: Story = { args: { notices: NOTICES }, decorators
 export const OnlyDoneAndFailed: Story = { args: { presses: [], needs: 0, notices: NOTICES } };
 
 /**
- * *Messages* (NOTIFY2g): an ask this machine holds with an agent's urgent line, a teammate's ask, and a conversation's answer, each
+ * *Messages*: an ask this machine holds with an agent's urgent line, a teammate's ask, and a conversation's answer, each
  * unread; an ask with nothing unread is not listed. What an agent wrote is shown as written, in English here in either language.
  */
 const MESSAGES: AskMessages[] = [

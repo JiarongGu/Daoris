@@ -6,8 +6,8 @@ import type { Quest } from '../data/api';
 import { DECLINED, DONE, OPEN, REOPENED, SEALED, SUBMITTED, TAKEN } from './fixtures';
 import { QuestStatus } from './QuestStatus';
 
-// A quest's closure states (FABRIC-CLOSE1d2) where a list or a line draws its status off its page: the chain, the map's detail,
-// an ask's work, a session's relations, Overview. On its own (STORYGAP1, the UI/UX design §1.2 item 6): *submitted* changes what
+// A quest's closure states where a list or a line draws its status off its page: the chain, the map's detail,
+// an ask's work, a session's relations, Overview. On its own: *submitted* changes what
 // a list reads as done, and *source reopened* stands beside it. Drawn as a line of an ask's work draws it, title then status,
 // against every status a quest no closure holds reads; at the main area's three widths, in 中文 and dark.
 
@@ -27,7 +27,7 @@ function Lines({ quests }: { quests: readonly Quest[] }) {
   );
 }
 
-/** In a closure graph: submitted and held for the person's yes, submitted and sealed, and a step whose source was reopened. */
+/** In a closure graph: submitted and held for the person's yes, submitted and sealed, and a step whose source is reopened. */
 const CLOSURE: readonly Quest[] = [SUBMITTED, SEALED, REOPENED];
 /** And as a quest no closure holds reads, beside them. */
 const EVERY: readonly Quest[] = [OPEN, TAKEN, ...CLOSURE, DONE, DECLINED];
@@ -48,7 +48,7 @@ export const Every: Story = {};
 /** *Submitted*, its pill keeping the status's tone, the hold beside it. */
 export const Submitted: Story = { args: { quests: [SUBMITTED, SEALED] } };
 
-/** *Source reopened* beside a step whose source was reopened: keyed on the hold, not the status. */
+/** *Source reopened* beside a step whose source is reopened: keyed on the hold, not the status. */
 export const SourceReopened: Story = { args: { quests: [REOPENED, { ...REOPENED, id: 'ro1ro1', status: 'Open', title: 'A withdrawn step, open again' }] } };
 
 /** Half: a 680 px window with the list a strip beside it. */

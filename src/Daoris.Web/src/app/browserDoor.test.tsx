@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// BRW7, the way the application holds it: the whole window over a mocked shell, so the browser's door
+// The browser's door, the way the application holds it: the whole window over a mocked shell, so the browser's door
 // and where a link goes are what a person meets on the window.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
@@ -35,7 +35,7 @@ const QUEST = {
   status: 'Open', filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z', links: [TICKET],
 };
 
-/** A conversation in `engine`, running — the one the driver may say is driving the browser (BRW8). */
+/** A conversation in `engine`, running — the one the driver may say is driving the browser. */
 const CHAT = {
   id: 's1a2b3c4', quest: null, repository: 'engine', door: 'claude-code', kind: 'chat', state: 'working',
   created: '2026-09-30T00:00:00Z', updated: '2026-09-30T00:01:00Z', workspace: 'default',
@@ -52,7 +52,7 @@ function respond(url: string): Response {
   return Response.json([]);
 }
 
-/** A set-up step's set-up waiting for the person here, as the driver's state says it (REVIEWENV1d). */
+/** A set-up step's set-up waiting for the person here, as the driver's state says it. */
 const IN_REVIEW = {
   quest: 'q2', title: 'Show #q1 in `local` for review', environment: 'local', look: 'http://localhost:4200/reports',
   shows: 'the new column, turned on', served: false,
@@ -95,7 +95,7 @@ function start() {
 
 const opened = () => invoke.mock.calls.filter(([module, type]) => module === 'DAORIS.WINDOWS' && type === 'OPEN_BROWSER');
 
-/** Open the quest's page from Overview's band — in Quests' main area since FRAME1d — and the ticket link on it. */
+/** Open the quest's page from Overview's band — in Quests' main area — and the ticket link on it. */
 async function ticketLink() {
   // The band's row and the outstanding row both open it.
   await userEvent.click((await screen.findAllByRole('button', { name: /Expose a streaming budget/ }))[0]!);
@@ -113,7 +113,7 @@ describe("Daoris's browser, from the window", () => {
 
   /**
    * The door is on the strip, among its acts, beside the region toggles — not a place on the activity
-   * bar, where every item is a view of this window (D66).
+   * bar, where every item is a view of this window.
    */
   it('has a door on the strip, and none on the activity bar, that opens the browser', async () => {
     machine(undefined);
@@ -145,7 +145,7 @@ describe("Daoris's browser, from the window", () => {
   });
 
   /**
-   * BRW8: the strip says whose hands are on the browser beside its door — the session the driver says
+   * The strip says whose hands are on the browser beside its door — the session the driver says
    * it handed the browser, by the name the rail gives it — and pressing it opens that session.
    */
   it('names the session driving the browser beside its door, and opens it on a press', async () => {
@@ -175,7 +175,7 @@ describe("Daoris's browser, from the window", () => {
   });
 
   /**
-   * REVIEWENV1d: a set-up waiting for the person's review is said on the strip beside the browser's door, never inside the
+   * A set-up waiting for the person's review is said on the strip beside the browser's door, never inside the
    * browser, with whether its tab is still served; *Show it again* asks the shell to serve it again.
    */
   it('says a set-up waits for review beside the door, and shows it again on a press', async () => {

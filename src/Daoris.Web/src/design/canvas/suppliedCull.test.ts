@@ -3,7 +3,7 @@ import { buildGrid } from './spatialGrid';
 import { cullSupplied, lineDrawn } from './suppliedCull';
 import type { Box } from './viewMath';
 
-// CANVAS1e (the canvas design §2.6, §4, trap 11): a supplied world's cards culled past 400 and drawn as dots below 4 px of `text-meta`,
+// A supplied world's cards culled past 400 and drawn as dots below 4 px of `text-meta`,
 // the focused, the selected and find's match always mounted.
 
 const field = (count: number): Map<string, Box> => {

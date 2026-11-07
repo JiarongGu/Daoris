@@ -9,7 +9,7 @@ import { CodeMapWorld } from './code/CodeMap';
 import { MapWorld } from './MapWorld';
 import type { MapNode, Topology } from './topology';
 
-// MAPUX1d (the map UX design §5): find reaches the level shown from 13 items on both levels, by a repository's name and then what it
+// Find reaches the level shown from 13 items on both levels, by a repository's name and then what it
 // says it owns and accepts, by a module's id and then its folder's path, saying so in the result; Enter while an input method composes
 // steps nothing, so a Chinese name can be typed in the field.
 

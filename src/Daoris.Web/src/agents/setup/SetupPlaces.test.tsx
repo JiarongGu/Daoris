@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// AGENTSPLACE1e (the Agents-place design §3): the Setup mode's tree of places and each place's head, read from PLACES, lit by its flag.
+// The Setup mode's tree of places and each place's head, read from PLACES, lit by its flag.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),

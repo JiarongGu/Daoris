@@ -6,7 +6,7 @@ import { FindingList, type FindingsAnswer } from './FindingList';
 import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';
 import { findingId } from './records';
 
-// Convergence's list (FRAME1f, D118 §2) on Knowledge's pane (UX6i, D150 §2.2), under the place's two-way choice, in every
+// Convergence's list on Knowledge's pane, under the place's two-way choice, in every
 // state the design names: the findings with one chosen, each kind of likeness, capped, the first comparison on its way, a
 // moved similarity on its way with the last findings held, nothing converging, at the floor, an error with no answer
 // ever, the semantic tier's note, a 中文 finding, the strip, and laid over the main area.
@@ -82,7 +82,7 @@ export const ComparingAgain: Story = { args: { threshold: 0.68, answer: answered
 /** Nothing converges: the empty state, whose act lowers the similarity by a tenth. */
 export const NothingConverges: Story = { args: { answer: answered({ findings: [] }), chosen: null } };
 
-/** At the floor: nothing lower is offered, and the empty state says it is the floor (UX5 U42). */
+/** At the floor: nothing lower is offered, and the empty state says it is the floor. */
 export const AtTheFloor: Story = { args: { threshold: 0.5, answer: answered({ findings: [], at: 0.5 }), chosen: null } };
 
 /** A comparison that failed with no answer ever: its sentence in place, never blank. */
@@ -96,7 +96,7 @@ export const Semantic: Story = { args: { semantic: true } };
 /** A finding with a 中文 entry: content, never translated. */
 export const ChineseFinding: Story = { args: { answer: answered({ findings: [CJK_FINDING, ...FINDINGS] }), chosen: findingId(CJK_FINDING) } };
 
-/** Closed by the person: its strip holds its controls alone (D118 §2). */
+/** Closed by the person: its strip holds its controls alone. */
 export const Strip: Story = { args: { layout: CLOSED } };
 
 /** A strip the window drew, opened: the list over the main area, beside its strip. */

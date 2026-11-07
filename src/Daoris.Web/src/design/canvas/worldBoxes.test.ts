@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { observeWorld, readWorld, scaleOf } from './worldBoxes';
 
-// CANVAS1a (D224; the canvas design §2.1, trap 1): every box the ink, the reveal and the anchor read is in world units, the rect less the
+// Every box the ink, the reveal and the anchor read is in world units, the rect less the
 // drawing's origin and divided by the scale the world is drawn at, to half a pixel; the same at every scale. jsdom lays nothing out, so
 // each element's rect is stood in for as a world drawn at `k` and moved by a translation would give it.
 

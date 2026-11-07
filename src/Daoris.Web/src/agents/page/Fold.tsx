@@ -4,7 +4,7 @@ import { Icon } from '../../design/ui';
 import type { AgentSection } from '../AgentPage';
 
 /**
- * A section folded to its line (D150 §1 rule 4): its name, the values it holds in a phrase, and a chevron that opens it,
+ * A section folded to its line: its name, the values it holds in a phrase, and a chevron that opens it,
  * since it opens and closes something. The section's id is what a door's part scrolls to.
  */
 export function Fold({ section, title, summary, open, onToggle, children }: {

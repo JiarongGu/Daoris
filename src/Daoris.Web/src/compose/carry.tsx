@@ -6,7 +6,7 @@ import { cn } from '../lib/cn';
 import { Button, Icon } from '../design/ui';
 
 /**
- * What a composer carries beside its words (D65 §2): the links as typed — read into addresses when
+ * What a composer carries beside its words: the links as typed — read into addresses when
  * it is sent — and the browser's own file handles, read whole only then.
  */
 export type Carry = { links: string; files: File[] };
@@ -18,7 +18,7 @@ export type LeftOff = 'tooMany' | 'tooLarge' | null;
 /**
  * The browser's file dialog, hidden, and the way to open it — each composer's own button opens it.
  * Cleared after every choice, so choosing a file again after removing it is still a change. Both
- * composers wrote this input out (REV3 CLEAN1).
+ * composers wrote this input out.
  */
 export function useFileChooser(onChoose: (files: File[]) => void, label: string) {
   const ref = useRef<HTMLInputElement>(null);
@@ -35,9 +35,9 @@ export function useFileChooser(onChoose: (files: File[]) => void, label: string)
 }
 
 /**
- * What a record carries, counted rather than listed (D65 §2): a card is a summary, and its record
+ * What a record carries, counted rather than listed: a card is a summary, and its record
  * holds the links and the files themselves. Nothing when it carries neither. The quest and ask
- * cards each wrote this (REV3 CLEAN1).
+ * cards each wrote this.
  */
 export function CarriedCount({ links, files }: { links: number; files: number }) {
   const { t } = useTranslation();
@@ -59,8 +59,8 @@ export const carriesFiles = (event: { dataTransfer: DataTransfer | null }) =>
   Array.from(event.dataTransfer?.types ?? []).includes('Files');
 
 /**
- * The drop, paste and chooser half of a composer — shared by the quest composer and the ask composer
- * (INT4c), so the two cannot drift on how a file arrives.
+ * The drop, paste and chooser half of a composer — shared by the quest composer and the ask composer,
+ * so the two cannot drift on how a file arrives.
  *
  * @remarks
  * `handlers` go on the FORM: the whole composer takes a drop and a paste, because aiming at a box
@@ -115,8 +115,8 @@ export function useCarry(carry: Carry, onChange: (next: Carry) => void, active: 
         setDragging(false);
         attach(Array.from(event.dataTransfer.files));
       },
-      // A screenshot on the clipboard is a file, not text: attached, and kept out of the field it was
-      // pasted into. A paste of text goes where it was pasted, as ever.
+      // A screenshot on the clipboard is a file, not text: attached, and kept out of the field it is
+      // pasted into. A paste of text goes where it is pasted.
       onPaste: (event: ClipboardEvent) => {
         const pasted = Array.from(event.clipboardData?.files ?? []);
         if (pasted.length === 0) return;

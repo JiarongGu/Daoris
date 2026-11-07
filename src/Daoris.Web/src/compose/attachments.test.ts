@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { admit, isImage, linksOf, MAX_FILES, MAX_FILE_BYTES, toUpload } from './attachments';
 
-// What the composer does with files and links BEFORE the service judges them (D65 §2). The service
+// What the composer does with files and links BEFORE the service judges them. The service
 // is the authority — these only keep the form from offering an ask it would refuse, and say why.
 
 const file = (name: string, size: number, text = 'x') => {

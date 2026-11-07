@@ -4,7 +4,7 @@ import { Inline } from './Card';
 import { WhyGlyph } from './Tip';
 
 /**
- * The label track's bounds (the UI/UX design R1; D185's UIFIT1 note has the shots that set them): the track is the
+ * The label track's bounds: the track is the
  * widest label of the card's rows, content-sized between `floor` and `cap`, and below `stack` of the card's own width
  * it goes, each value under its words. The classes below spell the same numbers; these are for the tests and the records.
  */
@@ -18,11 +18,11 @@ const TRACK_COLUMNS = 'grid-cols-[fit-content(min(22rem,50%))_minmax(0,1fr)]';
 const SettingListContext = createContext(false);
 
 /**
- * A card's rows on one label track (the UI/UX design R1, §4.2; UIFIT1). A layout wrapper, never a second row: it is the
+ * A card's rows on one label track. A layout wrapper, never a second row: it is the
  * one grid, each `SettingRow` in it a subgrid across its two columns, so the track is the widest of the card's labels
  * and every value starts at its edge, the values forming one column the eye runs down. Below 32rem of its own width the
- * track goes and each value sits under its words at the card's full width: WSR4's floor, moved from the row to the card,
- * because the track is the card's. What is not a row (a fold, a sentence under the rows) spans both columns.
+ * track goes and each value sits under its words at the card's full width: the floor belongs to the card, because the
+ * track is the card's. What is not a row (a fold, a sentence under the rows) spans both columns.
  *
  * jsdom lays nothing out, so `ui.test.tsx` holds the structure and `measured/settings.spec.ts` the geometry in a browser.
  */
@@ -51,7 +51,7 @@ export function SettingRow({ label, hint, why, control, children }: {
   const cells = (
     <>
       {/* 🔴 The label's cell keeps a floor, and the value gives way to it. With `minmax(0,1fr)` a path as the control
-          took its whole width first, and at 888 the label beside it was 24px wide, one character a line (UX5 U58).
+          took its whole width first, and at 888 the label beside it came out 24px wide, one character a line.
           A path breaks at its separators. */}
       <div data-setting-label="" className="min-w-[12rem]">
         <div className="flex items-center gap-1.5 text-body font-medium text-ink">
@@ -87,7 +87,7 @@ export function SettingRow({ label, hint, why, control, children }: {
     );
   }
   return (
-    // A row alone is its own container (WSR4): below 32rem the value goes under the label at the row's full width.
+    // A row alone is its own container: below 32rem the value goes under the label at the row's full width.
     // Beside a 155px label floor a 309px row left the control 130px, and a branch pattern showed eleven characters.
     <div data-setting-row="" className={cn('@container', rule)}>
       <div className={cn('grid items-start gap-x-6 gap-y-1.5 @max-[32rem]:grid-cols-1', TRACK_COLUMNS)}>
@@ -100,7 +100,7 @@ export function SettingRow({ label, hint, why, control, children }: {
 /* ---------------------------------------------------------------- forms */
 
 /**
- * What a field holds, and the column it takes for it (the UI/UX design R1, UIFIT1d): a number 4.5rem, a short name 8rem,
+ * What a field holds, and the column it takes for it: a number 4.5rem, a short name 8rem,
  * a name 16rem, a branch pattern 20rem, and an address, a command or a folder the rest of the form's width; `acts` the
  * row's own presses. A fixed one is a `minmax`, so it yields to its container rather than overflow it.
  */
@@ -127,13 +127,13 @@ const STACKS: Record<FormFloor, { grid: string; row: string; head: string; label
 const FormFloorContext = createContext<FormFloor>('32rem');
 
 /**
- * A form laid by its own width (the UI/UX design R1, §4.2; UIFIT1d): sized to its content up to the pane, never capped
+ * A form laid by its own width: sized to its content up to the pane, never capped
  * below it, and never laid out by the window's width. It is the one grid, its columns by what each field holds
  * (`FIELD_WIDTHS`), and each `FormRow` a subgrid of it, so a form of rows (the heavy gates) keeps its columns aligned
  * while its container holds them; below the form's floor, by a container query of its own, each row stacks, a `head`
  * row goes and each `FormField` asked to show its label only then does. The 40rem and 48rem caps the settings forms
  * wore, and the `md:` columns that read the window, are what this replaces: a form at 630 px of pane kept its three
- * columns because the window was 1546, and a capped form left half a wide pane empty.
+ * columns because the window measured 1546, and a capped form left half a wide pane empty.
  */
 export function FormGrid({ columns, floor = '32rem', className, children }: {
   columns: readonly FieldKind[]; floor?: FormFloor; className?: string; children: ReactNode;

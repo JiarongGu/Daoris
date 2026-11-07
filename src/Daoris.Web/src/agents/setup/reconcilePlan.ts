@@ -1,4 +1,4 @@
-// A repository's reconcile with the shared doctrine as the driver answers it (D230 point 2; `RECONCILE_PLAN` and `RECONCILE_APPLY`): the
+// A repository's reconcile with the shared doctrine as the driver answers it (`RECONCILE_PLAN` and `RECONCILE_APPLY`): the
 // shapes the place page's note draws and the reader that takes the answer defensively. The bridge leaves a null out.
 
 /** How the canon the doctrine tool carries stands to the one the checkout synced from. */

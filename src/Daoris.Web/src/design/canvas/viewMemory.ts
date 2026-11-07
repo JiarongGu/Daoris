@@ -1,11 +1,11 @@
 import type { Box, Point, View } from './viewMath';
 
-// The viewer's place in a graph (CANVAS1d; the canvas design §4, trap 18): kept for the maps under `daoris.canvas.<feature>.<key>`, in a
+// The viewer's place in a graph: kept for the maps under `daoris.canvas.<feature>.<key>`, in a
 // try/catch since it is a convenience, and claiming nothing about facts that changed. An unchanged graph gives its view back exactly; a
 // changed one keeps the anchor's screen place, else its nearest surviving group's, and says the selected item is gone.
 
 export type Remembered = {
-  /** What the graph was when this was kept: its ids, hashed. */
+  /** The graph's identity when this is kept: its ids, hashed. */
   identity: string;
   view: View;
   /** The node nearest the middle, its group and where on screen its top left stood. */

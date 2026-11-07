@@ -9,8 +9,8 @@ import {
 import { BUILT_IN, GIT, MIRROR, NODE, PWSH, PWSH_FILE_GONE } from './toolsFixtures';
 import type { Answered } from '../work/InlineConfirm';
 
-// TOOLS7 (D121 §4.1): one tool's card, git's switch said before it applies, and the resource locations, drawn from
-// props. ToolsDomain holds the bridge, and `daoris tool` is the terminal's door to the same file (D50).
+// One tool's card, git's switch said before it applies, and the resource locations, drawn from
+// props. ToolsDomain holds the bridge, and `daoris tool` is the terminal's door to the same file.
 
 const card = (tool: ToolShown, props: Partial<Parameters<typeof ToolCard>[0]> = {}) => {
   const handlers = {
@@ -122,7 +122,7 @@ describe('a tool\'s card', () => {
     expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
   });
 
-  /** UXFIX2b1: the version's delete is the shared inline ask: its sentence focused, pending, a refusal said inside. */
+  /** The version's delete is the shared inline ask: its sentence focused, pending, a refusal said inside. */
   it('asks with its sentence focused, waits saying so, says a refusal inside, and closes once it lands', async () => {
     let answer: Answered | undefined;
     card(NODE, { choice: { ...choiceOf(NODE), version: '20.18.0' }, onDelete: (_version, answered) => { answer = answered; } });

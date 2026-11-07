@@ -5,9 +5,9 @@ import { chinese } from '../design/storyLanguage';
 import { DECLINED, DONE, OPEN, TAKEN } from './fixtures';
 import { QuestFlow, QuestLifeFlow } from './QuestFlow';
 
-// A quest's statuses drawn as a flowchart (FLOWCHART1a1; the flowchart design §2.1, §4.4): the four statuses and the moves
+// A quest's statuses drawn as a flowchart: the four statuses and the moves
 // `QuestTransitions.Allows` allows, the one it stands at lit, at the frame's widths, 300 px the side bar's floor (the rail),
-// 400 and 544 top to bottom, 1200 left to right. With its moves (FLOWCHART1a2): the way it went drawn heavier, what happened
+// 400 and 544 top to bottom, 1200 left to right. With its moves: the way it went drawn heavier, what happened
 // inside each status listed in it, a conflict refused, a held Done in open's hue. The first decorator is the innermost, so a
 // theme's page wraps the frames.
 
@@ -60,12 +60,12 @@ export const TakenChineseDark: Story = { args: { quest: TAKEN }, decorators: [ch
 export const Submitted: Story = {
   args: { quest: { ...TAKEN, submission: { machine: 'm1', sequence: 3, at: TAKEN.updated } } }, decorators: light,
 };
-/** Done, its moves not read: nothing leaves a close, and whether it was taken first is not drawn. */
+/** Done, its moves not read: nothing leaves a close, and whether it had been taken first is not drawn. */
 export const Done: Story = { args: { quest: DONE }, decorators: light };
 /** Declined, the same. */
 export const Declined: Story = { args: { quest: DECLINED }, decorators: light };
 
-/** The way it went (FLOWCHART1a2): its path heavier, and inside Taken a wait, a conflict and its dismissal; a late done not applied. */
+/** The way it went: its path heavier, and inside Taken a wait, a conflict and its dismissal; a late done not applied. */
 export const Went: Story = { args: { quest: DONE, moves: WENT }, decorators: light };
 /** The same in 中文. */
 export const WentChinese: Story = { args: { quest: DONE, moves: WENT }, decorators: [chinese, atWidths(), inLight] };

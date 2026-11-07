@@ -9,8 +9,7 @@ import {
 } from './fixtures';
 import { QuestPage } from './QuestPage';
 
-// FABRIC-CLOSE1d and CLOSE1c3 (the fabric events design §E5; D173's CLOSE1a, CLOSE1c and WORKFLOW2d notes; D156): a closure
-// graph's quest reads *Submitted*, then the gate or hold it waits on, then done; the person reopens a sealed submission here,
+// A closure graph's quest reads *Submitted*, then the gate or hold it waits on, then done; the person reopens a sealed submission here,
 // and a step its source's reopen holds says so in its own words, with go on and abandon and never the yes.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -73,7 +72,7 @@ describe("a closure graph's quest on its page", () => {
   });
 });
 
-// FABRIC-CLOSE1d3 (after CLOSE1c4 and CLOSE1c8): a reopened source, taken with no submission, says the reopen with the person's
+// A reopened source, taken with no submission, says the reopen with the person's
 // words as they wrote them and the session told of it, and a submission names the session that said its ready.
 describe('a source the person reopened', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -177,7 +176,7 @@ describe('a step its source’s reopen holds', () => {
   });
 });
 
-// FABRIC-CLOSE1j2 (§E5; D173's CLOSE1j and CLOSE1j2 notes): a closure graph's end, which `WORK_STATE` answers on the quest's own unit
+// A closure graph's end, which `WORK_STATE` answers on the quest's own unit
 // (`quest:<id>`) and no milestone on the page carries, is said among the facts of that quest's page, in the milestone's words: closed by
 // you before its end, naming the nodes it stopped; or partially closed, naming the quest lost and why, its close node's stop offered in
 // the danger ink while What needs you holds its press.

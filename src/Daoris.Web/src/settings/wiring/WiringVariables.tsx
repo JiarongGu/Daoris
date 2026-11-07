@@ -56,9 +56,9 @@ function UnsetRow({ variable }: { variable: WiringVariable }) {
 }
 
 /**
- * Variables (the this-Daoris design §3.5): every variable Daoris reads, from the code's one list. A set one is a row: its
+ * Variables: every variable Daoris reads, from the code's one list. A set one is a row: its
  * value, where it came from, who reads it, and the account's where that differs; a key says *set* with its audit prefix and
- * never its value (§5). The ones not set fold under, each with what is used instead.
+ * never its value. The ones not set fold under, each with what is used instead.
  *
  * @remarks
  * A molecule: drawn from props. An adopted service's own variables are not this window's to know, so the row says so.

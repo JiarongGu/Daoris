@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import type { PushActs } from './NewRef';
 import { PushRef } from './PushRef';
 
-// Push a branch or a lightweight tag (GITAPP2g, n; D241 point 2): a press that says what moves on origin and sends nothing until it is
+// Push a branch or a lightweight tag: a press that says what moves on origin and sends nothing until it is
 // confirmed, carrying the commit the page showed; a tag's confirmation says the place's Dangerous value, which decides it at the door.
 
 const COMMIT = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678';

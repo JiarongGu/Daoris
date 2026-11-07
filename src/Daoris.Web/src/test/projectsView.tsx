@@ -10,7 +10,7 @@ import { useListPanes } from '../work/frame/listPanes';
 import { ViewFrame } from '../work/frame/ViewFrame';
 import { useDoor } from './door';
 
-// Repositories alone, as its suites hold it (FRAME1e): the view's list and its main area on a browser's frame, with
+// Repositories alone, as its suites hold it: the view's list and its main area on a browser's frame, with
 // the application's list memory, so what a test chooses is what a relaunch would remember. The doors' events are
 // props, held the way `App` holds them.
 
@@ -20,7 +20,7 @@ export function ProjectsView({
 }: {
   /** The workspace tab a door's plan opened (`placeOpening`), where it names one; else the Setup tab for a section, else the one remembered. */
   tab?: WorkspaceTab;
-  /** The application's door from a workspace's Workflow tab to a section of its Setup (SETUPUX1v). */
+  /** The application's door from a workspace's Workflow tab to a section of its Setup. */
   onOpenWorkspaceSetup?: (workspace: string, section: WorkspaceSection) => void;
   notify: Notify;
   onOpenCode?: (repository: string) => void;
@@ -33,21 +33,21 @@ export function ProjectsView({
   onAddOpened?: () => void;
   importRequested?: boolean;
   onImportOpened?: () => void;
-  /** The workspace a go's Add or Import opens filled with (ENTRY1d2b). */
+  /** The workspace a go's Add or Import opens filled with. */
   drawerWorkspace?: string | null;
   /** The item a door names as it opens the view (`useDoor`): a repository, or a workspace's item. */
   door?: string;
-  /** The section of a workspace's Setup the door asked to see open (UX6g). */
+  /** The section of a workspace's Setup the door asked to see open. */
   section?: WorkspaceSection | null;
-  /** A door into how a landed branch landed (FLOWCHART1c): its opening chose the repository (`door`) and Branches, as `App`'s does. */
+  /** A door into how a landed branch landed: its opening chose the repository (`door`) and Branches, as `App`'s does. */
   branchAsked?: { repository: string; branch: string } | null;
   onBranchOpened?: () => void;
-  /** A door into a repository's place in the Agents place, once its Setup mode is lit (AGENTSPLACE1f, 1h). */
+  /** A door into a repository's place in the Agents place, once its Setup mode is lit. */
   onOpenSetup?: (repository: string) => void;
 }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
-  // The page's tab, held as `App` holds it, so a relaunch reopens the tab a test chose (UX6f); a workspace's apart (UX6g).
+  // The page's tab, held as `App` holds it, so a relaunch reopens the tab a test chose; a workspace's apart.
   const [tab, setTab] = useState<ProjectTab>(() => (branchAsked ? 'branches' : readProjectTab()));
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(() => opensAt ?? (section ? 'details' : readWorkspaceTab()));
   useDoor(lists, 'projects', door);
@@ -83,7 +83,7 @@ export async function chooseRepository(name: string) {
   return repositoryMain();
 }
 
-/** A workspace's head in the list chosen (UX6g, D150 §4.1), and the page it opens, found by its title. */
+/** A workspace's head in the list chosen, and the page it opens, found by its title. */
 export async function chooseWorkspace(name: string) {
   const group = await within(repositoryList()).findByRole('region', { name });
   await userEvent.click(within(within(group).getByRole('heading', { level: 3 })).getAllByRole('button')[0]!);

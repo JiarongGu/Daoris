@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
 
 /**
- * The type steps `tokens.css` declares (D41 §3 as amended by D56).
+ * The type steps `tokens.css` declares.
  *
  * @remarks
  * 🔴 **tailwind-merge has to be told these are SIZES, or it treats them as colours and deletes
@@ -13,7 +13,7 @@ import { extendTailwindMerge } from 'tailwind-merge';
  * It is exactly the failure this project keeps finding: valid Tailwind, a perfectly rendering page,
  * one step off the intended scale, and nothing to notice. `tokens.test.ts` could not catch it —
  * the class is right there in the source, which is all a source scan can see. What it does hold is
- * that this list is the one `tokens.css` declares (FRAME1h), so a step added there reaches the merge.
+ * that this list is the one `tokens.css` declares, so a step added there reaches the merge.
  */
 export const TYPE_STEPS = ['meta', 'small', 'body', 'title', 'view', 'wordmark', 'value'] as const;
 

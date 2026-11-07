@@ -7,10 +7,10 @@ import type { UpdateMode, UpdateOutcome, UpdateState } from '../../update/Update
 /** The pill a drain's state wears: in progress in taken's hue, a refusal an outcome in declined's, a held word neutral. */
 const STATE_TONE: Record<string, string> = { draining: 'taken', applying: 'taken', waiting: 'neutral', refused: 'declined' };
 
-/** The pill a swap's ending wears: each an outcome (D41 §3), so installed is done's and the rest declined's. */
+/** The pill a swap's ending wears: each an outcome, so installed is done's and the rest declined's. */
 const OUTCOME_TONE: Record<string, string> = { installed: 'done', 'rolled-back': 'declined', refused: 'declined' };
 
-/** The words each state offers, the move first (D41 §4), as the banner offers them. */
+/** The words each state offers, the move first, as the banner offers them. */
 const WORDS: Record<string, readonly UpdateMode[]> = { waiting: ['when-idle', 'now'], draining: ['now', 'not-now'], refused: ['now'] };
 
 const WORD_KEY: Record<UpdateMode, string> = { 'when-idle': 'update.whenIdle', now: 'update.now', 'not-now': 'update.notNow' };
@@ -18,17 +18,17 @@ const WORD_KEY: Record<UpdateMode, string> = { 'when-idle': 'update.whenIdle', n
 const WORD_VARIANT = { 'when-idle': 'default', now: 'primary', 'not-now': 'ghost' } as const;
 
 /**
- * The install's update in Settings (UPDATE1b, D139 §3, §6): what is staged beside it, the drain and what it waits on, how
+ * The install's update in Settings: what is staged beside it, the drain and what it waits on, how
  * the last swap ended, and the screen's three words for it — the row that stands where the banner, the screen's other
  * door, is gone once dismissed. `daoris update` is the terminal's door to the same request.
  *
  * @remarks
- * A molecule: drawn from props, so every state is reachable without a shell (D52 as amended); the Driver domain holds
+ * A molecule: drawn from props, so every state is reachable without a shell; the Driver domain holds
  * the hooks. It says the banner's sentences where they are the same fact — a swap's ending and each check's reason — so
  * the two doors never word one thing twice. Nothing until the shell answers.
  *
- * The last swap is `last`, the journal's record told or not (UPDATE1d), never the banner's once-said `outcome`: it stands
- * after the banner's *Dismiss* and at every later start, as the terminal's plain `daoris update` says it (D50).
+ * The last swap is `last`, the journal's record told or not, never the banner's once-said `outcome`: it stands
+ * after the banner's *Dismiss* and at every later start, as the terminal's plain `daoris update` says it.
  */
 export function UpdateSection({ update, busy = false, onSay }: {
   update: UpdateState | undefined;
@@ -41,7 +41,7 @@ export function UpdateSection({ update, busy = false, onSay }: {
 
   const named = (version?: string | null, commit?: string | null) =>
     `${version ?? ''}${commit ? ` (${commit})` : ''}`.trim();
-  // A check's code the catalogue words; one it does not keeps the driver's own sentence (D139 §4).
+  // A check's code the catalogue words; one it does not keeps the driver's own sentence.
   const why = (code?: string | null, fallback?: string | null) =>
     (code && i18n.exists(`update.why.${code}`) ? t(`update.why.${code}`) : fallback ?? code ?? '');
 
@@ -114,7 +114,7 @@ export function UpdateSection({ update, busy = false, onSay }: {
   );
 }
 
-/** A state's word on its pill, then its sentence: status leads (D41 §4). */
+/** A state's word on its pill, then its sentence: status leads. */
 function Said({ pill, children }: { pill: { tone: string; word: string } | null; children: ReactNode }) {
   return (
     <p className="m-0 text-small text-ink-soft">

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyTheme, effectiveDark, readThemeChoice, setThemeChoice, subscribeTheme, THEME_KEY, themeChoice } from './theme';
 
-// The theme is the viewer's choice (D66): system, light or dark — per window-profile, like the
+// The theme is the viewer's choice: system, light or dark — per window-profile, like the
 // language and the scope, and applied as `data-theme` on <html>, which the tokens key their forced
 // blocks on. `system` is the absence of the attribute, so the OS's media query decides as it always has.
 
@@ -60,7 +60,7 @@ describe('the theme choice', () => {
   });
 
   /**
-   * WINDOW1: a detached session is another document on the same origin, and it read the choice once,
+   * A detached session is another document on the same origin, and it read the choice once,
    * at open — so the main window's change never reached it. The browser tells every OTHER document of
    * a storage write, and this is the half that hears it.
    */

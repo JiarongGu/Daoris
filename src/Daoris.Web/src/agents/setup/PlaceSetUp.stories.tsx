@@ -6,7 +6,7 @@ import { KEPT_ROW, planOf, SETUP_PRESETS } from './placeFixtures';
 import { askOf, deliveriesOf, freshDraft, type SetUpDraft } from './placePlan';
 import { PlaceSetUp } from './PlaceSetUp';
 
-// A place's Set up… (AGENTSPLACE1j, SETUPUX1j; the setup-UX design §2.2): how it lands (Keep, the deliveries by id, Not driven), adoption with
+// A place's Set up…: how it lands (Keep, the deliveries by id, Not driven), adoption with
 // what it builds, driving, the refusals under their parts with their doors, the plan's line and *Review the plan*, at the main area's 80, 39 and
 // 25 rem, in 中文 and in dark. The review is `PlaceReview.stories.tsx`.
 
@@ -64,7 +64,7 @@ export const RefusedWithDoorsChinese: Story = { ...RefusedWithDoors, decorators:
 export const RefusedWithDoorsChineseNarrow: Story = { ...RefusedWithDoors, decorators: [storyWidths.narrow, chinese] };
 export const RefusedWithDoorsDark: Story = { ...RefusedWithDoors, decorators: [dark] };
 
-/** Keep how it lands, suggested where the landing was chosen or a saved workflow is followed, saying what it follows. */
+/** Keep how it lands, suggested where the landing is chosen or a saved workflow is followed, saying what it follows. */
 export const Keep: Story = { args: { ...plannedFor(draftOf({ preset: 'keep', adoption: false })), plan: planOf(askOf(draftOf({ preset: 'keep', adoption: false })), { engine: KEPT_ROW }) } };
 export const KeepHalf: Story = { ...Keep, decorators: [storyWidths.half] };
 export const KeepNarrow: Story = { ...Keep, decorators: [storyWidths.narrow] };

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { LIST_ROW, useListKeys } from '../work/frame/listKeys';
 import { DomainList } from './DomainList';
 
-// FRAME1g (D118 §2, §5): Settings' domains as its list pane holds them. A molecule: the domains, their names
+// Settings' domains as its list pane holds them. A molecule: the domains, their names
 // and the one chosen arrive as props, and a choice goes out.
 
 const DOMAINS = [

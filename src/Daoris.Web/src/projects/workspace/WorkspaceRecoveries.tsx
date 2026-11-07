@@ -6,13 +6,13 @@ import { Button, Inline } from '../../design/ui';
 import { InlineConfirm } from '../../work/InlineConfirm';
 import { entryName, type MilestoneEntry, type RecoveryDropGroup, type RecoveryDropResult } from '../../work/head/milestone';
 
-/** The command the driver says deletes a recovery ref nothing holds (D102's CLEANUP1 note): no new verb. */
+/** The command the driver says deletes a recovery ref nothing holds: no new verb. */
 const DELETE = 'git update-ref -d';
 
 /** A recovery ref nothing of the person's holds: kept at any age, until they delete it. */
 const unheld = (entry: MilestoneEntry) => entry.kind === 'recovery-ref' && !entry.until && entry.detail.includes(DELETE);
 
-/** A folder's own name, never its path: the folder is the machine's (D47 §4). */
+/** A folder's own name, never its path: the folder is the machine's. */
 const folderName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
 /** What keeps it, in the reader's language where the page has the words, and the driver's own clause where it does not. */
@@ -58,7 +58,7 @@ function dropGroups(rows: readonly MilestoneEntry[]): RecoveryDropGroup[] {
 }
 
 /**
- * The delete of the ones nothing holds, asked once (RECOVERYDROP1, D102's CLEANUP1 note): it lists the refs and says plainly that
+ * The delete of the ones nothing holds, asked once: it lists the refs and says plainly that
  * their commits may then be lost from this machine, once git's garbage collection runs, and that a git remote may still have the
  * work. The driver deletes each only if it still names the commit shown and nothing of the person's holds it by then.
  */
@@ -102,7 +102,7 @@ function DropAsk({ groups, onDrop, onClose, onDone }: {
 }
 
 /**
- * **What is kept for recovery** (RECOVERYVIEW1, CLEANUP1): Daoris's own recoveries no unit of work names, on the workspace's
+ * **What is kept for recovery**: Daoris's own recoveries no unit of work names, on the workspace's
  * Branches: a folder set aside, kept until its date, and a recovery ref, kept by what holds its commit or, where nothing of the
  * person's does, until they delete it, with the command to do that, copyable. Nothing is drawn where there are none.
  *
@@ -116,8 +116,8 @@ export function WorkspaceRecoveries({ recoveries, repositories, onDrop }: {
   /** The workspace's repositories, by name: another's recoveries are not this page's. */
   repositories: readonly string[];
   /**
-   * The person's press to delete the refs nothing holds (RECOVERYDROP1): sent each repository's refs with the commits shown, it
-   * answers what went and what was kept. None, or an answer without the commit, offers the copyable commands alone.
+   * The person's press to delete the refs nothing holds: sent each repository's refs with the commits shown, it
+   * answers what went and what stays. None, or an answer without the commit, offers the copyable commands alone.
    */
   onDrop?: (groups: RecoveryDropGroup[]) => Promise<RecoveryDropResult>;
 }) {

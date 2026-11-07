@@ -3,7 +3,7 @@ import type { PluginShown } from './catalog';
 import { PluginMainNotice, PluginPage } from './PluginPage';
 import { InTheme, PNG_ICON, SVG_ICON } from './storyIcons';
 
-// A plugin's page (PLUGUI1b, D119 §3.2) in the main area, in every state the design names on today's answers: running,
+// A plugin's page in the main area, in every state the design names on today's answers: running,
 // off, refused, a landing plugin, an agents-only plugin, no source record, an update's plan and a refused one, a trial
 // passed and failed, Remove… asking; and the main area with no page: nothing chosen, gone, loading.
 
@@ -31,7 +31,7 @@ const meta: Meta<typeof PluginPage> = {
     onSwitch: nothing, onTry: nothing, onAskUpdate: nothing, onApplyUpdate: nothing, onCancelUpdate: nothing,
     onAskRemove: nothing, onRemove: nothing, onCancelRemove: nothing,
   },
-  // The main area's height and a width between the side bar's two states (D119 §3.6).
+  // The main area's height and a width between the side bar's two states.
   decorators: [(Story) => (
     <div className="flex h-[40rem] w-[46rem] max-w-full border border-line bg-page">
       <Story />
@@ -125,7 +125,7 @@ export const TrialFailed: Story = {
 /** *Remove…* pressed once: the sentence saying what the second press does, *Remove plugin* and *Never mind*. */
 export const RemoveAsking: Story = { args: { asking: true } };
 
-/** Its own icon leads the header (D140 §2), and *update available* sits beside its state: light, chosen. */
+/** Its own icon leads the header, and *update available* sits beside its state: light, chosen. */
 export const IconAndUpdateLight: Story = {
   args: { plugin: { ...RUNNING, icon: SVG_ICON, update: 'waits' } },
   decorators: [(Story) => <InTheme theme="light"><Story /></InTheme>],
@@ -141,7 +141,7 @@ export const IconAndUpdateDark: Story = {
 export const MonogramDark: Story = { decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>] };
 
 /**
- * A declared icon that does not draw (D140 §3.1): the monogram, and its Source says why in the reader's sentence. Never
+ * A declared icon that does not draw: the monogram, and its Source says why in the reader's sentence. Never
  * a refusal: the plugin is sound, and nothing leads the page.
  */
 export const IconNotDrawn: Story = {
@@ -162,7 +162,7 @@ export const NothingChosen: StoryObj<typeof PluginMainNotice> = {
   ),
 };
 
-/** Gone: the chosen plugin was removed at a terminal or by hand. */
+/** Gone: the chosen plugin is removed at a terminal or by hand. */
 export const Gone: StoryObj<typeof PluginMainNotice> = { render: () => <PluginMainNotice state="gone" /> };
 
 /** Loading: skeleton rows, never the empty state. */

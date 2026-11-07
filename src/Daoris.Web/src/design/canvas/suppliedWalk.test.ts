@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createWalk, type Stop } from './suppliedWalk';
 
-// CANVAS1e (the canvas design §2.4, §11, trap 15): the walk over a supplied world's cards and its lines. → from a card reaches its
+// The walk over a supplied world's cards and its lines. → from a card reaches its
 // first line out and then the card beyond, ← the line it came by, ↑ and ↓ cycle the lines at one end, and every line is reached.
 
 const box = (x: number, y: number) => ({ x, y, w: 100, h: 40 });

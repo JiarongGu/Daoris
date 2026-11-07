@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// UX6b (design §1 rule 6, §2.5; D150 §8), the way the application holds it: the whole window over a mocked shell. On the
+// A remembered choice, the way the application holds it: the whole window over a mocked shell. On the
 // owner's install Quests reopened yesterday's done quest, and Overview's side bar kept an ended session's whole note.
 // A view opened by its place reopens its chosen item only while it still waits; off Sessions the side bar follows only a
 // session that runs or waits on the person, and opens on Ask Daoris otherwise.

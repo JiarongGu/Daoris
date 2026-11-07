@@ -7,7 +7,7 @@ import type { SupervisorRulesRead } from '../../data/wiring';
 import i18n from '../../locales/i18n';
 import { SupervisorRulesFold } from './SupervisorRulesFold';
 
-// CONTEXTDRIVE1g (the context counters design §7.1): a place's supervisor rules edited on the page: each rule a row, each saying what it
+// A place's supervisor rules edited on the page: each rule a row, each saying what it
 // replaces, an inherited rule offered with *Set here instead…*, written whole at the revision read, the driver's refusal kept under Save.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);

@@ -10,7 +10,7 @@ import { COUNTS, ENGINE, GIT_BRANCHES_ENGINE, LINE, NEWBIE } from './fixtures';
 import { ProjectPage } from './ProjectPage';
 import { BranchesTab, HistoryTab } from './git/RepositoryGit';
 
-// CTX1 (D138, design §4): a repository's page on a right-click offers its header's acts, *Open code map* and *Manage*, as
+// A repository's page on a right-click offers its header's acts, *Open code map* and *Manage*, as
 // its buttons press them, then its name. A molecule, so each is reached by passing it.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -58,8 +58,8 @@ describe("a repository's page on a right-click", () => {
   });
 });
 
-// A repository's page is Details, and the tabs its holder hands bodies for. A browser gets Details alone, with no tab row
-// (D47 §4); its line is read-only, with a door to the Agents place's page where it is set (AGENTSPLACE1f).
+// A repository's page is Details, and the tabs its holder hands bodies for. A browser gets Details alone, with no tab row;
+// its line is read-only, with a door to the Agents place's page where it is set.
 describe("a repository's tabs", () => {
   it("shows its line read-only on Details, with a door that opens the place's page", async () => {
     const onOpenSetup = vi.fn();
@@ -80,8 +80,8 @@ describe("a repository's tabs", () => {
   });
 });
 
-// UX6h1 (D150 §4.2, §4.4): Git is inside Repositories, as a repository's Branches and History tabs after Details, a shell's
-// like Setup (D147 §6). Each tab's body is its holder's, which reads only while the tab shows.
+// Git is inside Repositories, as a repository's Branches and History tabs after Details, a shell's
+// like Setup. Each tab's body is its holder's, which reads only while the tab shows.
 describe("a repository's Branches and History tabs", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 

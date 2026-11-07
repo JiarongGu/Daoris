@@ -4,7 +4,7 @@ import { en, zh } from '../locales/index';
 import { attentionToast, noticeWords } from './noticeWords';
 
 /**
- * NOTIFY2d (D196, the notification design §3.3, §9): the words the page hands the shell's notifier, and the toast a focused window
+ * The words the page hands the shell's notifier, and the toast a focused window
  * says for the same attention, each in the reader's language.
  */
 describe('the notices\' words (NOTIFY2d)', () => {

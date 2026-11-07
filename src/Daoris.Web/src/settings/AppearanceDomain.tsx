@@ -6,7 +6,7 @@ import { languageName, pageLanguage } from '../locales/languages';
 
 /**
  * How this window looks and speaks — per viewer, remembered by this window's profile like the scope,
- * never machine wiring and never a file (D66). Both settings apply at once; nothing to save.
+ * never machine wiring and never a file. Both settings apply at once; nothing to save.
  */
 export function AppearanceDomain() {
   const { t, i18n } = useTranslation();
@@ -14,7 +14,7 @@ export function AppearanceDomain() {
   const language = pageLanguage(i18n.language);
 
   return (
-    // No title of its own: the main area's header names the domain (FRAME1g), and a card alone in it would
+    // No title of its own: the main area's header names the domain, and a card alone in it would
     // say it twice.
     <Card>
       <SettingList>

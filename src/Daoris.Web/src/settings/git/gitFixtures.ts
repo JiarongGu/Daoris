@@ -1,6 +1,6 @@
 import type { GitActs, GitIdentityShown, GitPageShown, GitTestAnswer } from './Git';
 
-// Settings → Git (GITAUTH1e) in the shape the shell's `TOOLS_LIST` answers as `identities`: the stories, the organisms' tests and the
+// Settings → Git in the shape the shell's `TOOLS_LIST` answers as `identities`: the stories, the organisms' tests and the
 // domain's tests draw the same machine. Neutral by convention: a host is an example's, a key a made-up one, and no path appears.
 
 const KEY = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleExampleExampleExampleExampleExample daoris-work';

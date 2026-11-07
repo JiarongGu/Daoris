@@ -11,8 +11,8 @@ type Step = { is: 'idle' } | { is: 'form' } | { is: 'confirm' } | { is: 'working
 export type RenamedRef = { act: string; name: string; to: string; partial: boolean };
 
 /**
- * **Rename a branch** (GITAPP2e, D204; the git-writes design §6): a press on one of *Yours*' rows that asks for the new name, says what will
- * happen and where the old tip stays, and sends nothing until it is confirmed. The press carries the commit the row showed, so the driver
+ * **Rename a branch**: a press on one of *Yours*' rows that asks for the new name, says what will
+ * happen and where the original tip stays, and sends nothing until it is confirmed. The press carries the commit the row showed, so the driver
  * refuses a branch that has moved. A refusal is said in the driver's own sentence with the name kept to change; a branch that moved is handed
  * to the list (`onRenamed`), whose notice outlives this row and holds *Finish* and *Undo* (`Renamed`).
  *

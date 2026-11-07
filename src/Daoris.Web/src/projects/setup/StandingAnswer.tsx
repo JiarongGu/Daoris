@@ -7,11 +7,11 @@ import { Button, SettingRow } from '../../design/ui';
 const STANDING_LIMIT = 2_000;
 
 /**
- * **A repository's standing answer on this machine** (KNOWUSE1b, D135 §3): what the person says holds for every session
+ * **A repository's standing answer on this machine**: what the person says holds for every session
  * there — which writes are allowed, where to test — in their own words, handed to each one beneath its quest. A row of the
- * repository's Setup (UX6f): its words verbatim with when they were set, or that there is none; *Edit* or *Add* opens the
- * words in place, and *Clear* takes them back. The same `standing` `daoris place standing` edits (D50), kept on this
- * machine and never written into the repository (D32), which its info glyph says.
+ * repository's Setup: its words verbatim with when they were set, or that there is none; *Edit* or *Add* opens the
+ * words in place, and *Clear* takes them back. The same `standing` `daoris place standing` edits, kept on this
+ * machine and never written into the repository, which its info glyph says.
  *
  * Props only, no hook from the query layer or the shell (components §2).
  */

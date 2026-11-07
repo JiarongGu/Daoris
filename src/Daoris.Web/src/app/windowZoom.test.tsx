@@ -10,7 +10,7 @@ import { useZoomKeys, useZoomWheel } from './windowZoom';
 // jsdom lays nothing out: the map is given a width past the canvas floor, so it stands in its viewport.
 vi.mock('../design/useWidth', async (original) => ({ ...(await original<typeof import('../design/useWidth')>()), useWidth: () => 900 }));
 
-// ZOOM1 (the UI/UX design §3.11): Ctrl+wheel and the keys step the window's zoom, the engine's own zoom never beside it, and a
+// Ctrl+wheel and the keys step the window's zoom, the engine's own zoom never beside it, and a
 // surface that zooms itself (the Map) keeps its own Ctrl+wheel.
 
 function Window({ wheel = true, keys = false, children }: { wheel?: boolean; keys?: boolean; children?: React.ReactNode }) {
@@ -80,7 +80,7 @@ describe("the window's zoom, by the wheel and the keys", () => {
     expect(zoomLevel()).toBe(110);
     key({ key: '0', code: 'Digit0' });
     expect(zoomLevel()).toBe(100);
-    // Any other key is left where it was going.
+    // Any other key is left to go where it is going.
     expect(key({ key: 'b', code: 'KeyB' })).toBe(true);
   });
 });

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// The Workflow tab in SHELL mode (WORKFLOW1b; D157 point 12, the workflow design §6.1): a repository's page and a
+// The Workflow tab in SHELL mode: a repository's page and a
 // workspace's ask this machine's driver for their Current over DAORIS.DRIVER's `WORKFLOW_CURRENT`, only while the tab
 // shows, and each door opens the Setup that sets a step. Over a mocked bridge, as the shell-attached half is held
 // (`docs/2026-09-19-frontend-architecture.md` §4).
@@ -64,7 +64,7 @@ describe('the Workflow tab', () => {
       return STATE;
     });
 
-  // AGENTSPLACE1h: a repository's Workflow is the Agents place's page (the Workflow section), so the tab is not drawn, its Current is not
+  // A repository's Workflow is the Agents place's page (the Workflow section), so the tab is not drawn, its Current is not
   // asked here, and a workspace's door to a repository's own workflow opens that place.
   describe('the place holds the Workflow', () => {
     it("draws no Workflow tab on a repository's page and asks no Current for it", async () => {
@@ -89,7 +89,7 @@ describe('the Workflow tab', () => {
       expect(asked('WORKFLOW_CURRENT').filter(([, , options]) => options?.payload?.repository === 'engine')).toEqual([]);
     });
 
-    // SETUPUX1v: the defaults a step of the workspace's Current names are the place's Workflow rows, so the door asks the application, not the tab.
+    // The defaults a step of the workspace's Current names are the place's Workflow rows, so the door asks the application, not the tab.
     it("opens the workspace's defaults at their new home from a step its rules set, and keeps the tab on Workflow", async () => {
       const onOpenWorkspaceSetup = vi.fn();
       answering(() => WORKSPACE);

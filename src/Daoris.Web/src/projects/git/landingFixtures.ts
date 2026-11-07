@@ -1,7 +1,7 @@
 import type { MilestoneEntry, MilestoneUnit } from '../../work/head/milestone';
 import type { TraceAnswer, TraceBranch } from '../../work/head/trace';
 
-// A landed branch's landing as the trace and the work's milestones answer it (FLOWCHART1c): the fixtures `landingLife.test.ts`, the
+// A landed branch's landing as the trace and the work's milestones answer it: the fixtures `landingLife.test.ts`, the
 // branch page's tests and its stories draw. Neutral names only: a repository `engine`, sessions `s2`..`s4`, a placeholder address.
 
 const at = (minute: number) => new Date(Date.UTC(2026, 9, 3, 10, minute)).toISOString();
@@ -71,7 +71,7 @@ export const WAITING_UNITS: MilestoneUnit[] = [{
   entries: [],
 }];
 
-/** A landing as a driver from before FLOWCHART1c answers it: no session, no advances and no units, so the drawing says none were read. */
+/** A landing as an older driver answers it: no session, no advances and no units, so the drawing says none are read. */
 export const OLDER_BRANCH: TraceBranch = {
   branch: 'review/q2-shader-cache', tip: '0e4b9c0000000000000000000000000000000000', at: at(10), line: 'main', plugin: 'github', pushed: false,
 };

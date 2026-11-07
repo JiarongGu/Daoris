@@ -13,7 +13,7 @@ import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';
 import type { KnowledgeMode } from './modes';
 import { type EntryReading, findingId } from './records';
 
-// The Knowledge place whole (UX6i, D150 §2.2): Search and Convergence as one place, its list pane under the two-way choice
+// The Knowledge place whole: Search and Convergence as one place, its list pane under the two-way choice
 // and the mode's page in the main area, as the window draws it, at whatever width the story is given: the design's
 // 1546 px with the list open, and 680 px, where the list is a strip whose marks are the two modes. The choice switches in
 // the story as it does on the window; each mode's fixtures are the stories' of its list and its page.

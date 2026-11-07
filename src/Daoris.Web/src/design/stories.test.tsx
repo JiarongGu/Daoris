@@ -6,7 +6,7 @@ import '../locales/i18n';
 import { rooted } from '../test/sources';
 
 /**
- * Every story, rendered — Storybook's states are the design review (D42 §5), and this makes each one
+ * Every story, rendered — Storybook's states are the design review, and this makes each one
  * a smoke test for free. It is a multiplier, not a second suite: a story that throws is caught by
  * the inner loop rather than by a reviewer opening Storybook, and a state nobody wrote a story for
  * is still a state nobody checks.
@@ -18,7 +18,7 @@ import { rooted } from '../test/sources';
  * (components plan §2), and a roster that stopped at the top level would have silently excluded
  * every one of them while still reporting a passing suite.
  *
- * And each render remembers no language (STORY2): a story's language is the story's, so a story that wrote the page's
+ * And each render remembers no language: a story's language is the story's, so a story that wrote the page's
  * `daoris.language` would bring the next story, and every later load in that browser profile, up in its language. The
  * key is cleared before each render, as a fresh profile has it, so a write of any language shows. The import half is
  * `storyLanguage.test.tsx`'s, since these modules are imported before any test runs.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { foldGroups, type GroupShape, groupFolds } from './groupFolds';
 
-// COMPANYVIEW1f (the company-view design §4, *Legible at size*): a drawing of places is drawn whole up to 24 nodes; past that each
+// A drawing of places is drawn whole up to 24 nodes; past that each
 // group of places (a workspace and its repositories) folds to one node, every edge across its boundary drawn to it, unless the person
 // opened it. Pure: the folds are a function of the nodes' groups, the edges and which folds were opened.
 

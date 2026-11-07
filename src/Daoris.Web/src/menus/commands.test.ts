@@ -3,7 +3,7 @@ import {
   COMMANDS, type CommandDoors, type CommandEntry, type CommandState, commandTable, MENUS, matching, paletteCommands, shortcutGroups,
 } from './commands';
 
-// The one table (UX7a, D152 §2): every verb named once, with its menu, its key, the surfaces that have it, when it
+// The one table: every verb named once, with its menu, its key, the surfaces that have it, when it
 // applies and what it runs. "What can I do right now" is a value, so every world is an argument rather than an
 // arrangement: a browser, a shell on Overview, a shell on Sessions with a session attended, a quest open on Quests.
 
@@ -58,13 +58,13 @@ describe('the menu bar (D152 §1)', () => {
 
   it('gives 33 of its items a key on a shell (the design §6.2)', () => {
     const onQuests = table({ view: 'quests', list: { shown: true } }).filter((each) => each.menuItem);
-    // The 31st to the 33rd, View's zoom (ZOOM1).
+    // The 31st to the 33rd, View's zoom.
     expect(onQuests.filter((each) => each.keys.length > 0)).toHaveLength(33);
   });
 });
 
 describe('each menu (the design §3.2)', () => {
-  /** NEW1b (D162 point 1): *New conversation* is the first new thing, on Ctrl+N; a new ask moved to Ctrl+Shift+N. */
+  /** *New conversation* is the first new thing, on Ctrl+N; a new ask moved to Ctrl+Shift+N. */
   it('Workspace: the new things, the scope, the repositories, the workspace\'s setup, Settings', () => {
     expect(ids(inMenu(table(), 'workspace'))).toEqual([
       'workspace.newConversation', 'workspace.newAsk', 'workspace.newQuest', 'workspace.scope:*', 'workspace.scope:work',
@@ -87,7 +87,7 @@ describe('each menu (the design §3.2)', () => {
       'view.console', 'view.monitor', 'view.browser', 'view.theme:system', 'view.theme:light', 'view.theme:dark', 'view.language:en',
       'view.language:zh', 'view.zoomIn', 'view.zoomOut', 'view.zoomReset', 'view.refresh',
     ]);
-    // NOTIFY2b (the notification design §2.1): *Notifications* is reached from the one table, the menu and the palette alike.
+    // *Notifications* is reached from the one table, the menu and the palette alike.
     const notifications = entry(table(), 'view.notifications');
     const opened = doors();
     commandTable(state(), opened, t).find((each) => each.id === 'view.notifications')!.run();
@@ -101,7 +101,7 @@ describe('each menu (the design §3.2)', () => {
   });
 
   /**
-   * ZOOM1 (the UI/UX design §3.11): the window zooms as an editor's does, by VS Code's keys, each the window's wherever the
+   * The window zooms as an editor's does, by VS Code's keys, each the window's wherever the
    * focus is, a field and the terminal included; a step past either end, and 100% at 100%, is off.
    */
   it("View: the zoom, in, out and back to 100%, by an editor's keys", () => {
@@ -162,7 +162,7 @@ describe('in a browser (D152 §3.6, D47 §4)', () => {
       'workspace.newAsk', 'workspace.newQuest', 'workspace.scope:*', 'workspace.scope:work', 'workspace.scope:forge',
       'workspace.settings',
     ]);
-    // No zoom (ZOOM1): a browser has its own, which scales its page and never its own frame.
+    // No zoom: a browser has its own, which scales its page and never its own frame.
     expect(ids(inMenu(browser, 'view'))).toEqual([
       'view.commands', 'view.list', 'view.theme:system', 'view.theme:light', 'view.theme:dark', 'view.language:en',
       'view.language:zh', 'view.refresh',
@@ -175,7 +175,7 @@ describe('in a browser (D152 §3.6, D47 §4)', () => {
     expect(ids(inMenu(browser, 'help'))).toEqual(['help.setup', 'help.shortcuts', 'help.about']);
   });
 
-  /** A browser claims no key it keeps for itself, and shows none it does not answer (D152 §3.4). */
+  /** A browser claims no key it keeps for itself, and shows none it does not answer. */
   it('claims no key a browser keeps: Ctrl+Shift+N, Ctrl+1–8, Ctrl+F, Ctrl+Shift+P', () => {
     // A new conversation is the shell's alone; a new ask is offered, without the key a browser keeps for its own window.
     expect(entry(browser, 'workspace.newConversation')).toBeUndefined();
@@ -198,7 +198,7 @@ describe('when an item applies (D152 §2, the design §3.3)', () => {
     expect(entry(table({ attached: false }), 'run.session.stop')).toBeUndefined();
   });
 
-  /** A record's act in the menu is enabled exactly when its header offers it (D152 §2). */
+  /** A record's act in the menu is enabled exactly when its header offers it. */
   it('enables a session\'s acts exactly as its header offers them, and runs each through its owner', () => {
     const on = doors();
     const attended = table({ view: 'sessions', session: { acts: ['stop', 'detach', 'copy'], answer: false } }, on);
@@ -237,7 +237,7 @@ describe('when an item applies (D152 §2, the design §3.3)', () => {
     expect(entry(table({ view: 'map', list: null }), 'view.list')).toBeUndefined();
   });
 
-  /** UX6i: Knowledge's list is its mode's, the result list or the finding list, as each was named when it was a place. */
+  /** Knowledge's list is its mode's, the result list or the finding list, as each is named. */
   it("names Knowledge's list by what it holds in the mode in front", () => {
     expect(entry(table({ view: 'knowledge', knowledge: 'search', list: { shown: true } }), 'view.list')?.label)
       .toBe('layout.menu.list.search');
@@ -255,7 +255,7 @@ describe('when an item applies (D152 §2, the design §3.3)', () => {
 });
 
 /**
- * UXFIX1: what a tick means is the table's, so a menu can say it and not only draw it. A region shown is a toggle; the
+ * What a tick means is the table's, so a menu can say it and not only draw it. A region shown is a toggle; the
  * place, the scope, the theme and the language are each one choice among their rows; a door has no tick.
  */
 describe('what each tick means (UXFIX1)', () => {
@@ -295,7 +295,7 @@ describe('what each tick means (UXFIX1)', () => {
 });
 
 /**
- * UX6j (D150 §2.1): the activity bar's foot holds Settings alone. Refreshing the index and switching the language left it,
+ * The activity bar's foot holds Settings alone. Refreshing the index and switching the language left it,
  * and each keeps the doors it had beside it: View's row and the palette's, and for the language Settings → Appearance too.
  */
 describe("what left the activity bar's foot (UX6j)", () => {
@@ -325,14 +325,14 @@ describe("what left the activity bar's foot (UX6j)", () => {
     ]);
     languages[1]!.run();
     expect(on.language).toHaveBeenCalledWith('zh');
-    // The language is the viewer's own (D66), so a browser has it too.
+    // The language is the viewer's own, so a browser has it too.
     expect(entry(table({ attached: false }), 'view.language:zh')?.menuItem).toBe(true);
   });
 });
 
 /**
- * UX6i (D150 §2.2): Search and Convergence are one place, Knowledge, and every door either had still reaches its list: Go
- * › Knowledge (Ctrl+6, where Convergence was) opens the place in the mode it was left in, Edit › Search knowledge
+ * Search and Convergence are one place, Knowledge, and every door either had still reaches its list: Go
+ * › Knowledge (Ctrl+6) opens the place in the mode it is left in, Edit › Search knowledge
  * (Ctrl+Shift+F) its Search, and the palette's *Go to: Convergence* its Convergence, in no menu, since Go's row is the
  * place.
  */
@@ -399,7 +399,7 @@ describe('the palette reads the same table (D152 §2)', () => {
     expect(palette.find((each) => each.id === 'help.log')).toMatchObject({ title: 'command.settingsAt(settings.domain.logs)' });
   });
 
-  /** The design §3.7: what the Agents menu held keeps a palette row, each a part of the Agents place or Overview's. */
+  /** What the Agents menu held keeps a palette row, each a part of the Agents place or Overview's. */
   it('keeps the Agents menu\'s sections as palette rows on a shell, and in no menu', () => {
     const on = doors();
     const entries = table({}, on);
@@ -466,7 +466,7 @@ describe('the keys (D152 §3)', () => {
     expect(keysOf('workspace.newConversation')).toEqual(['Ctrl+N']);
     expect(keysOf('workspace.newAsk')).toEqual(['Ctrl+Shift+N']);
     expect(keysOf('help.ask')).toEqual(['F1', 'Ctrl+Alt+I']);
-    // ZOOM1: View › Appearance's zoom in VS Code, Ctrl++ beside Ctrl+= for the layouts and the numpad that type the plus.
+    // View › Appearance's zoom in VS Code, Ctrl++ beside Ctrl+= for the layouts and the numpad that type the plus.
     expect(keysOf('view.zoomIn')).toEqual(['Ctrl+=', 'Ctrl++']);
     expect(keysOf('view.zoomOut')).toEqual(['Ctrl+-']);
     expect(keysOf('view.zoomReset')).toEqual(['Ctrl+0']);
@@ -474,7 +474,7 @@ describe('the keys (D152 §3)', () => {
 
   it('prints every key by menu for the Keyboard shortcuts drawer, in the reader\'s language', () => {
     const groups = shortcutGroups(table({ view: 'quests', list: { shown: true } }), t);
-    // Run prints no key since its *Start a session…* became Workspace's *New conversation…* (NEW1b), so it lists none.
+    // Run prints no key since its *Start a session…* became Workspace's *New conversation…*, so it lists none.
     expect(groups.map((group) => group.menu)).toEqual(['menu.workspace', 'menu.edit', 'menu.view', 'menu.go', 'menu.terminal', 'menu.help']);
     expect(groups.flatMap((group) => group.rows).length).toBe(33);
     expect(groups[0]!.rows[0]).toEqual({ label: 'menu.workspace.newConversation', keys: ['Ctrl+N'] });
@@ -508,10 +508,10 @@ describe('matching what was typed', () => {
   });
 
   it('finds a command by a keyword it does not show', () => {
-    // "theme" and "machine" are what people will type for Settings (D66); neither is in its title.
+    // "theme" and "machine" are what people will type for Settings; neither is in its title.
     expect(matching(list, 'theme').map((c) => c.id)).toContain('workspace.settings');
     expect(matching(list, 'machine').map((c) => c.id)).toContain('workspace.settings');
-    // "get started" finds Setup (SETUP1a), in either language.
+    // "get started" finds Setup, in either language.
     expect(matching(list, 'get started')[0]?.id).toBe('help.setup');
     expect(matching(list, '入门').map((c) => c.id)).toContain('help.setup');
   });

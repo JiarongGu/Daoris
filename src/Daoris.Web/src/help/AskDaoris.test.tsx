@@ -5,13 +5,13 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// HELP1a (D89): Ask Daoris's conversation, with the bridge mocked as present — the panel exists only in
-// the shell, since most of what it reads is this machine's (D47 §4).
+// Ask Daoris's conversation, with the bridge mocked as present — the panel exists only in
+// the shell, since most of what it reads is this machine's.
 
 const { invoke, notifyReady, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
-  // The state hub's ear (STATEHUB1f, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  // The state hub's ear: what the mocked shell publishes after a press reaches it, as the kit's pump would.
   heard: new Map<string, (payload: unknown) => void>(),
 }));
 
@@ -33,7 +33,7 @@ import { pushedOf, useStateSlices } from '../bridge/state/slices';
 import { asksSlice, questsSlice } from '../bridge/sessions/quests';
 import { sessionsSlice } from '../bridge/sessions/sessions';
 
-/** ASKQUESTS1: the slices a go card's standings are read from, pushed as `ShellSignals` mounts them. */
+/** The slices a go card's standings are read from, pushed as `ShellSignals` mounts them. */
 const PUSHED_HERE = [questsSlice, asksSlice, sessionsSlice];
 import { code } from '../test/code';
 import { moved } from '../test/sliceShell';
@@ -51,7 +51,7 @@ const HELP = {
 let SESSIONS: unknown[] = [];
 let HELPER: string | null = 'claude-code-acp';
 let PROPOSALS: unknown[] = [];
-/** ASKQUESTS1: what the conversation published, by id, and the quests and asks the service lists. */
+/** What the conversation published, by id, and the quests and asks the service lists. */
 let PUBLISHED_HERE: unknown[] = [];
 let QUESTS: unknown[] = [];
 let ASKS: unknown[] = [];
@@ -141,12 +141,11 @@ describe('Ask Daoris, with an agent named', () => {
       payload: { id: HELP.id, text: 'how do I drive a repository?' },
     }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_HELP', { payload: {} });
-    // Its conversations are read from the sessions the shell pushes, every workspace's, and the panel keeps the window's own
-    // (ASKSCOPE1d).
+    // Its conversations are read from the sessions the shell pushes, every workspace's, and the panel keeps the window's own.
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'sessions' } });
   });
 
-  /** QUEUEEDIT1b: words waiting behind Ask Daoris's turn can be taken back out by their id. */
+  /** Words waiting behind Ask Daoris's turn can be taken back out by their id. */
   it('removes a waiting message from the conversation by its id', async () => {
     SESSIONS = [HELP];
     bridge();
@@ -163,11 +162,11 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * HELP4: with none running, a message first opens the conversation, which takes seconds (the room is
+   * With none running, a message first opens the conversation, which takes seconds (the room is
    * written, the agent spawned). The person's words showed nowhere meanwhile, and read as lost. They are
    * shown at once, as opening Ask Daoris, and stay shown until the driver's own queue answers for the
    * conversation — never gone while the session list catches up, and never shown twice. The send opens
-   * it here: the one opened as the panel showed (HELP5) was refused, silently.
+   * it here: the one opened as the panel shows is refused, silently.
    */
   it('shows the first words at once while the conversation opens, and keeps them until the driver has them', async () => {
     const words = 'tidy the branches so one PR is left';
@@ -214,14 +213,14 @@ describe('Ask Daoris, with an agent named', () => {
 
     await act(async () => { listed(); });
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: HELP.id } }));
-    // Once in the conversation, besides its head, which calls it by them (ASKHIST1c).
+    // Once in the conversation, besides its head, which calls it by them.
     await waitFor(() => expect(screen.getAllByText(words, { ignore: 'script, style, h3' })).toHaveLength(1));
     expect(screen.getByRole('heading', { name: words })).toBeInTheDocument();
     expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
   });
 
   /**
-   * HELPSTART1: the driver answers the press once the conversation is placed, `starting`, its record still `queued` while the
+   * The driver answers the press once the conversation is placed, `starting`, its record still `queued` while the
    * room is read. The words go to it at once and show once, as it opening, from the driver's own queue.
    */
   it('hands the first words to a conversation the driver answers as starting, shown once as it opens', async () => {
@@ -254,7 +253,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * SENDLOST1: on a loaded machine the page stopped waiting on Ask Daoris's start (the bridge's TIMEOUT) and the person's
+   * On a loaded machine the page stopped waiting on Ask Daoris's start (the bridge's TIMEOUT) and the person's
    * first words vanished, though the driver went on to open the conversation. They stay shown, saying the machine has not
    * answered yet, nothing put back in the box to send twice, and go once to the conversation the list next shows.
    */
@@ -300,7 +299,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * SENDLOST1: words to the conversation running show the moment they are sent, as sending. A send the page stopped waiting
+   * Words to the conversation running show the moment they are sent, as sending. A send the page stopped waiting
    * on keeps them, saying the machine has not answered yet — never back in the box to be sent twice — until the
    * conversation's own record holds them.
    */
@@ -350,13 +349,13 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * SENDLOST1: words whose send timed out to a conversation that then ended without them never arrived: they go back in the
+   * Words whose send timed out to a conversation that then ended without them never arrived: they go back in the
    * box, said so, for the person to send again.
    */
   it('gives words back once their conversation ended without them', async () => {
     const words = 'are you there?';
     SESSIONS = [HELP];
-    // Once it ended, the next opens ahead (HELP5), under an id of its own.
+    // Once it ended, the next opens ahead, under an id of its own.
     bridge({ sessionId: 'n3xt0000', message: 'opened' });
     const answered = invoke.getMockImplementation()!;
     invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
@@ -379,7 +378,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * HELP5: the agent's spawn and its protocol session took seconds after the person pressed send. The
+   * The agent's spawn and its protocol session took seconds after the person pressed send. The
    * conversation opens as the panel shows instead: once, however often the panel draws, and once under
    * React's development double-mount. Nobody has spoken in it yet, so the panel goes on showing what it
    * showed, and the first words go to it rather than opening another.
@@ -430,7 +429,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * HELP5 with HELP4: words sent while the conversation opened ahead is still opening show at once, as
+   * Words sent while the conversation opened ahead is still opening show at once, as
    * opening Ask Daoris, and go to it once it answers — never to a second one.
    */
   it('holds words sent while the conversation opened ahead is still opening, and gives them to it', async () => {
@@ -465,7 +464,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * HELP5: the side bar and Quick Ask hold one conversation. The one opened ahead is spoken in from either
+   * The side bar and Quick Ask hold one conversation. The one opened ahead is spoken in from either
    * host, and an opening that answers late, from the other, never hides the conversation spoken in.
    */
   it('keeps the conversation spoken in shown in both hosts, however late the other opening answers', async () => {
@@ -480,7 +479,7 @@ describe('Ask Daoris, with an agent named', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     client.setQueryData(keys.driver, { drivable: ['engine'], holds: [], trees: [], helperAgent: HELPER });
     client.setQueryData(keys.sessions(HELP.repository, true, null), []);
-    // The window's hub hears what each opening published (STATEHUB1h): the sessions it opened one among.
+    // The window's hub hears what each opening published: the sessions it opened one among.
     const hosts = (count: number) => (
       <QueryClientProvider client={client}>
         <Hub />
@@ -511,7 +510,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * HELP5: a conversation that runs is carried on, so none is opened beside it. *New conversation*
+   * A conversation that runs is carried on, so none is opened beside it. *New conversation*
    * clears the panel, and once the one it finished has gone, the next opens ahead too.
    */
   it('opens none beside the one running, and the next once new conversation has finished it', async () => {
@@ -568,7 +567,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * DOCK1d: a question asked from the palette arrives already asked — sent once, as a typed one is,
+   * A question asked from the palette arrives already asked — sent once, as a typed one is,
    * and not again when the frame draws it again; a new question is a new id.
    */
   it('sends a question it is handed once, as if typed, and a new one when handed another', async () => {
@@ -591,7 +590,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * CTX1 (D138, design §3): *Ask Daoris about it* hands its words as a draft, quoted in the box for the person's question,
+   * *Ask Daoris about it* hands its words as a draft, quoted in the box for the person's question,
    * and sends nothing until they do; it is let go once in the box, as a sent one is.
    */
   it('puts a draft it is handed in the box, sends nothing, and lets it go', async () => {
@@ -611,7 +610,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * NEW1g (D162): a draft that will start a new conversation shows one. With the newest ended, the panel clears to a blank one
+   * A draft that will start a new conversation shows one. With the newest ended, the panel clears to a blank one
    * first (as *New conversation* does, without ending anything), and the draft goes in the box, not under the ended transcript.
    */
   describe('a draft handed to it', () => {
@@ -663,7 +662,7 @@ describe('Ask Daoris, with an agent named', () => {
       expect(sent()).toEqual([]);
     });
 
-    // The composer's *Make it a task with Daoris…* hands a draft that ends on its words (NEW1d-b), unlike CTX1's quote, which
+    // The composer's *Make it a task with Daoris…* hands a draft that ends on its words, unlike a quote, which
     // ends on a blank line for the person's question: put above words already in the box, a blank line keeps them apart.
     it('keeps a blank line between a draft that ends on its words and the words already in the box', async () => {
       SESSIONS = [HELP];
@@ -688,7 +687,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * SETUP1b: the side bar's AskDaoris is drawn again whenever its tab is, and a Quick Ask box each time it
+   * The side bar's AskDaoris is drawn again whenever its tab is, and a Quick Ask box each time it
    * opens, so a question still held by the application would be asked again by every new drawing. It
    * says when it has sent one, and the holder, told, lets it go (frontend-architecture §4b): held the way
    * the application holds it, a drawing after that sends nothing.
@@ -717,9 +716,9 @@ describe('Ask Daoris, with an agent named', () => {
     expect(sent()).toEqual(['walk me through it']);
   });
 
-  /** HELP1b: where the person is goes ahead of their words, and an unchanged screen is not said twice. */
+  /** Where the person is goes ahead of their words, and an unchanged screen is not said twice. */
   it('hands the conversation where the person is, once for as long as the screen is the same', async () => {
-    // The attended session has ENDED — what the person reads is named all the same (found looking at HELP1b).
+    // The attended session has ENDED — what the person reads is named all the same.
     SESSIONS = [HELP, { ...HELP, id: 'p4rk3d00', repository: 'engine', state: 'completed', note: 'Which one?' }];
     bridge();
     show({ view: 'sessions', workspace: 'aurora' }, 'p4rk3d00');
@@ -742,8 +741,8 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * FLOWCHART2d: the workflow draft open in the editor goes beside the words with its fingerprint, frozen with them, where that moved since
-   * the conversation was told it, and never again unchanged; where the person is says a draft is open.
+   * The workflow draft open in the editor goes beside the words with its fingerprint, frozen with them, where that moved since
+   * the conversation is told it, and never again unchanged; where the person is says a draft is open.
    */
   it('hands the conversation the open draft beside the words, and not again while it is unchanged', async () => {
     SESSIONS = [HELP];
@@ -761,7 +760,7 @@ describe('Ask Daoris, with an agent named', () => {
       await waitFor(() => expect(sentDraft()).toEqual([{ ...draft, fingerprint: fingerprintOf(graph) }]));
       const first = invoke.mock.calls.find(([, type]) => type === 'SESSION_INPUT')![2].payload;
       expect(first.preface).toContain('editing a workflow draft of `release-flow` from v2 for `engine`, not saved: 1 steps;');
-      // FLOWCHART2f: kept as told, by its fingerprint, for a proposal against it to be taken against that graph.
+      // Kept as told, by its fingerprint, for a proposal against it to be taken against that graph.
       await waitFor(() => expect(toldGraph(fingerprintOf(graph))).toEqual(graph));
       expect(toldSessions().at(-1)).toBe(HELP.id);
 
@@ -779,7 +778,7 @@ describe('Ask Daoris, with an agent named', () => {
     }
   });
 
-  /** FRAME1i-a: the chosen item is part of where the person is, so a change of it is said again and a same one is not. */
+  /** The chosen item is part of where the person is, so a change of it is said again and a same one is not. */
   it('hands the conversation the item again when it changed', async () => {
     SESSIONS = [HELP];
     bridge();
@@ -809,7 +808,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * With HELP5: the conversation opened as the panel showed was refused, which says nothing and is not
+   * The conversation opened as the panel shows is refused, which says nothing and is not
    * asked again while the person types. The send asks for itself, and says why it cannot.
    */
   it('keeps the words in the box, with the driver\'s sentence, when no conversation can start', async () => {
@@ -849,7 +848,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * HELPNEWCHAT1 (the owner's report, 2026-10-24): *New conversation* finishes the one running, which winds up before it ends, and
+   * *New conversation* finishes the one running, which winds up before it ends, and
    * a driver at 5e36d25 answered the next start with that one, `running`, carried on. The new conversation's first words went to the
    * conversation finished, back into its box. They wait as the new one opening until the finished one has ended, then open their own.
    */
@@ -889,7 +888,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * HELPNEWCHAT1: first words handed to a conversation whose queue has not answered yet are its own. *New conversation* sets that
+   * First words handed to a conversation whose queue has not answered yet are its own. *New conversation* sets that
    * conversation aside, and its words with it: the new one shows no words opening, and opens ahead once the other has ended.
    */
   it('sets a conversation’s first words aside with it on New conversation, never left opening', async () => {
@@ -922,7 +921,7 @@ describe('Ask Daoris, with an agent named', () => {
     await waitFor(() => expect(starts()).toBe(2));
   });
 
-  /** HELP1c: what it proposes is a card under the conversation, applied or not by the person's press. */
+  /** What it proposes is a card under the conversation, applied or not by the person's press. */
   it('shows what the conversation proposes, and applies or dismisses it on the person\'s press', async () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
@@ -944,7 +943,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * ASKQUESTS1 (the Ask Daoris design §9 item 12): what the conversation published is in its own strip, with the state each one's
+   * What the conversation published is in its own strip, with the state each one's
    * list holds now: here a quest a session has taken, named by that session's state. A row opens its record on Quests, the door a
    * go uses, and nothing else is pressed.
    */
@@ -983,7 +982,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * ASKQUESTS1: a go card's sentence says where its quest stands (since ASKDISMISS1), so the plan its Apply judges moves with a take.
+   * A go card's sentence says where its quest stands, so the plan its Apply judges moves with a take.
    * Where the shell pushes the quests, the asks and the sessions, the card is drawn again at the push that moves a standing, never on
    * a clock and never by a pull, so its Apply finds the plan it shows rather than answering that it changed.
    */
@@ -1039,7 +1038,7 @@ describe('Ask Daoris, with an agent named', () => {
     PROPOSALS = [];
   });
 
-  /** ASKQUESTS1: a conversation that published nothing shows no strip, and asks no list of quests or asks for one. */
+  /** A conversation that published nothing shows no strip, and asks no list of quests or asks for one. */
   it('shows no strip where the conversation published nothing', async () => {
     SESSIONS = [HELP];
     bridge();
@@ -1053,7 +1052,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * HELP6: a go is applied by navigating, through the starters' own door, and nothing else changes. The
+   * A go is applied by navigating, through the starters' own door, and nothing else changes. The
    * driver settles it and names the place; the page opens it — here the setup guide at its second step.
    */
   it('takes the person to the place a go names once they press go there', async () => {
@@ -1080,7 +1079,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * ENTRY1f1 (D161's ENTRY1f note): a go may name the one ask that waits, judged by the driver against the machine's
+   * A go may name the one ask that waits, judged by the driver against the machine's
    * records; the page opens Quests with it chosen, named as Quests' list names an ask.
    */
   it('takes the person to the one ask a go names', async () => {
@@ -1106,7 +1105,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * FLOWCHART2g (D223 §4.4): a draft card's Open in the editor takes the person to the place's Workflow with its editor asked on the draft
+   * A draft card's Open in the editor takes the person to the place's Workflow with its editor asked on the draft
    * the card is against, not to the place alone: the driver's go names no repository, so the page names the place from the card.
    */
   it("opens the editor on the draft a conversation's draft card is against, for the repository the card names", async () => {
@@ -1132,7 +1131,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * ASKDISMISS1: the block a published quest leaves in the conversation is a go card, and its dismiss only takes it away. The
+   * The block a published quest leaves in the conversation is a go card, and its dismiss only takes it away. The
    * driver settles the card and says nothing into the conversation; the page presses nothing about the quest: no Apply, no
    * words, no quest's or ask's route. A taken quest's card says it is taken, in the driver's sentence.
    */
@@ -1167,7 +1166,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * ENTRY1f2 (D161's ENTRY1f note): a go may name the one session that waits, judged by the driver against the machine's
+   * A go may name the one session that waits, judged by the driver against the machine's
    * own records; the page opens Sessions with it chosen, by its id.
    */
   it('takes the person to the one session a go names', async () => {
@@ -1192,7 +1191,7 @@ describe('Ask Daoris, with an agent named', () => {
     APPLIED = APPLIED_SETTING;
   });
 
-  /** PLUGUI1h (D119's note): a go may name an offer, as `offer:<id>`; the page opens Plugins with it chosen. */
+  /** A go may name an offer, as `offer:<id>`; the page opens Plugins with it chosen. */
   it('takes the person to the one offer a go names', async () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
@@ -1216,7 +1215,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * ENTRY1d2b (D161's ENTRY1d note): a go to Add repository or Import a folder may carry the workspace the driver judged; the
+   * A go to Add repository or Import a folder may carry the workspace the driver judged; the
    * page opens the drawer with it filled, and the folder stays the person's pick, so no path is in the go.
    */
   it('takes the person to Add repository with the workspace a go names filled', async () => {
@@ -1241,7 +1240,7 @@ describe('Ask Daoris, with an agent named', () => {
     APPLIED = APPLIED_SETTING;
   });
 
-  /** NEW1d-b: a go to New conversation names the repository and the words, and the door carries both to the composer. */
+  /** A go to New conversation names the repository and the words, and the door carries both to the composer. */
   it('takes the person to the composer with the repository and words a go names', async () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
@@ -1264,7 +1263,7 @@ describe('Ask Daoris, with an agent named', () => {
     APPLIED = APPLIED_SETTING;
   });
 
-  /** HELP6: a delete is applied through the driver's Apply, like every card, and opens nothing. */
+  /** A delete is applied through the driver's Apply, like every card, and opens nothing. */
   it('deletes a record made by mistake on the person\'s press, and goes nowhere', async () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
@@ -1287,7 +1286,7 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * HELP6: an update the person applied is followed by the Agents screen where the application holds its
+   * An update the person applied is followed by the Agents screen where the application holds its
    * running action; drawn alone, with nothing holding one, the card still applies.
    */
   it('applies an agent\'s update with nothing above to follow it', async () => {
@@ -1311,7 +1310,7 @@ describe('Ask Daoris, with an agent named', () => {
     APPLIED = APPLIED_SETTING;
   });
 
-  /** With HELP5: the next conversation opens ahead, and the one that ended stays in front until it is spoken in. */
+  /** The next conversation opens ahead, and the one that ended stays in front until it is spoken in. */
   it('says a conversation that ended has, and that a message starts the next', async () => {
     SESSIONS = [{ ...HELP, state: 'completed' }];
     bridge({ sessionId: 'n3xt0000', message: 'opened' });
@@ -1325,8 +1324,8 @@ describe('Ask Daoris, with an agent named', () => {
 });
 
 /**
- * ASKHIST1: Ask Daoris's conversations, kept on this machine only. The history lists them; one the person chooses is shown in
- * the newest's place and goes on in itself with their next words where its own conversation was kept, so its knowledge
+ * Ask Daoris's conversations, kept on this machine only. The history lists them; one the person chooses is shown in
+ * the newest's place and goes on in itself with their next words where its own conversation is kept, so its knowledge
  * carries; one that cannot is offered a new conversation from its words.
  */
 describe('Ask Daoris’s history', () => {
@@ -1389,8 +1388,8 @@ describe('Ask Daoris’s history', () => {
   });
 
   /**
-   * SWITCHCTX1c-i (the switch-context design §2.7): an earlier part owns neither the region's scroll nor the frame's facts. Ended,
-   * it used to open the shared region at its own head, so the line opened mid-way; only the part shown follows the tail.
+   * An earlier part owns neither the region's scroll nor the frame's facts. Ended,
+   * it would open the shared region at its own head, so the line would open mid-way; only the part shown follows the tail.
    */
   it('lets the part shown alone own the region’s scroll, no earlier part opening it at its own head', async () => {
     SESSIONS = [EARLIER, HELP];
@@ -1436,13 +1435,13 @@ describe('Ask Daoris’s history', () => {
       payload: { id: EARLIER.id, text: 'and a remote?' },
     }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: expect.objectContaining({ id: 'n3xt0000' }) });
-    // The word said declares the history (HELPHISTORYHUB1), so the state hub lists it again, not the conversation's own ask.
+    // The word said declares the history, so the state hub lists it again, not the conversation's own ask.
     await waitFor(() => expect(listed()).toBeGreaterThan(before));
   });
 
   /**
-   * SESSCTX1c part B (the steward's choice: Ask Daoris follows the same rule in its own room): words to an ended conversation whose
-   * resume was refused wait for the person, and *Go on with Daoris's brief* goes on in a new conversation of the room handed Daoris's
+   * Ask Daoris follows the same rule in its own room: words to an ended conversation whose
+   * resume is refused wait for the person, and *Go on with Daoris's brief* goes on in a new conversation of the room handed Daoris's
    * brief and the words, which the panel then shows.
    */
   it('goes on with Daoris’s brief in a new conversation where its words wait for the person', async () => {
@@ -1483,7 +1482,7 @@ describe('Ask Daoris’s history', () => {
   });
 
   /**
-   * LIMITRESUME1d2 (D206 §3.7): a conversation its account's limit holds says so above the box, read from its events; its *Go on now
+   * A conversation its account's limit holds says so above the box, read from its events; its *Go on now
    * with…* is Ask Daoris's own door (`ResumeWords.HelpDoor`), a new conversation from this one, never the hand-over, which refuses Ask
    * Daoris. No accounts read, the driver's own line says when the first is ready again.
    */
@@ -1518,7 +1517,7 @@ describe('Ask Daoris’s history', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', expect.anything());
   });
 
-  /** One whose own conversation was not kept cannot go on in itself: a new one starts from its words, handed as a file. */
+  /** One whose own conversation is not kept cannot go on in itself: a new one starts from its words, handed as a file. */
   it('starts a new conversation from the words of one that cannot go on in itself', async () => {
     withHistory([row({ resumable: false })], { sessionId: 'fr0m0000', message: 'opened', from: EARLIER.id });
     show();
@@ -1537,7 +1536,7 @@ describe('Ask Daoris’s history', () => {
     }));
   });
 
-  /** ASKHIST1b: a title too long for the dock, a pasted URL, breaks at the panel's edge where the conversation says it. */
+  /** A title too long for the dock, a pasted URL, breaks at the panel's edge where the conversation says it. */
   it('says which conversation one started from at the dock’s edge, however long its title', async () => {
     const title = 'to complete this https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567&page=com.example.plugin.tabpanels';
     withHistory([row({ resumable: false, title, opening: title })], { sessionId: 'fr0m0000', message: 'opened', from: EARLIER.id });
@@ -1569,7 +1568,7 @@ describe('Ask Daoris’s history', () => {
 
     await menu();
     await user.click(await screen.findByRole('menuitem', { name: 'Rename…' }));
-    // It starts from the title shown (ASKHIST1c).
+    // It starts from the title shown.
     await user.clear(screen.getByRole('textbox', { name: 'Name' }));
     await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Workspaces');
     await user.click(screen.getByRole('button', { name: 'Save' }));
@@ -1581,16 +1580,16 @@ describe('Ask Daoris’s history', () => {
     const before = listed();
     await user.click(await screen.findByRole('button', { name: 'Delete conversation' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: EARLIER.id } }));
-    // The delete declares the history (HELPHISTORYHUB1): the state hub lists it again, the conversation asks nothing by hand.
+    // The delete declares the history: the state hub lists it again, the conversation asks nothing by hand.
     await waitFor(() => expect(listed()).toBeGreaterThan(before));
   });
 });
 
 /**
- * ASKHIST1c: the history and the open conversation, made right after the owner looked at the window. Each conversation keeps
+ * The history and the open conversation, made right after the owner looked at the window. Each conversation keeps
  * its own draft, words and files, and a new one its own; one the person chose that cannot go on takes no words until they
  * choose a new conversation from it, or a blank one, and one being checked takes none either; the keys go from the list to a
- * conversation and back to the row it was opened from; and the list says what it is doing.
+ * conversation and back to the row it is opened from; and the list says what it is doing.
  */
 describe.each(['en', 'zh'])('Ask Daoris’s history and open conversation in %s', (language) => {
   const ANSWERED = { ...HELP, state: 'completed' };
@@ -1696,8 +1695,8 @@ describe.each(['en', 'zh'])('Ask Daoris’s history and open conversation in %s'
     await waitFor(() => expect(box()).toHaveFocus());
   });
 
-  // ASKHIST1d2: a search reaches every conversation, past the pages the whole list has read, and its row says whether one
-  // can go on as the list's does (D158's ASKHIST1d1 note).
+  // A search reaches every conversation, past the pages the whole list has read, and its row says whether one
+  // can go on as the list's does.
   it('knows from the search that found it whether a conversation can go on, while the whole list has not answered', async () => {
     historyBridge((words) => (words
       ? { conversations: [row(A.id, 'about A?', { found: 'about A?', resumable: false })], total: 1, next: null }
@@ -1751,7 +1750,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s history and open conversation in %s'
     await userEvent.clear(screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') }));
     await userEvent.keyboard('{Escape}');
 
-    // Called by the row it was opened from meanwhile.
+    // Called by the row it is opened from meanwhile.
     await screen.findByRole('heading', { name: 'about A?' });
     expect(await screen.findByRole('status')).toHaveTextContent(i18n.t('help.checking'));
     expect(box()).toBeNull();
@@ -1865,13 +1864,13 @@ describe('Ask Daoris, with no agent named', () => {
 });
 
 /**
- * HELPMODE1b (D183 points 2-4; the modes design §1, §5, §6): Ask Daoris's access on its panel. The chip beside the box shows the mode
- * the conversation in view runs under, its record's, and a switch that waits for its next turn (ACCESSSWAP1); restricted is set at
+ * Ask Daoris's access on its panel. The chip beside the box shows the mode
+ * the conversation in view runs under, its record's, and a switch that waits for its next turn; restricted is set at
  * once and full access asked once; *What it has* reads what its start handed, with the door that grants each thing it lacks.
  */
 describe('Ask Daoris’s access and what it has', () => {
   let MODE = 'restricted';
-  // The conversations the driver says run under another access than the one chosen (ACCESSSWAP1).
+  // The conversations the driver says run under another access than the one chosen.
   let SWAPPING: string[] = [];
   let ROWS: unknown[] = [];
   let WIRED: unknown = { session: HELP.id, recorded: false, receipts: [] };
@@ -1951,8 +1950,8 @@ describe('Ask Daoris’s access and what it has', () => {
   });
 
   /**
-   * ACCESSSWAP1 (D183 point 2): the driver ends a conversation whose access changed at its turn's end, and its next words resume the
-   * same conversation under the new access (D131). The panel keeps it in view as it ends, so those words go on in it, never in a new
+   * The driver ends a conversation whose access changed at its turn's end, and its next words resume the
+   * same conversation under the new access. The panel keeps it in view as it ends, so those words go on in it, never in a new
    * conversation opened beside it.
    */
   it('keeps a conversation ended for an access change in view, and its next words go on in it', async () => {
@@ -2057,7 +2056,7 @@ describe('Ask Daoris’s access and what it has', () => {
     expect(await chip('Restricted · full access next turn')).toBeInTheDocument();
   });
 
-  // ACCESSASK1 (the UI/UX design R3, §3.4): full access's refusal is said inside its ask, open to be pressed again, and a switch
+  // Full access's refusal is said inside its ask, open to be pressed again, and a switch
   // back refused under the chip in the composer bar; neither in the composer's own line.
   it('says a refusal where it was pressed: inside full access’s ask, and under the chip for a switch back', async () => {
     SESSIONS = [HELP];

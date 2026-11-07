@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { stewardReverse, stewardSetAt, type StewardActNow } from './standing';
 
-// The steward's acts as the page reads them (STEWARDROLE1b, D209 §5.1, §5.4): which repository's driving the steward set, from this
+// The steward's acts as the page reads them: which repository's driving the steward set, from this
 // run's memory, and the owner's reverse press each standing act has.
 
 const act = (id: string, kind: string, at: string, more: Partial<StewardActNow> = {}): StewardActNow => ({

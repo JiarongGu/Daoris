@@ -11,7 +11,7 @@ import { MapWorld } from '../MapWorld';
 import type { TreeGroup } from './mapTreeModel';
 import type { MapNode, Topology } from '../topology';
 
-// MAPUX1e (the map UX design §6, §7): one tree on both levels with one row in the tab order; each row's counts and states; below 36rem
+// One tree on both levels with one row in the tab order; each row's counts and states; below 36rem
 // the list is the reading and the detail opens under its row.
 
 const measured = vi.hoisted(() => ({ width: undefined as number | undefined }));

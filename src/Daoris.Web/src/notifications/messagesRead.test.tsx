@@ -22,7 +22,7 @@ import { WorkspaceScopeProvider } from '../data/scope';
 import type { Channel } from '../work/channel';
 import { NotificationsView } from './NotificationsView';
 
-// Reading an ask's messages where the whole channel is read (NOTIFY2g, the notification design §2.4): the ask's page moves the
+// Reading an ask's messages where the whole channel is read: the ask's page moves the
 // person's mark through the newest once (`CHANNEL_MARK`), the shell pushes the ask's count as the service then says it, and its item
 // leaves *Messages*; a session's channel panel shows a part of the channel and moves no mark, so the item stays; *Mark read* moves
 // the same mark with the newest message's moment.

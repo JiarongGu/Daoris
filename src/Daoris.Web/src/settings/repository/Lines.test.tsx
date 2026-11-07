@@ -4,8 +4,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import { LineField } from './Lines';
 
-// WSR2: a line's field, set as `daoris place line` sets it from a terminal (D50). One field, on a workspace's Setup and a
-// repository's (UX6f, UX6g; D150 §4.2, §4.3), so its behaviour is held here.
+// A line's field, set as `daoris place line` sets it from a terminal. One field, on a workspace's Setup and a
+// repository's, so its behaviour is held here.
 
 const draw = (set: string | undefined, onSave = vi.fn(), clearable = true) => {
   render(
@@ -48,7 +48,7 @@ describe("a line's field", () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  /** A Setup row gives each value its own *Clear* beside the field (UX6f), so there the field carries none. */
+  /** A Setup row gives each value its own *Clear* beside the field, so there the field carries none. */
   it('carries no clear of its own where its row has one', () => {
     draw('develop', vi.fn(), false);
     expect(screen.queryByRole('button', { name: 'Clear', hidden: true })).toBeNull();

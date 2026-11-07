@@ -3,7 +3,7 @@ import { minimapGeometry, viewAtMinimap } from './minimapRule';
 import type { Box, Size, View } from './viewMath';
 
 /**
- * **The minimap** (CANVAS1d; the canvas design §4): the whole world as small boxes on a canvas2D layer and the view as a rectangle, which
+ * **The minimap**: the whole world as small boxes on a canvas2D layer and the view as a rectangle, which
  * a press or a drag moves. A pointer aid, hidden from a reader (the toolbar, the keys and the list reach everything it does); the
  * canvas offers it by `minimap.ts`'s rule. A molecule: the view is the canvas's.
  */

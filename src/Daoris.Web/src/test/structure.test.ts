@@ -3,7 +3,7 @@ import { join, posix, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * The structure gate for the page's sources (STRUCT5c, D166; the code-structure design §5), the CLI's gate in vitest. Its
+ * The structure gate for the page's sources, the CLI's gate in vitest. Its
  * map is `structure.json` beside it. Each breach names the file, the line (0 for the file as a whole) and the rule:
  * - `top`: a file at `src/`'s top is on the map's `entry` list (`main.tsx`, which `index.html` runs, the stylesheet it and
  *   Storybook load, and Vite's ambient types) or one the map's `root` list names with the module it is to move to, and

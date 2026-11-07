@@ -5,7 +5,7 @@ import i18n from '../locales/i18n';
 import { HELD, OPEN, REFILED, REFILED_NAMED, REFILED_UNNAMED, STARTING, WORKING } from './fixtures';
 import { bodyUnderHead, QuestPage } from './QuestPage';
 
-// A quest's head, titles first (UX7c, D152 §7; the UX7 design §5.3), as a molecule: its state leads, its name follows on
+// A quest's head, titles first, as a molecule: its state leads, its name follows on
 // two lines at most, one facts line, its id in its ⋯ and its Details, and a body that does not say the title again.
 
 const NOTE = '(Re-filed from ask #39c495, whose quest was taken outside the driver with no session.)';
@@ -71,7 +71,7 @@ describe('a quest’s head', () => {
       .toEqual(['Take', 'Decline…', 'More actions']);
   });
 
-  /** HEAD2b: the primary holds still in `acts`, Decline… in the fold (shown above 640 px), the ⋯ last. */
+  /** The primary holds still in `acts`, Decline… in the fold (shown above 640 px), the ⋯ last. */
   it('puts the primary in the acts, Decline… in the fold and the ⋯ last', () => {
     page();
     const take = screen.getByRole('button', { name: 'Take' });
@@ -172,7 +172,7 @@ describe('a quest’s head', () => {
 });
 
 /**
- * WAITSHOWN1: its driven session's record, read as the session list's reader reads it (D126 §2.4). A session whose quest waits
+ * Its driven session's record, read as the session list's reader reads it. A session whose quest waits
  * on another repository's answer ended as completed, and read so beside a quest that has not finished; a working session
  * carries its last end in its note, which the page leaves out while it works.
  */

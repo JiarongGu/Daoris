@@ -29,17 +29,17 @@ const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 const NO_TIPS: string[] = [];
 
 /**
- * **A repository's Branches tab, with its data** (UX6h1, D150 §4.4): the part that reads the list, drawn only while the tab
+ * **A repository's Branches tab, with its data**: the part that reads the list, drawn only while the tab
  * shows, so the page asks Git nothing until it is open. A repository with no checkout here (the registry names no root) is
- * said so at once, with no read: there is no git to ask (D147 §6).
+ * said so at once, with no read: there is no git to ask.
  */
 export function RepositoryBranches({ repository, workspace, here, onOpenBranch, onOpenHistory }: {
   repository: string;
-  /** Its workspace, which with its name scopes the list to it (D112, BRSCOPE1). */
+  /** Its workspace, which with its name scopes the list to it. */
   workspace: string;
   /** It has a checkout on this machine. */
   here: boolean;
-  /** Open a branch's page, from its name (UX6h3b). */
+  /** Open a branch's page, from its name. */
   onOpenBranch?: (branch: string) => void;
   /** Open its History, from its line's row. */
   onOpenHistory?: () => void;
@@ -50,10 +50,10 @@ export function RepositoryBranches({ repository, workspace, here, onOpenBranch, 
 }
 
 /**
- * **A branch's page, with its data** (UX6h3b, the built-in Git design §2.3, §4.1): the repository's list read again for it
+ * **A branch's page, with its data**: the repository's list read again for it
  * (`GIT_BRANCHES`, the same read its Branches holds), the branch found there by its name, its session's title joined as the
- * list joins it, and its graph since it parted from its line: `GIT_GRAPH` with `sinceParted` and the two tips D147 names, the
- * branch's commit then the line's, a page at a time. A branch the list no longer holds is said gone, and asks no graph.
+ * list joins it, and its graph since it parted from its line: `GIT_GRAPH` with `sinceParted` and its two tips, the
+ * branch's commit then the line's, a page at a time. A branch the list does not hold is said gone, and asks no graph.
  */
 export function RepositoryBranch({ repository, workspace, here, branch, onBack, landingOpen = false }: {
   repository: string;
@@ -63,7 +63,7 @@ export function RepositoryBranch({ repository, workspace, here, branch, onBack, 
   branch: string;
   /** Back to the repository's Branches. */
   onBack: () => void;
-  /** Opened by a door into how it landed (FLOWCHART1c: the work's milestone, a run's landing step): that section opens with the page. */
+  /** Opened by a door into how it landed (the work's milestone, a run's landing step): that section opens with the page. */
   landingOpen?: boolean;
 }) {
   return here
@@ -72,7 +72,7 @@ export function RepositoryBranch({ repository, workspace, here, branch, onBack, 
 }
 
 /**
- * **A repository's History tab, with its data** (UX6h1, the built-in Git design §2.3): its line's graph, walked from the
+ * **A repository's History tab, with its data**: its line's graph, walked from the
  * commit the list names its line's. Read only while it shows, and not at all with no checkout here.
  */
 export function RepositoryHistory({ repository, workspace, here }: { repository: string; workspace: string; here: boolean }) {
@@ -82,7 +82,7 @@ export function RepositoryHistory({ repository, workspace, here }: { repository:
 }
 
 /**
- * **A repository's Changes tab, with its data** (GITAPP2b, D204, the git-writes design §1, §11): drawn where the person let Daoris
+ * **A repository's Changes tab, with its data**: drawn where the person let Daoris
  * change the checkout's files, read when the tab opens, on window focus and on *Refresh*, and not at all with no checkout here.
  * What the shell holds until its fresh read lands is shown with its own time and marked as read again.
  */
@@ -107,7 +107,7 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
     : { state: 'read', value };
   const refreshing = query.isFetching || (value !== null && new Date(value.readAt).getTime() < askedAt);
 
-  // GITAPP2h: the presses of the tab. The hunks a row opens are read by `Hunks`, under the tab's own key.
+  // The presses of the tab. The hunks a row opens are read by `Hunks`, under the tab's own key.
   const { press, undo, resolve } = useGitActs(repository, workspace);
   const [last, setLast] = useState<ChangesLast | null>(null);
   const say = (verb: ChangesLast['verb'], path: string | null) => (answer: GitActAnswer & { stale?: boolean }) =>
@@ -124,7 +124,7 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
     return <ChangeHunks read={hunksRead} verb={side === 'unstaged' ? 'stage' : 'unstage'} busy={busy} onPress={onPress} />;
   }, [repository, workspace]);
 
-  // GITAPP2j: a conflicted file's conflicts, read by the row that opens them under the tab's own key.
+  // A conflicted file's conflicts, read by the row that opens them under the tab's own key.
   const Conflict = useMemo(() => function Conflict({ path, busy, onPress }: { path: string; busy: boolean; onPress: (press: ConflictPress) => void }) {
     const conflict = useGitConflict(repository, workspace, path);
     const answered = conflict.data;
@@ -137,7 +137,7 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
     return <ConflictHunks read={conflictRead} busy={busy} onPress={onPress} />;
   }, [repository, workspace]);
 
-  // GITAPP2i: the commit box. It reads the plan for its verb itself (an amend's git runs one more hook) and presses through the tab's one
+  // The commit box. It reads the plan for its verb itself (an amend's git runs one more hook) and presses through the tab's one
   // busy; it is a component of its own so the message typed stays while the tab reads again.
   const commit = useGitCommitAct(repository, workspace);
   const pressCommit = useRef<(press: CommitBoxPress, done: () => void) => void>(() => {});
@@ -161,7 +161,7 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
       : { state: 'read', value: answered.value };
     return <CommitBox read={planRead} amend={amend} onAmend={setAmend} busy={busy} onPress={(box, done) => pressCommit.current(box, done)} />;
   }, [repository, workspace]);
-  // GITAPP2k: the switch box and the stash box, each a component of its own so what was chosen or typed stays while the tab reads again.
+  // The switch box and the stash box, each a component of its own so what is chosen or typed stays while the tab reads again.
   const switching = useGitSwitchAct(repository, workspace);
   const pressSwitch = useRef<(press: SwitchBoxPress, done: () => void) => void>(() => {});
   pressSwitch.current = (box, done) => switching.mutate(box, {
@@ -249,19 +249,19 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
 const NO_BRANCHES: GitBranch[] = [];
 
 /**
- * **A workspace's branch list, with its data** (UX6h2b2, the built-in Git design §2.2, D112): drawn by its Branches tab above
+ * **A workspace's branch list, with its data** : drawn by its Branches tab above
  * the clean-up and the look. One `GIT_BRANCHES` for the workspace answers its repositories holding a branch of Daoris's,
  * each a group, and the rest apart. A group asks its sessions' titles only once it shows, so a tab of many repositories asks
  * for five; one apart is read alone, as its own page's Branches reads it, once the person includes it, never by an `all`
  * read, which would read every checkout here again.
  *
  * @remarks
- * The rows are filtered to the workspace again, as BRSCOPE1's are, so a row of another workspace's is never this tab's.
+ * The rows are filtered to the workspace again, so a row of another workspace's is never this tab's.
  */
 export function WorkspaceBranchGroups({ workspace, onOpenRepository, onOpenBranch, onOpenHistory }: {
   workspace: string;
   onOpenRepository: (repository: string) => void;
-  /** Open a branch's page on its repository's (UX6h3b), from its name in a group. */
+  /** Open a branch's page on its repository's, from its name in a group. */
   onOpenBranch?: (repository: string, branch: string) => void;
   /** Open a repository's History, from its line's row in its group. */
   onOpenHistory?: (repository: string) => void;
@@ -293,7 +293,7 @@ export function WorkspaceBranchGroups({ workspace, onOpenRepository, onOpenBranc
   );
 }
 
-/** What a list's rows press (UX6h3b): a branch's name its page, the line's History. */
+/** What a list's rows press: a branch's name its page, the line's History. */
 type Presses = { onOpen?: (branch: string) => void; onOpenHistory?: () => void };
 
 /** A group the workspace's read already holds: its list as read, its sessions' titles joined while it shows. */
@@ -314,7 +314,7 @@ function BranchesRead({ repository, workspace, ...presses }: { repository: strin
   const pushPlan = useGitPushPlan(repository, workspace).data?.value;
   const push = useGitPush(repository, workspace);
   const deletes = useGitDeletes(repository, workspace).data?.value;
-  // GITAPP2f, g: Fetch and Push are drawn only once the driver's plan is read; before it, or where it did not answer, the tab offers neither.
+  // Fetch and Push are drawn only once the driver's plan is read; before it, or where it did not answer, the tab offers neither.
   const acts: RefActs = {
     ...refActs, fetch: plan ? { ...plan, press: fetchOrigin } : undefined, push: pushPlan ? { ...pushPlan, press: push } : undefined,
   };
@@ -322,7 +322,7 @@ function BranchesRead({ repository, workspace, ...presses }: { repository: strin
 }
 
 /**
- * **Each session branch's session's title, by the branch's name** (UX6h2a, the built-in Git design §2.2): the rail's rule
+ * **Each session branch's session's title, by the branch's name**: the rail's rule
  * (`sessionTitle`: its quest's name, else its ask or its opening words), joined here from the session the driver named for
  * the branch's tree and the records the service lists. Asked only where a session's branch names one. With no record listed,
  * a quest the driver named still names it, by its name where the quest is listed and by its reference otherwise.
@@ -350,7 +350,7 @@ type PageOutcome = { page: GitGraphPage } | { code: string | null; sentence: str
 function pageOutcome(query: { error: unknown; data?: GitAnswer<GitGraphPage> }): PageOutcome {
   if (query.error) return { code: null, sentence: sentence(query.error) };
   if (!query.data) return null;
-  // A refusal is a code the page words (`errors.{code}`), never git's own sentence (GIT1d).
+  // A refusal is a code the page words (`errors.{code}`), never git's own sentence.
   const refusal = gitRefusal(query.data);
   if (refusal) return { code: refusal.code, sentence: sentence(refusal) };
   const page = query.data.value;
@@ -362,7 +362,7 @@ function pageOutcome(query: { error: unknown; data?: GitAnswer<GitGraphPage> }):
 type PagedGraph = GitRead<{ commits: GitLogCommit[]; more: boolean; loadingMore: boolean; moreError: string | null }>;
 
 /**
- * **A graph's pages accumulated** (UX6h3a), History's and a branch page's (UX6h3b): one `GIT_GRAPH` per page asked,
+ * **A graph's pages accumulated**, History's and a branch page's: one `GIT_GRAPH` per page asked,
  * `useGitGraphPages`, each cached by its page, and the count asked a state of the holder's, reset with the tips it counts for.
  * The commits are the leading pages that arrived, in order, so the lanes are laid over the whole list; the next page on its
  * way, or refused, is said in the foot beside them, which a press asks again. With no tip it asks nothing and reads as on its
@@ -404,12 +404,12 @@ function usePagedGraph(repository: string, tips: readonly string[], options: { s
   return { graph, onMore };
 }
 
-/** The most tips `GIT_GRAPH` carries (D147, `GraphTips`): past it the read refuses `GIT_TOO_MANY_TIPS`, so it is never asked more. */
+/** The most tips `GIT_GRAPH` carries (`GraphTips`): past it the read refuses `GIT_TOO_MANY_TIPS`, so it is never asked more. */
 const GRAPH_TIPS = 256;
 
 /**
  * The History tab's read: its line's graph, walked from the commit the list names its line's, its pages accumulated. With
- * *All branches* ticked (UX6h3c, page state) the walk is over the repository's branches: the line's commit, then each local
+ * *All branches* ticked (page state) the walk is over the repository's branches: the line's commit, then each local
  * and origin branch's in the list's order, distinct, the first `GRAPH_TIPS` of them.
  */
 function HistoryRead({ repository, workspace }: { repository: string; workspace: string }) {
@@ -417,7 +417,7 @@ function HistoryRead({ repository, workspace }: { repository: string; workspace:
   const [allBranches, setAllBranches] = useState(false);
   const commit = list.state === 'read' ? list.value.line.commit : null;
   const branches = list.state === 'read' ? list.value.branches : NO_BRANCHES;
-  // The graph's tips are whole ids the list resolved (D147 §4.2): with none, the graph asks nothing.
+  // The graph's tips are whole ids the list resolved: with none, the graph asks nothing.
   const { tips, limit } = useMemo(() => {
     if (!commit) return { tips: NO_TIPS, limit: undefined };
     if (!allBranches) return { tips: [commit], limit: undefined };
@@ -442,7 +442,7 @@ function HistoryRead({ repository, workspace }: { repository: string; workspace:
 }
 
 /**
- * A branch page's read (UX6h3b): the list's, the branch in it, and its walk since it parted from its line. The walk is asked
+ * A branch page's read: the list's, the branch in it, and its walk since it parted from its line. The walk is asked
  * with the branch's tip then the line's, as `sinceParted` requires, and drawn with the line's first, so the line keeps the
  * leftmost lane as it does in History.
  */
@@ -463,7 +463,7 @@ function BranchPageRead({ repository, workspace, name, onBack, landingOpen }: {
 
   const read = ((): BranchRead => {
     if (list.state !== 'read') return list;
-    // Gone from the list since its row was pressed, or a ref git named no commit for: there is nothing of it to draw.
+    // Gone from the list after its row is pressed, or a ref git named no commit for: there is nothing of it to draw.
     if (!branch || !branch.commit) return { state: 'gone' };
     const value = { branch, line: line?.branch ?? null, title: titles[branch.name] ?? null };
     if (!lineTip) return { state: 'read', value, graph: { state: 'noLine' } };
@@ -473,11 +473,11 @@ function BranchPageRead({ repository, workspace, name, onBack, landingOpen }: {
 }
 
 /**
- * How a landed branch landed, read once its section opens (FLOWCHART1c; the flowchart design §2.7): the trace of the session its
+ * How a landed branch landed, read once its section opens: the trace of the session its
  * landing record names (`TRACE`), which carries the landing with its advances and units, and the units
  * of work the branch carries (`WORK_STATE` by the branch, in this repository), which carry the end, the clean-up and the recovery.
- * Never by a unit's executor, which is any of its sessions: the record names the one it was made for. Absent where the branch is no
- * landing's, and where nothing reads the trace (a browser, D47 §4).
+ * Never by a unit's executor, which is any of its sessions: the record names the one it is made for. Absent where the branch is no
+ * landing's, and where nothing reads the trace (a browser).
  */
 function useLandingDoor(repository: string, name: string, session: string | null, opened: boolean): LandingDoor | undefined {
   const [open, setOpen] = useState(opened);

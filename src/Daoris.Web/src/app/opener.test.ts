@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { askItem, doorOpening, opening, placeOpening, planOpening, projectsItem, questsItem, workspaceItem } from './opener';
 
-// One opener (D118 §3i): every door into a view says what it opens, and the view's chosen item takes it.
+// One opener: every door into a view says what it opens, and the view's chosen item takes it.
 // Pure, so what each door does is an assertion, and `App` only applies it.
 
 describe('the opener', () => {
-  /** COMPANYVIEW1b: a door into Roles names the mode; a door naming an agent or a part of its page names Agents; the place alone names none. */
+  /** A door into Roles names the mode; a door naming an agent or a part of its page names Agents; the place alone names none. */
   it("names the Agents place's mode only where the door needs one", () => {
     expect(opening('agents')).toEqual({ view: 'agents' });
     expect(opening('agents', null, { agentsMode: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });
@@ -17,7 +17,7 @@ describe('the opener', () => {
     expect(opening('quests', null, { agentsMode: 'setup' })).toEqual({ view: 'quests' });
   });
 
-  /** COMPANYVIEW1e: Setup's and This Daoris's lines open Roles on Appointed roles. */
+  /** Setup's and This Daoris's lines open Roles on Appointed roles. */
   it("opens a Roles section a door names, in Roles' mode, and only in the Agents place", () => {
     expect(opening('agents', null, { roleSection: 'appointed' })).toEqual({ view: 'agents', agentsMode: 'setup', roleSection: 'appointed' });
     expect(doorOpening({ view: 'agents', roleSection: 'appointed' })).toEqual({ view: 'agents', agentsMode: 'setup', roleSection: 'appointed' });
@@ -34,7 +34,7 @@ describe('the opener', () => {
     expect(opening('sessions', 's1a2b3c4')).toEqual({ view: 'sessions', chosen: { view: 'sessions', item: 's1a2b3c4' } });
   });
 
-  /** FRAME1d: Quests' main area shows the item its list chose, so the choice is the whole of what a door does. */
+  /** Quests' main area shows the item its list chose, so the choice is the whole of what a door does. */
   it('chooses the quest a door names, and nothing more: no drawer is asked for', () => {
     expect(opening('quests', 'abc123')).toEqual({ view: 'quests', chosen: { view: 'quests', item: 'abc123' } });
   });
@@ -55,12 +55,12 @@ describe('the opener', () => {
     expect(opening('settings', 'start', { anchor: 'step-setUp' })).toEqual({
       view: 'settings', chosen: { view: 'settings', item: 'start' }, anchor: 'step-setUp',
     });
-    // GITAUTH1e: Settings → Git opens its add form on the host a door names, in view; a door naming none lets a host left before go.
+    // Settings → Git opens its add form on the host a door names, in view; a door naming none lets a host left before go.
     expect(opening('settings', 'git', { gitHost: 'github.com' })).toEqual({
       view: 'settings', chosen: { view: 'settings', item: 'git' }, anchor: 'git-add', gitHost: 'github.com',
     });
     expect(opening('settings', 'git')).toEqual({ view: 'settings', chosen: { view: 'settings', item: 'git' }, anchor: null, gitHost: null });
-    // The gear names no domain: Settings opens on the one it had, at its top as it was.
+    // The gear names no domain: Settings opens on the one it has, at its top as it is.
     expect(opening('settings')).toEqual({ view: 'settings' });
   });
 
@@ -70,7 +70,7 @@ describe('the opener', () => {
     expect(opening('projects', null, { drawer: 'import' })).toEqual({ view: 'projects', drawer: 'import' });
   });
 
-  /** ENTRY1d2b (D161's ENTRY1d note): Ask Daoris's go opens Add or Import with its workspace filled, and only a form takes it. */
+  /** Ask Daoris's go opens Add or Import with its workspace filled, and only a form takes it. */
   it('opens one of Repositories\' forms with the workspace a door fills it with, and nothing else with it', () => {
     expect(opening('projects', null, { drawer: 'add', drawerWorkspace: 'work' })).toEqual({ view: 'projects', drawer: 'add', drawerWorkspace: 'work' });
     expect(opening('projects', null, { drawer: 'import', drawerWorkspace: 'work' }))
@@ -79,7 +79,7 @@ describe('the opener', () => {
     expect(opening('sessions', null, { drawer: 'add', drawerWorkspace: 'work' })).toEqual({ view: 'sessions' });
   });
 
-  /** NEW1d-b: a door to the composer carries its repository and words, on Sessions alone. */
+  /** A door to the composer carries its repository and words, on Sessions alone. */
   it('opens the composer with the repository and words a door carries, on Sessions alone', () => {
     expect(opening('sessions', null, { compose: { repository: 'engine', sentence: 'fix it' } }))
       .toEqual({ view: 'sessions', compose: { repository: 'engine', sentence: 'fix it' } });
@@ -87,7 +87,7 @@ describe('the opener', () => {
     expect(opening('projects', null, { compose: { sentence: 'x' } })).toEqual({ view: 'projects' });
   });
 
-  /** PLUGUI1b (D119 §3.1): a plugin by its id, and one of Daoris's own plugins as an offer, since the two may share an id. */
+  /** A plugin by its id, and one of Daoris's own plugins as an offer, since the two may share an id. */
   it('chooses the plugin or the offer a door names, in Plugins\' list', () => {
     expect(opening('plugins', 'acme.gate')).toEqual({ view: 'plugins', chosen: { view: 'plugins', item: 'acme.gate' } });
     expect(opening('plugins', 'offer:in-app-browser')).toEqual({
@@ -96,13 +96,13 @@ describe('the opener', () => {
     expect(opening('plugins')).toEqual({ view: 'plugins' });
   });
 
-  /** FRAME1e: a repository's page opens its code map, the Map's page one level in, which is no chosen item (§4). */
+  /** A repository's page opens its code map, the Map's page one level in, which is no chosen item (§4). */
   it('opens the Map on the code map a door names, and only the Map', () => {
     expect(opening('map', null, { code: 'engine' })).toEqual({ view: 'map', code: 'engine' });
     expect(opening('projects', 'engine', { code: 'engine' })).toEqual({ view: 'projects', chosen: { view: 'projects', item: 'engine' } });
   });
 
-  /** UX6f (D150 §4.2): a door opens a repository's page at a tab; a tab is Repositories' alone. */
+  /** A door opens a repository's page at a tab; a tab is Repositories' alone. */
   it('opens a repository at the tab a door names, and names no tab for another view', () => {
     expect(opening('projects', 'engine', { tab: 'branches' })).toEqual({
       view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'branches',
@@ -113,7 +113,7 @@ describe('the opener', () => {
   });
 
   /**
-   * FLOWCHART1c: a door into how a landed branch landed (the work's milestone, a run's landing step) opens its repository at
+   * A door into how a landed branch landed (the work's milestone, a run's landing step) opens its repository at
    * Branches with that branch's page; it names the branch with its repository, and nothing on any other view.
    */
   it('opens a landed branch\'s page on its repository\'s Branches, where the door names the repository', () => {
@@ -125,7 +125,7 @@ describe('the opener', () => {
     expect(opening('quests', 'abc123', { branch: 'review/q6-asset-cache' })).toEqual({ view: 'quests', chosen: { view: 'quests', item: 'abc123' } });
   });
 
-  /** UX6g (D150 §4.1): Repositories' list holds workspaces and repositories, so an item there names which. */
+  /** Repositories' list holds workspaces and repositories, so an item there names which. */
   it('names a workspace as a workspace, since Repositories\' list holds both', () => {
     expect(workspaceItem('aurora')).toBe('workspace:aurora');
     expect(projectsItem('workspace:aurora')).toEqual({ workspace: 'aurora' });
@@ -136,7 +136,7 @@ describe('the opener', () => {
   });
 
   /**
-   * UX6g (D150 §4.3, §2.4): a door into a workspace's page names its tab and the Setup section to open; one that names no
+   * A door into a workspace's page names its tab and the Setup section to open; one that names no
    * workspace opens the workspace in view, and with none in view, Repositories with nothing chosen.
    */
   it('opens a workspace at the tab and section a door names, the workspace in view where it names none', () => {
@@ -158,8 +158,8 @@ describe('the opener', () => {
   });
 
   /**
-   * FRAME1f: an entry by its id in Search's list, and a finding by its entries in Convergence's. Since UX6i (D150 §2.2)
-   * both are Knowledge's, and a door names the mode with the item: each mode's list keeps its own chosen item.
+   * An entry by its id in Search's list, and a finding by its entries in Convergence's.
+   * Both are Knowledge's, and a door names the mode with the item: each mode's list keeps its own chosen item.
    */
   it('chooses the entry or the finding a door names, on Knowledge in its mode', () => {
     expect(opening('knowledge', 'game:.claude/knowledge/world-streaming.md', { knowledge: 'search' })).toEqual({
@@ -170,7 +170,7 @@ describe('the opener', () => {
     });
   });
 
-  /** UX6i: a door into Search or Convergence names the mode; one into the place names none, and it opens as it was left. */
+  /** A door into Search or Convergence names the mode; one into the place names none, and it opens as it is left. */
   it('opens Knowledge in the mode a door names, or as it was left where it names none', () => {
     expect(opening('knowledge', null, { knowledge: 'convergence' })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
     expect(opening('knowledge')).toEqual({ view: 'knowledge' });
@@ -182,7 +182,7 @@ describe('the opener', () => {
   });
 
   /**
-   * ENTRY1b (D161's ENTRY1 note): a door into what waits on the person names a group of Sessions' or Quests' list, which
+   * A door into what waits on the person names a group of Sessions' or Quests' list, which
    * the view brings into view, and no item in it. A group means nothing to another view, Overview's among them.
    */
   it('opens Sessions or Quests with the group a door names, and only there', () => {
@@ -213,7 +213,7 @@ describe('the opener', () => {
   });
 });
 
-// CONFIRMWAIT1c (the confirm-wait design §8.1, §15.3 item 13): a press's card opens the page its plan is shown on, scoped to the
+// A press's card opens the page its plan is shown on, scoped to the
 // press's own session, repository, workspace, quest or ask.
 describe("a press's plan door", () => {
   const holding = (repository: string) => ({ game: 'studio', tools: 'forge' } as Record<string, string>)[repository] ?? null;
@@ -247,7 +247,7 @@ describe("a press's plan door", () => {
   });
 });
 
-/** AGENTSPLACE1f and 1h: every door naming a repository's place ends in `apply`, so one resolution there is the door census. */
+/** Every door naming a repository's place ends in `apply`, so one resolution there is the door census. */
 describe('a door naming a repository\'s place, in the Setup mode', () => {
   const where = () => 'studio';
 
@@ -258,7 +258,7 @@ describe('a door naming a repository\'s place, in the Setup mode', () => {
     expect(placeOpening(doorOpening({ view: 'agents', placeOf: 'engine' }), where)).toEqual(place);
   });
 
-  // SETUPUX1v (the setup-UX design §4, row v): the census of the doors that opened a section of a workspace's Setup tab. Each ends in `apply`, so
+  // The census of the doors that opened a section of a workspace's Setup tab. Each ends in `apply`, so
   // this one redirect holds them: a section the place took opens the place's page at its row, and the remote, the deployment's wiring, opens
   // Repositories' workspace at Details. Dark, nothing moves.
   it("opens each section of a workspace's Setup tab at its new home, whichever door named it", () => {
@@ -274,7 +274,7 @@ describe('a door naming a repository\'s place, in the Setup mode', () => {
     });
   });
 
-  // FLOWCHART2g: a conversation's draft card opens the place's Workflow with its editor on the draft the conversation was told.
+  // A conversation's draft card opens the place's Workflow with its editor on the draft the conversation names.
   it("opens the place's Workflow with the editor asked on a draft, for a repository and for a workspace, lit only", () => {
     const edit = { draft: 'g1-0123456789abcdef', workflow: 'release', name: 'Release for engine', base: 2 };
     const repository = doorOpening({ view: 'agents', placeOf: 'engine', placeEdit: edit });
@@ -299,13 +299,13 @@ describe('a door naming a repository\'s place, in the Setup mode', () => {
       .toMatchObject({ view: 'projects', workspaceTab: 'details', workspaceSection: 'remote' });
   });
 
-  // AGENTSPLACE1h: a door to a repository's workflow names the place's Workflow section.
+  // A door to a repository's workflow names the place's Workflow section.
   it("opens the repository's place at its Workflow section", () => {
     const place = { view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'workflow' } };
     expect(placeOpening(opening('agents', null, { placeOf: 'engine', placeSection: 'workflow' }), where)).toEqual(place);
   });
 
-  // SETUPUX1h: a door names the section of the place's page and the row of it, and the page opens there.
+  // A door names the section of the place's page and the row of it, and the page opens there.
   it('carries the section and row a door names to the place\'s page', () => {
     const door = opening('agents', null, { placeOf: 'engine', placeSection: 'roles', placeRow: 'review' });
     expect(placeOpening(door, where)).toEqual({
@@ -313,7 +313,7 @@ describe('a door naming a repository\'s place, in the Setup mode', () => {
     });
   });
 
-  // AGENTSPLACE1k: Ask Daoris's place card opens a repository's Details (a workspace's page for several) with the ask; lit, the place's page.
+  // Ask Daoris's place card opens a repository's Details (a workspace's page for several) with the ask; lit, the place's page.
   it('opens the place the card names with its ask, and leaves the Details where they are while the mode is dark', () => {
     const setUp = { repositories: ['engine'], preset: 'integrated', opinion: false, look: false, adoption: false, drive: false };
     const door = doorOpening({ view: 'projects', item: 'engine', tab: 'details', setUp });
@@ -325,7 +325,7 @@ describe('a door naming a repository\'s place, in the Setup mode', () => {
     expect(placeOpening(workspace, where)).toEqual({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio', setUp: several });
   });
 
-  // SETUPUX1m: the Roles mode's doors, which named the mode or one of its sections, name This machine's page once the Setup mode is lit.
+  // The Roles mode's doors, which named the mode or one of its sections, name This machine's page once the Setup mode is lit.
   it("opens This machine's page for each door that opened the Roles mode, at the part of it the door named", () => {
     const machine = { view: 'agents', agentsMode: 'setup', place: 'machine' };
     // The Appointed roles section is the Roles section's *Appointed* row (Settings' and the supervisor's doors say it).

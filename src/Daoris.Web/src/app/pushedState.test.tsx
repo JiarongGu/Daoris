@@ -3,8 +3,8 @@ import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The driver's state pushed with its data (PUSH1a, D182): the whole window over a mocked shell and a fake clock, counting every
-// route read as IDLECPU1's `idle.test.tsx` does. A tick reads none of the pushed state again, a push changes it with no read, a
+// The driver's state pushed with its data: the whole window over a mocked shell and a fake clock, counting every
+// route read as `idle.test.tsx` does. A tick reads none of the pushed state again, a push changes it with no read, a
 // focus asks nothing of it, and a second window reads its one snapshot.
 
 const { invoke, notifyReady, heard } = vi.hoisted(() => ({
@@ -24,7 +24,7 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-// The real hub, with a probe run in an effect declared before its own (so first among its effects), for PUSHMOUNT1's order.
+// The real hub, with a probe run in an effect declared before its own (so first among its effects), for the mount order.
 const { mountProbe } = vi.hoisted(() => ({ mountProbe: { current: null as (() => void) | null } }));
 vi.mock('./ShellSignals', async () => {
   const actual = await vi.importActual<typeof import('./ShellSignals')>('./ShellSignals');
@@ -63,7 +63,7 @@ const CONSIDERED = { quest: 'q-1', repository: 'engine', verdict: 'Blocked', rea
 const HOLD = { folder: 'X:/engine', trustFile: 'X:/profile/.claude.json', quest: 'q-1' };
 const WAIT = { agent: 'claude-code', account: 'account-2', until: '2026-10-20T12:00:00+00:00', stated: true, quests: ['q-1'], asks: [], signedOut: [] };
 
-/** Why quests sit, the trust holds and the account waits, as the shell's owner holds them (FOUNDATION1s): each pushed whole. */
+/** Why quests sit, the trust holds and the account waits, as the shell's owner holds them: each pushed whole. */
 const CONSIDERATIONS_SNAPSHOT = {
   slice: 'considerations', epoch: 'k1', status: 'ready',
   partitions: [
@@ -73,7 +73,7 @@ const CONSIDERATIONS_SNAPSHOT = {
   ],
 };
 
-/** What an agent Daoris starts may do, as the rules' owner pushes `RULES`'s answer whole (FOUNDATION1s part B). */
+/** What an agent Daoris starts may do, as the rules' owner pushes `RULES`'s answer whole. */
 const RULES: AgentRulesState = {
   path: 'permissions.json', defaults: [], scopes: [{ scope: 'machine', allow: [], ask: [], deny: ['Bash(rm:*)'] }], proposals: [],
 };
@@ -81,7 +81,7 @@ const RULES_SNAPSHOT = {
   slice: 'rules', epoch: 'r1', status: 'ready', partitions: [{ partition: 'rules', seq: 1, status: 'ready', data: RULES }],
 };
 
-/** A session parked to ask, as the attention slice's owner pushes its row and what the Sessions badge counts (PUSH1d4). */
+/** A session parked to ask, as the attention slice's owner pushes its row and what the Sessions badge counts. */
 const PARKED_ROW = { kind: 'parked', id: 'a-1', since: '2026-10-20T08:00:00+00:00', workspace: 'default', where: 'engine', note: {} };
 const ATTENTION_SNAPSHOT = {
   slice: 'attention', epoch: 'n1', status: 'ready',
@@ -121,7 +121,7 @@ const record = (id: string, extra: Record<string, unknown> = {}) => ({
   updated: '2026-10-19T09:00:00+00:00', workspace: 'default', ...extra,
 });
 
-/** The sessions' slice as the shell's owner holds it (PUSH1d2): a partition per workspace, its records by id. */
+/** The sessions' slice as the shell's owner holds it: a partition per workspace, its records by id. */
 const SESSIONS_SNAPSHOT = {
   slice: 'sessions', epoch: 's1', status: 'ready',
   partitions: [
@@ -132,7 +132,7 @@ const SESSIONS_SNAPSHOT = {
 
 const CALL = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };
 
-/** The running calls' slice (WAITSAY1c2): one partition, session id to its call. */
+/** The running calls' slice: one partition, session id to its call. */
 const CALLS_SNAPSHOT = {
   slice: 'calls', epoch: 'c1', status: 'ready',
   partitions: [{ partition: 'calling', seq: 1, status: 'ready', data: { 'a-1': CALL } }],
@@ -145,7 +145,7 @@ const entry = (session: string, group: string) => ({
   parts: [{ session, quest: null, shown: grouping(session, group).shown, group, began: 'opened', after: null, askedBy: null }],
 });
 
-/** The session groups' slice (PUSH1c3a): each row under its session with its group's sort inputs, each entry under its key. */
+/** The session groups' slice: each row under its session with its group's sort inputs, each entry under its key. */
 const GROUPS_SNAPSHOT = {
   slice: 'groups', epoch: 'g1', status: 'ready',
   partitions: [
@@ -163,7 +163,7 @@ const GROUPS_SNAPSHOT = {
 const unitRow = (unit: string, repository: string) =>
   ({ unit, repository, end: { state: 'unknown', said: '' }, result: [], cleanup: { state: 'pending', waits: [], gone: [] }, recovery: [], entries: [] });
 
-/** The work slice as the shell's owner holds it (PUSH1c2b): a partition per repository, `<no checkout>`, and `<held>` apart. */
+/** The work slice as the shell's owner holds it: a partition per repository, `<no checkout>`, and `<held>` apart. */
 const WORK_SNAPSHOT = {
   slice: 'work', epoch: 'w1', status: 'ready',
   partitions: [
@@ -178,7 +178,7 @@ const STANDING = {
   workspace: 'default', wired: true, ahead: 2, behind: ['q7'], conflicts: [], synced: '2026-10-20T08:00:00+00:00', tried: '2026-10-20T09:00:00+00:00',
 };
 
-/** The sync slice as the shell's owner holds it (PUSH1a2): a partition per wired circle, each the route's record for it. */
+/** The sync slice as the shell's owner holds it: a partition per wired circle, each the route's record for it. */
 const SYNC_SNAPSHOT = {
   slice: 'sync', epoch: 'y1', status: 'ready',
   partitions: [{ partition: 'default', seq: 1, status: 'ready', data: STANDING }],
@@ -187,7 +187,7 @@ const SYNC_SNAPSHOT = {
 const sweepRow = (branch: string) =>
   ({ repository: 'engine', workspace: 'default', branch, hasTree: false, kind: 'empty', commits: 0, removable: true });
 
-/** The clean-up's list as the shell's owner holds it (PUSH1c4a): a partition per repository with a checkout here. */
+/** The clean-up's list as the shell's owner holds it: a partition per repository with a checkout here. */
 const SWEEP_SNAPSHOT = {
   slice: 'sweep', epoch: 'p1', status: 'ready',
   partitions: [{ partition: 'engine', seq: 1, status: 'ready', data: { branches: [sweepRow('daoris/s-one')], landed: [] } }],
@@ -198,7 +198,7 @@ const quest = (id: string, extra: Record<string, unknown> = {}) => ({
   updated: '2026-10-19T09:00:00+00:00', workspace: 'default', links: [], attachments: [], ...extra,
 });
 
-/** The quests' slice as the shell's owner holds it (PUSH1d3): a partition per workspace, its quests by id. */
+/** The quests' slice as the shell's owner holds it: a partition per workspace, its quests by id. */
 const QUESTS_SNAPSHOT = {
   slice: 'quests', epoch: 'q1', status: 'ready',
   partitions: [
@@ -212,7 +212,7 @@ const askRecord = (id: string, extra: Record<string, unknown> = {}) => ({
   updated: '2026-10-19T09:00:00+00:00', links: [], attachments: [], proposal: [], quests: ['q-1'], ...extra,
 });
 
-/** The asks' slice as the shell's owner holds it (PUSH1d3): a partition per workspace, its asks by id. */
+/** The asks' slice as the shell's owner holds it: a partition per workspace, its asks by id. */
 const ASKS_SNAPSHOT = {
   slice: 'asks', epoch: 'k1', status: 'ready',
   partitions: [{ partition: 'default', seq: 1, status: 'ready', data: { 'k-1': askRecord('k-1'), 'k-2': askRecord('k-2', { state: 'Closed' }) } }],
@@ -221,7 +221,7 @@ const ASKS_SNAPSHOT = {
 const used = (session: string, when: string) =>
   ({ session, repository: 'engine', door: 'claude-code', profile: 'work', used: 12_000, size: 200_000, when });
 
-/** What sessions consumed, as the shell's owner holds it (PUSH1e): each session under its id, each account's share under its key. */
+/** What sessions consumed, as the shell's owner holds it: each session under its id, each account's share under its key. */
 const USAGE_SNAPSHOT = {
   slice: 'usage', epoch: 'u1', status: 'ready',
   partitions: [
@@ -245,7 +245,7 @@ const claude = (used: number, over: boolean) => ({
   scopes: [],
 });
 
-/** How each agent's accounts are used, as the shell's owner holds it (PUSH1e): a partition per agent, its verdicts beside each reading. */
+/** How each agent's accounts are used, as the shell's owner holds it: a partition per agent, its verdicts beside each reading. */
 const ACCOUNTS_SNAPSHOT = {
   slice: 'accounts', epoch: 'a1', status: 'ready',
   partitions: [{ partition: 'claude-code', seq: 1, status: 'ready', data: claude(0.4, false) }],
@@ -367,7 +367,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(tick['DAORIS.DRIVER.STATE']).toBeUndefined();
     expect(tick['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
     expect(tick['DAORIS.DRIVER.LINES']).toBeUndefined();
-    // Nor the clean-up's list, whose every read asked the pull-request plugin (PUSH1c4b).
+    // Nor the clean-up's list, whose every read asked the pull-request plugin.
     expect(tick['DAORIS.DRIVER.SWEEP_PLAN']).toBeUndefined();
   });
 
@@ -481,14 +481,14 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     function Second() {
       useDriver();
       useLines();
-      // The hub first, as each root mounts it (PUSHMOUNT1), then what reads the sessions.
+      // The hub first, as each root mounts it, then what reads the sessions.
       return <><ShellSignals notify={() => {}} /><Sessions /></>;
     }
     render(<QueryClientProvider client={second}><WorkspaceScopeProvider initial={null}><Second /></WorkspaceScopeProvider></QueryClientProvider>);
     await later(2_000);
 
     // One snapshot for each slice, and no pull. The first window's own ask of the held permissions, every few seconds while a
-    // session works (AUTONOMY1b3c, `permissionsAgainIn`), is not this window's, and may land in these two seconds.
+    // session works (`permissionsAgainIn`), is not this window's, and may land in these two seconds.
     const { 'DAORIS.DRIVER.PERMISSION_WAITS': _firstWindows, ...read } = since(before, asked());
     expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': SLICES, 'DAORIS.DRIVER.UNDER_WAY': 1 });
     expect(sessionReads()).toBe(reads);
@@ -543,7 +543,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     await later(1_000);
     expect(read).toEqual({ considered: [CONSIDERED], untrusted: [HOLD] });
 
-    // A tick that says nothing of them leaves them as they were, where it used to replace them whole with what it carried.
+    // A tick that says nothing of them leaves them as they are, and does not replace them whole with what it carries.
     const before = asked();
     await act(async () => {
       heard.get('DRIVER_TICK')?.({ events: [] });
@@ -662,7 +662,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
       other = useAsks(false).data;
       return null;
     }
-    // The hub first, as each root mounts it (PUSHMOUNT1), then what reads the asks.
+    // The hub first, as each root mounts it, then what reads the asks.
     render(
       <QueryClientProvider client={second}>
         <WorkspaceScopeProvider initial={null}><ShellSignals notify={() => {}} /><Second /></WorkspaceScopeProvider>
@@ -686,7 +686,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(first?.map((each) => each.id)).toEqual(['k-3', 'k-1']);
     expect(other?.map((each) => each.id)).toEqual(['k-3', 'k-1']);
     expect(askReads()).toBe(0);
-    // The second window's own snapshots alone. The first window's ask of the held permissions is not this window's (AUTONOMY1b3c),
+    // The second window's own snapshots alone. The first window's ask of the held permissions is not this window's,
     // nor its badge, which the new ask moved: what needs the person read it from the push.
     const { 'DAORIS.DRIVER.PERMISSION_WAITS': _firstWindows, 'DAORIS.WINDOWS.SET_BADGE': _badge, ...read } = since(before, asked());
     expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': SLICES, 'DAORIS.DRIVER.UNDER_WAY': 1 });
@@ -777,7 +777,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
   });
 
   /**
-   * AUTONOMY1b3b: where the calls are pushed, the held permissions are asked as a pushed call's waiting mark moves, and never every
+   * Where the calls are pushed, the held permissions are asked as a pushed call's waiting mark moves, and never every
    * few seconds while a session works: the mark comes with the hold and goes with its answer or release.
    */
   it('asks the held permissions as a pushed call is marked waiting and unmarked, and never on a clock (AUTONOMY1b3b)', async () => {
@@ -810,8 +810,8 @@ describe("the driver's state, pushed (PUSH1a)", () => {
   });
 
   /**
-   * PUSH1d4 (D182 point 6): who needs the person is .NET's judgement, read once as its snapshot, the badge and the taskbar counting
-   * its rows. A tick reads none of what the band was judged from (the rules, the second opinions, the helpers' asks, the held calls,
+   * Who needs the person is.NET's judgement, read once as its snapshot, the badge and the taskbar counting
+   * its rows. A tick reads none of what the band is judged from (the rules, the second opinions, the helpers' asks, the held calls,
    * the work, the accounts), and a push moves the count with no read.
    */
   it('counts who needs the person from its snapshot, a tick reading none of its inputs and a push moving it with no read (PUSH1d4)', async () => {
@@ -846,7 +846,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
   });
 
   /**
-   * PUSHUX1 (the UI/UX design §3.8): every slice answered not judged, and the pulls beneath them not answered yet. Nothing a window
+   * Every slice answered not judged, and the pulls beneath them not answered yet. Nothing a window
    * shows reads as empty: who needs the person draws its skeleton, the quests' tiles and card their placeholders, the status bar
    * no count. Then judged, each says so; and read again whole, the band holds its last rows, dimmed.
    */
@@ -917,7 +917,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
   });
 
   /**
-   * PUSHUX2 (PUSHUX1's hand-back, the UI/UX design §3.8): a shell is known before its driver answers. While the driver's snapshot is
+   * A shell is known before its driver answers. While the driver's snapshot is
    * on its way the window keeps Sessions, the view it remembered, and Settings its machine's domains and the one it remembered, never
    * reading as a browser; then the snapshot lands and nothing moves.
    */
@@ -1081,7 +1081,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
       heard.get('STATE_CHANGED')?.({ scopes: ['sessions', 'landing', 'sweep'] });
       await vi.advanceTimersByTimeAsync(2_000);
     });
-    // Past the minute the pull was fresh for, then a focus.
+    // Past the minute the pull stays fresh for, then a focus.
     await later(61_000);
     hidden(true);
     hidden(false);
@@ -1163,7 +1163,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
       other = useSyncStanding('default').data;
       return null;
     }
-    // The hub first, as each root mounts it (PUSHMOUNT1), then what reads where the circle stands.
+    // The hub first, as each root mounts it, then what reads where the circle stands.
     render(
       <QueryClientProvider client={second}>
         <WorkspaceScopeProvider initial={null}><ShellSignals notify={() => {}} /><Second /></WorkspaceScopeProvider>
@@ -1184,7 +1184,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(first).toMatchObject({ ahead: 0, tried: '2026-10-20T09:05:00+00:00' });
     expect(other).toMatchObject({ ahead: 0, tried: '2026-10-20T09:05:00+00:00' });
     expect(syncReads()).toBe(0);
-    // The second window's own snapshots alone; the first window's ask of the held permissions is not this window's (AUTONOMY1b3c).
+    // The second window's own snapshots alone; the first window's ask of the held permissions is not this window's.
     const { 'DAORIS.DRIVER.PERMISSION_WAITS': _firstWindows, ...read } = since(before, asked());
     expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': SLICES, 'DAORIS.DRIVER.UNDER_WAY': 1 });
   });
@@ -1242,7 +1242,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(other?.accounts).toEqual([{ agent: 'claude-code', profile: 'work', sessions: 2, used: 24_000 }]);
     const read = since(before, asked());
     expect(read['DAORIS.DRIVER.USAGE']).toBeUndefined();
-    // The second window's own snapshots alone; the first window's ask of the held permissions is not this window's (AUTONOMY1b3c).
+    // The second window's own snapshots alone; the first window's ask of the held permissions is not this window's.
     expect(read['DAORIS.DRIVER.STATE_SLICE']).toBe(SLICES);
   });
 

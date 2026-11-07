@@ -7,14 +7,14 @@ import { describe, expect, it } from 'vitest';
 import { DotMark } from './ui';
 
 /**
- * **A mark at rest is still** (FREEZE1, D41's motion rule: motion on overlays and hovers, and no shimmer anywhere).
+ * **A mark at rest is still** (motion on overlays and hovers, and no shimmer anywhere).
  *
  * The live dot pulsed for ever. Measured on the install (2026-10-08), one endless `motion-safe:animate-pulse` kept the
  * window drawing at the display's rate, 601 frames in 5 s, and its GPU process spent about a quarter of a core for as long
- * as any session was live. So the pulse says a turn began and then settles: a few cycles, never `infinite`.
+ * as any session is live. So the pulse says a turn began and then settles: a few cycles, never `infinite`.
  *
  * Read from the stylesheet the page is built with, compiled as the build compiles it, because the count is a token's
- * (`--animate-pulse` in `tokens.css`) and a class name says nothing of it. Tailwind stays out of the other tests (WEBFAST1);
+ * (`--animate-pulse` in `tokens.css`) and a class name says nothing of it. Tailwind stays out of the other tests;
  * this one compiles only the classes it names.
  */
 

@@ -5,14 +5,14 @@ import { SelectField, Tip } from '../design/ui';
 const EVERY = '*';
 
 /**
- * The scope control (WSP5): which circle the console is looking at. Global chrome, in the **app
- * strip** with the rest of it since D56 — one scope per query, never five filters that can disagree
- * (workspace design §4). It decides what every number on every screen means, which is why it belongs
+ * The scope control: which circle the console is looking at. Global chrome, in the **app
+ * strip** with the rest of it — one scope per query, never five filters that can disagree.
+ * It decides what every number on every screen means, which is why it belongs
  * to the application rather than to either frame.
  *
  * **Absent while the deployment holds one workspace.** A family that is one circle needs no control
  * to say so, and silence keeps today's behaviour byte for byte — the same rule as session trees.
- * **"Every workspace" is stated, not implied**, with the count: the D24 shape — report the scope that
+ * **"Every workspace" is stated, not implied**, with the count: report the scope that
  * ran — rather than a page that silently mixes circles or silently picks one.
  *
  * Props only, no hook from `./queries` or `./shell` (the component plan's rule): every state here is

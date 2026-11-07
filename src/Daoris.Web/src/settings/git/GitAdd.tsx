@@ -14,8 +14,8 @@ const RSA_ALONE = new Set(['dev.azure.com', 'ssh.dev.azure.com']);
 const FIELD = 'min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 text-body text-ink outline-none placeholder:text-ink-faint';
 
 /**
- * Add a git identity (GITAUTH1e, the git-auth design §7.2), a form in the pane, never a drawer: where, how, the key or the sign-in,
- * and who commits. A refusal is said under the press that started it, the form kept open with what was typed (R3). The identity is
+ * Add a git identity, a form in the pane, never a drawer: where, how, the key or the sign-in,
+ * and who commits. A refusal is said under the press that started it, the form kept open with what is typed. The identity is
  * saved at the press; its test is a press of its own, so a failed test leaves it with its mark.
  */
 export function GitAdd({ acts, knownHosts, wayToday = 'ssh', host: initialHost = '', added = null, pick, onClose }: {

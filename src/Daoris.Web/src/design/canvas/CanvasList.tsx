@@ -8,7 +8,7 @@ const OPEN_ALL = 200;
 export type ListGroup = { id: string; title: string; items: readonly { id: string; title: string }[] };
 
 /**
- * **The graph as a list** (CANVAS1d; the canvas design §2.6, trap 11): every item, grouped as the graph is, each group's count said and
+ * **The graph as a list**: every item, grouped as the graph is, each group's count said and
  * each item's place in it (`aria-setsize`, `aria-posinset`). It is what a reader gets of a world no viewport draws, what stands below
  * the 36rem floor, and what *Show as list* chooses. A group opens on a press, and only an open group's items are drawn, so ten thousand
  * items cost the groups' count, never theirs. A molecule: the groups and the selection are given.

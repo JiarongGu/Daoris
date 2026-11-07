@@ -4,7 +4,7 @@ import i18n from '../locales/i18n';
 import { type Confirmation, Confirmations } from './Confirmations';
 import { standingSaid } from './standingSaid';
 
-// CHANNELJOIN1c (D244 point 10): a join from a place the system would not tell is asked, and its card says so beside the asker.
+// A join from a place the system would not tell is asked, and its card says so beside the asker.
 
 const JOIN: Confirmation = {
   source: 'pipe', id: 'j1', module: 'DAORIS.DRIVER', route: 'CHANNEL_JOIN',

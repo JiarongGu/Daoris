@@ -4,7 +4,7 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { DeleteRef } from './DeleteRef';
 
-// Delete a branch (GITAPP2d, D204, the git-writes design §6) on a Yours row: the press, what will go confirmed, and refused in the driver's
+// Delete a branch on a Yours row: the press, what will go confirmed, and refused in the driver's
 // sentence. At the main area's three widths (80, 39 and 25rem) in English and 中文, in both themes.
 
 const nothing = async () => ({ refused: false, said: '' });

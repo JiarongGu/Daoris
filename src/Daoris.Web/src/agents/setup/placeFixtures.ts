@@ -1,7 +1,7 @@
 import type { PresetWorkflow } from '../../workflow/edit/answers';
 import type { PlaceApplied, PlaceAsk, PlaceDeclaration, PlacePlanned, PlaceRefusal, PlaceRepositoryPlan, PlaceSide } from './placePlan';
 
-// A place's plan as `PLACE_PLAN` answers it, for the set-up's tests and stories (AGENTSPLACE1j): two repositories of the workspace *aurora*,
+// A place's plan as `PLACE_PLAN` answers it, for the set-up's tests and stories: two repositories of the workspace *aurora*,
 // each with the facts the driver reads. What the ask changes follows the driver's rules only as far as the page shows them.
 
 const side = (driven: boolean, preset: string | null = null): PlaceSide => ({ driven, held: false, trees: driven, match: { preset, own: [] } });
@@ -70,7 +70,7 @@ const REPOSITORIES: Record<string, Omit<PlaceRepositoryPlan, 'changes' | 'after'
   },
 };
 
-/** A repository whose landing was chosen and whose work follows a saved workflow: the driver suggests the preset it matches, for `kept`. */
+/** A repository whose landing is chosen and whose work follows a saved workflow: the driver suggests the preset it matches, for `kept`. */
 export const KEPT_ROW: Partial<PlaceRepositoryPlan> = {
   before: { ...side(true, 'merge-after-accept'), values: { workflow: { value: 'Release for engine v2', source: 'repository' } } },
   suggested: { preset: 'merge-after-accept', adoption: false, why: WHY.kept },

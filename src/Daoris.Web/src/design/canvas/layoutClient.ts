@@ -1,6 +1,6 @@
 import { type Layout, layoutScene, type Scene } from './layoutScene';
 
-// Who lays a scene out (CANVAS1d; the canvas design §4): inline for a small one, in a worker for a large one so typing is never blocked.
+// Who lays a scene out: inline for a small one, in a worker for a large one so typing is never blocked.
 // Every request carries the scene's revision; an answer for an older revision is dropped, and a request can be cancelled.
 
 /** The part of a Worker the client uses, so a test hands in a fake. */

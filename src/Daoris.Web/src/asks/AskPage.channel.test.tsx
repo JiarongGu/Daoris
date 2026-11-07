@@ -11,7 +11,7 @@ import { EVIDENCE_ENTRIES } from '../work/entries.fixtures';
 import { AskPage } from './AskPage';
 import { PUBLISHED } from './fixtures';
 
-// SESSONE2c (D167 points 6 to 8; the co-working design §2.4): an ask's page gains its Channel, where its sessions and the person
+// An ask's page gains its Channel, where its sessions and the person
 // talk, beside its sessions: shell-only, so a page given no door draws none.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);

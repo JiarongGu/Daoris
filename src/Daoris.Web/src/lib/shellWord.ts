@@ -1,6 +1,6 @@
-// An argument as a terminal hint prints it (ACCTQUOTE1, D125's ACCTQUOTE1 note). A twin on the page is a command a person
+// An argument as a terminal hint prints it. A twin on the page is a command a person
 // copies into whichever shell they have: PowerShell, Command Prompt or a POSIX shell, and on Windows the install's `daoris`
-// is `daoris.cmd`, which PowerShell finds too (D124 §1.2). An account's name, an id or a workspace's name may hold a
+// is `daoris.cmd`, which PowerShell finds too. An account's name, an id or a workspace's name may hold a
 // character one of them reads, so a value printed bare can change the command it is pasted into: `R&D` pasted into
 // Command Prompt runs `D`. One spelling serves every shell:
 //
@@ -13,7 +13,7 @@
 //      person types the value as their shell spells it; pasted as it is, the placeholder reads as a redirection, as
 //      `<branch>` in a twin always has.
 //
-// It is the page's twin of the driver's `ShellWord` (the CLI's `shellword.ts` left with PUSH1f2e); `shellWord.test.ts` and
+// It is the page's twin of the driver's `ShellWord`; `shellWord.test.ts` and
 // the driver's `ShellWordTests` read one table, `fixtures/shell-words.json` among the driver's tests, row for row, and the
 // CLI's suite holds that table against the shells themselves.
 

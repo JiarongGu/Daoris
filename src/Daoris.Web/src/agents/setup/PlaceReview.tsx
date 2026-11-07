@@ -51,7 +51,7 @@ const ENDED: Record<DrivingState, 'driven' | 'notDriven' | 'adoption'> = {
 };
 
 /**
- * **Set up…**'s review (SETUPUX1k; the setup-UX design §2.2): the plan the choices made, in one order. What changes, each identical change once with
+ * **Set up…**'s review: the plan the choices made, in one order. What changes, each identical change once with
  * its repositories, beside the driver's reach sentences and the lines it could not read; what stops it, linked back; what it starts and what it
  * lowers of your part; the work driving releases, held on a press that is outside the apply, each repository's outcome beside it; the acceptances,
  * unticked and bound to the declaration read; the terminal line; and one *Apply*.

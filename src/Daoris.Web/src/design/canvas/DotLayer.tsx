@@ -4,7 +4,7 @@ import { viewRect } from './tiers';
 import type { Size, View } from './viewMath';
 
 /**
- * **The dot tier's layer** (CANVAS1d; the canvas design §4): below 4 px of effective `text-meta` a node is a dot, drawn on a canvas2D
+ * **The dot tier's layer**: below 4 px of effective `text-meta` a node is a dot, drawn on a canvas2D
  * layer in the viewport's own pixels, `aria-hidden` (the list and the keys reach every node), redrawn once a frame at most while the
  * view moves and never at rest. A molecule: the grid and the view are given.
  */

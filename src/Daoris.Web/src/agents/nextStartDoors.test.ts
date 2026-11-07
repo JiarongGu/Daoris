@@ -3,7 +3,7 @@ import i18n from '../locales/i18n';
 import { scopeOf } from '../settings/accounts/accountsFixtures';
 import { nextStartSaid } from './agents';
 
-// AGENTPROVIDER1 row s-ix o1 to o3: the agent card speaks for the account's own door, and says one line for each other door whose
+// The agent card speaks for the account's own door, and says one line for each other door whose
 // answer to *does a start run in its own home* differs, in both languages.
 
 describe('the next start card’s doors', () => {

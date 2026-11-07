@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// ASKSCOPE1d (D158's ASKSCOPE1 note, points 1 and 6): Ask Daoris follows the window's workspace. Its start carries the workspace
+// Ask Daoris follows the window's workspace. Its start carries the workspace
 // the window shows, captured at the press; a window on every workspace asks which before a start; its history is the window's
 // workspace unless every workspace's is chosen, each row then labelled; and another workspace's conversation is named, and gone
 // on in only once the window has switched to it. The bridge is mocked as present, as Ask Daoris's own suite mocks it.

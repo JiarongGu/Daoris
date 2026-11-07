@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// CTX1 (D138), the way the application holds it: the whole window over a mocked shell, so what a right-click offers and
+// The context menus, the way the application holds them: the whole window over a mocked shell, so what a right-click offers and
 // where each door leads are what a person meets on the window — a quest's page, its link, selected words, the strip.
 
 const { invoke, notifyReady, systemMenu } = vi.hoisted(() => ({

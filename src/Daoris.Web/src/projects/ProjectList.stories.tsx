@@ -5,7 +5,7 @@ import { ListMore, ListPane } from '../work/frame/ListPane';
 import { CJK, ELSEWHERE, ENGINE, GAME, MIRRORED, NEWBIE, UNDECLARED } from './fixtures';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './ProjectList';
 
-// Repositories' list (FRAME1e, D118 §2; UX6g, D150 §4.1) on its list pane, in every state the design names: a group per
+// Repositories' list on its list pane, in every state the design names: a group per
 // workspace, its head a door to the workspace's page, its adopted then its registered not adopted; a workspace chosen, a
 // repository chosen, driven and held on this machine, one with no checkout here, one that declared nothing, one holding
 // Daoris's branches; only adopters, a browser's (no ＋, no ⋯, no standing), empty, loading, an error with no answer ever,
@@ -57,7 +57,7 @@ type Args = {
   groups: WorkspaceGroup[];
   chosen?: string | null;
   chosenWorkspace?: string | null;
-  /** A shell's list: its ＋ adds a repository and its ⋯ imports a folder. A browser's makes nothing (D48 §7). */
+  /** A shell's list: its ＋ adds a repository and its ⋯ imports a folder. A browser's makes nothing. */
   shell?: boolean;
   layout?: ListLayout;
   loading?: boolean;
@@ -171,7 +171,7 @@ export const ChineseName: Story = {
   },
 };
 
-/** Closed by the person: its strip holds its controls alone, the open and the ＋ (D118 §2). */
+/** Closed by the person: its strip holds its controls alone, the open and the ＋. */
 export const Strip: Story = { args: { layout: CLOSED } };
 
 /** A strip the window drew, opened: the list over the main area, beside its strip. */

@@ -6,10 +6,10 @@ import { InTheme } from '../../plugins/storyIcons';
 import type { Answered } from '../../work/InlineConfirm';
 import { type AccessEdit, AccessRows, type ResolvedPause } from './Access';
 
-// A level's access rows (AUTONOMY1d, D184 points 1-3, 5; ACCESSASK1, the UI/UX design §3.3) at its three levels: a repository's
-// Setup with each pause from where it was set, a workspace's, and this machine's on Driver; full access on in the warning colour;
-// its ask open in the warning tone; and a change the driver refused, said under the row it was pressed in with the editor open
-// (R3). At the frame's width, the 680 px window's main area and the main area's 400 px floor (R6), in both themes and in 中文.
+// A level's access rows at its three levels: a repository's
+// Setup with each pause from where it is set, a workspace's, and this machine's on Driver; full access on in the warning colour;
+// its ask open in the warning tone; and a change the driver refused, said under the row it is pressed in with the editor open.
+// At the frame's width, the 680 px window's main area and the main area's 400 px floor, in both themes and in 中文.
 
 /** The engine's setup: its permissions from its workspace, routing from this machine, landing Daoris's, its go-aheads its own. */
 const MIXED: ResolvedPause[] = [
@@ -102,7 +102,7 @@ export const FullAccessAsked: Story = {
 export const FullAccessAskedDark: Story = { ...FullAccessAsked, decorators: [dark] };
 
 /**
- * A pause's change the driver refused (ACCESSASK1, R3): said under its row in the driver's sentence, whole, with its editor still
+ * A pause's change the driver refused: said under its row in the driver's sentence, whole, with its editor still
  * open to press again, and no toast.
  */
 export const PauseRefused: Story = {

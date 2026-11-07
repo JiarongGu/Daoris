@@ -12,8 +12,8 @@ import { Canvas, CANVAS_FLOOR, type CanvasHandle, type CanvasOptions } from './C
 import { syntheticFlow } from './canvasFixtures';
 import { observeWorld, readWorld } from './worldBoxes';
 
-// The canvas's stories (CANVAS1a; D224, the canvas design §2.6, §5): a flow standing in the viewport at the main area's 80, 39 and 25rem,
-// in English and 中文 and both themes. At 25rem, below the 36rem floor, the flow is placed as it always was. The dense graph is drawn whole
+// The canvas's stories: a flow standing in the viewport at the main area's 80, 39 and 25rem,
+// in English and 中文 and both themes. At 25rem, below the 36rem floor, the flow is placed as the pane does without a canvas. The dense graph is drawn whole
 // once *Show whole* is pressed and pans at 80rem; the synthetic worlds of 100, 500 and 2,000 nodes are what the frame times are measured
 // on (`measured/canvas.spec.ts`). Keyboard: Tab reaches the toolbar, then the drawing's one stop; the arrows walk it and the view follows.
 
@@ -66,7 +66,7 @@ export const LifecycleChineseDarkNarrow: Story = { decorators: [storyWidths.narr
 /** Edited: zoom floored at 80%, so the ＋ and the ports stay usable. */
 export const LifecycleEdit: Story = { args: { mode: 'edit' } };
 
-/** Twelve steps plain, then with a mark of each kind on four of them (CANVAS1b): a chip beside each where it clears every box, no node moved. */
+/** Twelve steps plain, then with a mark of each kind on four of them: a chip beside each where it clears every box, no node moved. */
 export const Plain12: Story = { args: { fixture: 12 } };
 export const Marked: Story = { args: { fixture: 12, marked: true } };
 export const MarkedHalf: Story = { args: { fixture: 12, marked: true }, decorators: [storyWidths.half] };

@@ -4,17 +4,17 @@ import { type HelpServerShown, pluginState, type PluginShown } from '../../plugi
 import { PluginIcon } from '../../plugins/PluginIcon';
 import { STATE_WORD } from '../../plugins/PluginList';
 
-/** A server's approval in a word, as its plugin's page judges it (HELPPLUG1c): changed since approved is a wait that asks again. */
+/** A server's approval in a word, as its plugin's page judges it: changed since approved is a wait that asks again. */
 function approval(server: HelpServerShown): string {
   const state = server.state ?? 'waits';
   return state === 'waits' && server.changed ? 'changed' : state;
 }
 
 /**
- * **Settings' Plugins section** (PLUGSET1, the modes design §4.1): each installed plugin with what it holds set, its switch's
+ * **Settings' Plugins section**: each installed plugin with what it holds set, its switch's
  * word and each server's approval for Ask Daoris with the writes accepted, and a door to its page, where each is changed. Read
  * only, so a person looking in Settings finds a plugin's settings without a second set of controls: a plugin's record is
- * changed on its own page alone (HELPMODE1c3). An install with none says so.
+ * changed on its own page alone. An install with none says so.
  *
  * A molecule: every state by props, the door's press out.
  */

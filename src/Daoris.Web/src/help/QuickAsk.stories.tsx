@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AskPanel } from './AskPanel';
 import { QuickAsk } from './QuickAsk';
 
-// Quick Ask (DOCK1d): Ask Daoris's conversation in a box at the palette's place. The box holds the
+// Quick Ask: Ask Daoris's conversation in a box at the palette's place. The box holds the
 // same unframed panel the side bar holds; here it holds the panel on a machine that lacks nothing.
 
 const meta = {

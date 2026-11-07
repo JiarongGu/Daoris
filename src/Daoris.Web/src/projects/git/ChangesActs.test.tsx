@@ -6,7 +6,7 @@ import { GIT_CHANGES_ENGINE, GIT_HUNKS_BUDGET } from '../fixtures';
 import { ChangeHunks } from './ChangeHunks';
 import { ChangesTab, type ChangesActs } from './RepositoryGit';
 
-// Stage, unstage and Undo in the Changes tab (GITAPP2h, D204, the git-writes design §4, §8): a file pressed whole, the hunks and lines of
+// Stage, unstage and Undo in the Changes tab: a file pressed whole, the hunks and lines of
 // it, the last act said with Undo beside a done one, a refusal in the driver's sentence, and every press waiting while an act runs.
 // A molecule: its acts arrive as a prop, so each state is reached by it.
 

@@ -17,7 +17,7 @@ import { PlacePageView } from './PlacePage';
 import { foldedLines, headOf, type PlaceSection, sectionsOf } from './placeShell';
 import { AGENTS, CATALOGUE, PLACES } from './setupFixtures';
 
-// This machine's page (SETUPUX1m, the setup-UX design §2.4): Roles folded to its line and All roles open, every role once with its scope
+// This machine's page: Roles folded to its line and All roles open, every role once with its scope
 // filter and search, a role placed elsewhere read-only with *Open at ‹place›*, the diagram beside the list, and the suggested-choices
 // line above the sections. At the main area's three widths (80, 39 and 25 rem), in both languages and both
 // themes; a `play` presses what a person would, by keyboard-reachable controls.

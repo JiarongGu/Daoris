@@ -17,7 +17,7 @@ export type SwitchPlanValue = {
 export type SwitchBoxPress = { branch: string; from: string | null; head: string | null };
 
 /**
- * **The switch box of the Changes tab** (GITAPP2k, D204, the git-writes design §8): the local branches to move this checkout to, the hooks
+ * **The switch box of the Changes tab**: the local branches to move this checkout to, the hooks
  * the switch runs (never skipped) and, in the driver's sentence, why it would be refused (tracked files changed, the branch out in another
  * tree, the branch the checkout is on). A switch is never forced and carries no change across; switching back is the same press.
  *

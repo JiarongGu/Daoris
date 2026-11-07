@@ -1,4 +1,4 @@
-// The layout of a large positioned world (CANVAS1d; the canvas design §4): pure and synchronous, so it runs inline for a small scene and
+// The layout of a large positioned world: pure and synchronous, so it runs inline for a small scene and
 // in a worker for a large one (`layoutClient.ts`). A scene is nodes in groups and the edges between them; each group is layered on its
 // own (ranks by longest path with cycles broken, order by barycentre sweeps), and the groups are packed in shelves, each at a size its
 // member count predicts, so an overview needs nothing measured.

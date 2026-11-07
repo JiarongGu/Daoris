@@ -1,7 +1,7 @@
 import type { ListGroup } from '../../design/canvas/CanvasList';
 import type { MapLine } from '../mapLayout';
 
-// The workspace map as a list (CANVAS1e; the canvas design §2.6, §3.3): the reading that is not a canvas, offered at every width by
+// The workspace map as a list: the reading that is not a canvas, offered at every width by
 // *Show as list*. Pure: the repositories in the map's reading order, then the lines by kind, the work before the declarations, each
 // item named as the drawing names it for a reader.
 

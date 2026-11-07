@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// D230 point 2 (the context-one design §3 B): an adopted repository's note of the shared doctrine, a molecule over the reconcile's plan as the
+// An adopted repository's note of the shared doctrine, a molecule over the reconcile's plan as the
 // driver answers it: offered where the doctrine tool's status says the canon moved or a keep reopened, its press the person's, confirmed in
 // the page; nothing where nothing is offered; a refusal the driver's sentence; in English and in Chinese.
 

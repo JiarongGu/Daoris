@@ -6,9 +6,9 @@ import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import { dataParts, dataText, LOG_FILTERS, LogList, type LogFilters, type LogReading } from './Logs';
 
-// LOG1c (D94): Settings → Logs, the screen's door to the machine log — the recent lines newest first,
+// Settings → Logs, the screen's door to the machine log — the recent lines newest first,
 // the terminal's filters, a count per level, and the folder. Drawn from props: SettingsView holds the
-// bridge, and `daoris logs` is the terminal's door to the same reading (D50).
+// bridge, and `daoris logs` is the terminal's door to the same reading.
 
 const READING: LogReading = {
   folder: 'C:/somewhere/data/logs',
@@ -37,7 +37,7 @@ const rows = () => within(screen.getByRole('list', { name: 'log lines' })).getAl
 
 describe('the logs domain', () => {
   /**
-   * NAME1b (UX5 U57): the card is alone in its domain and the list names it *Machine log*, so it carries
+   * The card is alone in its domain and the list names it *Machine log*, so it carries
    * no title of its own, as every card alone in its domain leaves it; it opens on what the log is.
    */
   it('carries no title of its own, and opens on what the log is', () => {
@@ -47,7 +47,7 @@ describe('the logs domain', () => {
     expect(screen.queryByText('Machine log')).toBeNull();
   });
 
-  /** LOOK5: the opening names its terminal twin as code, as every setting's is, and never prints the backticks. */
+  /** The opening names its terminal twin as code, as every setting's is, and never prints the backticks. */
   it('sets the terminal twin in its opening as code', () => {
     draw();
 
@@ -145,8 +145,8 @@ function exception(length: number): string {
 }
 
 describe('a value cut short (LOGVIEW1)', () => {
-  // A host line's exception showed its first 160 characters and nothing said more were kept, so the type it named was
-  // missed for a day. The line says how much was cut, and its expansion opens the value whole.
+  // A host line's exception cut silently hides the type it names. The line says how much is cut, and its expansion
+  // opens the value whole.
   const EXCEPTION = exception(2000);
   const LONG: LogReading = {
     ...READING,

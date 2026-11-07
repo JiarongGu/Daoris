@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import type { GitDeletedRef } from './DeletedRefs';
 import { DeletedRefs } from './DeletedRefs';
 
-// ONEWAY1r: the git page lists a repository's deletes from the journal, each with its Undo. A molecule: the rows and the acts arrive as props.
+// The git page lists a repository's deletes from the journal, each with its Undo. A molecule: the rows and the acts arrive as props.
 
 const row = (over: Partial<GitDeletedRef> = {}): GitDeletedRef => ({
   act: 'd1', kind: 'branch', name: 'spike/renderer', commit: 'a'.repeat(40), at: new Date().toISOString(), press: 'daoris', recovery: 'refs/daoris/discarded/spike', closed: null,

@@ -11,7 +11,7 @@ import { type AppointedRead, buildStructure, NO_FILTERS, type StructureFilters }
 import { DiagramDetail, type RoleDoors } from './StructureSections';
 import { DRIVER, largeStructure, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKS } from './structureFixtures';
 
-// The roles' diagram (COMPANYVIEW1f, the company-view design §4) at the widths the frame gives the main area: across at 80rem with the
+// The roles' diagram at the widths the frame gives the main area: across at 80rem with the
 // chosen node's detail beside it, and its list at 39 and 25rem, the detail below; in both languages and both themes. Past 24 nodes
 // each workspace folds to one node. The measured check (`measured/roles.spec.ts`) reads these stories' edges in a real browser.
 

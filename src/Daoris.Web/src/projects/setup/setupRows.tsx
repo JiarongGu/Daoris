@@ -64,7 +64,7 @@ export function setupRows({ driving, drivingLine, t, repository, busy, i18n, lin
               control={<CheckField checked={driving.held} disabled={busy} onChange={driving.onHold} label={t('projects.driver.hold')} hideLabel />}
             />
           )}
-          {/* Session trees (D51): its sessions open their own worktree, so the person's uncommitted work in the
+          {/* Session trees: its sessions open their own worktree, so the person's uncommitted work in the
               checkout stops holding the driver. */}
           <SettingRow
             label={t('projects.driver.trees')}
@@ -75,7 +75,7 @@ export function setupRows({ driving, drivingLine, t, repository, busy, i18n, lin
       ),
     });
   }
-  // The rows of the line and landing, each one `work` holds and the place's folds hold apart (SETUPUX1o).
+  // The rows of the line and landing, each one `work` holds and the place's folds hold apart.
   const lineRow = line && work?.onLine
     ? (
       <>
@@ -196,7 +196,7 @@ export function setupRows({ driving, drivingLine, t, repository, busy, i18n, lin
   const integrationRow = !gatesApart && landed?.start.integration && landed.onAcceptIntegration
     ? <IntegrationDeclaration repository={repository} integration={landed.start.integration} busy={busy} onAccept={landed.onAcceptIntegration} />
     : null;
-  // FABRIC-PIPELINE1b: the heavy gates and the sessions' checks, the checks first. The heavy gates named are those its own file marks where it
+  // The heavy gates and the sessions' checks, the checks first. The heavy gates named are those its own file marks where it
   // marks some, else this machine's list, as `run-heavy` resolves them.
   const heavyNames = heavy ? (heavy.marks?.marks === true ? heavy.marks.names : heavy.gates.map((gate) => gate.name)) : [];
   const heavyChecksSaid = heavy?.checks ? sessionChecksSummary(t, heavy.checks.set) : null;

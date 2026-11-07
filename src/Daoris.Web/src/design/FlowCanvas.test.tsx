@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
 import { type FlowCanvasProps, type FlowEdge, type FlowNode, FlowCanvas } from './FlowCanvas';
 
-// FLOWCHART2a (D223): the canvas draws the layout, the ink and the keys, and a caller draws the nodes and the chips. A decision's
+// The canvas draws the layout, the ink and the keys, and a caller draws the nodes and the chips. A decision's
 // route names its port; a data wire is read by no layout and is drawn only while one of its ends is selected. jsdom lays nothing out,
 // so the pane's width is stood in for, and the geometry is the measured-box check's.
 
@@ -90,7 +90,7 @@ describe('a data wire', () => {
   });
 });
 
-// FLOWCHART2b (D223 §3, §8.8): what an editor adds to the canvas. A ＋ on a way stands on its path where the flow is drawn and under its
+// What an editor adds to the canvas. A ＋ on a way stands on its path where the flow is drawn and under its
 // source in the rail; pick mode walks only the steps that can take the way and never gives the focus to one that cannot.
 const focusable = ({ node, stop, picking }: Parameters<FlowCanvasProps['renderNode']>[0]) => (
   <div role="listitem" data-flow-node={node.id} data-picking={picking === undefined ? undefined : String(picking)} tabIndex={stop ? 0 : -1}>{node.title}</div>

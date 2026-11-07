@@ -5,12 +5,12 @@ import { moment, size } from '../../locales/format';
 import { Door, Fact, WiringCard } from './WiringParts';
 
 /**
- * Logs (the this-Daoris design §3.9): the machine log's folder, its size, the days it keeps, its newest day, with the press
+ * Logs: the machine log's folder, its size, the days it keeps, its newest day, with the press
  * that opens the folder and the door to the Machine log; and whether the window's engine log is there.
  *
  * @remarks
- * A molecule: drawn from props. *Open the folder* is the Machine log's own press, kept where it stood (LOG1c); no other press
- * of this page opens a folder (that, and a copied line, are WIRING1e's).
+ * A molecule: drawn from props. *Open the folder* is the Machine log's own press, kept where it stood; no other press
+ * of this page opens a folder (a copied line is the Terminal card's).
  */
 export function WiringLogs({ logs, onOpenFolder, onLog }: {
   logs: SystemWiring['logs'];

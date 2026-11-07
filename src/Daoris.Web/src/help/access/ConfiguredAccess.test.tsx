@@ -6,8 +6,8 @@ import i18n from '../../locales/i18n';
 import { ConfiguredAccess } from './ConfiguredAccess';
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId } from './wired';
 
-// HELPMODE1c1 (D183 point 1; the modes design §4.1, §5): restricted mode's configured access, drawn from props for the owner's
-// review before any grant is built. Each grant says its reach, its default and its state, its operations each a box of its own
+// Restricted mode's configured access, drawn from props for the owner's
+// review. Each grant says its reach, its default and its state, its operations each a box of its own
 // or one group, and its door; a grant the agent cannot be held to says so with why, its boxes disabled; a choice the
 // conversation in view did not start with is marked as taking its next start.
 
@@ -21,7 +21,7 @@ const CHOSEN: HelpGrantChoice[] = [
   { id: 'settings', chosen: [] },
 ];
 
-/** HELPMODE1c4: the checkouts the driver serves, each by its repository's name; `game` turned off. */
+/** The checkouts the driver serves, each by its repository's name; `game` turned off. */
 const SERVED = { checkouts: ['engine', 'game'] };
 
 const ALL: HelpGrantId[] = ['housekeeping', 'browser', 'checkouts', 'settings', 'shell'];
@@ -92,7 +92,7 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(onChoose).toHaveBeenCalledWith('housekeeping', 'inspect', false);
   });
 
-  // HELPMODE1c3 (the modes design §4.1's decided note): the browser's grant is its plugin's approval, made on that plugin's tab, the
+  // The browser's grant is its plugin's approval, made on that plugin's tab, the
   // one place its record is changed; this row shows that record's state read only and leads there, with no second set of boxes.
   it('draws the browser read only from its plugin’s approval, its door leading to the plugin’s tab, with no boxes', async () => {
     await i18n.changeLanguage(language);
@@ -131,7 +131,7 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(within(row('browser')).queryByText(i18n.t('help.grants.state.needs-approval'))).toBeNull();
   });
 
-  // HELPMODE1c4: the checkouts the driver serves, one box each by its repository's name as written, those not turned off checked; a
+  // The checkouts the driver serves, one box each by its repository's name as written, those not turned off checked; a
   // press hands the repository up. With none served, it says why and draws no box.
   it('draws a box for each checkout the driver serves, by its repository’s name, and lists the five ordinary settings', async () => {
     await i18n.changeLanguage(language);
@@ -178,8 +178,8 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(within(row('browser')).queryByText(i18n.t('help.grants.state.on'))).toBeNull();
     expect(within(row('browser')).getByText(i18n.t('help.grants.why.browser', { agent: 'Codex' }))).toBeInTheDocument();
 
-    // Daoris holds its typed tools itself, so they hold on Codex too: housekeeping, the chosen settings, and since HELPMODE1c4 the
-    // checkouts' read, which no longer waits on a rule Codex does not take.
+    // Daoris holds its typed tools itself, so they hold on Codex too: housekeeping, the chosen settings, and the
+    // checkouts' read, which does not wait on a rule Codex does not take.
     expect(within(row('checkouts')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
     expect(within(row('checkouts')).queryByText(i18n.t('help.grants.state.unavailable'))).toBeNull();
     for (const each of within(row('checkouts')).getAllByRole('checkbox')) expect(each).not.toBeDisabled();

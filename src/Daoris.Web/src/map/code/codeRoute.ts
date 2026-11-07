@@ -1,7 +1,7 @@
 import { buildGrid, queryGrid } from '../../design/canvas/spatialGrid';
 import type { Box } from '../../design/canvas/viewMath';
 
-// The code map's lines routed around its cards (CANVAS1f; the canvas design §3.4, §4.1). Pure. A line keeps its direct shape (level
+// The code map's lines routed around its cards. Pure. A line keeps its direct shape (level
 // where two cards stand side by side, down or up where one is below the other) unless that shape crosses a card; then it runs
 // orthogonally through the gaps, found by a shortest path over the cards' edges that pays for each bend, and leaves and enters its
 // cards as the direct shape would. The work is bounded, never the facts: past the bounds a line keeps its direct shape.

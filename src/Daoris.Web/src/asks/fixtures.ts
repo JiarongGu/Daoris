@@ -20,7 +20,7 @@ export const PROPOSED: Ask = anAsk({
 });
 
 /**
- * Its sentence names a repository (ASKNAME1), proposed first with that name alone as the evidence, here in another case
+ * Its sentence names a repository, proposed first with that name alone as the evidence, here in another case
  * than the sentence's; then a repository whose declaration shares one of its words.
  */
 export const NAMES_ITS_REPOSITORY: Ask = {
@@ -50,17 +50,17 @@ export const REFUSED: Ask = {
   note: '`newcomer` is not an adopted repository in `aurora` — only an adopter can be asked.',
 };
 
-/** Every quest it became has closed (USE1c) — the service reports it done, derived from those quests. */
+/** Every quest it became has closed — the service reports it done, derived from those quests. */
 export const DONE: Ask = { ...PUBLISHED, id: '6b5a4c3d2e1f', state: 'Done' };
 
 export const CLOSED: Ask = {
   ...PROPOSED, id: '2a3b4c5d6e7f', state: 'Closed', note: 'Answered in the design review instead.', updated: hoursAgo(1),
 };
 
-/** A tier this page has no word for (anything after INT4b's) — shown as the service wrote it. */
+/** A tier this page has no word for (any later one) — shown as the service writes it. */
 export const UNKNOWN_TIER: Ask = { ...PUBLISHED, id: 'f0e1d2c3b4a5', tier: 'intake-session' };
 
-/** The session an intake opened for an ask (D65 §1b): a chat in the ask's name, in its circle. */
+/** The session an intake opened for an ask: a chat in the ask's name, in its circle. */
 export const INTAKE_SESSION: Session = {
   id: 'i9n8t7k6a5b4', repository: 'ask #3e4f5a6b7c8d', door: 'claude-code', kind: 'chat',
   state: 'completed', ask: '3e4f5a6b7c8d', doorVersion: '2.1.4', workspace: 'aurora',
@@ -73,7 +73,7 @@ export const BY_INTAKE: Ask = {
   ...PUBLISHED, id: '3e4f5a6b7c8d', tier: 'intake', intake: INTAKE_SESSION.id, quests: ['9a8b7c6d5e4f'],
 };
 
-/** Its intake could not settle whose it is, and parked asking the person (D65 §1b). */
+/** Its intake could not settle whose it is, and parked asking the person. */
 export const INTAKE_ASKED: Ask = { ...PROPOSED, id: '3e4f5a6b7c8d', intake: INTAKE_SESSION.id };
 export const INTAKE_PARKED: Session = {
   ...INTAKE_SESSION, state: 'awaiting-person',
@@ -81,7 +81,7 @@ export const INTAKE_PARKED: Session = {
 };
 
 /**
- * Its sessions asked the person for go-aheads (KNOWUSE1a): the production write approved with the person's words, a
+ * Its sessions asked the person for go-aheads: the production write approved with the person's words, a
  * release refused, and the menu entries still waiting, asked by two sessions, the second asking again where the words
  * could not tell it from the first. A kind this page has no word for is shown as the service wrote it.
  */
@@ -113,7 +113,7 @@ export const WITH_GO_AHEADS: Ask = {
 };
 
 /** A CJK sentence, long, so the card's one line and the record's title are both tried. */
-/** A request of about a thousand characters on one line, as the install's longest were (HEAD2d). */
+/** A request of about a thousand characters on one line, as the install's longest were. */
 export const LONG_ASK: Ask = {
   ...PROPOSED, id: '3f4e5d6c7b8a',
   sentence: Array.from(
@@ -122,7 +122,7 @@ export const LONG_ASK: Ask = {
   ).join(' '),
 };
 
-/** A long request its asker gave a short title (HEAD2e): the head and the row say the short title, the body the whole request. */
+/** A long request its asker gave a short title: the head and the row say the short title, the body the whole request. */
 export const SHORT_TITLED: Ask = { ...LONG_ASK, id: '5a6b7c8d9e0f', short: 'Cold-cache stall' };
 
 export const LONG_CJK: Ask = {

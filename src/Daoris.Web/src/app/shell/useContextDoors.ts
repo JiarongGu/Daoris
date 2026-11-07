@@ -20,7 +20,7 @@ export function useContextDoors({ notify, t, openings, setSearchAsked, open, att
   openBrowser: UseMutationResult<{ opened: boolean; windows: string[]; }, Error, string | undefined, unknown>;
   copyText: React.RefObject<(text: string) => void>;
 }) {
-  // The right-click menu's doors (CTX1, D138 §3): a copy, said once copied, since nothing on the screen shows it; Search
+  // The right-click menu's doors: a copy, said once copied, since nothing on the screen shows it; Search
   // with the words in its box; and, a shell's, Quick Ask with them quoted and Daoris's browser at the address.
   const contextDoors: ContextDoors = {
     copy: (text) => {
@@ -36,11 +36,11 @@ export function useContextDoors({ notify, t, openings, setSearchAsked, open, att
       openInBrowser: (address: string) => openBrowser.mutate(address, { onError: failure(notify) }),
     } : {}),
   };
-  // A page that composes words for Ask Daoris (the workflow editor's *Ask why* and *Fix it*, FLOWCHART2c) fills Quick Ask's box through this door.
+  // A page that composes words for Ask Daoris (the workflow editor's *Ask why* and *Fix it*) fills Quick Ask's box through this door.
   const fillAsk = useRef(askQuickly);
   fillAsk.current = askQuickly;
   useEffect(() => (attached ? registerAskFill((text) => fillAsk.current(text, true)) : undefined), [attached]);
-  // Edit › Copy ID copies what a page's own *Copy … ID* would, and says so the same way (UX7a).
+  // Edit › Copy ID copies what a page's own *Copy … ID* would, and says so the same way.
   copyText.current = contextDoors.copy;
   return { contextDoors };
 }

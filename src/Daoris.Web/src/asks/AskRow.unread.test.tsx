@@ -4,7 +4,7 @@ import i18n from '../locales/i18n';
 import { AskRow } from './AskRow';
 import { PROPOSED } from './fixtures';
 
-// SESSONE2c (D167): an ask's row counts what is unread on its channel, in the reader's language, and says nothing where there is none.
+// An ask's row counts what is unread on its channel, in the reader's language, and says nothing where there is none.
 
 const row = (unread?: number) => render(<ul><AskRow ask={PROPOSED} unread={unread} onOpen={() => {}} /></ul>);
 

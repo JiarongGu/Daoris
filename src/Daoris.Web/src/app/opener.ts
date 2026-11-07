@@ -10,13 +10,13 @@ import type { ProjectTab, WorkspaceSection, WorkspaceTab } from '../projects/tab
 import type { SettingsAnchor } from '../settings/SettingsView';
 import { LIST_BOUNDS, type ListView } from '../work/frame/layout';
 
-// The application's one opener (D118 §3i): every door into a view says what it opens — the palette, a
+// The application's one opener: every door into a view says what it opens — the palette, a
 // status item, a row of *What needs you*, a map's detail, a notification, Ask Daoris's go — and the view's
 // chosen item takes it. Planned here, as a value, and applied by `App`, which holds what it changes.
 
 const ASK = 'ask:';
 
-/** An ask's item: Quests' list holds asks and quests, so an item there names which (D118 §2). */
+/** An ask's item: Quests' list holds asks and quests, so an item there names which. */
 export const askItem = (id: string) => `${ASK}${id}`;
 
 /** What one of Quests' items is: an ask, or a quest. */
@@ -26,7 +26,7 @@ export function questsItem(item: string): { ask: string } | { quest: string } {
 
 const WORKSPACE = 'workspace:';
 
-/** A workspace's item: Repositories' list holds workspaces and repositories, so an item there names which (UX6g, §4.1). */
+/** A workspace's item: Repositories' list holds workspaces and repositories, so an item there names which. */
 export const workspaceItem = (name: string) => `${WORKSPACE}${name}`;
 
 /** What one of Repositories' items is: a workspace, or a repository. */
@@ -35,7 +35,7 @@ export function projectsItem(item: string): { workspace: string } | { repository
 }
 
 /**
- * A group of a view's list that a door brings into view (ENTRY1b, D161's ENTRY1 note): what waits on the person there.
+ * A group of a view's list that a door brings into view: what waits on the person there.
  * Sessions' *Waiting on you* and *To review*, by the driver's reader's names (`SessionGroupName`), and Quests' asks and
  * the quests held for the person (`questGroups`). A door naming a group names no item in it.
  */
@@ -45,7 +45,7 @@ export type OpenGroup = 'you' | 'review' | 'asks' | 'held';
 const GROUP_VIEW: Readonly<Record<OpenGroup, View>> = { you: 'sessions', review: 'sessions', asks: 'quests', held: 'quests' };
 
 /**
- * The composer opened by a go to New conversation (NEW1d-b, D162): the repository it chooses and the words it opens with,
+ * The composer opened by a go to New conversation: the repository it chooses and the words it opens with,
  * each only where the go named one. Neither is sent; the person presses *Start*.
  */
 export type Compose = { repository?: string; sentence?: string };
@@ -62,16 +62,16 @@ export type OpenPart = {
   anchor?: SettingsAnchor; drawer?: 'add' | 'import'; drawerWorkspace?: string; tab?: ProjectTab; placeOf?: string; code?: string; agentPart?: AgentPart; agentsMode?: AgentsMode; roleSection?: RoleDoor;
   workspaceTab?: WorkspaceTab; workspaceSection?: WorkspaceSection; knowledge?: KnowledgeMode; group?: OpenGroup;
   compose?: Compose;
-  /** A landed branch of the repository the door names, whose page opens with how it landed (FLOWCHART1c). */
+  /** A landed branch of the repository the door names, whose page opens with how it landed. */
   branch?: string;
-  /** The quick set-up Ask Daoris proposed for the place the door names (AGENTSPLACE1k): the place's *Set up…* opens on it. */
+  /** The quick set-up Ask Daoris proposed for the place the door names: the place's *Set up…* opens on it. */
   setUp?: PlaceAsk;
-  /** The repository whose place a door opens in the Agents place's Setup mode, at the section and row it names (SETUPUX1h). */
+  /** The repository whose place a door opens in the Agents place's Setup mode, at the section and row it names. */
   placeSection?: PlaceSection;
   placeRow?: string;
-  /** A place's Workflow with its editor opened on a draft (FLOWCHART2g): a conversation's draft card's door. */
+  /** A place's Workflow with its editor opened on a draft: a conversation's draft card's door. */
   placeEdit?: PlaceEdit;
-  /** The host Settings → Git's add form opens filled with (GITAUTH1e): a held remote's door, Ask Daoris's screen door. */
+  /** The host Settings → Git's add form opens filled with: a held remote's door, Ask Daoris's screen door. */
   gitHost?: string;
 };
 
@@ -79,79 +79,79 @@ export type OpenPart = {
 export type Opening = {
   view: View;
   /**
-   * The item the view's list has chosen now, where the view has a list and the door named one (§3f). Its main area
-   * shows it: a quest's record or an ask's on Quests since FRAME1d, which no longer opens either in a drawer.
+   * The item the view's list has chosen now, where the view has a list and the door named one. Its main area
+   * shows it: a quest's record or an ask's on Quests, which open in the main area, never in a drawer.
    */
   chosen?: { view: ListView; item: string };
   /** The part of Settings' domain to bring into view, or null for its top, where the door named a domain. */
   anchor?: SettingsAnchor | null;
   /**
-   * The host Settings → Git opens its add form on (GITAUTH1e, the git-auth design §7.4), or null for none, where the door named the Git
+   * The host Settings → Git opens its add form on, or null for none, where the door named the Git
    * domain: a door into it never inherits a host another door left.
    */
   gitHost?: string | null;
-  /** One of Repositories' forms, which stay drawers (§3d). */
+  /** One of Repositories' forms, which stay drawers. */
   drawer?: 'add' | 'import';
   /**
-   * The workspace the form opens filled with (ENTRY1d2b, D161's ENTRY1d note): Ask Daoris's go names it, and the person
+   * The workspace the form opens filled with: Ask Daoris's go names it, and the person
    * still picks the folder there. Only with a form.
    */
   drawerWorkspace?: string;
   /**
-   * The tab a repository's page opens at (UX6f, D150 §4.2), remembered for whichever repository the view shows.
+   * The tab a repository's page opens at, remembered for whichever repository the view shows.
    */
   tab?: ProjectTab;
   /** The repository whose place the Setup mode opens at: `placeOpening` names the place by the workspace the registry holds it in. */
   placeOf?: string;
   /**
-   * The repository whose code map the Map opens on (MAP3a), where a repository's page names it (FRAME1e). The Map has no
-   * list (§4), so this is no chosen item: it is the page one level in.
+   * The repository whose code map the Map opens on, where a repository's page names it. The Map has no
+   * list, so this is no chosen item: it is the page one level in.
    */
   code?: string;
   /**
-   * The part of an agent's page to open and bring into view (UX6e, D150 §2.4): its accounts, what it may do, its usage. A
+   * The part of an agent's page to open and bring into view: its accounts, what it may do, its usage. A
    * door naming a part and no agent opens the agent that has it.
    */
   agentPart?: AgentPart;
   /**
-   * The tab a workspace's page opens at (UX6g, D150 §4.3), and the section of its Setup to open: the remote, or its
+   * The tab a workspace's page opens at, and the section of its Setup to open: the remote, or its
    * defaults. Its doors are what Settings → Workspace and Permissions held, now Repositories → the workspace's page.
    */
   workspaceTab?: WorkspaceTab;
   workspaceSection?: WorkspaceSection;
   /**
-   * The mode Knowledge opens in (UX6i, D150 §2.2): a door into Search or Convergence names it, and its item is chosen in
-   * that mode's list. A door into the place names none, and it opens in the mode it was left in.
+   * The mode Knowledge opens in: a door into Search or Convergence names it, and its item is chosen in
+   * that mode's list. A door into the place names none, and it opens in the mode it is left in.
    */
   knowledge?: KnowledgeMode;
   /**
-   * The mode the Agents place opens in (COMPANYVIEW1b): a door into Roles names it, and a door naming an agent or a part of its page
-   * names Agents. A door into the place names none, and it opens in the mode it was left in.
+   * The mode the Agents place opens in: a door into Roles names it, and a door naming an agent or a part of its page
+   * names Agents. A door into the place names none, and it opens in the mode it is left in.
    */
   agentsMode?: AgentsMode;
   /** The part of This machine's page a door opens: it names the Setup mode, and the page opens at that part. */
   roleSection?: RoleDoor;
-  /** The place the Setup mode opens at (AGENTSPLACE1f), by the id its list chooses it under (`repositoryId`, `workspaceId`). */
+  /** The place the Setup mode opens at, by the id its list chooses it under (`repositoryId`, `workspaceId`). */
   place?: string;
   /**
-   * Where a place's page opens (SETUPUX1h): the section a door names, and the row of it, with the page the door came from for *Back*.
+   * Where a place's page opens: the section a door names, and the row of it, with the page the door came from for *Back*.
    * Set by a door naming a repository's place or by the page's own doors.
    */
   placeAt?: PlaceAt;
   /**
-   * The group of Sessions' or Quests' list to bring into view (ENTRY1b, D161's ENTRY1 note): what waits on the person there,
+   * The group of Sessions' or Quests' list to bring into view: what waits on the person there,
    * with no item in it chosen. The list brings it once it has answered, then lets it go (`useBringGroup`).
    */
   group?: OpenGroup;
-  /** The composer opened with these (NEW1d-b): Sessions' main area, the repository chosen and the words in. */
+  /** The composer opened with these: Sessions' main area, the repository chosen and the words in. */
   compose?: Compose;
   /**
-   * A landed branch's page to open on its repository's Branches, with how it landed open (FLOWCHART1c): the work's milestone and a
+   * A landed branch's page to open on its repository's Branches, with how it landed open: the work's milestone and a
    * run's landing step name it. Page state of Repositories', so it is an event its view consumes, as a drawer is.
    */
   branch?: { repository: string; branch: string };
   /**
-   * The set-up the Agents place's Setup opens on (AGENTSPLACE1k), for the place it chooses. Dark, the Details it names are all a door
+   * The set-up the Agents place's Setup opens on, for the place it chooses. Dark, the Details it names are all a door
    * opens, and the ask is not carried.
    */
   setUp?: PlaceAsk;
@@ -161,11 +161,11 @@ const listed =(view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS
 
 /**
  * What `open(view, item?)` does: the view, and the item its list now has chosen. A view with no list,
- * Overview or Map, keeps no chosen item (§4). An item a view cannot show is the view's own business, as a
- * session that has gone or a domain this window lacks always was.
+ * Overview or Map, keeps no chosen item. An item a view cannot show is the view's own business, as a
+ * session that has gone or a domain this window lacks always is.
  *
  * `here` is the workspace in view, where there is one (the scope, or the only workspace): a door naming a workspace's page
- * and no workspace opens that one (UX6g), as a door naming an agent's part and no agent opens the agent that has it.
+ * and no workspace opens that one, as a door naming an agent's part and no agent opens the agent that has it.
  */
 export function opening(view: View, item?: string | null, part: OpenPart = {}, here: string | null = null): Opening {
   const plan: Opening = { view };
@@ -217,10 +217,10 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
 }
 
 /**
- * **A door naming a repository's place resolves it here** (AGENTSPLACE1f and 1h, the Agents-place design §6): a door has the repository,
+ * **A door naming a repository's place resolves it here**: a door has the repository,
  * and the place is named by the workspace the registry holds it in. They all end in `apply`, so one resolution there holds them all.
  * Each section of a workspace's Setup has
- * its home (SETUPUX1v, `WORKSPACE_HOMES`); a door naming the workspace's tab and no section stays on the tab until it goes. A door naming the tab and no repository
+ * its home (`WORKSPACE_HOMES`); a door naming the workspace's tab and no section stays on the tab until it goes. A door naming the tab and no repository
  * (the help room's) opens the mode, whose list chooses one. Dark, the plan is unchanged.
  *
  * `workspaceOfRepository` answers the workspace a repository sits in, as the registry holds it.
@@ -230,7 +230,7 @@ export function placeOpening(plan: Opening, workspaceOfRepository: (repository: 
     const { placeOf, ...rest } = plan;
     return { ...rest, agentsMode: 'setup', place: repositoryId(workspaceOfRepository(placeOf), placeOf) };
   }
-  // SETUPUX1m: a door into the Setup mode names This machine's page. Appointed roles is its Roles section's row; All roles is its own
+  // A door into the Setup mode names This machine's page. Appointed roles is its Roles section's row; All roles is its own
   // section; a door naming the mode alone opens the page at Roles.
   if (plan.view === 'agents' && plan.agentsMode === 'setup' && !plan.place) {
     const { roleSection: _section, ...rest } = plan;
@@ -238,7 +238,7 @@ export function placeOpening(plan: Opening, workspaceOfRepository: (repository: 
     return { ...rest, place: MACHINE, placeAt: at };
   }
   if (plan.view !== 'projects') return plan;
-  // AGENTSPLACE1k: Ask Daoris's set-up card opens the place's page with its ask, a repository's or the workspace's the repositories are in.
+  // Ask Daoris's set-up card opens the place's page with its ask, a repository's or the workspace's the repositories are in.
   if (plan.setUp && plan.chosen?.view === 'projects') {
     const named = projectsItem(plan.chosen.item);
     const place = 'repository' in named ? repositoryId(workspaceOfRepository(named.repository), named.repository) : workspaceId(named.workspace);
@@ -247,19 +247,19 @@ export function placeOpening(plan: Opening, workspaceOfRepository: (repository: 
 
   if (plan.chosen?.view !== 'projects') return plan;
   const named = projectsItem(plan.chosen.item);
-  // FLOWCHART2g: a conversation's draft card opens the workspace's Workflow with its editor asked on the draft.
+  // A conversation's draft card opens the workspace's Workflow with its editor asked on the draft.
   if (plan.workspaceTab === 'workflow' && plan.placeAt?.edit && 'workspace' in named) {
     return { view: 'agents', agentsMode: 'setup', place: workspaceId(named.workspace), placeAt: plan.placeAt };
   }
   if (plan.workspaceSection && 'workspace' in named) {
-    // SETUPUX1v: each section of a workspace's setup has its home on its place. The remote is Repositories', a row of its Details.
+    // Each section of a workspace's setup has its home on its place. The remote is Repositories', a row of its Details.
     if (plan.workspaceSection === 'remote') return { ...plan, workspaceTab: 'details' };
     return { view: 'agents', agentsMode: 'setup', place: workspaceId(named.workspace), placeAt: WORKSPACE_HOMES[plan.workspaceSection] };
   }
   return plan;
 }
 
-/** Where each section of a workspace's setup lives on the workspace's place: its section and the row of it (SETUPUX1v). */
+/** Where each section of a workspace's setup lives on the workspace's place: its section and the row of it. */
 const WORKSPACE_HOMES: Record<Exclude<WorkspaceSection, 'remote'>, PlaceAt> = {
   defaults: { section: 'workflow', row: 'defaults' },
   access: { section: 'sessions', row: 'access' },
@@ -269,7 +269,7 @@ const WORKSPACE_HOMES: Record<Exclude<WorkspaceSection, 'remote'>, PlaceAt> = {
 };
 
 /**
- * Where a starter's, a setup step's or Ask Daoris's door leads (HELP1d, SETUP1a, HELP6): its view and the
+ * Where a starter's, a setup step's or Ask Daoris's door leads: its view and the
  * item it names, a Settings domain at its part, one of Repositories' forms, or a workspace's page, the one in view
  * (`here`) where it names none.
  */
@@ -278,7 +278,7 @@ export function doorOpening(door: StarterDoor, here: string | null = null): Open
 }
 
 /**
- * Where a press's plan door leads (CONFIRMWAIT1c, the confirm-wait design §8.1, §15.3 item 13): the page that shows the plan the
+ * Where a press's plan door leads: the page that shows the plan the
  * press rests on, as it stands now, scoped as the press is. A land opens its session at its review (`review`, the Work frame's
  * intent); a sweep or a sync its workspace's Branches, a repository's
  * sync the workspace holding it (`holding`), and either naming none the one in view (`here`); a clear its workspace's Details,

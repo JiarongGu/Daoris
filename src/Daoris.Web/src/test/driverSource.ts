@@ -2,8 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 /**
- * A driver source a twin vitest parses, read by the file's name wherever it lies under the driver's folder (STRUCT1, D166;
- * the code-structure design §6): the driver's files move into module folders one module per branch, so a twin names the
+ * A driver source a twin vitest parses, read by the file's name wherever it lies under the driver's folder: the driver's files move into module folders one module per branch, so a twin names the
  * file and never its folder. A name no file has, or two files have, is refused. The CLI's `driver-names.test.ts` holds
  * each name a twin reads by to one file.
  */

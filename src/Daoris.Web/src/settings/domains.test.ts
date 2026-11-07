@@ -7,7 +7,7 @@ import { LIST_BOUNDS } from '../work/frame/layout';
 import { rememberedDomain, SETTINGS_DOMAINS } from './domains';
 
 /**
- * Settings by domain (MOD4): the frame, the domain list, and one `settings/<Name>Domain.tsx` per domain.
+ * Settings by domain: the frame, the domain list, and one `settings/<Name>Domain.tsx` per domain.
  * Every Settings domain lived in one file, and eight of eighteen branches in three days edited it
  * (`docs/2026-09-30-parallel-development-design.md`). The list in `domains.ts` is the only place a domain
  * is added; these hold that the frame stays a frame and that the list is the whole truth.
@@ -45,8 +45,8 @@ describe('the Settings registry', () => {
   });
 
   /**
-   * A setting lives on the thing it is about (D150 §1): Agents left for its place (UX6e), Workspace and Permissions for a
-   * workspace's page and a repository's (UX6g, §3.1), and Plugins for its place, its folder's row to Driver (UX6j, §2.3).
+   * A setting lives on the thing it is about: Agents left for its place, Workspace and Permissions for a
+   * workspace's page and a repository's, and Plugins for its place, its folder's row to Driver.
    * What stays is the machine's or the person's: seven domains.
    */
   it('holds what is the machine\'s or the person\'s: eight domains, no agent, workspace, permissions or plugins domain', () => {
@@ -60,8 +60,8 @@ describe('the Settings registry', () => {
   });
 
   /**
-   * UX6j (D150 §2.3, D116): the first domain is *Get started* again, as D97 named it, since *Setup* names a repository's
-   * and a workspace's tab now. Its id was always `start`.
+   * The first domain is *Get started*, since *Setup* names a repository's
+   * and a workspace's tab. Its id is `start`.
    */
   it('names the first domain Get started, which Setup no longer names', () => {
     expect(SETTINGS_DOMAINS[0]).toMatchObject({ id: 'start', label: 'settings.domain.start' });
@@ -70,7 +70,7 @@ describe('the Settings registry', () => {
   });
 
   /**
-   * UX6j: a domain remembered under `daoris.settings` from before it left opens where what it held stayed: Plugins at
+   * A domain remembered under `daoris.settings` from before it left opens where what it held stayed: Plugins at
    * Driver, which keeps its folder's row and the door to the Plugins place. One that left for a page Settings holds no row
    * of (Agents, Workspace, Permissions) opens on Appearance, as any domain this window lacks does.
    */
@@ -81,12 +81,12 @@ describe('the Settings registry', () => {
   });
 
   /**
-   * FRAME1g: the frame is Settings as the window's frame takes it — its list pane, which `DomainList` draws,
+   * The frame is Settings as the window's frame takes it — its list pane, which `DomainList` draws,
    * and its main area, which shows whichever domain the list chose — and Settings drawn alone. It names no
    * domain itself.
    */
   it('is the frame\'s only way to a domain: it imports only the list and its rows from Settings\', and declares only the frame', () => {
-    // The frame sits in `settings/` beside the domains since STRUCT5c (D166), so what it takes from Settings is `./…`.
+    // The frame sits in `settings/` beside the domains, so what it takes from Settings is `./…`.
     const reached = new Set([...frame.matchAll(/from\s+'\.\/([\w./-]+)'/g)].map((match) => match[1]));
     expect([...reached].sort()).toEqual(['DomainList', 'domains']);
     const declared = [...frame.matchAll(/^(?:export\s+)?function\s+(\w+)/gm)].map((match) => match[1]);

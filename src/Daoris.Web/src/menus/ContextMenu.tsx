@@ -6,17 +6,17 @@ import {
 } from './press';
 
 /**
- * **The right-click menu** (CTX1, D138): MENU1's menu, opened at a point rather than under a trigger, its groups between
+ * **The right-click menu**: the menu, opened at a point rather than under a trigger, its groups between
  * rules. A molecule: every state is reached by its props.
  *
  * @remarks
- * - **Anchored on a point**: a trigger of no size, fixed where the press was, so the menu's place and its turning back
+ * - **Anchored on a point**: a trigger of no size, fixed where the press is, so the menu's place and its turning back
  *   from the window's edge are the menu atom's, as every other menu's are.
  * - **Named by what it is for** (`label`): the surface's *Actions for …*, else *Actions here*. Radix names a menu by its
  *   trigger, which here is nothing a reader can hear, so the name is said on the menu itself.
- * - **Opened by a key, its first act has the focus** (design §5); opened by the pointer, the menu itself does, and the
+ * - **Opened by a key, its first act has the focus**; opened by the pointer, the menu itself does, and the
  *   arrows go from there, as Radix's own context menu does.
- * - **Closed, the focus goes back where it was**, unless the act chosen moved it: a reason's field that opened, Quick
+ * - **Closed, the focus goes back where it came from**, unless the act chosen moved it: a reason's field that opened, Quick
  *   Ask's box. Radix's own would focus the trigger, which is nothing.
  */
 export function ContextMenu({ open = true, at, label, sections, keyed = false, returnTo = null, onCopy, onClose }: {
@@ -28,7 +28,7 @@ export function ContextMenu({ open = true, at, label, sections, keyed = false, r
   sections: readonly (readonly MenuAct[])[];
   /** Opened by its key, so its first act takes the focus. */
   keyed?: boolean;
-  /** Where the focus was before it opened, given back on closing. */
+  /** Where the focus is before it opens, given back on closing. */
   returnTo?: HTMLElement | null;
   /** A copy chosen: the menu owner copies and says so. */
   onCopy?: (text: string) => void;
@@ -70,7 +70,7 @@ export function ContextMenu({ open = true, at, label, sections, keyed = false, r
 
 /**
  * A menu opened by its key gives its first act the focus, once the menu atom has focused the menu itself: a beat after it
- * is drawn. Radix moves to the first item only for a key it heard, and the menu key was heard before the menu existed.
+ * is drawn. Radix moves to the first item only for a key it heard, and the menu key is heard before the menu exists.
  */
 function focusFirst(content: HTMLDivElement | null) {
   if (!content) return;
@@ -79,7 +79,7 @@ function focusFirst(content: HTMLDivElement | null) {
   }, 0);
 }
 
-/** A menu the window has open: where, what, and how it was asked for. */
+/** A menu the window has open: where, what, and how it is asked for. */
 type Opened = {
   /** Each opening its own, so a menu asked for elsewhere is a new one at its new place. */
   id: number;
@@ -92,15 +92,15 @@ type Opened = {
 };
 
 /**
- * **The window's one right-click handler** (CTX1, D138, design §3): mounted once per window, it reads what a press is on
+ * **The window's one right-click handler**: mounted once per window, it reads what a press is on
  * and opens the menu for it, with the doors the frame hands it (copy, search, ask, open in Daoris's browser).
  *
  * @remarks
  * - **A surface offers its acts with `contextOffer`** on its root; it holds no hook, so a molecule offers its own. This
  *   reads the innermost offer from the event once every surface has heard it, since it listens on the document.
  * - **A text field keeps the engine's own menu**, and a surface that answered the press itself (a tab's views menu) is
- *   left to it. Everywhere else the engine's menu is suppressed, menu or none (D138 §4).
- * - **The keys** (design §5): the menu key and Shift+F10 ask for the focused element's menu, at its corner, by the same
+ *   left to it. Everywhere else the engine's menu is suppressed, menu or none.
+ * - **The keys**: the menu key and Shift+F10 ask for the focused element's menu, at its corner, by the same
  *   path a right-click takes, so a surface offers once for both. The engine asks for its own on the menu key's way up on
  *   Windows, so the key is stopped there too, and a second ask while a menu is open asks for nothing.
  * - **It closes when the window loses the focus or changes size**, as a menu of the system's does.
@@ -110,7 +110,7 @@ export function ContextMenus({ doors, shell = true }: {
   /**
    * Whether this window is the desktop's, whose engine's menu offers a web page's acts and is suppressed. A browser is
    * the person's own, with its own acts (a new tab, its translation, its extensions): there the page's menu opens only
-   * where a surface offers acts, and the browser's stays everywhere else (design §2).
+   * where a surface offers acts, and the browser's stays everywhere else.
    */
   shell?: boolean;
 }) {
@@ -182,7 +182,7 @@ export function ContextMenus({ doors, shell = true }: {
       if (event.key === 'ContextMenu' && !isTextField(document.activeElement)) event.preventDefault();
     };
 
-    // A window that changes size moves what the menu was opened on. Losing the focus closes it too, which the menu atom does.
+    // A window that changes size moves what the menu is opened on. Losing the focus closes it too, which the menu atom does.
     const close = () => setMenu((was) => (was?.open ? { ...was, open: false } : was));
 
     document.addEventListener('contextmenu', onContext);

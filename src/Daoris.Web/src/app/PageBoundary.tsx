@@ -5,7 +5,7 @@ import { Button, Icon, Inline, Prose } from '../design/ui';
 import { errorMessage, reportPageStopped } from '../bridge/log';
 import { liftSplash } from './splash';
 
-// The page's last stand (PAGELOOP1). With no boundary, a render that threw anywhere unmounted the whole tree, and the window was
+// The page's last stand. With no boundary, a render that throws anywhere unmounts the whole tree and leaves the window
 // blank: on the install React's update-depth guard (#185) did it twice, seconds before a session ended. The window has no reload of
 // its own and a restart of Daoris ends every running session, so the page catches it here, says so in the window's words, and
 // offers a reload of the page alone. Outside every provider: a failure inside the query client, the scope or the tooltips is caught
@@ -39,7 +39,7 @@ export function PageStopped({ message, logged, onReload }: {
   const { t } = useTranslation();
   return (
     <main aria-labelledby={HEADING} className="grid min-h-screen place-items-center bg-page px-6 py-10 text-ink">
-      {/* A reading column centred in the window, as the start prompt's is (D141 §4): the screen has no pane to wrap at. */}
+      {/* A reading column centred in the window, as the start prompt's is: the screen has no pane to wrap at. */}
       <div className="flex w-full max-w-[34rem] flex-col items-start gap-3">
         <span className="text-ink-danger"><Icon name="failure" size={26} /></span>
         <h1 id={HEADING} className="text-view font-[650] tracking-[-0.01em]">{t('stopped.headline')}</h1>
@@ -57,7 +57,7 @@ export function PageStopped({ message, logged, onReload }: {
 
 /**
  * Catches a render that threw below it, reports it once (`page.error`, `where` `render`, with the view and the top of the component
- * stack, D217), lifts a splash still up, and draws {@link PageStopped} in its place until the page is reloaded. `view` is the
+ * stack), lifts a splash still up, and draws {@link PageStopped} in its place until the page is reloaded. `view` is the
  * window's own where no view has said which it shows (a secondary window's); `reload` is the test's seam, the window's location by
  * default.
  */

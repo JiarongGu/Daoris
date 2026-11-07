@@ -40,7 +40,7 @@ describe('the primitives', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Ask for something' })).toBeInTheDocument();
-    // Its lines are set to leave no word alone on the last one (seen on Search's, UX5 U41).
+    // Its lines are set to leave no word alone on the last one.
     expect(screen.getByText('The family owes itself nothing right now.').closest('p')).toHaveClass('text-pretty');
   });
 
@@ -62,12 +62,12 @@ describe('the primitives', () => {
 });
 
 /**
- * A setting is a row (2026-09-23): label, one-line hint, the control at the right — and the why on
- * the glyph, for the reader who asks, rather than as the paragraph that used to sit above every
+ * A setting is a row: label, one-line hint, the control at the right — and the why on
+ * the glyph, for the reader who asks, rather than as a paragraph above every
  * control on the Machine view.
  */
 describe('a select', () => {
-  // SELECT1: a list longer than the window ran off its edge, with nothing to scroll it by. The list is capped at
+  // A list longer than the window ran off its edge, with nothing to scroll it by. The list is capped at
   // the room the popper measures on the side it opened, and it scrolls inside that.
   it('caps its open list at the room the window has, and scrolls inside it', async () => {
     const user = userEvent.setup();
@@ -84,7 +84,7 @@ describe('a select', () => {
 });
 
 describe('a menu', () => {
-  // MENU1: the dropdown menus had no atom, and a long one (a receiver filter, a long workspace list) ran off the
+  // The dropdown menus had no atom, and a long one (a receiver filter, a long workspace list) ran off the
   // window as the select had. The menu is capped at the room the popper measures on its side, and scrolls inside.
   // Opened from the keyboard with a fresh `userEvent.setup()`, as AppMenu's and SyncStatus's tests are: the shared API
   // carries pointer state between tests, and a `defaultOpen` menu does not open under jsdom.
@@ -167,9 +167,9 @@ describe('a setting row', () => {
   });
 
   /**
-   * UX5 U58, seen on the window: at 888 a path as the control took its whole width first, and the label beside it was
+   * Seen on the window: at 888 a path as the control took its whole width first, and the label beside it came out
    * 24px wide, one character a line. The label's column keeps a floor and the control gives way to it: a path breaks at
-   * its separators. Since UIFIT1 (the UI/UX design R1) the column is a label track: content-sized between the floor and
+   * its separators. The column is a label track: content-sized between the floor and
    * a cap, never half the row, so the value sits beside its words and a long label wraps at the cap.
    */
   it('keeps a floor under the label and a cap over it, so a long control gives way to it and a long label wraps', () => {
@@ -184,8 +184,8 @@ describe('a setting row', () => {
   });
 
   /**
-   * R1: a value starts at the track's edge and the row's own acts follow it, never the pane's far edge. The control's
-   * wrapper justifies to the start, at every width (the far-edge `justify-end` is what UIFIT1a's shots showed).
+   * A value starts at the track's edge and the row's own acts follow it, never the pane's far edge. The control's
+   * wrapper justifies to the start, at every width (a far-edge `justify-end` would put it at the pane's edge).
    */
   it("starts the value at the track's edge, and its acts follow it rather than the pane's far edge", () => {
     render(<SettingRow label="Daoris home" control={<span>a-path</span>} />);
@@ -195,9 +195,9 @@ describe('a setting row', () => {
   });
 
   /**
-   * WSR4, seen on the window: with Settings' nav and the side bar open a row was 309px, the floor left the control
+   * Seen on the window: with Settings' nav and the side bar open a row measured 309px, the floor left the control
    * 130px, and a branch pattern showed eleven characters. A row that narrow puts its control under the label, at the
-   * row's full width. A row alone is its own container (R1 moves the floor to the card's list, below); it answers to
+   * row's full width. A row alone is its own container (the card's list holds the floor, below); it answers to
    * the width it has, not the window's.
    */
   it('puts the control under the label when the row itself is narrow', () => {
@@ -224,7 +224,7 @@ describe('a setting row', () => {
 });
 
 /**
- * R1 (the UI/UX design, UIFIT1): a card's rows share one label track. `SettingList` is the one grid, its rows subgrids
+ * A card's rows share one label track. `SettingList` is the one grid, its rows subgrids
  * of it, so the track is the widest of the card's labels between the floor and the cap, and every value starts at its
  * edge. jsdom lays nothing out, so the structure is held here and the geometry in `measured/settings.spec.ts`.
  */
@@ -289,7 +289,7 @@ describe('a setting list', () => {
 });
 
 /**
- * R1 (the UI/UX design, UIFIT1d): a form is sized to its content up to the pane, laid by its own width. `FormGrid` is the
+ * A form is sized to its content up to the pane, laid by its own width. `FormGrid` is the
  * one grid, its columns by what each field holds, each `FormRow` a subgrid of it; below the form's floor, by a container
  * query of its own, each row stacks, the head row goes and each field shows its own label. jsdom lays nothing out, so the
  * structure is held here.
@@ -400,7 +400,7 @@ describe('the liveness dot', () => {
   });
 
   /**
-   * MILESTONEUX1 (the UI/UX design §4): a fact's mark. `done` is the one a thing reached or kept wears, in done's hue and
+   * A fact's mark. `done` is the one a thing reached or kept wears, in done's hue and
    * ink; `waits` is what waits on another, a neutral that is neither the person's open hue nor an outcome's.
    */
   it('gains done, in done’s hue and ink, and waits, a neutral, each told apart from the five that stand', () => {
@@ -419,7 +419,7 @@ describe('the liveness dot', () => {
   });
 
   /**
-   * UX5 U1: waiting on the person wore declined's red on the dot and the pill, `--warn` on the map,
+   * Waiting on the person wears one hue everywhere, never declined's red on the dot and the pill, `--warn` on the map,
    * and open's amber on the band's card, three hues for one fact. It is the status palette's waiting
    * hue everywhere, and red stays an outcome's, which is what a failed tool call is.
    */
@@ -434,8 +434,8 @@ describe('the liveness dot', () => {
 });
 
 /**
- * D118 §5: one item on a list closed to its strip — FRAME6's session strip row made general, so Plugins'
- * strip (PLUGUI1) is the same atom.
+ * One item on a list closed to its strip — the session strip row made general, so Plugins'
+ * strip is the same atom.
  */
 describe('the strip mark', () => {
   const inStrip = (node: ReactElement) => render(<Tooltip.Provider><ul>{node}</ul></Tooltip.Provider>);
@@ -458,7 +458,7 @@ describe('the strip mark', () => {
     expect(container.querySelector('li')).toHaveAttribute('data-list-row');
   });
 
-  /** D119: a plugin that is simply on wears no mark, and one switched off a faint initial. */
+  /** A plugin that is simply on wears no mark, and one switched off a faint initial. */
   it('wears no mark where it is given none, and a faint initial where it is dimmed', () => {
     const { container } = inStrip(<StripMark label="lint-on-save · off" initialOf="lint-on-save" dimmed />);
     expect(container.querySelector('.size-1\\.5')).toBeNull();
@@ -471,7 +471,7 @@ describe('the strip mark', () => {
   });
 
   /**
-   * ACCTUX2: Claude Code and Codex both showed `C`. A mark of its own (UX7's *CC*, *Cx*) is drawn as given, its case kept,
+   * Claude Code and Codex would both show `C`. A mark of its own (*CC*, *Cx*) is drawn as given, its case kept,
    * in place of the first character, and faint where it is dimmed.
    */
   it('draws letters it is given as written, in place of the initial', () => {
@@ -516,10 +516,10 @@ describe('a code span in a sentence', () => {
 });
 
 /**
- * LOOK5, seen on the install in Settings → Agents in 中文: a browser may break after any hyphen, so a setting's
+ * Seen on the install in Settings → Agents in 中文: a browser may break after any hyphen, so a setting's
  * terminal twin read `--no-` over `keep` and `--` over `workspace`. jsdom lays nothing out, so what is held is the
  * structure that leaves a line nowhere to break inside a word: each word is an inline box no wider than its line,
- * which moves whole and breaks inside only when it alone is wider (`break-word`, U8), and the spaces between the
+ * which moves whole and breaks inside only when it alone is wider (`break-word`), and the spaces between the
  * boxes are the span's only loose text.
  */
 describe('a code span breaks only between its words', () => {
@@ -577,7 +577,7 @@ describe('a code span breaks only between its words', () => {
 });
 
 /**
- * UXFIX4b, seen at the branch list's 400 px floor: a long branch name filled its line and the comma after it opened the
+ * Seen at the branch list's 400 px floor: a long branch name filled its line and the comma after it opened the
  * next one, `, whose work…`, since Chromium may break after any inline box, even before a comma. jsdom lays nothing out,
  * so what is held is the structure that leaves the line nowhere to break there, measured in Chromium through the Sweep
  * floor stories: a word and the marks after it are one box, as text inside which no line breaks before a closing mark;
@@ -693,7 +693,7 @@ describe('the meta line', () => {
   });
 
   /**
-   * UX5 U8, seen on the window: `break-all` broke a tree anywhere, so the head read `family\g` over
+   * Seen on the window: `break-all` broke a tree anywhere, so the head read `family\g` over
    * `ame`. A path breaks after a separator, and inside a name only when that one name is wider than
    * the line, which is what `anywhere` means once the separators offer somewhere better.
    */
@@ -721,23 +721,23 @@ describe('the session tone map', () => {
     'completed', 'declined', 'stood-down', 'failed', 'stopped',
   ];
 
-  // The nine the wire carries, the one the page shows a live chat between turns (UX5 U17), the two words the
-  // session list's reader derives from the session's quest (D126 §2.2), the park the person answered (ANSWER1c), a
-  // record going on with their words (MSG1f), and a session waiting on its own helper (HELPERWAIT1).
+  // The nine the wire carries, the one the page shows a live chat between turns, the two words the
+  // session list's reader derives from the session's quest, the park the person answered, a
+  // record going on with their words, and a session waiting on its own helper.
   const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'limited', 'limit-waits', 'not-started'];
 
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
     expect(Object.keys(SESSION_TONE).sort()).toEqual([...SHOWN].sort());
-    // Declined's red beside the word "awaiting you" read as a session that had failed (UX5 U1).
+    // Declined's red beside the word "awaiting you" reads as a session that has failed.
     expect(SESSION_TONE['awaiting-person']).toBe('open');
-    // Idle is quiet: no status hue, and no live mark (U17, the reference console's own reading).
+    // Idle is quiet: no status hue, and no live mark (the reference console's own reading).
     expect(SESSION_TONE.idle).toBe('neutral');
     expect(SESSION_DOT.idle).toBe('idle');
   });
 
   /**
-   * D126 §2.3, audit M6: open's hue means it waits on you, and nothing else in the list wears it. `queued` shared it
+   * Open's hue means it waits on you, and nothing else in the list wears it. `queued` shared it
    * and left the word to tell the two apart; it keeps its idle mark and wears no status hue.
    */
   it("keeps open's hue for what waits on the person alone", () => {
@@ -750,15 +750,15 @@ describe('the session tone map', () => {
     // Awaiting a reply, nothing runs and nothing waits on the person: quiet.
     expect(SESSION_TONE['awaiting-reply']).toBe('neutral');
     expect(SESSION_DOT['awaiting-reply']).toBe('idle');
-    // ANSWER1c: answered, it waits on the driver's next look, as a queued session does, and no longer on the person.
+    // Answered, it waits on the driver's next look, as a queued session does, and no longer on the person.
     expect(SESSION_TONE.answered).toBe('neutral');
     expect(SESSION_DOT.answered).toBe('idle');
-    // HELPERWAIT1: waiting on its own helper, nothing runs and nothing waits on the person, as awaiting a reply.
+    // Waiting on its own helper, nothing runs and nothing waits on the person, as awaiting a reply.
     expect(SESSION_TONE['awaiting-helper']).toBe('neutral');
     expect(SESSION_DOT['awaiting-helper']).toBe('idle');
   });
 
-  /** Each shown state has its word: the record's in `sessionState`, the reader's two in `work.shown` (D126 §8). */
+  /** Each shown state has its word: the record's in `sessionState`, the reader's two in `work.shown`. */
   it('names every shown state by a key both catalogues hold', () => {
     expect(shownKey('queued')).toBe('sessionState.queued');
     expect(shownKey('idle')).toBe('sessionState.idle');
@@ -778,7 +778,7 @@ describe('the session tone map', () => {
   });
 
   /**
-   * UX5 U17: a live chat is idle between turns and working while one runs, as the driver says; a
+   * A live chat is idle between turns and working while one runs, as the driver says; a
    * turn it has not answered for is the record's word. Driven work is one long turn.
    */
   it('shows a live chat between turns as idle, and nothing else', () => {
@@ -792,9 +792,9 @@ describe('the session tone map', () => {
   });
 
   /**
-   * ANSWER1c (D131): a park the person answered stays parked until the driver's next look, with the answer set, and the
+   * A park the person answered stays parked until the driver's next look, with the answer set, and the
    * same session goes on then. Its state still says it waits on the person; it shows as answered, so no surface asks
-   * the person again. An answer this machine was not told (a teammate's, or none) leaves it waiting. ONEWAY1m: the answer is
+   * the person again. An answer this machine is not told (a teammate's, or none) leaves it waiting. The answer is
    * read from the keyed `said` words, the person's alone, so Daoris's own word on a park leaves it waiting.
    */
   it('shows a park the person answered as answered until the driver takes it up', () => {
@@ -804,12 +804,12 @@ describe('the session tone map', () => {
     expect(shownState({ kind: 'driven', state: 'awaiting-person', said: [{ ...said('It reopened.')[0]!, from: 'daoris' }] }, undefined))
       .toBe('awaiting-person');
     expect(personsSaid({ said: [...said('Port 8080.', 'Port 9090.'), { ...said('a helper says')[0]!, helper: 'h1' }] })).toBe('Port 8080.\n\nPort 9090.');
-    // Once the driver takes it up the record says so: going on while the words still wait for its first prompt (MSG1f).
+    // Once the driver takes it up the record says so: going on while the words still wait for its first prompt.
     expect(shownState({ kind: 'driven', state: 'working', said: said('Use the second.') }, undefined)).toBe('going-on');
   });
 
   /**
-   * MSG1f (D137 §3.2): a record that went on with the person's words and whose run is opening shows *going on*, as an
+   * A record that went on with the person's words and whose run is opening shows *going on*, as an
    * answered park shows *answered*: it keeps the words until its run's first prompt takes them, and then it is working.
    * An ended record with words waiting is the reader's to say, since words it cannot take wait there too.
    */
@@ -826,7 +826,7 @@ describe('the session tone map', () => {
   });
 
   /**
-   * LIMITRESUME1a (D206 point 1; the limit-resume design §3.1): a `failed` record whose `limit` an account's limit set shows
+   * A `failed` record whose `limit` an account's limit set shows
    * *limited*, quiet and ended, never the failure's red. The flag on any other state says nothing, and a record from a host
    * before the flag is the failure it says.
    */
@@ -841,7 +841,7 @@ describe('the session tone map', () => {
   });
 
   /**
-   * LIMITSWITCH3b (D137's note of 2026-10-26): a record held for an account's reset shows the reader's *limit-waits*, quiet and idle, since
+   * A record held for an account's reset shows the reader's *limit-waits*, quiet and idle, since
    * it goes on by itself; the record's own state alone never says it, so it is the reader's word and no state of the ledger.
    */
   it('shows an ended record held for an account’s reset as its wait, quietly', () => {
@@ -852,7 +852,7 @@ describe('the session tone map', () => {
   });
 
   /**
-   * MODELROLE1c3 (D205 §3.5(c), §7.1): a `failed` record its agent's refusal of the choice ended before anything ran, its note's code
+   * A `failed` record its agent's refusal of the choice ended before anything ran, its note's code
    * `ended.choice-not-offered`, shows *Not started*, quiet and ended, never the failure's red. Any other failure is the failure it says.
    */
   it('shows a record ended choice-not-offered as not started, quietly', () => {
@@ -882,18 +882,18 @@ describe('the session tone map', () => {
   it('counts exactly the four states that still hold a repository', () => {
     expect([...SESSION_ACTIVE].sort())
       .toEqual(['awaiting-person', 'queued', 'starting', 'working']);
-    // Parked counts as active on purpose (D46 §4): the person is the flow control, not an exit.
+    // Parked counts as active on purpose: the person is the flow control, not an exit.
     expect(SESSION_ACTIVE.has('awaiting-person')).toBe(true);
     expect(STATES.filter((state) => !SESSION_ACTIVE.has(state))).toHaveLength(5);
   });
 });
 
 /**
- * D41 §6 says a drawer is `role="dialog"` **with `aria-modal`**. Radix writes the role and traps the
- * focus but never writes that attribute, so the sentence described the design and not the page — for
- * as long as it had existed, with every gate green, because no gate reads prose.
+ * A drawer is `role="dialog"` **with `aria-modal`**. Radix writes the role and traps the
+ * focus but never writes that attribute, so a design that says so describes the design and not the page,
+ * with every gate green, because no gate reads prose.
  *
- * This is the gate that now reads it. It covers every modal surface the platform has, so the next one
+ * This is the gate that reads it. It covers every modal surface the platform has, so the next one
  * is caught by the act of not being listed.
  */
 describe('every modal surface says it is modal', () => {
@@ -940,7 +940,7 @@ describe('every modal surface says it is modal', () => {
 });
 
 /**
- * IME1: Radix closes a dialog on any Escape, heard on the document before the field it was pressed in, so dropping an
+ * Radix closes a dialog on any Escape, heard on the document before the field it is pressed in, so dropping an
  * input method's composition in Quick Ask's box closed the box. The atoms that open one keep that Escape.
  */
 describe('a dialog keeps the Escape an input method is composing with', () => {
@@ -981,7 +981,7 @@ describe('a dialog keeps the Escape an input method is composing with', () => {
 });
 
 /**
- * UXTOAST1 (D41): a toast never lies over an open drawer, whose foot held the retire ask a toast covered on the installed
+ * A toast never lies over an open drawer, whose foot held the retire ask a toast covered on the installed
  * window. jsdom draws nothing, so the check is the positions the rule sets: the drawer hugs the right edge at its width,
  * and the toasts' right edge is that width and the corner's gap in from the same edge, their left edge clear of the
  * activity bar, from the first width that holds a toast beside it.
@@ -1045,7 +1045,7 @@ describe('a toast beside an open drawer', () => {
 });
 
 /**
- * NOTIFY2b (the notification design §3.3, Fable's F1.1): a toast may carry a door, and one that stays is never closed by its seven
+ * A toast may carry a door, and one that stays is never closed by its seven
  * seconds: a terminal's press's toast stays until the view opens or the press ends, which its owner says by taking it away.
  */
 describe('a toast with a door', () => {
@@ -1132,7 +1132,7 @@ describe('a tip', () => {
 /**
  * 🔴 A count is a circle.
  * jsdom has no layout, so what can be held here is the cause: the box's height and its minimum width
- * are ONE size. The oval was two sizes nothing kept equal — a min-width, and a line-height plus a
+ * are ONE size. An oval comes of two sizes nothing keeps equal — a min-width, and a line-height plus a
  * border. The window's own measurement is the other half, taken on the desktop.
  */
 describe('the count badge', () => {
@@ -1187,7 +1187,7 @@ describe('the segmented choice', () => {
   });
 
   /**
-   * UXFIX1: the focus moves with the choice, as the WAI-ARIA radio group's does. Left on the option it came from, Space
+   * The focus moves with the choice, as the WAI-ARIA radio group's does. Left on the option it came from, Space
    * chose that one again and a screen reader stayed on an option no longer chosen. Every `Segmented` is this atom (only
    * `ui.tsx` builds a radio), so this holds Knowledge's mode, Settings' rows and the review's choices alike.
    */
@@ -1222,7 +1222,7 @@ describe('the segmented choice', () => {
     expect(document.activeElement).toBe(radio('Light'));
   });
 
-  /** UXFIX1: an arrow moves on from the option that holds the focus, so a choice its owner has not taken yet is not lost. */
+  /** An arrow moves on from the option that holds the focus, so a choice its owner has not taken yet is not lost. */
   it('moves on from the focused option while the value it chose is still on its way', async () => {
     const chosen: string[] = [];
     render(<Theme onChange={(value) => chosen.push(value)} />);
@@ -1235,7 +1235,7 @@ describe('the segmented choice', () => {
     expect(chosen).toEqual(['light', 'dark']);
   });
 
-  /** UX6i: a list's head spreads its choice over the row, each option an equal share (Knowledge's Search · Convergence). */
+  /** A list's head spreads its choice over the row, each option an equal share (Knowledge's Search · Convergence). */
   it('fills its row where asked, each option an equal share, and sits at its own width otherwise', () => {
     render(
       <Segmented
@@ -1252,7 +1252,7 @@ describe('the segmented choice', () => {
 });
 
 /**
- * ZOOM1 (the UI/UX design §3.11): the window zooms by the page's root size, so what is drawn in rem grows with it. An icon
+ * The window zooms by the page's root size, so what is drawn in rem grows with it. An icon
  * drawn in pixels stayed small beside text that grew, and in the frame, which wears the level's inverse, it shrank.
  */
 describe("the window's zoom", () => {

@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { store, stored } from '../lib/stored';
 
-// The window's zoom (ZOOM1, the UI/UX design §3.11): the content larger or smaller in an editor's steps, the frame kept at its
+// The window's zoom: the content larger or smaller in an editor's steps, the frame kept at its
 // own size. Kept for the machine as the theme is (`theme.ts`, the exemplar), in the window's own storage: the engine's
 // profile is this machine's, so a level chosen here is this machine's and no other's.
 //
@@ -45,7 +45,7 @@ export function zoomStep(level: number, direction: 1 | -1): number {
 
 /**
  * Put a level on the document: the root's size, and the frame's inverse. 100% removes both, so the page is exactly the one
- * drawn before there was a zoom.
+ * drawn without a zoom.
  */
 export function applyZoom(level: number = current): void {
   const root = document.documentElement;
@@ -72,14 +72,14 @@ export function setZoom(level: number): void {
   tell();
 }
 
-/** View's three zoom acts (ZOOM1): a step in, a step out, or back to the page as drawn. */
+/** View's three zoom acts: a step in, a step out, or back to the page as drawn. */
 export function zoomBy(step: 'in' | 'out' | 'reset'): void {
   setZoom(step === 'reset' ? ZOOM_DEFAULT : zoomStep(current, step === 'in' ? 1 : -1));
 }
 
 /**
- * A level another main window chose (ONEINSTANCE1): the store tells every other document of a write, so this one follows
- * as the theme does (WINDOW1), applied and told without writing it back.
+ * A level another main window chose: the store tells every other document of a write, so this one follows
+ * as the theme does, applied and told without writing it back.
  */
 export function followStoredZoom(event: StorageEvent): void {
   if (event.key !== ZOOM_KEY && event.key !== null) return;

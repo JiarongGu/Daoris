@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// A repository's Branches and History tabs in SHELL mode (UX6h1, D150 §4.2, §4.4): Git inside Repositories. Each tab asks
-// this machine's driver over DAORIS.DRIVER's `GIT_BRANCHES` and `GIT_GRAPH` (GIT1d) only while it shows, asks nothing for a
+// A repository's Branches and History tabs in SHELL mode: Git inside Repositories. Each tab asks
+// this machine's driver over DAORIS.DRIVER's `GIT_BRANCHES` and `GIT_GRAPH` only while it shows, asks nothing for a
 // repository with no checkout here, and says a refusal by its code in its place. Over a mocked bridge, as the shell-attached
 // half is held (`docs/2026-09-19-frontend-architecture.md` §4).
 
@@ -55,9 +55,9 @@ describe("a repository's Branches and History tabs", () => {
   const answering = ({ branches = () => ENGINE_LIST, graph = () => answer(PAGE), log = () => ({ lines: [] }), trace, work }: {
     branches?: (payload: Record<string, unknown>) => unknown;
     graph?: (payload: Record<string, unknown>) => unknown;
-    /** What the machine log answers `LINES` with (AUTOTIDY1a). */
+    /** What the machine log answers `LINES` with. */
     log?: () => unknown;
-    /** What `TRACE` and `WORK_STATE` answer (FLOWCHART1c). */
+    /** What `TRACE` and `WORK_STATE` answer. */
     trace?: (payload: Record<string, unknown>) => unknown;
     work?: (payload: Record<string, unknown>) => unknown;
   } = {}) =>
@@ -89,7 +89,7 @@ describe("a repository's Branches and History tabs", () => {
     await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
 
     const list = await within(repositoryMain()).findByRole('region', { name: "engine's branches" });
-    // Two sessions', three landed, five of yours (UX6h2a); the line heads the list.
+    // Two sessions', three landed, five of yours; the line heads the list.
     expect(within(list).getAllByRole('listitem')).toHaveLength(10);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_BRANCHES', expect.objectContaining({ payload: { repository: 'engine', workspace: 'aurora' } }));
     expect(asked('GIT_GRAPH')).toEqual([]);
@@ -234,7 +234,7 @@ describe("a repository's Branches and History tabs", () => {
   });
 
   /**
-   * UX6h3b (the built-in Git design §2.3): a branch's name in Branches opens its page in the main area, page state of the
+   * A branch's name in Branches opens its page in the main area, page state of the
    * view's. The page asks `GIT_GRAPH` since the branch parted from its line, its two tips the branch's then the line's, pages
    * it with the load-more foot, and goes back to the repository's Branches. The line's own row opens History.
    */
@@ -303,7 +303,7 @@ describe("a repository's Branches and History tabs", () => {
       expect(within(repositoryMain()).getByRole('tab', { name: 'Branches' })).toHaveAttribute('aria-selected', 'true');
     });
 
-    // UX6h3d: the way back returns the focus to the press that opened the page, so a keyboard reader keeps their place.
+    // The way back returns the focus to the press that opened the page, so a keyboard reader keeps their place.
     it("leaves the focus on the opened branch's name button when it goes back", async () => {
       answering({ graph });
       show(<ProjectsView notify={() => {}} />);
@@ -348,7 +348,7 @@ describe("a repository's Branches and History tabs", () => {
   });
 
   /**
-   * FLOWCHART1c (the flowchart design §2.7, §10's trap): a landed branch's page draws how it landed, read once its section opens:
+   * A landed branch's page draws how it landed, read once its section opens:
    * the trace of the session its landing record names, never a unit's executor, and the units of work the branch carries, by the
    * branch. A door into it (the work's milestone, a run's landing step) opens the page with the section open.
    */
@@ -472,10 +472,10 @@ describe("a repository's Branches and History tabs", () => {
   });
 
   /**
-   * UX6h2b2 (the built-in Git design §2.2, D112): a workspace's Branches tab lists each of its repositories' branches as a
+   * A workspace's Branches tab lists each of its repositories' branches as a
    * group above the clean-up and the look, read once for the workspace, a session's branch named by its title in its group.
    * The game holds no branch of Daoris's: it is apart and folded, read alone once the person includes it. A row of another
-   * workspace's is filtered out again, as BRSCOPE1's rows are.
+   * workspace's is filtered out again.
    */
   it("lists each repository's branches as a group above the clean-up, and reads one apart only once it is included", async () => {
     const [line, physics, ...rest] = GIT_BRANCHES_ENGINE.branches;
@@ -501,7 +501,7 @@ describe("a repository's Branches and History tabs", () => {
     expect(engine.compareDocumentPosition(cleanUp) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     // The game is apart, and the other workspace's row is not this tab's.
-    // Said once on the tab, not again under Updates (UX6h2b3).
+    // Said once on the tab, not again under Updates.
     expect(screen.getAllByText(/with a checkout here holds? no branch of Daoris's/)).toHaveLength(1);
     await userEvent.click(within(repositoryMain()).getByText("1 repository with a checkout here holds no branch of Daoris's, and is not listed"));
     const apart = within(within(repositoryMain()).getByRole('group', { name: 'Repositories not listed' }));
@@ -513,7 +513,7 @@ describe("a repository's Branches and History tabs", () => {
     expect(within(game).getByRole('list', { name: 'Yours (2)' })).toBeInTheDocument();
     expect(asked('GIT_BRANCHES').map(([, , request]) => request.payload)).toEqual([{ workspace: 'aurora' }, { repository: 'game', workspace: 'aurora' }]);
 
-    // One fold (UX6h2b3): Updates lists nothing apart of its own, and its look takes the game the fold included.
+    // One fold: Updates lists nothing apart of its own, and its look takes the game the fold included.
     const updates = within(screen.getByRole('region', { name: 'Updates' }));
     expect(updates.queryByText(/with a checkout here/)).toBeNull();
     await userEvent.click(updates.getByRole('button', { name: 'Look for updates' }));
@@ -525,7 +525,7 @@ describe("a repository's Branches and History tabs", () => {
   });
 
   /**
-   * AUTOTIDY1a (D88): the tab shows what the look cleaned up in this workspace, read from the machine log with the two events,
+   * The tab shows what the look cleaned up in this workspace, read from the machine log with the two events,
    * the workspace and a week, and drawn after the repositories' groups and before the clean-up.
    */
   it("draws what was cleaned up on its own after the groups and before the clean-up, asked of the log for this workspace", async () => {
@@ -564,7 +564,7 @@ describe("a repository's Branches and History tabs", () => {
   });
 });
 
-// GITAPP2b (D204, the git-writes design §2, §11): the switch *Daoris may change this checkout's files*, off by default in Setup's
+// The switch *Daoris may change this checkout's files*, off by default in Setup's
 // Reach, and the Changes tab beside Branches and History where it is on. The tab reads on open and on *Refresh* and writes nothing.
 describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () => {
   beforeEach(() => {
@@ -633,7 +633,7 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     expect(invoke.mock.calls.map(([, called]) => called).filter((called) => /^(STAGE|UNSTAGE|COMMIT)/.test(String(called)))).toEqual([]);
   });
 
-  // GITAPP2h: the presses of the tab reach the driver as one act each, with what the hunks were read against, and Undo takes the act.
+  // The presses of the tab reach the driver as one act each, with what the hunks were read against, and Undo takes the act.
   it('stages a file whole: reads its hunks for what to send back, presses GIT_STAGE, says it done and undoes it by its act', async () => {
     const budget = { ...GIT_HUNKS_BUDGET, hunks: [] };
     answering(switchOn, undefined, {
@@ -698,7 +698,7 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     expect(asked('GIT_STAGE')).toEqual([]);
   });
 
-  // GITAPP2i: the commit box reads the plan, presses with the tip and tree it showed, and says a hook's rewrite from the answer.
+  // The commit box reads the plan, presses with the tip and tree it showed, and says a hook's rewrite from the answer.
   it('commits the staged changes: reads the plan, presses GIT_MAKE_COMMIT with its tip and tree, and says what a hook changed', async () => {
     answering(switchOn, undefined, {
       GIT_COMMIT_PLAN: () => answer(GIT_COMMIT_PLAN_ENGINE),
@@ -739,7 +739,7 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     expect(asked('GIT_MAKE_COMMIT')).toEqual([]);
   });
 
-  // GITAPP2k: stash Save reads its plan and presses with the tip and the shared stash it showed.
+  // Stash Save reads its plan and presses with the tip and the shared stash it showed.
   it('saves to the stash: reads the plan, presses GIT_STASH with the tip and the stash it showed, and names the stash saved', async () => {
     answering(switchOn, undefined, {
       GIT_STASH_PLAN: () => answer(GIT_STASH_PLAN_ENGINE),
@@ -759,7 +759,7 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     expect(await within(region).findByRole('status')).toHaveTextContent('Saved as stash 3fa91c0e2b7d');
   });
 
-  // GITAPP2l: stash Apply presses the stash's commit id, never its place on the list, with the tip the plan showed.
+  // Stash Apply presses the stash's commit id, never its place on the list, with the tip the plan showed.
   it('applies a stash by its commit id with the tip the plan showed, and says the stash is kept', async () => {
     answering(switchOn, undefined, {
       GIT_STASH_PLAN: () => answer(GIT_STASH_PLAN_ENGINE),
@@ -778,7 +778,7 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     expect(await within(region).findByRole('status')).toHaveTextContent('The stash is kept in refs/stash');
   });
 
-  // GITAPP2k: switch reads the plan of the branch chosen and presses with the branch HEAD named and its commit.
+  // Switch reads the plan of the branch chosen and presses with the branch HEAD named and its commit.
   it('switches: chooses a local branch, reads its plan, presses GIT_SWITCH, and says a refusal in the driver\'s sentence', async () => {
     answering(switchOn, undefined, {
       GIT_BRANCHES: () => ({ repositories: [{ ...GIT_BRANCHES_ENGINE, workspace: 'aurora' }], apart: [], sessionsUnread: false }),
@@ -831,7 +831,7 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
   });
 });
 
-// GITAPP2c (D204, the git-writes design §6, §9): New branch and New tag on a repository's Branches. The person names it, sees what will
+// New branch and New tag on a repository's Branches. The person names it, sees what will
 // be made, and confirms; only then does the press go to the driver, which answers it as data. The undo deletes the ref at the id it made.
 describe("a repository's New branch and New tag (GITAPP2c)", () => {
   beforeEach(() => {
@@ -1204,7 +1204,7 @@ describe("a repository's New branch and New tag (GITAPP2c)", () => {
   });
 });
 
-// GITAPP2m (D204, the git-writes design §7, §9): Edit history on a branch of the person's own. The page asks the driver's plan first
+// Edit history on a branch of the person's own. The page asks the driver's plan first
 // (`plan: true`, which changes nothing) and shows the commits it takes; only Confirm sends the edit, carrying the ids the plan pinned.
 // A refusal stays in the form in the driver's sentence; an unknown outcome is said and never retried.
 describe("a branch's Edit history (GITAPP2m)", () => {

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
-// Every state of the scope control, on the shipped component (D42 §5): the two the console shows
+// Every state of the scope control, on the shipped component: the two the console shows
 // daily, the crowded one, and the absence — because "renders nothing with one workspace" is a state a
 // reviewer must be able to see too.
 

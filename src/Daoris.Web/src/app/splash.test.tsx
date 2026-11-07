@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 
-// The window's splash, page side (SPLASHDATA1): the main window's page says, once, that its first screen has its data,
+// The window's splash, page side: the main window's page says, once, that its first screen has its data,
 // and the window lifts its splash then rather than as the page's browser is made.
 
 const { closeSplash } = vi.hoisted(() => ({ closeSplash: vi.fn(() => Promise.resolve()) }));
@@ -108,7 +108,7 @@ describe('the splash lifts once the first screen has its data', () => {
 });
 
 /**
- * A start's first screen (STARTFAST1b): the frame's status and the Sessions list's groups, which waits on it, beside the
+ * A start's first screen: the frame's status and the Sessions list's groups, which waits on it, beside the
  * harnesses' probes and the lines, which queue behind the driver's first looks and are no part of what the screen draws.
  */
 function StartScreen({ status, groups, probes, lines }: Record<'status' | 'groups' | 'probes' | 'lines', Promise<string>>) {

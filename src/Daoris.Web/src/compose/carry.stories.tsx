@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CarryFields, NO_CARRY, type Carry } from './carry';
 
-// What a quest or an ask carries beside its words (D65 §2): the links typed, and the files dropped,
+// What a quest or an ask carries beside its words: the links typed, and the files dropped,
 // pasted or chosen. One molecule, so the two composers cannot drift on how a file arrives.
 
 const meta: Meta = { title: 'Compose/CarryFields' };

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { rooted } from '../test/sources';
 
 /**
- * **A key an input method is composing with is never the page's** (IME1). Every handler that checks Enter or Escape
+ * **A key an input method is composing with is never the page's**. Every handler that checks Enter or Escape
  * asks `isComposing` (`lib/composing.ts`) first, so accepting a candidate sends nothing, picks no row and closes
  * nothing. The composer sent a half-written message on the Enter that accepted a candidate, and the mention list, the
  * palette and every search box had the same gap: nothing asked.
@@ -90,7 +90,7 @@ const shipped = Object.entries(sources).filter(([path]) => !HARNESS.test(path));
 
 describe('a key an input method is composing with', () => {
   it('catches a handler it is meant to catch — the check itself, sabotaged', () => {
-    // The composer's shape before IME1.
+    // The shape of a composer that acts on Enter without asking whether an input method is composing.
     expect(unasked([['./work/Box.tsx', "const keys = (event) => { if (event.key === 'Enter' && !event.shiftKey) say(); };\n"]]))
       .toEqual(['./work/Box.tsx:1 Enter']);
     // Either side, inequality, a key of its own, a code, and a case in a switch on the key.

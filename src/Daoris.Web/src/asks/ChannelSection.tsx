@@ -19,10 +19,10 @@ const NONE = '*';
 /** The codes the service refuses a post with, which this page has words for; another is said as the service wrote it. */
 const REFUSALS = new Set(['empty', 'too-long', 'bad-to', 'bad-re', 'not-found']);
 
-/** The codes *Send to its session* is refused with, which this page has words for (COWORK1d); another is said as the shell wrote it. */
+/** The codes *Send to its session* is refused with, which this page has words for; another is said as the shell wrote it. */
 const FORWARD_REFUSALS = new Set(['no-part', 'gone', 'held']);
 
-/** The person's *Send to its session* (COWORK1d): a message, the repository whose session it goes to, and how it ended. */
+/** The person's *Send to its session*: a message, the repository whose session it goes to, and how it ended. */
 export type ChannelForward = (message: string, repository: string, answered: ChannelAnswered) => void;
 
 /** A door, in the accent, as the page's other doors are. */
@@ -32,7 +32,7 @@ const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent u
 export const whoOf = (t: TFunction, item: ChannelItem) => {
   if (item.person) return item.origin ? t('asks.channel.who.teammate', { machine: item.origin }) : t('asks.channel.who.you');
   const named = [item.repository, item.agent].filter(Boolean).join(' · ');
-  // An agent outside Daoris is said as itself, that it is outside, and never as a session (CHANNELJOIN1c).
+  // An agent outside Daoris is said as itself, that it is outside, and never as a session.
   if (item.outside) return named ? t('asks.channel.who.outside', { who: named }) : t('asks.channel.who.outsideAgent');
   return named || t('asks.channel.who.session');
 };
@@ -44,29 +44,29 @@ const firstWords = (text: string | null | undefined, limit = 60) => {
 };
 
 /**
- * **An ask's channel** (SESSONE2c, D167 points 6 to 8; the co-working design §2.4): where its sessions and the person talk,
+ * **An ask's channel**: where its sessions and the person talk,
  * messages and Daoris's own lines in time order, newest at the foot, and the person's composer under them. The ask's page
  * draws all of it; a session's panel (`ChannelPanel`) draws what concerns its line of work and starts *To* on its repository.
  *
  * @remarks
  * **A molecule**: the channel arrives as the shell answered it, and a post leaves as a call with how it ended; nothing is asked
- * here. Daoris's lines are coded and worded in the reader's language (D142); a message is shown as written, and a session's
+ * here. Daoris's lines are coded and worded in the reader's language; a message is shown as written, and a session's
  * is that agent's claim, so it names its repository and agent and never says *You*.
  *
- * **What is unread** is what came after the person's mark when the page was opened: the items are marked *new*, counted in the
+ * **What is unread** is what comes after the person's mark when the page is opened: the items are marked *new*, counted in the
  * heading, and the mark moves through the newest once (`onRead`), so the count falls in the rows and the list. The marks stay
- * until the page is left, so what was new is seen. A panel reads a part of the channel and moves no mark.
+ * until the page is left, so what is new is seen. A panel reads a part of the channel and moves no mark.
  *
- * **A teammate's ask's channel** (SESSONE2h, SESSONE2i) is drawn and posted to as an ask's: the post travels to the machine that holds
- * it. The mark moves where `onRead` is handed: the service keeps the person's mark on a teammate's ask its mirror holds (NOTIFY2g).
+ * **A teammate's ask's channel** is drawn and posted to as an ask's: the post travels to the machine that holds
+ * it. The mark moves where `onRead` is handed: the service keeps the person's mark on a teammate's ask its mirror holds.
  * A message a teammate's person wrote names them, never *You*.
  *
  * **A refusal is the service's code** (`empty`, `too-long`, `bad-to`, `bad-re`, `not-found`), said in the composer in the
  * reader's language, the words kept.
  *
- * **What a message reached** (COWORK1d, D188; the message-urgency design §7, §8.4): an urgent message names its level in a word, and
+ * **What a message reached**: an urgent message names its level in a word, and
  * each says, per repository it addresses, what reached that line of work, never more than Daoris observed. Where it waits there, is
- * held for a turn's end, was handed only partly or never reached it, *Send to its session* sends it on (`onForward`), the person's own
+ * held for a turn's end, is handed only partly or never reached it, *Send to its session* sends it on (`onForward`), the person's own
  * press.
  */
 export function ChannelSection({
@@ -75,9 +75,9 @@ export function ChannelSection({
   /** Null while it is being read. */
   channel: Channel | null;
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
-  /** *Send to its session* (COWORK1d). Absent where there is nowhere to send one from, as on a teammate's ask. */
+  /** *Send to its session*. Absent where there is nowhere to send one from, as on a teammate's ask. */
   onForward?: ChannelForward;
-  /** The person's mark moved through the newest item shown, once what was unread is on the page. Absent in a panel. */
+  /** The person's mark moves through the newest item shown, once what is unread is on the page. Absent in a panel. */
   onRead?: (through: string) => void;
   /** A line opens its quest. Absent where there is nowhere to open it. */
   onOpenQuest?: (quest: string) => void;
@@ -108,7 +108,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
   const place = useId();
   const items = only ? forEntry(channel.items, only) : channel.items;
   const newest = newestAt(channel.items);
-  // What was unread when the page opened, held until it is left: the mark moves at once, and what was new is still seen.
+  // What is unread when the page opens, held until it is left: the mark moves at once, and what is new is still seen.
   const [opened] = useState(() => ({ mark: channel.mark ?? null, unread: channel.unread }));
   const counted = onRead !== undefined;
   const fresh = counted ? sinceMark(items, opened.mark) : [];
@@ -127,7 +127,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
     return () => { alive.current = false; };
   }, []);
 
-  // The mark moves once what was unread is on the page, and again only if more arrives and is shown.
+  // The mark moves once what is unread is on the page, and again only if more arrives and is shown.
   useEffect(() => {
     if (channel.unread > 0 && newest) read.current?.(newest);
   }, [channel.unread, newest]);
@@ -167,7 +167,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
     <div className="grid gap-3">
       <p className="m-0 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-small text-ink-soft">
         <span>{only ? t('asks.channel.panel.lead', { repository: only.repository }) : t('asks.channel.lead')}</span>
-        {/* News waits on nobody: a neutral pill, never open's hue, the person's waits' alone (BADGEUX1). */}
+        {/* News waits on nobody: a neutral pill, never open's hue, the person's waits' alone. */}
         {unread > 0 && <Pill tone="neutral">{t('asks.channel.unread', { count: unread })}</Pill>}
       </p>
 
@@ -195,7 +195,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
           </ol>
         )}
 
-      {/* COMMS1k: the messages to one part each, apart from the channel, read-only, each with what it reached in that part's line. */}
+      {/* The messages to one part each, apart from the channel, read-only, each with what it reached in that part's line. */}
       {(channel.addressed ?? []).length > 0 && (
         <section aria-label={t('asks.channel.addressed.title')} className="grid gap-1.5">
           <h4 className="m-0 text-small font-semibold text-ink-soft">{t('asks.channel.addressed.title')}</h4>
@@ -252,11 +252,11 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
   );
 }
 
-/** The receipts a message to one part has words for (COMMS1k); another is said as the shell wrote it. */
+/** The receipts a message to one part has words for; another is said as the shell wrote it. */
 const PART_RECEIPTS = new Set(['waiting', 'held', 'sent', 'taken', 'read']);
 
 /**
- * One message to one part alone (COMMS1k, the comms design §4.4, §7): who wrote it, to which part, when, its words as written, and what
+ * One message to one part alone: who wrote it, to which part, when, its words as written, and what
  * it reached in that part's line, never more than Daoris observed. It offers no press: a part's message is the part's to read.
  */
 function AddressedRow({ item }: { item: ChannelItem }) {
@@ -303,9 +303,9 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward 
   anchorOf: (id: string) => string;
   quoted: ChannelItem | null;
   isNew: boolean;
-  /** Absent in a read-only channel (SESSONE2h): there is nothing to answer from here. */
+  /** Absent in a read-only channel: there is nothing to answer from here. */
   onReply?: () => void;
-  /** *Send to its session* for one repository it addresses (COWORK1d); absent where nothing may be sent on from here. */
+  /** *Send to its session* for one repository it addresses; absent where nothing may be sent on from here. */
   onForward?: (repository: string, answered: ChannelAnswered) => void;
 }) {
   const { t } = useTranslation();
@@ -324,7 +324,7 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward 
         <span>{toWords}</span>
         <span>{ago(item.at)}</span>
         {item.question && <Pill tone={item.open ? 'open' : 'neutral'}>{item.open ? t('asks.channel.questionOpen') : t('asks.channel.question')}</Pill>}
-        {/* COWORK1d (the design §8.2): a level is named only where it is not quiet, in a word and a neutral emphasis. */}
+        {/* A level is named only where it is not quiet, in a word and a neutral emphasis. */}
         {item.urgent === true && <Pill tone="neutral">{t('work.level.urgent')}</Pill>}
         {isNew && <Pill tone="neutral">{t('asks.channel.new')}</Pill>}
       </p>
@@ -364,8 +364,8 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward 
 }
 
 /**
- * What a message reached in one repository it addresses (COWORK1d, the design §7, §8.4), worded from the shell's state, and *Send to
- * its session* where it may be sent on: pressed once, it says it was sent, or why not by the shell's code.
+ * What a message reached in one repository it addresses, worded from the shell's state, and *Send to
+ * its session* where it may be sent on: pressed once, it says it is sent, or why not by the shell's code.
  */
 function ReceiptRow({ receipt, onForward }: { receipt: ChannelReceipt; onForward?: (answered: ChannelAnswered) => void }) {
   const { t } = useTranslation();
@@ -404,8 +404,8 @@ function ReceiptRow({ receipt, onForward }: { receipt: ChannelReceipt; onForward
 }
 
 /**
- * **A session's Channel** (SESSONE2c, the co-working design §2.4): the ask's channel kept to its line of work, under its head,
- * folded to its title and a count. Open, it lists what was said to everyone, to its repository and by it, with the lines of the
+ * **A session's Channel**: the ask's channel kept to its line of work, under its head,
+ * folded to its title and a count. Open, it lists what is said to everyone, to its repository and by it, with the lines of the
  * quests that concern it, and the composer with *To* starting at its repository. The whole channel is the ask's page's.
  *
  * @remarks
@@ -418,7 +418,7 @@ export function ChannelPanel({ channel, only, onPost, onForward, onOpenQuest, on
   channel: Channel | null;
   only: { entry: string; repository: string };
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
-  /** *Send to its session* (COWORK1d), as the ask's page offers it. */
+  /** *Send to its session*, as the ask's page offers it. */
   onForward?: ChannelForward;
   onOpenQuest?: (quest: string) => void;
   /** Open the ask's own page, where the whole channel is. Absent where there is nowhere to open it. */

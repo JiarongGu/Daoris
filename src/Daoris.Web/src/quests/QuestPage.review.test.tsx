@@ -7,7 +7,7 @@ import i18n from '../locales/i18n';
 import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN, STEP_SHOWN_AGAIN, WORK } from '../work/gates/reviewFixtures';
 import { QuestPage } from './QuestPage';
 
-// REVIEWENV1g (D154 point 8; the review environment design §3.3): a set-up step's page gains *Review in `<environment>`*,
+// A set-up step's page gains *Review in `<environment>`*,
 // every set-up it said newest first, and the verdict's presses under the newest; a done its review holds waits for that,
 // never for a yes.
 

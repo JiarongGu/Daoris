@@ -25,7 +25,7 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
   setAgentPart: React.Dispatch<React.SetStateAction<AgentPart | null>>;
   open: (target: View, item?: string | null | undefined, part?: OpenPart | undefined) => void;
 }) {
-  // The Plugins view (PLUGUI1b, D119): held on every view, so what its pages hold — a trial's report, an update's
+  // The Plugins view: held on every view, so what its pages hold — a trial's report, an update's
   // plan — stays while Daoris is open; it asks the driver for nothing until it is in front.
   const plugins = usePluginsView({
     active: view === 'plugins',
@@ -35,10 +35,10 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
     onAsk: attached ? askSetup : undefined,
   });
 
-  // The Agents place (UX6e, D150 §5): held on every view, as Plugins is; it reads the roster the frame holds and the
-  // accounts' files, and opening it asks no account. A sign-in started there outlives leaving it (SIGNIN1).
+  // The Agents place: held on every view, as Plugins is; it reads the roster the frame holds and the
+  // accounts' files, and opening it asks no account. A sign-in started there outlives leaving it.
   const agentsPane = lists.pane('agents');
-  // The words to the session that proposed a rule an *Accept* on the page kept (PROPOSEHERE1c): the Agents place is handed the
+  // The words to the session that proposed a rule an *Accept* on the page kept: the Agents place is handed the
   // door, its own view pressing no say hook.
   const sayToSession = useSay();
   const agents = useAgentsView({
@@ -52,7 +52,7 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
     part: agentPart,
     onAnchored: () => setAgentPart(null),
     onOpenPlugin: (plugin) => open('plugins', plugin),
-    // A place's Workflow and Sessions (AGENTSPLACE1f, 1h; SETUPUX1h): their rows press the driver's hooks, which the application hands in so
+    // A place's Workflow and Sessions: their rows press the driver's hooks, which the application hands in so
     // the place imports none. Each is an element, mounted only while its section is open.
     bodies: (place) => ({
       workflow: (
@@ -71,7 +71,7 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
         />
       ),
     }),
-    // A repository's driving, for its page head (SETUPUX1h): the hold, and the ⋯'s drive and trees.
+    // A repository's driving, for its page head: the hold, and the ⋯'s drive and trees.
     driving: (row, render) => (
       <PlaceDrivingScope
         row={row}
@@ -82,9 +82,9 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
         {render}
       </PlaceDrivingScope>
     ),
-    // A place's *Set up…* (AGENTSPLACE1j): it reads the plan and presses Apply, which the application hands in for the same reason.
+    // A place's *Set up…*: it reads the plan and presses Apply, which the application hands in for the same reason.
     setUp: (place, page, doorFor) => <PlaceSetUpPanel place={place} page={page} notify={notify} doorFor={doorFor} onOpenQuest={(quest) => open('quests', quest)} />,
-    // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
+    // The Roles mode's doors: each thing's home, the Agents mode at an agent's accounts among them.
     roleDoors: {
       agent: (agent) => open('agents', agent, { agentPart: 'accounts', agentsMode: 'agents' }),
       repository: (repository, door) => open('agents', null, { placeOf: repository, ...(door === 'workflow' ? { placeSection: 'workflow' as const } : {}) }),

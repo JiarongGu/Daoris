@@ -5,9 +5,9 @@ import { starters } from './starters';
 import type { ToolDoor } from '../agents/tools';
 import { said } from '../test/said';
 
-// SETUP1a (D97): one pure reading of the machine serves the setup guide and Ask Daoris's starters, so a
+// One pure reading of the machine serves the setup guide and Ask Daoris's starters, so a
 // step and a starter never disagree. Every machine is an argument: fresh, an agent signed in with nothing
-// registered, everything done, and a browser, which may learn nothing of a machine (D47 §4).
+// registered, everything done, and a browser, which may learn nothing of a machine.
 
 const door = (over: Partial<ToolDoor> = {}): ToolDoor => ({
   door: 'claude-code', present: true, product: 'Claude Code', ownLogin: 'in',
@@ -40,7 +40,7 @@ const MACHINES = {
     sessions: [{ state: 'working' as const }],
     lines: [
       { repository: 'engine', workspace: 'aurora', branch: 'develop', source: 'workspace' as const },
-      // Not driven, so its missing line is neither the setup's business nor a starter's (STARTERSCOPE1).
+      // Not driven, so its missing line is neither the setup's business nor a starter's.
       { repository: 'game', workspace: 'aurora', source: 'none' as const },
     ],
   },
@@ -144,7 +144,7 @@ describe('the machine, read once for the guide and the starters', () => {
   });
 
   /**
-   * ANSWER1e (D131's ANSWER1c note, answer-continues design §5): a park the person answered stays parked until the
+   * A park the person answered stays parked until the
    * driver's next look, and the same session goes on then, so Ask Daoris counts it among what waits on them no longer.
    */
   it('counts no park the person answered as waiting on them', () => {
@@ -202,7 +202,7 @@ describe('each step: its state, its doors and its commands', () => {
     });
     // One step for the place's Set up…, which chooses how its work lands and drives it.
     expect(steps.setUp).toMatchObject({ doors: [{ view: 'agents', agentsMode: 'setup' }], commands: ['daoris place <repository> --plan'] });
-    // UX6e: what agents may do is on the page of the agent Daoris hands the rules file (D150 §3.1).
+    // What agents may do is on the page of the agent Daoris hands the rules file.
     expect(steps.rules).toMatchObject({ doors: [{ view: 'agents', agentPart: 'rules' }], commands: ['daoris agent rules'] });
   });
 
@@ -218,7 +218,7 @@ describe('each step: its state, its doors and its commands', () => {
     expect(state({ profiles: profile('in') })).toBe('done');
     expect(state({ profiles: profile('out') })).toBe('todo');
     expect(state({ profiles: [] })).toBe('todo');
-    // The tool's own sign-in is no account of Daoris's, signed in or not (D175).
+    // The tool's own sign-in is no account of Daoris's, signed in or not.
     expect(state({ ownLogin: 'in', profiles: [] })).toBe('todo');
     expect(state({ ownLogin: 'out', profiles: profile('in') })).toBe('done');
   });

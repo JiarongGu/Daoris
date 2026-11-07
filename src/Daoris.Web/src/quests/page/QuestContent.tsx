@@ -31,8 +31,8 @@ export function QuestContent({ body, request, held, requirements, quest, t }: {
       )}
 
       {!held && requirements.length > 0 && (
-        /* What the person required (DRIFT1c, D133 §3), in their words: the measure, where the body above is the intake's
-           reading of the ask. Then how its done answered each, and when a departure was accepted. */
+        /* What the person required, in their words: the measure, where the body above is the intake's
+           reading of the ask. Then how its done answered each, and when a departure is accepted. */
         <QuestRequirements
           className="mt-4"
           id={quest.id}
@@ -44,8 +44,8 @@ export function QuestContent({ body, request, held, requirements, quest, t }: {
       )}
 
       {(quest.links?.length ?? 0) > 0 && (
-        /* The asker's addresses, as links — the service accepted only http and https, so each is an address
-           and nothing that would run. They open where the person chose, their browser or Daoris's (BRW7). */
+        /* The asker's addresses, as links — the service accepts only http and https, so each is an address
+           and nothing that would run. They open where the person chose, their browser or Daoris's. */
         <div className="mt-4">
           <PageSection title={t('quests.detail.links')}>
             <ul className="m-0 grid list-none gap-1 p-0">
@@ -66,9 +66,9 @@ export function QuestContent({ body, request, held, requirements, quest, t }: {
       )}
 
       {(quest.attachments?.length ?? 0) > 0 && (
-        /* The files, by name (D65 §2). One this machine keeps opens through the host's own route — never by its
+        /* The files, by name. One this machine keeps opens through the host's own route — never by its
            path, which a page does not show — and a picture is shown as one. One named on the record and kept
-           elsewhere says so, rather than looking like a broken link. Kept here is a path pulled or `kept` pushed (PUSH1d3). */
+           elsewhere says so, rather than looking like a broken link. Kept here is a path pulled or `kept` pushed. */
         <div className="mt-4">
           <PageSection title={t('quests.detail.files')}>
             <ul className="m-0 grid list-none gap-2 p-0">
@@ -102,7 +102,7 @@ export function QuestContent({ body, request, held, requirements, quest, t }: {
         </div>
       )}
 
-      {/* How its conflicts ended (SYNCMERGE1c2, D178 point 7): history, so below what it carries, with nothing to press. */}
+      {/* How its conflicts ended: history, so below what it carries, with nothing to press. */}
     </>
   );
 }

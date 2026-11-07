@@ -5,7 +5,7 @@ import { useSessions } from '../../data/queries';
 import { RelatedSessions } from '../../work/head/RelatedSessions';
 import { IntegrationTab } from './IntegrationTab';
 
-/** A repository's Integration tab with its look and acts (INTEGRATE1h): read only while the tab draws it, the owner's acts the window's. */
+/** A repository's Integration tab with its look and acts: read only while the tab draws it, the owner's acts the window's. */
 export function RepositoryIntegration({ repository, notify }: { repository: string; notify?: (message: string) => void }) {
   const look = useIntegration(repository);
   const act = useIntegrate();

@@ -1,7 +1,7 @@
 import type { EdgeStyle, FlowLayout } from './flowLayout';
 
 /**
- * **A flowchart's edges, drawn from the boxes the page measured** (FLOWCHART1a1; the flowchart design §3.4, §3.5 and §4.2):
+ * **A flowchart's edges, drawn from the boxes the page measured**:
  * the nodes and waypoint slots are placed by CSS, and this routes each path through them and places each label, from their
  * boxes alone. Nothing here changes a box, so nothing measured can loop back into the layout.
  *
@@ -9,8 +9,8 @@ import type { EdgeStyle, FlowLayout } from './flowLayout';
  * Written along the flow's own axes, so one routing serves both drawn placements: the **main** axis runs from rank to rank
  * (down the page top to bottom, across it left to right), the **cross** axis along a rank.
  * - **A forward path** leaves its source's far side, crosses each rank gap as a curve that leaves and arrives along the
- *   main axis (the Map's `link`), and runs straight through each waypoint slot it was given, so it never enters a node.
- * - **A return** (§3.5) leaves its source's far side into the gap after its rank, runs along that gap to a lane of its own
+ *   main axis (the Map's `link`), and runs straight through each waypoint slot it is given, so it never enters a node.
+ * - **A return** leaves its source's far side into the gap after its rank, runs along that gap to a lane of its own
  *   outside every node (left of the drawing top to bottom, below it left to right), along the lane, and back along the
  *   gap before its target's rank into its near side. Each run in a gap is set apart from the others by its lane, so two
  *   returns never share a line, and the lanes nest by span (`layoutFlow`).
@@ -32,7 +32,7 @@ export type InkPath = {
   to: string;
   style: EdgeStyle;
   back: boolean;
-  /** The outcome's port it leaves (FLOWCHART2a). */
+  /** The outcome's port it leaves. */
   port: string | null;
   d: string;
   points: Point[];
@@ -50,7 +50,7 @@ type Segment = { kind: 'L'; to: Point } | { kind: 'C'; c1: Point; c2: Point; to:
 const round = (value: number) => Math.round(value * 2) / 2;
 
 /**
- * What a drawing adds to the routing (FLOWCHART2a): the boxes of the ports a decision's outcomes stand in, by `node:outcome`, which a
+ * What a drawing adds to the routing: the boxes of the ports a decision's outcomes stand in, by `node:outcome`, which a
  * `when` path leaves top to bottom instead of a spot spread along its node's edge; and the data wires to draw, each outside the nodes
  * on a lane of its own at the right.
  */
@@ -83,7 +83,7 @@ export function routeInk(layout: FlowLayout, placement: 'across' | 'down', boxes
   const forward = layout.paths.filter((path) => !path.back);
   const back = layout.paths.filter((path) => path.back).sort((a, b) => a.lane! - b.lane!);
 
-  // A decision's route leaves its outcome's port where one was measured; only top to bottom, where the ports stand on the lower edge.
+  // A decision's route leaves its outcome's port where one is measured; only top to bottom, where the ports stand on the lower edge.
   const anchorOf = (path: FlowLayout['paths'][number]): Box | undefined =>
     down && path.port !== null ? extras.ports?.get(`${path.from}:${path.port}`) : undefined;
 
@@ -161,7 +161,7 @@ export function routeInk(layout: FlowLayout, placement: 'across' | 'down', boxes
     drawn.push(finish(path, corners[0]!, orthogonal(corners), at(lane, (out + into) / 2)));
   }
 
-  // Data wires (FLOWCHART2a), drawn top to bottom only and to a later rank: out of the source's foot at its right end, along the gap
+  // Data wires, drawn top to bottom only and to a later rank: out of the source's foot at its right end, along the gap
   // after its rank to a lane right of every node, down it, and in along the gap before the target's rank, set apart from the returns'
   // runs there. The layout never saw them, so no node, rank or lane moved for them.
   const dataOut = new Map<number, number>();
@@ -268,7 +268,7 @@ export function placeLabels(paths: readonly InkPath[], sizes: ReadonlyMap<string
 const INSERT_AT = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8] as const;
 
 /**
- * Place an editor's ＋ on each path given one (FLOWCHART2b; D223 §6): at the first point along its length, from the middle outward, whose
+ * Place an editor's ＋ on each path given one: at the first point along its length, from the middle outward, whose
  * box clears every node, every label shown and every ＋ placed before it; one that fits nowhere is not shown, the way keeping its ＋ in the
  * step's inspector. The measured-box check holds that none lies over a node, a label or another ＋.
  */

@@ -8,7 +8,7 @@ import { DriverCards } from './DriverCards';
 import { settingOf } from './DriverDomain';
 
 /**
- * The page's half of the settings census (D228): the page reads the machine's settings from the one list the driver declares
+ * The page's half of the settings census: the page reads the machine's settings from the one list the driver declares
  * (`SETTINGS`, written from it), so a setting has one key. Each key and route is listed once; each setting the Driver domain draws
  * is worded under its key in every catalogue, and drawn there by its label.
  */

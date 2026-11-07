@@ -6,7 +6,7 @@ import { type Editing, editingOfLine, mayEditLine, roleName, RolesCard } from '.
 import type { PlaceRoleEditor } from './PlaceRoles';
 
 /**
- * **A place's appointed roles** (ROLEONE1b): the supervisor and the steward as the catalogue holds them, one row each for the roles placed
+ * **A place's appointed roles**: the supervisor and the steward as the catalogue holds them, one row each for the roles placed
  * here, with who holds it and its acts. *Edit* opens the role editor of All roles over `SET_ROLE`: the acts, the holder and the supervisor's
  * window are the record's, and the page judges nothing.
  */

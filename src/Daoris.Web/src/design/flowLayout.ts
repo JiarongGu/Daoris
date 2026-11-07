@@ -1,5 +1,5 @@
 /**
- * **A flowchart's layout** (FLOWCHART1a1; D186 point 2, the flowchart design §3.1, §3.2 and §3.5): a pure, deterministic
+ * **A flowchart's layout**: a pure, deterministic
  * function of a graph's shape that says which edges return, each node's rank, the waypoint slots an edge takes through
  * the ranks it skips, each rank's order, and what each placement needs. It holds no positions: `RankedFlow` places the slots
  * with CSS and draws the edges from the boxes they make.
@@ -24,17 +24,17 @@
  */
 
 /**
- * How an edge is drawn: a move, a failure's or a rejection's short dashes, a refused move (a conflict), a conditional one
- * (FLOWCHART1b): a move made only on a guard, or one that has not happened, such as going on or where Accept would land; or a way
- * back (DECIDE1c), always a return, whatever the walk finds. Dashed, like the failures; the cause is in words, never the ink.
- * A `when` (FLOWCHART2a) is a decision's route, solid from the outcome's port; a `data` wire carries what a step made, is no way on
+ * How an edge is drawn: a move, a failure's or a rejection's short dashes, a refused move (a conflict), a conditional one:
+ * a move made only on a guard, or one that has not happened, such as going on or where Accept would land; or a way
+ * back, always a return, whatever the walk finds. Dashed, like the failures; the cause is in words, never the ink.
+ * A `when` is a decision's route, solid from the outcome's port; a `data` wire carries what a step made, is no way on
  * and is never laid out: it is drawn only while an end is selected.
  */
 export type EdgeStyle = 'next' | 'failed' | 'rejected' | 'refused' | 'conditional' | 'back' | 'when' | 'data';
 
 /**
  * What the layout reads of a flow: its nodes in declared order, its edges, and where it is entered. A node's `stack` is what makes
- * it like another for a stack (FLOWCHART1c): a try's code, a kind and its state. Absent, the node never stacks.
+ * it like another for a stack: a try's code, a kind and its state. Absent, the node never stacks.
  */
 export type FlowShape = {
   nodes: readonly { id: string; stack?: string; ports?: readonly string[] }[];
@@ -43,7 +43,7 @@ export type FlowShape = {
 };
 
 /**
- * A stack (FLOWCHART1c; the flowchart design §3.5, §3.6 step 1): three or more like nodes, each following the one before in a
+ * A stack: three or more like nodes, each following the one before in a
  * chain, which a flow draws as one fold until it is opened. Its edges are named apart: those into its first member and out of its
  * last cross its boundary and are drawn to the fold; those between its members are said in its description.
  */
@@ -71,7 +71,7 @@ export type FlowPath = {
   from: string;
   to: string;
   style: EdgeStyle;
-  /** The outcome's port it leaves, where it is a decision's route (FLOWCHART2a): each port is a path of its own. */
+  /** The outcome's port it leaves, where it is a decision's route: each port is a path of its own. */
   port: string | null;
   /** The edges it draws, in declared order. */
   edges: string[];
@@ -168,7 +168,7 @@ export function layoutFlow(shape: FlowShape): FlowLayout {
   const ranks: Slot[][] = Array.from({ length: count }, () => []);
   for (const id of ids) ranks[rank[id]!]!.push({ kind: 'node', id });
 
-  // A decision's ports (FLOWCHART2a): the targets it reaches by them take, in the places they already hold, the order of the outcomes,
+  // A decision's ports: the targets it reaches by them take, in the places they already hold, the order of the outcomes,
   // so the sweeps start from the order the ports are drawn in.
   for (const node of shape.nodes) {
     const order = node.ports ?? [];
@@ -224,7 +224,7 @@ export function layoutFlow(shape: FlowShape): FlowLayout {
 }
 
 /**
- * The stacks in a flow (FLOWCHART1c; the flowchart design §3.6 step 1, D191): each run of three or more like nodes, every one a
+ * The stacks in a flow: each run of three or more like nodes, every one a
  * link of a chain (at most one edge in and one out, never to itself), each following the one before. Two like nodes stay apart.
  * Pure, and reads only the shape: a node's `stack`, its edges' ends and the declared order, so the same graph stacks the same way.
  * A stack applies at any size, where §3.6's other folds wait for 24 nodes: an instance repeats itself (a try, an advance), and a
@@ -271,7 +271,7 @@ export function findStacks(shape: FlowShape): Stack[] {
 /**
  * What each placement needs of the pane, in px at `rem` px a rem (§3.2): left to right, every rank side by side with the
  * rank gaps between; top to bottom, the widest rank's node tracks, waypoints and gaps, and a lane for each return. `least`
- * is the node track's floor in rem: §3.2's 10rem, or a caller's wider one (FLOWCHART1d: a workflow's step, which holds its
+ * is the node track's floor in rem: 10rem, or a caller's wider one (a workflow's step, which holds its
  * settings and its run's facts, is 19rem).
  */
 export function needs(layout: FlowLayout, rem = 16, least: number = FLOW_REM.node): { across: number; down: number } {
@@ -287,10 +287,10 @@ export function needs(layout: FlowLayout, rem = 16, least: number = FLOW_REM.nod
 }
 
 /**
- * What a caller bounds the placement by (FLOWCHART1d): its node track's floor in rem, and whether left to right is one of its
+ * What a caller bounds the placement by: its node track's floor in rem, and whether left to right is one of its
  * placements. A flow in sections is read rank by rank under their titles, so it is never left to right (the workflow's
- * *Before it lands* and *After it lands*, the flowchart design §2.4 and §5.1). `column` is the most nodes a rank may hold left to
- * right, three unless the caller's ranks are columns that read as lists (COMPANYVIEW1f: the roles' places, roles and agents).
+ * *Before it lands* and *After it lands*). `column` is the most nodes a rank may hold left to
+ * right, three unless the caller's ranks are columns that read as lists (the roles' places, roles and agents).
  */
 export type PlacementBounds = { least?: number; across?: boolean; column?: number };
 

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PageStopped } from './PageBoundary';
 
-// The page's error screen (PAGELOOP1), the states a reviewer must see: the window's, with the machine log that heard it; a
+// The page's error screen, the states a reviewer must see: the window's, with the machine log that heard it; a
 // message longer than its line; and a browser's, which has no log to name.
 
 const meta: Meta<typeof PageStopped> = {

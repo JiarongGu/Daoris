@@ -11,20 +11,20 @@ export type AskDraft = Carry & {
   /** The receiver the person named, or empty: the declarations propose, and nothing is published. */
   to: string;
   /**
-   * The person's review choice for the ask's work (REVIEWENV1g, design §1.5): `off`, `on` or an environment's name; empty
+   * The person's review choice for the ask's work: `off`, `on` or an environment's name; empty
    * leaves each repository's rule to decide, which is what an ask carried before.
    */
   review?: string;
   /** Their words with the choice, kept with it. */
   reviewWords?: string;
   /**
-   * Its short title (HEAD2e), optional: the person's few words that tell it apart in a list, at most 40 characters. Empty sends
+   * Its short title, optional: the person's few words that tell it apart in a list, at most 40 characters. Empty sends
    * none, and the ask is named by its first line.
    */
   short?: string;
 };
 
-/** A short title's length as the service counts it: by character, a Chinese one counted once (SESSUX1j's rule). */
+/** A short title's length as the service counts it: by character, a Chinese one counted once. */
 const characters = (text: string) => [...text.trim()].length;
 
 /** Whether a draft is whole enough to send: its circle and words, and a short title the service would keep. */
@@ -37,25 +37,25 @@ const NOBODY = '*';
 const BY_RULE = '*';
 
 /**
- * The ask composer (INT4c) — the screen twin of `daoris ask --workspace … [--to …] [--file …]
- * [--url …] "…"` (D50, D65 §1a).
+ * The ask composer — the screen twin of `daoris ask --workspace … [--to …] [--file …]
+ * [--url …] "…"`.
  *
  * @remarks
- * **An ask is made in ONE circle**, because its circle is whom it can reach (D48 §4). That is the
+ * **An ask is made in ONE circle**, because its circle is whom it can reach. That is the
  * circle the page is scoped to, or the only one the machine holds — `fixed` — and then no choice is
  * offered. Scoped to none of several, the person says which: "every circle" has no single circle, and
  * assuming `default` would ask somewhere nobody chose.
  *
  * **Naming a receiver is optional.** Named, the ask is published to it at once, as `--to` does.
- * Left unnamed, the declarations tier proposes and publishes nothing (INT4a), unless the machine sets
- * an intake agent, which reads the ask and publishes on its own (INT4b). 🔴 So what the composer
- * promises follows `intake` (UX5 U34): it said *nothing is published until you name a receiver*,
- * which an intake breaks, and a door that cannot know, a browser, promises neither.
+ * Left unnamed, the declarations tier proposes and publishes nothing, unless the machine sets
+ * an intake agent, which reads the ask and publishes on its own. So what the composer
+ * promises follows `intake`: *nothing is published until you name a receiver* would be false
+ * under an intake, and a door that cannot know, a browser, promises neither.
  *
  * It carries what the quest composer carries, through the same fields and the same drop, paste and
- * chooser (`compose/carry`), so the two cannot drift. Props only (components §2).
+ * chooser (`compose/carry`), so the two cannot drift. Props only.
  *
- * **The person may choose the review of its work** (REVIEWENV1g, D154 point 3; the review environment design §1.5): each
+ * **The person may choose the review of its work**: each
  * repository's rule by default, which sends nothing; a review in the default environment, in an environment the circle's
  * rules declare, or none, with their words, which the host judges and refuses in its sentence for a repository that declares
  * none. Only where a shell says which environments are declared is a named one offered; `on` and `off` need no rule read.
@@ -63,7 +63,7 @@ const BY_RULE = '*';
 export function AskComposer({
   draft, onChange, fixed, circles, receivers, busy = false, onSubmit, onCancel, intake, environments = [],
 }: {
-  /** The review environments the circle's rules declare, by name (REVIEWENV1a); none where no shell says. */
+  /** The review environments the circle's rules declare, by name; none where no shell says. */
   environments?: string[];
   draft: AskDraft;
   onChange: (draft: AskDraft) => void;
@@ -71,7 +71,7 @@ export function AskComposer({
   fixed: string | null;
   /** Every circle this machine holds — what the person chooses among when nothing is fixed. */
   circles: string[];
-  /** Who can be named: the repositories the host says can be asked, in the ask's circle (D70). */
+  /** Who can be named: the repositories the host says can be asked, in the ask's circle. */
   receivers: string[];
   /** Whether this machine sets an intake agent: true, false, or absent where the door cannot know. */
   intake?: boolean | null;
@@ -143,7 +143,7 @@ export function AskComposer({
             className="min-h-28 resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
           />
         </label>
-        {/* Its short title (HEAD2e), optional and the person's own, as a quest's is (SESSUX1j): what a list and its head show for
+        {/* Its short title, optional and the person's own, as a quest's is: what a list and its head show for
             it. Counted as it is typed, and past the service's limit it says so and holds the ask back, not sends one refused. */}
         <label className="grid gap-1 text-small text-ink-soft">
           <span className="flex items-baseline justify-between gap-2">
@@ -199,7 +199,7 @@ export function AskComposer({
             className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
           />
         )}
-        {/* The terminal's way to the same choice (D50, REVIEWENV1j2). */}
+        {/* The terminal's way to the same choice. */}
         <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('asks.compose.reviewTwin')} /></p>
         <CarryFields
           carry={draft}

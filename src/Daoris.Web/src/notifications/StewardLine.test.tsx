@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// The steward's line in *Notifications* (STEWARDROLE1b, D209; the steward design §5.3, §5.4, §8): *Steward appointed · n acts since
+// The steward's line in *Notifications*: *Steward appointed · n acts since
 // Daoris started · Turn off*, opening to the run's acts newest first, each its act in words, its target, its time and the mark *By the
 // steward, on your behalf*, and only while it stands, the owner's own reverse press: *Stop driving* for a drive, *Drive* for an undrive,
 // *Trees off* for trees, *Resume* for a hold, *Hold* for a resume, *Try again* for a stop; none for a finish or a Try again. A stop whose
@@ -40,7 +40,7 @@ const ACTS: StewardActNow[] = [
 const STANDING: StandingConfirmationNow = {
   holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: [],
 };
-/** The steward's desk this run, newest first (STEWARDROLE1c): one waiting, one declined with a reason, one answered by an act. */
+/** The steward's desk this run, newest first: one waiting, one declined with a reason, one answered by an act. */
 const DESK: DeskRequestNow[] = [
   {
     id: 'r3', act: 'retry', target: '#q3', why: 'the outage passed <b>now</b>', filed: '2026-10-25T10:09:00Z', state: 'open', closed: null,
@@ -175,7 +175,7 @@ describe("Notifications' steward line", () => {
     expect(screen.getByRole('region', { name: '管家' }).textContent).not.toMatch(/这台机器|渠道|总管|任务|\{\{|undefined/);
   });
 
-  // STEWARDROLE1c (D209 §6.2): the desk under the line, folded until opened, each request its caller's words as written, marked as
+  // The desk under the line, folded until opened, each request its caller's words as written, marked as
   // granting nothing, and how the steward closed it; it offers the owner no press.
   it("says the steward's desk under the line, each request as its caller wrote it and how the steward closed it", async () => {
     render(<StewardLine standing={{ ...STANDING, stewardDesk: DESK }} onReverse={vi.fn()} />);
@@ -201,7 +201,7 @@ describe("Notifications' steward line", () => {
     }
   });
 
-  // COMMS1l: the desk kept across a restart, a request left open when Daoris stopped said as interrupted, never as waiting.
+  // The desk kept across a restart, a request left open when Daoris stopped said as interrupted, never as waiting.
   it('COMMS1l says a request left open when Daoris stopped as interrupted, in English and Chinese, and counts it as no wait', async () => {
     const interrupted: DeskRequestNow = {
       id: 'r0', act: 'drive', target: 'engine', why: 'engine is next', filed: '2026-10-24T09:00:00Z', state: 'interrupted',

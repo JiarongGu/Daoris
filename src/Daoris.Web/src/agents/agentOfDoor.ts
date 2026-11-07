@@ -4,7 +4,7 @@ import type { AgentSheet } from './tools';
 export type AgentDoors = readonly Pick<AgentSheet, 'id' | 'doors'>[] | null | undefined;
 
 /**
- * Which agent a door is (AGENTPROVIDER1 s-vii; the agent-provider design §7 row 10), as the roster's sheet answers it: the agent whose
+ * Which agent a door is, as the roster's sheet answers it: the agent whose
  * doors hold it, so a move between one agent's two doors (`claude-code`, `claude-code-acp`) is one agent. A door no sheet names, or a
  * roster with no sheet, is its own agent.
  */

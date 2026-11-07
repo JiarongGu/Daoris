@@ -48,7 +48,7 @@ export function useWorkViews({ lists, view, notify, attached, openInWork, openRu
   searchAsked: { text: string; id: number; } | null;
   setSearchAsked: React.Dispatch<React.SetStateAction<{ text: string; id: number; } | null>>;
 }) {
-  // The Quests view (FRAME1d, D118 §2): held on every view, as Plugins is, so what its composers hold lasts while
+  // The Quests view: held on every view, as Plugins is, so what its composers hold lasts while
   // Daoris is open; its list and its main area read the list's memory, which every door into it names (§3i).
   const questsPane = lists.pane('quests');
   const quests = useQuestsView({
@@ -68,7 +68,7 @@ export function useWorkViews({ lists, view, notify, attached, openInWork, openRu
     group: listGroup,
     onGroupBrought: () => setListGroup(null),
   });
-  // The Repositories view (FRAME1e, D118 §2): held on every view, as Quests is; its list is the registry and its main
+  // The Repositories view: held on every view, as Quests is; its list is the registry and its main
   // area the chosen repository's page, which every door into it names (§3i). Its drawers are the Workspace menu's too.
   const projects = useProjectsView({
     active: view === 'projects',
@@ -81,15 +81,15 @@ export function useWorkViews({ lists, view, notify, attached, openInWork, openRu
     workspaceSection,
     notify,
     onOpenCode: (repository) => open('map', null, { code: repository }),
-    // A workspace's Details names each agent's accounts there, set on the agent's page (UX6e).
+    // A workspace's Details names each agent's accounts there, set on the agent's page.
     onOpenAgent: (agent) => open('agents', agent),
-    // A remote nothing serves opens Settings → Git, where an identity is set up for it (GITAUTH1e).
+    // A remote nothing serves opens Settings → Git, where an identity is set up for it.
     onOpenGit: () => open('settings', 'git'),
-    // A landing rule's plugin opens its page (PLUGUI1c2c).
+    // A landing rule's plugin opens its page.
     onOpenPlugin: (plugin) => open('plugins', plugin),
-    // A repository's setup is its place's page in the Agents place's Setup mode (AGENTSPLACE1f).
+    // A repository's setup is its place's page in the Agents place's Setup mode.
     onOpenSetup: (repository) => open('agents', null, { placeOf: repository }),
-    // A workspace's setup sections have their homes on its place, which `apply` opens for a door naming one (SETUPUX1v).
+    // A workspace's setup sections have their homes on its place, which `apply` opens for a door naming one.
     onOpenWorkspaceSetup: (workspace, section) => open('projects', workspaceItem(workspace), { workspaceSection: section }),
     onSyncNow,
     syncing: syncNow.isPending,
@@ -98,16 +98,16 @@ export function useWorkViews({ lists, view, notify, attached, openInWork, openRu
     importRequested,
     onImportOpened: () => { setImportRequested(false); setDrawerWorkspace(null); },
     drawerWorkspace,
-    // A workspace's clear names what it keeps, each with the page that frees it (HIST1e, D153 §5).
+    // A workspace's clear names what it keeps, each with the page that frees it.
     onOpenQuest: openQuest,
     onOpenAsk: openAsk,
     onAttend: attached ? openInWork : undefined,
     branchAsked,
     onBranchOpened: () => setBranchAsked(null),
   });
-  // Knowledge (UX6i, D150 §2.2): Search and Convergence (FRAME1f, D118 §2) as one place, held on every view as Quests is
+  // Knowledge: Search and Convergence as one place, held on every view as Quests is
   // and asking the service nothing until in front. Each mode's list memory is its chosen item and its one filter, *local
-  // only* and the similarity (§3f), as it was; a mode chosen at the list's head is a door into the place in that mode.
+  // only* and the similarity; a mode chosen at the list's head is a door into the place in that mode.
   const knowledge = useKnowledgeView({
     active: view === 'knowledge',
     mode: knowledgeMode,

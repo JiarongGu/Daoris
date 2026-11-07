@@ -1,6 +1,6 @@
 import type { Box, Point } from './viewMath';
 
-// The spatial grid a positioned world is culled and walked by (CANVAS1d; the canvas design §4): boxes bucketed by cell, so what is in
+// The spatial grid a positioned world is culled and walked by: boxes bucketed by cell, so what is in
 // view, and what lies nearest in a direction, is read from a few cells and never from every node.
 
 export type Grid = { cell: number; cells: Map<number, string[]>; boxes: ReadonlyMap<string, Box> };

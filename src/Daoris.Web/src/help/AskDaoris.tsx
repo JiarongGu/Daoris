@@ -9,19 +9,19 @@ import { useMachine } from './useMachine';
 import { attendedOf, type HelpWhere } from './where';
 
 /**
- * Ask Daoris's organism (HELP1, D89): it reads what the machine holds — the registry, the driver, the
- * agents, the sessions and the lines, through the one reading the setup guide shares (D97) — and hands
- * the panel what it lacks, and, where an agent is named, the conversation (HELP1a). Shell-only: most of
- * it is this machine's, which a browser may not learn (D47 §4).
+ * Ask Daoris's organism: it reads what the machine holds — the registry, the driver, the
+ * agents, the sessions and the lines, through the one reading the setup guide shares — and hands
+ * the panel what it lacks, and, where an agent is named, the conversation. Shell-only: most of
+ * it is this machine's, which a browser may not learn.
  */
 export function AskDaoris({
   where, attending = null, framed = true, opening, onOpened, width, range, onResize, onResetWidth, onGo, onClose,
 }: {
-  /** What is on the screen, told to the conversation ahead of the person's words (HELP1b). */
+  /** What is on the screen, told to the conversation ahead of the person's words. */
   where?: Omit<HelpWhere, 'session'>;
   /**
-   * A question already asked, from the palette (DOCK1d) or the setup guide (SETUP1b): sent once per id,
-   * as a typed one is; or a draft for the box, from a right-click's *Ask Daoris about it* (CTX1).
+   * A question already asked, from the palette or the setup guide: sent once per id,
+   * as a typed one is; or a draft for the box, from a right-click's *Ask Daoris about it*.
    */
   opening?: AskOpening | null;
   /** Told once the opening is sent, so its holder lets it go and a later drawing does not send it again. */
@@ -47,7 +47,7 @@ export function AskDaoris({
     helper, onOpened, onGo);
 
   const found = starters(machine);
-  // The setup guide's standing, from the same reading (D97): the starters lead to it while it is not done.
+  // The setup guide's standing, from the same reading: the starters lead to it while it is not done.
   const setup = settled ? setupProgress(setupSteps(machine)) ?? undefined : undefined;
 
   return (

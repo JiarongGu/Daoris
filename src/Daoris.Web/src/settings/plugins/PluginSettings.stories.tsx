@@ -4,7 +4,7 @@ import { storyWidths } from '../../design/storyWidths';
 import type { PluginShown } from '../../plugins/catalog';
 import { PluginSettings } from './PluginSettings';
 
-// Settings → Driver's Plugins section (PLUGSET1, the modes design §4.1): each installed plugin with what it holds set and
+// Settings → Driver's Plugins section: each installed plugin with what it holds set and
 // its door to its page; an install with none, one and several, in English and 中文, at the frame's widths.
 
 const nothing = () => {};

@@ -1,7 +1,7 @@
 import { type Quest } from '../../data/api';
 import { type IconName } from '../../design/ui';
 
-/** The acts a quest's page offers: its header's, then its body's (CTX1, D138 §4). */
+/** The acts a quest's page offers: its header's, then its body's. */
 export type QuestAct =
   | 'take' | 'done' | 'pause' | 'decline' | 'abandon' | 'delete' | 'clear' | 'clearFailed' | 'accept' | 'resume' | 'retry'
   | 'trust' | 'session' | 'reopen' | 'goOn';
@@ -26,7 +26,7 @@ export const QUEST_ACT: Record<QuestAct, { label: string; icon?: IconName }> = {
 };
 
 /**
- * A header act's button: the one loud control is the quest's next step (UX5 U31), taking it while it is open and closing
+ * A header act's button: the one loud control is the quest's next step, taking it while it is open and closing
  * it once it is taken; Pause… plain; the rest quiet.
  */
 export function buttonOf(act: QuestAct, status: Quest['status']): 'primary' | 'default' | 'ghost' {

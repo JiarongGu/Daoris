@@ -66,7 +66,7 @@ export function QuestAsks({ asking, work, pauseLines, target, t, waiting, setAsk
       )}
 
       {history && (asking === 'clear' || asking === 'clearFailed') && (asking === 'clear' ? history.plan : history.failed) && (
-        /* 🔴 A clear removes what this machine kept, which nothing gives back (D153): the first press lists what goes and
+        /* 🔴 A clear removes what this machine kept, which nothing gives back: the first press lists what goes and
            what stays, held from here, and the second sends exactly that (§5). */
         <ClearAsk
           key={asking}
@@ -83,9 +83,9 @@ export function QuestAsks({ asking, work, pauseLines, target, t, waiting, setAsk
       )}
 
       {deleting && deletable && (
-        /* 🔴 A delete removes the record, which nothing gives back (D95) — so the first press only asks, the
+        /* 🔴 A delete removes the record, which nothing gives back — so the first press only asks, the
            way removing an account does, and the second is the one that deletes. It stays open until the service
-           answers, and says a refusal inside itself (UXFIX2). */
+           answers, and says a refusal inside itself. */
         <InlineConfirm
           className="mb-4"
           label={t('quests.detail.deleteTitle')}
@@ -98,9 +98,9 @@ export function QuestAsks({ asking, work, pauseLines, target, t, waiting, setAsk
       )}
 
       {asking === 'done' && moving && (
-        /* The person's done (QUESTCLOSE1): it asks once, since a done does not move again, with their note, which the
-           record keeps after the sentence saying the done was theirs. Open until the service answers, a refusal said inside
-           it (UXFIX2). */
+        /* The person's done: it asks once, since a done does not move again, with their note, which the
+           record keeps after the sentence saying the done is theirs. Open until the service answers, a refusal said inside
+           it. */
         <InlineConfirm
           className="mb-4"
           label={t('quests.detail.doneTitle')}
@@ -127,9 +127,9 @@ export function QuestAsks({ asking, work, pauseLines, target, t, waiting, setAsk
       )}
 
       {asking === 'reopen' && reopenable && (
-        /* The person's reopen of a sealed submission (FABRIC-CLOSE1c3, D156): it asks once, naming the step it holds, and sends
+        /* The person's reopen of a sealed submission: it asks once, naming the step it holds, and sends
            the submission this page showed, which the door refuses once another is current. Open until the service answers, a
-           refusal said inside it (UXFIX2). */
+           refusal said inside it. */
         <InlineConfirm
           className="mb-4"
           label={t('quests.detail.reopenTitle')}
@@ -154,7 +154,7 @@ export function QuestAsks({ asking, work, pauseLines, target, t, waiting, setAsk
 
       {declining && moving && (
         /* Declining without a reason is refused by the service; the ask does not offer the mistake. It stays open until
-           the service answers, a refusal said inside it (UXFIX2b2b). */
+           the service answers, a refusal said inside it. */
         <InlineConfirm
           className="mb-4"
           label={t('quests.detail.declineTitle')}

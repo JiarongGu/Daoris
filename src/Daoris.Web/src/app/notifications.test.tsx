@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// NOTIFY2b (D196 points 3 to 5, the notification design §2.1, §3, §4), the way the application holds it: the whole window over a
+// A terminal's press, the way the application holds it: the whole window over a
 // mocked shell that tells a terminal's press over the confirmation channel and its own event, and a service whose door holds a
 // press of its own. No band under the title bar for a press of either source; the bell counting each press once, in the warning hue
 // with the presses' own count while one waits unshown; the press's toast in the focused window, said once, its *Open* showing the
@@ -61,7 +61,7 @@ const SERVICE = {
 
 let waiting: unknown[] = [];
 let service: unknown[] = [];
-// The `notices` slice's messages partition (NOTIFY2g), keyed by ask; none where the shell pushes no notices.
+// The `notices` slice's messages partition, keyed by ask; none where the shell pushes no notices.
 let messages: Record<string, unknown> | null = null;
 const NEWEST = { id: 'm2', at: base.updated, who: 'agent', repository: 'db', line: 'Stop before you land.', level: 'urgent', toEveryone: true };
 let keyed = false;
@@ -206,7 +206,7 @@ describe('Notifications, in the window', () => {
     expect(screen.queryByText(/A terminal asks to say words/)).toBeNull();
   });
 
-  // NOTIFY2j: told by the shell to every window, read once as the window mounts and never polled; one waiting at that read arrived
+  // Told by the shell to every window, read once as the window mounts and never polled; one waiting at that read arrived
   // before the window did, and one told after it is said.
   it("says a service's press once, as the shell tells it, counts it, and never polls the service", async () => {
     focused.mockReturnValue(true);
@@ -259,7 +259,7 @@ describe('Notifications, in the window', () => {
   });
 
   /**
-   * NOTIFY2g (§2.1, §5): an ask with anything unread wears the bell's dot and is listed in Messages; an urgent message to everyone is
+   * An ask with anything unread wears the bell's dot and is listed in Messages; an urgent message to everyone is
    * said once by a toast in the focused window, whose Open goes to the ask's page.
    */
   it("wears the dot for an unread message, lists it in Messages, and says an urgent one once with a door to its ask", async () => {

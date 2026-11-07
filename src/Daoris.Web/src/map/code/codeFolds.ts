@@ -1,6 +1,6 @@
 import type { CodeTree } from './codeClusters';
 
-// One folder folded alone (CANVAS1f; the canvas design §4, one mechanism folds). Pure. *Show every folder* and *Fold the folders again*
+// One folder folded alone. Pure. *Show every folder* and *Fold the folders again*
 // move every group at once; this closes the one group an open frame's header names, and what lies beneath it, and leaves the rest open.
 
 /** `open` with `group` closed, and every group beneath it, the rest as they were. */

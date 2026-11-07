@@ -6,7 +6,7 @@ import { BranchPage, type BranchGraph, type BranchRead } from './BranchPage';
 import { GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE } from '../fixtures';
 import { SHARED_BRANCH, SHARED_UNITS } from './landingFixtures';
 
-// A branch's page (UX6h3b, the built-in Git design §2.3) in Repositories' main area, opened from a branch's name in Branches:
+// A branch's page in Repositories' main area, opened from a branch's name in Branches:
 // each kind (a session's with its state and title, landed in step with an open pull request, landed and gone from origin after
 // it merged, landed and never pushed, yours, origin's), its walk a page at a time with the foot reading and refused, a branch
 // at its line's own commit, its states (the list or the walk on its way, refused, gone from the list, its line with no commit
@@ -17,7 +17,7 @@ const nothing = () => {};
 // A flex item of the main area's height frame, with no padding of its own, so the page's scroll box stays bounded.
 const dark: Decorator = (Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 p-0"><Story /></InTheme>;
 
-// The main area at the frame's widths (the UI/UX design R6, STORYGAP1): wide by default, `storyWidths.half` a 680 px window
+// The main area at the frame's widths: wide by default, `storyWidths.half` a 680 px window
 // with the list a strip beside it, and `storyWidths.narrow` the main area's 400 px floor.
 const narrow = storyWidths.narrow;
 
@@ -101,7 +101,7 @@ export const WalkReading: Story = { args: { read: listed(PHYSICS, { state: 'read
 /** The list refused in the driver's words. */
 export const Refused: Story = { args: { read: { state: 'refused', sentence: 'git could not list the branches here: git did not start.' } } };
 
-/** Gone from the list since its row was pressed: said, with the way back. */
+/** Gone from the list after its row is pressed: said, with the way back. */
 export const Gone: Story = { args: { read: { state: 'gone' } } };
 
 /** Its line has no commit here, so it cannot be drawn beside it. */
@@ -122,7 +122,7 @@ export const LandedNarrow: Story = { args: Landed.args, decorators: [narrow] };
 /** Landed, at a 680 px window: the list a strip beside the main area. */
 export const LandedHalf: Story = { args: Landed.args, decorators: [storyWidths.half] };
 
-/** How it landed (FLOWCHART1c), folded to its line above the commits until it is opened. */
+/** How it landed, folded to its line above the commits until it is opened. */
 export const LandedHowItLandedFolded: Story = {
   args: { ...Landed.args, landing: { open: false, onToggle: nothing } },
 };

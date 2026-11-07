@@ -9,7 +9,7 @@ import {
 } from '../../workflow/fixtures';
 import { IntegrationDeclaration } from './IntegrationDeclaration';
 
-// INTEGRATE1d part 3 (the integration design §11 row d, §17.7): a repository's integration declaration on its Setup, beside the landed
+// A repository's integration declaration on its Setup, beside the landed
 // route: where its acceptance stands, the declaration as written where it waits, and the person's Accept and withdraw. A molecule.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -37,7 +37,7 @@ describe("a repository's integration declaration on its Setup", () => {
     expect(screen.getByLabelText("daoris.gates.json at main's tip aa11bb2")).toHaveTextContent('"scratch": ["dist/", "coverage/"]');
     await userEvent.click(screen.getByRole('button', { name: 'Accept the integration declaration' }));
     expect(onAccept).toHaveBeenCalledWith({ gates: INTEGRATION_CHANGED.tip!.gates }, expect.anything());
-    // Changed, it was accepted before: it can be withdrawn too.
+    // Changed, it is accepted already: it can be withdrawn too.
     expect(screen.getByRole('button', { name: 'Withdraw' })).toBeInTheDocument();
   });
 

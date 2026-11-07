@@ -5,7 +5,7 @@ import i18n from '../locales/i18n';
 import { en } from '../locales';
 import { UpdateBanner, type UpdateState } from './UpdateBanner';
 
-// UPDATE1 (D139 §2, §3): the install's update as a quiet strip — staged and waiting, draining, applying, refused, and how
+// The install's update as a quiet strip — staged and waiting, draining, applying, refused, and how
 // the last swap ended — with the screen's words for it: Update when idle, Update now, Not now.
 
 const STAGED = { id: '20261003-ab12', version: '0.0.1', commit: 'abc1234', at: '2026-10-03T12:00:00Z' };
@@ -21,7 +21,7 @@ const draw = (update: UpdateState | undefined, busy = false) => {
   return { onSay, onDismiss, container, unmount };
 };
 
-// SWAP2c (D139's SWAP2 note): the two codes SWAP2 added to the journal, each said in the reader's language. The
+// The swap's two newest journal codes, each said in the reader's language. The
 // journal's own sentence is English and stays the terminal's (`daoris update`).
 const DETAIL = 'the journal’s own English sentence.';
 const SWAP2_CODES = [
@@ -112,7 +112,7 @@ describe('the update banner', () => {
     expect(screen.getByRole('status')).not.toHaveTextContent(DETAIL);
   });
 
-  // The banner's set is what made SWAP2's codes fall through to the journal's English: every reason the catalogue words,
+  // A code missing from the banner's set falls through to the journal's English: every reason the catalogue words,
   // the banner words, so a code given a sentence is never left out of the set again.
   it('words every reason the catalogue has a sentence for', () => {
     const codes = Object.keys(en).filter((key) => key.startsWith('update.why.')).map((key) => key.slice('update.why.'.length));

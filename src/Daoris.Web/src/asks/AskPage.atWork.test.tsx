@@ -10,7 +10,7 @@ import { ASK_EMPTY, ASK_SAID, ASK_TWO_ENTRIES } from '../work/atWork/atWork.fixt
 import { AskPage } from './AskPage';
 import { PUBLISHED } from './fixtures';
 
-// COWORKVIEW1d (the cowork view design §3.5): an ask's page gains its At work section above its quests, replacing nothing, shell-only.
+// An ask's page gains its At work section above its quests, replacing nothing, shell-only.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 

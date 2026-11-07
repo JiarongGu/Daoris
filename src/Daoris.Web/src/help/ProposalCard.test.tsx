@@ -6,7 +6,7 @@ import { code } from '../test/code';
 import { RELEASE_CARD } from '../workflow/edit/proposalFixtures';
 import { type HelpProposal, ProposalCard } from './ProposalCard';
 
-// HELP1c (D89): a change Ask Daoris proposes, and the person's two presses.
+// A change Ask Daoris proposes, and the person's two presses.
 
 const LANDING = {
   id: 'p1a2b3c4', kind: 'setting' as const,
@@ -40,7 +40,7 @@ describe('a proposal of Ask Daoris\'s', () => {
   });
 });
 
-// HELP6: every door built since, a card of its own kind — each with Apply (or its kind's word for it) and
+// Every door built since, a card of its own kind — each with Apply (or its kind's word for it) and
 // Not now, since every one is the person's press.
 
 const UPDATE: HelpProposal = {
@@ -69,7 +69,7 @@ const GO: HelpProposal = {
   why: 'the person asked where to name its agent',
 };
 
-// PLUG9: a plugin that has landed, added from its folder, or one installed here switched on.
+// A plugin that has landed, added from its folder, or one installed here switched on.
 const PLUGIN_ADD: HelpProposal = {
   id: 'p6', kind: 'plugin',
   describe: 'Add plugin `acme.quiet-hours` (Quiet hours 1.0.0) from `quiet-hours` in `house-plugins`, copied into Daoris\'s home under its id.',
@@ -94,7 +94,7 @@ const PLUGIN_ON: HelpProposal = {
   },
 };
 
-// PLUG9 (d): one of the install's own plugins, by id, with what it needs; (c): an update, with what changes.
+// One of the install's own plugins, by id, with what it needs; (c): an update, with what changes.
 const PLUGIN_OFFER: HelpProposal = {
   id: 'p8', kind: 'plugin',
   describe: 'Install Daoris\'s own plugin `github-pull-request` (GitHub pull request 1.0.0), which this install offers.',
@@ -129,7 +129,7 @@ const press = async (proposal: HelpProposal, apply: string, dismiss = 'Not now')
   expect(onDismiss).toHaveBeenCalledWith(proposal.id);
 };
 
-// HELPPLUG1c (D170's note): the person's approval of what a plugin's server offers Ask Daoris, proposed; and its withdrawal.
+// The person's approval of what a plugin's server offers Ask Daoris, proposed; and its withdrawal.
 const GRANT: HelpProposal = {
   id: 'p9', kind: 'plugin',
   describe: 'Approve server `browser` of plugin `in-app-browser` for Ask Daoris.',
@@ -212,7 +212,7 @@ describe('the kinds that reach every door', () => {
   });
 
   /**
-   * ASKDISMISS1: a go's second press only takes the card away, so it is worded as that, never as Not now, which answers a change;
+   * A go's second press only takes the card away, so it is worded as that, never as Not now, which answers a change;
    * and a go to a quest a session took says so in the driver's sentence. The card offers no act on the quest.
    */
   it('a go to a taken quest says it is taken, and its second press is a dismiss, no act on the quest', async () => {
@@ -227,7 +227,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Go there', 'Dismiss']);
   });
 
-  // ENTRY1d1: no command edits only the registry's row, so a move carries none, and its card is the plain one.
+  // No command edits only the registry's row, so a move carries none, and its card is the plain one.
   it('a move to a workspace says what moves and where, carries no command, with Apply and Not now', async () => {
     const move: HelpProposal = {
       id: 'p13', kind: 'repository', terminal: '', why: 'the person asked to keep engine beside the studio\'s work',
@@ -243,7 +243,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.queryByText(/the same at a terminal/)).not.toBeInTheDocument();
   });
 
-  // SESSUX1h2a: archiving sessions is the generic card, with its command; a session delete is the delete kind's.
+  // Archiving sessions is the generic card, with its command; a session delete is the delete kind's.
   it('a session archive card is the generic one, with the terminal command beside Apply and Not now', async () => {
     const archive: HelpProposal = {
       id: 'p14', kind: 'session', terminal: 'daoris session archive s1 s2', why: 'the person is done with them',
@@ -257,7 +257,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(/the same at a terminal/)).toBeInTheDocument();
   });
 
-  // PAUSE1f-a: pausing or resuming is the generic card, its sentence the driver's describe.
+  // Pausing or resuming is the generic card, its sentence the driver's describe.
   it('a pause card is the generic one, with Apply and Not now', async () => {
     const pause: HelpProposal = {
       id: 'p16', kind: 'pause', terminal: 'daoris quests pause q1', why: 'the person asked to stop it',
@@ -270,7 +270,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(code('q1'))).toBeInTheDocument();
   });
 
-  // HIST1f-a: clearing finished history is the generic card too, its sentence the driver's describe.
+  // Clearing finished history is the generic card too, its sentence the driver's describe.
   it('a clear card is the generic one, with Apply and Not now', async () => {
     const clear: HelpProposal = {
       id: 'p17', kind: 'clear', terminal: 'daoris quests clear q1', why: 'the person asked to clear it',
@@ -283,7 +283,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(code('q1'))).toBeInTheDocument();
   });
 
-  // WORKFLOW1h-d: the design's card (§8.2): the title by version, Your part first, the diff, the outward acts, needs, applies to.
+  // The design's card (§8.2): the title by version, Your part first, the diff, the outward acts, needs, applies to.
   const WORKFLOW: HelpProposal = {
     id: 'p21', kind: 'workflow', terminal: 'daoris workflow edit docs-to-pr --base 1', why: 'the person asked',
     describe: 'Save version 2 of workflow `docs-to-pr` for `web-app`: new work only.',
@@ -327,7 +327,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByRole('button', { name: 'Not now' })).toBeInTheDocument();
   });
 
-  // FLOWCHART2f (D223 §4.4): a change to the draft open in the editor saves and chooses nothing: its changes, what to put right before it
+  // A change to the draft open in the editor saves and chooses nothing: its changes, what to put right before it
   // saves, and one press, which opens the editor and settles nothing there.
   const DRAFTED: HelpProposal = {
     ...RELEASE_CARD,
@@ -370,7 +370,7 @@ describe('the kinds that reach every door', () => {
     }
   });
 
-  // INTEGRATE1r part r3 (the integration design §17.7, F42): a graph chosen for a repository whose landing rule declares no gates says so,
+  // A graph chosen for a repository whose landing rule declares no gates says so,
   // each repository by its name as code, the sentence the page's own words (it is no refusal); a cannot is a need, the driver's sentence
   // as sent, since it names the Setup row to run.
   it('says, per repository it reaches, that the version integrates with no gates, in English and in 中文', async () => {
@@ -414,7 +414,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText('It is also chosen for web-app.')).toBeInTheDocument();
   });
 
-  // FABRIC-PIPELINE1i: a route with no version, a verification pipeline's graph, and what a change asks less of the person.
+  // A route with no version, a verification pipeline's graph, and what a change asks less of the person.
   const VERIFY = {
     ...WORKFLOW.workflow!, id: 'line-verify', name: 'Verify the line', base: 1, version: 2, choose: true, route: 'landed', saves: true,
     verifies: true, diff: ['~ gates · check'], yourPart: [], outward: ['`gates` asks for a fix of each failed gate with no press of yours.'],
@@ -513,7 +513,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(/contributes nothing: declares agent/)).toBeInTheDocument();
   });
 
-  // HELP10: Daoris's browser's settings, a card as a setting's is: what changes, and the command that does the same.
+  // Daoris's browser's settings, a card as a setting's is: what changes, and the command that does the same.
   const BROWSER: HelpProposal = {
     id: 'p10', kind: 'browser',
     describe: 'Links on the page open in Daoris\'s browser, from the next click. A sign-in link always opens in the system\'s browser.',
@@ -529,7 +529,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(code(BROWSER.terminal))).toBeInTheDocument();
   });
 
-  // HELP10: bringing up to date (WSR6, D109), the screen's two presses on one card: the look, which fetches and so is
+  // Bringing up to date, the screen's two presses on one card: the look, which fetches and so is
   // the person's, then Apply on the rows the look listed.
   const SYNC: HelpProposal = {
     id: 'p11', kind: 'sync',
@@ -571,7 +571,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(code(LOOKED.terminal))).toBeInTheDocument();
   });
 
-  // LEFT3 b: what the rows do not say, said on the card itself and not only in the look's message (WSR7, D112).
+  // What the rows do not say, said on the card itself and not only in the look's message.
   const unreadable = 'fatal: Could not read from remote repository.';
   const yesterday = new Date(Date.now() - 26 * 3_600_000).toISOString();
   const OFFLINE: HelpProposal = {
@@ -678,27 +678,27 @@ describe('the kinds that reach every door', () => {
       expect(screen.getByText('问道衍建议打开一个界面')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '删除' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '前往' })).toBeInTheDocument();
-      // ASKDISMISS1: the go card's dismiss takes it out of the list, as a notice's does; the delete card keeps its 暂不.
+      // The go card's dismiss takes it out of the list, as a notice's does; the delete card keeps its 暂不.
       expect(screen.getByRole('button', { name: '移除' })).toBeInTheDocument();
       expect(screen.getAllByRole('button', { name: '暂不' })).toHaveLength(2);
       expect(screen.getByText(GO.describe)).toBeInTheDocument();
-      // PLUG9: the plugin card's chrome translates; the command stays as the manifest writes it.
+      // The plugin card's chrome translates; the command stays as the manifest writes it.
       expect(screen.getByText('问道衍提议一个插件')).toBeInTheDocument();
       const runs = within(screen.getByRole('list', { name: '插件会运行什么' }));
       expect(runs.getByText(code('node ${plugin}/hooks.mjs'))).toBeInTheDocument();
       cleanup();
-      // PLUG9 (c) and (d): what an offer needs and what an update changes, the chrome in 中文.
+      // What an offer needs and what an update changes, the chrome in 中文.
       render(<ul><ProposalCard proposal={PLUGIN_OFFER} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_UPDATE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(screen.getByText(/^需要：/)).toBeInTheDocument();
       expect(screen.getByText(/^版本：/)).toBeInTheDocument();
       expect(screen.getByText(/从它的来处替换它的文件夹/)).toBeInTheDocument();
       cleanup();
-      // HELP10: bringing up to date's chrome, the look's word the screen's own.
+      // Bringing up to date's chrome, the look's word the screen's own.
       render(<ul><ProposalCard proposal={SYNC} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(screen.getByText('问道衍提议更新到最新')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '检查更新' })).toBeInTheDocument();
       cleanup();
-      // LEFT3 b: what the look did not fetch and left apart, the chrome in 中文 and git's words as git said them.
+      // What the look did not fetch and left apart, the chrome in 中文 and git's words as git said them.
       render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(within(screen.getByRole('note', { name: '未获取' })).getByText(unreadable)).toBeInTheDocument();
       expect(within(screen.getByRole('group', { name: '未检查的仓库' })).getByText(/点名其中一个的提议会查看它/)).toBeInTheDocument();
@@ -710,7 +710,7 @@ describe('the kinds that reach every door', () => {
 });
 
 /**
- * AGENTSPLACE1k: a place's set-up card shows the plan's changes, each said once with the repositories it reaches; its Apply opens
+ * A place's set-up card shows the plan's changes, each said once with the repositories it reaches; its Apply opens
  * *Set up…* seeded and presses nothing, and says so beside the button.
  */
 describe('a place\'s set-up card', () => {

@@ -5,7 +5,7 @@ import { phaseTime } from '../locales/format';
 import { DotMark, Icon, Inline } from './ui';
 
 /**
- * A step that waits says its phase and how long (R2, the UI/UX design §2; SIGNIN1 built it for the sign-in, §3.2). A process
+ * A step that waits says its phase and how long. A process
  * whose answer is a start and whose end comes later is drawn as its phases: the done ones with the time each took, the one
  * now with its time running, the ones to come by name. A process that looks the same at five seconds and at five minutes
  * cannot be told from a hung one.
@@ -39,7 +39,7 @@ const STATE_WORD: Record<PhaseState, string> = {
 
 /**
  * Now, read again at each step of a time that runs from `from`: each second in its first minute and each minute after, at
- * the step's own boundary. Nothing at rest moves (§3, FREEZE1): a stopped time keeps no timer.
+ * the step's own boundary. Nothing at rest moves: a stopped time keeps no timer.
  */
 function useStep(from: number, running: boolean): number {
   return useClock(running ? from : null, (gone) => {

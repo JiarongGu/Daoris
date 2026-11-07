@@ -32,10 +32,10 @@ export function roleIdFor(name: string, work: string, taken: readonly string[]):
   return id;
 }
 
-/** The roles whose running conversation goes on with the next choice at its agent's limit (D205 §3.5(e)). */
+/** The roles whose running conversation goes on with the next choice at its agent's limit. */
 const CONVERSING = new Set(['ask-daoris', 'chat']);
 
-/** The work a role may be off for, and an actor's own words for off (D205 §2.1: they keep their cards' words on the folded rows). */
+/** The work a role may be off for, and an actor's own words for off (they keep their cards' words on the folded rows). */
 const OFF_WORKS = new Set(['intake', 'ask-daoris']);
 const OFF_WORDS: Record<string, string> = { intake: 'settings.ai.intake.off', 'ask-daoris': 'settings.ai.helper.off' };
 
@@ -54,7 +54,7 @@ export function newRoleEditing(
 /** One row: the catalogue's role, and the staffing its `ROLES` row carries. */
 export type Line = { id: string; row: RoleRow | null; actor: ActorRow | null };
 
-/** Whether a role's editor is offered: a catalogue role this home keeps, the one editor of its record and its choices (ONEWAY1a). */
+/** Whether a role's editor is offered: a catalogue role this home keeps, the one editor of its record and its choices. */
 export const mayEditLine = (line: Line, kept: boolean): boolean =>
   !!line.row && (line.row.state === 'seed' || line.row.state === 'set') && kept;
 
@@ -112,7 +112,7 @@ export function entryText(t: TFunction, entry: ActorChoice): string {
 }
 
 /**
- * A role's staffing in its folded words (D205 §7): its first choice and how many more, *as before* where it reads today's settings,
+ * A role's staffing in its folded words: its first choice and how many more, *as before* where it reads today's settings,
  * *Off*, a fenced role's own words, or the driver's sentence where its stored entry does not read.
  */
 export function actorSummary(t: TFunction, row: ActorRow): string {
@@ -148,7 +148,7 @@ function rulesSaid(t: TFunction, catalogue: RoleCatalogue | null | undefined, ro
 }
 
 /**
- * A role's policy in its folded words (STAFFPOLICY1f, §6.2): the rule with its proportions; its moves and their bound are the supervisor's
+ * A role's policy in its folded words: the rule with its proportions; its moves and their bound are the supervisor's
  * rules and said there. Nothing for a role with no policy or a stale one, which runs in order as today and says so where it is edited.
  */
 export function policyLine(t: TFunction, read: RolePolicyRow | null | undefined): string {

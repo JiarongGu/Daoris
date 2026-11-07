@@ -11,11 +11,11 @@ import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './git/RepositoryGit';
 import type { ProjectTab } from './tabs';
 
-// A repository's page (FRAME1e, D118 §2) in Repositories' main area: its Details tab (adopted, driven here, held, with its
+// A repository's page in Repositories' main area: its Details tab (adopted, driven here, held, with its
 // line, with unlanded branches, a teammate's with no checkout here, one that declared nothing, one not adopted with a root
 // here, one not adopted with none, a browser's, a 中文 name);
-// since UX6h1 (§4.4) its Branches and History tabs, each reading, with no checkout here, refused, with nothing yet and read,
-// History's lanes for a merged branch and for several, dark, in 中文 and narrow; since UX6h2a Branches by kind, its line's
+// its Branches and History tabs, each reading, with no checkout here, refused, with nothing yet and read,
+// History's lanes for a merged branch and for several, dark, in 中文 and narrow; Branches by kind, its line's
 // and its landed branches' other standings with origin, its session records unread, dark and narrow; and the main area with
 // no page: nothing chosen, gone, loading, an error with no answer ever.
 
@@ -24,7 +24,7 @@ const nothing = () => {};
 // A flex item of the main area's height frame, with no padding of its own, so the page's scroll box stays bounded.
 const dark: Decorator = (Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 p-0"><Story /></InTheme>;
 
-// The main area at the frame's widths (the UI/UX design R6, STORYGAP1): wide by default, `storyWidths.half` a 680 px window
+// The main area at the frame's widths: wide by default, `storyWidths.half` a 680 px window
 // with the list a strip beside it, and `storyWidths.narrow` the main area's 400 px floor.
 const narrow = storyWidths.narrow;
 
@@ -32,7 +32,7 @@ const narrow = storyWidths.narrow;
 const TITLES = { 'daoris/engine-physics-step': 'Expose a streaming budget' };
 
 type BranchesValue = GitRepositoryBranches & { sessionsUnread?: boolean };
-// Each branch's name opens its page and the line's opens History, as the window's do (UX6h3b): `BranchPage`'s stories.
+// Each branch's name opens its page and the line's opens History, as the window's do: `BranchPage`'s stories.
 const branchesRead = (read: GitRead<BranchesValue>) =>
   <BranchesTab repository="engine" read={read} titles={TITLES} onOpen={nothing} onOpenHistory={nothing} />;
 const branchesAs = (more: Partial<BranchesValue>) => branchesRead({ state: 'read', value: { ...GIT_BRANCHES_ENGINE, ...more } });
@@ -60,7 +60,7 @@ const historyRead = (read: HistoryRead) => <HistoryTab repository="engine" read=
 const lineHistory = (commits: GitLogCommit[], more: Partial<Extract<HistoryRead, { state: 'read' }>['value']> = {}, tips = [commits[0]!.commit]) =>
   // `onMore` is the page's: a story draws the foot, and its press is the holder's.
   <HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits, more: false, ...more } }} onMore={nothing} />;
-// *All branches* ticked (UX6h3c): the ⋯ is the page's, so a story draws it ticked, with the limit's sentence where given.
+// *All branches* ticked: the ⋯ is the page's, so a story draws it ticked, with the limit's sentence where given.
 const allBranchesHistory = (commits: GitLogCommit[], limit?: { shown: number; total: number }) => (
   <HistoryTab
     repository="engine"
@@ -108,7 +108,7 @@ const meta: Meta<typeof Tabbed> = {
     line: { ...LINE, branch: 'main', source: 'workspace' },
     here: true,
     drivable: true,
-    // Its branches and its line's history (UX6h1): a shell's, as Git's reads answer them.
+    // Its branches and its line's history: a shell's, as Git's reads answer them.
     branches: branchesRead({ state: 'read', value: GIT_BRANCHES_ENGINE }),
     history: lineHistory(GIT_HISTORY_ENGINE),
     onManage: nothing,
@@ -123,17 +123,17 @@ type Story = StoryObj<typeof Tabbed>;
 
 /**
  * Adopted, on Details: its summary as its one line, *Open code map* and *Manage* in its header; what the index holds and
- * the commit it was fed from, its workspace, its line read-only with its door to Setup, and its declaration as chips.
+ * the commit it is fed from, its workspace, its line read-only with its door to Setup, and its declaration as chips.
  */
 export const Adopted: Story = {};
 
 /** Held by the person: *held* outranks *drives here*, which it suspends; the hold is lifted on Setup. */
 export const Held: Story = { args: { held: true } };
 
-/** Its own line (WSR2): the branch its work grows from and lands on, and that it was set for this repository. */
+/** Its own line: the branch its work grows from and lands on, and that it is set for this repository. */
 export const WithALine: Story = { args: { line: LINE } };
 
-/** Session branches holding work no branch of the person's holds (WSR3): named here, listed in Settings. */
+/** Session branches holding work no branch of the person's holds: named here, listed in Settings. */
 export const UnlandedBranches: Story = { args: { line: LINE, unlanded: 2 } };
 
 /** A teammate's registration with no checkout here: *not on this machine*, and nothing printed of anyone's path. */
@@ -141,14 +141,14 @@ export const NoRootHere: Story = {
   args: { registration: MIRRORED, counts: COUNTS['studio-tools'], here: false, drivable: false, line: null },
 };
 
-/** Adopted, and declared nothing: the warning that an asker would be guessing (D34). */
+/** Adopted, and declared nothing: the warning that an asker would be guessing. */
 export const Undeclared: Story = { args: { registration: UNDECLARED, counts: undefined } };
 
 /** The game: drivable, with no feed, since this deployment reads its own checkouts. */
 export const AnotherAdopter: Story = { args: { registration: GAME, counts: COUNTS.game } };
 
 /**
- * Not adopted, with a root here (INT3c): *not adopted* in its head, no *Manage*, and the steps to adopt as text with the
+ * Not adopted, with a root here: *not adopted* in its head, no *Manage*, and the steps to adopt as text with the
  * reasoning on the info glyph; Setup holds its driving.
  */
 export const NotAdopted: Story = { args: { registration: NEWBIE, counts: COUNTS.newbie, drivable: false, onManage: undefined } };
@@ -158,7 +158,7 @@ export const NotAdoptedNoRoot: Story = {
   args: { registration: ELSEWHERE, counts: undefined, here: false, drivable: false, onManage: undefined, line: null },
 };
 
-/** A browser's page: Details alone, no tab row, no *Manage* and no setting, which only a shell's driver says (D47 §4). */
+/** A browser's page: Details alone, no tab row, no *Manage* and no setting, which only a shell's driver says. */
 export const InABrowser: Story = {
   args: {
     here: undefined, drivable: undefined, line: undefined, branches: undefined, history: undefined,
@@ -167,15 +167,15 @@ export const InABrowser: Story = {
 };
 
 /**
- * **Branches** (UX6h1, D150 §4.2, §4.4; by kind since UX6h2a, the built-in Git design §2.2): its line at the head, set for
+ * **Branches**, by kind: its line at the head, set for
  * the workspace, in step with origin and fetched three hours ago; *Sessions'*, one named by its session's title and state and
  * one no record names, each ahead of and behind the line; *Landed*, in step with an open pull request, gone from origin after
  * it merged, and never pushed; and *Yours*, five of seven with *Show 2 more*. The branch only origin holds is not drawn.
- * Each name is a press (UX6h3b): a branch's opens its page, the line's History.
+ * Each name is a press: a branch's opens its page, the line's History.
  */
 export const Branches: Story = { args: { start: 'branches' } };
 
-/** Branches with origin's shown (UX6h2b1): the ⋯ after Yours pressed and its ticked item chosen, *Origin's (1)* under Yours. */
+/** Branches with origin's shown: the ⋯ after Yours pressed and its ticked item chosen, *Origin's (1)* under Yours. */
 export const BranchesOriginShown: Story = {
   args: Branches.args,
   play: async ({ canvasElement }) => {
@@ -267,7 +267,7 @@ export const BranchesChinese: Story = { args: { start: 'branches' }, decorators:
 export const BranchesNoCheckoutChinese: Story = { args: BranchesNoCheckout.args, decorators: [chinese] };
 
 /**
- * **History** (UX6h1, the built-in Git design §2.3): its line's commits newest first, each beside the lanes laid from its
+ * **History**: its line's commits newest first, each beside the lanes laid from its
  * parents: a branch merged into the line has a lane of its own until the commit it grew from, and the merge's dot is hollow.
  */
 export const History: Story = { args: { start: 'history' } };
@@ -275,7 +275,7 @@ export const History: Story = { args: { start: 'history' } };
 /** History with several branches merged in, one beside another: four lanes at their widest. */
 export const HistorySeveralLanes: Story = { args: { start: 'history', history: lineHistory(SEVERAL) } };
 
-/** History over *All branches* (UX6h3c): the ⋯ ticked in the head, whose sentence says the graph is over every local branch and origin's. */
+/** History over *All branches*: the ⋯ ticked in the head, whose sentence says the graph is over every local branch and origin's. */
 export const AllBranches: Story = { args: { start: 'history', history: allBranchesHistory(SEVERAL) } };
 
 /** *All branches* past the read's 256 tips: the head says it drew the first 256 of the branches. */
@@ -285,7 +285,7 @@ export const AllBranchesChinese: Story = { args: AllBranchesPastTheLimit.args, d
 export const AllBranchesNarrow: Story = { args: AllBranchesPastTheLimit.args, decorators: [narrow] };
 
 /**
- * **History, a page at a time** (UX6h3a, UXLOADMORE1): the first page's commits with the load-more foot: "{n} commits listed",
+ * **History, a page at a time**: the first page's commits with the load-more foot: "{n} commits listed",
  * with no total, since the graph answers none, and *Show more* while it answers `more`. The foot is this story's, and its
  * twins': HistoryMoreLoading, HistoryMoreFailed, and the dark, 中文 and narrow ones.
  */

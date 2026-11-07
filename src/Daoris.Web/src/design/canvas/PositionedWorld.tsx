@@ -6,7 +6,7 @@ import { GROUP } from './sceneModel';
 import type { Tier } from './tiers';
 import type { Box, Size } from './viewMath';
 
-// The drawing of a positioned world (CANVAS1d; the canvas design §4): what `PositionedCanvas` decided to mount, drawn at its tier. Nodes
+// The drawing of a positioned world: what `PositionedCanvas` decided to mount, drawn at its tier. Nodes
 // and group frames are absolutely placed in world units; the paths are one SVG in the same units; a dot is the canvas layer's, not here.
 // A molecule: it holds no state and reads no data.
 

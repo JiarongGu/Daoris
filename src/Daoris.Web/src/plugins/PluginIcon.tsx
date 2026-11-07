@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { cn } from '../lib/cn';
 import { iconSource, type IdentHue, monogram } from './icon';
 
-/** Each size the icon is drawn at (D140 §2): the list's strip, a row of the catalogue, a page's header. */
+/** Each size the icon is drawn at: the list's strip, a row of the catalogue, a page's header. */
 const SIZE = {
   strip: 'size-5 rounded-control text-meta',
   row: 'size-8 rounded-control text-title',
@@ -20,14 +20,14 @@ const HUE: Record<IdentHue, string> = {
 };
 
 /**
- * **A plugin's icon** (PLUGUI2, D140 §3): its own, declared in its manifest and handed as its bytes, or its monogram.
+ * **A plugin's icon**: its own, declared in its manifest and handed as its bytes, or its monogram.
  *
  * @remarks
  * **A molecule**: everything arrives as props. **Decoration**, hidden from a reader, since the plugin's name is always
  * beside it.
  *
  * - **Its own icon is drawn as an image**, never inlined as markup: in an `<img>` none of an SVG's scripts run, nothing
- *   outside it loads and none of its styles reach the page (D64 §7). Only an SVG's or a PNG's bytes are drawn
+ *   outside it loads and none of its styles reach the page. Only an SVG's or a PNG's bytes are drawn
  *   (`iconSource`); a path or an address is no icon. One that will not load gives way to the monogram.
  * - **The monogram** is the name's first character on the id's hue (`monogram`): the same on every machine and reload.
  *   It is identity and never status: how a plugin stands stays on its pill, with its word.

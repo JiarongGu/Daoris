@@ -1,12 +1,12 @@
 import { createContext, type MouseEvent, type ReactNode, useContext } from 'react';
 
 /**
- * The one place a link on the page opens (BRW7): a ticket in a quest or an ask, a URL in the
+ * The one place a link on the page opens: a ticket in a quest or an ask, a URL in the
  * conversation, a link in the Markdown an agent wrote, a file the host serves.
  *
  * @remarks
  * **Where it opens is the person's choice**, `links` in the browser's settings file — the same one
- * `daoris browser links` edits (D50). The application reads it and, where it says Daoris's browser and a
+ * `daoris browser links` edits. The application reads it and, where it says Daoris's browser and a
  * shell is here to open one, provides an opener; this component honours whatever it is given. With no
  * opener — a browser, which has no bridge, or the system's choice — a link opens as a link always has,
  * outside the window: in the desktop a plain link would navigate the whole window away, which is the
@@ -49,7 +49,7 @@ export function ExternalLink({ href, system = false, className, title, children 
   href: string | undefined;
   /**
    * Always the system's browser, whatever the person chose: a sign-in to an agent's account is the
-   * person's own, and never belongs in a browser any process on this machine can drive (D78 §3.4).
+   * person's own, and never belongs in a browser any process on this machine can drive.
    */
   system?: boolean;
   className?: string;
@@ -66,7 +66,7 @@ export function ExternalLink({ href, system = false, className, title, children 
   };
 
   return (
-    // A link that must stay the system's says so on itself, so a right-click never offers it to Daoris's browser (CTX1).
+    // A link that must stay the system's says so on itself, so a right-click never offers it to Daoris's browser.
     <a href={href} target="_blank" rel="noreferrer" className={className} title={title} onClick={onClick} data-link={system ? 'system' : undefined}>
       {children}
     </a>

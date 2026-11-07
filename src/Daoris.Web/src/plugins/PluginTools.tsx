@@ -3,7 +3,7 @@ import { Button, Inline, Pill } from '../design/ui';
 import { PageSection } from '../work/frame/ViewMain';
 import type { ToolCheckShown, ToolShown } from './catalog';
 
-/** A press the driver turned down (`PLUGIN_TOOL_FIX`'s `why`), with its own sentence, beside the check it was made on. */
+/** A press the driver turned down (`PLUGIN_TOOL_FIX`'s `why`), with its own sentence, beside the check it is made on. */
 export type ToolRefused = { tool: string; check: number; why: string; message: string };
 
 /** The check a console is open for, by its tool's id and its number from 1. */
@@ -13,8 +13,8 @@ export type ToolFixing = { tool: string; check: number };
 const CODED = new Set(['fix_not_declared', 'not_found', 'not_started', 'refused', 'unknown_tool', 'unknown_check', 'no_fix']);
 
 /**
- * **What a plugin needs, and where it stands** (ADOSIGNIN1, D150 point 7): each tool it declares with its range and why, and
- * once the person has pressed *Check*, whether it was found and each readiness check passed. A check that does not pass has
+ * **What a plugin needs, and where it stands**: each tool it declares with its range and why, and
+ * once the person has pressed *Check*, whether it is found and each readiness check passed. A check that does not pass has
  * one press, *Sign in* or *Set up*, which opens a console the person sees running that check's command and nothing else;
  * the tool is read again when it closes. A tool not found says the plugin's own words for getting it, and presses nothing.
  *

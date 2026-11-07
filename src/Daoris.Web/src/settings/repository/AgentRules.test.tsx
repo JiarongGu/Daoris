@@ -6,8 +6,8 @@ import i18n from '../../locales/i18n';
 import { code } from '../../test/code';
 import { AgentRules, type AgentRulesState, type RuleProposal } from './AgentRules';
 
-// PERM1 (D72): what an agent Daoris starts may do — Claude Code's own rules in Daoris's scopes, the
-// screen's half of `daoris agent rules` (D50). Every value here is the driver's RULES answer.
+// What an agent Daoris starts may do — Claude Code's own rules in Daoris's scopes, the
+// screen's half of `daoris agent rules`. Every value here is the driver's RULES answer.
 
 const DEFAULTS: AgentRulesState['defaults'] = [
   {
@@ -22,7 +22,7 @@ const DEFAULTS: AgentRulesState['defaults'] = [
   },
   { id: 'no-push', list: 'deny', on: true, fixed: true, rules: ['Bash(git push:*)'], why: "A push leaves this machine: git access's Write says whether a session may." },
   { id: 'no-publish', list: 'deny', on: false, rules: [], why: 'Publishing a package or creating a release stays the person’s call.' },
-  // A hook, not a rule (PERM3): no rules, and the tools it judges named instead.
+  // A hook, not a rule: no rules, and the tools it judges named instead.
   {
     id: 'tree-guard', list: 'deny', on: true, rules: [], hook: 'Edit|Write|MultiEdit|NotebookEdit',
     why: 'A session writes files only inside its own tree.',
@@ -69,7 +69,7 @@ describe('What agents may do', () => {
     expect(within(publish).getByRole('checkbox').getAttribute('aria-checked')).toBe('false');
   });
 
-  /** ONEWAY1q: a push is git access's Write alone, so `no-push` is shown with no switch, saying what sets it. */
+  /** A push is git access's Write alone, so `no-push` is shown with no switch, saying what sets it. */
   it('shows the fixed no-push with no switch, saying git access sets it', () => {
     show();
     const push = screen.getByRole('listitem', { name: 'no-push' });
@@ -80,7 +80,7 @@ describe('What agents may do', () => {
   // Three defects the installed window showed on this card, 2026-09-24, none of which a story could.
 
   /**
-   * No title of its own (UX5 U57): the card is alone in its domain, and the settings list already
+   * No title of its own: the card is alone in its domain, and the settings list already
    * names it, as every card alone in its domain leaves it. Its first row is the file.
    */
   it('carries no title of its own, and opens on the file', () => {
@@ -90,8 +90,8 @@ describe('What agents may do', () => {
   });
 
   /**
-   * Each default's row was the only child of its own item, so the setting row's `first:` and `last:`
-   * both held and took its rule and its padding away: four defaults ran together as one block.
+   * Each default's row is the only child of its own item, so the setting row's `first:` and `last:`
+   * both hold and would take its rule and its padding away: four defaults would run together as one block.
    */
   it('divides one default from the next, as every other list of settings is', () => {
     show();
@@ -163,8 +163,8 @@ describe('What agents may do', () => {
   });
 
   /**
-   * REV3 web-rest F12: the words were cleared the moment they were handed up, so a rule the driver
-   * refused was gone from the box as well. They stay until the organism says the rule was added.
+   * The words stay until the organism says the rule is added: cleared the moment they are handed up, a rule the driver
+   * refused would be gone from the box as well.
    */
   it('keeps the rule it was given until the rule is added, so a refused one can be corrected', async () => {
     let added: (() => void) | undefined;
@@ -193,7 +193,7 @@ describe('What agents may do', () => {
   });
 });
 
-// PERM2 (D74): what agents proposed about these rules. A narrowing applied itself at the driver's tick;
+// What agents proposed about these rules. A narrowing applied itself at the driver's tick;
 // a widening waits here for the person, who alone may let an agent do more.
 const PROPOSALS: RuleProposal[] = [
   {

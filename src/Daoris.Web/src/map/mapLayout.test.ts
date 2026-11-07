@@ -3,7 +3,7 @@ import type { Box } from '../design/canvas/viewMath';
 import { layeredGeometry, ringGeometry, START_LEAST } from './mapLayout';
 import type { MapNode, QuestEdge, Topology } from './topology';
 
-// CANVAS1e (the canvas design §3.3): the map's geometry as a positioned world — one line for every relationship, none lost to a block or a
+// The map's geometry as a positioned world — one line for every relationship, none lost to a block or a
 // filter, no card over another at the widths the window gives, and the ring and the layers the same cards and lines.
 
 const node = (id: string, workspace?: string): MapNode =>

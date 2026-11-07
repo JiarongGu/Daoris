@@ -5,11 +5,11 @@ import { ConfiguredAccess } from '../help/access/ConfiguredAccess';
 import { FullAccessAsk, HelpModeChip } from '../help/access/HelpModePicker';
 import { type Answered, Refused } from '../work/InlineConfirm';
 
-/** What the service says answers search and convergence (D24) — its own words, verbatim. */
+/** What the service says answers search and convergence — its own words, verbatim. */
 export type SearchTier = { tier: string; note?: string | null; semantic: boolean };
 
 /**
- * Ask Daoris's access on THIS machine (HELPMODE1b, D183 point 2): the mode each conversation's next turn takes (ACCESSSWAP1), chosen
+ * Ask Daoris's access on THIS machine: the mode each conversation's next turn takes, chosen
  * by the panel's chip's rule, which the domain holds: restricted at once, full access only on its confirmation.
  */
 export type HelpAccessJob = {
@@ -27,7 +27,7 @@ export type HelpAccessJob = {
 };
 
 /**
- * Restricted mode's configured access on THIS machine (HELPMODE1c1, D183 point 1; the modes design §4.1, §5): the agent the
+ * Restricted mode's configured access on THIS machine: the agent the
  * grants are held on, what is chosen, and each choice handed up.
  */
 export type HelpGrantsJob = {
@@ -36,43 +36,43 @@ export type HelpGrantsJob = {
   /** The grants whose operations show from the start. */
   opened?: readonly HelpGrantId[];
   busy?: boolean;
-  /** The operations the driver acts on, for each grant it serves (HELPMODE1c2b); a grant not named is drawn as the mock. */
+  /** The operations the driver acts on, for each grant it serves; a grant not named is drawn as the mock. */
   built?: Partial<Record<HelpGrantId, readonly string[]>>;
   onChoose: (grant: HelpGrantId, operation: string, chosen: boolean) => void;
-  /** A grant set on a plugin's own tab (the browser's, HELPMODE1c3): its door, leading to that tab. */
+  /** A grant set on a plugin's own tab (the browser's): its door, leading to that tab. */
   onManage?: (grant: HelpGrantId, plugin: string | null) => void;
 };
 
 /**
- * Daoris's own AI (AGT6): each job Daoris may use a model for, the tier that answers it now, and how
+ * Daoris's own AI: each job Daoris may use a model for, the tier that answers it now, and how
  * to change it.
  *
  * @remarks
  * What Daoris itself uses a model for. The answer is two jobs, and each is stated the way `model-decoupling`
  * asks: what it does with no model, which tier is answering, and where the choice is made.
  *
- * **The search tier is the service's sentence, never a claim of this page's** (D24): the pill and the
+ * **The search tier is the service's sentence, never a claim of this page's**: the pill and the
  * note are what `/api/status` said, verbatim, and before it has said anything the page claims nothing.
  * How to change it is a sentence and not a control, because the model is read from the service's
  * environment when it starts — a control here would be a second source for a choice the deployment
  * makes, and on a browser a promise it could not keep.
  *
- * **Intake and Ask Daoris are actors** (MODELROLE1d, D205 §7): their cards folded into their rows on *Actors*, which is this
- * machine's (`driver.json`), so a browser is given neither (D47 §4). Ask Daoris's access stays here, this machine's too.
+ * **Intake and Ask Daoris are actors**: their cards folded into their rows on *Actors*, which is this
+ * machine's (`driver.json`), so a browser is given neither. Ask Daoris's access stays here, this machine's too.
  */
 export function AiJobs({ search, access, grants }: {
   search?: SearchTier; access?: HelpAccessJob;
-  /** Restricted mode's configured access, drawn under the access row while restricted (HELPMODE1c1). */
+  /** Restricted mode's configured access, drawn under the access row while restricted. */
   grants?: HelpGrantsJob;
 }) {
   const { t } = useTranslation();
 
   return (
-    // No title of its own: the main area's header names the domain (FRAME1g), and a lone card would say it twice.
+    // No title of its own: the main area's header names the domain, and a lone card would say it twice.
     <Card>
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.body')}</Prose>
 
-      {/* The card's rows on one label track (R1, UIFIT1): each job's value beside its words. */}
+      {/* The card's rows on one label track: each job's value beside its words. */}
       <SettingList>
       <SettingRow
         label={t('settings.ai.search.label')}
@@ -92,9 +92,9 @@ export function AiJobs({ search, access, grants }: {
 }
 
 /**
- * Ask Daoris's access (HELPMODE1b, D183 point 2; the modes design §5): the panel's own chip, beside its agent, this machine's choice
+ * Ask Daoris's access: the panel's own chip, beside its agent, this machine's choice
  * for every workspace. Full access's confirmation opens under the row, where it has the row's width, and so does restricted mode's
- * configured access while restricted (HELPMODE1c1, design §5's sketch): full access hands everything, so it has nothing to grant.
+ * configured access while restricted: full access hands everything, so it has nothing to grant.
  */
 function HelpAccess({ access, grants }: { access: HelpAccessJob; grants?: HelpGrantsJob }) {
   const { t } = useTranslation();

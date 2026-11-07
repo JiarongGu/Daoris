@@ -4,7 +4,7 @@ import type { WorkPlan, WorkPlanQuest } from '../work/pausing/pausing';
 import { LISTED_ASK, LISTED_CONSIDERED, PAUSABLE_ASK, PAUSED_LISTED_ASK } from '../work/pausing/pausingFixtures';
 import { whyItSits, type WorkItem, workTree } from './workTree';
 
-// An ask's work as its page lists it (PAUSE1h, D132 §7.1): each quest with its sessions and the questions they asked, each
+// An ask's work as its page lists it: each quest with its sessions and the questions they asked, each
 // question listed the same way under the quest whose session asked it, and why each sits.
 
 /** The tree as ids, so a case reads as the shape it asserts. */
@@ -133,7 +133,7 @@ describe('whyItSits', () => {
     expect(whyItSits(unnamed, null, 'a1b2c3')).toEqual({ line: { key: 'asks.work.elsewhereUnnamed' } });
     const outside = { ...item('0c1d2e'), quest: { ...item('0c1d2e').quest, machine: null, kept: 'taken-outside' as const } };
     expect(whyItSits(outside, null, 'a1b2c3')).toEqual({ line: { key: 'asks.work.outside' } });
-    // FABRIC-CLOSE1c20: a take lost to the person's reopen is not another machine's.
+    // A take lost to the person's reopen is not another machine's.
     const reopened = { ...item('0c1d2e'), quest: { ...item('0c1d2e').quest, machine: null, kept: 'source-reopened' as const } };
     expect(whyItSits(reopened, null, 'a1b2c3')).toEqual({ line: { key: 'asks.work.reopenedTake' } });
   });

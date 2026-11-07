@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// Settings → This Daoris, set up from the page (WIRING1e, the this-Daoris design §4): *Open* sends a row's id and never a path;
+// Settings → This Daoris, set up from the page: *Open* sends a row's id and never a path;
 // *Put on my PATH* and *Take off my PATH* say first what they do and press only on the second; *Copy a terminal line* is the page's
-// clipboard and presses nothing; *Change the service's address* says the old value and the new first; each refusal is data, said in
+// clipboard and presses nothing; *Change the service's address* says the current value and the new one first; each refusal is data, said in
 // the catalogue's words, in both languages. The shell here is a stand-in: no account, PATH or file manager is touched.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({ invoke: vi.fn(), notifyReady: vi.fn(() => Promise.resolve()) }));

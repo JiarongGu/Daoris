@@ -1,17 +1,17 @@
 import { store, stored } from '../lib/stored';
 
 /**
- * A repository's page's tabs (UX6f, D150 §4.2), in the order the page draws them: what the page holds, its branches and its
- * line's history (UX6h1, §4.4: Git inside Repositories), its checkout's changes where the person let Daoris change its files
- * (GITAPP2b, D204) and its integration. Its setup and workflow are its place's, in the Agents place's Setup mode.
+ * A repository's page's tabs, in the order the page draws them: what the page holds, its branches and its
+ * line's history, its checkout's changes where the person let Daoris change its files
+ *  and its integration. Its setup and workflow are its place's, in the Agents place's Setup mode.
  */
 export const PROJECT_TABS = ['details', 'branches', 'history', 'changes', 'integration'] as const;
 
 export type ProjectTab = (typeof PROJECT_TABS)[number];
 
 /**
- * A workspace's page's tabs (UX6g, D150 §4.3), in the order the page draws them: its repositories and what a start runs on,
- * the clean-up and bringing up to date across its repositories, and how work moves in them (WORKFLOW1b). Its defaults, access
+ * A workspace's page's tabs, in the order the page draws them: its repositories and what a start runs on,
+ * the clean-up and bringing up to date across its repositories, and how work moves in them. Its defaults, access
  * and rules are its place's, in the Agents place's Setup mode; its remote's wiring is a row of Details.
  */
 export const WORKSPACE_TABS = ['details', 'branches', 'workflow'] as const;
@@ -19,13 +19,13 @@ export const WORKSPACE_TABS = ['details', 'branches', 'workflow'] as const;
 export type WorkspaceTab = (typeof WORKSPACE_TABS)[number];
 
 /**
- * The parts of a workspace's setup a door may name (UX6g, §4.3; *Sessions' access* since AUTONOMY1d; its *Supervisor* since SUPERVISOR1e).
+ * The parts of a workspace's setup a door may name, among them *Sessions' access* and its *Supervisor*.
  * Each opens on the workspace's place (`WORKSPACE_HOMES`), the remote on Details' Remote row. *Reach* is the place's Sessions row that
- * holds its rules and the machines its remote counts undeclared (SETUPUX1v).
+ * holds its rules and the machines its remote counts undeclared.
  */
 export type WorkspaceSection = 'defaults' | 'access' | 'git' | 'supervisor' | 'remote' | 'reach';
 
-/** Where the tab chosen is kept: one for the view, whichever repository it shows (§4.2, *remembered per view*). */
+/** Where the tab chosen is kept: one for the view, whichever repository it shows. */
 const KEY = 'daoris.list.projects.tab';
 
 /**

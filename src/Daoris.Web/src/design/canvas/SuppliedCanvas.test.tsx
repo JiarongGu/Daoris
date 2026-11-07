@@ -7,7 +7,7 @@ import '../../locales/i18n';
 import { SuppliedCanvas, type SuppliedWorld } from './SuppliedCanvas';
 import { memoryKey } from './viewMemory';
 
-// CANVAS1e (D224; the canvas design §2.2, §3.3, trap 15): a positioned world the feature supplies. jsdom lays nothing out, so unless a
+// A positioned world the feature supplies. jsdom lays nothing out, so unless a
 // width is stood in for the canvas is below its floor and the world is drawn as a pane; the viewport is `Canvas.test.tsx`'s.
 
 const measured = vi.hoisted(() => ({ width: undefined as number | undefined }));
@@ -111,7 +111,7 @@ describe('a supplied world below the canvas floor', () => {
 });
 
 describe('a press, a double press and a way back', () => {
-  // MAPUX1b: a double press counts as one press, so it never chooses and releases at once.
+  // A double press counts as one press, so it never chooses and releases at once.
   it('counts a double press on a card or a line as one press: it chooses and does not release', async () => {
     const chosen = vi.fn();
     render(<Host onChange={chosen} />);
@@ -124,7 +124,7 @@ describe('a press, a double press and a way back', () => {
     expect(chosen).toHaveBeenLastCalledWith('a>c');
   });
 
-  // MAPUX1c: a way back chooses and reveals a card, and gives it the focus when it is told to.
+  // A way back chooses and reveals a card, and gives it the focus when it is told to.
   it('gives the focus to the card a way back names, once, and only when told to', async () => {
     const { rerender } = render(<Host reveal={{ id: 'c', focus: false }} />);
     expect(screen.getByRole('button', { name: 'card c' })).not.toHaveFocus();

@@ -7,8 +7,8 @@ import i18n from '../locales/i18n';
 import type { Channel, ElsewhereAsk } from '../work/channel';
 import { TeammateAskPage } from './TeammateAskPage';
 
-// SESSONE2h (D167; the co-working design §2.4): a teammate's ask has no record here, so its page is the channel the sync mirrored,
-// under what the messages carry (circle, machines, moment); none of the ask page's request, quest or work sections. SESSONE2i: the
+// A teammate's ask has no record here, so its page is the channel the sync mirrored,
+// under what the messages carry (circle, machines, moment); none of the ask page's request, quest or work sections. The
 // person posts to it, as to an ask of theirs.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -40,7 +40,7 @@ describe('a teammate’s ask’s page', () => {
     expect(within(channel).getByText('Which column?')).toBeInTheDocument();
   });
 
-  /** 🔴 SESSONE2i: the composer posts to the teammate's ask, answering one of its messages, with no Send to its session. */
+  /** 🔴 The composer posts to the teammate's ask, answering one of its messages, with no Send to its session. */
   it('posts the person’s words to it, answering a message, and offers nothing to send on', async () => {
     const onPost = vi.fn();
     render(<TeammateAskPage ask={ASK} channel={CHANNEL} onPost={onPost} />);
@@ -63,7 +63,7 @@ describe('a teammate’s ask’s page', () => {
     expect(screen.queryByRole('button', { name: /Publish|Close ask|Delete/ })).toBeNull();
   });
 
-  /** NOTIFY2g: the service keeps the person's mark on a teammate's ask, so reading its page clears its item in Messages. */
+  /** The service keeps the person's mark on a teammate's ask, so reading its page clears its item in Messages. */
   it('moves the person’s mark through the newest item once what was unread is on the page', () => {
     const onRead = vi.fn();
     render(<TeammateAskPage ask={ASK} channel={CHANNEL} onPost={POST} onRead={onRead} />);

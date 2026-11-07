@@ -8,7 +8,7 @@ import {
   ASKS, type AskEdge, type ChainEdge, type DependsEdge, type KnowledgeEdge, type QuestEdge, type Topology,
 } from './topology';
 
-// The map's geometry as a positioned world (CANVAS1e; the canvas design §3.3): the ring below `RING_MAX` and the layers above it, each
+// The map's geometry as a positioned world: the ring below `RING_MAX` and the layers above it, each
 // one `SuppliedWorld` with its typed lines, so crossing twelve changes this layout and nothing the canvas draws. Pure.
 
 /** A name is the type scale's at 1; the map never opens smaller than this, and pans instead. */
@@ -170,7 +170,7 @@ function blockTopology(topology: Topology, names: ReadonlySet<string>, asksHere:
 }
 
 /**
- * The layers (MAP4): one workspace's map is `layoutLayers` whole; several are blocks, each its own layers under its name, stacked by name,
+ * The layers: one workspace's map is `layoutLayers` whole; several are blocks, each its own layers under its name, stacked by name,
  * and a line between two blocks runs down the gap between them. `width` is what the viewport shows at the opening scale.
  */
 export function layeredGeometry(topology: Topology, width: number): MapGeometry {

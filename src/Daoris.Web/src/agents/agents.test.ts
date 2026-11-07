@@ -12,7 +12,7 @@ import {
 } from './agents';
 import type { PoolReceipt } from '../settings/accounts/accounts';
 
-// The Agents place's words and facts (UX6e, D150 §5), pure: an account's last known state with when it was read, the list's
+// The Agents place's words and facts, pure: an account's last known state with when it is read, the list's
 // rows, and each folded section's line. No bridge, so every state is an argument.
 
 const TEN = '2026-10-04T10:42:00.000Z';
@@ -54,7 +54,7 @@ describe('an account’s state, as last known', () => {
   });
 
   /**
-   * ACCTUX1: the cool-off is a hold, and where Daoris chose its length because the agent named no reset, *resets …* claimed a
+   * The cool-off is a hold, and where Daoris chose its length because the agent named no reset, *resets …* claimed a
    * reset nobody reported. The column says until when it holds, in either language, whoever chose the time.
    */
   it('says a cool-off as a hold until its end, never a reset, whoever chose the time', () => {
@@ -68,7 +68,7 @@ describe('an account’s state, as last known', () => {
   });
 
   /**
-   * ACCTUX1: a key its provider refused reads signed out, and saying it *unchecked* told the person nothing was wrong. A
+   * A key its provider refused reads signed out, and saying it *unchecked* would tell the person nothing is wrong. A
    * refusal is kept whatever the account is, ahead of a cool-off as a sign-out is, since a reset frees neither.
    */
   it('says a key its provider refused as Key refused, ahead of a cool-off, in open’s hue while it holds work', () => {
@@ -113,7 +113,7 @@ describe('an account’s state, as last known', () => {
 
 describe('which accounts hold work', () => {
   /**
-   * POOL1c (D197 point 1; the account-pool design §4.2): every account signed in for Daoris serves every workspace, so each one
+   * Every account signed in for Daoris serves every workspace, so each one
    * holds work, whatever an order names, and a signed-out one is loud. An account the agent does not have holds nothing.
    */
   it('is every account of Daoris’s, one set for every workspace, whatever the order names', () => {
@@ -130,7 +130,7 @@ describe('which accounts hold work', () => {
     expect(signedOutHeld(tool!, null)).toBe(2);
   });
 
-  /** ACCTUX1: a refused key holding work waits on the person as a signed-out account does, so the badge counts it. */
+  /** A refused key holding work waits on the person as a signed-out account does, so the badge counts it. */
   it('counts a refused key that holds work, and says it in the list’s phrase', () => {
     const [tool] = byTool([claude({
       profiles: [
@@ -142,7 +142,7 @@ describe('which accounts hold work', () => {
     expect(agentRows([tool!], { agents: [THREE] })[0]!.phrase).toBe('2 accounts · 1 signed out · 1 key refused');
   });
 
-  /** OWNSPACE1b-A (D175), POOL1c (D197 point 3): nothing starts in the tool's own sign-in, so it is never counted. */
+  /** Nothing starts in the tool's own sign-in, so it is never counted. */
   it("never counts the tool's own sign-in, even signed out with no account of Daoris's", () => {
     const [tool] = byTool([claude({ ownLogin: 'out', profiles: [] })]);
     const none: AgentAccounts = { agent: 'claude-code', speaks: false, own: {}, accounts: [], scopes: [scopeOf()] };
@@ -168,11 +168,11 @@ describe('the list', () => {
   });
 
   /**
-   * ACCTUX2: the strip drew each agent's first character, so Claude Code and Codex were both `C` (the UX7 design §4.6). A
+   * The strip drew each agent's first character, so Claude Code and Codex were both `C`. A
    * mark its declaration gives leads; else the first letters, each word's initial or a lone word's first two; and none
    * repeats a mark above it in the list.
    */
-  /** INSTALLDOOR1: a row says whether Daoris has an installer for it. */
+  /** A row says whether Daoris has an installer for it. */
   it('says whether Daoris installs each agent, an absent field reading as it does', () => {
     const rows = (door: Partial<ToolDoor>) => agentRows(toolsOf([{ ...claude(), present: false, ...door }]), undefined)[0]!;
     expect(rows({}).installs).toBe(true);
@@ -194,7 +194,7 @@ describe('the list', () => {
     const declared = doors.map((door) => (door.door === 'codex-acp' ? { ...door, mark: ' Cx ' } : door));
     expect(agentRows(byTool(declared), undefined).map((row) => row.mark)).toEqual(['CC', 'Cx', 'DH', 'Co', 'Ac']);
     expect(agentRows(byTool([{ ...claude(), mark: 'Claude' }]), undefined)[0]!.mark).toBe('Cl');
-    // INSTALLDOOR1: a null mark falls back to the letters.
+    // A null mark falls back to the letters.
     expect(agentRows(byTool([{ ...claude(), mark: null }]), undefined)[0]!.mark).toBe('CC');
 
     // A 中文 name gives its first two characters whole.
@@ -223,7 +223,7 @@ describe('an account’s name, as a person reads it (ACCT2)', () => {
   });
 
   /**
-   * ACCTNAME1's page half: the owner named each account by the email it signs in as, so a name and its identity that differ
+   * The owner names each account by the email it signs in as, so a name and its identity that differ
    * only in case, or in the spaces around them, are one name said once, as every name here is compared without case.
    */
   it('says a name that is its identity once, whatever its case', () => {
@@ -252,8 +252,8 @@ describe('an account’s name, as a person reads it (ACCT2)', () => {
 });
 
 /**
- * ACCOUNTID1b: one email signed in to two organisations is two accounts that read alike. The organisation is said where it
- * tells two of one agent's sign-ins apart, after the email and each said once (ACCTNAME1's rule); else the plan; else nothing.
+ * One email signed in to two organisations is two accounts that read alike. The organisation is said where it
+ * tells two of one agent's sign-ins apart, after the email and each said once; else the plan; else nothing.
  */
 describe('two sign-ins of one email, told apart (ACCOUNTID1b)', () => {
   beforeEach(() => i18n.changeLanguage('en'));
@@ -334,7 +334,7 @@ describe('two sign-ins of one email, told apart (ACCOUNTID1b)', () => {
   });
 });
 
-/** ACCTUX4b (the second opinion's lines 128-133): the set's next start, said above the accounts in the fold's words. */
+/** The set's next start, said above the accounts in the fold's words. */
 describe('the next start, above the accounts', () => {
   beforeEach(() => i18n.changeLanguage('en'));
   const labelOf = (name: string) => name;
@@ -368,7 +368,7 @@ describe('the next start, above the accounts', () => {
     expect(nextStartSaid(near, labelOf)).toEqual({
       takes: 'The next start takes account-3: account-1 is over its curve on its weekly window, so it goes last.', held: null, doors: [],
     });
-    // Passed while another reason names a third account: its hold says which of the three holds it (SWITCH1b-iii).
+    // Passed while another reason names a third account: its hold says which of the three holds it.
     const held = scopeOf({
       list, begins: 'account-1', near: [{ account: 'account-1', window: 'session', by: 'refused' }],
       next: { account: 'account-3', reason: 'fewest', over: 'account-2', others: [{ account: 'account-1', hold: 'near' }] },
@@ -397,7 +397,7 @@ describe('the next start, above the accounts', () => {
     expect(nextStartSaid(null, labelOf)).toBeNull();
   });
 
-  /** OWNSPACE1b-A (D175 point 4): no Daoris account signed in is its own line, said apart from a wait. */
+  /** No Daoris account signed in is its own line, said apart from a wait. */
   it('says no Daoris account is signed in, once, where the reason arrives', () => {
     expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'noAccount', others: [] } }), labelOf)).toEqual({
       takes: 'No Daoris account is signed in for it; its starts wait until you sign in.', held: null, doors: [],
@@ -423,7 +423,7 @@ describe('the one act an account’s state asks for (D152 §4)', () => {
     expect(accountAct(state('cooling'), { signsIn: true, present: true })).toEqual({ act: 'tryNow', loud: false });
   });
 
-  /** POOL1c (the account-pool design §4.2): *Use in a workspace…* goes, since every account runs for every workspace. */
+  /** *Use in a workspace…* goes, since every account runs for every workspace. */
   it('is none for a signed-in account or a key: every account serves every workspace', () => {
     expect(accountAct(state('in'), { signsIn: true, present: true })).toBeNull();
     expect(accountAct(state('keyed'), { signsIn: true, present: true })).toBeNull();
@@ -435,7 +435,7 @@ describe('the one act an account’s state asks for (D152 §4)', () => {
   });
 
   /**
-   * ACCTUX1: a refused key is repaired by a key, never a sign-in: *New API key* into the same account (KEYREPLACE1b), loud
+   * A refused key is repaired by a key, never a sign-in: *New API key* into the same account, loud
    * where it holds work. Where the agent takes no key from Daoris there is no act to offer.
    */
   it('is New API key when its key was refused, and none where the agent takes no key', () => {
@@ -448,10 +448,10 @@ describe('the one act an account’s state asks for (D152 §4)', () => {
 });
 
 /**
- * ACCTUX4 (the second opinion's account section, adopted): what an account's agent last said, as stable cells, a window each,
+ * What an account's agent last said, as stable cells, a window each,
  * the same two for both makers, `session` then `weekly`, then any other a reading named. Each says its exact share, its
- * agent's own word, its reset and how long ago its own reading was; a window its agent did not report is unknown, in words,
- * with no bar and never 0% (D130 §5.2). One sentence of every window compared badly across windows and makers. ACCTUX1 holds:
+ * agent's own word, its reset and how long ago its own reading is; a window its agent did not report is unknown, in words,
+ * with no bar and never 0%. One sentence of every window compared badly across windows and makers. So
  * a share is a reading in the ink, a time the soft ink, and a cool-off whose length Daoris chose says the reset is unknown.
  */
 describe('what an account’s agent last said, a cell a window', () => {
@@ -467,8 +467,8 @@ describe('what an account’s agent last said, a cell a window', () => {
       { window: 'session', used: 0.88, reset: RESET, standing: 'warned', credits: false, seen: SEEN },
     ],
   };
-  // SWITCH1d: the five-hour window read from its agent, the week said by a session, 62% of it used; each against its scope's curve
-  // as .NET judges it and the accounts' answer carries it (PUSH1e): the smart curve's 90% on the session, and 43 hours of the week's
+  // The five-hour window read from its agent, the week said by a session, 62% of it used; each against its scope's curve
+  // as.NET judges it and the accounts' answer carries it: the smart curve's 90% on the session, and 43 hours of the week's
   // 168 gone, so the smart week stands at 46% of it and 62% is over it.
   const measured = {
     seen: SEEN,
@@ -497,7 +497,7 @@ describe('what an account’s agent last said, a cell a window', () => {
     expect(usage.notes).toEqual([]);
   });
 
-  // USAGEPROBE1b: the projection to now beside the reading, said as projected and only where it differs or cannot be made.
+  // The projection to now beside the reading, said as projected and only where it differs or cannot be made.
   describe('its projected use beside its reading', () => {
     const projectedOf = (window: Record<string, unknown>) =>
       usageCells({ said: { seen: SEEN, windows: [{ window: 'session', used: 0.2, reset: RESET, credits: false, seen: SEEN, source: 'read', ...window }] } }, signedIn, { now: NOW })!
@@ -536,10 +536,10 @@ describe('what an account’s agent last said, a cell a window', () => {
   it('draws the same two cells where its agent speaks, each unknown until read, and another window after them', () => {
     expect(usageCells({}, signedIn, { fixed: true, now: NOW })!.cells.map((cell) => [cell.window, cell.reading, cell.used]))
       .toEqual([['session', 'unknown', null], ['weekly', 'unknown', null]]);
-    // Where nothing could be said (a key, an agent that does not speak), nothing said is not said (D152 §4.2).
+    // Where nothing could be said (a key, an agent that does not speak), nothing said is not said.
     expect(usageCells({}, signedIn, { now: NOW })).toBeNull();
     expect(usageCells({ said: { seen: SEEN, windows: [] } }, signedIn, { now: NOW })).toBeNull();
-    // A Codex window of another length (CODEXUSE1) after the two, in a cell of its own, named as the driver names it.
+    // A Codex window of another length after the two, in a cell of its own, named as the driver names it.
     const odd = { seen: SEEN, windows: [{ window: '90-minute', used: 0.4, reset: RESET, credits: false, seen: SEEN }] };
     expect(usageCells({ said: odd }, signedIn, { now: NOW })!.cells.map((cell) => [cell.window, cell.name, cell.reading]))
       .toEqual([['session', 'five-hour', 'unknown'], ['weekly', 'weekly', 'unknown'], ['90-minute', '90-minute', '40% used']]);
@@ -557,7 +557,7 @@ describe('what an account’s agent last said, a cell a window', () => {
   });
 
   /**
-   * SWITCH1d (the switch design §5): each window against its scope's curve now, the curve's value said, a window over it said so
+   * Each window against its scope's curve now, the curve's value said, a window over it said so
    * and drawn in the warning hue; and where its reading came from, read from its agent or said by a session, with its age.
    */
   it('says each window against its scope’s curve now as .NET judged it, and where its reading came from', () => {
@@ -596,7 +596,7 @@ describe('what an account’s agent last said, a cell a window', () => {
       ['5 小时', '已用 88%，它自己说用量超前于节奏', `${clockOf(RESET, NOW)} 重置`, `${ago(SEEN)}由会话报告`],
       ['每周', '已用 15%', `${clockOf(WEEK, NOW)} 重置`, `${ago(EARLIER)}由会话报告`],
     ]);
-    // SWITCH1d: against the curve, and read from its agent.
+    // Against the curve, and read from its agent.
     const [session, weekly] = usageCells({ said: measured }, signedIn, { now: NOW, product: 'Claude Code' })!.cells;
     expect([session!.curve, session!.times[1], weekly!.curve]).toEqual(['曲线此刻允许 90%', `${ago(SEEN)}从 Claude Code 读取`, '超出其曲线此刻的 46%']);
     expect(usageCells({}, signedIn, { fixed: true, now: NOW })!.cells[0]!.reading).toBe('未知');
@@ -606,7 +606,7 @@ describe('what an account’s agent last said, a cell a window', () => {
 });
 
 /**
- * POOL1c (D197 point 7; the account-pool design §4.2, §6.3): what the fold into one set changed, each receipt's lines in the
+ * What the fold into one set changed, each receipt's lines in the
  * reader's language, from its kinds and values, in the order the terminal's `agent list` says them (`AgentListCommand.PoolLines`).
  */
 describe('what the fold into one set changed', () => {
@@ -677,7 +677,7 @@ describe('what the fold into one set changed', () => {
 describe('each folded section’s line', () => {
   beforeEach(() => i18n.changeLanguage('en'));
 
-  /** POOL1c (the account-pool design §4.2's `agents.use.summary.all`): the set's, every workspace's, and how it is used. */
+  /** The set's, every workspace's, and how it is used. */
   it('says how accounts are used as the one set’s: every account, for every workspace, and the way they are used', () => {
     expect(useSummary(THREE, 3)).toBe('All 3 accounts, for every workspace · Make the most of them');
     expect(useSummary({ ...THREE, scopes: [scopeOf({ use: { ...THREE.scopes[0]!.use, use: 'order' } })] }, 1))

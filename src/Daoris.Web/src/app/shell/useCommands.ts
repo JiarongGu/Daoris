@@ -72,9 +72,9 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
   setShortcuts: React.Dispatch<React.SetStateAction<boolean>>;
   setAbout: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  // The setup guide (SETUP1b, D97), from the reading Ask Daoris's starters share: the status bar's count
+  // The setup guide, from the reading Ask Daoris's starters share: the status bar's count
   // until the required steps are done, and Get started opened once at start on a machine missing any of
-  // the first three. Both wait for the machine to be read, and neither is a browser's (D47 §4).
+  // the first three. Both wait for the machine to be read, and neither is a browser's.
   const setupReading = useMachine();
   const setupStepsNow = setupSteps(setupReading.machine);
   const setupCount = setupReading.settled ? setupProgress(setupStepsNow) ?? undefined : undefined;
@@ -87,12 +87,12 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
     open: () => openSettings('start'),
   });
 
-  // The record in the main area, as its page offers it to a right-click (CTX1), read by Run's record groups and Edit's
-  // *Copy ID* (UX7a, D152 §2): each act has one owner, whichever door pressed it.
+  // The record in the main area, as its page offers it to a right-click, read by Run's record groups and Edit's
+  // *Copy ID*: each act has one owner, whichever door pressed it.
   const copyText = useRef<(text: string) => void>(() => {});
   const offers = useMemo(() => offerStore((text) => copyText.current(text)), []);
   const offered = useMainOffer(offers);
-  // The field the person was last in, which Edit's acts go back to once a menu has taken the focus (D152 §3.4).
+  // The field the person last had focus in, which Edit's acts go back to once a menu has taken the focus.
   const fields = useRef<ReturnType<typeof fieldTracker> | null>(null);
   useEffect(() => {
     const tracker = fieldTracker(document);
@@ -107,7 +107,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
   const chosenQuest = lists.pane('quests').chosen;
 
   /**
-   * What is true now, which decides what the menus, the palette and the keys offer (D152 §2). The box Find goes to and
+   * What is true now, which decides what the menus, the palette and the keys offer. The box Find goes to and
    * the field Edit acts on are read from the page as it stands, so a key reads them at the press.
    */
   const commandState = (): CommandState => {
@@ -125,7 +125,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
       wired: Boolean(wired),
       theme,
       language: pageLanguage(i18n.language),
-      // Each agent installed here, as the Agents place lists it (UX6e): the palette goes to each one's page.
+      // Each agent installed here, as the Agents place lists it: the palette goes to each one's page.
       agents: byTool(Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [])
         .filter((tool) => tool.present)
         .map((tool) => ({ name: tool.name, label: tool.product ?? tool.name })),
@@ -152,20 +152,20 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
     setWorkIntent(intent);
   };
 
-  /** What each verb runs: the application's doors, handed to the table (D152 §2). */
+  /** What each verb runs: the application's doors, handed to the table. */
   const commandDoors: CommandDoors = {
-    // Asking lives at the head of Quests (INT4c); the menu goes there and opens the composer, and a quest's composer too.
+    // Asking lives at the head of Quests; the menu goes there and opens the composer, and a quest's composer too.
     ask: () => { open('quests'); setAsking(true); },
     quest: () => { open('quests'); setOpening({}); },
     scope: scope.setWorkspace,
     add: () => open('projects', null, { drawer: 'add' }),
-    // `daoris import <folder> --workspace <name>`'s screen door (D77): the drawer chooses the folder and names the workspace.
+    // `daoris import <folder> --workspace <name>`'s screen door: the drawer chooses the folder and names the workspace.
     import: () => open('projects', null, { drawer: 'import' }),
-    // The workspace in view's setup (UX6g): its place's Workflow defaults, where the opener sends a section.
+    // The workspace in view's setup: its place's Workflow defaults, where the opener sends a section.
     workspaceSetup: () => open('projects', null, { workspaceSection: 'defaults' }),
     sync: () => { if (circle) onSyncNow(circle); },
     wire: () => { if (circle) open('projects', workspaceItem(circle), { workspaceSection: 'remote' }); },
-    // At a domain the row names, or at the one Settings' list remembers (D75).
+    // At a domain the row names, or at the one Settings' list remembers.
     settings: (section) => (section ? openSettings(section as SettingsSection) : open('settings')),
     edit: (act) => {
       void runEdit(act, fields.current?.field() ?? fields.current?.history() ?? null).then((done) => {
@@ -174,9 +174,9 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
     },
     find: () => findTarget(document, view)?.focus(),
     searchKnowledge: () => {
-      // Knowledge's Search (UX6i), whatever mode the place was left in.
+      // Knowledge's Search, whatever mode the place is left in.
       open('knowledge', null, { knowledge: 'search' });
-      // A beat after the view is drawn, as Quick Ask's box is opened (DOCK1d): its box is in its list.
+      // A beat after the view is drawn, as Quick Ask's box is opened: its box is in its list.
       window.setTimeout(() => findTarget(document, 'knowledge')?.focus(), 0);
     },
     copyId: () => { offers.run('copy'); },
@@ -184,9 +184,9 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
     toggle: (region: LayoutRegion) => { toggleRegion(region); },
     reset: () => placements.reset(),
     frame: frameIntent,
-    // *Notifications* where it stands (NOTIFY2b, §2.1): View's row and the palette's, as the bell shows it.
+    // *Notifications* where it stands: View's row and the palette's, as the bell shows it.
     notifications: () => showNotifications(),
-    // A window is the shell's to open (SURF8), so neither is in a browser's table.
+    // A window is the shell's to open, so neither is in a browser's table.
     monitor: () => openWindow.mutate(MONITOR_WINDOW),
     browser: () => openBrowser.mutate(),
     theme: setTheme,
@@ -198,20 +198,20 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
     agent: (name) => open('agents', name),
     agentPart: (part) => open('agents', null, { agentPart: part }),
     region: (previous) => focusRegion(document, previous),
-    // A record's act by its page's own press (D152 §2): the session's through `sessionActs.ts`, the quest's by its page.
+    // A record's act by its page's own press: the session's through `sessionActs.ts`, the quest's by its page.
     sessionAct: (act) => { offers.run(act); },
     questAct: (act) => { offers.run(act); },
     help: openHelp,
     quickAsk: () => askQuickly(),
     setup: () => openSettings('start'),
     shortcuts: () => setShortcuts(true),
-    // Settings → Driver, where the install's update is (UPDATE1b): nothing here checks a release channel.
+    // Settings → Driver, where the install's update is: nothing here checks a release channel.
     update: () => openSettings('driver', 'update'),
     about: () => setAbout(true),
   };
   const translate = (key: string, values?: Record<string, unknown>) => (values ? t(key, values) : t(key));
   const entries = commandTable(commandState(), commandDoors, translate);
-  // The menus as the bar draws them; a browser has no Terminal (D152 §3.6), and claims no Alt (§3.4), so shows no letter.
+  // The menus as the bar draws them; a browser has no Terminal, and claims no Alt, so shows no letter.
   const barMenus: BarMenu[] = MENUS.filter((menu) => !menu.shell || attached).map((menu) => ({
     id: menu.id,
     label: t(menu.label),

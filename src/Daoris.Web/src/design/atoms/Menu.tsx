@@ -6,7 +6,7 @@ import { type IconName, Icon, FRAME_HELD, FrameHeld } from './Icon';
 /* ---------------------------------------------------------------- menus */
 
 /**
- * What a menu's rows light with under the pointer and the keys (MENU1). Two looks were already in the window when the
+ * What a menu's rows light with under the pointer and the keys. Two looks were already in the window when the
  * menus became one atom, and the atom kept both rather than change what a person sees: the title bar's menus and most
  * others light a row with the raised surface and lift its ink from soft, as a menu bar's do; a list's ⋯ and `＋` and a
  * session row's menu, which open from among a list's rows, light it with the accent's soft field, as those rows do.
@@ -46,7 +46,7 @@ function MenuRoot(props: ComponentProps<typeof DropdownMenu.Root>) {
   return <DropdownMenu.Root modal={false} {...props} />;
 }
 
-/** A menu's layer and cap, its own size or the frame's (ZOOM1), as `MenuContent` says. */
+/** A menu's layer and cap, its own size or the frame's, as `MenuContent` says. */
 const menuCap = (held: boolean) => cn(
   'z-30 overflow-y-auto overflow-x-hidden',
   held
@@ -60,11 +60,11 @@ const menuCap = (held: boolean) => cn(
  * item's menus are sized to what they hold.
  *
  * @remarks
- * **Capped at the room the popper measured on its side, and scrolled inside it** (MENU1, as SELECT1 for the select):
- * a long menu (a receiver filter, a long workspace list) ran off the window with nothing to scroll it by. The bar is
+ * **Capped at the room the popper measured on its side, and scrolled inside it**, as the select is:
+ * a long menu (a receiver filter, a long workspace list) would run off the window with nothing to scroll it by. The bar is
  * the theme's (`tokens.css`), and the keys still reach every row, since focusing one scrolls it into view.
  *
- * **Opened from the frame, it keeps the frame's size** (ZOOM1): the room the popper measured is the window's, so its cap is
+ * **Opened from the frame, it keeps the frame's size**: the room the popper measured is the window's, so its cap is
  * read back through the frame's zoom.
  */
 function MenuContent({ highlight = 'raised', className, children, ...props }: ComponentProps<typeof DropdownMenu.Content> & {
@@ -88,7 +88,7 @@ function MenuContent({ highlight = 'raised', className, children, ...props }: Co
 
 /**
  * An act, with no selected state. A toggle is a `CheckboxItem` and a choice among rows a `RadioItem` in a `RadioGroup`,
- * each with `aria-checked`, so the current choice is heard as well as drawn (UXFIX1c). `tick={false}` reserves their
+ * each with `aria-checked`, so the current choice is heard as well as drawn. `tick={false}` reserves their
  * column for alignment; a plain act cannot draw a selected tick.
  */
 function MenuRow({ tick, className, children, ...props }: ComponentProps<typeof DropdownMenu.Item> & { tick?: false }) {
@@ -134,7 +134,7 @@ function MenuSeparator({ className, ...props }: ComponentProps<typeof DropdownMe
 }
 
 /**
- * A row that opens a menu to its side (UX7a, D152 §3.3): View's *Theme* and *Language*, on hover or →. Its tick column
+ * A row that opens a menu to its side: View's *Theme* and *Language*, on hover or →. Its tick column
  * is kept, so its name lines up with the rows around it, and the chevron says it opens rather than acts.
  */
 function MenuSubRow({ className, children, ...props }: ComponentProps<typeof DropdownMenu.SubTrigger>) {
@@ -167,7 +167,7 @@ function MenuSubContent({ className, children, ...props }: ComponentProps<typeof
 }
 
 /**
- * One act a menu offers (CTX1, D138): its name, its glyph, and what choosing it does. A surface's ⋯ and its right-click
+ * One act a menu offers: its name, its glyph, and what choosing it does. A surface's ⋯ and its right-click
  * draw the same list, so the two never offer a different set.
  */
 export type MenuAct = {
@@ -185,7 +185,7 @@ export type MenuAct = {
 };
 
 /**
- * A list of acts as a menu's rows (CTX1): its glyph in a column of its own, so the names line up whether or not each act
+ * A list of acts as a menu's rows: its glyph in a column of its own, so the names line up whether or not each act
  * has one, then its name. A copy goes to `onCopy`, the menu owner's.
  */
 function MenuActRows({ acts, onCopy }: { acts: readonly MenuAct[]; onCopy?: (text: string) => void }) {
@@ -211,14 +211,14 @@ function MenuActRows({ acts, onCopy }: { acts: readonly MenuAct[]; onCopy?: (tex
 }
 
 /**
- * **The menu** (MENU1): every dropdown in the window, on Radix's dropdown menu, as `SelectField` is every select. Its
+ * **The menu**: every dropdown in the window, on Radix's dropdown menu, as `SelectField` is every select. Its
  * parts are Radix's names, so a menu reads as one did before it had an atom, and every pixel is here: the surface,
  * the cap, the row's density and look, the tick's column, a label and a rule.
  *
  * @remarks
  * Eight files had each styled the primitive on their own, and none capped its height, so a long menu ran off the
  * window. `primitives.test.ts` now holds that no file but the atoms imports a primitive. The sub-menu came with the menu
- * bar's View (UX7a), whose *Theme* and *Language* each open one. `Acts` draws a surface's acts (CTX1), as its ⋯ and the
+ * bar's View, whose *Theme* and *Language* each open one. `Acts` draws a surface's acts, as its ⋯ and the
  * right-click menu both do.
  */
 export const Menu = {

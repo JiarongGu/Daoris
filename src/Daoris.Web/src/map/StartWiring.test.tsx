@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { StartWiringList } from './StartWiring';
 import type { StartWiring } from './wiring';
 
-// MAP1b (D67 §3): what a start in each workspace would run on, and which setting chose each part —
+// What a start in each workspace would run on, and which setting chose each part —
 // the driver's answer, drawn. The account's name is the roster's to give, so it arrives as a function.
 
 const start = (extra: Partial<StartWiring> = {}): StartWiring => ({
@@ -29,7 +29,7 @@ describe('what a start runs on', () => {
 
   /**
    * Nothing set is a real answer: the tool's own account, named as the roster names it on the same
-   * page (UX5 U53, where it read "the agent's own sign-in"), and whatever PATH has.
+   * page, and whatever PATH has.
    */
   it('names the tool\'s own account as the roster does, and PATH, when nothing is set', () => {
     render(<StartWiringList
@@ -49,7 +49,7 @@ describe('what a start runs on', () => {
     expect(screen.getByText('the command driver.json names')).toBeInTheDocument();
   });
 
-  /** D46 §3: the driver's sentence names what to run, so it is shown whole and untranslated. */
+  /** The driver's sentence names what to run, so it is shown whole and untranslated. */
   it('shows a held start with the driver\'s own sentence', () => {
     const refusal = '`claude-code` is pinned to 9.9.9 on this machine, and nothing is installed at that version.';
     render(<StartWiringList starts={[start({ refusal })]} nameOf={nameOf} />);
@@ -69,7 +69,7 @@ describe('what a start runs on', () => {
   });
 
   /**
-   * AGT6: once an agent is named for the intake, a circle has two jobs, and each row says which it
+   * Once an agent is named for the intake, a circle has two jobs, and each row says which it
    * is — two rows reading "a start in aurora" with different agents would be one fact contradicting
    * itself.
    */

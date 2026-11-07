@@ -7,7 +7,7 @@ import { PLACE_DOMAINS, PLACE_PARTS } from './places';
 import { attendedOf, type HelpWhere, itemOf, prefaceOf } from './where';
 import { said as saidWords } from '../test/said';
 
-// HELP1b (D89): where the person is, as the helper is told it ahead of their words.
+// Where the person is, as the helper is told it ahead of their words.
 
 describe('where the person is', () => {
   it('names the view and the workspace in scope', () => {
@@ -20,37 +20,36 @@ describe('where the person is', () => {
   it('names the settings domain on Settings', () => {
     expect(prefaceOf({ view: 'settings', workspace: null, settings: 'driver' }))
       .toBe('Where the person is now: Settings → Driver, every workspace.');
-    // UX6j (D150 §2.3): the guide is Get started again, since Setup names a repository's and a workspace's tab.
+    // The guide is Get started again, since Setup names a repository's and a workspace's tab.
     expect(prefaceOf({ view: 'settings', workspace: null, settings: 'start' }))
       .toBe('Where the person is now: Settings → Get started, every workspace.');
   });
 
   /**
-   * NAME1b: the agent names back the place the person is in, so it is told each place by the window's own
+   * The agent names back the place the person is in, so it is told each place by the window's own
    * English name — the one the activity bar and Settings' domain list show — never a name of its own.
    */
   it("names every view and every domain as the window's English does", () => {
-    // Knowledge is named with its mode, below; the twin's Search and Convergence are its two modes (UX6i).
+    // Knowledge is named with its mode, below; the twin's Search and Convergence are its two modes.
     for (const view of VIEWS.map((each) => each.view).filter((name) => name !== 'settings' && name !== 'knowledge')) {
       expect(prefaceOf({ view, workspace: null }), view)
         .toBe(`Where the person is now: the ${en[`nav.${view}`]} view, every workspace.`);
     }
-    // Agents left Settings for a place of its own (UX6e), which the views above name since the twins moved it (UX6e2);
-    // Workspace and Permissions left for a workspace's page (UX6g), and Plugins for its place (UX6j), and since UX6g2b the
-    // twins name only the domains Settings shows.
+    // Agents have a place of its own, which the views above name; Workspace and Permissions are on a workspace's
+    // page, and Plugins have their place, so the twins name only the domains Settings shows.
     for (const domain of PLACE_DOMAINS) {
       expect(prefaceOf({ view: 'settings', workspace: null, settings: domain }), domain)
         .toBe(`Where the person is now: Settings → ${en[`settings.domain.${domain}`]}, every workspace.`);
     }
   });
 
-  /** UX6i (D150 §2.2): Knowledge is one place in two modes, and the helper is told which, by the names its choice shows. */
+  /** Knowledge is one place in two modes, and the helper is told which, by the names its choice shows. */
   it("names Knowledge's mode, by the names its list's choice shows", () => {
     expect(prefaceOf({ view: 'knowledge', workspace: null, knowledge: 'convergence' }))
       .toBe(`Where the person is now: the ${en['nav.knowledge']} view, showing ${en['nav.convergence']}, every workspace.`);
     expect(prefaceOf({ view: 'knowledge', workspace: 'aurora', knowledge: 'search' }))
       .toBe('Where the person is now: the Knowledge view, showing Search, workspace `aurora`.');
-    // Each mode a go may name is one the preface names: since UX6i2a a mode is a part within Knowledge, not a view, and the
+    // Each mode a go may name is one the preface names: a mode is a part within Knowledge, not a view, and the
     // two are held here so the loop can never run over nothing again.
     const modes = PLACE_PARTS.filter(({ within }) => within === 'knowledge').map(({ part }) => part as KnowledgeMode);
     expect(modes).toEqual(['search', 'convergence']);
@@ -87,9 +86,9 @@ describe('where the person is', () => {
   });
 
   /**
-   * ANSWER1f (D131's ANSWER1c note): a park the person answered stays `awaiting-person` until the driver's next look
-   * (ANSWER1b), and the same session goes on with the answer then. The helper is told so, as the session list says it,
-   * never that it waits on the person. No word of the person's waiting is no answer, as `answeredPark` reads it (ONEWAY1m).
+   * A park the person answered stays `awaiting-person` until the driver's next look,
+   * and the same session goes on with the answer then. The helper is told so, as the session list says it,
+   * never that it waits on the person. No word of the person's waiting is no answer, as `answeredPark` reads it.
    */
   it('names an answered park as going on with the answer at the next look, never as waiting on the person', () => {
     const sessions = [
@@ -110,7 +109,7 @@ describe('where the person is', () => {
   });
 
   /**
-   * HELP2: the helper cannot see the window, and asked what the panel held it guessed (DOCK1d's look).
+   * The helper cannot see the window, and asked what the panel held it guessed.
    * On Sessions it is told where the views stand and which region is showing.
    */
   it('says which views each region holds, and whether it is showing', () => {
@@ -124,18 +123,18 @@ describe('where the person is', () => {
       layout: { right: ['timeline', 'review', 'ask', 'console'], panel: [], rightShown: false, panelShown: true },
     })).toBe('Where the person is now: the Sessions view, every workspace. The right side bar holds the timeline, the review, '
       + 'Ask Daoris and the console, and is closed; the panel holds nothing.');
-    // On every view, since the frame is (DOCK1a); only a caller with no frame leaves it out.
+    // On every view, since the frame is; only a caller with no frame leaves it out.
     expect(prefaceOf({ view: 'quests', workspace: null, layout: { right: ['ask'], panel: ['console'], rightShown: true, panelShown: true } }))
       .toBe('Where the person is now: the Quests view, every workspace. The right side bar holds Ask Daoris, and is open; '
         + 'the panel holds the console, and is showing.');
     expect(prefaceOf({ view: 'quests', workspace: null })).toBe('Where the person is now: the Quests view, every workspace.');
-    // The person's own terminal (CONSOLE4b), by the name its tab carries.
+    // The person's own terminal, by the name its tab carries.
     expect(prefaceOf({ view: 'quests', workspace: null, layout: { right: ['ask'], panel: ['console', 'terminal'], rightShown: true, panelShown: true } }))
       .toBe('Where the person is now: the Quests view, every workspace. The right side bar holds Ask Daoris, and is open; '
         + 'the panel holds the console and the terminal, and is showing.');
   });
 
-  /** FRAME1i-a (D118): the item a view has chosen, by the id a go names, only while the screen shows it. */
+  /** The item a view has chosen, by the id a go names, only while the screen shows it. */
   it('names the item a view has chosen, one case per kind, and says nothing with none', () => {
     const at = (view: Parameters<typeof prefaceOf>[0]['view'], kind: NonNullable<HelpWhere['item']>['kind'], id: string) =>
       prefaceOf({ view, workspace: null, item: { kind, id } });
@@ -155,7 +154,7 @@ describe('where the person is', () => {
       .toContain('looking at quest `abc123`. The right side bar');
   });
 
-  /** FLOWCHART2d: a draft open in the editor is said where the person is, ahead of anything the driver's bound could cut. */
+  /** A draft open in the editor is said where the person is, ahead of anything the driver's bound could cut. */
   it('says a workflow draft is open, early enough that the preface bound keeps it', () => {
     const draft = { workflow: 'release-flow', place: 'engine', base: 2, steps: 9, problems: 1, selected: 'find' };
     expect(prefaceOf({ view: 'projects', workspace: 'aurora', item: { kind: 'repository', id: 'engine' }, draft })).toBe(
@@ -183,7 +182,7 @@ describe('where the person is', () => {
     expect(itemOf('plugins', 'acme.gate', 'live')).toEqual({ kind: 'plugin', id: 'acme.gate' });
     for (const standing of ['gone', 'unread', undefined] as const) expect(itemOf('quests', 'abc123', standing)).toBeNull();
     expect(itemOf('quests', null, 'live')).toBeNull();
-    // An offer is not an installed plugin (left to PLUGUI1h); Knowledge and Settings keep what they say today.
+    // An offer is not an installed plugin; Knowledge and Settings keep what they say today.
     expect(itemOf('plugins', 'offer:acme.gate', 'live')).toBeNull();
     expect(itemOf('knowledge', 'x', 'live')).toBeNull();
     expect(itemOf('settings', 'x', 'live')).toBeNull();

@@ -3,7 +3,7 @@ import { buildTree, defaultOpen, layoutCode, ROOT } from './codeClusters';
 import { CYCLE_ACROSS_FOLDERS } from './codeFixtures';
 import { foldGroup } from './codeFolds';
 
-// CANVAS1f (the canvas design §4): one folder folded alone, its siblings and the folders above it left open.
+// One folder folded alone, its siblings and the folders above it left open.
 
 const mod = (id: string, path: string) => ({ id, path, summary: '' });
 const tree = buildTree(

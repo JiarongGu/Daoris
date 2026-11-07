@@ -40,27 +40,27 @@ export function useOpener({ machineRegistry, chooseKnowledgeMode, agentsModes, l
   circle: string | null;
 }) {
   /**
-   * **The application's one opener** (D118 §3i): every door into a view calls it, naming the item it opens,
-   * and the view's list has that item chosen (§3f). `opener.ts` plans it as a value; this applies it.
-   * Settings opens at the domain a door names, at the part it names (D75, UX5 U72): the tier opens Daoris's
-   * own AI, the remote Workspace, the driver Driver, where each once opened the whole page at its top.
+   * **The application's one opener**: every door into a view calls it, naming the item it opens,
+   * and the view's list has that item chosen. `opener.ts` plans it as a value; this applies it.
+   * Settings opens at the domain a door names, at the part it names: the tier opens Daoris's
+   * own AI, the remote Workspace, the driver Driver, never the whole page at its top.
    */
   const apply = (planned: Opening) => {
-    // A door naming a repository's place is resolved to the place's id (AGENTSPLACE1f).
+    // A door naming a repository's place is resolved to the place's id.
     const plan = placeOpening(planned, (repository) => {
       const row = (machineRegistry.data ?? []).find((each) => each.repository === repository);
       return row ? workspaceOf(row) : DEFAULT_WORKSPACE;
     });
-    // Knowledge's mode first (UX6i): a switch reads that mode's remembered choice again, and an item a door names in it
+    // Knowledge's mode first: a switch reads that mode's remembered choice again, and an item a door names in it
     // is then chosen now, never a remembered choice.
     if (plan.knowledge) chooseKnowledgeMode(plan.knowledge);
     if (plan.agentsMode) agentsModes.onMode(plan.agentsMode);
-    // SETUPUX1h: a door to a place names the section and the row it opens at.
+    // A door to a place names the section and the row it opens at.
     if (plan.place) agentsModes.onPlaceAt(plan.place, plan.placeAt ?? {});
-    // Ask Daoris's place card (AGENTSPLACE1k): the place's *Set up…* opens on the ask, once the Agents place has the place chosen.
+    // Ask Daoris's place card: the place's *Set up…* opens on the ask, once the Agents place has the place chosen.
     if (plan.place && plan.setUp) agentsModes.onSeed(plan.place, plan.setUp);
     if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
-    // A view opened by a door that names nothing reopens what its list chose only while it still waits (UX6b, D150 §8):
+    // A view opened by a door that names nothing reopens what its list chose only while it still waits:
     // the list reads it again, and lets go of one that closed or went. A door that names an item has it chosen above.
     // Knowledge's chosen item is its mode's list's.
     else if (plan.view !== view && isListed(plan.view)) {
@@ -84,12 +84,12 @@ export function useOpener({ machineRegistry, chooseKnowledgeMode, agentsModes, l
     // A door naming a code map opens the Map on it; any other way onto the Map opens the workspace, as it always has.
     if (plan.code !== undefined) setMapCode(plan.code);
     else if (plan.view !== view) setMapCode(null);
-    // A list laid over the main area is never kept: another view lets it go (§3f).
+    // A list laid over the main area is never kept: another view lets it go.
     if (plan.view !== view) closings.setListOver(false);
     setTab(plan.view);
     store(VIEW, plan.view === 'sessions' ? 'sessions' : null);
   };
-  // A door naming a workspace's page and no workspace opens the one in view (UX6g).
+  // A door naming a workspace's page and no workspace opens the one in view.
   const open = (target: View, item?: string | null, part?: OpenPart) => apply(plannedOpening(target, item, part, circle));
 
   /** A domain chosen in Settings' own list opens at its top: an anchor its part never answered is dropped. */

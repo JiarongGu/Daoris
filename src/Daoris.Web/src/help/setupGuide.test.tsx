@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// SETUP1a (D97): Settings → Get started on the desktop, the bridge mocked as present, so the steps are
+// Settings → Get started on the desktop, the bridge mocked as present, so the steps are
 // read off the machine the driver describes — the same reading Ask Daoris's starters make.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
@@ -116,7 +116,7 @@ describe('Get started, on the desktop', () => {
       .toBeInTheDocument();
   });
 
-  /** SETUP1b: *Don't open at start* is the viewer's own convenience, kept in this browser's storage. */
+  /** *Don't open at start* is the viewer's own convenience, kept in this browser's storage. */
   it('keeps "Don\'t open at start" as this viewer\'s choice', async () => {
     show();
 
@@ -129,7 +129,7 @@ describe('Get started, on the desktop', () => {
     expect(window.localStorage.getItem(AT_START)).toBeNull();
   });
 
-  /** SETUP1b: the head hands Ask Daoris a first message, once it has an agent to run on. */
+  /** The head hands Ask Daoris a first message, once it has an agent to run on. */
   it('hands Ask Daoris the steps not yet done, once it has an agent', async () => {
     machine({ ...FRESH, state: { ...FRESH.state, helperAgent: 'claude-code-acp' } });
     const onAskSetup = vi.fn();
@@ -142,7 +142,7 @@ describe('Get started, on the desktop', () => {
 });
 
 /**
- * SETUP1b (D97 §2): a machine missing any of the first three steps opens on Get started at start —
+ * A machine missing any of the first three steps opens on Get started at start —
  * once per start, when the machine has been read, and never pulling the person from where they went.
  */
 describe('opening at start', () => {
@@ -187,7 +187,7 @@ describe('opening at start', () => {
     expect(open).not.toHaveBeenCalled();
   });
 
-  /** Storage is a convenience: refused, the guide still opens as though nothing was chosen. */
+  /** Storage is a convenience: refused, the guide still opens as though nothing had been chosen. */
   it('opens where storage is refused, as though nothing was chosen', () => {
     const refuse = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('refused'); });
     try {

@@ -3,9 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// COMPANYVIEW1b (the company-view design §1, §3, §3.1): the Agents place's Roles mode, beside Agents, switched by the list's head. Its
-// five sections, Working roles the one built, and the working roles' presses reaching their one door (`SET_ROLE`, ONEWAY1a) from here.
-// The roles' tests moved from AI features' suite with the card they test (`settings/AiDomain.test.tsx` until COMPANYVIEW1b).
+// The Agents place's Roles mode, beside Agents, switched by the list's head. Its
+// five sections, Working roles the one built, and the working roles' presses reaching their one door (`SET_ROLE`) from here.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -120,7 +119,7 @@ describe('The Agents place, Roles mode', () => {
     show(<Place />);
     const user = userEvent.setup();
     expect(await screen.findByRole('radio', { name: 'Agents' })).toBeChecked();
-    // The Agents mode is as it was: the list of agents.
+    // The Agents mode stays: the list of agents.
     expect(await screen.findByRole('list', { name: 'Agents' })).toBeTruthy();
 
     await openRoles();
@@ -201,7 +200,7 @@ describe('The Agents place, Roles mode', () => {
     expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('saved'));
   });
 
-  /** The editor is the mode's, held above the card (D168 point 3): a refresh of the roles read does not close it. */
+  /** The editor is the mode's, held above the card: a refresh of the roles read does not close it. */
   it('keeps an open editor while the roles are read again', async () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     catalogue = 'seeded';
@@ -232,7 +231,7 @@ describe('The Agents place, Roles mode', () => {
     await i18n.changeLanguage('en');
   });
 
-  // AGENTSPLACE1g2: *Use these choices* is one press over SET_ROLES, said once; a refusal is the driver's sentence and every role is refused.
+  // *Use these choices* is one press over SET_ROLES, said once; a refusal is the driver's sentence and every role is refused.
   describe.each([[false], [true]])('the suggested choices pressed, refused %s', (refused) => {
     it('goes out as one SET_ROLES and says so, or says the driver\'s sentence', async () => {
       window.localStorage.setItem('daoris.list.agents.mode', 'setup');
@@ -298,7 +297,7 @@ describe('The Agents place, Roles mode', () => {
     expect(await screen.findByText(/a role must take it on the machine/)).toBeTruthy();
   });
 
-  /** Ask Daoris's row says what it runs on and how, under its order (it said so beside its access on AI features before COMPANYVIEW1b). */
+  /** Ask Daoris's row says what it runs on and how, under its order. */
   it("says under Ask Daoris's row what it runs on, and with full access where the driver says so", async () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     const answer = invoke.getMockImplementation()!;
@@ -323,7 +322,7 @@ describe('The Agents place, Roles mode', () => {
   });
 });
 
-/** Intake's row (MODELROLE1d, D205 §7): its order set in its editor over SET_ROLE (ONEWAY1a), off in its own words, with what an intake runs as. */
+/** Intake's row: its order set in its editor over SET_ROLE, off in its own words, with what an intake runs as. */
 describe('Intake in the Roles mode', () => {
   const start = (job: 'work' | 'intake', adapter: string) => ({
     job, workspace: 'default', adapter, owner: 'claude-code', product: 'Claude Code',

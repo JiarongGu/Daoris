@@ -25,7 +25,7 @@ export type HitsAnswer =
     hits: Hit[];
     /** The service capped them: there are more than these. */
     more: boolean;
-    /** The answer was made by meaning too (TIER1). */
+    /** The answer is made by meaning too. */
     byMeaning: boolean;
     /** Neither half answered, which is not nothing matching. */
     nothing: boolean;
@@ -34,22 +34,22 @@ export type HitsAnswer =
   };
 
 /**
- * **Search's list** (FRAME1f, D118 §2): the box, *each repository's own only*, and the hits. A hit is a row of the list,
- * and choosing one reads its entry in the main area, where it was a drawer (audit SR4).
+ * **Search's list**: the box, *each repository's own only*, and the hits. A hit is a row of the list,
+ * and choosing one reads its entry in the main area.
  *
  * @remarks
- * **A molecule**: what was typed and what was answered arrive, and every keystroke and press goes out.
+ * **A molecule**: what is typed and what is answered arrive, and every keystroke and press goes out.
  *
- * - **The box is the list's search** (D118 §3a, §3e): ↓ goes from it into the hits, as VS Code's filter boxes hand it
- *   on, ↑ and ↓ move between them, Home and End go to either end, and Escape clears what was typed, as the session
+ * - **The box is the list's search**: ↓ goes from it into the hits, as VS Code's filter boxes hand it
+ *   on, ↑ and ↓ move between them, Home and End go to either end, and Escape clears what is typed, as the session
  *   list's does. The clearing control is the platform's own: `type="search"` brings Chromium's native one, which
  *   WebView2 paints in Windows' accent, a blue ✕ in a palette with no blue; that one is hidden in `tokens.css`.
- * - **Loading is §4's** (audit SR11): a first answer is skeleton rows, with its words on the line the count takes;
+ * - **Loading is skeleton rows**: a first answer is skeleton rows, with its words on the line the count takes;
  *   a newer search holds the last answer at reduced opacity, so the list never jumps between two answers as the
  *   person types.
  * - **How many, and whether that is all**: a capped list with nothing saying so is the one answer a search must
  *   never give quietly.
- * - **An empty answer is an empty state** in the tier's own words, with the way to Convergence (UX5 U41); nothing
+ * - **An empty answer is an empty state** in the tier's own words, with the way to Convergence; nothing
  *   answering is said apart from nothing matching.
  */
 export function HitList({
@@ -62,7 +62,7 @@ export function HitList({
   answer: HitsAnswer;
   /** The query whose terms are marked in each excerpt. */
   marked: string;
-  /** This deployment matches meaning too (D24): a hit found by words alone is then said to be. */
+  /** This deployment matches meaning too: a hit found by words alone is then said to be. */
   semantic: boolean;
   /** The list's chosen item: an entry's id. */
   chosen: string | null;
@@ -82,12 +82,12 @@ export function HitList({
           <input
             type="search"
             value={query}
-            // The view is for finding: arriving on it is arriving to type (audit SR8).
+            // The view is for finding: arriving on it is arriving to type.
             autoFocus
             aria-label={t('search.box')}
             placeholder={t('search.placeholder')}
             onChange={(event) => onQuery(event.target.value)}
-            // Escape clears a search, and one with nothing in it is left to the list laid over (D118 §3a).
+            // Escape clears a search, and one with nothing in it is left to the list laid over.
             onKeyDown={(event) => { if (!isComposing(event) && event.key === 'Escape' && query) { event.preventDefault(); onQuery(''); } }}
             className="min-h-6 min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
           />
@@ -144,7 +144,7 @@ export function HitList({
                 key={hit.id}
                 aria-label={hit.title}
                 data-list-row=""
-                // A hit is a document's link: a right-click opens it or copies its path (CTX1, D138 §4).
+                // A hit is a document's link: a right-click opens it or copies its path.
                 {...contextOffer({
                   label: hit.title,
                   acts: [
@@ -165,7 +165,7 @@ export function HitList({
                   )}
                   {/* The matched terms, MARKED: the service centres the excerpt on the first match, since a result
                       that cannot show its reasoning gets treated as an oracle. Plain text around each mark, never a
-                      span, whose edge dropped a space from the row's accessible name (RAIL1). */}
+                      span, whose edge would drop a space from the row's accessible name. */}
                   {hit.excerpt && (
                     <span className="mt-0.5 line-clamp-3 block text-small text-ink-soft">
                       {mark(hit.excerpt, marked).map((run, index) => (run.hit

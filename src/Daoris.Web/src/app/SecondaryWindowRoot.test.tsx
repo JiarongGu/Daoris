@@ -3,7 +3,7 @@ import { act, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// NOTIFY2b (the notification design §3.3): a secondary window (a detached session, the monitor) holds no *Notifications*, so a
+// A secondary window (a detached session, the monitor) holds no *Notifications*, so a
 // terminal's press heard while it is the window in front is said there by a toast naming where it waits, with no door; and nothing
 // while it is not in front.
 

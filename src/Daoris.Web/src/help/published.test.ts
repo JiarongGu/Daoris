@@ -4,7 +4,7 @@ import { PUBLISHED } from '../asks/fixtures';
 import { DONE, OPEN, TAKEN, WORKING } from '../quests/fixtures';
 import { type HelpPublishedEntry, publishedCounts, publishedItems } from './published';
 
-// ASKQUESTS1 (the Ask Daoris design §9 item 12): what a conversation published, each with its live state read from the lists the
+// What a conversation published, each with its live state read from the lists the
 // shell pushes, never polled. A list not answered yet is reading, never empty, and a record it no longer holds is gone.
 
 const entry = (over: Partial<HelpPublishedEntry>): HelpPublishedEntry => ({

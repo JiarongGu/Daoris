@@ -19,7 +19,7 @@ import { graphIdentity } from './viewMemory';
 import type { Box, Size, View } from './viewMath';
 import type { WorldRead } from './worldBoxes';
 
-// A large positioned world in the canvas (CANVAS1d; D224, the canvas design §4): the scene laid out inline or in a worker under its
+// A large positioned world in the canvas: the scene laid out inline or in a worker under its
 // revision, the world drawn by tier, culled past 400 nodes, grouped worlds past 1,000 as an overview that opens one group at a time,
 // with find, the minimap, the viewer's remembered place and the list a reader or a narrow window gets.
 
@@ -76,7 +76,7 @@ export function PositionedCanvas({ scene, label, feature, storeKey, version = ''
   const rem = useRootRem();
   const wide = width !== undefined && width >= CANVAS_FLOOR * rem - 0.5;
 
-  // The drawing keeps the scene it was laid out for until the next layout arrives: a newer scene's answer replaces it, a stale one is dropped.
+  // The drawing keeps the scene it is laid out for until the next layout arrives: a newer scene's answer replaces it, a stale one is dropped.
   const [held, setHeld] = useState<{ scene: Scene; layout: Layout } | null>(null);
   const client = useMemo(() => createLayoutClient(spawnLayoutWorker()), []);
   useEffect(() => () => client.dispose(), [client]);

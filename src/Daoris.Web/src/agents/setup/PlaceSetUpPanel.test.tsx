@@ -3,11 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// AGENTSPLACE1j (the Agents-place design §4, §5's first flows): *Set up…* on a place's page reads one plan from the driver, says every
+// *Set up…* on a place's page reads one plan from the driver, says every
 // refusal in place, and presses Apply as the person's own with the plan's digest and the acceptances chosen. Seen failing first.
-// SETUPUX1j (the setup-UX design §2.2): Keep how it lands is offered and sent, mixed suggestions preselect nothing, and a refusal's door
+// Keep how it lands is offered and sent, mixed suggestions preselect nothing, and a refusal's door
 // repairs its cause and returns, the plan read again.
-// SETUPUX1k (the setup-UX design §2.2, §3 flow 1): the choices end at *Review the plan*; the review applies, says what holding did per repository,
+// The choices end at *Review the plan*; the review applies, says what holding did per repository,
 // clears a tick whose declaration changed, waits while a plan is read, says `moved` in the driver's words, ends flow 1 as *Not driven · adoption
 // running*, opens the adoption quest by a door, and is where a seed from Ask Daoris opens.
 
@@ -236,7 +236,7 @@ describe('Set up…, on a place\'s page', () => {
     await review();
     await userEvent.click(await screen.findByRole('checkbox', { name: /Accept for integration/ }));
     expect(screen.getByRole('checkbox', { name: /Accept for integration/ })).toBeChecked();
-    // The blob moves while the person reads; the next plan read is of another ask, and the tick it was made at no longer holds.
+    // The blob moves while the person reads; the next plan read is of another ask, and the tick made against the earlier blob does not hold.
     blob = 'ffffffffffffffffffffffffffffffffffffffff';
     await userEvent.click(screen.getByRole('button', { name: '← Back to the choices' }));
     await userEvent.click(screen.getByRole('checkbox', { name: 'Your look before it lands' }));
@@ -363,7 +363,7 @@ describe('Set up…, on a place\'s page', () => {
     expect(asked[0]!.closest('li')).toHaveTextContent('(engine, site)');
   });
 
-  // AGENTSPLACE1k, SETUPUX1k: Ask Daoris's place card hands the application a seeded set-up; the page opens on its review, and the plan it reads is that ask's.
+  // Ask Daoris's place card hands the application a seeded set-up; the page opens on its review, and the plan it reads is that ask's.
   it('opens seeded from an ask Ask Daoris proposed on its review, and plans that ask rather than the suggestion', async () => {
     const ask: PlaceAsk = { repositories: ['engine'], preset: 'pull-request', opinion: true, look: false, adoption: true, builds: 'service', drive: false };
     show(<SeededPlace ask={ask} place="repo:aurora/engine" />);
@@ -372,7 +372,7 @@ describe('Set up…, on a place\'s page', () => {
     expect(await screen.findByRole('heading', { name: 'Review: set up engine' })).toBeTruthy();
     expect(screen.queryByRole('radiogroup', { name: 'How it lands' })).toBeNull();
     await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toEqual(ask));
-    // Nothing was pressed: the seed plans only, and Apply stays the person's.
+    // Nothing is pressed: the seed plans only, and Apply stays the person's.
     expect(sent('PLACE_APPLY')).toEqual([]);
     // Back to the choices finds the ask as seeded.
     await userEvent.click(screen.getByRole('button', { name: '← Back to the choices' }));

@@ -11,7 +11,7 @@ import type { MapSelection } from './MapLines';
 import { MapWorld } from './MapWorld';
 import type { MapNode, QuestEdge, Topology } from './topology';
 
-// The reference map on the canvas (CANVAS1e; D224, the canvas design §3.3): a ring of five, the layers of twenty-nine, several workspaces
+// The reference map on the canvas: a ring of five, the layers of twenty-nine, several workspaces
 // as blocks, a chosen line, the map as a list, and a kept place whose selection is gone, at the main area's 80, 39 and 25rem, in English and 中文 and both themes. At 25rem, below the 36rem
 // floor, the map is drawn where it fits and pans in its pane. Keyboard: Tab reaches the toolbar, the region, then the world's one stop;
 // → walks from a card to its first line out and on to the card beyond, ← back by the line it came by, ↑ and ↓ cycle the lines at a card.
@@ -71,7 +71,7 @@ function MapStory({ topology, line = null, storeKey = 'story', inPlace = false }
 }
 
 /**
- * A place kept by this viewer under the map as it was, with a repository selected that has since left it: written before the map
+ * A place kept by this viewer under the map as it stands, with a repository selected that has since left it: written before the map
  * opens, once per mount, and taken away after, so the canvas restores it and says the selection is gone.
  */
 function KeptWithAGoneSelection({ children }: { children: ReactNode }) {
@@ -119,7 +119,7 @@ export const ALineChosen: Story = { args: { line: { kind: 'quests', from: 'repo-
 export const ALineChosenRing: Story = { args: { topology: RING, line: { kind: 'quests', from: 'game', to: 'engine' } }, decorators: [storyWidths.half] };
 
 /**
- * Each zoom says less about the same cards (MAPUX1a): at 100% a name, its count and the session in words; at 50% the name and count; at
+ * Each zoom says less about the same cards: at 100% a name, its count and the session in words; at 50% the name and count; at
  * 25% a dot, the ring kept, and the chosen card's name beside it. The anchor keeps the view on the first repository.
  */
 const atZoom = (k: number) => keptAtZoom('map', 'story', k, 'repo-00');
@@ -148,7 +148,7 @@ export const AsListChineseDark: Story = { play: asList, decorators: [storyWidths
 export const AsListALineChosen: Story = { args: { line: { kind: 'quests', from: 'repo-03', to: 'repo-09' } }, play: asList };
 
 /**
- * Below the 36rem floor the list is the reading (MAPUX1e): one tree, one row in the tab order, each row's count and state in words, and
+ * Below the 36rem floor the list is the reading: one tree, one row in the tab order, each row's count and state in words, and
  * the chosen row's detail opening under it.
  */
 export const ListNarrowDetailInPlace: Story = { args: { line: { kind: 'node', id: 'repo-09' }, inPlace: true }, decorators: [storyWidths.narrow] };

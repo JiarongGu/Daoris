@@ -13,49 +13,48 @@ import type { Machine } from './machine';
 /**
  * Where the screen that fixes a starter, or does a setup step, is: a view, and in Settings its domain
  * and the card in it — or on Projects, the Workspace menu's drawer that adds a repository or imports a
- * folder (SETUP1a). Since FRAME1c it may name the item it opens in its view — a session, a quest, a
- * repository, a plugin — which the application's one opener chooses there (D118 §3i); since UX6e an agent
- * and the part of its page; since UX6g a workspace's page, its tab and the section of its Setup; since UX6i Knowledge's
- * mode, Search or Convergence.
+ * folder. It may name the item it opens in its view — a session, a quest, a repository, a plugin —
+ * which the application's one opener chooses there; for an agent, the part of its page; for a workspace,
+ * its page, its tab and the section of its Setup; for Knowledge, the mode, Search or Convergence.
  */
 export type StarterDoor = {
   view: View; item?: string; section?: SettingsSection; anchor?: SettingsAnchor; drawer?: 'add' | 'import';
-  /** The workspace the drawer opens filled with (ENTRY1d2b): Ask Daoris's go's. The folder is never a door's. */
+  /** The workspace the drawer opens filled with: Ask Daoris's go's. The folder is never a door's. */
   drawerWorkspace?: string;
-  /** The composer opened by a go to New conversation (NEW1d-b), with the repository it chooses and the words it opens with. */
+  /** The composer opened by a go to New conversation, with the repository it chooses and the words it opens with. */
   compose?: Compose;
-  /** A repository page's tab (UX6f). */
+  /** A repository page's tab. */
   tab?: ProjectTab;
-  /** The host Settings → Git opens its Add a git identity form on (GITAUTH1e): a sync card's door for a fetch that was not made. */
+  /** The host Settings → Git opens its Add a git identity form on: a sync card's door for a fetch that has not been made. */
   gitHost?: string;
-  /** The repository whose place the Agents place's Setup mode opens at, with the section and row of its page (SETUPUX1h). */
+  /** The repository whose place the Agents place's Setup mode opens at, with the section and row of its page. */
   placeOf?: string;
   placeSection?: PlaceSection;
   placeRow?: string;
   agentPart?: AgentPart;
-  /** The Agents place's mode (COMPANYVIEW1b): a door into Roles. */
+  /** The Agents place's mode: a door into Roles. */
   agentsMode?: AgentsMode;
   /** The part of This machine's page to open: a door to Appointed roles, or to All roles. */
   roleSection?: RoleDoor;
   /**
-   * A workspace page's tab and the Setup section to open (UX6g, D150 §4.3): a door into a workspace's defaults, its remote
+   * A workspace page's tab and the Setup section to open: a door into a workspace's defaults, its remote
    * or its clean-up. One that names no workspace in `item` opens the workspace in view.
    */
   workspaceTab?: WorkspaceTab;
   workspaceSection?: WorkspaceSection;
-  /** Knowledge's mode (UX6i): a door into Search or Convergence, which are Knowledge's two lists. */
+  /** Knowledge's mode: a door into Search or Convergence, which are Knowledge's two lists. */
   knowledge?: KnowledgeMode;
-  /** A group of Sessions' or Quests' list that waits on the person, brought into view (ENTRY1b); no item in it. */
+  /** A group of Sessions' or Quests' list that waits on the person, brought into view; no item in it. */
   group?: OpenGroup;
-  /** Ask Daoris's place card (AGENTSPLACE1k): the quick set-up the place's *Set up…* opens on. */
+  /** Ask Daoris's place card: the quick set-up the place's *Set up…* opens on. */
   setUp?: PlaceAsk;
-  /** A conversation's draft card (FLOWCHART2g): the place's Workflow, its editor opened on the draft the card is against. */
+  /** A conversation's draft card: the place's Workflow, its editor opened on the draft the card is against. */
   placeEdit?: PlaceEdit;
 };
 
 /**
- * One thing this machine lacks (HELP1d, D89): the sentence's key and its values, the screen that fixes
- * it, and the terminal command that does the same (D50) where one does.
+ * One thing this machine lacks: the sentence's key and its values, the screen that fixes
+ * it, and the terminal command that does the same where one does.
  */
 export type Starter = {
   id: 'waiting' | 'nothing-registered' | 'nothing-driven' | 'agent-signed-out' | 'no-line' | 'helper-off';
@@ -66,21 +65,21 @@ export type Starter = {
 
 /**
  * Ask Daoris's starters: what this machine lacks, in the order a setup goes — what waits on the person
- * first, since it is waiting now. Pure, so every machine is an argument (D24's no-model tier: the
+ * first, since it is waiting now. Pure, so every machine is an argument (the no-model tier: the
  * useful part with no agent at all).
  *
  * @remarks
  * A tool is signed out only on a **definite** `out` from the tool, with no named account signed in
- * either — the roster's own rule (SES3): `unknown` is not a lack anyone can act on.
+ * either — the roster's own rule: `unknown` is not a lack anyone can act on.
  *
- * The machine is `readMachine`'s, the one reading the setup guide's steps are made from too (D97).
+ * The machine is `readMachine`'s, the one reading the setup guide's steps are made from too.
  */
 export function starters(
   machine: Pick<Machine, 'repositories' | 'drivable' | 'tools' | 'waiting' | 'unnamedLines' | 'helper'>,
 ): Starter[] {
   const found: Starter[] = [];
 
-  // ENTRY1b: the sessions waiting on the person are Sessions' *Waiting on you*, which the door brings into view.
+  // The sessions waiting on the person are Sessions' *Waiting on you*, which the door brings into view.
   if (machine.waiting > 0) {
     found.push({ id: 'waiting', values: { count: machine.waiting }, door: { view: 'sessions', group: 'you' } });
   }
@@ -93,11 +92,11 @@ export function starters(
 
   for (const tool of machine.tools) {
     // No Daoris account signed in: none, or each a definite out (an `unknown` is not a lack). The tool's own
-    // sign-in does not count (D175, OWNSPACE1b-C).
+    // sign-in does not count.
     if (tool.present && tool.accounts.every((account) => account.login === 'out')) {
       found.push({
         id: 'agent-signed-out', values: { tool: tool.product ?? tool.name },
-        // The agent's page, at its accounts (UX6e, D150 §5): where an account is signed in.
+        // The agent's page, at its accounts: where an account is signed in.
         door: { view: 'agents', item: tool.name, agentPart: 'accounts' }, command: `daoris agent login ${tool.name}`,
       });
     }

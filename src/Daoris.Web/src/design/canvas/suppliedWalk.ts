@@ -1,7 +1,7 @@
 import { buildGrid, nearestWay, type Way } from './spatialGrid';
 import type { Box } from './viewMath';
 
-// The walk over a supplied world (CANVAS1e; the canvas design §2.4, §11): every card and every line is a stop, one of them holds the
+// The walk over a supplied world: every card and every line is a stop, one of them holds the
 // world's Tab stop. → from a card reaches its first line out and then the card beyond, ← the line it came by (else its first line in),
 // ↑ and ↓ cycle the lines at the end the walk came to, and on a card they go to the nearest card above or below.
 
@@ -24,7 +24,7 @@ export function createWalk({ order, boxes, lines, statics = new Set<string>() }:
   const out = (id: string) => lines.filter((each) => each.from === id);
   const into = (id: string) => lines.filter((each) => each.to === id);
   const isStop = (id: string) => !statics.has(id) && boxes.has(id);
-  /** The line each card was last reached by, so ← and → return by it. */
+  /** The line each card is last reached by, so ← and → return by it. */
   const came = new Map<string, string>();
   /** The card whose lines the walk is cycling, and which way they run from it. */
   let anchor: { node: string; into: boolean } | null = null;

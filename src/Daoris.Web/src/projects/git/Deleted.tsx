@@ -6,8 +6,8 @@ import type { RefActs } from './NewRef';
 type Step = { is: 'deleted' } | { is: 'undoing' } | { is: 'undone' } | { is: 'said'; sentence: string } | { is: 'unknown' };
 
 /**
- * **What a delete left, and its Undo** (GITAPP2d, D204; the git-writes design §6): kept by the list beyond the deleted row, which the
- * refreshed list no longer draws. *Undo* makes the branch again only where its name is free and puts its configuration back; the driver
+ * **What a delete left, and its Undo**: kept by the list beyond the deleted row, which the
+ * refreshed list does not draw. *Undo* makes the branch again only where its name is free and puts its configuration back; the driver
  * refuses it otherwise, in words, and a result it cannot tell is said and never retried.
  *
  * @remarks

@@ -8,16 +8,15 @@ import { anotherMainWindow, secondaryWindow } from '../work/window';
 
 export { CAPTION_ATTRIBUTE, CAPTION_SLOTS, type CaptionSlot } from '../work/strip/caption';
 
-// The window's own chrome, page side (SURF7 / D56). The strip that D56 built as a region becomes the
-// title bar: a drag on it moves the window, a still click does nothing, double-click maximizes it
-// (FRAME2), a strip at its very top resizes, and the room reserved at its right is handed to the OS
+// The window's own chrome, page side. The strip becomes the
+// title bar: a drag on it moves the window, a still click does nothing, double-click maximizes it,
+// a strip at its very top resizes, and the room reserved at its right is handed to the OS
 // as real caption buttons.
 //
-// **The window paints those buttons; the page only reserves and reports their rectangles** (D56 as
-// amended, which has the reason).
+// **The window paints those buttons; the page only reserves and reports their rectangles**.
 //
 // None of this exists in a browser. Every call goes through the bridge and simply rejects there, which
-// is why each one is fire-and-forget: a window command that fails is a window that was never ours.
+// is why each one is fire-and-forget: a window command that fails is a window that is not ours.
 
 /**
  * Where the page reserved each caption button, in CSS px relative to the viewport — which is exactly
@@ -51,7 +50,7 @@ export function captionRects(container: HTMLElement | null): CaptionButtonRect[]
 export const APPLICATION_NAME = 'Daoris (道衍)';
 
 /**
- * The page's title (MAINWINDOWS3): the application, and the workspace this window holds where one is chosen. Each main window
+ * The page's title: the application, and the workspace this window holds where one is chosen. Each main window
  * holds its own, so two of them on two workspaces would otherwise read alike wherever a title is read. A workspace's name is
  * the person's and is written as they wrote it; every workspace adds nothing, as the frame's bare name says today.
  */
@@ -60,7 +59,7 @@ export function windowTitle(workspace: string | null): string {
 }
 
 /**
- * Keep this page's title on the workspace its window holds (MAINWINDOWS3): the document's own, which a browser's tab shows. The
+ * Keep this page's title on the workspace its window holds: the document's own, which a browser's tab shows. The
  * desktop frame's title is its own (`WaitingBadge.Title`, the count before the name).
  */
 export function useWindowTitle(workspace: string | null) {
@@ -68,8 +67,8 @@ export function useWindowTitle(workspace: string | null) {
   useEffect(() => {
     const title = windowTitle(workspace);
     document.title = title;
-    // The frame wears the workspace after its own count and name (MAINWINDOWS3b): the kit raises no title event to the host. And
-    // the workspace the window holds, as data, from which the shell picks the window a notification opens (NOTIFY2c).
+    // The frame wears the workspace after its own count and name: the kit raises no title event to the host. And
+    // the workspace the window holds, as data, from which the shell picks the window a notification opens.
     if (isAvailable && secondaryWindow(globalThis.location?.search ?? '') === null) {
       tellFrameTitle(title, anotherMainWindow(globalThis.location?.search ?? ''), workspace);
     }
@@ -90,9 +89,8 @@ export function useWindowTitle(workspace: string | null) {
  * `WindowState.Normal` and the OS would drag the maximized-size window with stale restore bounds.
  *
  * **The theme is pushed, not polled.** Without it a runtime light↔dark switch leaves the DWM border
- * and the caption buttons in the old theme, because those are painted natively and never see the
- * page's CSS. The engine is told the viewer's choice too, for Chromium's own UI (`useEngineTheme`,
- * THEMESCHEME1).
+ * and the caption buttons in the stale theme, because those are painted natively and never see the
+ * page's CSS. The engine is told the viewer's choice too, for Chromium's own UI (`useEngineTheme`).
  */
 export function useWindowChrome() {
   const commands = useRef<WindowCommands | undefined>(undefined);
@@ -100,7 +98,7 @@ export function useWindowChrome() {
   const maximized = useWindowMaximized();
   // The bridge, not the driver: the caption room has to be right on the FIRST paint, and the
   // driver's answer arrives a round-trip later. Reserving it late would shift the strip's contents
-  // sideways once, which is the one thing reserving the room early was meant to avoid.
+  // sideways once, which is the one thing reserving the room early avoids.
   const { isAvailable } = useShenora();
   useEngineTheme();
 
@@ -149,10 +147,10 @@ export function useWindowChrome() {
       ? window.matchMedia('(prefers-color-scheme: dark)')
       : null;
 
-    // The theme the PAGE is in, which is the viewer's choice when there is one (D66) and the OS's
+    // The theme the PAGE is in, which is the viewer's choice when there is one and the OS's
     // when there is not — so pushed on either changing. Told only the OS, a window set to light on
     // a dark desktop would keep dark caption buttons over a light strip.
-    // Another main window, which a later launch opened (ONEINSTANCE1), is told by its name: the kit's
+    // Another main window, which a later launch opened, is told by its name: the kit's
     // `SET_THEME` reaches the first main window alone, and answers any other with no route.
     const named = anotherMainWindow(globalThis.location?.search ?? '');
     const push = named
@@ -174,7 +172,7 @@ export function useWindowChrome() {
     maximized,
     /**
      * A drag on the strip's own space has begun: hand off to the OS move loop. The strip calls it once
-     * a press travels past the drag distance, never on the press itself (FRAME2), so a still click on
+     * a press travels past the drag distance, never on the press itself, so a still click on
      * a maximized window leaves it maximized. Restores first when maximized, because that is what a
      * native caption drag does and what the host's refusal expects. The restored window goes back to
      * its own restore bounds rather than under the pointer: neither `TOGGLE_MAXIMIZE` nor `START_DRAG`
@@ -185,7 +183,7 @@ export function useWindowChrome() {
       else fire((commands) => commands.startDrag());
     }, [maximized]),
     onToggleMaximize: useCallback(() => fire((commands) => commands.toggleMaximize()), []),
-    /** A right-click on the strip's own space: the window's system menu, as a caption's (CTX1, D138 §4). */
+    /** A right-click on the strip's own space: the window's system menu, as a caption's. */
     onSystemMenu: useCallback(() => fire((commands) => commands.showSystemMenu()), []),
     /** The sliver above the strip: the frameless technique gives the top edge to the client. */
     onResizeTop: useCallback(() => fire((commands) => commands.startResize('top')), []),

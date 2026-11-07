@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// FRAME1g on the window (D118 §3a, §3f): Settings' list is a list pane the application holds, so its four
+// On the window: Settings' list is a list pane the application holds, so its four
 // doors — the strip's toggle, the View menu's item, Ctrl+B and a press on the Settings place — are Settings'
-// too, named for it, and its domain is remembered under the key it always was.
+// too, named for it, and its domain is remembered under the key `daoris.settings`.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -80,7 +80,7 @@ const widen = (width: number) => act(() => {
   window.dispatchEvent(new Event('resize'));
 });
 
-/** A menu opens from the keyboard in jsdom, the path D41 §6 requires anyway (see `AppMenu.test`). */
+/** A menu opens from the keyboard in jsdom, the path the platform language requires anyway (see `AppMenu.test`). */
 async function viewMenu() {
   const user = userEvent.setup();
   screen.getByRole('button', { name: 'View' }).focus();
@@ -105,7 +105,7 @@ describe("Settings' list, on the window", () => {
     expect(screen.getByRole('separator', { name: EDGE })).toHaveAttribute('aria-valuenow', '176');
     await waitFor(() => expect(screen.getByRole('button', { name: TOGGLE })).toHaveAttribute('aria-pressed', 'true'));
     await viewMenu();
-    // A toggle, said as one (UXFIX1).
+    // A toggle, said as one.
     expect(screen.getByRole('menuitemcheckbox', { name: /^Settings list/ })).toHaveAttribute('aria-checked', 'true');
   });
 
@@ -145,7 +145,7 @@ describe("Settings' list, on the window", () => {
     expect(window.localStorage.getItem('daoris.settings')).toBe('driver');
   });
 
-  /** D118 §3f: Settings keeps the key its domain was always remembered under, so nothing forgets itself. */
+  /** Settings keeps the key its domain is remembered under, so nothing forgets itself. */
   it('opens on the domain remembered under daoris.settings', async () => {
     window.localStorage.setItem('daoris.settings', 'driver');
     await settings();
@@ -157,9 +157,9 @@ describe("Settings' list, on the window", () => {
   });
 
   /**
-   * UX6j (D150 §2.3): Plugins left Settings for its place, and the one row of it Settings keeps, the plugins folder with
-   * its door to the place, is Driver's. Its domain, remembered from before, opens there rather than on a domain it never
-   * was; the seven domains hold no Plugins.
+   * Plugins live in their own place, and the one row of it Settings keeps, the plugins folder with
+   * its door to the place, is Driver's. A remembered Plugins domain opens there rather than on a domain that does not
+   * exist; the seven domains hold no Plugins.
    */
   it('opens a Plugins domain remembered from before it left at Driver, where its folder and its door are', async () => {
     window.localStorage.setItem('daoris.settings', 'plugins');

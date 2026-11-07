@@ -1,6 +1,6 @@
 import { type Box, type Point, type Size, toWorld, type View } from './viewMath';
 
-// The pure arithmetic of the canvas's pointer gestures (CANVAS1b; D224, the canvas design §2.4, §2.5): the box drawn to select, the pan
+// The pure arithmetic of the canvas's pointer gestures: the box drawn to select, the pan
 // at the viewport's edge while a connection is dragged, and where a rubber line starts.
 
 /** The box two screen points span, as the world rectangle it covers under `view` (the points are the viewport's own). */

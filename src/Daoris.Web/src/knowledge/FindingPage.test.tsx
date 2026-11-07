@@ -10,7 +10,7 @@ import { BODIES, CONVERGENT, RESTATEMENT } from './fixtures';
 import { FindingMainNotice, FindingPage } from './FindingPage';
 import type { EntryReading } from './records';
 
-// A finding's page as a molecule (FRAME1f, D118 §2): the finding and each entry's reading arrive, and nothing is held.
+// A finding's page as a molecule: the finding and each entry's reading arrive, and nothing is held.
 
 const show = (readings: Record<string, EntryReading>, finding = CONVERGENT) =>
   render(<Tooltip.Provider><FindingPage finding={finding} readings={readings} /></Tooltip.Provider>);
@@ -19,7 +19,7 @@ const read = (id: string): EntryReading => ({ state: 'read', entry: BODIES[id]! 
 
 describe("a finding's page", () => {
   /**
-   * The service's sentence is the contract (D21, D31): verbatim, its command as code, never a button that applies it;
+   * The service's sentence is the contract: verbatim, its command as code, never a button that applies it;
    * and it already says what kind of finding this is, so no gloss of the UI's sits beside it.
    */
   it("says the service's sentence first, verbatim, and adds no act", () => {
@@ -71,7 +71,7 @@ describe("Convergence's main area with no finding", () => {
   });
 });
 
-/** CTX1 (D138, design §4): each entry on a finding's page offers its own path on a right-click. */
+/** Each entry on a finding's page offers its own path on a right-click. */
 describe("a finding's entries on a right-click", () => {
   it('offers each entry’s path, in its own section', async () => {
     const copy = vi.fn();

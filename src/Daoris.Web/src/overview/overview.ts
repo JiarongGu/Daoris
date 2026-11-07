@@ -9,11 +9,11 @@ export interface IndexedRepository {
  * The repositories worth a bar, and how many were left out.
  *
  * @remarks
- * 🔴 **Written from the deployed application, which is the only place it shows** (D62). The
- * fixture the dev loop runs against holds two repositories, so the card was a chart of two rows and
- * looked finished. A real machine has fourteen: the card ran past the fold, its legend — the
- * paragraph that explains what the dot and "local" mean — was cut off below the window, and the
- * card beside it ended a screen earlier.
+ * 🔴 **Written from the deployed application, which is the only place it shows**. The
+ * fixture the dev loop runs against holds two repositories, so the card is a chart of two rows and
+ * looks finished. A real machine has fourteen: the card runs past the fold, its legend — the
+ * paragraph that explains what the dot and "local" mean — is cut off below the window, and the
+ * card beside it ends a screen earlier.
  *
  * **Ranked and capped, never scrolled.** A scroll region inside a card on a page that also scrolls
  * is two scrollbars for one gesture. The point of this card is *which repositories hold the most*,

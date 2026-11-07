@@ -5,7 +5,7 @@ import { aQuest } from '../quests/aQuest';
 import { ChainLine } from './ChainLine';
 import { buildChain } from './chain';
 
-// SESS2 H7: the chain above a session as one line of stops, the head's quest named *this quest*, and
+// The chain above a session as one line of stops, the head's quest named *this quest*, and
 // the whole strip a press away.
 
 const quest = (id: string, extra: Partial<Quest> = {}): Quest => aQuest({
@@ -39,7 +39,7 @@ describe('the chain line', () => {
     expect(onExpand).toHaveBeenCalled();
   });
 
-  // HEADFIT1b (D185): one line at every width, the stops cut with an ellipsis and whole in their tip, the press at the line's end.
+  // One line at every width, the stops cut with an ellipsis and whole in their tip, the press at the line's end.
   it('keeps its press at the line\'s end, never wrapped, and says the stops whole in their tip', () => {
     render(<ChainLine chain={buildChain('b', QUESTS, [])} onExpand={() => {}} />);
 
@@ -53,7 +53,7 @@ describe('the chain line', () => {
     expect(show.className).toContain('shrink-0');
   });
 
-  // FABRIC-CLOSE1d2: the words the quest's page reads, in the line's plain ink.
+  // The words the quest's page reads, in the line's plain ink.
   it('says submitted for a closure graph\'s submitted quest, and source reopened for a step held so', () => {
     const quests = [
       quest('a', { status: 'Taken', closure: 'gph-1', submission: { machine: 'desk', sequence: 1, at: '2026-09-23T02:00:00Z' } }),

@@ -7,9 +7,9 @@ import type { ActorRow, RoleCatalogue, RoleRow } from '../../data/wiring';
 import i18n from '../../locales/i18n';
 import { RolesCard, roleIdFor, roleName } from './Roles';
 
-// FOUNDATION1y-i (the foundation design §2.7), COMPANYVIEW1a (the company-view design §3.1): the roles on AI features, one row each. The
+// The roles on AI features, one row each. The
 // person adds, changes and removes a working role (its names, work, place and choices), turns it off, gives a seeded one back its seed,
-// and takes the Designer Daoris suggests. Every press goes by the one door, `SET_ROLE` (ONEWAY1a): Save, Off and Use the default; the
+// and takes the Designer Daoris suggests. Every press goes by the one door, `SET_ROLE`: Save, Off and Use the default; the
 // page judges nothing, and a refusal is the driver's sentence under its press.
 
 // The editor's ⓘ is a tip, which needs the provider the application mounts.
@@ -163,7 +163,7 @@ describe('The roles', () => {
     expect(screen.getByRole('form', { name: 'Night shift' })).toBeTruthy();
   });
 
-  // AGENTSPLACE1g: All roles sets the machine-wide roles apart, reads the others and opens them at their place; the editor asks for no id
+  // All roles sets the machine-wide roles apart, reads the others and opens them at their place; the editor asks for no id
   // and picks from what the agent offers.
   describe('All roles', () => {
     it('sets the roles placed machine-wide apart from those placed elsewhere, and reads the others', () => {
@@ -332,7 +332,7 @@ describe('The roles', () => {
     });
   });
 
-  // MODELROLE1f: each role's last seven days from the machine log, one quiet line; a role with no start has none.
+  // Each role's last seven days from the machine log, one quiet line; a role with no start has none.
   const USE = {
     days: 7,
     roles: [{

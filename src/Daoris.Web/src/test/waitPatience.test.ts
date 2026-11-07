@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// WEBWAIT1: the shared patience in setup.tsx reaches `vi.waitFor`, whose own default is one second.
+// The shared patience in setup.tsx reaches `vi.waitFor`, whose own default is one second.
 describe('the page tests\' shared wait patience', () => {
   it('lets vi.waitFor wait past its own one second for a condition that comes late', async () => {
     let ready = false;

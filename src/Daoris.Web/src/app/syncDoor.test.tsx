@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// NAME1b (UX5 U72): a menu item named for a part opens at that part. The sync menu's *Remote and reach…* is named for the
-// workspace's page's section where its remote is set (UX6g, D150 §4.3), so it opens there: the whole window over a mocked
+// A menu item named for a part opens at that part. The sync menu's *Remote and reach…* is named for the
+// workspace's page's section where its remote is set, so it opens there: the whole window over a mocked
 // shell, since the door is the application's.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
@@ -90,7 +90,7 @@ describe("the sync menu's doors", () => {
 
     const main = await screen.findByRole('main');
     expect(await within(main).findByRole('heading', { level: 1, name: 'aurora' })).toBeInTheDocument();
-    // The remote is a row of Details now (SETUPUX1v).
+    // The remote is a row of Details now.
     expect(within(main).getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
     expect(await within(main).findByRole('region', { name: 'Remote' })).toBeInTheDocument();
     expect(await within(main).findByText('https://aurora.example.com')).toBeInTheDocument();

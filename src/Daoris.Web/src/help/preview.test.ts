@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { previewText, ROW_BEFORE, ROW_LINE, rowLine } from './preview';
 
-// ASKHIST1c: a row of Ask Daoris's history read an answer's raw Markdown (`**#d208d4**`, backticks). Its line is plain text:
+// A row of Ask Daoris's history read an answer's raw Markdown (`**#d208d4**`, backticks). Its line is plain text:
 // the delimiters go, the words and the code's own contents stay, and nothing in it is a link or a button.
 
 describe('a conversation’s line as plain text', () => {
@@ -35,8 +35,8 @@ describe('a conversation’s line as plain text', () => {
   });
 });
 
-// ASKHIST1d2: the driver hands a line whole up to 1000 characters, an answer's first and the one a search found its words on
-// (D158's ASKHIST1d1 note). The page parses it, then cuts it to what a row holds: from a little before the words found, so a
+// The driver hands a line whole up to 1000 characters, an answer's first and the one a search found its words on.
+// The page parses it, then cuts it to what a row holds: from a little before the words found, so a
 // clamp to two lines never hides them.
 
 /** Whether a cut left half of a character outside the basic plane. */

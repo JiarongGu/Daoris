@@ -3,9 +3,9 @@ import { act, renderHook } from '@testing-library/react';
 import { useKnowledgeMode } from './KnowledgeView';
 import type { ListPanes } from '../work/frame/listPanes';
 
-// UX6i (D150 §2.2): Knowledge's mode, remembered for the place. Switching to the other mode is a door that names no item
-// (UX6b, D150 §1 rule 6): that mode's remembered choice is read again before it is shown, so one whose item went while
-// the other mode was in front opens nothing chosen, never its gone state.
+// Knowledge's mode, remembered for the place. Switching to the other mode is a door that names no item
+// that mode's remembered choice is read again before it is shown, so one whose item went while
+// the other mode is in front opens nothing chosen, never its gone state.
 
 const panes = () => ({ reopen: vi.fn() }) as unknown as ListPanes & { reopen: ReturnType<typeof vi.fn> };
 

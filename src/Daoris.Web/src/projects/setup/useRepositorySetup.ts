@@ -30,8 +30,8 @@ type LinesAnswer = NonNullable<ReturnType<typeof useLines>['data']>;
 type Row<K extends keyof LinesAnswer> = NonNullable<LinesAnswer[K]>[number];
 
 /**
- * **A repository's setup as its molecule takes it** (UX6f, D150 §4.2; moved out of the Repositories view by AGENTSPLACE1f so the Agents
- * place's page and the dark Setup tab hold the one reading): every setting it holds on this machine, each with the press its terminal twin
+ * **A repository's setup as its molecule takes it**: the Agents
+ * place's page and the dark Setup tab hold the one reading of every setting it holds on this machine, each with the press its terminal twin
  * makes, and each change said as the toast Settings' lists said it. A section the driver did not answer is absent, never a control whose
  * save would be refused; Reach waits for reading across, so it opens on what it holds.
  *
@@ -44,7 +44,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
   registration: Registration | undefined;
   enabled: boolean;
   notify: Notify;
-  /** Open Settings → Git, where a remote nothing serves is given an identity (GITAUTH1e); absent, the press is not drawn. */
+  /** Open Settings → Git, where a remote nothing serves is given an identity; absent, the press is not drawn. */
   onOpenGit?: (host: string) => void;
 }): RepositorySetupProps | null {
   const { t } = useTranslation();
@@ -77,22 +77,22 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
 
   const target = registration?.repository ?? null;
   const shown = enabled && driver.data !== undefined && target !== null;
-  // GITAUTH1e: its git remotes, with what serves each, and the machine's identities to choose from; shell-only, as the identities are.
+  // Its git remotes, with what serves each, and the machine's identities to choose from; shell-only, as the identities are.
   const identities = useTools().data?.identities?.identities;
   const remotes = useGitRemotes({ repository: target ?? undefined, enabled: shown });
   const across = useAcross({ enabled: shown });
-  // GITAPP2b: the sessions the service lists, asked only while its switch is on, to say which already run in its checkout (a session with
+  // The sessions the service lists, asked only while its switch is on, to say which already run in its checkout (a session with
   // no tree of its own runs in the registered root).
   const named = (names: string[] | undefined, name: string) => (names ?? []).some((each) => each.toLowerCase() === name.toLowerCase());
   const checkoutOn = target !== null && named(driver.data?.checkoutWrites, target);
   const checkoutSessions = useSessions(target, false, shown && checkoutOn);
-  // Whether its own daoris.gates.json marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c): the driver's reading.
+  // Whether its own daoris.gates.json marks heavy gates, so wins over this machine's list: the driver's reading.
   const heavyMarks = useHeavyMarks(target ?? '', { enabled: shown });
-  // FABRIC-PIPELINE1a: the route row reads its Workflow answer's start node.
+  // The route row reads its Workflow answer's start node.
   const current = useWorkflowCurrent(target === null ? null : { repository: target }, { enabled: shown });
   useErrorNotify(shown ? across.error : null, notify);
   const onDriverError = failure(notify);
-  // Which door this machine's starts ride (INT3c): an unadopted repository is carried by the protocol door only (D70).
+  // Which door this machine's starts ride: an unadopted repository is carried by the protocol door only.
   const door = doorOf(roster.data?.adapter, list(roster.data?.harnesses));
 
   if (!registration || !driver.data) return null;
@@ -113,8 +113,8 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
   const same = (name: string) => name.toLowerCase() === registration.repository.toLowerCase();
 
   /**
-   * This machine's driving for one repository — the same wherever it can be driven: every adopter, and since INT3c one not adopted with a
-   * root here (D70). One with no root has nowhere to start, and gets none.
+   * This machine's driving for one repository — the same wherever it can be driven: every adopter, and one not adopted with a
+   * root here. One with no root has nowhere to start, and gets none.
    */
   const drivingOf = (): Driving | null => {
     if (!registration.adopted && !canBeAsked(registration)) return null;
@@ -127,13 +127,13 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
       onHold: (next) => setHold.mutate({ repository: name, held: next }, { onError: onDriverError }),
       onTrees: (next) => setTrees.mutate({ repository: name, ownTree: next }, { onError: onDriverError }),
       note: !registration.adopted && door === 'native' ? t('projects.outside.directDoor') : undefined,
-      // STEWARDROLE1b (D209 §5.1): what the steward set here, from this run's memory.
+      // What the steward set here, from this run's memory.
       stewardSet: stewardSetOf(),
     };
   };
 
   /**
-   * Its session language (LANG1c, D142 point 7): the driver's resolution from the lines, its workspace's by the table's name, and the table.
+   * Its session language: the driver's resolution from the lines, its workspace's by the table's name, and the table.
    * An answer without it carries no table, and nothing is offered rather than a field whose save is refused.
    */
   const languageOfPage = (): NonNullable<RepositorySetupProps['sessions']>['language'] => {
@@ -176,7 +176,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
         : t('settings.lines.policyCleared', { name: registration.repository })),
       onError: onDriverError,
     }),
-    // Where its work is reviewed before it lands (REVIEWENV1a); where the answer holds no reviews, and no row is offered.
+    // Where its work is reviewed before it lands; where the answer holds no reviews, and no row is offered.
     review: Array.isArray(lines.data?.reviews) ? resolved<NonNullable<RepositorySetupProps['work']>['review'] & object>(lines.data.reviews) ?? { repository, workspace } : undefined,
     onReview: Array.isArray(lines.data?.reviews)
       ? (edit: ReviewEdit) => setReview.mutate({ repository, ...edit }, {
@@ -184,7 +184,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
           onError: onDriverError,
         })
       : undefined,
-    // Which other agent reads its work before it lands (XAGENT1a); where the answer holds no opinions, and no row is offered.
+    // Which other agent reads its work before it lands; where the answer holds no opinions, and no row is offered.
     opinion: Array.isArray(lines.data?.opinions) ? resolved<NonNullable<RepositorySetupProps['work']>['opinion'] & object>(lines.data.opinions) ?? { repository, workspace } : undefined,
     onOpinion: Array.isArray(lines.data?.opinions)
       ? (edit: OpinionEdit) => setOpinion.mutate({ repository, ...edit }, {
@@ -192,7 +192,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
           onError: onDriverError,
         })
       : undefined,
-    // How its work is committed (DOORS1b); where the answer holds no commits, and no row is offered.
+    // How its work is committed; where the answer holds no commits, and no row is offered.
     commits: Array.isArray(lines.data?.commits) ? resolved<NonNullable<RepositorySetupProps['work']>['commits'] & object>(lines.data.commits) ?? { repository, workspace } : undefined,
     onCommits: Array.isArray(lines.data?.commits)
       ? (edit: CommitEdit) => setCommits.mutate({ repository, ...edit }, {
@@ -202,7 +202,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
       : undefined,
   };
 
-  // Its sessions' access (AUTONOMY1d), where it can be driven; where the answer holds no access, and no section is drawn. What stands
+  // Its sessions' access, where it can be driven; where the answer holds no access, and no section is drawn. What stands
   // above it is its workspace's over this machine's, as set, so turning off a full access from above sets today's pauses here rather than
   // clearing back into it. Full access answers its ask: done, or refused in the driver's sentence.
   const resolvedAccess = resolved<Row<'access'>>(lines.data?.access);
@@ -222,8 +222,8 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
     }),
   } : null;
 
-  // This machine's heavy gates for it (HEAVYRUN1b2b), where it can be driven, matched without case as the driver keys them; an answer without
-  // them has none, and no section is drawn. The whole list goes out, and a refusal is said where Save was pressed.
+  // This machine's heavy gates for it, where it can be driven, matched without case as the driver keys them; an answer without
+  // them has none, and no section is drawn. The whole list goes out, and a refusal is said where Save is pressed.
   const heavyGates = state.heavyGates;
   const heavy: RepositorySetupProps['heavy'] = driving && Array.isArray(heavyGates) ? {
     gates: heavyGates.find((row) => same(row.repository))?.gates ?? [],
@@ -236,7 +236,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
       },
       onError: (error) => answered.refused(sentence(error)),
     }),
-    // Which checks its sessions run (FABRIC-PIPELINE1b), matched without case as the driver keys them; where the answer holds none, and
+    // Which checks its sessions run, matched without case as the driver keys them; where the answer holds none, and
     // no row is drawn. A press goes out at once, and a refusal is said in the row.
     checks: Array.isArray(state.sessionChecks) ? {
       set: (state.sessionChecks.find((row) => same(row.repository))?.checks as SessionChecksValue | undefined) ?? null,
@@ -250,11 +250,11 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
     } : null,
   } : null;
 
-  // Its standing answer (KNOWUSE1b), matched without case as the driver matches it; where the answer holds no `standing`, and nothing is
+  // Its standing answer, matched without case as the driver matches it; where the answer holds no `standing`, and nothing is
   // offered rather than a field whose save would be refused.
   const sessions: RepositorySetupProps['sessions'] = driving && {
     language: languageOfPage(),
-    // What a helper its agent asks for does (DOORS1b); where the answer holds no helpers, and no row is offered.
+    // What a helper its agent asks for does; where the answer holds no helpers, and no row is offered.
     helpers: Array.isArray(lines.data?.helpers) ? resolved<NonNullable<NonNullable<RepositorySetupProps['sessions']>['helpers']>>(lines.data.helpers) ?? { repository, workspace } : undefined,
     onHelpers: Array.isArray(lines.data?.helpers)
       ? (edit: HelperEdit) => setHelpers.mutate({ repository, ...edit }, {
@@ -262,7 +262,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
           onError: onDriverError,
         })
       : undefined,
-    // What an agent's ask to hand its session over does (MIXAGENT1c); where the answer holds none, and no row is offered.
+    // What an agent's ask to hand its session over does; where the answer holds none, and no row is offered.
     handOver: Array.isArray(lines.data?.handOver) ? resolved<NonNullable<NonNullable<RepositorySetupProps['sessions']>['handOver']>>(lines.data.handOver) ?? { repository, workspace } : undefined,
     onHandOver: Array.isArray(lines.data?.handOver)
       ? (edit: HandOverEdit) => setHandOver.mutate({ repository, ...edit }, {
@@ -283,7 +283,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
     : undefined;
   const where = t('settings.rules.where.repository', { name: registration.repository });
   const reach: RepositorySetupProps['reach'] = across.data === undefined && !across.error ? null : {
-    // GITAPP2b: the switch, where the shell answers it; on, it says which sessions already run in the checkout.
+    // The switch, where the shell answers it; on, it says which sessions already run in the checkout.
     checkout: state.checkoutWrites === undefined ? undefined : {
       on: named(state.checkoutWrites, registration.repository),
       running: checkoutSessions.error ? null
@@ -327,7 +327,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
     }),
   };
 
-  // The landed route (FABRIC-PIPELINE1a): what verifies the work that lands, read from its Workflow answer's start node, which a driver before
+  // The landed route: what verifies the work that lands, read from its Workflow answer's start node, which a driver before
   // it does not answer; the choice is the person's press, and accepts the declaration at its line's tip.
   const start = current.data?.repository === registration.repository ? current.data.start ?? null : null;
   const landed: RepositorySetupProps['landed'] = start ? {
@@ -342,7 +342,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
       },
       onError: (error) => answered.refused(sentence(error)),
     }),
-    // INTEGRATE1d: the person's Accept of the declaration they read, by its blob, or a withdrawal; a refusal comes back as an answer.
+    // The person's Accept of the declaration they read, by its blob, or a withdrawal; a refusal comes back as an answer.
     onAcceptIntegration: (request, answered) => acceptIntegration.mutate({ repository, ...request }, {
       onSuccess: (answer) => {
         if (answer.done) {
@@ -356,7 +356,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
     }),
   } : null;
 
-  // GITAUTH1f (§7.3): its git access as `LINES` resolves it, the level above as STATE sets its workspace's and this machine's; absent on a
+  // Its git access as `LINES` resolves it, the level above as STATE sets its workspace's and this machine's; absent on a
   // where the answer lacks it.
   const gitResolved = resolved<RepositoryGitAccess>(lines.data?.gitAccess);
   const gitAccess = gitResolved ? {

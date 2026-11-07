@@ -4,24 +4,24 @@ import { byTool, type Tool, type ToolDoor } from '../agents/tools';
 import { answeredPark } from '../design/ui';
 
 /**
- * What this machine holds, as Ask Daoris's starters (HELP1d) and the setup guide (SETUP1a, D97) read
+ * What this machine holds, as Ask Daoris's starters and the setup guide read
  * it: one reading for both, so a starter and a step never disagree.
  */
 export type Machine = {
-  /** Whether a shell answers. Without one only the registry is this page's to know (D47 §4). */
+  /** Whether a shell answers. Without one only the registry is this page's to know. */
   attached: boolean;
   /** The repositories registered here. */
   repositories: readonly string[];
   drivable: readonly string[];
   tools: readonly Tool[];
   /**
-   * How many sessions wait on the person. Not a park they answered (ANSWER1e): the same session goes on with it at the
+   * How many sessions wait on the person. Not a park they answered: the same session goes on with it at the
    * driver's next look, as the session list already says.
    */
   waiting: number;
   /**
-   * Driven repositories with no line set and none git can name. One imported and never driven is not counted
-   * (STARTERSCOPE1): it has no line to want until the driver drives it.
+   * Driven repositories with no line set and none git can name. One imported and never driven is not counted:
+   * it has no line to want until the driver drives it.
    */
   unnamedLines: readonly string[];
   /** The agent Ask Daoris runs on, or null. */
@@ -35,7 +35,7 @@ export type Machine = {
  *
  * @remarks
  * **A browser reads the registry and nothing else**, whatever it is handed: the rest is this machine's,
- * which a browser may not learn (D47 §4), and its queries never fire there anyway. An answer not yet in
+ * which a browser may not learn, and its queries never fire there anyway. An answer not yet in
  * reads as empty; the caller says whether the reading has settled.
  */
 export function readMachine(answers: {

@@ -8,7 +8,7 @@ import { Door, Fact, WiringCard } from './WiringParts';
 const PARTS = ['kit', 'cli', 'driver', 'service', 'connector', 'dotnet', 'node'] as const;
 
 /**
- * Versions and the update (the this-Daoris design §3.6): the program with its build as the release workflow stamped it, the UI
+ * Versions and the update: the program with its build as the release workflow stamped it, the UI
  * kit, the doctrine tool, the driver's verbs, the service and its connector, .NET and Node.js, each its version or why there
  * is none; Node is Tools' to say, so its row carries that door. The update is one line: what is staged and how the last swap
  * ended, with the door to Driver, where it is taken. A development run has none to take.

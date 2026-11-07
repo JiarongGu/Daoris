@@ -10,7 +10,7 @@ import { menuActs, rightClick } from '../test/contextMenu';
 import { CJK, ELSEWHERE, ENGINE, GAME, MIRRORED, NEWBIE, UNDECLARED } from './fixtures';
 import { FILTER_PAST, ProjectList, type WorkspaceGroup } from './ProjectList';
 
-// Repositories' list as a molecule (FRAME1e, D118 §2; UX6g, D150 §4.1): a group per workspace, its head a door to the
+// Repositories' list as a molecule: a group per workspace, its head a door to the
 // workspace's page, its rows arriving with what each says, and every press going out.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -94,7 +94,7 @@ describe("Repositories' list", () => {
     expect(within(screen.getByRole('listitem', { name: 'game' })).getByRole('button')).toHaveAttribute('aria-current', 'true');
   });
 
-  /** D34: adopted and undeclared is addressable, and an asker would be guessing, so its row says so. */
+  /** Adopted and undeclared is addressable, and an asker would be guessing, so its row says so. */
   it("says an adopter's summary as it wrote it, and that one declared nothing", () => {
     list({ groups: [{ workspace: 'default', adopted: [{ registration: ENGINE }, { registration: UNDECLARED }], outside: [] }] });
 
@@ -141,7 +141,7 @@ describe("Repositories' list", () => {
   });
 
   /**
-   * §4.1: past twelve repositories the list gains a filter, as the map gained a search past twelve (MAP4a), and *Registered,
+   * §4.1: past twelve repositories the list gains a filter, as the map gained a search past twelve, and *Registered,
    * not adopted* starts folded under a group that has adopters. A filter shows the rows whose name holds it, and a
    * workspace whose name does, whole.
    */
@@ -176,7 +176,7 @@ describe("Repositories' list", () => {
     expect(screen.queryByRole('searchbox')).toBeNull();
   });
 
-  /** CTX1 (D138, design §4): a repository's row offers what it does on a right-click, opening it and its name. */
+  /** A repository's row offers what it does on a right-click, opening it and its name. */
   it('offers Open and its name on a right-click', async () => {
     const copy = vi.fn();
     const { onChoose } = list();
@@ -192,7 +192,7 @@ describe("Repositories' list", () => {
     expect(copy).toHaveBeenCalledWith('engine');
   });
 
-  /** D118 §3h: a list that never had an answer says the sentence in place, and is never blank. */
+  /** A list that never had an answer says the sentence in place, and is never blank. */
   it('says the sentence of a registry that never answered, in place', () => {
     list({ groups: [], unanswered: 'Daoris could not reach this machine\'s host.' });
 

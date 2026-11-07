@@ -4,7 +4,7 @@ import { Button } from '../../design/ui';
 import { suggestedRoles } from '../roles/SuggestedChoicesCard';
 
 /**
- * **What waits on This machine's staffing** (SETUPUX1m, the setup-UX design §2.4): one line for the choices Daoris suggests, a door to
+ * **What waits on This machine's staffing**: one line for the choices Daoris suggests, a door to
  * *All roles*, where the suggested-choices card is answered. Nothing is drawn where none stands.
  *
  * A molecule: the count arrives, and the press goes out.

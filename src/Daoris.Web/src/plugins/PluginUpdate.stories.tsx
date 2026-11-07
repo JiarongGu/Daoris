@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PluginUpdatePlan } from './PluginUpdate';
 
-// PLUG9 (c), D103, in the shape the driver's PLUGIN_UPDATE answer takes: an update's plan three ways, as a plugin's page
-// shows it under its header. The install's own plugins are the Plugins place's list and offer page since Settings →
-// Plugins retired into it (UX6j, D150 §2.3), so their card went with the domain.
+// In the shape the driver's PLUGIN_UPDATE answer takes: an update's plan three ways, as a plugin's page
+// shows it under its header. The install's own plugins are the Plugins place's list and offer page.
 
 const meta = {
   title: 'Plugins/PluginUpdate',

@@ -4,7 +4,7 @@ import { storyWidths } from '../design/storyWidths';
 import { InTheme } from '../plugins/storyIcons';
 import { type HelpProposal, ProposalCard } from './ProposalCard';
 
-// AGENTSPLACE1k: Ask Daoris's card for a place's quick set-up, at the widths the frame gives the main area (80, 39 and 25rem), in both
+// Ask Daoris's card for a place's quick set-up, at the widths the frame gives the main area (80, 39 and 25rem), in both
 // languages and both themes. Its Apply opens the place's Set up… and presses nothing.
 
 const PLACE: HelpProposal = {

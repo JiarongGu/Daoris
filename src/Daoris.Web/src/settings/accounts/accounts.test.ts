@@ -6,7 +6,7 @@ import {
   type NextStart, nothingSaid, offeredLine, ownLine, saidLine, USE_DEFAULTS, windowName,
 } from './accounts';
 
-// How each agent's accounts are used, read and said (TOOL4g; D125 §2.4, §3.7; D130 §3.1, §4.6, §5.2, §16.4): the pure half
+// How each agent's accounts are used, read and said: the pure half
 // the molecules and the Agents domain read. With one account and with six: nothing counts accounts.
 
 const scope = (over: Partial<AccountScope> = {}): AccountScope => ({
@@ -27,7 +27,7 @@ describe('the answer, read', () => {
     expect(agentOf({} as never, 'claude-code')).toBeNull();
   });
 
-  /** POOL1a2, POOL1c (D197): the set's one scope, every workspace's; an answer with none reads the defaults. */
+  /** The set's one scope, every workspace's; an answer with none reads the defaults. */
   it('reads the set’s one scope, and the defaults where an answer has none', () => {
     const held = agent({ scopes: [scope({ list: SIX })] });
 
@@ -51,7 +51,7 @@ describe('what is said', () => {
   const now = new Date('2026-10-03T12:50:00Z');
   const cooling = { until: '2026-10-03T16:02:00Z', stated: true, window: 'weekly', seen: '2026-10-03T12:00:00Z', assumedZone: false, notBelieved: false };
 
-  /** D125 §2.4: until when, in this machine's zone and named, how long from now, and why. */
+  /** Until when, in this machine's zone and named, how long from now, and why. */
   it('says a cool-off with how long it lasts and why, in either language', async () => {
     expect(coolingLine(cooling, now)).toMatch(/^Cooling until .+ · in 3h 12m · the agent said so$/);
     expect(coolingLine({ ...cooling, stated: false }, now)).toContain("Daoris's default: the agent named no time");
@@ -62,14 +62,14 @@ describe('what is said', () => {
     expect(coolingLine(cooling, now)).toMatch(/^冷却至 .+ · 还有 .+ · 智能体如此说明$/);
   });
 
-  /** MODELROLE1k: a model family's cool-off names the family, since a start asking another still runs on the account. */
+  /** A model family's cool-off names the family, since a start asking another still runs on the account. */
   it('says a model family\'s cool-off for that family, in either language', async () => {
     expect(coolingLine({ ...cooling, model: 'opus' }, now)).toMatch(/^Cooling for opus until .+ · in 3h 12m · the agent said so$/);
     await i18n.changeLanguage('zh');
     expect(coolingLine({ ...cooling, model: 'opus' }, now)).toMatch(/^opus 冷却至 .+ · 还有 .+ · 智能体如此说明$/);
   });
 
-  /** WINDOWNAME1: a window of another length is named in the reader's language, its digits kept. */
+  /** A window of another length is named in the reader's language, its digits kept. */
   it('names a "<n>-minute" window in either language', async () => {
     expect(windowName('90-minute')).toBe('90-minute');
     expect(windowName('monthly')).toBe('monthly');
@@ -78,7 +78,7 @@ describe('what is said', () => {
     expect(windowName('monthly')).toBe('monthly');
   });
 
-  /** D130 §5.2, as the CLI's `saidLine` says it: its own word first, then each window's use and reset. */
+  /** As the CLI's `saidLine` says it: its own word first, then each window's use and reset. */
   it('says what an agent last said, with how long ago, and nothing said as nothing', () => {
     const seen = new Date(Date.now() - 3 * 3_600_000).toISOString();
     const said = {
@@ -101,7 +101,7 @@ describe('what is said', () => {
   });
 
   /**
-   * USAGEREAD3b (D165 point 2, design §1.3): Claude Code's pace warning is the standing `warned`, said in its own words as the
+   * Claude Code's pace warning is the standing `warned`, said in its own words as the
    * start's note and the CLI's `saidLine` say it, and never as near its limit; a limit reached still goes before it.
    */
   it('says the agent’s pace warning as ahead of its pace, never as near, in either language', async () => {
@@ -119,7 +119,7 @@ describe('what is said', () => {
     expect(saidLine(warned)).not.toContain('接近');
   });
 
-  /** D130 §16.4: with nothing said by any account of the list, the walk needs none of their word, and the screen says so. */
+  /** With nothing said by any account of the list, the walk needs none of their word, and the screen says so. */
   it('knows when no account of a list has said anything', () => {
     const list = scope({ list: ['account-1', 'account-2'] });
     const quiet = agent();
@@ -130,7 +130,7 @@ describe('what is said', () => {
   });
 
   /**
-   * TOOL6e (D130 §3–§4): which account the next start takes and the walk's step that chose it, in the reader's language,
+   * Which account the next start takes and the walk's step that chose it, in the reader's language,
    * the account named as a person calls it.
    */
   it('says which account the next start takes and why', async () => {
@@ -147,7 +147,7 @@ describe('what is said', () => {
       .toBe('The next start takes account-3: it comes before account-2 in the order.');
     expect(nextLine(next({ account: 'account-2', reason: 'fewest', over: 'account-1' }), list, labelOf))
       .toBe('The next start takes account-2: it runs fewer of Daoris\'s sessions than work@example.invalid.');
-    // What passes an account (SWITCH1b-iii, D165 point 2): its own near entry says which, else all three are named.
+    // What passes an account: its own near entry says which, else all three are named.
     expect(nextLine(next({ account: 'account-2', reason: 'near', over: 'account-1' }), list, labelOf))
       .toBe('The next start takes account-2: work@example.invalid has reached its limit, draws on usage credits or is over its curve, so it goes last.');
     const near = (by: 'refused' | 'credits' | 'number', window = 'weekly') => scope({ ...list, near: [{ account: 'account-1', window, by }] });
@@ -157,12 +157,12 @@ describe('what is said', () => {
       .toBe('The next start takes account-2: work@example.invalid has reached its five-hour limit, so it goes last.');
     expect(nextLine(next({ account: 'account-2', reason: 'near', over: 'account-1' }), near('credits'), labelOf))
       .toBe('The next start takes account-2: work@example.invalid is drawing on usage credits, so it goes last.');
-    // Step 5 is the most room under the curve, and the week's pace only with the switch off (the switch design §3).
+    // Step 5 is the most room under the curve, and the week's pace only with the switch off.
     expect(nextLine(next({ account: 'account-2', reason: 'pace', over: 'account-1' }), list, labelOf))
       .toBe('The next start takes account-2: it has more room under its curve than work@example.invalid.');
     expect(nextLine(next({ account: 'account-2', reason: 'pace', over: 'account-1' }), scope({ ...list, use: { ...USE_DEFAULTS, early: false } }), labelOf))
       .toBe('The next start takes account-2: it is further behind its week\'s pace than work@example.invalid.');
-    // Step 4 weighs what would lapse at the reset, not only when (USAGERESET1).
+    // Step 4 weighs what would lapse at the reset, not only when.
     expect(nextLine(next({ reason: 'lapsing', when: '2026-10-04T10:00:00Z' }), list, labelOf))
       .toMatch(/^The next start takes work@example\.invalid: its week resets .+, with more of it left to spend before then\.$/);
     expect(nextLine(next({ account: 'account-3', reason: 'notStarted' }), list, labelOf))
@@ -181,7 +181,7 @@ describe('what is said', () => {
       .toBe("None of Daoris's accounts is ready, and none comes ready by itself: the next start waits for you.");
 
     await i18n.changeLanguage('zh');
-    // POOL1c (D197 §4): the order is the set's, said as the order, never a list a scope holds.
+    // The order is the set's, said as the order, never a list a scope holds.
     expect(nextLine(next({}), scope({ list: ['account-1', 'account-2'], begins: 'account-1' }), labelOf))
       .toBe('下一次启动使用 work@example.invalid：它在顺序中排第一。');
     expect(nextLine(next({ account: 'account-2', reason: 'onlyReady', over: null }), list, labelOf))
@@ -201,8 +201,8 @@ describe('what is said', () => {
   });
 
   /**
-   * NEXTLAPSE1 (D165's USAGERESET1 note): a start ranked by what would lapse says the window, its reset, how much of it is
-   * unused and when that was read, as the start's own line does; an answer without them says its reset alone.
+   * A start ranked by what would lapse says the window, its reset, how much of it is
+   * unused and when that is read, as the start's own line does; an answer without them says its reset alone.
    */
   it('says what would lapse where the next start was ranked by it', async () => {
     const list = scope({ list: ['account-1', 'account-2'], begins: 'account-1' });
@@ -224,7 +224,7 @@ describe('what is said', () => {
   });
 
   /**
-   * TOOL6g: a next start that waits while accounts of its list are not signed in says a sign-in starts it, sooner than the
+   * A next start that waits while accounts of its list are not signed in says a sign-in starts it, sooner than the
    * reset where one cools, so *waits until* never hides that a sign-in would free it.
    */
   it('says a waiting start would start sooner on a sign-in, naming the accounts not signed in', async () => {
@@ -246,12 +246,12 @@ describe('what is said', () => {
 
     await i18n.changeLanguage('zh');
     expect(nextLine(waits(null, passed.slice(1)), list, labelOf)).toContain('登录 work@example.invalid、account-2');
-    // ACCTUX1: the accounts come before the editor this is said in, so neither language points below.
+    // The accounts come before the editor this is said in, so neither language points below.
     expect(nextLine(waits('2026-10-06T09:00:00Z', passed), list, labelOf)).not.toMatch(/下方|对应的行/);
     expect(nextLine(waits(null, passed.slice(1)), list, labelOf)).not.toMatch(/下方|对应的行/);
   });
 
-  /** ACCTUX1b: a key is repaired by a new key, never a sign-in, so a wait names the key's repair apart from a login's. */
+  /** A key is repaired by a new key, never a sign-in, so a wait names the key's repair apart from a login's. */
   it('says a waiting start needs a new API key for a key, and a sign-in for an account', async () => {
     const labelOf = (name: string) => name;
     const isKey = (name: string) => name === 'key-1';
@@ -274,7 +274,7 @@ describe('what is said', () => {
       .toBe('key-1 的密钥被拒绝，需要换上新的 API 密钥。');
   });
 
-  /** TOOL6e: what holds every other account, cooling with until when, and the accounts a scope does not use, together. */
+  /** What holds every other account, cooling with until when, and the accounts a scope does not use, together. */
   it('says what holds the other accounts, and nothing for an account merely ranked after', async () => {
     const labelOf = (name: string) => name;
     const next: NextStart = {
@@ -295,7 +295,7 @@ describe('what is said', () => {
       '^account-1 is cooling until .+; account-4 has reached its limit, draws on usage credits or is over its curve; '
       + 'account-5 was refused by its provider; account-6 is kept for conversations; account-7 is not on this machine\\. '
       + 'Not used here: account-8, account-9\\.$'));
-    // The scope's near entry says which of the three holds it (SWITCH1b-iii).
+    // The scope's near entry says which of the three holds it.
     const only = (hold: NextStart['others'][number]) => ({ ...next, others: [hold] });
     expect(heldLine(only({ account: 'account-4', hold: 'near' }), labelOf, undefined, [{ account: 'account-4', window: 'weekly', by: 'number' }]))
       .toBe('account-4 is over its curve on its weekly window.');
@@ -315,7 +315,7 @@ describe('what is said', () => {
     expect(heldLine(only({ account: 'account-4', hold: 'near' }), labelOf)).toBe('account-4 已达上限、正在使用用量额度或用量超出曲线。');
   });
 
-  /** TOOL6e: when a cool-off ended, the account offered again since then. */
+  /** When a cool-off ended, the account offered again since then. */
   it('says since when an account is offered again', async () => {
     expect(offeredLine('2026-10-03T10:17:00Z')).toMatch(/^offered again since .+$/);
     await i18n.changeLanguage('zh');
@@ -323,7 +323,7 @@ describe('what is said', () => {
   });
 
   /**
-   * D175 point 1, POOL1c (D197 point 3; the account-pool design §4.2's `harness.own.shared`): the tool's own sign-in is outside
+   * The `harness.own.shared` line: the tool's own sign-in is outside
    * Daoris's accounts, never signed in or out, asked or started in by Daoris, and never changed by adding an account; no who.
    */
   it('says the tool\'s own sign-in is outside Daoris’s accounts, never asked, and never changed by adding one', async () => {

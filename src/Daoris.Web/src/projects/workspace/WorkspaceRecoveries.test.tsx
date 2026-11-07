@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import { type MilestoneEntry, readWorkState } from '../../work/head/milestone';
 import { WorkspaceRecoveries } from './WorkspaceRecoveries';
 
-// What Daoris keeps for recovery that no unit names, in a workspace's Branches tab (RECOVERYVIEW1, CLEANUP1): a molecule over
+// What Daoris keeps for recovery that no unit names, in a workspace's Branches tab: a molecule over
 // `WORK_STATE.recovery`, each state reached by its props. A folder says its date, a recovery ref its holder and date or, where
 // nothing holds it, the command that deletes it.
 
@@ -79,7 +79,7 @@ describe('what is kept for recovery', () => {
     expect(rows[0]).toHaveTextContent('was not read');
   });
 
-  // RECOVERYDROP1: the person's press to delete the refs nothing holds, behind a confirmation that says plainly what may be lost.
+  // The person's press to delete the refs nothing holds, behind a confirmation that says plainly what may be lost.
   describe('the delete of the ones nothing holds', () => {
     const COMMIT = 'a'.repeat(40);
     const shown = recovery({ commit: COMMIT });

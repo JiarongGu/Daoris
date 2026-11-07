@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// The Browser domain in SHELL mode. Moved from `shell.test.tsx` with MOD4: tests follow their code.
+// The Browser domain in SHELL mode.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -25,8 +25,8 @@ import { code } from '../test/code';
 import { DRIVER_STATE, respond, serviceCalls, show } from '../test/shellHarness';
 
 /**
- * Daoris's browser on Settings (CHR5, CHR7): the favorites it shows on its bookmarks bar and the
- * extensions setting, over the files `daoris browser` edits (D50). A machine domain: the bridge, never
+ * Daoris's browser on Settings: the favorites it shows on its bookmarks bar and the
+ * extensions setting, over the files `daoris browser` edits. A machine domain: the bridge, never
  * the service.
  */
 describe('the browser domain', () => {
@@ -89,7 +89,7 @@ describe('the browser domain', () => {
       "Other software's extensions will be refused from the browser's next start."));
   });
 
-  /** BRW12: the person's Edge, as an option, saying what it brings before it is chosen. */
+  /** The person's Edge, as an option, saying what it brings before it is chosen. */
   it('choosing Edge lands as the verb a terminal has, and says what Edge brings', async () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="browser" />);
@@ -101,12 +101,12 @@ describe('the browser domain', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Your Edge, from the next time the browser is opened.'));
   });
 
-  /** BRW7: where the page's links open — set here or by `daoris browser links`, and holding at once. */
+  /** Where the page's links open — set here or by `daoris browser links`, and holding at once. */
   it("sending links to Daoris's browser lands as the verb a terminal has, and says it holds at once", async () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="browser" />);
 
-    // A shell that sends no `links` is the system's, as a link always was.
+    // A shell that sends no `links` is the system's, as a link always is.
     expect(await screen.findByRole('radio', { name: "System browser" })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByText(code(/daoris browser links system\|daoris/))).toBeTruthy();
     await userEvent.click(screen.getByRole('radio', { name: "Daoris's browser" }));
@@ -115,7 +115,7 @@ describe('the browser domain', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith("Links on the page open in Daoris's browser, from the next click."));
   });
 
-  /** BRW8: whose hands are on it, in its own domain too — each session a door into Sessions. */
+  /** Whose hands are on it, in its own domain too — each session a door into Sessions. */
   it('names who is driving it, each opening its session, and says so when nobody is', async () => {
     const onAttend = vi.fn();
     const { unmount } = show(

@@ -7,7 +7,7 @@ import { isComposing } from '../../lib/composing';
 const LISTED = 50;
 
 /**
- * **Find on a canvas** (CANVAS1d; the canvas design §4, trap 14): a field in the toolbar, worded by the feature, that says *n of m*.
+ * **Find on a canvas**: a field in the toolbar, worded by the feature, that says *n of m*.
  * Enter and Shift+Enter step the matches (the focus stays in the field: the next Enter would open the node), ↓ hands the focus to the
  * match shown and Escape clears the find. The matches are also a list of named results to choose from. A molecule: all of it is given.
  */

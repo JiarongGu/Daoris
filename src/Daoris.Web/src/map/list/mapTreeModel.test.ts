@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { groupRow, keyInTree, openedAtStart, type TreeGroup, treeRows } from './mapTreeModel';
 
-// MAPUX1e (the map UX design §6): the Map's list as the WAI tree, its rows and its keys.
+// The Map's list as the WAI tree, its rows and its keys.
 
 const GROUPS: TreeGroup[] = [
   { id: 'repositories', title: 'Repositories', items: [{ id: 'a', title: 'a' }, { id: 'b', title: 'b' }] },

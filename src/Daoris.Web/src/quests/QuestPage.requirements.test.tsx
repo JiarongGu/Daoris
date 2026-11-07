@@ -9,7 +9,7 @@ import { menuActs, rightClick } from '../test/contextMenu';
 import { ACCEPTED, DEPARTED_WHY, HELD, HELD_CJK, MET, OPEN, REQUIRING } from './fixtures';
 import { QuestPage } from './QuestPage';
 
-// DRIFT1d2 (D133 §3–§4): a quest's page quotes what the person required, each requirement with its check and how the done
+// A quest's page quotes what the person required, each requirement with its check and how the done
 // answered it, met or departed with the reason and the person's words it relied on; a held departure is accepted there in
 // one press, and an accepted one says when.
 

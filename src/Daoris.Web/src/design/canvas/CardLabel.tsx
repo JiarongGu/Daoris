@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { NodeState } from './SuppliedCanvas';
 
 /**
- * **The chosen and the focused card's name beside it** (MAPUX1a; the map UX design §3): below the full tier a card draws less, but the
+ * **The chosen and the focused card's name beside it**: below the full tier a card draws less, but the
  * card a person has chosen or is on keeps its name, at the type scale whatever the zoom, so they always see where they are. Hidden from
  * a reader (`aria-hidden`): the card's button is already named. A molecule: the state and the words are given.
  */

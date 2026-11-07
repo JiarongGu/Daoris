@@ -41,7 +41,7 @@ export function mapChoice(t: TFunction, topology: Topology, selected: MapSelecti
 }
 
 /**
- * What the line under the drawing says with nothing chosen (MAPUX1f): why the map shows no connection where it shows none, else the
+ * What the line under the drawing says with nothing chosen: why the map shows no connection where it shows none, else the
  * hint. Hidden kinds come first, then a *Which quests* that leaves none (with what *All of them* would show), then no work yet moved.
  */
 export function mapHint(t: TFunction, facts: {

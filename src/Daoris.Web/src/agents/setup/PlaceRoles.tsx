@@ -24,7 +24,7 @@ const placedHere = (place: StructurePlaceAsk, scope: { kind: string; id?: string
   return scope.kind === kind && (kind === 'machine' || scope.id === (kind === 'repository' ? place.repository : place.workspace));
 };
 
-/** The states of a first choice that stop the work as it stands (SETUPUX1l): the rest read as the parent's would. */
+/** The states of a first choice that stop the work as it stands: the rest read as the parent's would. */
 const READS_FINE = new Set(['ready', 'unknown', 'not-read']);
 
 /** Whether a work needs a look: its starts hold, a part of it did not read, or its first choice cannot run. */
@@ -50,7 +50,7 @@ function ChoiceLine({ work, policy, role }: { work: StructureWork; policy?: Role
 }
 
 /**
- * **A place's Roles section** (AGENTSPLACE1g1, the Agents-place design §3): one row per work, read from `ROLE_STRUCTURE` for the place's
+ * **A place's Roles section**: one row per work, read from `ROLE_STRUCTURE` for the place's
  * chain alone: the role taking it, where that role is placed, its first choice and that choice's last reading, with the appointed roles
  * of the place under them.
  *
@@ -58,13 +58,13 @@ function ChoiceLine({ work, policy, role }: { work: StructureWork; policy?: Role
  * - **A row taken from a parent offers *Give \<place\> its own…***, and a role placed here *Edit* and *Back to \<parent\>'s*, which is the
  *   role's removal asked in an `InlineConfirm` that names the role the work falls back to. All three are the role editor of All roles
  *   (`RolesCard`'s editor) and `SET_ROLE`: the place is filled and fixed, the id is made, the page judges nothing.
- * - **It reads the last readings alone** (D150 point 5): the chain's read probes no account.
+ * - **It reads the last readings alone**: the chain's read probes no account.
  */
 export function PlaceRoles({ place, notify, onSource }: { place: StructurePlaceAsk; notify: Notify; onSource?: SourceDoor }) {
   const editor = useRoleEditing(notify);
   const chain = useRoleStructureChain(place);
   const read = chain.data ? 'ok' : chain.isError ? 'failed' : 'loading';
-  // The supervisor and the steward are catalogue roles (D233 point 2): their rows are the ones placed here.
+  // The supervisor and the steward are catalogue roles: their rows are the ones placed here.
   const here = (scope: { kind: string; id?: string }) => placedHere(place, scope);
   const appointed = appointedRows(editor.catalogue).some((row) => here({ kind: row.scopeKind ?? 'machine', id: row.scopeId ?? undefined }))
     ? <AppointedRows placed={here} editor={editor} />
@@ -72,7 +72,7 @@ export function PlaceRoles({ place, notify, onSource }: { place: StructurePlaceA
   return <PlaceRolesView place={place} read={read} answer={chain.data ?? null} editor={editor} appointed={appointed} onSource={onSource} />;
 }
 
-/** The door from a role's source mark to the place that sets it, at the same work (SETUPUX1h): its workspace's page, or this machine's. */
+/** The door from a role's source mark to the place that sets it, at the same work: its workspace's page, or this machine's. */
 export type SourceDoor = (scope: { kind: 'workspace' | 'machine'; id?: string }, work: string) => void;
 
 /** What the section needs of the role editor's hook: the molecule reads no bridge. */

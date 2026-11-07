@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useIsFetching, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { WindowCommands } from '@shenora/react';
 
-// The window's splash, page side (SPLASHDATA1, D56; D22's SHEN3 note). The main window holds its splash over this page
-// until the page says its first screen has its data, over the kit's `CLOSE_SPLASH` (`closeSplash`): it came down as the
-// page's browser was made, and the person watched an empty frame fill in. The window lifts it at a bound of its own
+// The window's splash, page side. The main window holds its splash over this page
+// until the page says its first screen has its data, over the kit's `CLOSE_SPLASH` (`closeSplash`); lifting it as the
+// page's browser is made would show an empty frame filling in. The window lifts it at a bound of its own
 // when the page never says (`SplashLift`), so nothing here can hold the window for ever.
 
 /**
@@ -15,7 +15,7 @@ import { WindowCommands } from '@shenora/react';
 export const SPLASH_QUIET_MS = 150;
 
 /**
- * The roots of the queries the first screen draws (STARTFAST1b, the start-path design §4-5): a start lands on Overview or
+ * The roots of the queries the first screen draws: a start lands on Overview or
  * Sessions (`rememberedView`), and those views and the frame around them read the service's status, the repositories and
  * the registry, the driver's state, the quests, asks and sessions (the list's groups among them), and what needs the person
  * and the notices. Not the harnesses' probes nor the lines (`['driver', 'lines']`), which queue behind the driver's first
@@ -50,8 +50,8 @@ function useFirstScreenAnswered(firstScreen: (key: QueryKey) => boolean): boolea
 
 /**
  * Lift the window's splash, over the kit's `CLOSE_SPLASH`. Fire-and-forget, as every window command is (`useWindowChrome`): a call
- * that fails is a window that was never ours (a secondary window's, which the kit answers `NO_ROUTE`; a browser's, which has none),
- * and the window's own bound lifts its splash anyway. The page's error screen calls it too (PAGELOOP1): a page that stopped before
+ * that fails is a window that is not ours (a secondary window's, which the kit answers `NO_ROUTE`; a browser's, which has none),
+ * and the window's own bound lifts its splash anyway. The page's error screen calls it too: a page that stopped before
  * its first screen had its data is shown at once, rather than behind the splash until the bound.
  */
 export function liftSplash(): void {

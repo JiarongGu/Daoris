@@ -1,7 +1,7 @@
 import type { TreeGroup } from '../list/mapTreeModel';
 import { CLOSED_PAST, type CodeTree, defaultOpen, ROOT } from './codeClusters';
 
-// The code map as a tree (MAPUX1e; the map UX design §6): one group per folder by path, closed past 60 modules as the drawing is, each
+// The code map as a tree: one group per folder by path, closed past 60 modules as the drawing is, each
 // module a row in the folder that holds it, and a cycle a group of its own under the folder nearest it.
 
 const byName = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
