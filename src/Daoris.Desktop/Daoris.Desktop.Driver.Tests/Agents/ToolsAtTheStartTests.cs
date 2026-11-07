@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTONE1d (D230 point 3, the context-one design part D): a session Daoris runs on a Claude door holds its connector's tools from
-/// its first request, never as names behind a search step, whatever its kind. One switch, the adapter's own (HELP5), on every spawn; a
+/// A session Daoris runs on a Claude door holds its connector's tools from
+/// its first request, never as names behind a search step, whatever its kind. One switch, the adapter's own, on every spawn; a
 /// door whose harness has no such switch, Codex's among them, is handed nothing.
 /// </summary>
 public sealed class ToolsAtTheStartTests

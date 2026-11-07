@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3): a conversation's pending start whose agent refused it at the open, as its
+/// A conversation's pending start whose agent refused it at the open, as its
 /// replacement's keyed open reads it: the moving words kept on the refused record, which that open names so they move in its own step, in the
 /// order said; and a producer's retry that joined the moving words under the key of one kept there, which goes nowhere a second time. The
 /// replacement itself, which needs an agent, is <see cref="ChatPendingProcessTests"/>'s.

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1b (D229 point 2; the context-counters design §3): the session sees its line's course. The brief carries the counts as an
+/// The session sees its line's course. The brief carries the counts as an
 /// item under its own cap, accounted with a cut of its own; a go-on's words carry one line where a count moved or stands near what Daoris
 /// does on it; a start whose line counted something carries the item; and every word is Daoris's own, composed from codes and numbers,
 /// so a label planted in a count's source never reaches the text.

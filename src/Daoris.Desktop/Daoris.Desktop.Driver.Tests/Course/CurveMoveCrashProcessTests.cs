@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-iii part b (D212; the foundation design §3.3, §13.4 steps 1 to 5, §19.4, row f-iii's proof): the curve's move record holds
+/// The curve's move record holds
 /// through a crash at every boundary. A shell is killed at each place the executor passes (<see cref="Cuts"/>), and a shell that comes up
 /// takes its move up and ends it by its phase; the person's word the keyed open moved is then carried once by its destination's go-on, and the
 /// brief is written once by the dead shell or never, never twice; the move is not asked again under its key.
@@ -29,16 +29,16 @@ public sealed class CurveMoveCrashProcessTests : IAsyncLifetime
 
     /// <summary>What a killed shell's curve move comes to once a shell comes up.</summary>
     /// <param name="Phase">The move's phase after the come-up.</param>
-    /// <param name="Held">The reason it was held, where it was.</param>
+    /// <param name="Held">The reason it is held, where it is.</param>
     /// <param name="Closed">The reason it closed, where it did.</param>
-    /// <param name="Account">The account of the part whose go-on carries the word: the old part's before the open was made, the new part's after.</param>
+    /// <param name="Account">The account of the part whose go-on carries the word: the old part's before the open is made, the new part's after.</param>
     /// <param name="Briefed">How many times the dead shell's door wrote the brief to the new part.</param>
     private sealed record Ends(string Phase, string? Held, string? Closed, string Account, int Briefed);
 
-    /// <summary>The row of a boundary, where the person's word was kept on the old part (<paramref name="word"/>) or none was.</summary>
+    /// <summary>The row of a boundary, where the person's word is kept on the old part (<paramref name="word"/>) or none is.</summary>
     private static Ends Row(string cut, bool word) => cut switch
     {
-        // Before the open was asked: the line stays on its old part, the word with it, and the old part's own come-up carries it (§13.5's first row).
+        // Before the open is asked: the line stays on its old part, the word with it, and the old part's own come-up carries it.
         Cuts.Decided or Cuts.OldEnded => new("fell-back", null, null, "account-1", 0),
 
         // The open asked and never made: held `unrecorded` and closed, nothing opened, the word carried by the old part's go-on.

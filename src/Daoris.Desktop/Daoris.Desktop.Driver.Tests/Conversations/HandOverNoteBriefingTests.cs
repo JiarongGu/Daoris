@@ -3,13 +3,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1c (the mixed agents design §2: "where the old agent wrote one through its tool, its own hand-over note, kept and shown as
-/// that agent's claim"): the outgoing agent's note reaches the next agent beside Daoris's own record, marked as that agent's claim,
-/// never in its place; a conversation's briefing and a quest's carry-on alike. Nothing changes where no note was written.
+/// The outgoing agent's note reaches the next agent beside Daoris's own record, marked as that agent's claim,
+/// never in its place; a conversation's briefing and a quest's carry-on alike. Nothing changes where no note is written.
 /// </summary>
 public sealed class HandOverNoteBriefingTests
 {
-    /// <summary>SESSCTX1b: the conversation's briefing is Daoris's brief of its line (<see cref="ContextBrief"/>), the note its own section.</summary>
+    /// <summary>The conversation's briefing is Daoris's brief of its line (<see cref="ContextBrief"/>), the note its own section.</summary>
     [Fact]
     public void A_conversations_briefing_carries_the_outgoing_agents_note_as_its_claim_after_daoris_record()
     {

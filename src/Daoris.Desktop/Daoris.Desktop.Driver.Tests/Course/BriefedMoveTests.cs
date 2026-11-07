@@ -4,14 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 a-iii (D212, the design's §3.2 step 6 and §7 row 4): the briefed move, *Go on with Daoris's brief* and the same move by
+/// The briefed move, *Go on with Daoris's brief* and the same move by
 /// itself where a conversation's own conversation is proven lost, takes the walk with its own account first where that is ready, rather
 /// than opening on its own account as a pick, which refuses exactly while the account cools, when the person needs the part most. The
 /// person's press is the one exception to an automatic part's same-account refusal, and it takes one selection, counted once. An account
-/// the person picked (row a-ii) stays the one account: its part waits for it as before.
+/// the person picked stays the one account: its part waits for it.
 /// </summary>
 /// <remarks>
-/// The conversations run on the <c>acp-stub</c> adapter, a node stand-in on the protocol door whose accounts are the stub's (TOOL4j): no
+/// The conversations run on the <c>acp-stub</c> adapter, a node stand-in on the protocol door whose accounts are the stub's: no
 /// model, no account, no sign-in, no real agent binary. Every case has its own scratch home under <c>_fixtures/</c> and sets no variable
 /// of the process's environment, <c>DAORIS_HOME</c> least.
 /// </remarks>
@@ -165,7 +165,7 @@ public sealed class BriefedMoveTests : IDisposable
     }
 
     /// <summary>
-    /// An account the person picked (row a-ii) stays the one account, as D205 §3.5(d) has it: its part waits for it while it cools, though
+    /// An account the person picked stays the one account: its part waits for it while it cools, though
     /// another account is ready, and opens on it where it is ready.
     /// </summary>
     [Fact]
@@ -205,7 +205,7 @@ public sealed class BriefedMoveTests : IDisposable
             picked: new HarnessConversations(_home).PickedOn(session, account))).Answer;
 
     /// <summary>
-    /// 🔴 PICKCARRY1 (the steward's call of 2026-10-26, amending row a-ii's reading (3) and row a-iii's): a pick belongs to the conversation,
+    /// 🔴 A pick belongs to the conversation,
     /// so the new part the briefed move opens on the account the person picked keeps it, in the press and in the part a lost conversation
     /// goes on in alike, and the new part's next go-on waits for that account while it cools, though another is ready, as the part it came
     /// from did.
@@ -290,7 +290,7 @@ public sealed class BriefedMoveTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 TREEGONE2 (the owner's report, 2026-11-03; ONEWAY1's design §3 C5): a closed quest's session whose tree the look's tidy took, its
+    /// 🔴 A closed quest's session whose tree the look's tidy took, its
     /// empty branch with it, goes on by the person's press as a new part in a fresh tree grown from the line, handed Daoris's brief and their
     /// words, its record naming the one it continues. Nothing is made at the old tree's place.
     /// </summary>
@@ -344,7 +344,7 @@ public sealed class BriefedMoveTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1d-ii part 4 (the foundation design §3.4 rule 3, O6-F2, O6-F8): against a host whose <c>opens</c> mark is 2, the briefed move
+    /// 🔴 Against a host whose <c>opens</c> mark is 2, the briefed move
     /// and its not-offered path open the new part through the keyed door, which moves the person's words and one kept since the read in its own
     /// step, another agent's answer staying where it waits. The delivery is the new part's moved words: one prompt, the brief first where there is
     /// one, then each word once in order, its file copied into the new part's folder and linked from there; each shown on the new part by its own
@@ -433,7 +433,7 @@ public sealed class BriefedMoveTests : IDisposable
     [Fact]
     public async Task On_the_native_door_each_moved_word_is_shown_under_its_id_before_the_answer()
     {
-        // A Daoris account for Claude Code's doors, where every start runs (OWNSPACE1a).
+        // A Daoris account for Claude Code's doors, where every start runs.
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "daoris"));
         var log = Path.Combine(_home, "native.log");
         var config = DriverConfig.Empty with

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 a-ii (D212, the design §3.2 step 4): a start the person names an account for keeps, on its binding in the desktop store,
+/// A start the person names an account for keeps, on its binding in the desktop store,
 /// that they picked it. The doors that name one are <c>START_CHAT</c>'s <c>profile</c> (with words or without), the terminal's account
 /// and the person's hand-over press with an account; an agent's ask, the curve's move and a hand-over with no account named keep none, and
 /// a named account on those keeps today's reading. The pick is never a field on the service's record, which the ledger stand-in shows
@@ -110,7 +110,7 @@ public sealed class ChatHandOverTests : IDisposable
 
         Assert.True(handed.Kept, handed.Message);
         var next = handed.SessionId!;
-        // It opened on the account asked for, or the walk's where none was; and a pick is kept only where the person named it.
+        // It opened on the account asked for, or the walk's where none is; and a pick is kept only where the person named it.
         var ran = (await client.RecordAsync(next))!.Profile;
         if (account is not null) Assert.Equal(account, ran);
         Assert.Equal(picked, Conversations.PickedOn(next, ran));
@@ -120,10 +120,10 @@ public sealed class ChatHandOverTests : IDisposable
     }
 
     /// <summary>
-    /// PICKCARRY1, as AGENTPROVIDER1 s-vii reads it: a hand-over of a conversation the person picked an account for to its agent's other door
+    /// A hand-over of a conversation the person picked an account for to its agent's other door
     /// (<c>acp-stub</c> to <c>stub</c>, both the stub's, as <c>claude-code-acp</c> and <c>claude-code</c> are Claude Code's) opens a part on the
-    /// account the person picked, one account of one agent, so the part keeps the pick. Before, the record's door was compared with the new
-    /// part's and the pick was dropped; two providers sharing a pool are two agents and keep it apart (<c>AgentOfDoorTests</c>).
+    /// account the person picked, one account of one agent, so the part keeps the pick; the record's door is not compared with the new
+    /// part's. Two providers sharing a pool are two agents and keep it apart (<c>AgentOfDoorTests</c>).
     /// </summary>
     [Fact]
     public async Task A_hand_over_of_a_picked_conversation_to_its_agent_s_other_door_on_the_picked_account_keeps_the_pick()

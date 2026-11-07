@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// USAGEPROBE1 (D165, D179): each account's use projected from its last reading plus Daoris's own turns since, by the points
+/// Each account's use projected from its last reading plus Daoris's own turns since, by the points
 /// its readings rose over the work its turns spent, and when a start owes the maker a question: never a guess upward from
-/// nothing, and never near or over by a projection (D130 point 9). Pure but for the history built from USAGECAP1a2's shape.
+/// nothing, and never near or over by a projection. Pure but for the history built from the turns' shape.
 /// </summary>
 public sealed class UsageProjectionTests : IDisposable
 {
@@ -33,7 +33,7 @@ public sealed class UsageProjectionTests : IDisposable
     [Fact]
     public void A_turn_s_work_weighs_each_kind_by_the_table_and_a_count_not_said_is_never_zero_made_up()
     {
-        // Input 1, output 5, a cache read 0.1, a cache write 1.25 (D179 point 3).
+        // Input 1, output 5, a cache read 0.1, a cache write 1.25.
         Assert.Equal(3000, UsageProjection.Work(new TurnTokens(1000, 100, 10_000, 400)));
         Assert.Equal(1000, UsageProjection.Work(new TurnTokens(1000, null, null, null)));
         Assert.Null(UsageProjection.Work(new TurnTokens(null, null, null, null)));
@@ -64,7 +64,7 @@ public sealed class UsageProjectionTests : IDisposable
     public void Too_little_history_is_no_ratio_never_a_guess()
     {
         var reset = Now.AddHours(2);
-        // Four points of rise is under the five a ratio is read on (D179 point 4's interval).
+        // Four points of rise is under the five a ratio is read on.
         Assert.Null(UsageProjection.Ratio([Read("session", 0.10, reset, 3), Read("session", 0.14, reset, 1)], [Turn(2, 100_000)], "session", Now));
         // A rise with no turn of Daoris's beside it is someone else's use: nothing to divide by.
         Assert.Null(UsageProjection.Ratio([Read("session", 0.10, reset, 3), Read("session", 0.40, reset, 1)], [], "session", Now));
@@ -120,7 +120,7 @@ public sealed class UsageProjectionTests : IDisposable
     {
         var said = new AccountSaid([Said("session", 0.40, Now.AddHours(3), 10)]);
 
-        // Too little history to weigh what was spent since: the reading alone, said unweighed.
+        // Too little history to weigh what is spent after it: the reading alone, said unweighed.
         var none = UsageProjection.Of(said, [], [Turn(0.1, 9_000_000)], Now)!.Of("session")!;
         Assert.Equal((ProjectedBy.Unweighed, 0.40), (none.How, none.Projected));
 
@@ -208,7 +208,7 @@ public sealed class UsageProjectionTests : IDisposable
 
         Assert.Equal(1.0, projected.Of("session")!.Projected, 6);
         Assert.Equal(ProbeWhy.Near, UsageProjection.Owed(said, projected, use, Now));
-        // Near and over are the maker's reading's alone (D130 point 9).
+        // Near and over are the maker's reading's alone.
         Assert.False(AccountReadings.Near(said, use, Now));
         Assert.Equal(-10, UsageProjection.Room(projected, use, Now)!.Value, 6);
     }
@@ -280,7 +280,7 @@ public sealed class UsageProjectionTests : IDisposable
         Assert.Equal([1000.0], ledger.Of("claude-code", "account-1", Now).Turns.Select(turn => turn.Work));
 
         UsageHistory.Turned(_home, binding, new TurnSeen("3f9c2a71", 2, null, Now.AddMinutes(-1), new TurnTokens(2000, null, null, null), null, false), Now);
-        // A turn whose report's meaning is not known (D179 point 8), and one that said no count, are held as spend nothing weighs.
+        // A turn whose report's meaning is not known, and one that said no count, are held as spend nothing weighs.
         UsageHistory.Turned(_home, binding with { Meaning = UsageHistory.MeaningUnknown }, new TurnSeen("3f9c2a71", 3, null, Now.AddMinutes(-1), new TurnTokens(5000, null, null, null), null, false), Now);
         UsageHistory.Turned(_home, binding, new TurnSeen("3f9c2a71", 4, null, Now.AddMinutes(-1), null, null, true), Now);
         Assert.Equal(new double?[] { 1000, 2000, null, null }, ledger.Of("claude-code", "account-1", Now).Turns.Select(turn => turn.Work));

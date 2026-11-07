@@ -5,15 +5,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HEAD2e2 (D162's HEAD2e note, D50): an ask's short title at a terminal, the twin of the composer's field and of the one Ask Daoris's
+/// An ask's short title at a terminal, the twin of the composer's field and of the one Ask Daoris's
 /// ask card says. <c>daoris ask … --short "…"</c> sends it as typed; the service judges it, so a title too long reaches the door
-/// unchanged and the refusal is the service's sentence, printed verbatim. A service stood in: the fast half (MOD8).
+/// unchanged and the refusal is the service's sentence, printed verbatim. A service stood in: the fast half.
 /// </summary>
 public sealed class AskShortCommandTests
 {
     private const string Refusal = "A short title is at most 40 characters on one line. Nothing was asked.";
 
-    /// <summary>The ask's door hears the title as typed, and nothing where none was given; a too-long one is the service's to refuse.</summary>
+    /// <summary>The ask's door hears the title as typed, and nothing where none is given; a too-long one is the service's to refuse.</summary>
     [Fact]
     public async Task A_new_ask_carries_the_short_title_to_the_asks_door_unjudged()
     {

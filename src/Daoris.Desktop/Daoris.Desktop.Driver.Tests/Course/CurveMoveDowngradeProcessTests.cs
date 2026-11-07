@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-iii part b (D212; the foundation design §13.5's downgrade table, §19.4, row f-iii's proof): the curve's move across a downgrade,
+/// The curve's move across a downgrade,
 /// as <c>LimitMoveDowngradeProcessTests</c> proves the live limit move's. A shell is killed at each boundary of the move (<see cref="Cuts"/>),
 /// then an older build comes up on the home, then this build returns. The person's word the open moved is carried once, by whichever build's
 /// go-on reaches it first, and never again; this build's return acts once.
@@ -24,18 +24,18 @@ public sealed class CurveMoveDowngradeProcessTests : IAsyncLifetime
     public async Task DisposeAsync() => await _h.DisposeAsync();
 
     /// <param name="Phase">The move's phase after this build's return.</param>
-    /// <param name="Held">The reason it was held, where it was.</param>
+    /// <param name="Held">The reason it is held, where it is.</param>
     /// <param name="Closed">The reason it closed, where it did.</param>
     /// <param name="Word">The disposition the return gave the moved word, where it read it.</param>
     /// <param name="Briefed">How many times the killed shell's door wrote the brief to the new part.</param>
     private sealed record After(string Phase, string? Held, string? Closed, string? Word, int Briefed);
 
-    /// <summary>The row of a boundary, where the person's word was kept on the old part (<paramref name="word"/>) or none was.</summary>
+    /// <summary>The row of a boundary, where the person's word is kept on the old part (<paramref name="word"/>) or none is.</summary>
     private static After Row(string cut, bool word) => (cut, word) switch
     {
-        // Before the open: the old part as it was. With a word kept on it, an older build's go-on carries it on a record that continues the old
-        // part, which no key of the move's made, so this build's return closes the move `superseded` (§13.5's first row, the head read); with
-        // none the old part is as it was and the return falls back.
+        // Before the open: the old part unchanged. With a word kept on it, an older build's go-on carries it on a record that continues the old
+        // part, which no key of the move's makes, so this build's return closes the move `superseded` (the head read); with
+        // none the old part is unchanged and the return falls back.
         (Cuts.Decided or Cuts.OldEnded, true) => new("closed", null, MoveCloseWhy.Superseded, null, 0),
         (Cuts.Decided or Cuts.OldEnded, false) => new("fell-back", null, null, null, 0),
         (Cuts.Opening, _) => new("closed", MoveHoldWhy.Unrecorded, MoveCloseWhy.Resolved, null, 0),

@@ -5,13 +5,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>windows.json</c> read (TOOL6c, D130 §5.2): the driver writes what each account's agent said about its windows, and
-/// the walk reads it here, and <c>daoris agent list</c> and <c>profile use</c>. The CLI's <c>windows.ts</c> and its
-/// <c>windows.test.ts</c>, which held this table row for row, left with <c>daoris agent list</c> (PUSH1f2e4); the rows stay.
+/// <c>windows.json</c> read: the driver writes what each account's agent said about its windows, and
+/// the walk reads it here, and <c>daoris agent list</c> and <c>profile use</c>.
 /// </summary>
 /// <remarks>
 /// What an account said is written as JSON: each window still said, in the file's order, with its use, reset, standing,
-/// credits, when it was seen and on which session; <c>null</c> is nothing said.
+/// credits, when it is seen and on which session; <c>null</c> is nothing said.
 /// </remarks>
 public sealed class WindowsTwinTests : IDisposable
 {
@@ -39,8 +38,8 @@ public sealed class WindowsTwinTests : IDisposable
         ["source"] = window.Source,
     })]);
 
-    // ——— Reading (§5.2): missing or unreadable is nothing said; a reading is gone at its reset; a week a limit told says no
-    // use; names compare without case; the tool's own sign-in is its own key, "" (CODEXUSE3).
+    // ——— Reading: missing or unreadable is nothing said; a reading is gone at its reset; a week a limit told says no
+    // use; names compare without case; the tool's own sign-in is its own key, "".
 
     [Theory]
     [InlineData("missing is nothing said", null, "2026-10-02T12:00:00Z", "claude-code", "account-1", null)]

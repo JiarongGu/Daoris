@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1n (the context counters design §4.5, §9): a conversation's line reads the supervisor's rules as a driven line does. Its episode
+/// A conversation's line reads the supervisor's rules as a driven line does. Its episode
 /// makes its tries rule's number of tries; past them a move rule moves it by weight, counted in <c>moves</c>, the seeded hold ends its turn as
 /// always, and the moves rule's bound holds it; its limit's <c>wait</c> and <c>ask</c> keep it on its own account. Each act is kept.
 /// </summary>

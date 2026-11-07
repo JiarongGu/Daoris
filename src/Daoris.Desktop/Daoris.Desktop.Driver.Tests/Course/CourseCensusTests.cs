@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1e part 1 (the foundation design §3.1's census sentence, the brief §7.2): every site that opens a part <c>from</c> another
+/// Every site that opens a part <c>from</c> another
 /// or resumes with words, as a shape found in a source file. A file with a shape either reads the course or is named <i>not yet moved</i>
 /// in <c>fixtures/course-sites.json</c> with the survey's paths it decides, the row that adopts it (h for conversations, i for driven
 /// lines) and whether it opens a part and hands words (<c>hands</c>, which row d-ii's later parts read). Nothing reads the course yet, so
@@ -56,7 +56,7 @@ public sealed class CourseCensusTests
         var named = table.GetProperty("sites").EnumerateArray()
             .ToDictionary(site => (File: site.GetProperty("file").GetString()!, Shape: site.GetProperty("shape").GetString()!));
         var reads = new Regex(@"\b(LineCourse|CourseFacts)\b");
-        // FOUNDATION1h branch 8: a file that names no course type, whose calls each go to a reader of the course, is adapted: its shape is placed
+        // A file that names no course type, whose calls each go to a reader of the course, is adapted: its shape is placed
         // by the readers it is named through, each of which reads the course.
         var adapted = table.GetProperty("adapted").EnumerateArray()
             .ToDictionary(site => (File: site.GetProperty("file").GetString()!, Shape: site.GetProperty("shape").GetString()!));
@@ -110,7 +110,7 @@ public sealed class CourseCensusTests
 
         var placed = named.Values.SelectMany(site => site.GetProperty("paths").EnumerateArray().Select(path => path.GetString()!)).ToHashSet();
         var notDecisions = table.GetProperty("notDecisions").EnumerateArray().ToDictionary(item => item.GetProperty("path").GetString()!);
-        // FOUNDATION1h branch 3: a path whose every site now reads the course is named moved, with the branch that moved it, so it is neither
+        // A path whose every site reads the course is named moved, with the branch that moved it, so it is neither
         // placed (no site of it is left) nor a non-decision.
         var moved = table.GetProperty("moved").EnumerateArray().ToDictionary(item => item.GetProperty("path").GetString()!);
         foreach (var path in "ABCDEFGHIJKLMN".Select(letter => letter.ToString()))
@@ -137,25 +137,24 @@ public sealed class CourseCensusTests
             .Where(site => site.GetProperty("shape").GetString() == "answers-alone-read")
             .Select(site => Path.GetFileName(site.GetProperty("file").GetString()!))
             .OrderBy(file => file, StringComparer.Ordinal);
-        // FOUNDATION1h branch 7 and FOUNDATION1i path 1: the chat's go-on, the helper's words and the driver read the course.
+        // The chat's go-on, the helper's words and the driver read the course.
         Assert.Equal(["SupervisorDoor.cs"], holds);
     }
 
     /// <summary>
-    /// The closed values of a site's <c>moving</c>, which says how the open of a site that hands words moves them (FOUNDATION1d-ii part 4; part
-    /// 5 adopted the driven carry-on and the refused open, so no site waits on a later part).
+    /// The closed values of a site's <c>moving</c>, which says how the open of a site that hands words moves them (the driven carry-on and the refused open
+    /// are adopted, so no site waits on a later part).
     /// </summary>
     private static readonly string[] Moving = ["moves", "keyed", "no move"];
 
     /// <summary>
-    /// FOUNDATION1d-ii parts 4 and 5 (the foundation design §3.4 rule 3): every site that opens a part and hands it words names how its open
+    /// Every site that opens a part and hands it words names how its open
     /// moves them, and none that does not: <c>moves</c>, its open asked to move the old part's words (<c>MovedWords.Asked</c>) and its delivery
-    /// read from the destination's moved words (<c>MovedWords.Moving</c>), the driven carry-on and the refused open among them since part 5;
-    /// <c>keyed</c>, the hand-over's take (FOUNDATION1f-v part a), which asks its open under the move's key with nothing named and nothing read,
+    /// read from the destination's moved words (<c>MovedWords.Moving</c>), the driven carry-on and the refused open among them;
+    /// <c>keyed</c>, the hand-over's take, which asks its open under the move's key with nothing named and nothing read,
     /// as the curve's does, so the host moves every word of the person's kept on the old part meanwhile and the new part's own go-on says it
     /// after the brief; it hands no word of its own, so it reads none; <c>no move</c>, a site
-    /// that hands words to its own record or to a fresh one, with no record left, the driven go-on's resume among them. The ended limit move's
-    /// box members that read the destination's moved words were named until row f-vi retired the box (O6-F13; FOUNDATION1f-vi part a).
+    /// that hands words to its own record or to a fresh one, with no record left, the driven go-on's resume among them.
     /// </summary>
     [Fact]
     public void Every_site_that_hands_words_names_how_its_open_moves_them()
@@ -180,19 +179,17 @@ public sealed class CourseCensusTests
             Assert.True(Regex.IsMatch(reads, @"\bMovedWords\.(Moving|OnAsync)\("), $"{file} is named as moving its words but reads no destination's moved words");
         }
 
-        // The ended limit move's box members were named here until row f-vi retired the box (FOUNDATION1f-vi part a): its move is read from the
-        // store's record, so the table names none and the move's source has none of them.
+        // The ended limit move is read from the store's record, so the table names no box member and the move's source has none.
         Assert.False(table.TryGetProperty("box", out _), "the ended limit move's box members are retired");
         var source = WithoutComments(File.ReadAllText(Path.Combine(Root, "Daoris.Desktop.Driver/Course/Chat/LimitMove.cs")));
         Assert.DoesNotMatch(@"\b(DeliveredAsync|DeliveredToAsync|TakeUpBoxesAsync|TakeUpMovedAsync|box\.Moved)\b", source);
     }
 
     /// <summary>
-    /// FOUNDATION1f-ii part a (the foundation design §3.3): every move that keeps its move record is named in <c>records</c> with its member
-    /// and the row that adopted it, and none that does not: a source that decides a move through the conversations' holder
-    /// (<c>Moves.BeginAsync(</c>) is named, and each named member decides through it. The live limit move is the first and the curve's move
-    /// the second (f-iii part a), the conversation's hand-over's ask the next (f-v part a, through the holder it is handed) and the quest's
-    /// hand-over's the driven member's (f-v part c); rows f-iii's other parts to f-vi add theirs.
+    /// Every move that keeps its move record is named in <c>records</c> with its member,
+    /// and none that does not: a source that decides a move through the conversations' holder
+    /// (<c>Moves.BeginAsync(</c>) is named, and each named member decides through it. The live limit move, the curve's move,
+    /// the conversation's hand-over's ask (through the holder it is handed) and the quest's hand-over's (the driven member) are named.
     /// </summary>
     [Fact]
     public void Every_move_that_keeps_its_record_is_named_with_its_member()
@@ -221,7 +218,7 @@ public sealed class CourseCensusTests
     }
 
     /// <summary>
-    /// Path M, SWITCHCTX1's carry, has no code: the census reserves it, and fails the day a source writes a carried move, so the path is
+    /// Path M, the carry, has no code: the census reserves it, and fails the day a source writes a carried move, so the path is
     /// placed at its site then.
     /// </summary>
     [Fact]

@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xiii, the Context cuts: what they keep. Each case uses only surface present before the cuts and after them, so
-/// it passes on the move commit and on the cut: the closing note's one wording and its bound in a brief, a word told as Daoris's by
+/// What the Context cuts keep. Each case uses only surface present on both sides of the cuts, so
+/// it passes across them: the closing note's one wording and its bound in a brief, a word told as Daoris's by
 /// its author and a channel's claim by its opening, the attachments' folder a brief names, the gates a brief reads a check by (the
 /// tree's file, then this machine's mapping), and the instruction's account of the set-up's source, of the asking section, of the
 /// words, the go-aheads and the channel it counts by the instruction's own bounds. The seams the cuts add are
@@ -139,7 +139,7 @@ public sealed class ContextBoundaryTests : IDisposable
 
         var onAsk = Section(TargetPrompt.Composed(TargetPromptGoldenTests.Full with { Asker = "ask #a1b2c3" }).Account, HandedSections.Asking);
         var onRepository = Section(TargetPrompt.Composed(TargetPromptGoldenTests.Full with { Asker = "bridge" }).Account, HandedSections.Asking);
-        // CONTEXTONE1c: the look's sentence opens the asking section, its places the standing block's.
+        // The look's sentence opens the asking section, its places the standing block's.
         Assert.StartsWith("looking before asking, asking another repository, and stopping for the person, a go-ahead asked once on the ask: ", onAsk.Said);
         Assert.StartsWith("looking before asking, asking another repository, and stopping for the person: ", onRepository.Said);
     }

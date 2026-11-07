@@ -5,7 +5,7 @@ using StandInService = Daoris.Desktop.Driver.Tests.OrphanedSessionTests.StandInS
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a person attaches to a message (CONV4c): kept for the session under the home, granted read at
+/// What a person attaches to a message: kept for the session under the home, granted read at
 /// spawn, and referenced the way each door reads best — measured first
 /// (docs/2026-09-25-message-content-evidence.md).
 /// </summary>
@@ -22,7 +22,7 @@ public sealed class ChatAttachmentTests : IDisposable
     public ChatAttachmentTests()
     {
         Directory.CreateDirectory(Path.Combine(_home, "engine"));
-        // A Daoris account for Claude Code's doors, where every start now runs (OWNSPACE1a): never the person's own home.
+        // A Daoris account for Claude Code's doors, where every start runs: never the person's own home.
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "daoris"));
     }
 
@@ -84,7 +84,7 @@ public sealed class ChatAttachmentTests : IDisposable
 
     /// <summary>
     /// The native door: the file is named by its path on a line after the person's words, which the
-    /// agent reads with its own tool (measured); the session was handed a read of exactly the session's
+    /// agent reads with its own tool (measured); the session is handed a read of exactly the session's
     /// folder at spawn; and the record keeps the person's words and the file's name — never the path
     /// line Daoris added.
     /// </summary>
@@ -177,7 +177,7 @@ public sealed class ChatAttachmentTests : IDisposable
         public void Open(string address) { }
     }
 
-    /// <summary>A plugin whose server drives Daoris's browser, under the home the chat's runner reads (D78).</summary>
+    /// <summary>A plugin whose server drives Daoris's browser, under the home the chat's runner reads.</summary>
     private void HandBrowserPlugin()
     {
         var plugin = DaorisHome.Entry(_home, HomeEntry.Plugins,"in-app-browser");
@@ -190,8 +190,8 @@ public sealed class ChatAttachmentTests : IDisposable
     }
 
     /// <summary>
-    /// BRWHINT1a: a new chat's agent is told the browser it was handed with its first message, ahead of the person's words, on
-    /// each door — and with no later one. The person's words stay as written in the record, beside a note of what was told.
+    /// A new chat's agent is told the browser it is handed with its first message, ahead of the person's words, on
+    /// each door — and with no later one. The person's words stay as written in the record, beside a note of what is told.
     /// </summary>
     [Theory]
     [InlineData("claude-code", "user: ")]
@@ -220,8 +220,8 @@ public sealed class ChatAttachmentTests : IDisposable
     }
 
     /// <summary>
-    /// BROWSERSTART1: a chat taken up (the come-up after a restart starts it the same way) is handed the browser's endpoint and
-    /// brings no browser up, and its agent is still told the browser it was handed.
+    /// A chat taken up (the come-up after a restart starts it the same way) is handed the browser's endpoint and
+    /// brings no browser up, and its agent is still told the browser it is handed.
     /// </summary>
     [Fact]
     public async Task A_chat_taken_up_brings_no_browser_up_and_is_still_told_its_browser()
@@ -238,7 +238,7 @@ public sealed class ChatAttachmentTests : IDisposable
         Assert.Contains("Daoris has handed you its own browser as the MCP server `browser`", HeardText());
     }
 
-    /// <summary>Nothing that drives the browser handed, nothing said (BRWHINT1a).</summary>
+    /// <summary>Nothing that drives the browser handed, nothing said.</summary>
     [Fact]
     public async Task A_chat_handed_no_browser_is_told_nothing_of_one()
     {
@@ -278,7 +278,7 @@ public sealed class ChatAttachmentTests : IDisposable
         session.Events.Page(session.Id).Events.Count(e => e.Kind == SessionEventKind.Turn);
 
     /// <summary>
-    /// A stand-in Claude Code on its structured wire. It writes down the settings it was handed and every
+    /// A stand-in Claude Code on its structured wire. It writes down the settings it is handed and every
     /// message's whole text, and answers each with a result.
     /// </summary>
     private string NativeHarness()
