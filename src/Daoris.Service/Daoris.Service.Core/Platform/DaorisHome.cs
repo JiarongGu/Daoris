@@ -323,6 +323,8 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Windows = new("windows", HomeCategory.Data, "data/windows.json", "windows.json");
     public static readonly HomeEntry Reads = new("reads", HomeCategory.Data, "data/reads.json", "reads.json");
     public static readonly HomeEntry Permissions = new("permissions", HomeCategory.Data, "data/permissions.json", "permissions.json");
+    public static readonly HomeEntry Files = new("files", HomeCategory.Data, "data/files.json", "data/files.json");
+    public static readonly HomeEntry FilesFound = new("files-found", HomeCategory.Data, "data/files-found.json", "data/files-found.json");
     public static readonly HomeEntry RuleProposals = new("rule-proposals", HomeCategory.Data, "data/proposals", "proposals");
     public static readonly HomeEntry Tools = new("tools", HomeCategory.Data, "data/tools.json", "tools.json");
     public static readonly HomeEntry PluginState = new("plugin-state", HomeCategory.Data, "data/plugins.json", "plugins.json");
@@ -433,7 +435,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     /// <summary>Every entry, in the table's order, which the twins hold in the same order.</summary>
     public static IReadOnlyList<HomeEntry> Table { get; } =
     [
-        DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins,
+        DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, Files, FilesFound, RuleProposals, Tools, PluginState, Plugins,
         PluginApprovals, Usage,
         Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Sessions, Helpers, Partners, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,

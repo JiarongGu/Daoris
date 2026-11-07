@@ -10,7 +10,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class RoomCheckTests
 {
-    private static RoomCheckReport Check(string lanes, string? gates, params string[] tracked) => RoomCheck.Of(lanes, gates, tracked);
+    private static RoomCheckReport Check(string lanes, string? files, params string[] tracked) => RoomCheck.Of(lanes, files, tracked);
+
+    private static string Outputs(string path) => $$"""{ "rules": [ { "kind": "output", "paths": ["{{path}}"] } ] }""";
 
     private static string[][] Groups(RoomCheckReport report) => [.. report.Groups.Select(group => group.ToArray())];
 
@@ -46,7 +48,7 @@ public sealed class RoomCheckTests
                 { "id": "records", "paths": ["TASKS.md"], "builds": {} }
               ]
             }
-            """, """{ "trees": { "outputs": ["web/src/generated/"] } }""",
+            """, Outputs("web/src/generated/"),
             "web/package.json", "web/src/main.ts", "contracts/Contracts.csproj", "contracts/Quest.cs", "tools/gen.mjs", "TASKS.md");
 
         Assert.Empty(report.Problems);
@@ -67,7 +69,7 @@ public sealed class RoomCheckTests
                 { "id": "cli", "paths": ["cli/**"], "builds": { "units": ["cli/package.json"] } }
               ]
             }
-            """, """{ "trees": { "outputs": ["service/wwwroot/"] } }""",
+            """, Outputs("service/wwwroot/"),
             "web/package.json", "service/Http.csproj", "modules/Modules.csproj", "cli/package.json");
 
         Assert.Empty(report.Problems);
@@ -158,7 +160,7 @@ public sealed class RoomCheckTests
                 { "id": "tools", "paths": ["tools/**", "web/package-lock.json"], "builds": {} }
               ]
             }
-            """, """{ "trees": { "dependencies": [ { "path": "web/node_modules/", "key": ["web/package-lock.json"] } ] } }""",
+            """, """{ "rules": [ { "kind": "dependency", "paths": ["web/node_modules/"], "key": ["web/package-lock.json"] } ] }""",
             "web/package.json", "web/package-lock.json", "tools/a.mjs");
 
         Assert.Contains("the lockfile web/package-lock.json is in room tools and the unit beside it, web/package.json, in room web", report.Problems);
@@ -176,7 +178,7 @@ public sealed class RoomCheckTests
               ],
               "laneless": [ { "what": "The documents.", "paths": ["docs/**"] } ]
             }
-            """, """{ "trees": { "outputs": ["out/"] } }""", "tools/a.mjs", "devkit/b.cs", "web/c.ts", "docs/code-map.json");
+            """, Outputs("out/"), "tools/a.mjs", "devkit/b.cs", "web/c.ts", "docs/code-map.json");
 
         Assert.Contains("docs/code-map.json is written from rooms tools and devkit", report.Problems);
         Assert.Contains("out/web/ is written from rooms tools and web", report.Problems);
@@ -198,7 +200,7 @@ public sealed class RoomCheckTests
             """, null, "a/A.csproj");
 
         Assert.Contains("room a reads b/B.csproj, which no tracked file or declared output is", report.Problems);
-        Assert.Contains("room a writes a/bin/, which is neither tracked nor declared in trees", report.Problems);
+        Assert.Contains("room a writes a/bin/, which is neither tracked nor named in daoris.files.json", report.Problems);
     }
 
     [Fact]
@@ -212,10 +214,10 @@ public sealed class RoomCheckTests
     }
 
     [Fact]
-    public void A_malformed_classes_declaration_fails_the_check_with_its_reason()
+    public void A_rule_reaching_a_tracked_path_fails_the_check_with_its_reason()
     {
-        var report = Check("""{ "lanes": [ { "id": "a", "paths": ["a/**"], "builds": {} } ] }""", """{ "trees": { "outputs": ["a/"] } }""", "a/x.cs");
+        var report = Check("""{ "lanes": [ { "id": "a", "paths": ["a/**"], "builds": {} } ] }""", Outputs("a/"), "a/x.cs");
 
-        Assert.Contains("trees.outputs: 'a/' holds a/x.cs, which git tracks", report.Problems);
+        Assert.Contains("rules[1]: 'a/' holds a/x.cs, which git tracks", report.Problems);
     }
 }

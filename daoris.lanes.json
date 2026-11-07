@@ -129,6 +129,7 @@
         ".gitignore",
         ".github/**",
         "daoris.gates.json",
+        "daoris.files.json",
         "package.json",
         "package-lock.json",
         "src/Daoris.Devkit/**",
