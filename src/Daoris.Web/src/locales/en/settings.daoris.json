@@ -567,7 +567,7 @@
   "settings.daoris.setup.path.onSays": "Adds this folder to the end of your account's PATH:",
   "settings.daoris.setup.path.offSays": "Removes exactly this folder from your account's PATH:",
   "settings.daoris.setup.path.accountOnly": "Your account's PATH only, never the machine's. Programs already running are told the environment changed.",
-  "settings.daoris.setup.path.terminals": "Terminals opened after it find daoris and daoris-driver.",
+  "settings.daoris.setup.path.terminals": "Terminals opened after it find daoris.",
   "settings.daoris.setup.path.another": "Another daoris comes first and still will: {{path}}",
   "settings.daoris.setup.address.hint": "Your account's DAORIS_SERVICE_URL",
   "settings.daoris.setup.address.default": "not set (the default)",

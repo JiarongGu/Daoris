@@ -351,7 +351,7 @@ export const useSetKeep = () => useDriverChange('SET_KEEP');
 
 /**
  * *Try again* (RETRY1; SESSUX1b, D126 §3.4): let a parked quest run again, counting from where it stands, or release one
- * the person's stop holds — whichever the driver's verdict says applies, refused where neither does. `daoris driver
+ * the person's stop holds — whichever the driver's verdict says applies, refused where neither does. `daoris quest
  * retry <quest>` and its `--session` are the terminal's two halves.
  */
 export const useRetryQuest = () => useDriverChange('RETRY_QUEST');
@@ -582,7 +582,7 @@ export const useSetTrees = () => useDriverChange('SET_TREES');
 /** The switch *Daoris may change this checkout's files* (GITAPP2b): off by default, writes nothing to the repository itself. */
 export const useSetCheckoutWrites = () => useDriverChange('SET_CHECKOUT_WRITES');
 /**
- * A repository's standing answer (KNOWUSE1b): the person's words, or none to clear it — the same `standing` `daoris driver
+ * A repository's standing answer (KNOWUSE1b): the person's words, or none to clear it — the same `standing` `daoris place
  * standing <repo> "…"|--clear` edits. Blank words or words past the bound are the driver's refusal, its sentence verbatim.
  */
 export const useSetStanding = () => useDriverChange('SET_STANDING');

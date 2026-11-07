@@ -6,8 +6,8 @@ import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 
 /**
  * *Put on my PATH* and *Take off my PATH* (WIRING1e, the this-Daoris design §4), in the Terminal card. Each says first what it will
- * do, inline: the folder, that it is **your account's PATH only**, never the machine's, that terminals opened afterwards find `daoris`
- * and `daoris-driver`, and which `daoris` comes first if another does. A development run has no launchers and says so with no press.
+ * do, inline: the folder, that it is **your account's PATH only**, never the machine's, that terminals opened afterwards find `daoris`,
+ * and which `daoris` comes first if another does. A development run has no launchers and says so with no press.
  *
  * @remarks
  * A molecule: drawn from props. The domain sends the press and tells the ask how it ended (a refusal is said inside it).

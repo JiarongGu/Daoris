@@ -4,7 +4,7 @@ using static Daoris.Driver.HelpProposals;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>setting</c> proposal (HELP1c, D89): one of the <c>daoris driver</c> verbs the room's doors
+/// Ask Daoris's <c>setting</c> proposal (HELP1c, D89): one of the <c>daoris place</c>, <c>settings</c>, <c>quest</c> and <c>git</c> verbs the room's doors
 /// table names — its door the verb, its target the repository, its workspace one for a whole workspace, its
 /// value what it is set to — judged by the config's own edits, which throw the route's refusal.
 /// </summary>
@@ -27,7 +27,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     // It proposes, and the person applies (HELP1c, D89).
     public string Tool => "setting_propose";
 
-    /// <summary>The `daoris driver` verbs it takes, in the order the service's twin lists them (<c>HelpSettingProposalWriter.Doors</c>).</summary>
+    /// <summary>The `daoris place`, `settings`, `quest` and `git` verbs it takes, in the order the service's twin lists them (<c>HelpSettingProposalWriter.Doors</c>).</summary>
     /// <remarks>
     /// HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before; HELP10
     /// <c>retry</c>, once the facts carried the parked quests; LANG1c2 <c>language</c>, once the service's writer listed it;

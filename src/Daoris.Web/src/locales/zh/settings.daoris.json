@@ -567,7 +567,7 @@
   "settings.daoris.setup.path.onSays": "把下面这个文件夹追加到你的账户 PATH 末尾：",
   "settings.daoris.setup.path.offSays": "从你的账户 PATH 中只移除下面这个文件夹：",
   "settings.daoris.setup.path.accountOnly": "只改你的账户 PATH，绝不改机器的。已在运行的程序会收到环境已更改的通知。",
-  "settings.daoris.setup.path.terminals": "此后打开的终端能找到 daoris 和 daoris-driver。",
+  "settings.daoris.setup.path.terminals": "此后打开的终端能找到 daoris。",
   "settings.daoris.setup.path.another": "另一个 daoris 排在前面，之后仍然如此：{{path}}",
   "settings.daoris.setup.address.hint": "你的账户的 DAORIS_SERVICE_URL",
   "settings.daoris.setup.address.default": "未设置（默认值）",

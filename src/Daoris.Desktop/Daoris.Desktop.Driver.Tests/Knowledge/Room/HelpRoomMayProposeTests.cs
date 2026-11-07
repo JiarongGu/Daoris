@@ -172,7 +172,7 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// HELP9: a setting's doors are every `daoris driver` verb, reading and writing across among them (D107), each
+    /// HELP9: a setting's doors are every setting verb, reading and writing across among them (D107), each
     /// form said as the terminal spells it, and a write-to named as the person's standing say-so; since HELP10
     /// `retry` too, of a quest the driver parked.
     /// </summary>

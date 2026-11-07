@@ -104,7 +104,7 @@ public static class VerbLeases
             // `help mode` alone says the mode; naming one writes the driver's file (HELPMODE1a1).
             "help" => next is "rename" or "pin" or "unpin" or "delete" || (next == "mode" && args.Count > 2),
             "opinion" => next is "ask" or "stop" or "anyway" or "myself",
-            // The driver's standing choices `daoris driver …` hands on (PUSH1f2a, D194 point 2): each change is a short act, held from the
+            // The driver's standing choices `daoris settings …` and `daoris place …` hand on (PUSH1f2a, D194 point 2): each change is a short act, held from the
             // top; `list`, the usage and a verb this program does not have hold none. Read through the command's own reading.
             "driver" => DriverChoicesCommand.Changes([.. args.Skip(1)]),
             // The tools `daoris tool …` hands on (PUSH1f2c): a way set to the system's or a file, a delete, a location's change and a

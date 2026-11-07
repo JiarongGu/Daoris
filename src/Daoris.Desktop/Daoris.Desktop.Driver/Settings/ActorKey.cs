@@ -39,7 +39,7 @@ public static class ActorKey
     /// </summary>
     public static string? Judge(string actor, IReadOnlyList<ActorChoice>? choices)
     {
-        if (!Ids.Contains(actor, StringComparer.Ordinal)) return $"`{actor}` is not an actor — one of {string.Join(", ", Ids)}.";
+        if (!Ids.Contains(actor, StringComparer.Ordinal)) return $"`{actor}` is not a role with an order — one of {string.Join(", ", Ids)}.";
         if (choices is null) return null;
         if (choices.Count == 0)
         {

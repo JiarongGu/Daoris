@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The codes a standing choice's refusal is said in (PUSH1f2a, D194 point 4, the alone-path design §1.3): the page's catalogue keys,
 /// which the shell's <c>Refusals</c> declares as these, and the driver's verbatim refusal for every other. One table, read by the
-/// route that answers the window and by <c>daoris driver</c> acting alone, so a refusal is one line both ways.
+/// route that answers the window and by <c>daoris</c> acting alone, so a refusal is one line both ways.
 /// </summary>
 public static class ChoiceCodes
 {
@@ -78,7 +78,7 @@ public sealed record ReviewLooked(IReadOnlyList<string> Lacking, bool Unchecked)
 
 /// <summary>
 /// The standing choices' operations (PUSH1f2a, D194 point 4, the alone-path design §1.3): each the judgement a route made inside its
-/// handler, taken out over the facts it judges by, so the window's route and <c>daoris driver</c> acting alone call one
+/// handler, taken out over the facts it judges by, so the window's route and <c>daoris</c> acting alone call one
 /// implementation. The rest of the choices are already <see cref="DriverConfig"/>'s <c>With*</c> and each rule's <c>Apply</c>; their
 /// write is <see cref="Write"/>, which the route makes through its context with the loop's nudge.
 /// </summary>

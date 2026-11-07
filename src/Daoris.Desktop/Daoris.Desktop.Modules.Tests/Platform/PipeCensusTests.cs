@@ -115,7 +115,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The standing choices <c>daoris driver</c> sends (PUSH1f2a, D194 point 5): each a route of the driver's module the census
+    /// The standing choices <c>daoris place</c> and <c>settings</c> send (PUSH1f2a, D194 point 5): each a route of the driver's module the census
     /// makes the person's, so the window confirms it, and each verb no route takes says why it acts alone.
     /// </summary>
     [Fact]

@@ -43,12 +43,13 @@ describe("Bring in another agent…'s doors", () => {
     expect(open.mock.calls.map(([door]) => door)).toEqual(['askHelper', 'askPiece', 'review', 'handOver']);
     const alongside = choices.find((choice) => choice.door === 'alongside')!;
     expect(alongside.onChoose).toBeUndefined();
+    expect(alongside.off).toBeUndefined();
 
     render(<BringInAgent choices={choices} onClose={vi.fn()} />);
-    expect(['Answer a question', 'Write a piece', 'Second opinion', 'Go on with another agent', 'Work alongside']
+    expect(['Answer a question', 'Write a piece', 'Second opinion', 'Go on with another agent']
       .every((name) => screen.getByRole('button', { name }))).toBe(true);
-    expect((screen.getByRole('button', { name: 'Work alongside' }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByText(/A second request on the same ask runs alongside by itself/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Work alongside' })).toBeNull();
+    expect(screen.getByText('Work alongside').closest('li')?.textContent).toMatch(/needs no press: a second request on the same ask already runs alongside/);
   });
 
   it('turns off a piece and a second opinion for a session with no tree of its own, with the reason', () => {
@@ -67,11 +68,12 @@ describe("Bring in another agent…'s doors", () => {
     await i18n.changeLanguage('zh');
     render(<BringInAgent choices={teamOf(session()).choices ?? []} onClose={vi.fn()} />);
 
-    for (const name of ['回答一个问题', '写一个分项', '第二意见', '换一个智能体继续', '并行工作']) {
+    for (const name of ['回答一个问题', '写一个分项', '第二意见', '换一个智能体继续']) {
       expect(screen.getByRole('button', { name })).toBeTruthy();
     }
 
-    expect(screen.getByText(/同一请求上的第二个请求会自行并行运行/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '并行工作' })).toBeNull();
+    expect(screen.getByText('并行工作').closest('li')?.textContent).toMatch(/无需按键：同一请求上的第二个请求已会自行并行运行/);
   });
 
   it('brings in nobody for a helper, a reviewer or an intake', () => {
