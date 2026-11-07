@@ -161,7 +161,6 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         var repository = found.Scope.Kind == Daoris.Driver.RoleScope.Repository ? found.Scope.Id : null;
         if (act is null)
         {
-            // A supervisor's decision is covered by its grants alone; leaving one to the person asks none.
             if (asked is { } needed && !SupervisorGrants.Covers(found, needed.Kind, needed.Act)) return RoleJudgement.Refused(SupervisorWhy.NotGranted);
             state.Answers[held.Generation] = state.Answers.GetValueOrDefault(held.Generation) + 1;
             return new RoleJudgement(true, null, held.Kind, repository, held.Generation, holding.Id, Roles: roles);

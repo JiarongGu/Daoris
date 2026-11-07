@@ -65,15 +65,12 @@ internal static class RoleKit
         new(id, AuthoredText.Of("Supervisor"), RoleRecord.Appointed, [], scope ?? CatalogueScope.Everywhere,
             new RoleHold(AppointedRoles.Supervisor, acts ?? SupervisorKinds.Seeded, holder, window) { Decides = decides ?? [] });
 
-    /// <summary>The admission for a question at <paramref name="repository"/>, answered: what the holder's answer asks.</summary>
     public static DecisionAdmitted Admit(this StandingConfirmation standing, string repository) =>
         standing.Admit(SupervisorKinds.Question, new RolePlace(Repository: repository), SupervisorKinds.Answer);
 
-    /// <summary>Whether a hold is the supervisor answering a question at <paramref name="repository"/>.</summary>
     public static string? Covers(this StandingConfirmation standing, string generation, string repository) =>
         standing.Covers(generation, SupervisorKinds.Question, repository);
 
-    /// <summary>An appointed record as the catalogue reads one that reads.</summary>
     public static RoleSlot Slot(RoleRecord role) => new(role.Id, RoleState.Set, role, null, 1, role.Scope, Appointed: true);
 
     /// <summary>A repository's scope in the catalogue.</summary>
