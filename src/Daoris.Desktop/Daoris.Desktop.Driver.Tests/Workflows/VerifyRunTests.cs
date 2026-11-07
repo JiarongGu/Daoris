@@ -95,4 +95,17 @@ public sealed class VerifyRunTests : NodeRuntimeFixture
         Assert.Throws<DriverException>(() => VerifyRuns.Bind(_home, run));
         Assert.Matches("^v-[0-9a-f]{16}$", VerifyRuns.NewId());
     }
+
+    [Fact]
+    public void A_file_with_a_wrong_typed_field_is_passed_over_not_thrown_on()
+    {
+        var run = new VerifyRun(Run, "engine", "default", "checkout", "verify", 1, "gph-x", Commit, VerifyRuns.Person, _now);
+        VerifyRuns.Bind(_home, run);
+        var text = VerifyRuns.Serialize(run);
+
+        Assert.Null(VerifyRuns.Parse(text.Replace("\"schema\": 1", "\"schema\": \"1\"", StringComparison.Ordinal)));
+        Assert.Null(VerifyRuns.Parse(text.Replace("\"version\": 1", "\"version\": \"1\"", StringComparison.Ordinal)));
+        Assert.Null(VerifyRuns.Parse(System.Text.RegularExpressions.Regex.Replace(text, "\"at\": \"[^\"]*\"", "\"at\": 5")));
+        Assert.Equal(run, VerifyRuns.Parse(text));
+    }
 }

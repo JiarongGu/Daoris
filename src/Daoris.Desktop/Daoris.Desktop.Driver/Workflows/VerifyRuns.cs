@@ -125,11 +125,11 @@ public static class VerifyRuns
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             string? Text(string name) => root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-            if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("schema", out var schema) || !schema.TryGetInt32(out var number) || number != 1
+            if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("schema", out var schema) || schema.ValueKind != JsonValueKind.Number || !schema.TryGetInt32(out var number) || number != 1
                 || Text("run") is not { } run || Text("repository") is not { } repository || Text("root") is not { } checkout
-                || Text("workflow") is not { } workflow || !root.TryGetProperty("version", out var version) || !version.TryGetInt32(out var at)
+                || Text("workflow") is not { } workflow || !root.TryGetProperty("version", out var version) || version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out var at)
                 || Text("digest") is not { } digest || Text("commit") is not { } commit || Text("level") is not { } level
-                || !root.TryGetProperty("at", out var when) || !when.TryGetDateTimeOffset(out var bound))
+                || !root.TryGetProperty("at", out var when) || when.ValueKind != JsonValueKind.String || !when.TryGetDateTimeOffset(out var bound))
             {
                 return null;
             }

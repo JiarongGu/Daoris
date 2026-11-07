@@ -80,7 +80,7 @@ public static partial class PullRequestAnswers
     /// <summary>How much of a plugin's sentence is kept.</summary>
     public const int MessageLimit = 300;
 
-    [GeneratedRegex("^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("\\A(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})\\z", RegexOptions.CultureInvariant)]
     private static partial Regex FullId();
 
     /// <summary>The answer, or null where it is not one: the caller says so, naming the plugin.</summary>
