@@ -140,6 +140,19 @@ public sealed class HomeMigrationTests : IDisposable
     }
 
     [Fact]
+    public void A_step_whose_record_cannot_be_written_stops_the_run_as_failed_and_throws_nothing()
+    {
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Migration));
+        var ran = new List<string>();
+
+        var stopped = HomeMigration.Run(_home, [new Step("one", ran, () => false), new Step("two", ran, () => false)]);
+
+        Assert.Equal("one", stopped.Failed?.Step);
+        Assert.Empty(stopped.Ran);
+        Assert.Equal(new[] { "one" }, ran);
+    }
+
+    [Fact]
     public void A_held_home_is_converted_by_the_next_start()
     {
         Directory.CreateDirectory(_home);
