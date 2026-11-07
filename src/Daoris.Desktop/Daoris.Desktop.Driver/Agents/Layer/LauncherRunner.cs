@@ -122,9 +122,7 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
             while (await process.StandardOutput.ReadLineAsync(CancellationToken.None).ConfigureAwait(false) is { } line)
             {
                 seat.Heard();
-                var frame = NativeFrame.Of(line);
-                seat.Framed(frame);
-                if (!frame.IsObject) seat.Outside(line);
+                if (!NativeFrame.Of(line).IsObject) seat.Outside(line);
                 yield return line;
             }
 

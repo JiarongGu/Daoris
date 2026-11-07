@@ -90,10 +90,137 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
         Assert.Equal(3, Recorded.Count);
     }
 
-    private async Task<(ParityObservation Daoris, ParityObservation Layer)> BothAsync(string fixture)
+    /// <summary>A subagent's lineage, as the stream says its start and end, is the same lines on both paths.</summary>
+    [Fact]
+    public async Task A_family_s_lineage_is_written_alike_on_both_paths()
     {
-        var lines = File.ReadAllLines(Path.Combine(Fixtures, fixture)).Where(each => each.Length > 0).ToArray();
-        var name = Path.GetFileNameWithoutExtension(fixture);
+        var (daoris, layer) = await BothAsync("lineage/claude-family.stream.jsonl");
+
+        foreach (var seen in new[] { daoris, layer })
+        {
+            var lineage = seen.Seen.Where(each => each.Channel == ParityChannel.Lineage).ToList();
+            Assert.Equal(6, lineage.Count);
+            Assert.Contains(lineage, each => each["event"] == "started" && each["agent"] == "af7e45b4d6f2967a9" && each["parent"] == "a9b1456decf181940");
+            Assert.All(lineage, each => Assert.NotNull(each[ParityProjection.Process]));
+        }
+    }
+
+    /// <summary>
+    /// A subagent's words and calls ride the session's stdout marked by the call that spawned it (the console3 evidence): on both paths they
+    /// are said on its own stream, never on the session's console or in its record, and a backgrounded command is a stream of its own.
+    /// </summary>
+    [Fact]
+    public async Task A_child_s_words_and_calls_are_said_on_its_own_stream_alike_on_both_paths()
+    {
+        var (daoris, layer) = await BothAsync("claude-child-words", ChildWords);
+
+        ParityOracle.Equal(daoris, layer, Relation, []);
+        foreach (var seen in new[] { daoris, layer })
+        {
+            var streams = seen.Seen.Where(each => each.Channel == ParityChannel.Streams).Select(each => each["reading"]!).ToList();
+            Assert.Contains(streams, each => each.Contains("subagent/a1") && each.Contains("# console3 room"));
+            Assert.Contains(streams, each => each.Contains("subagent/a1") && each.Contains("README.md"));
+            Assert.Contains(streams, each => each.Contains("task/b1"));
+            Assert.DoesNotContain(seen.Seen, each => each.Channel is ParityChannel.Console or ParityChannel.Events && each["text"] == "# console3 room");
+        }
+    }
+
+    /// <summary>
+    /// A command its update ended after the turn, whose notification never came (a process Daoris ended at its turn's end before the harness
+    /// wrote it): today's reader ends it at the stream's close in the update's word, and the layer's events carry no update, so on the layer
+    /// path it is still running when the stream closes. The one difference, named.
+    /// </summary>
+    [Fact]
+    public async Task A_command_its_update_ended_with_no_notification_after_differs_only_by_its_named_gap()
+    {
+        var (daoris, layer) = await BothAsync("claude-update-cut", UpdateCut);
+
+        var (rest, theirs) = ParityGap.Apart(daoris, layer, [UpdateEnded]);
+        ParityOracle.Equal(rest, theirs, Relation, []);
+        Assert.Contains(daoris.Seen, each => each is { Channel: ParityChannel.End } && each["cut"] == "npm run gates");
+        Assert.Contains(layer.Seen, each => each is { Channel: ParityChannel.End } && each["cut"] == "");
+    }
+
+    private static string Frame(object value) => System.Text.Json.JsonSerializer.Serialize(value);
+
+    private static string Said(string subtype, object fields)
+    {
+        var node = System.Text.Json.JsonSerializer.SerializeToNode(fields)!.AsObject();
+        node["type"] = "system";
+        node["subtype"] = subtype;
+        return node.ToJsonString();
+    }
+
+    /// <summary>A session that backgrounds a command and spawns a subagent, whose words and call the stream marks as its own.</summary>
+    private static readonly string[] ChildWords =
+    [
+        Said("init", new { session_id = "c0ffee00-1111-2222-3333-444455556666", tools = new[] { "Bash", "Read", "Agent" } }),
+        Said("task_started", new { task_id = "b1", tool_use_id = "toolu_bg", description = "dev server", is_backgrounded = true, task_type = "local_bash" }),
+        Said("task_started", new { task_id = "a1", tool_use_id = "toolu_ag", description = "Read README first line", task_type = "local_agent", spawn_depth = 1, subagent_type = "general-purpose" }),
+        Frame(new
+        {
+            type = "assistant", parent_tool_use_id = "toolu_ag",
+            message = new
+            {
+                id = "msg_child", role = "assistant",
+                content = new object[]
+                {
+                    new { type = "tool_use", id = "toolu_read", name = "Read", input = new { file_path = "README.md" } },
+                },
+            },
+        }),
+        Frame(new
+        {
+            type = "user", parent_tool_use_id = "toolu_ag",
+            message = new { role = "user", content = new object[] { new { tool_use_id = "toolu_read", type = "tool_result", content = "# console3 room" } } },
+        }),
+        Frame(new
+        {
+            type = "assistant", parent_tool_use_id = "toolu_ag",
+            message = new { id = "msg_child_2", role = "assistant", content = new object[] { new { type = "text", text = "# console3 room" } } },
+        }),
+        Said("task_notification", new { task_id = "a1", tool_use_id = "toolu_ag", status = "completed", summary = "# console3 room" }),
+        Frame(new
+        {
+            type = "assistant",
+            message = new { id = "msg_own", role = "assistant", content = new object[] { new { type = "text", text = "The first line is the room's name." } } },
+        }),
+        Frame(new { type = "result", subtype = "success", is_error = false, result = "The first line is the room's name.", session_id = "c0ffee00-1111-2222-3333-444455556666" }),
+        Said("task_notification", new { task_id = "b1", tool_use_id = "toolu_bg", status = "stopped" }),
+    ];
+
+    /// <summary>A command backgrounded, the turn's result, and the command's update ending it: no notification follows.</summary>
+    private static readonly string[] UpdateCut =
+    [
+        Said("init", new { session_id = "c0ffee00-1111-2222-3333-444455556667", tools = new[] { "Bash" } }),
+        Frame(new
+        {
+            type = "assistant",
+            message = new
+            {
+                id = "msg_gates", role = "assistant",
+                content = new object[] { new { type = "tool_use", id = "toolu_gates", name = "Bash", input = new { command = "npm run gates", run_in_background = true, description = "npm run gates" } } },
+            },
+        }),
+        Said("task_started", new { task_id = "b1gates", tool_use_id = "toolu_gates", description = "npm run gates", is_backgrounded = true, task_type = "local_bash" }),
+        Frame(new { type = "result", subtype = "success", is_error = false, result = "The gates are running.", session_id = "c0ffee00-1111-2222-3333-444455556667" }),
+        Said("task_updated", new { task_id = "b1gates", patch = new { status = "killed" } }),
+    ];
+
+    /// <summary>
+    /// A command's end only its update said (BGWAIT1c): today's reader's reading of it and the cut its ending reads from it, which the layer's
+    /// events cannot say until Lyntai's Claude door yields a task's update.
+    /// </summary>
+    private static readonly ParityGap UpdateEnded = new(
+        "a command's end only its update said",
+        seen => seen.Where(each => each is { Channel: ParityChannel.Events, What: "TaskEnded" } or { Channel: ParityChannel.End }),
+        seen => seen.Where(each => each.Channel == ParityChannel.End));
+
+    private Task<(ParityObservation Daoris, ParityObservation Layer)> BothAsync(string fixture) => BothAsync(
+        Path.GetFileNameWithoutExtension(fixture), [.. File.ReadAllLines(Path.Combine(Fixtures, fixture)).Where(each => each.Length > 0)]);
+
+    private async Task<(ParityObservation Daoris, ParityObservation Layer)> BothAsync(string name, string[] lines)
+    {
         var command = LayerTestProvider.Scenario(_scratch, new { @out = lines }, name);
         using var daoris = new ParityDaorisPath(Path.Combine(_scratch, "daoris-" + name), ParityDaorisPath.Shipped(ClaudeDrivenLayer.Door));
         using var layer = new ParityLayerPath(Path.Combine(_scratch, "layer-" + name));

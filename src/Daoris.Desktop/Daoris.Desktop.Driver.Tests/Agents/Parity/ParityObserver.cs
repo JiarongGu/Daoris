@@ -5,16 +5,23 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// What a path observed, written into its <see cref="ParityObservation"/> by one reading of each thing, whichever path it came from: the
-/// readings handed the sink, the transcript's lines, the harness's own words, the failure as <see cref="AgentError"/> reads it and the end.
-/// A failure handed the sink is the failure's observation, read once at the end on both paths.
+/// readings handed the sink, the lineage's lines, the streams beside, the transcript's lines, the harness's own words, the failure as
+/// <see cref="AgentError"/> reads it and the end. A failure handed the sink is the failure's observation, read once at the end on both paths.
 /// </summary>
 internal static class ParityObserver
 {
-    /// <summary>The sink a path's run is handed: each reading observed as it arrives.</summary>
-    public static IReadingSink Sink(ParityObservation seen) => ReadingSinks.On<WireReading>(reading => Read(seen, reading));
+    /// <summary>
+    /// The sink a path's run is handed: watched, as a console someone watches is, so the streams the agent runs beside itself are kept apart
+    /// from its own lines; each reading observed as it arrives.
+    /// </summary>
+    public static IReadingSink Sink(ParityObservation seen) => new ObservedSink(seen);
 
     public static void Read(ParityObservation seen, WireReading reading)
     {
+        // The line a child's reading writes to the session's lineage (LineageReadings), stamped at the run's start: the file's own stamp is
+        // the wall clock's, which no two runs share.
+        if (ChildBindings.ChildLine(reading, seen.Start) is { } line) seen.Add(ParityChannel.Lineage, "line", Lineage(line));
+
         switch (reading)
         {
             case WireReading.ConversationNamed named:
@@ -60,7 +67,7 @@ internal static class ParityObserver
         seen.Add(
             ParityChannel.End, "end", ("exit", end.Exit?.ToString()), ("named", end.Named.ToString()), ("failed", end.Ending.Failed.ToString()),
             ("stopped", stopped.ToString()),
-            ("modelRefused", end.Ending.ModelRefused.ToString()), ("usage", end.Usage?.ToString()));
+            ("modelRefused", end.Ending.ModelRefused.ToString()), ("cut", string.Join('\n', end.Ending.BackgroundCut)), ("usage", end.Usage?.ToString()));
     }
 
     /// <summary>The failure as <see cref="AgentError"/> reads it, with the delivery the path read for the turn's words.</summary>
@@ -84,6 +91,24 @@ internal static class ParityObserver
         return said.Any(kind => kind is SessionEventKind.Message or SessionEventKind.Thought or SessionEventKind.Plan)
             ? FailureDelivery.Taken
             : FailureDelivery.NeverSent;
+    }
+
+    /// <summary>
+    /// A lineage line's fields in its own order, its process token named as the projection compares one; its <c>by</c> is the signal that
+    /// said the child, no provenance, so it is compared exactly.
+    /// </summary>
+    private static (string Name, string? Value)[] Lineage(string line) =>
+    [
+        .. JsonDocument.Parse(line).RootElement.EnumerateObject().Select(property => (
+            property.Name switch { "proc" => ParityProjection.Process, "by" => "signal", var name => name },
+            property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : property.Value.GetRawText())),
+    ];
+
+    private sealed class ObservedSink(ParityObservation seen) : IReadingSink
+    {
+        public bool Watched => true;
+
+        public void Read(WireReading reading) => ParityObserver.Read(seen, reading);
     }
 
     private static (string Name, string? Value)[] Fields(SessionEvent e)

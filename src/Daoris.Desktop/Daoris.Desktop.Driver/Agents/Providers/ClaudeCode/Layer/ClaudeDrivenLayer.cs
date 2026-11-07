@@ -24,6 +24,7 @@ internal static class ClaudeDrivenLayer
         {
             ModelRefusals = ModelRefusals,
             Steps = call => ClaudeStreamJson.Step(call.Name, call.ArgumentsJson, call.CallId),
+            Beside = (streams, say) => new ClaudeStreams(streams, say),
             Options = (prompt, carriers) => new Lyntai.Providers.ClaudeCli.ClaudeAgentOptions
             {
                 Prompt = prompt, SettingsPath = carriers?.Settings, McpConfigPath = carriers?.Servers,

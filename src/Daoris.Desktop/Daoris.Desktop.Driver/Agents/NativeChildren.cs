@@ -10,6 +10,9 @@ namespace Daoris.Driver;
 /// <remarks>One per capture: an end is read only for a start its own stream said.</remarks>
 internal sealed class NativeChildren
 {
+    /// <summary>The task type Claude Code says a subagent's task with, which the layer's events carry as its kind word.</summary>
+    internal const string Subagent = "local_agent";
+
     private readonly HashSet<string> _seen = new(StringComparer.Ordinal);
     private readonly HashSet<string> _ended = new(StringComparer.Ordinal);
 
@@ -19,7 +22,7 @@ internal sealed class NativeChildren
         if (frame.Type != "system") return null;
         switch (frame.Subtype)
         {
-            case "task_started" when frame.Text("task_type") == "local_agent" && frame.Text("task_id") is { Length: > 0 } child:
+            case "task_started" when frame.Text("task_type") == Subagent && frame.Text("task_id") is { Length: > 0 } child:
                 return _seen.Add(child)
                     ? new WireReading.ChildSeen(child, ChildSignal.Stream)
                     {
