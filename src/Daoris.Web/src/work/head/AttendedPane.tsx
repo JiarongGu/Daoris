@@ -17,6 +17,7 @@ import type { useAttendedHead } from './useAttendedHead';
 import type { useAttendedRecord } from './useAttendedRecord';
 import type { useAttendedSession } from './useAttendedSession';
 import { relationsOf } from './relations';
+import { SessionSupervisorCourse } from './SessionSupervisorCourse';
 import { SessionTerminalHold } from './SessionTerminalHold';
 
 type Page = ComponentProps<typeof AttendedSession>;
@@ -78,6 +79,8 @@ export function AttendedPane({
       } : null}
       // RPC1g1: a terminal holding this conversation, said on its head with *Let go of the terminal*.
       terminalHold={<SessionTerminalHold session={attended.id} />}
+      // CONTEXTDRIVE1j: the supervisor's decision on a point its rule referred, with *Overrule* while it is held.
+      supervisorCourse={<SessionSupervisorCourse session={attended.id} supervision={supervision} here={here} />}
       workAsk={workAskAt('head')}
       ruleAsk={ruleAskAt('head')}
       toEvent={toEvent}

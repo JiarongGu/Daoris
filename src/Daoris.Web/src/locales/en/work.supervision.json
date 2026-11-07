@@ -7,5 +7,21 @@
   "work.supervision.acted": "your rules acted {{count}} time, last {{when}}: {{counted}} {{n}}, {{act}}",
   "work.supervision.acted_other": "your rules acted {{count}} times, last {{when}}: {{counted}} {{n}}, {{act}}",
   "work.supervision.chip": "{{counted}} {{n}} of {{at}}",
-  "work.supervision.chipTip": "Your rule acts on this count at {{at}}; it stands at {{n}}."
+  "work.supervision.chipTip": "Your rule acts on this count at {{at}}; it stands at {{n}}.",
+  "work.supervision.decision": "Supervisor's decision",
+  "work.supervision.cardTitle": "The supervisor's decision",
+  "work.supervision.referred": "Your rule for {{counted}} ({{place}}) asked the supervisor at {{n}}; it chose to {{choice}} {{when}}.",
+  "work.supervision.whole": "{{says}} {{stands}}",
+  "work.supervision.choice.go-on": "go on",
+  "work.supervision.choice.hold": "leave it to you",
+  "work.supervision.course.held": "It goes on at {{at}} unless you overrule it.",
+  "work.supervision.course.went-on": "It went on.",
+  "work.supervision.course.overruled": "You overruled it.",
+  "work.supervision.course.stale": "It did not go on: {{why}}.",
+  "work.supervision.course.left": "It waits for you.",
+  "work.supervision.why.rule-holds": "your rule holds the line now",
+  "work.supervision.why.answered": "the point was settled some other way",
+  "work.supervision.why.role-changed": "the supervisor's role changed",
+  "work.supervision.overrule": "Overrule",
+  "work.supervision.overruleRefused": "It already went on, so it cannot be overruled."
 }

@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { ago } from '../../locales/format';
+import { ago, stamp } from '../../locales/format';
 import type { DetailRow } from './DetailsFold';
 
 /** One count of a line as `SESSION_SUPERVISOR` answers it: what it stands at, and the rule that acts on it, where one does. */
@@ -23,17 +23,39 @@ export type RuleActRead = {
   when: string;
 };
 
+/**
+ * The supervisor's decision on a point a person's `refer` rule held the line at, as `SESSION_SUPERVISOR` answers it: the count the rule
+ * read and its place, the supervisor's act (`go-on` or `hold`), when it was kept and when it goes on, and where it stands.
+ */
+export type CourseRead = {
+  id: string;
+  point: string;
+  count: string;
+  n: number;
+  rule: string;
+  place: string;
+  do: string;
+  state: string;
+  why?: string | null;
+  holder?: { kind: string; parent?: string | null } | null;
+  keptAt: string;
+  goesOnAt: string;
+  stateAt: string;
+  earlier: boolean;
+};
+
 /** What the head and *Details* say of the supervisor on one line. */
-export type LineSupervision = { counts: LineCountRead[]; acts: RuleActRead[] };
+export type LineSupervision = { counts: LineCountRead[]; acts: RuleActRead[]; courses: CourseRead[] };
 
-export const NO_SUPERVISION: LineSupervision = { counts: [], acts: [] };
+export const NO_SUPERVISION: LineSupervision = { counts: [], acts: [], courses: [] };
 
-/** The answer read defensively: an older driver answers neither field. */
+/** The answer read defensively: an older driver answers none of the fields. */
 export function readSupervision(answer: unknown): LineSupervision {
   const read = (answer ?? {}) as Partial<LineSupervision>;
   return {
     counts: Array.isArray(read.counts) ? read.counts : [],
     acts: Array.isArray(read.acts) ? read.acts : [],
+    courses: Array.isArray(read.courses) ? read.courses : [],
   };
 }
 
@@ -74,6 +96,30 @@ export function supervisorRow(t: TFunction, { acts }: LineSupervision): DetailRo
       count: acts.length, when: ago(last.when), counted: countWord(t, last.count), n: last.n, act: actWord(t, last.rule.do),
     }),
   };
+}
+
+/** What the supervisor chose on the point, which rule referred it, and when, in one sentence. */
+export function courseSays(t: TFunction, course: CourseRead): string {
+  return t('work.supervision.referred', {
+    counted: countWord(t, course.count).toLowerCase(), place: placeWord(t, course.place), n: course.n,
+    choice: t(`work.supervision.choice.${course.do}`, { defaultValue: course.do }), when: ago(course.keptAt),
+  });
+}
+
+/** Where the decision stands: when it goes on, that it did, that the person overruled it, why it did not, or that it waits for them. */
+export function courseStands(t: TFunction, course: CourseRead): string {
+  const why = course.why ? t(`work.supervision.why.${course.why}`, { defaultValue: course.why }) : '';
+  return t(`work.supervision.course.${course.state}`, { at: stamp(course.goesOnAt), why, defaultValue: course.state });
+}
+
+/** The decision said whole: what the supervisor chose, then where it stands, joined the language's way. */
+export const courseWhole = (t: TFunction, course: CourseRead): string =>
+  t('work.supervision.whole', { says: courseSays(t, course), stands: courseStands(t, course) });
+
+/** *Details*' Supervisor's decision: the newest course decision on the line, said whole; no row value where the supervisor decided none. */
+export function courseRow(t: TFunction, { courses }: LineSupervision): DetailRow {
+  const last = courses.at(-1);
+  return { label: t('work.supervision.decision'), value: last ? courseWhole(t, last) : null };
 }
 
 /** The count the head's chip names and its words: one a rule holds the line at, or one short of it. */

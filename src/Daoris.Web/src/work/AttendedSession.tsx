@@ -77,8 +77,10 @@ export function AttendedSession({
   chain = [], onSession, onQuest, onReview, relations, related, relatedOwn, onRelated, together, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
-  answers, gitAsks, gitAccess, supervision, milestone, record, onOpenBranch, question, parkBox, pieces, waitingOn, terminalHold,
+  answers, gitAsks, gitAccess, supervision, milestone, record, onOpenBranch, question, parkBox, pieces, waitingOn, terminalHold, supervisorCourse,
 }: {
+  /** Passed straight through to the head: the supervisor's decision on a point its rule referred, with *Overrule* while it is held. */
+  supervisorCourse?: Parameters<typeof SessionHead>[0]['supervisorCourse'];
   /** Passed straight through to the head: what each running session holds of git access, with *Tighten…* (D241 point 7). */
   gitAccess?: Parameters<typeof SessionHead>[0]['gitAccess'];
   /** Passed straight through to the head: the line's counts and the acts the person's rules made on it, *Details*' course and Supervisor line. */
@@ -331,6 +333,7 @@ export function AttendedSession({
         gitAccess={gitAccess}
         supervision={supervision}
         terminalHold={terminalHold}
+        supervisorCourse={supervisorCourse}
         entry={entryAccept}
       />
       {/* Its parts as a flowchart, the strip its rail (FLOWCHART1b); Accept's plan, once read, is where they would land. Folded to one
