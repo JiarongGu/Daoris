@@ -73,8 +73,9 @@ internal sealed class LookTold(
             _asked = asked;
         }
 
-        var active = await ActiveAsync(service, ct).ConfigureAwait(false);
-        if (active is not null && active != _active)
+        // The open ones as the look's own snapshot read them, which a second read of the list would only repeat.
+        var active = ActiveSessions.Signature(report.Active);
+        if (active != _active)
         {
             changed = true;
             _active = active;
@@ -171,19 +172,6 @@ internal sealed class LookTold(
         try
         {
             return Asks.Signature(await service.AsksAsync(ct).ConfigureAwait(false));
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>Which sessions are active and how, or null when the host could not answer — never a change.</summary>
-    private static async Task<string?> ActiveAsync(ServiceClient service, CancellationToken ct)
-    {
-        try
-        {
-            return ActiveSessions.Signature(await service.ActiveSessionsAsync(ct).ConfigureAwait(false));
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {
