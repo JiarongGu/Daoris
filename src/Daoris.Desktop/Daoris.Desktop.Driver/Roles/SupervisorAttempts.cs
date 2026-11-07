@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// <summary>How an agent supervisor's attempt ended.</summary>
 public static class SupervisorAttemptOutcomes
 {
-    /// <summary>Its block was kept as a decision.</summary>
+    /// <summary>Its block kept as a decision.</summary>
     public const string Decided = "decided";
 
     /// <summary>It left the subject to the person, a decision of its own and final.</summary>
@@ -65,7 +65,7 @@ public sealed class SupervisorAttempts(string home)
     /// <summary>Whether <paramref name="subject"/>'s attempts have ended, so it is the person's.</summary>
     public bool Ended(SupervisorSubject subject) => Of(subject).Any(each => each.Outcome is SupervisorAttemptOutcomes.Decided or SupervisorAttemptOutcomes.Left or SupervisorAttemptOutcomes.Failed);
 
-    /// <summary>The choices an attempt on <paramref name="subject"/> was made on, each once.</summary>
+    /// <summary>The choices <paramref name="subject"/>'s attempts ran on, each once.</summary>
     public IReadOnlyList<int> Spent(SupervisorSubject subject) => [.. Of(subject).Select(each => each.Choice).Distinct().Order()];
 
     /// <summary>The start's closure: every attempt with no outcome closed failed, its subject returned, since none runs after a restart.</summary>

@@ -218,10 +218,7 @@ public static class RoleDoor
         return change is RoleChange.SetRole { Role: var role } && Staffed(catalogue, role, choices) is { } staffed ? RoleCatalog.Judge(role, staffed) : null;
     }
 
-    /// <summary>
-    /// The staffing a set writes: the choices named, else none for a new added working role (off), else what the role has; an appointed
-    /// role's is <see cref="AppointedStaffing.Staffed"/>'s.
-    /// </summary>
+    /// <summary>The staffing a set writes: the choices named, else none for a new added working role (off), else what it has; an appointed role's is <see cref="AppointedStaffing.Staffed"/>'s.</summary>
     private static IReadOnlyList<ActorChoice>? Staffed(RoleCatalog catalogue, RoleRecord role, IReadOnlyList<ActorChoice>? choices) =>
         role.Hold is not null ? AppointedStaffing.Staffed(catalogue, role, choices)
         : choices ?? (ActorChoices.Ids.Contains(role.Id, StringComparer.Ordinal) || catalogue.Slots.Any(slot => slot.Id == role.Id && slot.Role is not null) ? null : []);

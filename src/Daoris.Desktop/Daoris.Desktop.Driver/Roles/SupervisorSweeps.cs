@@ -99,7 +99,7 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
     /// <summary>
     /// The start's sweep, before the first look's carry-ons: every kind's decision file read only to close it, <c>held</c> and <c>released</c>
     /// to <c>stale</c> (<see cref="SupervisorWhy.Restarted"/>), <c>admitted</c> to <c>interrupted</c>; each subject final to the owner,
-    /// one whose state line never reached its file among them, remembered as closed by its kind and subject. Memory is empty.
+    /// one whose state line never reached its file among them, or whose agent attempts ended, remembered as closed. Memory is empty.
     /// </summary>
     /// <returns>The sessions with a decision the sweep closed, whose waiting supervisor's words the look takes back.</returns>
     public IReadOnlyList<string> SweepAtStart(DateTimeOffset now)
@@ -134,8 +134,6 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
             }
         }
 
-        // No attempt runs after a restart: one with no outcome is closed failed, and a subject whose attempts ended is the person's,
-        // so no choice is spent on it again and no supervisor reconsiders it.
         foreach (var _ in book.Attempts.CloseUnended(now)) log?.Info("supervisor.attempt-failed", ("why", SupervisorWhy.Restarted));
         foreach (var subject in book.Attempts.EndedSubjects()) book.Closed.TryAdd(subject, SupervisorState.Interrupted);
 

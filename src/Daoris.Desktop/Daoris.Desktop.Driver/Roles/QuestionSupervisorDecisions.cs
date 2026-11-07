@@ -135,7 +135,6 @@ public sealed class QuestionSupervisorDecisions
     /// <summary>Whether <paramref name="subject"/> is closed to the person, so no list hands it to a supervisor of any holder again.</summary>
     public bool Closed(SupervisorSubject subject) => _book.Closed.ContainsKey(subject);
 
-    /// <summary>An agent supervisor's attempts, beside the decisions.</summary>
     public SupervisorAttempts Attempts => _book.Attempts;
 
     /// <summary>The owner's <b>Overrule</b> of a course decision (<see cref="SupervisorCourses.OverruleAsync"/>) or an answer (<see cref="SupervisorReleasing.OverruleAsync"/>).</summary>

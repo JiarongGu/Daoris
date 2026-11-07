@@ -49,10 +49,6 @@ public static class ActorKey
         return JudgeOrder(actor, choices);
     }
 
-    /// <summary>
-    /// Whether <paramref name="choices"/>, one or more, may be an order under <paramref name="actor"/>'s name, whatever role holds it: at most
-    /// <see cref="Most"/>, each word a word, no two alike, and brainstorm's one voice per agent. The refusal's sentence, or null where it may.
-    /// </summary>
     public static string? JudgeOrder(string actor, IReadOnlyList<ActorChoice> choices)
     {
         if (choices.Count > Most) return $"{actor} takes at most {Most} choices, not {choices.Count}.";

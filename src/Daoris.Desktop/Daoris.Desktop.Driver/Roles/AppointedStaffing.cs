@@ -17,7 +17,7 @@ public static class AppointedStaffing
     public static IReadOnlyList<ActorChoice>? Staffed(RoleCatalog catalogue, RoleRecord role, IReadOnlyList<ActorChoice>? choices) =>
         !Ordered(role.Hold) ? null : choices ?? (Ordered(Before(catalogue, role.Id)) ? null : []);
 
-    /// <summary>Whether a set of <paramref name="role"/> deletes its row: it was held by an agent and is held otherwise now.</summary>
+    /// <summary>Whether a set of <paramref name="role"/> deletes its row: it moves the holder off the agent.</summary>
     public static bool Unordered(RoleCatalog catalogue, RoleRecord role) => !Ordered(role.Hold) && Ordered(Before(catalogue, role.Id));
 
     /// <summary>

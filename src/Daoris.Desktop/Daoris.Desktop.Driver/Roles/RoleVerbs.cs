@@ -25,10 +25,6 @@ public sealed class RoleVerb : ChoiceVerb
     public override Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) =>
         args.Count > 1 && args[1] == "suggested" ? Task.FromResult(Suggested(args, world)) : null;
 
-    /// <summary>
-    /// The refusal of every write of the person's roles from a process an agents' job holds: a supervisor's turn would otherwise widen
-    /// its own grants from its own process, whatever its harness denies.
-    /// </summary>
     internal const string InAgentJob =
         "`driver role` writes the person's roles, and this process is one of an agent Daoris runs: make the change in Daoris's window or from your own terminal; nothing was written.";
 

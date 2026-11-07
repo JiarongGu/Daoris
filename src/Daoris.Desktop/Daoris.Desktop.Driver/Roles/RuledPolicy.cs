@@ -6,9 +6,8 @@ namespace Daoris.Driver;
 /// </summary>
 public static class RuledPolicy
 {
-    /// <summary>The rules a press's preset brings with it, at the role's place; none for a press that names no preset.</summary>
+    /// <summary>The rules a press's preset brings, at the role's place; none for no preset, and none for a supervisor, whose turns are no line a rule moves.</summary>
     public static IReadOnlyList<SupervisorRule> Of(RoleRecord role, RolePolicyPress press) =>
-        // A supervisor's turns are no line a rule moves, so its preset writes none.
         press is { Preset: { } preset, Clear: false } && role.Hold is null ? SupervisorRuleBook.PresetRules(preset, role.Id, PlaceOf(role.Scope)) : [];
 
     /// <summary>The supervisor's place a role's scope is: the machine, a workspace or a repository.</summary>

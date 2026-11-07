@@ -14,10 +14,7 @@ public sealed class SupervisorAttemptsTests : IDisposable
 
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "supervisor-attempts", Guid.NewGuid().ToString("N")[..8]);
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
-    }
+    public void Dispose() => GitSeed.Discard(_home);
 
     [Fact]
     public void An_attempt_is_written_before_its_start_and_its_outcome_at_its_end_one_per_choice()
