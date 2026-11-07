@@ -9,12 +9,13 @@ namespace Daoris.Driver;
 internal static class SetAsideReads
 {
     /// <summary>
-    /// Every folder below the tree's top that holds a <c>.git</c> file or folder, as paths from the tree's root with forward
-    /// slashes, none read into: what lies inside one is that repository's. Read from the folders, hidden ones included, never
-    /// following a link; the tree's own <c>.git</c> at its top is passed over, and never read into. A folder that cannot be read throws.
-    /// The same walk names every link it meets, never followed, which the slim's judgement reads.
+    /// Every folder below the tree's top that holds a <c>.git</c> file or folder, or is a bare repository (floor 2: a <c>HEAD</c> file and
+    /// <c>objects/</c> and <c>refs/</c> folders that git, asked read-only, takes as its own directory, or that git cannot answer for), as
+    /// paths from the tree's root with forward slashes, none read into: what lies inside one is that repository's. Read from the folders,
+    /// hidden ones included, never following a link; the tree's own <c>.git</c> at its top is passed over, and never read into. A folder
+    /// that cannot be read throws. The same walk names every link it meets, never followed, which the slim's judgement reads.
     /// </summary>
-    internal static (List<string> Nested, List<string> Links) NestedRepositories(string tree)
+    internal static async Task<(List<string> Nested, List<string> Links)> NestedRepositoriesAsync(string tree, CancellationToken ct)
     {
         var top = Path.TrimEndingDirectorySeparator(Path.GetFullPath(tree));
         var options = new EnumerationOptions { IgnoreInaccessible = false, AttributesToSkip = 0, RecurseSubdirectories = false };
@@ -27,6 +28,7 @@ internal static class SetAsideReads
             var below = new List<string>();
             var linked = new List<string>();
             var repository = false;
+            bool head = false, objects = false, refs = false;
             foreach (var entry in new DirectoryInfo(folder).EnumerateFileSystemInfos("*", options))
             {
                 if (string.Equals(entry.Name, ".git", StringComparison.OrdinalIgnoreCase))
@@ -43,7 +45,18 @@ internal static class SetAsideReads
                 else if (entry is DirectoryInfo directory)
                 {
                     below.Add(directory.FullName);
+                    objects |= directory.Name == "objects";
+                    refs |= directory.Name == "refs";
                 }
+                else
+                {
+                    head |= entry.Name == "HEAD";
+                }
+            }
+
+            if (!repository && head && objects && refs && !string.Equals(folder, top, StringComparison.OrdinalIgnoreCase))
+            {
+                repository = await IsOwnGitDirectoryAsync(folder, ct).ConfigureAwait(false);
             }
 
             if (repository)
@@ -57,6 +70,22 @@ internal static class SetAsideReads
         }
 
         return (found, links);
+    }
+
+    /// <summary>
+    /// Whether a folder with a bare repository's shape is one: git asked read-only for the directory it takes the folder to be, and
+    /// anything but its own answer for another place leaves it one, since a folder git cannot answer for may still hold refs no other
+    /// repository has, and holding a folder that is not one costs a held tree where missing one loses them.
+    /// </summary>
+    private static async Task<bool> IsOwnGitDirectoryAsync(string folder, CancellationToken ct)
+    {
+        var (code, stdout, _) = await WorkingTree.GitAsync(
+            folder, ["--no-optional-locks", $"--git-dir={folder}", "rev-parse", "--git-dir"], ct).ConfigureAwait(false);
+        if (code != 0) return true;
+        var answer = stdout.Trim();
+        return answer is "." || string.Equals(
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(answer, folder)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)),
+            StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
