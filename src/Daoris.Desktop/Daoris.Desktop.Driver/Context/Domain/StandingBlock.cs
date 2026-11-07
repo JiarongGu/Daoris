@@ -10,16 +10,16 @@ namespace Daoris.Driver;
 /// conversation. It replaces the routing line, the standing answer's preface and the instruction's map, look and indexes.
 /// </summary>
 /// <remarks>
-/// <b>Its bound.</b> The whole first prompt shares the native door's single argument, 32,767 characters on Windows, which
-/// <c>DAORIS_TARGET</c> carries too. Where the instruction and the block together would pass <see cref="Budget"/>, the block goes
+/// <b>Its bound.</b> The whole first prompt shares one value of at most 32,767 characters on Windows: the native door takes it on stdin,
+/// and <c>DAORIS_TARGET</c> carries it as an environment variable, which Windows caps at that. Where the instruction and the block together would pass <see cref="Budget"/>, the block goes
 /// through the door's file channel (<see cref="StandingFacts.File"/>), and the instruction carries <see cref="Pointer"/> in its place.
 /// </remarks>
 public static class StandingBlock
 {
-    /// <summary>The native door's single argument on Windows, which the whole first prompt shares.</summary>
+    /// <summary>The most one value weighs on Windows (an environment variable such as <c>DAORIS_TARGET</c>), which the whole first prompt shares.</summary>
     public const int ArgumentLimit = 32_767;
 
-    /// <summary>The most a first prompt with its block inline weighs: the argument less a margin of 2,767 characters.</summary>
+    /// <summary>The most a first prompt with its block inline weighs: the limit less a margin of 2,767 characters.</summary>
     public const int Budget = 30_000;
 
     /// <summary>The most indexes it names: a pointer to where a look starts, not a listing; past it the rest are counted.</summary>

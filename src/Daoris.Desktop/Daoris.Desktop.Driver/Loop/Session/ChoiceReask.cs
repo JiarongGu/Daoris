@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Loop's implementation of the open's <see cref="IChoiceReask"/> (the agent-provider design §2.5, row n): the refusal kept in the offers store
-/// first, then the walk asked, Roles' for a driven run and Course's pending and walk for a conversation, each composed where its executor is
-/// built and handed here as <paramref name="walk"/>.
+/// Loop's implementation of the open's <see cref="IChoiceReask"/> (the agent-provider design §2.5, row n): the walk asked for a refused model,
+/// Roles' for a driven run and Course's pending and walk for a conversation, each composed where its executor is built and handed here as
+/// <paramref name="walk"/>. The refusal itself is already kept in the offers store (<see cref="OfferRefusals"/>) when the reading arrives.
 /// </summary>
 internal sealed class ChoiceReask(Func<ModelRefusal, Task<ActorAsked?>> walk) : IChoiceReask
 {
