@@ -13,6 +13,7 @@ import { stateText } from '../roles/StructureSections';
 import { placeKey } from '../roles/supervisorRulesDraft';
 import { AppointedRows } from './AppointedRows';
 import { PlaceSupervisorRules } from './PlaceSupervisorRules';
+import { WhoDecidesHere } from './WhoDecidesHere';
 
 type Kind = 'machine' | 'workspace' | 'repository';
 
@@ -66,8 +67,9 @@ export function PlaceRoles({ place, notify, onSource }: { place: StructurePlaceA
   const read = chain.data ? 'ok' : chain.isError ? 'failed' : 'loading';
   // The supervisor and the steward are catalogue roles: their rows are the ones placed here.
   const here = (scope: { kind: string; id?: string }) => placedHere(place, scope);
-  const appointed = appointedRows(editor.catalogue).some((row) => here({ kind: row.scopeKind ?? 'machine', id: row.scopeId ?? undefined }))
-    ? <AppointedRows placed={here} editor={editor} />
+  const anyPlaced = appointedRows(editor.catalogue).some((row) => here({ kind: row.scopeKind ?? 'machine', id: row.scopeId ?? undefined }));
+  const appointed = anyPlaced || editor.catalogue?.deciders
+    ? <>{anyPlaced && <AppointedRows placed={here} editor={editor} />}<WhoDecidesHere place={place} editor={editor} /></>
     : null;
   return <PlaceRolesView place={place} read={read} answer={chain.data ?? null} editor={editor} appointed={appointed} onSource={onSource} />;
 }

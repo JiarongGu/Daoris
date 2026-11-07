@@ -413,6 +413,7 @@ const readRoles = (raw: unknown): RoleCatalogue | null => {
     ...(answer.use && Array.isArray(answer.use.roles) ? { use: answer.use } : {}),
     ...(Array.isArray(answer.policies) ? { policies: answer.policies } : {}),
     ...(answer.supervisor && Array.isArray(answer.supervisor.sets) && Array.isArray(answer.supervisor.counts) ? { supervisor: answer.supervisor } : {}),
+    ...(answer.deciders && Array.isArray(answer.deciders.places) && Array.isArray(answer.deciders.elsewhere) ? { deciders: answer.deciders } : {}),
     ...(Array.isArray(answer.policyFields) ? { policyFields: answer.policyFields } : {}),
     ...(Array.isArray(answer.policyPresets) ? { policyPresets: answer.policyPresets } : {}),
     ...(Array.isArray(answer.suggestedChoices) ? { suggestedChoices: answer.suggestedChoices, suggestedChoicesDated: answer.suggestedChoicesDated } : {}),

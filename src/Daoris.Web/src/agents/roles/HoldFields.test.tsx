@@ -45,4 +45,16 @@ describe("the role editor's appointed fields", () => {
     expect(screen.getByRole('checkbox', { name: '回答问题' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: '采纳工作以落地' })).not.toBeChecked();
   });
+
+  it("keeps the machine's generic supervisor deciding every kind, said, with every kind's acts to grant", async () => {
+    const { unmount } = render(<HoldFields hold={{ ...GATEKEEPER, decides: [], fixed: true }} disabled={false} onChange={vi.fn()} />);
+    expect(screen.getByText("The machine's supervisor for every decision holds your rules, so it decides every kind.")).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Allows' })).toBeNull();
+    expect(screen.getByRole('checkbox', { name: 'accept work to land' })).not.toBeChecked();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<HoldFields hold={{ ...GATEKEEPER, decides: [], fixed: true }} disabled={false} onChange={vi.fn()} />);
+    expect(screen.getByText('本机的通用主管持有你的规则，因此决定每一类决定。')).toBeInTheDocument();
+  });
 });

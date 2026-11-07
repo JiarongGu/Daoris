@@ -35,7 +35,9 @@ describe('The appointed roles of a place', () => {
   it('shows each role with its holder and acts, and sets them over SET_ROLE', async () => {
     const onSet = draw();
 
-    expect(screen.getByText('Held by your rules · answer a question and let a line go on and move a line to another choice · an answer is held 5 minutes for your overrule')).toBeTruthy();
+    expect(screen.getByText(
+      'Decides: Every decision no other supervisor here takes · Held by your rules, then you · answer a question and let a line go on and move a line to another choice · a decision is held 5 minutes for your overrule',
+    )).toBeTruthy();
     expect(screen.getByText(/^Held by no one · drive and stop$/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /Steward/ }));
@@ -48,7 +50,7 @@ describe('The appointed roles of a place', () => {
 
     const [press] = onSet.mock.calls[0] as [RoleChangePress];
     expect(press).toMatchObject({
-      change: 'set', id: 'steward', role: { takes: [], filled: 'appointed', authority: ['drive', 'stop', 'resume'], holder: 'terminal' },
+      change: 'set', id: 'steward', role: { takes: [], filled: 'appointed', kind: 'steward', authority: ['drive', 'stop', 'resume'], holder: 'terminal' },
     });
     expect(press.choices).toBeUndefined();
     expect(press.role).not.toHaveProperty('window');
@@ -58,8 +60,8 @@ describe('The appointed roles of a place', () => {
     await i18n.changeLanguage('zh');
     draw();
 
-    expect(screen.getByText(/^由你的规则担任 · 回答问题.*答复会保留 5 分钟，供你否决/)).toBeTruthy();
-    expect(screen.getByText(/^由无人担任 · 驱动.*停止/)).toBeTruthy();
+    expect(screen.getByText(/^决定：这里其他主管不接的每项决定 · 担任者：你的规则，再由你决定 · 回答问题.*决定会保留 5 分钟，供你否决/)).toBeTruthy();
+    expect(screen.getByText(/^担任者：无人 · 驱动.*停止/)).toBeTruthy();
   });
 
   it('draws the diagram\'s appointed half from the catalogue: a role not held is dashed', () => {

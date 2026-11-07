@@ -98,7 +98,7 @@ export function editingOfLine(
     ...nameFields(row?.name, name), takes: row?.takes ?? [],
     work: row?.takes[0] ?? works[0] ?? 'build', place: row?.scopeKind ?? 'machine', placeId: row?.scopeId ?? '',
     drafts: row?.hold ? [] : draftsOf(line, agents, key, keeps ? policy : null), ...(keeps && policy ? { policy: policyDraftOf(policy) } : {}),
-    ...(row?.hold ? { hold: holdDraftOf(row.hold) } : {}),
+    ...(row?.hold ? { hold: holdDraftOf(row.hold, (row.scopeKind ?? 'machine') === 'machine') } : {}),
   };
 }
 

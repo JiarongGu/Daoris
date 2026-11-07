@@ -9,7 +9,7 @@ const FIELD = 'w-24 min-w-0 rounded-control border border-line-strong bg-raised 
  * kinds it decides), who holds it, and the supervisor's window, in place of the choices a working role has. The role's own kind is the
  * record's and is not changed here; the machine's generic supervisor keeps every kind, said, since it holds the person's rules.
  */
-export function HoldFields({ hold, disabled, machine = false, onChange }: { hold: HoldDraft; disabled: boolean; machine?: boolean; onChange: (hold: HoldDraft) => void }) {
+export function HoldFields({ hold, disabled, onChange }: { hold: HoldDraft; disabled: boolean; onChange: (hold: HoldDraft) => void }) {
   const { t } = useTranslation();
   const toggle = (act: string) => onChange({ ...hold, acts: hold.acts.includes(act) ? hold.acts.filter((each) => each !== act) : [...hold.acts, act] });
   const check = (act: string) => (
@@ -18,7 +18,7 @@ export function HoldFields({ hold, disabled, machine = false, onChange }: { hold
       label={t(`agents.setup.roles.hold.act.${act}`)} className="text-small text-ink"
     />
   );
-  const fixed = machine && hold.decides.length === 0;
+  const fixed = hold.fixed === true;
   return (
     <div className="grid gap-2">
       {hold.kind === 'supervisor' && (

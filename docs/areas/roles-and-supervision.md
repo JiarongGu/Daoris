@@ -45,7 +45,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
 | `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's 16 proposal kinds, each judged by its route's code and applied by the person |
 | `HelpModes`, `HelpSwap`, `HelpHousekeeping`, `HelpSettings`, `HelpReceipt` | `Help/HelpMode.cs` and its neighbours, `Help/HelpWired.cs` | Access mode, its change at a turn, configured access, what a start handed |
-| The page | `Web/agents/roles/`, `Web/agents/setup/` | One role editor and policy form, appointed roles, structure and call table; a place's Roles, its supervisor |
+| `SupervisorResolution`, `SupervisorGrants`, `SupervisorKinds`, `SupervisorDeciders` | `Roles/Supervisor{Resolution,Grants,Kinds,Deciders}.cs` | Who decides a kind at a place; the one grant check; the kinds and their acts; `ROLES`' `deciders` |
+| The page | `Web/agents/roles/`, `Web/agents/setup/` | One role editor and policy form, appointed roles, structure and call table; a place's Roles, its supervisor, *Who decides here* (`WhoDecidesHere`, `whoDecides.ts`) |
 
 ## Its rules
 
@@ -205,8 +206,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     (`Admit(kind, place, act)`) answers that supervisor's hold where its holder is the started terminal and
     `SupervisorGrants.Covers` grants the act, else `not-staffed`, `not-started` or `not-granted`; a leave asks no grant. The judge
     refuses a holder's answer or go-on its grants do not cover `not-granted`, and the keeping, the releases and the tickets ask the
-    admission with the decision's kind and act, so a grant taken away by any process stops the next step. The steward is the
-    catalogue's one steward. Ask Daoris may explain the supervisor, never overrule it. (from D233)
+    admission with the decision's kind and act, so a grant taken away by any process stops the next step. `ROLES` answers the same
+    resolution as `deciders` (`SupervisorDeciders`): for the machine, each place an appointed role's scope or `repository_workspaces`
+    names, and a repository no place names, a line per kind naming the supervisor, its place, its holder and the kind's granted acts,
+    or the resolver's sentence. A place's Roles words them as *Who decides here* (`WhoDecidesHere`): the supervisor and where it is
+    set, *your rules, then you* where the person's rules hold it, *you (… may not …)* where it is granted none of the kind's acts, or
+    *you* with the sentence; *Add a supervisor for…* offers the kinds no supervisor placed there decides and opens the role editor
+    with that kind, the place and nothing ticked. The editor shows the machine's generic supervisor's *Decides* fixed, said. An
+    appointed press names its `kind`. The steward is the catalogue's one steward. Ask Daoris may explain the supervisor, never
+    overrule it. (from D233)
 42. A role held by the terminal acts once the window starts its terminal (`START_ROLE_TERMINAL`, the window's alone); unstarted
     is `not-started`, another holder `not-staffed`, a hold the role no longer reads as `role-changed`. Unstaffed is off. The
     agent supervisor is on for a place exactly where its supervisor's holder is `terminal` and that terminal is started: the

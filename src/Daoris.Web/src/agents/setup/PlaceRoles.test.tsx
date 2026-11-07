@@ -336,7 +336,7 @@ describe('A place page, Roles', () => {
     });
     expect(within(row).getByText('Supervisor')).toBeTruthy();
     expect(document.querySelector('[data-place-row="appointed"]')).not.toBeNull();
-    expect(within(row.closest('[data-setting-row]') as HTMLElement).getByText(/^Held by your rules · answer a question/)).toBeTruthy();
+    expect(within(row.closest('[data-setting-row]') as HTMLElement).getByText(/^Decides: Every decision no other supervisor here takes · Held by your rules, then you · answer a question/)).toBeTruthy();
 
     cleanup();
     await openEngine();

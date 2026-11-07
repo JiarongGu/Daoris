@@ -29,13 +29,17 @@ export const HOLDERS: Readonly<Record<RoleHoldRead['kind'], readonly HoldDraft['
 /** The bounds of the supervisor's window, in minutes. */
 export const WINDOW_BOUNDS = { least: 1, most: 60 } as const;
 
-/** An appointed role's hold as the editor keeps it: the window as text while typed; a supervisor's kinds, none for a generic one. */
-export type HoldDraft = { kind: RoleHoldRead['kind']; acts: string[]; holder: 'rules' | 'terminal' | 'none'; window: string; decides: string[] };
+/** An appointed role's hold as the editor keeps it; `fixed`, the machine's generic supervisor, keeps every kind for the person's rules. */
+export type HoldDraft = { kind: RoleHoldRead['kind']; acts: string[]; holder: 'rules' | 'terminal' | 'none'; window: string; decides: string[]; fixed?: boolean };
 
-/** The draft an appointed role's editor opens with. */
-export const holdDraftOf = (hold: RoleHoldRead): HoldDraft => ({
+/** The draft an appointed role's editor opens with, placed on the machine or elsewhere. */
+export const holdDraftOf = (hold: RoleHoldRead, onMachine = false): HoldDraft => ({
   kind: hold.kind, acts: [...hold.acts], holder: hold.holder ?? 'none', window: String(hold.window ?? 5), decides: [...(hold.decides ?? [])],
+  ...(onMachine && hold.kind === 'supervisor' && (hold.decides ?? []).length === 0 ? { fixed: true } : {}),
 });
+
+/** A new supervisor's draft, deciding <kind> with nothing granted and held by the person's rules (*Add a supervisor for…*). */
+export const newSupervisorDraft = (kind: string): HoldDraft => ({ kind: 'supervisor', acts: [], holder: 'rules', window: '5', decides: [kind] });
 
 export const decidedKinds = (decides: readonly string[]): string[] => (decides.length > 0 ? [...decides] : Object.keys(DECISION_KINDS));
 
@@ -54,16 +58,18 @@ export const holdReads = (draft: HoldDraft): boolean => {
 };
 
 /** The appointed fields of a `SET_ROLE` press; the supervisor's window and the kinds it decides only. */
-export const holdPress = (draft: HoldDraft): Pick<NonNullable<RoleChangePress['role']>, 'filled' | 'authority' | 'holder' | 'window' | 'decides'> => ({
-  filled: 'appointed', authority: draft.acts, holder: draft.holder === 'none' ? null : draft.holder,
+export const holdPress = (draft: HoldDraft): Pick<NonNullable<RoleChangePress['role']>, 'filled' | 'kind' | 'authority' | 'holder' | 'window' | 'decides'> => ({
+  filled: 'appointed', kind: draft.kind, authority: draft.acts, holder: draft.holder === 'none' ? null : draft.holder,
   ...(draft.kind === 'supervisor' ? { window: Number(draft.window), ...(draft.decides.length > 0 ? { decides: draft.decides } : {}) } : {}),
 });
 
-/** An appointed role's folded line: who holds it, its acts, and the supervisor's window. */
+/** An appointed role's folded line: what a supervisor decides, who holds it, its acts, and the supervisor's window. */
 export function holdLine(t: TFunction, hold: RoleHoldRead): string {
   const holder = t(`agents.setup.roles.hold.holder.${hold.holder ?? 'none'}`);
   const acts = hold.acts.length > 0 ? hold.acts.map((act) => t(`agents.setup.roles.hold.act.${act}`)).join(t('settings.ai.role.and')) : t('agents.setup.roles.hold.noActs');
+  const decides = (hold.decides ?? []).map((kind) => t(`agents.setup.roles.hold.decides.${kind}`)).join(t('settings.ai.role.and'));
   return [
+    ...(hold.kind === 'supervisor' ? [t('agents.setup.roles.hold.decidesLine', { kinds: decides || t('agents.setup.roles.hold.decides.every') })] : []),
     t('agents.setup.roles.hold.heldBy', { holder }),
     acts,
     ...(hold.kind === 'supervisor' ? [t('agents.setup.roles.hold.window', { count: hold.window ?? 5 })] : []),
