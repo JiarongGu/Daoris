@@ -152,4 +152,69 @@ public sealed class HelpRoleProposalTests : HelpProposalBoxFixture
         Assert.Contains(said, message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Nothing was proposed.", message);
     }
+
+    /// <summary>An appointed supervisor is written flat as the record's own fields: its kinds, granted acts, holder and window, beside its names and scope.</summary>
+    [Fact]
+    public void A_supervisor_of_kinds_is_written_with_its_kinds_acts_holder_and_window()
+    {
+        var (id, message) = Box().ProposeRole(
+            "set", "gatekeeper", "Gatekeeper", new Dictionary<string, string> { ["zh"] = "守门人" }, null, "workspace:studio", null, 0, "the person wants allows decided here", "h1", Now,
+            supervisor: new HelpSupervisorFields(["allow", "landing"], ["allow.once", "landing.accept"], "terminal", 10));
+
+        var written = Written(id!);
+        Assert.Equal(("role", "set", "gatekeeper"), (written.GetProperty("kind").GetString(), written.GetProperty("door").GetString(), written.GetProperty("target").GetString()));
+        var press = written.GetProperty("press");
+        Assert.Equal("supervisor", press.GetProperty("kind").GetString());
+        Assert.Equal(["allow", "landing"], press.GetProperty("decides").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal(["allow.once", "landing.accept"], press.GetProperty("authority").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal(("terminal", 10, "studio"), (press.GetProperty("holder").GetString(), press.GetProperty("window").GetInt32(), press.GetProperty("scope").GetProperty("id").GetString()));
+        Assert.Equal("守门人", press.GetProperty("name").GetProperty("zh").GetString());
+        Assert.False(press.TryGetProperty("takes", out _));
+        Assert.Contains($"Proposed `#{id}`", message);
+    }
+
+    /// <summary>A generic supervisor names an empty list of kinds, which is not the same as naming none: a field left out keeps the role's own.</summary>
+    [Fact]
+    public void A_generic_supervisor_writes_an_empty_list_and_a_field_left_out_is_not_written()
+    {
+        var (generic, _) = Box().ProposeRole("set", "wide", "Wide", null, null, "repository:daoris", null, null, "why", "h1", Now, supervisor: new HelpSupervisorFields([], null, null, null));
+        var press = Written(generic!).GetProperty("press");
+        Assert.Equal(0, press.GetProperty("decides").GetArrayLength());
+        Assert.Equal(["kind", "name", "scope", "decides"], press.EnumerateObject().Select(each => each.Name));
+
+        var (longer, _) = Box().ProposeRole("set", "gatekeeper", null, null, null, null, null, 2, "why", "h1", Now, supervisor: new HelpSupervisorFields(null, null, null, 20));
+        Assert.Equal(["kind", "window", "revision"], Written(longer!).GetProperty("press").EnumerateObject().Select(each => each.Name));
+    }
+
+    [Theory]
+    [InlineData("remove", "gatekeeper", null, null, null, null, "a supervisor is proposed by a `set`")]
+    [InlineData("set", "gatekeeper", "Allow", null, null, null, "is not the name of a kind of decision")]
+    [InlineData("set", "gatekeeper", null, "allow", null, null, "`<kind>.<act>`")]
+    [InlineData("set", "gatekeeper", null, null, "Terminal", null, "is not a holder")]
+    [InlineData("set", "gatekeeper", null, null, null, 0, "whole minutes")]
+    [InlineData("set", "supervisor", null, null, null, null, "its own id")]
+    public void A_supervisor_of_the_wrong_shape_is_refused_and_nothing_proposed(string change, string role, string? decides, string? acts, string? holder, int? window, string said)
+    {
+        var (id, message) = Box().ProposeRole(
+            change, role, null, null, null, null, null, null, "why", "h1", Now,
+            supervisor: new HelpSupervisorFields(decides is null ? null : [decides], acts is null ? null : [acts], holder, window));
+
+        Assert.Null(id);
+        Assert.Contains(said, message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Nothing was proposed.", message);
+    }
+
+    [Fact]
+    public void A_supervisor_proposal_carrying_a_working_role_s_field_or_the_rules_is_refused()
+    {
+        foreach (var (takes, choices, policy, place) in new (string[]?, string[]?, string?, string?)[] { (["build"], null, null, null), (null, ["claude-code"], null, null), (null, null, "even", null), (null, null, null, "machine") })
+        {
+            var (id, message) = Box().ProposeRole(
+                "set", "gatekeeper", null, null, takes, null, choices, null, "why", "h1", Now, policy, null, place, null, null,
+                new HelpSupervisorFields(["allow"], null, null, null));
+
+            Assert.Null(id);
+            Assert.Contains("a supervisor's record carries", message, StringComparison.OrdinalIgnoreCase);
+        }
+    }
 }

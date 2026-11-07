@@ -123,8 +123,8 @@ public sealed class HelpProposalBox(string? home)
     public (string? Id, string Message) ProposeRole(
         string change, string id, string? name, IReadOnlyDictionary<string, string>? nameIn, IReadOnlyList<string>? takes, string? scope, IReadOnlyList<string>? choices,
         long? revision, string why, string? session, DateTimeOffset at, string? policy = null, long? policyRevision = null,
-        string? place = null, string? rules = null, long? rulesRevision = null) =>
-        new HelpRoleProposalWriter(file).Propose(change, id, name, nameIn, takes, scope, choices, revision, why, session, at, policy, policyRevision, place, rules, rulesRevision);
+        string? place = null, string? rules = null, long? rulesRevision = null, HelpSupervisorFields? supervisor = null) =>
+        new HelpRoleProposalWriter(file).Propose(change, id, name, nameIn, takes, scope, choices, revision, why, session, at, policy, policyRevision, place, rules, rulesRevision, supervisor);
 
     /// <inheritdoc cref="HelpRepositoryProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeRepository(string repository, string workspace, string why, string? session, DateTimeOffset at) =>

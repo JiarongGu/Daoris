@@ -3,7 +3,7 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>role</c> kind's writer: a working role of the role catalogue added, changed,
+/// The <c>role</c> kind's writer: a working role or an appointed supervisor of the role catalogue added, changed,
 /// removed or given back its seed (one role's, or every seeded role's at once), the change <c>daoris role</c> and Agents → Roles → Working roles make. Its door is
 /// the change, its target the role's id, and its own <c>press</c> the record and choices as the driver's role door takes them, with the
 /// revision Ask Daoris read. Whether the judge takes it is the driver's to say, before the person sees it.
@@ -33,10 +33,16 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
     public (string? Id, string Message) Propose(
         string change, string id, string? name, IReadOnlyDictionary<string, string>? nameIn, IReadOnlyList<string>? takes, string? scope, IReadOnlyList<string>? choices,
         long? revision, string why, string? session, DateTimeOffset at, string? policy = null, long? policyRevision = null,
-        string? rulesPlace = null, string? rules = null, long? rulesRevision = null)
+        string? rulesPlace = null, string? rules = null, long? rulesRevision = null, HelpSupervisorFields? supervisor = null)
     {
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
-        if (Blank(id) == Supervisor || rulesPlace is not null || rules is not null || rulesRevision is not null)
+        if (supervisor is not null)
+        {
+            var working = takes?.Count > 0 || choices?.Count > 0 || Blank(policy) is not null || policyRevision is not null
+                || rulesPlace is not null || rules is not null || rulesRevision is not null;
+            if (HelpSupervisorFile.Refusal(supervisor, Blank(change), Blank(id), working) is { } unfit) return (null, $"{Capital(unfit)} Nothing was proposed.");
+        }
+        else if (Blank(id) == Supervisor || rulesPlace is not null || rules is not null || rulesRevision is not null)
         {
             return ProposeRules(change, id, name, nameIn, takes, scope, choices, revision, policy, policyRevision, rulesPlace, rules, rulesRevision, why, session, at);
         }
@@ -81,6 +87,7 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
         {
             Head(writer, door!, named!);
             writer.WriteStartObject("press");
+            if (supervisor is not null) writer.WriteString("kind", "supervisor");
             if (names.Count == 0 && Blank(name) is { } alone) writer.WriteString("name", alone);
             else if (names.Count > 0)
             {
@@ -128,6 +135,7 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
             else if (policyText == "none") writer.WriteNull("policy");
             else if (policyText is not null) writer.WriteString("policy", policyText);
             if (policyRevision is { } policyRead) writer.WriteNumber("policyRevision", policyRead);
+            if (supervisor is not null) HelpSupervisorFile.Write(writer, supervisor);
             if (revision is { } read) writer.WriteNumber("revision", read);
             writer.WriteEndObject();
         }, why, session, at);

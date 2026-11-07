@@ -113,6 +113,16 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
                     return Refused(error.Message);
                 }
 
+                if (HelpSupervisorProposals.Names(press) || current?.Hold?.Kind == AppointedRoles.Supervisor)
+                {
+                    var (supervisor, why) = HelpSupervisorProposals.Read(id, press, name, scope, current);
+                    if (supervisor is null) return Refused(why!);
+                    if (policy is not null) return Refused($"`{id}` is an appointed role: a policy shares a working role's choices.");
+                    if (!SupervisorConversion.Converted(home)) return Refused(SupervisorConversion.NotConvertedSaid);
+                    change = RoleChange.Set(supervisor);
+                    break;
+                }
+
                 change = RoleChange.Set(new RoleRecord(id, name ?? current?.Name ?? AuthoredText.Of(""), RoleRecord.Always, takes, scope));
                 break;
         }
@@ -137,6 +147,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         return new HelpPlan(null, Describe(change, choices) + Unsaid(change, choices, catalogue, new RoleStaffing(home), config), Terminal(change, choices), null)
         {
             Role = new HelpRoleChange(change, choices, read),
+            Supervisor = change is RoleChange.SetRole { Role.Hold: not null } appointed ? HelpSupervisorProposals.View(appointed.Role, current) : null,
         };
     }
 
@@ -226,6 +237,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
 
     private static string Describe(RoleChange change, IReadOnlyList<ActorChoice>? choices) => change switch
     {
+        RoleChange.SetRole { Role: { Hold: not null } supervisor } => HelpSupervisorProposals.Describe(supervisor, Place(supervisor.Scope)),
         RoleChange.SetRole { Role: var role } =>
             $"Set the role `{role.Id}` ({string.Join(" · ", role.Name.Texts)}): it takes {string.Join(", ", role.Takes)} {Place(role.Scope)}"
             + (choices is null ? ", its choices kept." : choices.Count == 0 ? ", off." : $", on {Choices(choices)}.")
@@ -237,6 +249,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
 
     private static string Terminal(RoleChange change, IReadOnlyList<ActorChoice>? choices) => change switch
     {
+        RoleChange.SetRole { Role: { Hold: not null } supervisor } => HelpSupervisorProposals.Terminal(supervisor, NameFlags(supervisor.Name)),
         RoleChange.SetRole { Role: var role } =>
             $"daoris role set {role.Id} {NameFlags(role.Name)} --takes {string.Join(",", role.Takes)} "
             + $"--scope {(role.Scope.Kind == RoleScope.Machine ? RoleScope.Machine : $"{role.Scope.Kind}:{role.Scope.Id}")}"
