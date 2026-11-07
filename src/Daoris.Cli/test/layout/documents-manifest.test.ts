@@ -1,9 +1,7 @@
-// Roles bound to paths: `documents` in the manifest, as the CLI reads it (DOC3; D122, the development
-// documents design §2.7).
+// Roles bound to paths: `documents` in the manifest, as the CLI reads it.
 //
-// A table the service's reader (DOC5) can hold its own against, row for row: what each declaration
-// becomes, and what is refused at the edge, before a single path is planned. Each row was written before
-// the code, and watched failing.
+// A table the service's reader can hold its own against, row for row: what each declaration
+// becomes, and what is refused at the edge, before a single path is planned.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -39,8 +37,7 @@ const MANIFEST_ROWS: { name: string; documents: unknown; harness?: string; read:
     ],
   },
   { name: 'an object with a path and no ceiling', documents: { router: { path: 'docs/README.md' } }, read: [{ role: 'router', path: 'docs/README.md', words: null }] },
-  // ORIENT2b (D151 point 4, the orientation design §1.4): the index of where things are is a path, read
-  // after the router.
+  // The index of where things are is a path, read after the router.
   {
     name: 'the index of where things are, a path, after the router',
     documents: { decisions: 'docs/decisions', index: 'docs/index/README.md', router: 'docs/README.md' },
@@ -50,7 +47,7 @@ const MANIFEST_ROWS: { name: string; documents: unknown; harness?: string; read:
       { role: 'decisions', path: 'docs/decisions', words: null },
     ],
   },
-  // KNOWFRESH1a-iii: `present` is the repository's own declaration for `tools/doc-current.mjs` (the present records it reads),
+  // `present` is the repository's own declaration for `tools/doc-current.mjs` (the present records it reads),
   // never a role: it is no document, so nothing lists it and the service's reader skips it as an unknown member.
   {
     name: "`present` is a repository's own declaration, no role",
@@ -78,7 +75,7 @@ const REFUSED_ROWS: { name: string; documents?: unknown; raw?: string; harness?:
   { name: "the repository's root", documents: { decisions: './' }, says: /documents\.decisions is the repository's root/ },
   { name: 'inside the doctrine target', documents: { glossary: '.claude/knowledge/glossary.md' }, says: /documents\.glossary '\.claude\/knowledge\/glossary\.md' sits inside \.claude, where daoris writes the on-demand tiers/ },
   { name: 'inside the mirror root', harness: 'agents', documents: { fixes: '.claude/skills/fixes.md' }, says: /sits inside \.claude\/skills, where daoris writes the mirror for Claude Code/ },
-  // DOC3a: a path is judged where it lands, not as spelled; the service's reader (DOC5) refuses both.
+  // A path is judged where it lands, not as spelled; the service's reader refuses both.
   { name: 'the root, reached by climbing back', documents: { decisions: 'docs/..' }, says: /documents\.decisions is the repository's root/ },
   { name: 'inside the target, reached by climbing back', documents: { glossary: 'x/../.claude/knowledge/g.md' }, says: /documents\.glossary 'x\/\.\.\/\.claude\/knowledge\/g\.md' sits inside \.claude, where daoris writes the on-demand tiers/ },
   {

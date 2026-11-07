@@ -73,9 +73,9 @@ test('every machine-local override the desktop reads is redirected, cleared, or 
     for (const file of listFiles(dir)) {
       if (!file.endsWith('.cs') || file.startsWith('bin/') || file.startsWith('obj/')) continue;
       const text = readText(join(dir, file));
-      // Only files that actually resolve a path under the Daoris home (D63) — the ones that touch
+      // Only files that actually resolve a path under the Daoris home — the ones that touch
       // `DaorisHome`. Everything else names variables about transport or identity, which a scratch
-      // machine has no opinion about. (Before D63 the tell was a `".daoris"` literal; there are none.)
+      // machine has no opinion about.
       if (!text.includes('DaorisHome.') && !text.includes('class DaorisHome')) continue;
       for (const [name] of text.matchAll(/DAORIS_[A-Z_]+/g)) found.add(name);
     }
@@ -86,18 +86,18 @@ test('every machine-local override the desktop reads is redirected, cleared, or 
   assert.ok(found.has('DAORIS_HOME') && REDIRECTED.includes('DAORIS_HOME'));
 
   // Both host paths are pinned rather than redirected: their locators prefer an INSTALLED binary, so
-  // an unnamed host means a scratch run silently uses the real machine's (ACP4 added the second).
-  // The plugin trio is WRITTEN into a hook process's environment and read by nothing here (D64 §4):
+  // an unnamed host means a scratch run silently uses the real machine's.
+  // The plugin trio is WRITTEN into a hook process's environment and read by nothing here:
   // a scratch run has nothing to redirect, because the driver is the one setting them. The quest's
-  // attachments directory is the same shape (D65 §2): written into a session's environment from what
+  // attachments directory is the same shape: written into a session's environment from what
   // the service answered, and read by nothing on this side. An intake's ask and session are too (`IntakeRoom.Scope`),
-  // written into its spawn's environment; its room is asked of the home since HOMELAYOUT2, which puts the file in this scan.
-  // A session's repository is the same (HEAVYRUN1b2a): written into a driven session's environment, read only by `run-heavy`
-  // inside that session, never by the desktop a scratch run starts. A session's start (`Spawning.cs`, in this scan since
-  // ENVSEAM1 asks the home there) writes the rest of its target the same way: the target, the quest's words, the service it
+  // written into its spawn's environment; its room is asked of the home, which puts the file in this scan.
+  // A session's repository is the same: written into a driven session's environment, read only by `run-heavy`
+  // inside that session, never by the desktop a scratch run starts. A session's start (`Spawning.cs`, in this scan
+  // because it asks the home) writes the rest of its target the same way: the target, the quest's words, the service it
   // answers (the scratch run's own, `scratchEnvironment` sets it) and the stub's configuration home, which is an account's.
-  // A session's lineage token (COWORKVIEW1a) is the same: written into its process, its hook and its connector by the driver.
-  // So are a session's role and its revision (KNOWCENTRAL2d), written into its connector's entry for memory's attribution.
+  // A session's lineage token is the same: written into its process, its hook and its connector by the driver.
+  // So are a session's role and its revision, written into its connector's entry for memory's attribution.
   const handled = new Set([
     ...REDIRECTED, ...CLEARED, 'DAORIS_HTTP_HOST', 'DAORIS_MCP_HOST',
     'DAORIS_PLUGIN_ID', 'DAORIS_PLUGIN_FOLDER', 'DAORIS_PLUGIN_DATA',
@@ -112,7 +112,7 @@ test('every machine-local override the desktop reads is redirected, cleared, or 
 
 /** The two the service reads by constant rather than beside a `.daoris` literal. */
 test('the index root and the store are redirected', () => {
-  // The core's files sit in module folders (STRUCT5b): the factory is found by name under it.
+  // The core's files sit in module folders: the factory is found by name under it.
   const core = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Core');
   const found = listFiles(core).filter((file) => file.replaceAll('\\', '/').split('/').pop() === 'ServiceFactory.cs');
   assert.equal(found.length, 1, 'ServiceFactory.cs is expected once under the service core');
@@ -123,7 +123,7 @@ test('the index root and the store are redirected', () => {
 });
 
 /**
- * PUSH1f2a (D194 point 1): a `daoris place …` typed in a scratch window's terminal is handed to the driver's program the variable names,
+ * A `daoris place …` typed in a scratch window's terminal is handed to the driver's program the variable names,
  * which is this checkout's build; with none built, the variable names none, so the CLI says where the program is rather than finding
  * another build, the parent shell's among them.
  */
@@ -150,10 +150,9 @@ test('a scratch run sets every redirected variable, and points the host at the w
 });
 
 /**
- * Both halves, or neither. The engine the shell ships (D92) opens the DevTools port the shell hands it
+ * Both halves, or neither. The engine the shell ships opens the DevTools port the shell hands it
  * only in development, so a run that sets the port without the mode opens no port at all, silently —
- * a window that starts perfectly and answers nothing, which is how the WebView2 half of this was
- * found before it. The WebView2 variable went with WebView2 (D93).
+ * a window that starts perfectly and answers nothing.
  */
 test('the debug port needs the runtime in dev mode, and neither is set unasked', () => {
   const env = environment();
@@ -180,8 +179,8 @@ const listening = (server: Server, host: string) => new Promise<number>((resolve
 });
 
 /**
- * LOOK4: `run` printed `debug port 9333` and nothing ever listened there, on a machine where Windows had
- * reserved 9309–9408 (`netsh interface ipv4 show excludedportrange protocol=tcp`). Nobody can bind a
+ * `run` could print `debug port 9333` with nothing ever listening there, on a machine where Windows
+ * reserves 9309–9408 (`netsh interface ipv4 show excludedportrange protocol=tcp`). Nobody can bind a
  * reserved port, so the engine could not open it, and said nothing. The probe asked whether anything
  * ANSWERED there, and a reserved port answers nothing, so it read as free. Every port of the 20 the walk
  * tries sat inside the same reservation. On a machine with no reservation over 9333 this passes either
@@ -291,7 +290,7 @@ test('the report of an application that ended says so, and does not claim a wind
 
 test('the engine log is under the root the run gave the application', () => {
   const sep = (path: string) => path.replaceAll('\\', '/');
-  // HOMELAYOUT4: an install's is in the window's memory, the home's `window` entry: its `data/` while an older build's engine
+  // An install's is in the window's memory, the home's `window` entry: its `data/` while an older build's engine
   // profile is still there, `profiles/window/` once moved and for a new install.
   const fx = makeFixture('desktop-engine-log');
   try {
@@ -306,13 +305,13 @@ test('the engine log is under the root the run gave the application', () => {
     fx.cleanup();
   }
   assert.equal(sep(engineLogOf({ install: null, real: true, exe: '/b/Daoris.Desktop.exe' })), '/b/data/chromium/cef.log');
-  // A scratch run's window memory is its one root's `profiles/window/` (design §6.1), which `Program.cs` hands the kit.
+  // A scratch run's window memory is its one root's `profiles/window/` , which `Program.cs` hands the kit.
   assert.match(sep(engineLogOf({ install: null, real: false, exe: '/b/Daoris.Desktop.exe' })),
     /_fixtures\/desktop\/daoris\/profiles\/window\/chromium\/cef\.log$/);
 });
 
 /**
- * HOMELAYOUT4, the design §6.1: a scratch run is one Daoris folder as an install is. Its `DAORIS_HOME` and its `--app-root`
+ * A scratch run is one Daoris folder as an install is. Its `DAORIS_HOME` and its `--app-root`
  * name the same root, which holds `app/` and the home's category folders, and the window's memory is `profiles/window/`.
  */
 test('a scratch run lays out one Daoris folder, home and app root alike, as an install does', () => {
@@ -362,7 +361,7 @@ test('the built executable is derived from the project, newest build first', () 
 });
 
 /**
- * D92: on the Chromium the shell ships, the exe is CEF's launcher, named from the assembly less `.App`,
+ * On the Chromium the shell ships, the exe is CEF's launcher, named from the assembly less `.App`,
  * in a runtime identifier's folder — and copied with CEF's own file date, so it is dated by the assembly
  * it starts. Dated by itself, a stale build in the folder above would win.
  */
@@ -399,18 +398,18 @@ test('the capture script and the tool agree with the project on the process name
     repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.App', 'Daoris.Desktop.App.csproj'));
   const assembly = /<AssemblyName>([^<]+)<\/AssemblyName>/.exec(csproj)?.[1];
   assert.ok(assembly, 'the shell declares an assembly name');
-  // On the Chromium it ships (D92) the process is CEF's launcher, named from the assembly less `.App`.
+  // On the Chromium it ships the process is CEF's launcher, named from the assembly less `.App`.
   const process = assembly.endsWith('.App') ? assembly.slice(0, -'.App'.length) : assembly;
 
   assert.ok(readText(join(repoRoot, 'tools', 'shot-window.ps1')).includes(`$ProcessName = '${process}'`));
   // The tool names the process by the executable it photographs, so the build's and an install's
-  // launcher — `Daoris.exe`, or an older install's — are both found (CHR4).
+  // launcher — `Daoris.exe`, or an older install's — are both found.
   assert.ok(readText(join(repoRoot, 'tools', 'desktop.mjs')).includes("'-ProcessName', basename(exe, '.exe')"));
   assert.equal(`${process}.exe`, SHELL_EXE, 'the build names the application as the install does');
 
-  // Daoris's own browser is the application's executable started with its argument since CHR8 (D99),
-  // so a name or a path no longer tells the two apart: the capture is handed the process `shotTarget`
-  // chose, by its id, whichever window was asked for (SHOTPICK1).
+  // Daoris's own browser is the application's executable started with its argument,
+  // so a name or a path does not tell the two apart: the capture is handed the process `shotTarget`
+  // chose, by its id, whichever window is asked for.
   const tool = readText(join(repoRoot, 'tools', 'desktop.mjs'));
   assert.ok(tool.includes('shotTarget(commandLinesAt(exe)'), 'the capture chooses among the processes from its path');
   assert.ok(tool.includes("'-ProcessId', String(target.pid)"), 'the capture hands the script the process it chose');
@@ -434,10 +433,7 @@ test('a prune also enforces the size cap, oldest first', () => {
 });
 
 /**
- * 🔴 Reaching the DEPLOYED shell — the instrument the first deployment recorded as missing and
- * deliberately did not build (case study 2d: *"the honest options are a deliberate opt-in flag or
- * nothing, and that is a decision, not a patch"*). D62 made it: the desktop app is the focus, and the
- * install is where it is judged.
+ * 🔴 Reaching the DEPLOYED shell: the desktop app is the focus, and the install is where it is judged.
  *
  * What is asserted here is the part that is silently wrong when it breaks. The capture, the
  * attach and the kill all match a shell by its executable's PATH — that is what stops this loop
@@ -448,7 +444,7 @@ test('an install is addressed by its folder, and the launcher is the one at its 
   const root = mkdtempSync(join(tmpdir(), 'daoris-install-'));
   writeFileSync(join(root, 'Daoris.exe'), '');
   // The launcher alone is not enough: it exits once it starts the application, which is what the
-  // instruments address (D93).
+  // instruments address.
   assert.equal(installedExe(root), null);
 
   mkdirSync(join(root, 'app'), { recursive: true });
@@ -457,7 +453,7 @@ test('an install is addressed by its folder, and the launcher is the one at its 
 });
 
 /**
- * An install published before D93 has the single-file shell's launcher, and the instruments still
+ * An install published before the rename has the single-file shell's launcher, and the instruments still
  * reach it until its next publish replaces it: that is the install the owner has open meanwhile.
  */
 test('an install from before the rename is found by the launcher it has', () => {
@@ -495,7 +491,7 @@ test('no install named is no install, rather than a path built from undefined', 
 
 /**
  * Every process query the tools build compares a path inside a PowerShell single-quoted string, and a
- * `'` in that path ended the string early (REV3): the query matched nothing, and a kill that matches
+ * `'` in that path would end the string early: the query matched nothing, and a kill that matches
  * nothing is a stale window still holding the port. Backslashes must stay single — doubled, the
  * comparison never matches either.
  */
@@ -506,7 +502,7 @@ test('a path is quoted for PowerShell with its apostrophes doubled and its backs
 });
 
 /**
- * The one query the dev loop, the deployment gate and the publish share (REV3 CLEAN1), asked about a
+ * The one query the dev loop, the deployment gate and the publish share, asked about a
  * process that is certainly running from a known path: this test's own. One question only — each
  * costs a PowerShell start, seconds on this platform — and the deployment gate asks the rest.
  */
@@ -516,8 +512,8 @@ test('the processes running from a path are found by that path', { skip: process
 });
 
 /**
- * The instruments refuse to report from a page that is not this run's shell (CHR2c). On Chromium every
- * shell's page has the same origin, so what tells this run's apart is the host it was told to reach:
+ * The instruments refuse to report from a page that is not this run's shell. On Chromium every
+ * shell's page has the same origin, so what tells this run's apart is the host it is told to reach:
  * the scratch and the install can both be up, and a reading taken in the other one is a claim about a
  * window nobody is looking at.
  */
@@ -533,13 +529,13 @@ test('the shell is told apart by the host its page reaches', () => {
   assert.equal(isShell({ chromium: false, webview: false, origin: SHELL_ORIGIN, host: scratch }, scratch), false,
     'a browser tab on the same address has no bridge');
 
-  // WebView2 is no shell of Daoris's since D93, even on the host's own origin.
+  // WebView2 is no shell of Daoris's, even on the host's own origin.
   assert.equal(isShell({ webview: true, chromium: false, origin: scratch, host: null }, scratch), false);
   assert.equal(isShell(null, scratch), false);
 });
 
 /**
- * On Chromium the engine's own processes run from the application's executable (CHR4), so "what runs
+ * On Chromium the engine's own processes run from the application's executable, so "what runs
  * from this path" counts renderers, a GPU process and utilities beside the one window. Closing those
  * one by one cost fifteen seconds each and crashed a page; the application is the process with no
  * `--type=`.
@@ -562,7 +558,7 @@ test('the application is told from the engine processes started from its own exe
 });
 
 /**
- * CHR8 (D99): Daoris's browser is a fourth kind of process from the same executable, the application
+ * Daoris's browser is a fourth kind of process from the same executable, the application
  * started with the browser's argument first. It is not the application — a stop that closed it would
  * close the person's browser, and it follows the application out on its own — and it is not one of the
  * engine's processes either: it holds windows of its own. Told apart by its FIRST argument, the rule the
@@ -603,7 +599,7 @@ test('the tools and the application spell the browser’s argument the same', ()
 });
 
 /**
- * `kill` stops what this loop started, by the pid it recorded (D93). After `run --install` the record
+ * `kill` stops what this loop started, by the pid it recorded. After `run --install` the record
  * names the install's application, and the person's own start of the same install runs from the same
  * path: stopping by path closed their window.
  */
@@ -615,10 +611,9 @@ test('kill stops the process the loop recorded, never another from the same path
 });
 
 /**
- * SHOTPICK1: the application and its browser run from one executable since D99, and both hold windows,
- * so the capture script's "the first process with a window from this path" was Windows' choice between
- * them. On an install it was the browser, photographed for the application with only "2 matching
- * windows are open; took the first" said. The tool now chooses the process by its command line, as
+ * The application and its browser run from one executable, and both hold windows,
+ * so the capture script's "the first process with a window from this path" would be Windows' choice between
+ * them. The tool chooses the process by its command line, as
  * `eval` chooses the application's page, and hands the script its id.
  */
 const exeAt = '"D:\\app\\Daoris.Desktop.exe"';
@@ -740,8 +735,8 @@ function themedPage({
 }
 
 /**
- * LOOK1: `shot --theme` emulates the system's scheme, which the page follows only while the viewer's
- * choice is System. On the install the choice was dark, and `--theme light` photographed dark with
+ * `shot --theme` emulates the system's scheme, which the page follows only while the viewer's
+ * choice is System. Where a stored choice is dark, `--theme light` would photograph dark with
  * nothing said. Where the emulation alone takes, the viewer's choice is never touched.
  */
 test('a theme the page takes from the system is emulated, and the viewer’s choice is never touched', async () => {
@@ -834,7 +829,7 @@ test('a viewer on System is put back to System when the page had to be set', asy
  * write to it, and `shot --theme` sets it for a capture and puts it back. Spelled twice, held here.
  */
 test('the tool and the page spell the theme’s key the same, and the page hears a write to it', () => {
-  // Found by its name under the page's source (STRUCT5c, D166), wherever the page's folders put it.
+  // Found by its name under the page's source, wherever the page's folders put it.
   const page = join(repoRoot, 'src', 'Daoris.Web', 'src');
   const named = listFiles(page, (name) => name === 'theme.ts');
   assert.equal(named.length, 1, `theme.ts is under the page's source ${named.length} times: a file read by name is there once`);

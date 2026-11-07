@@ -1,5 +1,5 @@
 #:project ../../../../Daoris.Desktop/Daoris.Desktop.Driver/Daoris.Desktop.Driver.csproj
-// EVENTHOOK1a's probe session (the event channel design §4.4, D244 point 8; the event hook design §7: M1, M5, M8).
+// The probe session for the event hook (M1, M5, M8).
 // It starts a throwaway interactive Claude Code session in a pseudo-console, in a scratch git room, types its input, reads what the
 // room's hooks log, and ends it. Never the owner's session or the steward's; it signs nothing in or out and reads no credential.
 // Run by hand from the repository's root, never by a gate:
@@ -150,7 +150,7 @@ if (claudePath is null) { Console.Error.WriteLine("claude.exe is not on PATH"); 
 var version = Run(claudePath, "--version");
 Log($"M1 version: {version}");
 
-// The enclosing session's markers and messaging variables, and any Daoris variable, are not handed on (DRV4).
+// The enclosing session's markers and messaging variables, and any Daoris variable, are not handed on.
 var environment = Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>()
     .Select(entry => (Key: (string)entry.Key, Value: (string?)entry.Value ?? ""))
     .Where(entry => !entry.Key.StartsWith("CLAUDE", StringComparison.OrdinalIgnoreCase)

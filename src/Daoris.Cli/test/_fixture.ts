@@ -10,8 +10,8 @@ const FIXTURE_ROOT = join(dirname(dirname(fileURLToPath(import.meta.url))), '_fi
 
 /**
  * How long a TypeScript test waits, in ms, for a signal that fails to come only when the code is wrong: a stub's or a plugin's
- * answer, a file or a process a child is to produce or end, a poll's condition (TESTPATIENCE3). It elapses only on failure, so
- * it costs a passing test nothing, and it is two minutes as the desktop tests' `Poll.Patience` is (TESTPATIENCE1), because a
+ * answer, a file or a process a child is to produce or end, a poll's condition. It elapses only on failure, so
+ * it costs a passing test nothing, and it is two minutes as the desktop tests' `Poll.Patience` is, because a
  * few seconds is what a machine at full load takes to start one process. The CLI's tests, the tool-tests and the tools' own
  * tests read it; `tools/test-patience.mjs` refuses a new fixed wait shorter than it unless its line says why it stays. Never
  * for an elapsed-time bound that states the claim, a staging delay, or a product input a test hands to code.
@@ -25,12 +25,12 @@ export interface Fixture {
   read(rel: string): string;
   exists(rel: string): boolean;
   /**
-   * Where a home entry is with this root as the Daoris home (D172, HOMELAYOUT3): asked of the table, never joined by hand
+   * Where a home entry is with this root as the Daoris home: asked of the table, never joined by hand
    * (`home-census.test.ts`), and its folder made, so a test may write the file as the code would find it.
    */
   entry(name: HomeEntryName, ...asked: string[]): string;
   /**
-   * The doctrine region's body (D59), or null when this repository has none.
+   * The doctrine region's body, or null when this repository has none.
    *
    * The always-loaded tier is a span in `AGENTS.md` rather than files under `.claude/rules/`, so
    * "what did sync write for this rule" is a question about a region now, and every test that used
@@ -90,9 +90,9 @@ export function makeFixture(name: string): Fixture {
       return body === null ? null : tierRuleBody(body, source);
     },
     // A child the test started (a stub agent, a git) may still be letting go of the folder as the test ends; on Windows
-    // that is EPERM, which failed passing tests in three suites on 2026-10-04 (FLAKE1). Waits as the rehearsals' cleans do. A
+    // that is EPERM, which would fail a passing test. Waits as the rehearsals' cleans do. A
     // file still held past the wait (a copied program a scanner reads after it ran) leaves the folder for the next run's start,
-    // which clears it: the test has passed by here, so the folder is not its verdict (the full set on 7ac72cc5a).
+    // which clears it: the test has passed by here, so the folder is not its verdict.
     cleanup: () => {
       try {
         rmSync(root, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 });
@@ -106,8 +106,8 @@ export function makeFixture(name: string): Fixture {
 /**
  * This process's environment without a `DAORIS_*` variable, for a stub child to start from: run inside a session Daoris
  * drives, the test inherits that session's quest, record or brainstorm turn, and an inherited `DAORIS_BRAINSTORM_TURN`
- * turns the protocol stub to its brainstorm branch (ENVLEAK2). The child carries only what its test sets, as the driver's
- * `Spawning.Unrole` hands a start only its own role (ENVLEAK1).
+ * turns the protocol stub to its brainstorm branch. The child carries only what its test sets, as the driver's
+ * `Spawning.Unrole` hands a start only its own role.
  */
 export function unroled(): Record<string, string | undefined> {
   return Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.toUpperCase().startsWith('DAORIS_')));

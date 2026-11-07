@@ -8,10 +8,10 @@ import { makeFixture } from '../_fixture.ts';
 import { TAR_END as END, pax, tarEntry as entry } from '../_tar.ts';
 
 /**
- * A vendor's package, unpacked whole (AGT2b) — the only archive Daoris opens, and one it opens only
- * after its hash matched the vendor's published one. The hash says the bytes are the vendor's; it says
+ * A vendor's package, unpacked whole — the only archive Daoris opens, and one it opens only
+ * after its hash matches the vendor's published one. The hash says the bytes are the vendor's; it says
  * nothing about where the entries inside point, so the extraction refuses every entry that would land
- * outside the directory it was given, whoever wrote the archive.
+ * outside the directory it is given, whoever wrote the archive.
  */
 
 test('a package unpacks whole: directories, files, and what may run stays runnable', async () => {

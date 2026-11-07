@@ -4,21 +4,21 @@ import { CHANGE_SKILL, onDemandExtras, renderIndex, renderTier, tierRuleBody } f
 import type { CanonFile } from '../../src/doctrine/records.ts';
 
 /**
- * What goes INSIDE the region (CANON8b/D59) — the always-loaded tier, rendered once, for the file
+ * What goes INSIDE the region — the always-loaded tier, rendered once, for the file
  * every harness reads.
  *
- * Three content decisions live here, and each is a consequence of the move rather than a preference:
+ * Four content decisions live here, and each is a consequence of the move rather than a preference:
  *
- * 1. **Frontmatter is stripped.** D14 already says frontmatter is only frontmatter at byte 0; eight
+ * 1. **Frontmatter is stripped.** Frontmatter is only frontmatter at byte 0; eight
  *    rules concatenated would put seven `---` blocks mid-document, where they render as horizontal
- *    rules and stray key-value prose. What it carried — `applies_when` and `enforces` — becomes the
- *    table, which is where it was always being read from anyway.
+ *    rules and stray key-value prose. What it carries — `applies_when` and `enforces` — becomes the
+ *    table.
  * 2. **Provenance stays.** The per-rule header is what keeps drift and `upstream` per RULE inside one
  *    region, which design §4 rests on.
  * 3. **The rules rows stay in the table** — cheap, and they carry the `applies_when`/`enforces` the
- *    stripped frontmatter held. The knowledge and skills rows moved to `<target>/INDEX.md`, which the
- *    region names (WSSETUP14a, D128 §2): they grew with the repository, and pushed the rules down.
- * 4. **Only the rules tier is in full** (CONSOLIDATE1). A knowledge document marked `rule: true` is a
+ *    stripped frontmatter held. The knowledge and skills rows live in `<target>/INDEX.md`, which the
+ *    region names: they grow with the repository, and would push the rules down.
+ * 4. **Only the rules tier is in full.** A knowledge document marked `rule: true` is a
  *    row linked to its file, and its body is read when it applies.
  */
 
@@ -87,7 +87,7 @@ test('the region is flat, because a body rewritten on the way in cannot be compa
 /**
  * The tiers that are NOT loaded are the reason an index exists at all: an agent cannot discover
  * `.claude/knowledge/` by reading a file that does not mention it. The region names the index, and the
- * index names every document (WSSETUP14a, D128 §2.2–§2.3).
+ * index names every document.
  */
 test('the region points at the index, and the index lists knowledge and skills by their paths', () => {
   const region = renderTier({ rules: [], version: '0.0.1' });
@@ -179,8 +179,8 @@ test('a single rule can be read back out of a rendered region', () => {
 
 /**
  * The body read back must be what the canon would render, byte for byte — otherwise the first `check`
- * after a clean `sync` reports drift on a file nobody touched, which is the failure D13 and the
- * body-comparison in `planSync` were both written from.
+ * after a clean `sync` reports drift on a file nobody touched, which the
+ * body-comparison in `planSync` guards against.
  */
 test('what is rendered is what reads back, for every rule', () => {
   const region = renderTier({ rules: two, version: '0.0.1' });

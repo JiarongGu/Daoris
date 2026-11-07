@@ -1,6 +1,6 @@
-// One writer at a time from the re-read to the rename of a home file an edit keeps (CONFIGLOCK1, D173's CONFIG1 note). A keeping
-// write reads the file again, makes its edit onto it and renames its own text over it; another writer whose rename landed between
-// that read and that rename was lost. Both twins take the same lock file, so a terminal's edit and the desktop's wait for each other.
+// One writer at a time from the re-read to the rename of a home file an edit keeps. A keeping
+// write reads the file again, makes its edit onto it and renames its own text over it; another writer whose rename lands between
+// that read and that rename is lost. Both twins take the same lock file, so a terminal's edit and the desktop's wait for each other.
 //
 // It is the CLI's twin of the driver's `KeepLock`; `keeplock.test.ts` reads `driver-config-keeps.json`'s `lock` rows, as
 // `KeepLockTests` does. The rules both keep:
@@ -13,7 +13,7 @@
 //   3. A writer that finds it waits, looking every 15 ms, for ten seconds (the driver's `RecordLock.Wait`), then is refused as a tool
 //      error naming the lock and its holder, nothing written.
 //   4. Stale: its process gone, written more than a minute ago (a write holds it for milliseconds, so a reused process id holds it a
-//      minute at most), or not that object. It is removed only while it still says what was judged stale, then taken.
+//      minute at most), or not that object. It is removed only while it still says what it said when judged stale, then taken.
 
 import { randomBytes } from 'node:crypto';
 import { linkSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
@@ -21,8 +21,7 @@ import { dirname, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
 
 /**
- * Whether a process runs with this id: signal 0 tests and sends nothing; one not ours to signal still runs. The home's lease asked it
- * here until the lease left with the last family's TypeScript (PUSH1f2f): a stale keep lock is still judged by it.
+ * Whether a process runs with this id: signal 0 tests and sends nothing; one not ours to signal still runs. A stale keep lock is judged by it.
  */
 function processLives(pid: number): boolean {
   try {
@@ -75,7 +74,7 @@ export function keepLockStale(text: string, now: number, lives: (pid: number) =>
  * Hold the lock of `file`, waiting while another writer holds it, for at most `within` milliseconds. Synchronous, as every keeping
  * write is.
  *
- * @throws DaorisError It was held by a live writer for the whole of the wait; nothing was taken.
+ * @throws DaorisError A live writer held it for the whole of the wait; nothing is taken.
  */
 export function takeKeepLock(
   file: string, { within = KEEP_LOCK_WAIT_MS, lives = processLives }: { within?: number; lives?: (pid: number) => boolean } = {},
@@ -89,7 +88,7 @@ export function takeKeepLock(
     if (failed === null) return held(path, mine);
 
     const seen = readText(path);
-    // Stale: removed only while it still says what was judged stale, so a lock another has just taken is not the one removed.
+    // Stale: removed only while it still says what it said when judged stale, so a lock another has just taken is not the one removed.
     if (seen !== null && keepLockStale(seen, Date.now(), lives) && readText(path) === seen && remove(path)) continue;
     if (Date.now() >= until) {
       const holder = seen === null ? `nothing this writer could read (${failed.message})` : holderOf(seen);
@@ -135,7 +134,7 @@ function holderOf(text: string): string {
   }
 }
 
-/** Written beside, then linked into place only where nothing is: never over another holder's lock. Null, or why it was not. */
+/** Written beside, then linked into place only where nothing is: never over another holder's lock. Null, or why it could not be. */
 function create(path: string, text: string): Error | null {
   const beside = `${path}.${randomBytes(8).toString('hex')}.writing`;
   try {

@@ -5,7 +5,7 @@ import { join, posix, relative } from 'node:path';
 import { cliRoot, ROWS, SOURCES, sourcePaths } from './_sources.ts';
 
 /**
- * The structure gate for the CLI's sources (STRUCT5d, D166; the code-structure design §5), the desktop modules' and the
+ * The structure gate for the CLI's sources, the desktop modules' and the
  * service core's gate in TypeScript. Its map is `fixtures/structure.json`. Each breach names the file, the line (0 for the
  * file as a whole) and the rule:
  * - `top`: a file at `src/`'s top is the entry (`cli.ts`: `bin/daoris.mjs` runs it, built as `dist/cli.js`) or one the map's
@@ -185,9 +185,9 @@ test('the map names declared modules and files that are there', () => {
 
 const mapFile = join(cliRoot, 'test', 'fixtures', 'structure.json');
 
-// PUSH1f2b (D194 point 7): `driver` and `workflows` left with the driver family's TypeScript, the family Daoris's driver program's whole;
-// PUSH1f2e `accounts`, and PUSH1f2f `agents` and `plugins`, the seam moved to `platform/driverprogram.ts`. ONEWAY1ai-i: `service` and
-// `browser` left with the registry's, the remotes' and the browser's verbs, the desktop program's typed operations now.
+// No `driver`, `workflows`, `accounts`, `agents`, `plugins`, `service` or `browser` family here: the driver program owns them
+// whole, and the seam to it is `platform/driverprogram.ts`. The registry's, the remotes' and the browser's verbs are the desktop
+// program's typed operations.
 test("the map names the CLI's modules", () => {
   assert.deepEqual(readMap(readFileSync(mapFile, 'utf8')).modules,
     ['cli', 'platform', 'doctrine', 'layout', 'tools']);
@@ -201,8 +201,8 @@ test("the CLI's own tree keeps its structure", () => {
     .filter((entry) => entry.isFile())
     .map((entry) => relative(testsFolder, join(entry.parentPath, entry.name)).split('\\').join('/'));
 
-  // A floor for the walk, not a size the CLI keeps: the management families left it row by row (D194), and the last of its
-  // management verbs at ONEWAY1ai-i, which left the doctrine commands and the seam, 43 sources.
+  // A floor for the walk, not a size the CLI keeps: the management families live in the driver program, which leaves the
+  // doctrine commands and the seam, 43 sources.
   assert.ok(sources.length >= 35, `the gate read only ${sources.length} sources: its walk no longer reaches the sources' tree`);
   assert.ok(tests.length >= 70, `the gate read only ${tests.length} tests: its walk no longer reaches the tests' tree`);
   assert.deepEqual(checkStructure(map, sources, tests), [], "each breaks the CLI's structure (the code-structure design §5)");

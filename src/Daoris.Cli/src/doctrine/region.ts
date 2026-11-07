@@ -1,11 +1,11 @@
-// The marked region — where the always-loaded tier lives (CANON8a, D59).
+// The marked region — where the always-loaded tier lives.
 //
 // `.claude/rules/` is read by exactly one of the three harnesses this family drives (measured:
 // `docs/2026-09-21-dsh-evaluation.md` §6.5), so the tier moves into `AGENTS.md`, which all three
 // read. That file belongs to the ADOPTER — one of them carries 133 lines of its own in it — so
 // Daoris owns a region of it and nothing else.
 //
-// `docs/2026-09-22-instruction-file-design.md` §4 is the state space, and it extends D19 with three
+// `docs/2026-09-22-instruction-file-design.md` §4 is the state space, and it extends the sync's rows with three
 // states a file never had. Every one of them REFUSES.
 //
 // 🔴 **Never guess at a boundary.** The text on the other side is somebody's own doctrine, and
@@ -136,8 +136,8 @@ export function hasImport(text: string, target: string): boolean {
  * whole-file diff on their next checkout.
  *
  * @remarks
- * D25 was this assumption the other way round, and it was found only because the release gates run on
- * Linux while development happens on Windows. Majority rather than first-seen: a file that has been
+ * Assuming one ending fails where the release gates run on Linux while development happens on
+ * Windows. Majority rather than first-seen: a file that has been
  * through both worlds has some of each, and the question is which one it mostly is.
  */
 function lineEnding(text: string): '\n' | '\r\n' {
@@ -164,7 +164,7 @@ export function writeRegion(text: string, name: string, body: string): string {
 
   if (found.kind === 'absent') {
     const theirs = text.replace(/[\r\n]*$/, '');
-    // A blank line between their text and the region, and none at all when there was no text.
+    // A blank line between their text and the region, and none at all when they have no text.
     const lead = theirs.length > 0 ? [theirs, ''] : [];
     return [...lead, ...block, ''].join(eol);
   }
@@ -178,7 +178,7 @@ export function writeRegion(text: string, name: string, body: string): string {
 }
 
 /**
- * The file with the region taken out, or null when the region was all of it (D117 §5.4: a room taken
+ * The file with the region taken out, or null when the region is all of it (a room taken
  * out of the manifest loses its pointer).
  *
  * @remarks
@@ -210,7 +210,7 @@ export function removeRegion(text: string, name: string): string | null {
  * evaluation §6.5). So this line is for exactly one reader, and every other reader ignores it.
  *
  * 🔴 **Always a region, even when this creates the whole file.** A bare line is prettier and is a
- * line nothing can ever retire: `daoris.lock` is the authority (D5) and a lock entry describes a
+ * line nothing can ever retire: `daoris.lock` is the authority and a lock entry describes a
  * file or a span, never a stray sentence. One mechanism means `check` and retirement read this file
  * exactly as they read the other one.
  *

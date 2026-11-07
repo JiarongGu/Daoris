@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { COMMANDS, HANDED_VARIABLE, runCli } from '../../src/cli.ts';
 
 /**
- * One name, `daoris`, one tree (D228). The CLI's rows declare the doctrine commands, offline, at the root; every other word is the
+ * One name, `daoris`, one tree. The CLI's rows declare the doctrine commands, offline, at the root; every other word is the
  * desktop's program's, handed to it whole, and a word handed once is never handed back. The program's groups are declared by its own
  * commands, so neither half holds the other's list.
  */

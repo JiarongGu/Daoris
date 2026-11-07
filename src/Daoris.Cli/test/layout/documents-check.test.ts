@@ -1,9 +1,8 @@
-// The declared documents in `sync` and `check` (DOC3; D122, the development documents design §2.7–§2.8).
+// The declared documents in `sync` and `check`.
 //
 // `sync` renders a *Where things are* table into the region; `check` fails on a fact (a declared path
 // absent, a link, the table stale) and only reports a judgement (a ceiling, the root file's bytes, no
-// backlog or decisions declared), D54's line. A repository that declares nothing sees no change. Each
-// case was written before the code, and watched failing.
+// backlog or decisions declared). A repository that declares nothing sees no change.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -59,7 +58,7 @@ test('sync renders Where things are into the region: one row per declared path, 
 });
 
 /**
- * ORIENT2b (D151 point 4, the orientation design §1.4): the index of where things are is the row that
+ * The index of where things are is the row that
  * sends a session there before it searches, so it sits after the router and says so in its job.
  */
 test('sync renders a declared index after the router, saying to open it before searching', () => {
@@ -339,7 +338,7 @@ test('a repository that declares nothing hears nothing about records', () => {
   fx.cleanup();
 });
 
-/** LAYOUT3's report and DOC3's are one line (design §6, *amended rows*): the root file in bytes. */
+/** The layout's report and the documents' are one line: the root file in bytes. */
 test('the root file over the smallest limit is one line, beside the brief\'s words', () => {
   const fx = declaring('documents-report-bytes');
   fx.repoFx.write('AGENTS.md', `# Our brief\n\n${'word '.repeat(7000)}\n\n${fx.repoFx.read('AGENTS.md')}`);

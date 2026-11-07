@@ -6,12 +6,11 @@ import {
 } from '../../src/doctrine/region.ts';
 
 /**
- * The marked region (CANON8a/D59) — where the always-loaded tier lives once it leaves
+ * The marked region — where the always-loaded tier lives once it leaves
  * `.claude/rules/`, because that directory is read by exactly one of the three harnesses.
  *
- * `docs/2026-09-22-instruction-file-design.md` §4 is the table these tests implement. It extends D19
- * — which exists because this area was corrected four times before anyone wrote a table down — with
- * the three states a file never had, and every one of them **refuses**.
+ * `docs/2026-09-22-instruction-file-design.md` §4 is the table these tests implement: the three
+ * states of a file beyond the lock × disk × canon table, and every one of them **refuses**.
  *
  * 🔴 The whole safety argument is one sentence: **never guess at a boundary.** The text on the other
  * side of it is the adopter's own doctrine, and `file-tool-discipline` already says what a computed
@@ -83,8 +82,8 @@ test('writing is idempotent', () => {
 
 /**
  * An adopter's file may be CRLF — one of them ships a `.gitattributes` — and a region written in LF
- * would show as a whole-file diff on every checkout. D25 was this same assumption, the other way
- * round, and it was only found because the release gates run on Linux and development on Windows.
+ * would show as a whole-file diff on every checkout. The same holds the other way round, and the
+ * release gates run on Linux while development runs on Windows.
  */
 test('the region takes the line ending the file already uses', () => {
   const crlf = '# Theirs\r\n\r\nAll of it.\r\n';
@@ -113,7 +112,7 @@ test('a multi-line body round-trips through a CRLF file', () => {
 
   assert.ok(!/[^\r]\n/.test(written), 'the file stopped being CRLF');
   assert.equal(found.kind === 'present' ? found.body : null, body);
-  // And writing what was read back changes nothing, which is the property sync depends on.
+  // And writing what is read back changes nothing, which is the property sync depends on.
   assert.equal(writeRegion(written, NAME, found.kind === 'present' ? found.body : ''), written);
 });
 
@@ -236,8 +235,8 @@ test('an intact region in a CRLF file is found', () => {
 /**
  * Creating the pointer file, and the three states §4 gives it.
  *
- * 🔴 **Always a region, even when Daoris creates the whole file.** The adopter whose layout this was
- * taken from has a bare one-line `CLAUDE.md`, which is prettier — and a bare line is a line nothing
+ * 🔴 **Always a region, even when Daoris creates the whole file.** The adopter whose layout this
+ * follows has a bare one-line `CLAUDE.md`, which is prettier — and a bare line is a line nothing
  * can later retire, because `daoris.lock` is the authority and a line is not a file. One mechanism
  * means `check`, `sync` and retirement read this file exactly as they read the other one.
  */
@@ -250,7 +249,7 @@ test('a repository with no pointer file gets one holding the import', () => {
 });
 
 test('a pointer file that already imports it is left completely alone', () => {
-  // The exact shape the style was taken from: one line, no region, nothing of ours.
+  // The exact shape of the style followed: one line, no region, nothing of ours.
   assert.equal(ensureImport('@AGENTS.md\n', 'AGENTS.md'), null);
   // And a repository that wrote its own sentence around the import is equally done.
   assert.equal(ensureImport('# Ours\n\nEverything is in @AGENTS.md.\n', 'AGENTS.md'), null);

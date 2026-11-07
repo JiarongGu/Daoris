@@ -4,8 +4,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture } from './_fixture.ts';
 
-// SESSOPT1b (D127, design §3): an entry has a shape, and `tools/doc-shapes.mjs` reports a backlog row, a router
-// row or a new archive outcome over it. A shape is a judgement, so it reports and exits 0 (D54); a configuration
+// An entry has a shape, and `tools/doc-shapes.mjs` reports a backlog row, a router
+// row or a new archive outcome over it. A shape is a judgement, so it reports and exits 0; a configuration
 // it cannot read is a fact, so it fails.
 // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
 const shapes = await import('../../../tools/doc-shapes.mjs') as {
@@ -48,7 +48,7 @@ test('a backlog row is its item and its indented lines, blank lines inside it to
   ].join('\n');
 
   assert.deepEqual(shapes.backlogRows(text), [
-    // -, [, ], **ROW1, —, the, first**, (§2):, two, words, and, three, more, **A, later, paragraph**, of, the, same, row:
+    // the item's words, its continuation lines and its later paragraph,
     // counted as written, the marker and the box too, as doc-budgets counts a document
     { id: 'ROW1', words: 20 },
     { id: 'ROW2', words: 8 },
@@ -100,7 +100,7 @@ test('an archive entry is a second-level heading, dated by the last date it name
 
   assert.deepEqual(shapes.archiveEntries(text), [
     { id: 'OLD1', date: '2026-09-30', outcome: 6 },
-    // **Outcome.**, Built:, one, thing., Detail:, D1's, note., then the fence and the heading-like line inside it
+    // the label and the words after it, then the fence and the heading-like line inside it
     { id: 'NEW1', date: '2026-10-03', outcome: 16 },
     // an entry with no label: what it says beyond its heading and its quoted row
     { id: 'NEW2', date: '2026-10-04', outcome: 6 },
@@ -109,7 +109,7 @@ test('an archive entry is a second-level heading, dated by the last date it name
 });
 
 test('a fence is read as markdown reads one: a longer fence quoting a shorter one, and a tilde fence, hold their headings', () => {
-  // ORIENT2h4: a three-backtick line inside a four-backtick fence closes nothing, and a tilde fence fences.
+  // A three-backtick line inside a four-backtick fence closes nothing, and a tilde fence fences.
   const text = [
     '# Archive', '',
     '## LONG1 — quotes an example (2026-10-07)', '', '**Outcome.** Quoted.', '',

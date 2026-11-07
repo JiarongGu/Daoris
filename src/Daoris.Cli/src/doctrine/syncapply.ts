@@ -23,13 +23,12 @@ function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
 }
 
 /**
- * Every path daoris writes or deletes must resolve INSIDE the root that declares it (D18, and since
- * D117 over every declared root: the target, the lock's old root, the mirror root, the rooms).
+ * Every path daoris writes or deletes must resolve INSIDE the root that declares it, over every
+ * declared root: the target, the lock's old root, the mirror root, the rooms.
  *
- * D5 makes anything absent from the lock invisible to the tool; this is its
- * complement, and it was missing. A lock entry containing `..` escaped the
- * target and reached arbitrary files — and the lock is *generated*, so it is
- * exactly the file nobody reads closely in review. A merge-mangled entry and a
+ * Anything absent from the lock is invisible to the tool; this is its complement. A lock entry
+ * containing `..` would escape the target and reach arbitrary files — and the lock is *generated*,
+ * so it is exactly the file nobody reads closely in review. A merge-mangled entry and a
  * crafted one in a pull request both arrive at the same delete.
  *
  * Refuses rather than sanitising: a path that tried to leave is not a path to
@@ -76,7 +75,7 @@ export function refuseWhatForceCannot(plan: SyncPlan): void {
       + "  then 'daoris sync'",
       1);
   }
-  // D4 and D71 (D230): a keep is this repository's own text of a rule, never a core rule's absence, which only a pack's
+  // A keep is this repository's own text of a rule, never a core rule's absence, which only a pack's
   // switch the repository confirms takes out.
   const absentCore = (plan.kept ?? []).filter((keep) => keep.absentCore).map((keep) => keep.target);
   if (absentCore.length) {
@@ -117,7 +116,7 @@ export function applySync(
         ? [`this repo already has its own ${plan.mirrors.collisions.join(', ')}, at the mirror path(s) daoris `
           + `writes for ${mirrorReader} — a skill kept for that agent alone needs a name no source skill has`]
         : []),
-      // D128 §2.4: a file of the repository's own where the generated index goes. Renaming it is the
+      // A file of the repository's own where the generated index goes. Renaming it is the
       // answer the canon's changelog gives an adopter.
       ...(indexCollides
         ? [`${plan.index.path} is this repo's own, where daoris writes the index of the knowledge and skills`]
@@ -138,7 +137,7 @@ export function applySync(
         `${plan.drifted.length} vendored file(s) edited locally: ${plan.drifted.join(', ')}\n` +
           `  promote the edit with 'daoris upstream <file>', or discard it with 'daoris sync --force'`);
     }
-    // D117 §3.3's second telling: the mirror is named with its source, and what to do with the edit.
+    // The mirror is named with its source, and what to do with the edit.
     for (const mirror of plan.mirrors.edited) {
       lines.push(mirror.sourceEdited
         ? `${mirror.path} — a mirror of ${mirror.of}, edited here, and ${mirror.of} was edited too: two edits `
@@ -170,7 +169,7 @@ export function applySync(
   }
   if (plan.editedSwitchedOff?.length && !force) {
     // Unlike an edited retirement, the canonical file still exists — so `upstream` is a real route,
-    // and the refusal says so first (D71).
+    // and the refusal says so first.
     const by = (target: string) =>
       plan.switchedOff.find((row) => target === row.target || target.startsWith(`${row.target}/`))?.by;
     throw new DaorisError(
@@ -185,7 +184,7 @@ export function applySync(
 
   // Resolve every path BEFORE touching anything, so a bad entry anywhere aborts
   // the whole apply rather than half-applying it. Written at the manifest's root, read and deleted at
-  // the lock's (D117 §5.1): the two are one folder unless this sync is a move.
+  // the lock's: the two are one folder unless this sync is a move.
   const from = plan.layout.from.target;
   const to = plan.layout.to.target;
   const files = plan.writes.filter((write) => !write.in);
@@ -194,13 +193,13 @@ export function applySync(
     write,
     abs: containedPath(root, to, write.target),
   }));
-  // 🔴 Never a span's old path: what sits there now is the repository's own file (REV3).
+  // 🔴 Never a span's old path: what sits there now is the repository's own file.
   const leaving = new Set(plan.leavesRegion ?? []);
   const deletes = [
     ...plan.deletes.filter((target) => !leaving.has(target)).map((target) => containedPath(root, from, target)),
     ...plan.moves.map((move) => containedPath(root, from, move.target)),
   ];
-  // A mirror is written under the manifest's mirror root and retired under the one its lock was
+  // A mirror is written under the manifest's mirror root and retired under the one its lock is
   // written for — the same folder unless the layout changed.
   const writeRoot = manifest.harnessDescriptor?.mirror?.root ?? '';
   const retireRoot = resolveHarness(plan.layout.from.harness).mirror?.root ?? manifest.harnessDescriptor?.mirror?.root;
@@ -209,7 +208,7 @@ export function applySync(
     ...plan.mirrors.retire,
     ...(force ? plan.mirrors.editedGone : []),
   ].map((path) => {
-    // D18 for the mirror's half: a lock written under a layout with no mirror root records no mirror,
+    // Containment for the mirror's half: a lock written under a layout with no mirror root records no mirror,
     // so one there is a crafted or mangled entry, and the repository root is no containment for a delete.
     if (retireRoot === undefined) {
       throw new DaorisError(
@@ -232,19 +231,19 @@ export function applySync(
     else writeBytesAtomic(abs, write.content);
   }
   // 🔴 Never a path this sync just wrote: flipping back to the older layout puts the canonical skill
-  // exactly where its mirror was.
+  // exactly where its mirror sits.
   const written = new Set([...writes.map(({ abs }) => abs), ...mirrorWrites.map(({ abs }) => abs)]);
   const retired = mirrorRetire.filter((abs) => !written.has(abs));
   for (const abs of retired) rmSync(abs, { force: true });
 
-  // The index, after the tiers it lists are on disk (D128 §2.4): its content was decided over the tiers
+  // The index, after the tiers it lists are on disk: its content is decided over the tiers
   // as this sync leaves them, and a move writes it at the new root and deletes the one the lock named.
   const indexAt = contained(root, to, plan.index.path);
   if (plan.index.state !== 'unchanged' || force) writeTextAtomic(indexAt, plan.index.content);
   const oldIndex = plan.index.old === null ? null : contained(root, from, plan.index.old);
   if (oldIndex !== null && oldIndex !== indexAt) rmSync(oldIndex, { force: true });
 
-  // A folder a move or a retired mirror emptied goes too, and only when empty (D117 §5.2).
+  // A folder a move or a retired mirror emptied goes too, and only when empty.
   pruneEmpty(root, [...(from !== to ? deletes : []), ...retired, ...(oldIndex !== null ? [oldIndex] : [])]);
 
   const layout = layoutFields(manifest.harnessDescriptor ?? resolveHarness(manifest.harness), to);
@@ -253,7 +252,7 @@ export function applySync(
     // Which canon of that version: `status` tells two apart by it, and never orders them by it.
     ...(canonDigest !== undefined ? { canonDigest } : {}),
     source: manifest.source,
-    // A kept file's entry as it was (D230): the disk against it stays what this repository changed.
+    // A kept file's entry unchanged: the disk against it stays what this repository changed.
     entries: plan.writes.map(({ pack, source, target, sha256: digest, in: within, kept }) => kept ? { ...kept } : ({
       pack,
       source,
@@ -262,13 +261,13 @@ export function applySync(
       sha256: digest,
       ...(within ? { in: within } : {}),
     })),
-    // What is off, and by whom, so `check` can say so offline (D71, D8).
+    // What is off, and by whom, so `check` can say so offline.
     ...(plan.switchedOff?.length
       ? { switchedOff: plan.switchedOff.map(({ target, by }) => ({ target, by })) }
       : {}),
-    // Where the files are now, every mirror and every room (D117 §5.1), each only when there is one.
+    // Where the files are now, every mirror and every room, each only when there is one.
     ...(layout ?? {}),
-    // The index this sync wrote, which makes it Daoris's to rewrite (D128 §2.4).
+    // The index this sync writes, which makes it Daoris's to rewrite.
     index: plan.index.path,
     ...(plan.mirrors.writes.length
       ? { mirrors: plan.mirrors.writes.map(({ path, of, sha256: digest }) => ({ path, of, sha256: digest })) }
@@ -284,7 +283,7 @@ export function applySync(
   return lock;
 }
 
-/** Each room's pointer, and each undeclared room's region taken back out (D117 §5.4). */
+/** Each room's pointer, and each undeclared room's region taken back out. */
 function writePointers(root: string, plan: SyncPlan): void {
   for (const pointer of plan.rooms.pointers) {
     if (pointer.content !== null) writeTextAtomic(contained(root, '', pointer.path), pointer.content);
@@ -297,7 +296,7 @@ function writePointers(root: string, plan: SyncPlan): void {
 }
 
 /**
- * Assemble every span into its region, and point the harness's own file at it (D59). One write per region
+ * Assemble every span into its region, and point the harness's own file at it. One write per region
  * file, never one per rule: each rewrite of the same file would re-read all that the last one just wrote.
  */
 function writeSpans(
@@ -319,31 +318,31 @@ function writeSpans(
       rules: within.map((write) => ({
         file: { pack: write.pack, source: write.source, target: write.target },
         text: write.content,
-        // Carried from `planSync`, where the canon was in hand — a span holds its body alone.
+        // Carried from `planSync`, where the canon is in hand — a span holds its body alone.
         ...(write.meta ? { meta: write.meta } : {}),
       })),
       ...onDemandExtras(writes),
       version: canonVersion,
       target: manifest.target,
-      // The rows this repository switched off (D71): the session loading the region learns what is
+      // The rows this repository switched off: the session loading the region learns what is
       // not there, and which pack said so, rather than meeting a doctrine with a silent hole in it.
       off,
-      // The mirror sentence, the rooms (D117 §5.3) and where the records are (D122 §2.7), rendered by the
+      // The mirror sentence, the rooms and where the records are, rendered by the
       // function `check` rebuilds them with.
       ...rosterExtras(root, harness, manifest.target, manifest.rooms ?? [], manifest.documents ?? []),
     };
 
     // 🔴 The RAW bytes: `writeRegion` keeps everything outside the region byte for byte and takes the
-    // file's own line ending — both of which a normalized read had already erased (REV3).
+    // file's own line ending — both of which a normalized read erases.
     const abs = join(root, file);
     const held = existsSync(abs) ? readFileSync(abs, 'utf8') : '';
     const body = renderTier(input);
     writeTextAtomic(abs, writeRegion(held, tier.region.name, body));
 
-    // 🔴 The migration's last piece. A repository that adopted before D59 has a generated
-    // `RULES_INDEX.md` in the directory the tier just left. It is not in the lock — generated files
-    // never were — so no retirement rule reaches it, and it would sit there as a roster that looks
-    // authoritative and is frozen at the moment the tier moved. Only ever a file daoris wrote.
+    // 🔴 The migration's last piece. An older repository has a generated `RULES_INDEX.md` in the
+    // directory the tier just left. It is not in the lock — generated files never are — so no
+    // retirement rule reaches it, and it would sit there as a roster that looks authoritative and
+    // is frozen at the moment the tier moved. Only ever a file daoris wrote.
     const legacy = join(root, from, 'rules', 'RULES_INDEX.md');
     if (existsSync(legacy)) rmSync(legacy, { force: true });
 

@@ -30,7 +30,7 @@ function onDemandHalf(text: string): string {
 }
 
 /**
- * The region's largest rules by bytes, each measured from its provenance line to the next one (CANONSIZE1).
+ * The region's largest rules by bytes, each measured from its provenance line to the next one.
  * The name is the rule's file name, which is what the canon and the lock call it.
  */
 function largestRules(body: string, count: number): { name: string; bytes: number }[] {
@@ -48,7 +48,7 @@ function largestRules(body: string, count: number): { name: string; bytes: numbe
 }
 
 /**
- * The on-demand half split at the *Where things are* table, its last section (D122 §2.8): the tiers'
+ * The on-demand half split at the *Where things are* table, its last section: the tiers'
  * tables are rebuilt from disk, the records' table from the manifest, and a stale one says which.
  */
 function splitWhere(half: string): { tiers: string; where: string } {
@@ -66,7 +66,7 @@ export function inspect(
 ): DriftReport {
   const drifted: string[] = [];
   const missing: string[] = [];
-  // 🔴 Read where the lock says the files are (D117 §5.1). Between a manifest's flip and the sync
+  // 🔴 Read where the lock says the files are. Between a manifest's flip and the sync
   // that moves them, reading at the manifest's root would call every file missing — a lie, and the
   // wrong advice: the fact is the move not made yet, and it is named below as one.
   const manifestHarness = manifest.harnessDescriptor ?? HARNESSES[DEFAULT_HARNESS]!;
@@ -89,14 +89,14 @@ export function inspect(
     return held?.kind === 'present' ? held.body : null;
   };
 
-  // A file the manifest keeps is this repository's own text (D230): its difference from the lock is a decision recorded,
+  // A file the manifest keeps is this repository's own text: its difference from the lock is a decision recorded,
   // never drift, and it is named on every run as a switched-off row is.
   const keeps = manifest.kept ?? {};
   const kept = Object.entries(keeps).sort(([a], [b]) => a.localeCompare(b)).map(([target, keep]) => ({ target, reason: keep.reason }));
 
   for (const entry of lock?.entries ?? []) {
     if (entry.in) {
-      // A span inside a file the repository owns (D59). Its identity is still `rules/<name>.md`, and
+      // A span inside a file the repository owns. Its identity is still `rules/<name>.md`, and
       // what is hashed is the rule's BODY — which is what keeps drift per rule inside one region.
       const body = spanBody(root, harness, entry, fileText);
       if (body === null) missing.push(entry.target);
@@ -114,7 +114,7 @@ export function inspect(
       + `${was.harness.id} (${target}/)`
     : null;
 
-  // The mirror, measured against the lock (D117 §3.2, D13) and against its source as it stands: offline
+  // The mirror, measured against the lock and against its source as it stands: offline
   // and canon-free, since a mirror is a copy of files already on disk.
   const mirrored = new Map((lock?.mirrors ?? []).map((entry) => [entry.path, entry]));
   const mirrorsDrifted: { path: string; of: string }[] = [];
@@ -147,7 +147,7 @@ export function inspect(
     }
   }
 
-  // Rooms (D117 §2.2): each declared one has instructions of its own, and its pointer imports them.
+  // Rooms: each declared one has instructions of its own, and its pointer imports them.
   const roomsWithoutInstructions: string[] = [];
   const roomPointersMissing: string[] = [];
   const pointer = manifestHarness.pointer;
@@ -180,12 +180,12 @@ export function inspect(
     ],
   });
 
-  // Reported, never failed on (D54): the root file against the smallest limit an agent reads, and what
+  // Reported, never failed on: the root file against the smallest limit an agent reads, and what
   // the index no longer lists. Not while a move is pending — the move names them, and moves them.
   const agentsFile = Object.values(harness.tiers).find((tier) => tier.region)?.region?.file ?? 'AGENTS.md';
   const agentsBytes = isFile(join(root, agentsFile)) ? statSync(join(root, agentsFile)).size : 0;
   // Only worked out over the limit: the own part is the file without the region, the rules are the
-  // region's provenance-marked sections (CANONSIZE1).
+  // region's provenance-marked sections.
   let agentsOwnBytes = agentsBytes;
   let agentsRegionBytes = 0;
   let agentsLargestRules: { name: string; bytes: number }[] = [];
@@ -207,7 +207,7 @@ export function inspect(
   const syncedPacks = new Set((lock?.entries ?? []).map((entry) => entry.pack));
   const stalePacks = manifest.packs.filter((pack) => !syncedPacks.has(pack));
 
-  // The same kind of fact for a switched-off core row (D71): the manifest and the lock disagree about
+  // The same kind of fact for a switched-off core row: the manifest and the lock disagree about
   // it — confirmed and never synced, or withdrawn and never synced. Named from the lock, so offline.
   const switchedOff = lock?.switchedOff ?? [];
   const confirmed = Object.entries(manifest.switchedOff ?? {});
@@ -221,7 +221,7 @@ export function inspect(
   ];
 
   // The tier is the LOCATION, so the always-loaded footprint is still measurable — a region has a
-  // byte count exactly as a directory did, which is the half of D7 that survives D59. Which tiers
+  // byte count exactly as a directory has. Which tiers
   // those are is the harness's answer, not a constant here.
   let coreBytes = 0;
   for (const name of alwaysLoadedTiers(harness)) {
@@ -236,20 +236,20 @@ export function inspect(
   }
   const overBudget = coreBytes > manifest.coreBudgetBytes;
 
-  // 🔴 The KNOWLEDGE and SKILLS rows, rebuilt from disk and compared with `<target>/INDEX.md` (WSSETUP14a,
-  // D128 §2.4). Offline and canon-free, which is what `check` inside a build gate requires (D8). What
+  // 🔴 The KNOWLEDGE and SKILLS rows, rebuilt from disk and compared with `<target>/INDEX.md`.
+  // Offline and canon-free, which is what `check` inside a build gate requires. What
   // this catches is the case that actually happens — a local document added and the index never
-  // re-synced. A lock that does not name the index has not had one written yet (D128 §2.4).
+  // re-synced. A lock that does not name the index has not had one written yet.
   const index = indexPath(target);
   const indexText = isFile(join(root, index)) ? readText(join(root, index)) : null;
   const tiers = indexInput({ root, target, lock, harness });
   const indexStale = lock?.index !== index || indexText !== renderIndex(tiers);
-  // Reported, never failed on (D54, D128 §3.2): the repository's own knowledge the index lists by its
+  // Reported, never failed on: the repository's own knowledge the index lists by its
   // heading. Its own only, since a canonical document without frontmatter is the canon's defect, and
   // the canon's own tests hold it.
   const withoutFrontmatter = tiers.knowledge.filter((document) => document.local && bare(document)).length;
 
-  // The region's half, two kinds of table compared apart (D122 §2.8): the pointer, the mirror sentence
+  // The region's half, two kinds of table compared apart: the pointer, the mirror sentence
   // and the rooms rebuilt from the disk, and the records' table from the manifest, so a stale one is
   // named as itself. The rules rows are deliberately not checked: they come from frontmatter the span
   // strips, so nothing offline can rebuild them, and a canon change is `status`'s report.
@@ -270,7 +270,7 @@ export function inspect(
     if (held.where !== wanted.where) documentsStale = true;
   }
 
-  // The declared documents (D122 §2.8). Facts: one absent, or a link, or a link held as text, which is
+  // The declared documents. Facts: one absent, or a link, or a link held as text, which is
   // never read through. Judgements, reported: a document over its ceiling in words, and the canon's
   // most-named records declared nowhere. A repository that declares nothing hears none of it.
   const documentLinksFound = documentLinks(root, documents);
@@ -308,11 +308,11 @@ export function inspect(
     ? RECORD_ROLES.filter((role) => !documents.some((doc) => doc.role === role && doc.path !== null))
     : [];
 
-  // The budget REPORTS; it does not fail (D54, the owner's call). Everything else here is a FACT the
-  // tool established — a file drifted, one is missing, a pack was never synced, the index is behind.
+  // The budget REPORTS; it does not fail (the owner's call). Everything else here is a FACT the
+  // tool established — a file drifted, one is missing, a pack is never synced, the index is behind.
   // Size is a JUDGEMENT: one byte over a number somebody chose is not wrong, and a gate that stops a
-  // build over a judgement gets its number raised rather than read — which is the failure D28
-  // predicted in its own words about noise. The number stays and is stated on every run, because a
+  // build over a judgement gets its number raised rather than read — the usual failure of noise.
+  // The number stays and is stated on every run, because a
   // signal nobody can see is not a signal.
   const ok = !drifted.length && !missing.length && !stalePacks.length && !indexStale && !rosterStale
     && !staleSwitches.length
@@ -338,7 +338,7 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
     write(`  stale     pack '${pack}' is in the manifest but not the lock`);
   }
   for (const stale of report.staleSwitches) write(`  stale     ${stale} — run 'daoris sync'`);
-  // Every run, whatever else it finds (D71): a core row that is off is never a surprise, and it is not
+  // Every run, whatever else it finds: a core row that is off is never a surprise, and it is not
   // a failure either — it is a decision the manifest records.
   for (const row of report.switchedOff) write(`  off       ${row.target} (switched off by pack '${row.by}')`);
   for (const keep of report.kept) write(`  kept      ${keep.target} — this repository's own text: ${keep.reason}`);
@@ -355,7 +355,7 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   if (report.rosterStale) {
     write("  roster    the doctrine region's pointer or rooms are out of date — run 'daoris sync'");
   }
-  // The layout's facts (D117 §5.2): each fails, and each says which file to open.
+  // The layout's facts: each fails, and each says which file to open.
   if (report.staleLayout) write(`  stale     layout: ${report.staleLayout} — run 'daoris sync' to move them`);
   for (const mirror of report.mirrorsDrifted) {
     write(`  drifted   ${mirror.path} — a mirror of ${mirror.of}, edited here`);
@@ -367,7 +367,7 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   }
   for (const path of report.roomPointersMissing) write(`  pointer   ${path} does not import AGENTS.md — run 'daoris sync'`);
   for (const problem of report.links) write(`  LINK      ${problem.path} — ${shortLink(problem)}`);
-  // Reported, never failed on (D54).
+  // Reported, never failed on.
   if (report.agentsBytes > INSTRUCTION_LIMIT) {
     const split = report.agentsRegionBytes
       ? `; own part ${report.agentsOwnBytes} bytes, doctrine region ${report.agentsRegionBytes} bytes`
@@ -380,7 +380,7 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
       + `instruction files and cuts the rest, which is the region's last rules — over by ${report.agentsBytes - INSTRUCTION_LIMIT}`
       + `${split} — advisory, not a gate`);
   }
-  // The declared documents (D122 §2.8): the facts first, each failing, then the judgements, never failing.
+  // The declared documents: the facts first, each failing, then the judgements, never failing.
   for (const doc of report.documentsMissing) write(`  document  ${doc.path} (${doc.role}) is declared in daoris.json, and absent`);
   for (const link of report.documentLinks) write(`  LINK      ${link.declared} (${link.role}) — ${shortDocumentLink(link)}`);
   if (report.documentsStale) {

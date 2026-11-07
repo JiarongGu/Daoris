@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// D75 §4: one word for the scope, the CLI's own. The interface said *circle* beside *workspace*, and
-// so did the sentences the CLI, the driver and the service print. The web's catalogues are held by
+// One word for the scope, the CLI's own: *circle* and *workspace* must not both name it in the interface
+// or in the sentences the CLI, the driver and the service print. The web's catalogues are held by
 // its own i18n test; this holds the other doors. *Circle* stays prose in the design documents.
 
 const cliRoot = dirname(dirname(fileURLToPath(import.meta.url)));

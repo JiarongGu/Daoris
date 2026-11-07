@@ -5,9 +5,9 @@ import { commandSync } from '../../src/doctrine/materialize.ts';
 import { commandUpstream } from '../../src/doctrine/upstream.ts';
 
 /**
- * `daoris upstream` by where it runs (D230): outside the canon's own checkout it composes a request's words to the
+ * `daoris upstream` by where it runs: outside the canon's own checkout it composes a request's words to the
  * repository that keeps the shared doctrine, offline, and writes nothing across; inside that checkout it writes the edit
- * into the canon as before.
+ * into the canon.
  */
 
 const doc = (name: string, body: string) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n${body}\n`;

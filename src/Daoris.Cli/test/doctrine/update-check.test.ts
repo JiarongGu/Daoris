@@ -7,10 +7,10 @@ import { canonDigest, readCanon } from '../../src/doctrine/canon.ts';
 import { commandSync } from '../../src/doctrine/materialize.ts';
 
 /**
- * The update check by content (CONTEXTONE1a): `status` runs the sync's own plan whatever the versions say, because the
+ * The update check by content: `status` runs the sync's own plan whatever the versions say, because the
  * canon's stamp stays at 0.0.1 through every 0.0.x build. Which side is newer only the version can say, so files are
  * called behind only when the lock's version is older; equal versions over a different canon are said as a difference
- * whose direction cannot be told, both digests named. Drift stays the disk against the lock (D13, D19).
+ * whose direction cannot be told, both digests named. Drift stays the disk against the lock.
  */
 
 const doc = (name: string, body = 'x') => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n${body}\n`;
@@ -43,7 +43,7 @@ function moveCanon(canon: Fixture): void {
   canon.write('core/skills/co-working/SKILL.md', skill('co-working'));
 }
 
-/** An edit here: D19's drift, the disk against the lock. */
+/** An edit here: drift, the disk against the lock. */
 const editHere = (repo: Fixture) =>
   repo.write('.claude/knowledge/notes.md', `${repo.read('.claude/knowledge/notes.md')}a local line\n`);
 

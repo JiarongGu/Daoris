@@ -11,7 +11,7 @@ export interface NewerLock {
   locked: string;
   /** The canon version this tool carries. */
   carried: string;
-  /** The tool at the lock's version, by npm's spelling, which a manifest's `source` uses too (D105). */
+  /** The tool at the lock's version, by npm's spelling, which a manifest's `source` uses too. */
   run: string;
 }
 
@@ -28,7 +28,7 @@ export function canonVersionAt(canonRoot: string): string | null {
  * `0.9.0`). Null for no lock, the same version, or an older one: the ordinary upgrade.
  *
  * During `0.0.x` every build carries `0.0.1`, so two builds of it read as the same version and this cannot
- * tell them apart until a release moves the number (D124 §1.4).
+ * tell them apart until a release moves the number.
  */
 export function newerLock(lock: Pick<Lock, 'canonVersion'> | null, carried: string): NewerLock | null {
   if (!lock || compareVersions(lock.canonVersion, carried) <= 0) return null;
@@ -36,15 +36,15 @@ export function newerLock(lock: Pick<Lock, 'canonVersion'> | null, carried: stri
 }
 
 /**
- * 🔴 An older doctrine tool never rewrites a newer lock (WSSETUP4, D124 §1.4).
+ * 🔴 An older doctrine tool never rewrites a newer lock.
  *
- * Drift is measured against the lock (D13), so to an older canon a file the newer one improved and nobody
- * touched here reads as *improved upstream, untouched here* (D19), and `sync` would rewrite it to the older
+ * Drift is measured against the lock, so to an older canon a file the newer one improved and nobody
+ * touched here reads as *improved upstream, untouched here*, and `sync` would rewrite it to the older
  * text and stamp the lock back; `upstream` would write the newer canon's words over the older canon's file. Two
- * versions on one machine is a hazard with npm alone, and an install carries a copy of its own (D124 §1.2), so
+ * versions on one machine is a hazard with npm alone, and an install carries a copy of its own, so
  * the tool refuses: exit 1, a policy refusal, naming both versions and the command at the lock's.
  *
- * @param argv the command as it was given, verb first, said back at the lock's version.
+ * @param argv the command as given, verb first, said back at the lock's version.
  */
 export function refuseNewerLock(lock: Pick<Lock, 'canonVersion'> | null, carried: string, argv: readonly string[]): void {
   const newer = newerLock(lock, carried);

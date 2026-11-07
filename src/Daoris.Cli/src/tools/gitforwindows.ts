@@ -1,6 +1,6 @@
-// Git for Windows' launcher, started past (GITSTART4, after GITSTART1; D121 §2.4). The `git.exe` in an install's `cmd`
+// Git for Windows' launcher, started past. The `git.exe` in an install's `cmd`
 // folder is a launcher that starts `<top>\<prefix>\bin\git.exe` as a second process, and a start costs 100–700 ms on a
-// loaded machine (PROC1a). Where the system's git is that launcher, the real git starts directly, handed the
+// loaded machine. Where the system's git is that launcher, the real git starts directly, handed the
 // environment the launcher would have handed it.
 //
 // 🔴 A TWIN of the driver's `GitForWindows.cs`. The two share no code; `gitforwindows.test.ts` holds its tables to
@@ -9,15 +9,14 @@
 //   1. Recognised only where the layout is unmistakable: a `git.exe` in a `cmd` folder, a git under a known prefix
 //      beside it, and `usr\bin`. An install with an `etc\git-bash.config`, whose `MSYS=` lines the launcher reads,
 //      any other layout and any other platform start as named.
-//   2. The launcher's variables are what it was measured setting (git 2.53.0.windows.3; FIX-LOG, GITSTART1): with no
+//   2. The launcher's variables are those measured on git 2.53.0.windows.3: with no
 //      `MSYSTEM` git repairs its own PATH in another order, and with any it repairs nothing, so `sh`, and with it every
 //      hook and `!` alias, would go unfound; so the start sets them all.
 //   3. A start whose PATH would pass one variable's 32,766 characters keeps the launcher.
 //
-// Only the system's git goes past: a git the person named or a managed one starts as it is (GITSTART5 is the managed
-// one's). It stays PURE: it reads files and answers "which program, with which environment"; `tools/fsx.mjs`'s
-// `spawnGit` starts the tools' git by it. The CLI's own `startChild` asked it too, until its one child became Daoris's driver
-// program (PUSH1f2f), which starts its own git (`WorkingTree.GitStart`).
+// Only the system's git goes past: a git the person named or a managed one starts as it is. It stays PURE: it reads files and answers "which program, with which environment"; `tools/fsx.mjs`'s
+// `spawnGit` starts the tools' git by it. The CLI's own `startChild` does not ask it: its one child is Daoris's driver
+// program, which starts its own git (`WorkingTree.GitStart`).
 
 import { existsSync, statSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
@@ -89,7 +88,7 @@ export function gitBehind(file: string): GitBehind | null {
 }
 
 /**
- * The variables the launcher sets for its child, read from the environment it was started with: `MSYSTEM` named for
+ * The variables the launcher sets for its child, read from the environment it is started with: `MSYSTEM` named for
  * its prefix over any; `PLINK_PROTOCOL` `ssh` where unset; `HOME` where unset, from `HOMEDRIVE` and `HOMEPATH` where
  * that is a folder other than the system's, else `USERPROFILE`; and its two folders and `HOME`'s `bin` before PATH. A
  * variable set empty counts as set. The driver's `GitForWindows.ChildEnvironment`.

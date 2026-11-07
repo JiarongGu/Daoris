@@ -1,14 +1,14 @@
-// The skills mirror (LAYOUT3, D117 §3.2 and §5.4's mirror table).
+// The skills mirror.
 //
 // Where the reference links `.claude/skills` to `.agents/skills`, `sync` writes a copy of every skill
 // under the target's skills folder into the mirror root, canonical and the repository's own alike,
 // because the harness that reads only there needs both. A link is not an option: on a checkout with
-// `core.symlinks=false` it is a text file holding a path, and that harness lists no skills (LAYOUT2).
+// `core.symlinks=false` it is a text file holding a path, and that harness lists no skills.
 //
-// 🔴 **Measured against the lock (D13), exactly as a canonical file is.** A mirror that differs from
-// what the lock recorded was edited HERE; one that matches the lock while its source moved on is only
-// behind, and `sync` renews it. A mirror of the repository's own skill is still Daoris's file — D5 is
-// about what Daoris writes, and Daoris wrote the mirror.
+// 🔴 **Measured against the lock, exactly as a canonical file is.** A mirror that differs from
+// what the lock recorded has been edited HERE; one that matches the lock while its source moved on is only
+// behind, and `sync` renews it. A mirror of the repository's own skill is still Daoris's file: the
+// repository's own files are those Daoris does not write, and Daoris writes the mirror.
 
 import type { Harness, LockEntry, MirrorEntry, MirrorPlan } from '../doctrine/records.ts';
 import { readFileSync } from 'node:fs';
@@ -31,7 +31,7 @@ export interface MirrorSource {
 }
 
 /**
- * The one line a mirror's entry file carries, under its frontmatter (D14): the source, and what to do.
+ * The one line a mirror's entry file carries, under its frontmatter: the source, and what to do.
  *
  * @remarks
  * It opens like every provenance line, so `stripHeader` takes it off on the way to the canon, and it
@@ -85,7 +85,7 @@ export function mirrorSources(
     // A skill is a folder with its entry file; a file beside the skills, or in a folder with none, is not one.
     const entry = files.get(`${skill}/${entryFile}`);
     if (!skill || !rest.length || !entry) continue;
-    // Per-agent metadata another agent writes inside the skill belongs to that agent (D117 §3.2).
+    // Per-agent metadata another agent writes inside the skill belongs to that agent.
     if (rest.length > 1 && mirror.skip.includes(rest[0]!)) continue;
 
     const of = `${target}/${dir}/${rel}`;
@@ -111,7 +111,7 @@ function onDisk(root: string, path: string): string | null {
 }
 
 /**
- * The mirror table of D117 §5.4, decided for every mirror path — the ones the sources want and the ones
+ * The mirror table, decided for every mirror path — the ones the sources want and the ones
  * the lock recorded.
  *
  * @param vacating Paths an old canonical file holds that this sync deletes (a move from a root the
