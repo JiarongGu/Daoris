@@ -74,8 +74,9 @@ public sealed class QuestionSupervisorDecisions
         _courses.KeepAsync(course, point, now, ct);
 
     /// <summary>Release each held go-on whose moment came (<see cref="SupervisorCourses.ReleaseAsync"/>).</summary>
-    public Task<IReadOnlyList<SupervisorState>> ReleaseCoursesAsync(CourseLine line, DateTimeOffset now, CancellationToken ct = default) =>
-        _courses.ReleaseAsync(line, now, ct);
+    public Task<IReadOnlyList<SupervisorState>> ReleaseCoursesAsync(
+        CourseLine line, DateTimeOffset now, IReadOnlyCollection<string>? counts = null, CancellationToken ct = default) =>
+        _courses.ReleaseAsync(line, now, counts, ct);
 
     /// <summary>Whether a referred point waits for the holder (<see cref="SupervisorCourses.Waits"/>).</summary>
     public bool Refers(string session, string point) => _courses.Waits(session, point);

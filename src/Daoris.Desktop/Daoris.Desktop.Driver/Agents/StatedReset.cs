@@ -39,6 +39,12 @@ public sealed record StatedReset(DateTimeOffset Moment, ResetPrecision Precision
 public static class ResetBounds
 {
     /// <summary>
+    /// Whether <paramref name="moment"/> is no later than <paramref name="seen"/> and no more than <see cref="AccountLimits.Grace"/> behind it:
+    /// a dated reset that only disagrees with the clock, which is read as <paramref name="seen"/>. Whoever weighs a moment against the grace asks this.
+    /// </summary>
+    public static bool InGrace(DateTimeOffset moment, DateTimeOffset seen) => moment <= seen && seen - moment <= AccountLimits.Grace;
+
+    /// <summary>
     /// The limit <paramref name="reset"/> gives: the margin added to it; a dated one up to <see cref="AccountLimits.Grace"/> behind
     /// <paramref name="seen"/> read as <paramref name="seen"/>; one behind it otherwise, or beyond <see cref="AccountLimits.Furthest"/>,
     /// not believed, the default standing in; none stated, the default.
@@ -51,7 +57,7 @@ public static class ResetBounds
         var byDefault = new LimitSeen(hit, window, seen + coolOff, Stated: false, AssumedZone: false);
         if (reset is null) return byDefault;
 
-        var moment = reset.Dated && reset.Moment <= seen && seen - reset.Moment <= AccountLimits.Grace ? seen : reset.Moment;
+        var moment = reset.Dated && InGrace(reset.Moment, seen) ? seen : reset.Moment;
         if (moment < seen || moment - seen > AccountLimits.Furthest) return byDefault with { NotBelieved = true };
         return new LimitSeen(hit, window, moment + AccountLimits.Margin, Stated: true, AssumedZone: reset.AssumedZone);
     }

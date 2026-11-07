@@ -44,6 +44,16 @@ public sealed class HostPolicyResetTests
             seen);
     }
 
+    // The grace is asked of this one function, by the sentence's reading choosing among the moments a date names as by the bounds themselves.
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(-1, true)]
+    [InlineData(-15, true)]
+    [InlineData(-16, false)]
+    [InlineData(1, false)]
+    public void The_grace_is_one_question_a_moment_just_behind_the_clock_up_to_the_grace_and_no_further(int minutes, bool inGrace) =>
+        Assert.Equal(inGrace, ResetBounds.InGrace(Seen.AddMinutes(minutes), Seen));
+
     [Fact]
     public void Host_policy_believes_no_reset_beyond_the_furthest_and_cools_an_unstated_one_for_the_default()
     {

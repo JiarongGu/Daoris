@@ -179,7 +179,7 @@ internal static class WorkConsole
         using var sync = RemoteSyncSet.FromEnvironment(service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable));
         var world = new WorkWorld(service, home, configPath, new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids)))
         {
-            Unadopted = SessionsConsole.Unadopted(config),
+            Unadopted = SetupWorld.Unadopted(config, home),
             Log = log,
             // RPC1e: the running Daoris's client where one answers, the person's presses confirmed in its window.
             Instance = InstanceHost.World(home, "daoris"),

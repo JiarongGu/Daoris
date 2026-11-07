@@ -8,7 +8,7 @@ public sealed record ReferredPoint(string Repository, RuleActed? Open, IReadOnly
 
 /// <summary>
 /// The release side of a referred point, as the look reads it at a course decision's release: why the point no longer takes the
-/// supervisor's go-on (null where it does), whether the line's session runs a turn now, and the count's own door. Course reads both
-/// (<c>ReferredPoints</c>), for the go-on marks the count keeps are its own.
+/// supervisor's go-on (null where it does), whether the line's session runs a turn now, and the count's own door. Work orders read both
+/// (<c>ReferredPoints</c>), for the go-on marks and the planner's considerations they read are above Roles.
 /// </summary>
 public sealed record CourseLine(Func<string, string, string?> Why, Func<string, bool> Running, Func<string, bool> GoOn);

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Data.Sqlite;
 using Daoris.Driver;
@@ -90,7 +91,7 @@ public sealed class LimitMoveStoreTests : IDisposable
             IReadOnlyList<ActorEffective>? order = null, EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false,
             bool ownFirst = false, MoveWords? moves = null)
         {
-            Asked.Add(moves);
+            Asked.Add(moves); 
             var opened = await client.OpenChatMovingAsync(repository, adapter, null, profile, tree, null, from, moves!, "default", ct);
             if (opened.SessionId is { } id) Opened = Talking(context, id, wire);
             return new ChatStart(opened.SessionId, opened.Message) { Moves = opened.Moves, Moved = opened.Moved };
@@ -156,7 +157,7 @@ public sealed class LimitMoveStoreTests : IDisposable
     /// A live conversation <c>c1</c> on account-1, its last turn refused by its limit with <c>Make the port configurable.</c>, its turns held by
     /// nothing; the limit's move keeps its record under this shell's run, <c>run-shell</c>.
     /// </summary>
-    private World Live(int opens, Action<ChatMessage>? wire = null, string? profile = "account-1")
+    private World Live(int opens, Action<ChatMessage>? wire = null, string? profile = "account-1", Provider? door = null)
     {
         var ledger = new ChatLedger { Opens = opens }.Register("engine", _root);
         var client = ledger.Client();
@@ -170,7 +171,7 @@ public sealed class LimitMoveStoreTests : IDisposable
             Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = AccountNoteCodes.AccountCoolingWindow.Code }],
         });
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
-        var adapters = TestDoors.Registry([Talk()]);
+        var adapters = TestDoors.Registry([door ?? Talk()]);
         var context = new ChatContext(
             client, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), events);
@@ -292,6 +293,37 @@ public sealed class LimitMoveStoreTests : IDisposable
         Assert.Empty(Store("run-probe").WordsOf(move.Id));
         Assert.Equal(("c2", MoveEffects.Prompt, MoveWordDispositions.Sent), (move.Destination, move.Effect!.What, move.Effect.Outcome));
         Assert.Equal(move.Opens, Assert.Single(world.Ledger.Opened).Key);
+    }
+
+    /// <summary>A conversation's adapter whose accounts each have a home of their own, Claude's limit words, and a program this machine has.</summary>
+    private static Provider Accounted() => TestDoors.Door(
+        "talk",
+        new TestAgent(
+            Binary: ["dotnet"], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
+            Limits: ClaudeLimits.Words, Windows: ClaudeWindows.Words, RunsInOwnHome: true),
+        transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
+
+    /// <summary>
+    /// 🔴 MODELROLE1k: the limit move's walk is the line's own, so another account at a model family's week is passed only for a line on
+    /// that family: a line on sonnet moves to it, and a line on opus is held off it and waits.
+    /// </summary>
+    [Theory]
+    [InlineData("sonnet", true)]
+    [InlineData("opus", false)]
+    public async Task A_model_family_s_cool_off_on_the_other_account_holds_only_a_line_on_that_family(string model, bool moves)
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "talk", "account-2"));
+        new HarnessSettings().WithDefault("talk", "account-2").Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var now = DateTimeOffset.UtcNow;
+        AccountCooling.Cool(_home, new CoolingEntry("talk", "account-2", now.AddDays(2), true, "weekly", now, "3f9c2a71", Model: "opus"), now);
+        var world = Live(opens: 1, door: Accounted());
+        using var c = world.Client;
+        world.Ledger.Edit("c1", record => record["asked"] = JsonSerializer.SerializeToNode(
+            new ActorAsked("talk", new("entry", model, true), new("account-default", null, false)), ActorRun.Json));
+
+        var moved = await world.Limit.MoveAsync("c1", Config(), null);
+
+        Assert.Equal(moves, moved is { SessionId: "c2" });
     }
 
     /// <summary>

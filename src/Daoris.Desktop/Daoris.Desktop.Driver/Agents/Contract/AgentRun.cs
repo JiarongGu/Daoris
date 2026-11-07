@@ -29,9 +29,6 @@ public abstract class AgentRun
     /// </summary>
     public abstract Task ResumeAsync(string conversation, CancellationToken ct, IResumeState? state = null);
 
-    /// <summary>A refused model's later choice, carried on the same session (O4-F5).</summary>
-    public abstract Task ApplyChoiceAsync(ActorAsked choice, CancellationToken ct);
-
     /// <summary>
     /// A native door's words (D243): the one way its process is handed a line, each word's id kept until the harness names its
     /// conversation, so the run's retry replays what that process never acknowledged; a go-on's words are held here and the next process

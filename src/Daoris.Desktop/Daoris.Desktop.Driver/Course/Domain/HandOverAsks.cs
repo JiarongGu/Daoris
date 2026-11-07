@@ -113,7 +113,7 @@ public sealed record HandOverDoor(string Harness, bool Present, string? AccountO
 /// </summary>
 public static class HandOverOrder
 {
-    /// <summary>A door's tool: its <c>accountOf</c> owner, else itself (the page's <c>toolOf</c>).</summary>
+    /// <summary>A door's tool: its <c>accountOf</c> owner, which the driver reads from <c>ProviderRegistry.BorrowedFrom</c>, else itself (the page's <c>toolOf</c>, whose table is the fixture's).</summary>
     public static string ToolOf(HandOverDoor door) => door.AccountOf?.Trim() is { Length: > 0 } owner ? owner : door.Harness;
 
     /// <summary>The harnesses of the other tools' first present doors, in the roster's order; the session's own tool is never one.</summary>
