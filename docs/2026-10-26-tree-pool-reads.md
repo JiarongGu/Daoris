@@ -1991,3 +1991,114 @@ programs and were not run: that a junction can be made to a folder not yet stand
 in it runs; npm's workspace links' names; that the testing host compiles a content root into a test assembly; that a CMake tree names its
 paths absolutely; and git's nesting, `gitdir` order and `core.hooksPath` behaviour. Round 3 takes each as the reads and the documentation
 state it, keeps a fallback where a design rests on one (§20), and row b proves each before row d.
+
+
+## Codex, round 6
+
+Codex's read of rows 2 to 4 as round 6 left them, at `b347f3ab20`, run by the steward from outside the install, read-only, without seeing the independent Opus reader's round-6 read; verbatim but for its headings set down.
+
+**Verdict**
+
+- **Row 2: another round.** Round 6 fixes the original takeover and stale-room landing cases, but recovery, hooks, start bases and cross-home writers still admit work loss or incorrect session branches.
+- **Row 3: another round.** The proposed key does not identify everything that can change a prepared install.
+- **Row 4: another round, narrowly on class validity.** The slot machinery looks sound; carrying path-bound installs without keyed invalidation can give the next line the wrong environment.
+
+Reviewed at `b347f3ab20bc`. No files changed, builds run or nested `local/` folders read. Measurements were not reproduced.
+
+Below, **Design** means `docs/2026-10-26-tree-pool-design.md`; code paths beginning `Workplace/`, `Loop/` or `Participants/` are relative to `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
+
+1. **Blocking — the fast-forward’s crash rollback can erase subsequent work.**
+
+   **Where:** R5.3, Design:227–235. Existing safeguards: `Workplace/ActFiles.cs:50`, `:77–83`; `Workplace/ActSteps.cs:162–164`.
+
+   **Sequence:** The act writes a free file from `N`, then crashes before moving the ref. While Daoris is down, the person edits that file. The specified reconciliation writes it back from `O`, destroying the new edit. Restoring the entire saved index similarly risks removing staging performed after the crash. The checkout lock cannot prevent these external actions.
+
+   Today’s file and index steps compare their expected state before replacing anything; simply calling the new operation journaled does not supply that protection.
+
+   **Smallest change:** Journal each affected path’s before and after state, including absence, mode and link identity. Roll back only an unchanged after-state; leave anything else held for the person. Restore only affected index entries, with the same comparison under `index.lock`. Test edits and staging made **between crash and reconciliation**, not only crashes during an otherwise untouched act.
+
+2. **Blocking — a private index does not confine commit hooks.**
+
+   **Where:** R5.3, Design:191–206; §26 F5, Design:2105. Code: `Workplace/ActCommits.cs:14`, `:71–80`.
+
+   **Sequence:** Rooms A and B contain changes. A’s private index starts from A’s branch and stages A’s selected files. Its `pre-commit` hook runs `git add -A`, inheriting that private index but seeing the shared working directory. B’s changes enter A’s index. `write-tree`, `commit-tree` and the branch CAS all succeed: B’s work is now on A’s line.
+
+   Existing commit code explicitly accommodates hooks changing the staged tree; the proposed operation has no final ownership check after those hooks.
+
+   **Smallest change:** Immediately before creating the commit, require the final tree’s differences from the captured branch tip to lie entirely within the explicitly selected, owned paths. Repeat the revert check against that final tree. Refuse a hook-expanded commit instead of silently trimming it. Use per-line message files as well, so concurrent hooks share neither index nor message state.
+
+3. **Blocking — working-tree-only restores evade the checks, and the recovery ref lacks a retention rule.**
+
+   **Where:** R5.3, Design:204–206, :274–283; §18 item 7, Design:1870–1876. Code: `Workplace/TreeGuard.cs:19–25`; recovery reflog handling at `Workplace/ActSteps.cs:95–99`.
+
+   **Sequence:** A claims at `O`, commits `x=A`, and the checkout subsequently advances to `N`, where `x=N`. An external `git restore --worktree x` restores the real index’s `N` content without changing refs or index entries. The turn-end checks pass. The commit check also passes because `N` is neither the original base content nor a missing added file. A’s next commit replaces its own work with `N`.
+
+   Separately, several turns of **uncommitted** work can exist only in the room recovery snapshot. A working-tree-only restore leaves the checked metadata unchanged; the next keep can replace that snapshot with the restored state. The design requires neither retained generations nor parentage preserving previous snapshots. Existing automatic reflog handling covers discarded refs, not this new prefix.
+
+   **Smallest change:** Require explicit acknowledgment when branch-changed paths revert to a checkout/index version introduced by a line move, not merely the original base. Keep immutable, addressable turn checkpoints with a stated retention rule; a new keep must not make the previous checkpoint unreachable. Otherwise the claimed one-turn loss bound does not hold.
+
+4. **Blocking — room eligibility ignores the start’s required source commit.**
+
+   **Where:** R5.3, Design:158–159, :167–188; row 2, Design:1571. Code: `Loop/Run/Tree/GrowTree.cs:110–120`; `Workplace/TreeOpening.cs:65`, `:70–84`.
+
+   **Sequence:** A chain’s next step must verify its predecessor’s unmerged branch. Its requested room is free, so row 2 creates its branch at checkout `HEAD`. It verifies the canonical checkout instead of the predecessor’s result. The same problem affects further parts whose work landed on another branch. Today’s opening explicitly preserves these source choices.
+
+   A clean registered checkout can also be on a branch other than the configured line; cleanliness alone does not make its `HEAD` the correct start.
+
+   **Smallest change:** Resolve the existing opening’s exact source commit first. Offer a room only when that source equals the checkout’s eligible line tip and the required closure is available there. Otherwise take the kept-slot fallback. Preserve the source and `GrownBranch` facts.
+
+5. **Blocking — the other-home marker excludes starts, but not writers.**
+
+   **Where:** R5.3, Design:325–327; §26 F7, Design:2107. Code: `Workplace/TreeLock.cs:43`, `:88–89`; `Workplace/LinePulls.cs:60–77`; `Workplace/IntegrationPromotes.cs:402–410`.
+
+   **Sequence:** Home A holds a room whose files are still clean. Home B already registers the checkout. B starts no session, so it violates no proposed marker rule. Its pull or promotion sees a clean checkout, takes its independent home-local lock and fast-forwards normally. That writes A’s held files instead of leaving them at A’s base. A can edit, build or commit before its turn-end detection runs.
+
+   **Smallest change:** Every Daoris writer touching the checkout’s files, index or checked-out line must consult the common-directory marker. A foreign owner means refuse or route through that owner’s room-aware operation. Make marker acquisition atomic with admission, and account for already-running foreign in-root sessions before granting the first room.
+
+6. **Blocking — a held claim needs an immutable ownership footprint.**
+
+   **Where:** R5.3, Design:158, :223–225; R5.4, Design:346–350; row 1, Design:1570. Code: `daoris.lanes.json:88`; the present disk reader at `tools/merge-branch.mjs:3006–3020`.
+
+   **Sequence:** A holds group G. Another session changes the lanes declaration, which here belongs to the separate records room. Alternatively, a fallback change lands a revised declaration. A subsequent move reads the new groups and classifies one of A’s formerly held paths as free. Step 3 can overwrite A’s working file. Merging or renaming groups can also make admission overlook an existing claim.
+
+   The claim records a base, but the design never requires ownership to be resolved from the declaration at that base rather than the current declaration.
+
+   **Smallest change:** Bind each claim to a committed declaration identity and its immutable ownership/closure patterns. Moves, commits and release use that footprint. Admit starts against the union of outstanding footprints; activate an incompatible partition only once affected claims are released. This is the necessary row-1 consequence of row 2.
+
+7. **Not blocking — extend the reader census to capture semantics, not just location.**
+
+   **Where:** R5.3, Design:178–185; §3.2, Design:889–901. Code: `Participants/Helpers/HelperCapture.cs:99–104`; `Loop/Helpers/HelperSettling.cs:37–44`; `Loop/Helpers/HelperTurn.cs:38–47`.
+
+   **Sequence:** Merely translating a room line’s path into the checkout makes today’s helper capture use checkout `HEAD` and whole-checkout status. A helper then receives other rooms’ changes and lagging-base files as the asker’s work.
+
+   **Smallest change:** Add this reader explicitly to the census. Capture from the asker’s branch tip, overlay only its owned working changes, and preserve branch versions elsewhere. Row 2 already requires readers not to mistake checkout identity for session identity, so this can be implemented under that requirement without another architectural choice.
+
+8. **Blocking — the dependency key identifies a lockfile, not necessarily the prepared install.**
+
+   **Where:** R5.5, Design:380–395; R5.6, Design:422–431; §25 F6, Design:2083. Code: `package.json:14`; `Workplace/IntegrationDeclaration.cs:27`, `:209–216`.
+
+   **Sequence:** An entry is sealed under the example key: lockfile bytes, Node version, system and architecture. A later line changes a lifecycle script that patches installed files, or changes install configuration or an install-relevant environment value. The lockfile and Node version remain unchanged. The old entry hits, and its manifest correctly verifies the **wrong install**.
+
+   Running preparation in the gates’ environment, as the independent read requests, does not put that environment’s values into the key.
+
+   **Smallest change:** Key the preparation identity too: commands, package-manager/toolchain identity, declared install inputs and relevant environment values. Lifecycle-script inputs must be covered. When their inputs cannot be bounded, miss conservatively rather than share. A conservative tracked-tree identity can be the initial default; narrower keys require an explicit completeness contract. Add same-lockfile/different-script and different-environment proofs.
+
+9. **Not blocking — manifest tolerance must distinguish caches from added dependencies.**
+
+   **Where:** R5.6, Design:425–429; independent round-5 F9/F10 at `docs/2026-10-26-tree-pool-reads.md:1460`, `:1482`. Code: `Workplace/TreeDependencies.cs:44–45`, `:248`.
+
+   **Sequence:** A session adds an undeclared package without changing the lockfile. All sealed files remain unchanged. If “files added beside them” are tolerated generally, the next line inherits that package and can pass a test that a clean install would fail.
+
+   **Smallest change:** Validate the dependency namespace at every take. Permit additions only beneath explicitly declared disposable cache paths; otherwise replace the placement. Today’s copy already distinguishes named top-level caches rather than treating arbitrary additions as caches. Carry forward the independent read’s writable-copy and link-safe-removal requirements too.
+
+10. **Blocking — path stability alone cannot validate a carried environment.**
+
+    **Where:** R5.5, Design:373, :398–402; §11’s replacement, Design:1346–1348. Independent round-5 F10 already identifies this at `docs/2026-10-26-tree-pool-reads.md:1490–1494`. Code: today’s fresh opening at `Workplace/TreeOpening.cs:133`; existing recognition of `.venv` at `Workplace/TreeScratch.cs:20`.
+
+    **Sequence:** Slot A contains an environment installed for lockfile A. The slot switches to line B, whose dependency lock or interpreter requirement differs. Its path is unchanged, so the proposed intermediate class carries the environment. B invokes that environment directly and tests against A’s packages. Unlike the class definition, the environment does not itself check the new repository’s lockfile.
+
+    **Smallest change:** Give path-bound installs a key and clear/recreate them when it changes, with explicit failure handling before admission. Put this requirement in row 4’s take and proofs, not only among row 3’s follow-ups. For mixed intermediate/runnable folders, use the independent read’s conservative output classification unless every supported runner rebuilds first.
+
+I found **no additional defect** in the revised same-line-only takeover rule or the ref-backed release predicate. Claim groups also address the identified shared-build races when their closures are complete and stable. The sparse/index-bit refusals, explicit signing, pathspec translation and selective commit interface answer those private-index points; hook confinement remains finding 2.
+
+For row 4, I found **no new work-loss case in the described claim fencing, named-job takeover, holder checks or non-forcing switch**. Its remaining blocker above concerns what the next line is allowed to reuse.
