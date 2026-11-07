@@ -7,10 +7,10 @@ export const DRIVEN_LISTED = 10;
 export const DRIVEN_WIDTH = 120;
 
 /**
- * A rolled-up row of driven sessions' cost (USAGECOST1): how many, how many had a `turn.ended` at all, the median and
+ * A rolled-up row of driven sessions' cost: how many, how many had a `turn.ended` at all, the median and
  * slowest of their turn time, the tokens summed, and the cache read per call — the cache read over the calls of the
  * sessions that measured both, which is the figure a smaller starting context or fewer steps would move. What no
- * line said is null, never zero.
+ * line says is null, never zero.
  */
 function drivenGroupOf(costs) {
   const timed = costs.filter((cost) => cost.ms !== null);
@@ -34,12 +34,12 @@ function drivenGroupOf(costs) {
 }
 
 /**
- * What each driven session cost (USAGECOST1): every session started in the period whose start says `driven` and not
+ * What each driven session cost: every session started in the period whose start says `driven` and not
  * `setup` (a set-up has its own section), newest first, with its repository and workspace, adapter, the models the
- * `actor.ran` lines named, its turns, its turn time, and its turns summed — the calls, the tokens read anew, read from
+ * `actor.ran` lines name, its turns, its turn time, and its turns summed — the calls, the tokens read anew, read from
  * the cache, written to it and written out — and its context at the largest. Then the same rolled up by repository and
- * by adapter and model. A session with no `turn.ended` is said so (`turns` 0, every figure null), never zero (D57,
- * D143 point 3); a turn of a session whose start the period does not hold is counted apart. Counts and times only.
+ * by adapter and model. A session with no `turn.ended` is said so (`turns` 0, every figure null), never zero;
+ * a turn of a session whose start the period does not hold is counted apart. Counts and times only.
  */
 export function drivenOf(lines) {
   const known = new Set();
@@ -104,11 +104,11 @@ export function drivenOf(lines) {
   };
 }
 
-/** The doors whose sessions can park (D83, D65): a driven session and an intake. A conversation never does. */
+/** The doors whose sessions can park: a driven session and an intake. A conversation never does. */
 const PARKING_KINDS = ['driven', 'intake'];
 
 /**
- * Parks per week by workspace (WSSETUP11, D124 §7.3): the sessions that stopped to ask the person, which
+ * Parks per week by workspace: the sessions that stopped to ask the person, which
  * setting a workspace up is meant to make rarer, beside the sessions started that week in that workspace by
  * a door that can park, so a week before a workspace is set up can be held against the weeks after. Weeks
  * begin on Monday, in UTC; a workspace a line does not say is `(unnamed)`, and a kind it does not say

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Recall: each recorded failure judged against the commit that introduced it (CISCOPE1c, D207; design
+ * Recall: each recorded failure judged against the commit that introduced it (design
  * `docs/2026-10-24-ci-scope-design.md` §3.5).
  *
  * ## Why
@@ -218,7 +218,7 @@ export function fixLogFailures(text, since, until) {
     const date = head[1];
     if (date < since || date > until) continue;
     const title = head[0].replace(/^## /, '').trim();
-    // The symptom says what was seen; a test the fix added is named in its fix and verification, not here.
+    // The symptom says what is seen; a test the fix added is named in its fix and verification, not here.
     const field = (name) => new RegExp(`\\*\\*${name}[.:]\\*\\*([\\s\\S]*?)(?=\\n(?:- )?\\*\\*[A-Z][\\w ]*[.:]\\*\\*|$)`).exec(part)?.[1] ?? '';
     const symptom = field('Symptom');
     const cause = field('Root cause');
@@ -290,7 +290,7 @@ export function gateVerdictFailures(file) {
   }));
 }
 
-/** A source's span, its count, and its observation lag: how long after the commit it names each failure was first seen there. */
+/** A source's span, its count, and its observation lag: how long after the commit it names each failure is first seen there. */
 export function sourceSummary(name, failures, commitTime) {
   const times = failures.map((each) => each.time).filter(Number.isFinite);
   const lags = failures.map((each) => (Number.isFinite(each.time) && commitTime.has(each.commit) ? each.time - commitTime.get(each.commit) : null))

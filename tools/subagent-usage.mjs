@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * What each dispatched subagent's context cost, read from the harness's own transcripts (D160).
+ * What each dispatched subagent's context cost, read from the harness's own transcripts.
  *
  *   node tools/subagent-usage.mjs <transcripts-dir> [--since YYYY-MM-DD] [--json <file>]
  *
@@ -10,15 +10,15 @@
  *
  * ## Why
  *
- * Every turn re-reads the whole context, so a branch's cost is its context summed over its turns. Before D160 the
- * median branch took 57 turns and grew 200K tokens orienting before its first edit, then carried that load through
- * every turn after (`docs/2026-10-10-subagent-load-evidence.md`). This reports the numbers the change is judged by:
+ * Every turn re-reads the whole context, so a branch's cost is its context summed over its turns: orienting before the
+ * first edit grows the context, and every turn after carries that load (`docs/2026-10-10-subagent-load-evidence.md`).
+ * This reports the numbers a change to that is judged by:
  * the context at the first turn (the fixed startup), at the first edit of the work (the orientation load), and at
  * the end, by agent type and model, so a scout-and-worker run can be compared with the runs before it.
  *
  * `weighted` counts each kind of token at its ratio to an uncached input token (a cache write 1.25, a cache read 0.1,
  * an output 5). It compares runs on one model. It is not a price, and runs on two models are compared by their
- * columns, not by it (D57 claims no price).
+ * columns, not by it.
  */
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
@@ -30,10 +30,10 @@ export const RATIO = Object.freeze({ input: 1, cacheWrite: 1.25, cacheRead: 0.1,
 const SCRATCH = /(^|[\\/])(local|_fixtures)[\\/]/;
 
 // A file written through the shell instead of the edit tools (file-tool-discipline): an in-place stream edit, or a
-// program's own write. A worker that edited this way showed no first edit at all (D160's SUBLOAD1c note). A search
+// program's own write, which shows no first edit at all. A search
 // for those words, and a write into scratch or temp, edit no work, so the count is an estimate that errs low.
-// A redirect into a source or record file counts too (`cat >> A.test.tsx <<EOF` appended a test, `>> FIX-LOG.md` an
-// entry; D160's second SUBLOAD1c note). A shell redirect stands after a space, so `=>x.id` is no redirect; `2>&1` and
+// A redirect into a source or record file counts too (`cat >> A.test.tsx <<EOF` appends a test, `>> FIX-LOG.md` an
+// entry). A shell redirect stands after a space, so `=>x.id` is no redirect; `2>&1` and
 // `> /dev/null` write no file, and a log written beside the work is no edit of it.
 const SHELL_EDIT = /\bsed\s+(-\w*\s+)*-i|\bperl\s+-\w*i|\.write\(|writeFileSync|\b(Set|Add)-Content\b|\bOut-File\b|\s>>?\s*[\w./\\-]+\.(ts|tsx|js|mjs|cjs|cs|json|md|css|html|ya?ml)\b/;
 const NOT_WORK = /local[\\/]scratch|_fixtures|[\\/]tmp\b|\$TMP|\$env:TEMP|[\\/]Temp[\\/]/i;
@@ -42,7 +42,7 @@ const SEARCH = /^\s*(cd\s+\S+\s*(&&|;)\s*)?(grep|rg|git\s+grep|Select-String)\b/
 const context = u => (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
 
 const isEdit = block => (block.name === 'Edit' || block.name === 'Write') && !SCRATCH.test(String(block.input?.file_path ?? ''));
-/** Whether a shell command writes a file of the work: what this tool counts and `shell-edit-guard.mjs` refuses (D161). */
+/** Whether a shell command writes a file of the work: what this tool counts and `shell-edit-guard.mjs` refuses. */
 export const editsThroughShell = command =>
   SHELL_EDIT.test(command) && !NOT_WORK.test(command) && !SEARCH.test(command);
 

@@ -28,7 +28,7 @@ export function summarise(lines, { from, to, skipped = 0, proposals = [], record
     const code = named(line.data.code) ?? 'an unnamed code';
     const entry = refused.get(code) ?? { code, count: 0, requests: [] };
     entry.count++;
-    // A harness action's refusal says which action beside its request (SIGNIN1), so a refused sign-in is told from an install.
+    // A harness action's refusal says which action beside its request, so a refused sign-in is told from an install.
     const action = named(line.data.action);
     entry.requests.push(`${named(line.data.request) ?? 'an unnamed request'}${action ? ` ${action}` : ''}`);
     refused.set(code, entry);
@@ -46,7 +46,7 @@ export function summarise(lines, { from, to, skipped = 0, proposals = [], record
       views: counted(field('view.opened', 'view')),
       commands: counted(field('command.run', 'command')),
       panels: counted(of('panel.moved').map((line) => `${named(line.data.view) ?? '?'} → ${named(line.data.region) ?? '?'}`)),
-      // The side bar's file previews (LEFT2, D111): how many, in how many sessions, and of what kind (LEFT3 f).
+      // The side bar's file previews: how many, in how many sessions, and of what kind.
       previews: {
         opened: previews.length,
         sessions: new Set(field('preview.opened', 'session')).size,
@@ -86,7 +86,7 @@ export function summarise(lines, { from, to, skipped = 0, proposals = [], record
 }
 
 /**
- * Each agent action's runs (SIGNIN1, `harness.started`, `harness.prompted`, `harness.ended`): by agent and action, how many
+ * Each agent action's runs (`harness.started`, `harness.prompted`, `harness.ended`): by agent and action, how many
  * started and asked the person, how they ended, and each phase's time — from the press to the tool's process up, from there
  * to its first link, the tool's run, the driver's read of who signed in, its write of the lists, and the whole. A phase a run
  * never reached is null in the log and is not timed here. Most started first.

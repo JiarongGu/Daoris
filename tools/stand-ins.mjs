@@ -1,5 +1,5 @@
 /**
- * The stand-ins, found from their files (AGENTPROVIDER1 row b, part 3; the agent-provider design §11 row b; D213's row b part 3 note).
+ * The stand-ins, found from their files.
  *
  * A provider written on the contract keeps a `provider.json` in its folder under the driver's `Agents/Providers/`: its id, its stand-in
  * flag, its doors' ids and kinds and, for a stand-in, its program's layout, the entry under the folder's `Program/` (a Node module) and
@@ -11,7 +11,7 @@
  * rehearsal's stand-in phase drives through the driver over every stand-in the files declare (`scenarioPlan`). Each case is named as
  * the conformance suite's live case of the same clause, so one line of a provider's `pending.json` holds it in both. A later stand-in is
  * its folder alone: nothing here, in the rehearsal or in the suite names one. A conversation's turn (`live.turn`) is the suite's alone:
- * a terminal's conversation is the running Daoris's (D238), and the rehearsal runs no instance to hold one.
+ * a terminal's conversation is the running Daoris's, and the rehearsal runs no instance to hold one.
  *
  *   node tools/stand-ins.mjs     list every stand-in the files declare, its doors and each case of the contract on each (exit 0, 1 a
  *                                file out of the layout, 2 tool error)

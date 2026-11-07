@@ -42,7 +42,7 @@ function cliProblem(unpacked) {
 }
 
 /**
- * Lay the doctrine tool out in an install (WSSETUP2, D124 §1.2): the tarball `npm pack` made of
+ * Lay the doctrine tool out in an install: the tarball `npm pack` made of
  * `src/Daoris.Cli`, unpacked by the CLI's own tar reader into `<install>/app/cli/node_modules/daoris/`, and
  * the launchers written into `<install>/app/bin/`. Both folders are staged beside and swapped in whole, so a
  * file an earlier publish wrote does not survive a republish, and a refused package leaves the last one

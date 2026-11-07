@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 /**
- * The question bench (KNOWUSE2): would a review of a question, before it reaches the person, class it as the person
+ * The question bench: would a review of a question, before it reaches the person, class it as the person
  * did?
  *
  * ## Why
  *
- * D135 §6: beside each item a park or a closing note brings, a review shows what may already answer it, and a model's
+ * Beside each item a park or a closing note brings, a review shows what may already answer it, and a model's
  * review never answers in the person's place until a replay over recorded questions shows it classes them as a person
  * did. The knowledge-use evidence (`docs/2026-10-03-knowledge-use-evidence.md` §4) classed 46 such questions: K a
  * knowledge document answers it, R the repository's documents require asking, B the ticket, the code or a look settles
  * it, O only the person (a credential, an account, a choice left to them, a go-ahead), D drift or Daoris's own
- * mechanics, and S (D184 point 4, QBENCH2) a choice the session decides itself, a name or which of two sound ways:
+ * mechanics, and S a choice the session decides itself, a name or which of two sound ways:
  * a reading is its right class and asking the person is a needless ask. This bench replays a cases file of such questions against a
  * repository's knowledge folder, through two tiers, and scores each against those classes.
  *
  * ## The tiers
  *
- * - **The floor needs no model** (D24): a BM25 word search, by the knowledge bench's tokenizer, over every markdown
+ * - **The floor needs no model**: an Okapi word search, by the knowledge bench's tokenizer, over every markdown
  *   line of the knowledge folder and the ask's words, each line with its neighbours. It shows the three best lines
  *   that share two words of the question at least, never two beside each other, labelled *words only*. It points at
  *   text and never answers: it cannot say a question needs the person.
@@ -29,11 +29,11 @@
  * ## The score
  *
  * Per tier: the K and B items found with the source the person's record names; the O items left to the person; and
- * every item the tier answered in the person's place wrongly, the number that must be zero before a review is shown
- * (D135 §6). An answer is a source or a reading. It is wrong on an O or an R, which are the person's to give, and a
+ * every item the tier answered in the person's place wrongly, the number that must be zero before a review is shown.
+ * An answer is a source or a reading. It is wrong on an O or an R, which are the person's to give, and a
  * source is wrong on any class unless it is the record's own (a quote not in its file, another document, the drifted
  * one). Each item says which tier classed it, and a tier that did not run, or a check that failed, is said, never
- * counted as zero (D24). The score is a report, never a gate (D54).
+ * counted as zero. The score is a report, never a gate.
  *
  * ## The cases file
  *
@@ -48,7 +48,7 @@
  *   node tools/question-bench.mjs run [--cases <file>] [--knowledge <dir>] [--harness "<command line>"] [--cwd <dir>]
  *        [--label <name>] [--timeout <seconds>] [--stop-after <failed checks in a row>] [--fresh]
  *
- * The helpers are tested by `node --test tools/question-bench.test.mjs`. What it found is D135's KNOWUSE2 note.
+ * The helpers are tested by `node --test tools/question-bench.test.mjs`.
  */
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
@@ -261,7 +261,7 @@ export function indexPassages(docs) {
 const clip = (text, max) => (text.length <= max ? text : `${text.slice(0, max - 1)}…`);
 
 /**
- * What the words of a question meet: the {@link FLOOR_LIMIT} best lines by BM25, each sharing {@link MIN_SHARED} of
+ * What the words of a question meet: the {@link FLOOR_LIMIT} best lines by Okapi score, each sharing {@link MIN_SHARED} of
  * its words at least, no two within {@link SLACK} lines of each other in one source. `extra` is searched with the
  * index (the ask's words).
  */
@@ -286,7 +286,7 @@ export function floorHits(question, index, extra = [], k1 = 1.2, b = 0.75) {
   }
   scored.sort((x, y) => y.score - x.score || (x.path < y.path ? -1 : x.path > y.path ? 1 : x.line - y.line));
   // A ticket is one long source, so the best lines are taken wherever they stand, but a line beside one already shown
-  // is the same place and is folded into it (KNOWUSE2: one line per source lost the ticket's line to its neighbours).
+  // is the same place and is folded into it (one line per source would lose the ticket's line to its neighbours).
   const shown = [];
   for (const h of scored) {
     if (shown.length >= FLOOR_LIMIT) break;
@@ -441,7 +441,7 @@ export function runCheck(commandLine, prompt, { cwd, timeoutMs = 300_000 } = {})
       done({ stdout, stderr, code: timedOut ? null : code, timedOut, wallMs: Date.now() - t0, ...(error ? { error } : {}) });
     };
     // A check that timed out ends at its bound: the tree's kill runs on, and waiting for the shell or its pipes would
-    // wait out the program whenever the kill is slow to land (KNOWUSE2).
+    // wait out the program whenever the kill is slow to land.
     const timer = setTimeout(() => {
       timedOut = true;
       stopTree(child);
@@ -472,7 +472,7 @@ export function scoreCase(c, hits, record, knowledge) {
       const right = judged.founded && pointerRight(judged, c.expected);
       model = { verdict: 'source', judged, right, wrong: own || !right, ...(judged.why ? { why: judged.why } : {}) };
     } else if (c.class === 'S') {
-      // A choice the session decides (D184 point 4): a reading is the right class, and asking the person is a needless ask.
+      // A choice the session decides: a reading is the right class, and asking the person is a needless ask.
       model = { verdict: reply.verdict, words: reply.words, right: reply.verdict === 'reading', wrong: false, needless: reply.verdict === 'person' };
     } else model = { verdict: reply.verdict, words: reply.words, right: false, wrong: own && reply.verdict === 'reading' };
   }

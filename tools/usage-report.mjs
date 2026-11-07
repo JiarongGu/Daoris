@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The usage report (LOG1d, D94): an install's machine log, summarised for a development session.
+ * The usage report: an install's machine log, summarised for a development session.
  *
  *   node tools/usage-report.mjs --home <dir> [--days 7] [--json] [--service <url>]
  *   node tools/usage-report.mjs --install <dir> [--days 7] [--json] [--service <url>]     (the install's `data/` home)
@@ -9,38 +9,37 @@
  *
  * The machine log (`docs/2026-09-30-machine-log-design.md`) exists so Daoris can be improved from real
  * use rather than from a guess. Reading thirty days of JSON lines is not how anyone starts a session, so
- * this reads them for the period and says, in a terminal's width: what was used most (views opened,
+ * this reads them for the period and says, in a terminal's width: what got used most (views opened,
  * commands run, panels moved, files previewed by kind), how the conversations and sessions went (how
  * many, by kind and adapter, the median and slowest open and first answer, how long turns took and how
- * they ended), the asks (UNBLOCK5: the permissions each session's harness would have asked a person for,
- * refused because nobody was at the prompt, per session by adapter and repository), the rule proposals
- * (UNBLOCK5: what waits for the person, and those made in the period by week and state), the set-ups
- * (WSSETUP11: each set-up session's minutes, tool calls, tokens and context), the driven sessions' cost
- * (USAGECOST1: each one's repository, adapter, models, turns, minutes, calls, tokens read anew, read from the cache,
+ * they ended), the asks (the permissions each session's harness would have asked a person for,
+ * refused because nobody is at the prompt, per session by adapter and repository), the rule proposals
+ * (what waits for the person, and those made in the period by week and state), the set-ups
+ * (each set-up session's minutes, tool calls, tokens and context), the driven sessions' cost
+ * (each one's repository, adapter, models, turns, minutes, calls, tokens read anew, read from the cache,
  * written to it and written out, and peak context, newest first, then rolled up by repository and by adapter and
- * model with the cache read per call; a session with no `turn.ended` is said so, never zero), the parks (WSSETUP11: the
+ * model with the cache read per call; a session with no `turn.ended` is said so, never zero), the parks (the
  * sessions that stopped to ask the person, per week by workspace, beside the sessions started there), the
- * agent actions (SIGNIN1: each sign-in, install or pin by agent and action, how it ended and each phase's time),
- * what was refused (by code, most first, a harness action's by its action), what failed (exceptions, the page's errors, error-level log lines,
+ * agent actions (each sign-in, install or pin by agent and action, how it ended and each phase's time),
+ * what got refused (by code, most first, a harness action's by its action), what failed (exceptions, the page's errors, error-level log lines,
  * failed or slow requests, grouped) and the lifecycle (starts, stops, uptime, versions). `--json` is the
  * same as data.
  *
- * ## Outcomes (OUTCOME1)
+ * ## Outcomes
  *
  * With `--service <url>` naming this machine's local host, it also says how each quest the period touched
  * went (`docs/2026-10-03-future-directions-review.md` §3, row 4): its sessions and how each ended, its
- * carry-ons, the person's answers on it, its departures and the person's yes (D133), its strikes (D58 as
- * D104 and D125 amend it), the limits it met counted apart, how and when it closed and the time from publish
+ * carry-ons, the person's answers on it, its departures and the person's yes, its strikes, the limits it met counted apart, how and when it closed and the time from publish
  * to close; then the same rolled up by repository and by agent and account. It is derived from the stores
  * that hold each fact: the host's quests and session records, each ask's words (three GETs, `RECORD_ROUTES`),
- * and the machine log's parks. Nothing is stored and nothing is written. A report, never a gate (D54): no
+ * and the machine log's parks. Nothing is stored and nothing is written. A report, never a gate: no
  * score folds the counts into one number, and each rate is said with its count, so a small sample says so.
- * A fact no store keeps is said missing with why, never zero (D57, D143 point 3). Without `--service`, or
+ * A fact no store keeps is said missing with why, never zero. Without `--service`, or
  * when the host does not answer, the section says so and the rest of the report stands.
  *
  * ## What it never prints
  *
- * **Anyone's words.** There are none in the log (D94 §5), and this adds none: it counts and times. The
+ * **Anyone's words.** There are none in the log, and this adds none: it counts and times. The
  * one free text a line carries, a caught error's message, is shown as its first line and never beyond
  * the log's own 120-character cap, so a stack or a paragraph cannot reach the screen through it. A rule
  * proposal holds words (its rule, its reason): only its id, its time and its state are read. A quest, a
@@ -70,7 +69,7 @@ export { DRIVEN_LISTED, DRIVEN_WIDTH } from './usage-report/driven.mjs';
 export { RECORD_ROUTES, readRecords, askOf, endingOf, outcomesOf } from './usage-report/outcomes.mjs';
 export { summarise } from './usage-report/summary.mjs';
 export { render } from './usage-report/render.mjs';
-// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+// Every home place is asked of the home layout, never joined here.
 // The install's layout, from the script that makes it: its home is `data/` beside the launcher.
 
 /**

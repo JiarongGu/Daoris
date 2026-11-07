@@ -2,7 +2,7 @@
  * The measurement behind the in-app browser's next shape (2026-09-28): is a real Edge, started and
  * kept by Daoris on a profile of its own, a better in-app browser than Daoris's own WebView2 window?
  *
- * BRW4–BRW6 rebuilt a browser's basics by hand on WebView2 and found two things no embedding answers:
+ * A browser's basics rebuilt by hand on WebView2 leave two things no embedding answers:
  * a tab an agent opens over CDP has no window, and a session cookie ends with the process. A real
  * Edge has tabs, history, favorites, devtools and downloads of its own. What is measured here is
  * what would make or break it as Daoris's browser:
@@ -220,7 +220,7 @@ await closeWindow(edge);
 console.log(`    restarted: ${await visit('/')}`);
 console.log(`    tabs restored: ${visibleTabs(edge.pid).join(' | ') || '(none read)'}`);
 
-// 3c. Daoris keeping them, as BRW10 does for its own window: the session cookies read over CDP before
+// 3c. Daoris keeping them, as it does for its own window: the session cookies read over CDP before
 // the close, and put back over CDP before the first page after it.
 console.log(`3c. Daoris keeps them: ${await visit('/login')}`);
 const { cookies } = await browserCall('Storage.getCookies');

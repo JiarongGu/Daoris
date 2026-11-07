@@ -1,7 +1,7 @@
 /**
- * ACP2's proof — `claude-code` over the protocol door (D53, evaluation §5).
+ * Proof of `claude-code` over the protocol door.
  *
- * D23 says an adapter arrives ON PROOF, and for a protocol door that proof is a real driven run:
+ * An adapter arrives ON PROOF, and for a protocol door that proof is a real driven run:
  * a real quest, a real harness, a real commit. That run spends a login, which is the owner's to
  * supply — so this script is built in two halves that fail differently.
  *
@@ -10,7 +10,7 @@
  *
  * **Readiness is not a failure.** A machine that is not set up yet gets a list of the exact commands
  * that set it up, and exit 0. What this script must never do is look like it proved something when
- * the login was missing — D23's "on proof" is the whole point, and a green line on a machine that
+ * the login is missing — "on proof" is the whole point, and a green line on a machine that
  * never called a model would be the worst possible lie to tell about it.
  *
  * Everything before `--drive` costs nothing: no model is called, no token is spent, and the
@@ -176,8 +176,8 @@ async function acpHandshake(configDir) {
 }
 
 /**
- * DRV4's shape, over the protocol door: a scratch repository, a real quest, one driven tick, and the
- * record read back. The assertions are what D23's "on proof" means — the work landed, the quest
+ * Over the protocol door: a scratch repository, a real quest, one driven tick, and the
+ * record read back. The assertions are what "on proof" means — the work landed, the quest
  * closed itself through the session's own connector, and the record names what produced it.
  */
 async function drivenRun() {
@@ -212,11 +212,11 @@ async function drivenRun() {
   check('a real quest is open', Boolean(questId), JSON.stringify(quest));
   if (!questId) return;
 
-  // 🔴 The person's rule that lets a session COMMIT (PERM1, D72). The driver's home is the folder its
-  // driver.json sits in, so the rules live beside it. Without them the first real runs (2026-09-24)
-  // took the quest over the connector — whose tools Daoris's defaults allow — made the edit, and were
-  // refused `git add`/`git commit`: the repository's own allow-list is ignored in a folder the agent
-  // has never trusted (DEPLOY1's measurement), so they declined honestly with no commit. `cd` is
+  // 🔴 The person's rule that lets a session COMMIT. The driver's home is the folder its
+  // driver.json sits in, so the rules live beside it. Without them a session takes the quest over
+  // the connector — whose tools Daoris's defaults allow — makes the edit, and is refused
+  // `git add`/`git commit`: the repository's own allow-list is ignored in a folder the agent
+  // has never trusted, so it declines honestly with no commit. `cd` is
   // here because the agent prefixes its commit with one, and every part of a compound command must
   // be allowed.
   writeFileSync(join(scratch, 'permissions.json'), `${JSON.stringify({
@@ -235,7 +235,7 @@ async function drivenRun() {
 
   if (session) {
     check('it ended completed', session.state === 'completed', `${session.state}: ${session.note ?? ''}`);
-    // The record names what produced the work (D49 §4) — the same three facts the pipe door records.
+    // The record names what produced the work — the same three facts the pipe door records.
     check('the record names the adapter', session.door === ADAPTER);
     check('the record names the harness version', Boolean(session.doorVersion), session.doorVersion ?? 'absent');
     check('the record carries evidence of a commit', /[0-9a-f]{7}/i.test(session.evidence ?? ''),
@@ -247,8 +247,8 @@ async function drivenRun() {
   check('the session closed its own quest through its connector', answered?.status === 'Done',
     `${answered?.status}`);
 
-  // TOOL3's half: the protocol door is the only one that reports usage, so a real run here is also
-  // the first time the measurement has anything real in it.
+  // The protocol door is the only one that reports usage, so a real run here is also
+  // what puts anything real in the measurement.
   const usageFile = join(scratch, 'usage.json');
   if (existsSync(usageFile)) {
     const measured = JSON.parse(readFileSync(usageFile, 'utf8'));

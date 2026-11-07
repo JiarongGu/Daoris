@@ -1,8 +1,8 @@
 /**
- * CONSOLE3c's measurement — what the NATIVE door's `stream-json` carries for a subagent and a
+ * Measurement: what the NATIVE door's `stream-json` carries for a subagent and a
  * background task, which no probe had read (docs/2026-09-28-console2-streams-evidence.md, "Left").
  *
- * The protocol door carries each as its own stream once asked (CONSOLE2). The pipe door runs the same
+ * The protocol door carries each as its own stream once asked. The pipe door runs the same
  * harness as `claude -p … --output-format stream-json --verbose --include-partial-messages`, and the
  * questions are whether a subagent's messages arrive marked with the tool call that spawned it
  * (`parent_tool_use_id`), what a backgrounded command says and where its output goes, and what the
@@ -14,10 +14,10 @@
  * Claude Code adapter) and a rules carrier on `--settings` as the driver hands every session. The turn
  * runs a foreground command, starts a background one that outlives the turn, and delegates one read to
  * a subagent. Every line is logged with its time, and after the binary exits the probe watches for the
- * background command's process for a while, to see whether it was left running.
+ * background command's process for a while, to see whether it is left running.
  *
- * 🔴 It spends one small real turn on the machine's own signed-in account, as the CONSOLE2 probe did
- * (authorised 2026-09-24). The enclosing agent session's `CLAUDE*` environment is stripped (DRV4).
+ * 🔴 It spends one small real turn on the machine's own signed-in account (authorised 2026-09-24).
+ * The enclosing agent session's `CLAUDE*` environment is stripped.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -35,7 +35,7 @@ const LINGER_MS = 25_000;
 /** The turn's bound: a probe that hangs is a probe that says nothing. */
 const TURN_MS = 240_000;
 
-/** The environment without the enclosing agent session's markers (DRV4). */
+/** The environment without the enclosing agent session's markers. */
 const env = Object.fromEntries(Object.entries(process.env)
   .filter(([key]) => !/^CLAUDE/i.test(key) && key !== 'AI_AGENT'));
 

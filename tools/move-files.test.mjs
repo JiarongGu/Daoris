@@ -1,5 +1,5 @@
 /**
- * MOVETOOL1: the move tool respells imports, asserts its counts and checks every import after, on a fixture repository.
+ * The move tool respells imports, asserts its counts and checks every import after, on a fixture repository.
  *
  *   node --test tools/move-files.test.mjs
  *

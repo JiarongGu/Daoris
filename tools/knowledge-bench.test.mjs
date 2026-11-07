@@ -1,10 +1,10 @@
 /**
- * The knowledge bench's helpers (KNOW3): the corpus's frontmatter from the router, each design's fixture,
+ * The knowledge bench's helpers: the corpus's frontmatter from the router, each design's fixture,
  * the push design's ranker, the root's isolation, and the scoring of a recorded stream.
  *
  *   node --test tools/knowledge-bench.test.mjs
  *
- * Run by `npm run verify`'s `node --test` list (TOOLTESTCENSUS1). Its scratch is a gitignored folder of the repository,
+ * Run by `npm run verify`'s `node --test` list. Its scratch is a gitignored folder of the repository,
  * and nothing here starts a model.
  */
 import assert from 'node:assert/strict';
@@ -210,7 +210,7 @@ test('a doc is named by its path in either layout, and by nothing else', () => {
   assert.equal(docNameOf('/x/A/knowledge'), null);
 });
 
-// The `recorded-*` fixtures are pilot streams (KNOW3, 2026-10-02), scrubbed of machine paths and trimmed of the
+// The `recorded-*` fixtures are pilot streams (2026-10-02), scrubbed of machine paths and trimmed of the
 // documents' text; `constructed-miss` is written by hand, because the pilot had no miss.
 
 test('a recorded search-first run is scored: the hit, the search before it, the wrong read after it, the tokens', () => {

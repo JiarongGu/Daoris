@@ -1,30 +1,30 @@
 /**
- * PERM2b's proof — a real session, refused a command its work needs, proposes the rule (D74).
+ * Proof that a real session, refused a command its work needs, proposes the rule.
  *
- * PERM2's door is proven without a model: a proposal seeded on disk was held by the tick as a widening,
- * answered by the person, and landed. What no gate can show is whether a real agent, handed the
+ * The door is proven without a model: a proposal seeded on disk is held by the tick as a widening,
+ * answered by the person, and lands. What no gate can show is whether a real agent, handed the
  * connector's `permission_propose` and a refusal, reaches for it. That is the model's behaviour rather
- * than the door's, and a run spends a login, so this script is built in ACP2's two halves.
+ * than the door's, and a run spends a login, so this script is built in two halves.
  *
  *   node tools/perm2-proof.mjs             readiness
  *   node tools/perm2-proof.mjs --drive     …and then one real driven session
  *
  * **The command.** The quest asks for one line committed, then an annotated tag on that commit:
  * `git tag -a proof-v1 -m "proof run"`. Daoris's `commit` default allows `cd`, `git add` and `git
- * commit`, and nothing allows a tag, so exactly that step is refused (D52). It is harmless: a tag is a
+ * commit`, and nothing allows a tag, so exactly that step is refused. It is harmless: a tag is a
  * local ref in a scratch repository, never pushed (`no-push` denies a push anyway), and `git tag -d`
  * takes it back. It is ANNOTATED because a bare `git tag` lists tags, and a read is approved by the
- * agent on its own — a read proves nothing about a refusal (DEPLOY1's first probe).
+ * agent on its own — a read proves nothing about a refusal.
  *
  * **Two honest endings, and the door holds in both.** The expected one is PROPOSED: a proposal file
  * under the driver's home, naming this session, a widening for the refused command, held `waiting` by
  * the tick, and nothing added to the rules without the person. The other is NOT PROPOSED: the agent
  * finished or declined without proposing. That is the model's choice, not the door's failure, and the
- * verdict says PERM2b is not proven by the run rather than calling it a pass. If the tag was NOT
+ * verdict says the run does not prove it rather than calling it a pass. If the tag is NOT
  * refused at all, the run proves nothing about proposing, and the verdict says that too.
  *
- * 🔴 **Run it with the `CLAUDE*` environment of any enclosing agent session unset** (DRV4's note).
- * 🔴 **The driver's home is the folder its `driver.json` sits in** (ACP2's lesson): the proposals, the
+ * 🔴 **Run it with the `CLAUDE*` environment of any enclosing agent session unset**.
+ * 🔴 **The driver's home is the folder its `driver.json` sits in**: the proposals, the
  * rules and the transcript land in this script's scratch folder. No `permissions.json` is written, so
  * the session gets exactly what an empty home hands: Daoris's defaults.
  */
@@ -34,7 +34,7 @@ import { capture } from './rehearsal-kit.mjs';
 import { ADAPTER, cliBin, openProof, repoRoot } from './proof-kit.mjs';
 
 // 🔴 Every constant is declared HERE, above every statement that can reach it: a `const` further down
-// sits in its temporal dead zone when the top-level run reaches it (INT4f's first drive died of it).
+// sits in its temporal dead zone when the top-level run reaches it.
 
 const TAG = 'proof-v1';
 const QUEST = {
@@ -46,7 +46,7 @@ const QUEST = {
 
 const drive = process.argv.includes('--drive');
 
-// Its own port: ACP2's proof holds 5201 and INT4f's 5202.
+// Its own port: the other proofs hold 5201 and 5202.
 const {
   scratch, totals, check, section, missing, readiness, ask, post, born, scratchDomain,
   freshScratch, startHost, stopHost, adopt, runDriver, verdict,
@@ -118,7 +118,7 @@ function heldRules() {
 }
 
 /**
- * One real driven session over the protocol door, then the record read back: the session, what it was
+ * One real driven session over the protocol door, then the record read back: the session, what it got
  * refused, whether it proposed, how the tick held it, and that nothing widened without the person.
  */
 async function drivenRun() {
@@ -166,7 +166,7 @@ async function drivenRun() {
     session ? `${session.id} — ${session.state}` : 'no session with that adapter');
   if (!session) return;
 
-  // What the session was refused, from its own transcript under the driver's home.
+  // What the session got refused, from its own transcript under the driver's home.
   const transcriptFile = join(scratch, 'sessions', `${session.id}.log`);
   const transcript = existsSync(transcriptFile) ? readFileSync(transcriptFile, 'utf8') : '';
   const refused = transcript.split('\n').filter((line) => line.includes('permission refused'));
@@ -178,7 +178,7 @@ async function drivenRun() {
   const closed = (await ask('/api/quests?includeClosed=true')) ?? [];
   const answered = closed.find((q) => q.id === questId);
 
-  // Honest either way: the work that was allowed landed or the quest was declined — never the tag.
+  // Honest either way: the work that is allowed landed or the quest got declined — never the tag.
   check('…it ended honestly: done without the tag, or declined',
     ['completed', 'declined'].includes(session.state) && ['Done', 'Declined'].includes(answered?.status),
     `session ${session.state}, quest ${answered?.status}`);

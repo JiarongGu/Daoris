@@ -1,5 +1,5 @@
 /**
- * CONSOLEWINDOWS1: the console-windows census.
+ * The console-windows census.
  *
  *   node --test tools/console-windows.test.mjs
  *

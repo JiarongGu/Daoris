@@ -52,8 +52,8 @@ export { startedHere } from './desktop/session.mjs';
 export { SHELL_ORIGIN, isShell, PAGE_IDENTITY, THEME_KEY, PAGE_THEME, themeChoiceExpression, withPageTheme, shotTarget } from './desktop/page.mjs';
 export { evalExpression } from './desktop/commands.mjs';
 
-// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
-// The install's layout, from the script that makes it (REV3 CLEAN1): one launcher at the root, the home in `data/`.
+// Every home place is asked of the home layout's table, never joined here.
+// The install's layout, from the script that makes it: one launcher at the root, the home in `data/`.
 
 function usage() {
   console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8')
@@ -64,7 +64,7 @@ function usage() {
 }
 
 /**
- * Only when this file is what was run. The helpers above are imported by the test suite, and a
+ * Only when this file is what runs. The helpers above are imported by the test suite, and a
  * module that dispatched on `process.argv` at import time would answer `node --test`'s arguments.
  */
 async function main(command, args) {
@@ -101,15 +101,15 @@ async function main(command, args) {
       /* `--theme light|dark` photographs the OTHER theme without touching the machine's setting.
        *
        * It exists because the window's own chrome — the DWM border and the caption buttons — is
-       * painted NATIVELY from whatever the page last pushed over SET_THEME (SURF7), so it is
+       * painted NATIVELY from whatever the page last pushed over SET_THEME, so it is
        * invisible to every other instrument: the page cannot see it, and a CSS-level check cannot
        * either. Emulating the media query makes the page push the other theme, and the window
        * repaints for real.
        *
        * The page follows the emulation only while the viewer's choice is System. A viewer who chose
        * light or dark has theirs set for the capture and put back after it, and a page that still
-       * is not in the theme is refused rather than photographed (LOOK1, `withPageTheme`). It holds
-       * for `--page` too, which ignored `--theme` before.
+       * is not in the theme is refused rather than photographed (`withPageTheme`). It holds
+       * for `--page` too.
        *
        * 🔴 The emulation is scoped to the CDP SESSION and is reverted the moment it closes. A probe
        * that set it, closed, and then captured reported dark and photographed a light window — so
@@ -121,18 +121,18 @@ async function main(command, args) {
         args.splice(themeFlag, 2);
       }
 
-      /* `--window <name>` photographs a SECONDARY window (SURF8) — `monitor`, or `session:<id>` —
-       * rather than the main one, or `browser`, Daoris's own browser beside the application (D99).
+      /* `--window <name>` photographs a SECONDARY window — `monitor`, or `session:<id>` —
+       * rather than the main one, or `browser`, Daoris's own browser beside the application.
        *
        * It exists because `Process.MainWindowHandle` answers for exactly one window and Windows
        * chooses which, so with the monitor open a capture silently photographs whichever the OS
        * calls main. A name that matches no open window is refused rather than falling back: the
        * whole point of asking is that the main window is not the one wanted. Which PROCESS holds the
-       * window is chosen before that, below, and never by Windows (SHOTPICK1). */
+       * window is chosen before that, below, and never by Windows. */
       const window = takeWindow(args);
 
       /* `--page [--size WxH]` asks Chromium for the PAGE over the debug port instead of photographing
-       * the window (SESS1). A minimized window photographs as its 314 × 50 caption, and restoring an
+       * the window. A minimized window photographs as its 314 × 50 caption, and restoring an
        * installed one puts it in front of its owner; the page renders without either. `--size` lays it
        * out at a width and height for the capture and puts it back after. It is the page alone: the
        * native frame and caption buttons are not in it, which is what the window capture is for. */
@@ -177,10 +177,10 @@ async function main(command, args) {
         break;
       }
 
-      // The browser runs from the application's own executable since CHR8 (D99), with windows of its
+      // The browser runs from the application's own executable, with windows of its
       // own, so the path and the process name are both of theirs: the process is chosen here, by its
-      // command line, and handed to the script by id (SHOTPICK1). Left to the script, the first of the
-      // two with a window was Windows' choice, and on an install it was the browser.
+      // command line, and handed to the script by id. Left to the script, the first of the
+      // two with a window is Windows' choice, and on an install that is the browser.
       const target = shotTarget(commandLinesAt(exe), { window, record: readRun(), exe });
       if (target.refusal) fail(target.refusal);
       if (target.others) {
@@ -196,7 +196,7 @@ async function main(command, args) {
 
       if (theme) {
         // Thrown, not exited: `run` would end the process inside the capture and skip putting the
-        // viewer's theme choice back (LOOK1).
+        // viewer's theme choice back.
         const capture = async () => {
           const result = spawnSync('powershell', captureArgs, { stdio: 'inherit', shell: false, windowsHide: true });
           if (result.error) throw new Error(`powershell did not start: ${result.error.message}`);

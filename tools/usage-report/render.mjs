@@ -32,9 +32,9 @@ function compact(count) {
 }
 
 /**
- * A set-up's cost as a line reads it (WSSETUP11): its minutes, calls, tokens and context, each only where
- * measured, or `not measured` when none was. Anew is the input read fresh, what was written to the cache
- * included; the rest was read from the cache (METER1's split).
+ * A set-up's cost as a line reads it: its minutes, calls, tokens and context, each only where
+ * measured, or `not measured` when none is. Anew is the input read fresh, what is written to the cache
+ * included; the rest is read from the cache.
  */
 function costOf(cost, { largest = false } = {}) {
   const parts = [];
@@ -51,7 +51,7 @@ function costOf(cost, { largest = false } = {}) {
 }
 
 /**
- * A driven session's cost as a line reads it (USAGECOST1): turns, turn time, calls, the four token counts and the peak
+ * A driven session's cost as a line reads it: turns, turn time, calls, the four token counts and the peak
  * context, each only where a line said it. A session with no `turn.ended` says so; it is never a row of zeros.
  */
 function drivenParts(cost) {
@@ -84,7 +84,7 @@ const spreadOf = (entry) =>
   `mean ${entry.mean} · median ${entry.median} · 90th ${entry.p90} · ${Math.round(entry.none * 100)}% with none`;
 
 /**
- * A quest's outcome as its line reads it (OUTCOME1): how it stands or closed and in how long, whether it was a first
+ * A quest's outcome as its line reads it: how it stands or closed and in how long, whether it is a first
  * pass, its departures and the person's yes, its sessions, then each count only where it is more than none. A fact that
  * is not known is not here: the quest's `not known` line says it, so an absent count is never read as none.
  */

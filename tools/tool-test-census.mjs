@@ -1,13 +1,12 @@
 /**
- * TOOLTESTCENSUS1: every tool test file is run by exactly one declared gate.
+ * Every tool test file is run by exactly one declared gate.
  *
  *   node tools/tool-test-census.mjs     check every tool test file (exit 0 clean, 1 an orphan or a double, 2 tool error)
  *
  * The files held are `tools/*.test.mjs` and every `*.test.ts` under `src/Daoris.Cli/tool-test/`. A gate in
  * `daoris.gates.json` owns a file when its command, with each `npm run` and `npm test` followed into the package script it
- * names, lists the file's path or globs it (`node --test "tool-test/**\/*.ts"`). `as-merged.test.mjs` rotted for weeks
- * outside every gate's list: the verify script names its files one by one, so a new test file that nobody adds stays unrun
- * and nothing says so. This census names each file no gate runs, each run by two gates, and each listed file that is gone.
+ * names, lists the file's path or globs it (`node --test "tool-test/**\/*.ts"`). The verify script names its files one by
+ * one, so a new test file that nobody adds stays unrun and nothing says so. This census names each file no gate runs, each run by two gates, and each listed file that is gone.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';

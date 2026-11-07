@@ -304,7 +304,7 @@ export function classesReached(paths, census) {
       whole.push({ path, why: placed.whole });
       continue;
     }
-    // A path no class reads, by what every class's files name and say, reaches none: one with no reach was read too. A file
+    // A path no class reads, by what every class's files name and say, reaches none: one with no reach is read too. A file
     // of the test project reaches the classes that read it, the same reading. A source area is where a class with no reach,
     // whose sources the census could not place, is reached.
     if (placed.none) continue;

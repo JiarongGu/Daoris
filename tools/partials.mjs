@@ -1,5 +1,5 @@
 /**
- * PART1: no C# type is declared `partial` in more than one hand-written file (D166's note "no partial type without
+ * No C# type is declared `partial` in more than one hand-written file ("no partial type without
  * generated code"; docs/2026-10-14-partial-types-survey.md, "The gate").
  *
  *   node tools/partials.mjs           check src/**\/*.cs against tools/partials.json (exit 0 clean, 1 breach, 2 tool error)

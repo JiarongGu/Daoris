@@ -9,16 +9,15 @@
  * trimmed: that copy also LAUNCHES a headless Chromium (profile directories, Edge-sync flags, target
  * disambiguation across restored tabs), because four of its tools drive a browser. Nothing here ever
  * launches a browser — the desktop shell is started by `desktop.mjs run`, which knows the port it
- * asked for — so the launching half would be carried code with no caller. What was kept is the part
- * that was bought with incidents: the id-matched client, and the rule that you identify a page
- * before reporting its answer.
+ * asked for — so a launching half would be code with no caller. What stays is the part bought with
+ * incidents: the id-matched client, and the rule that you identify a page before reporting its answer.
  */
 import { createServer } from 'node:net';
 
 /**
  * Both loopback addresses. The engine binds its debug port to `localhost`, which one machine resolves to
- * IPv4 and another (or the same one, another day) to IPv6 alone: a port asked only on 127.0.0.1 then read
- * as free while the shell held it on [::1], and every instrument found nothing listening (LOOK3).
+ * IPv4 and another (or the same one, another day) to IPv6 alone: a port asked only on 127.0.0.1 would read
+ * as free while the shell held it on [::1], and every instrument would find nothing listening.
  */
 export const LOOPBACKS = ['127.0.0.1', '[::1]'];
 
@@ -56,9 +55,9 @@ export async function answersOn(port, timeoutMs = 700) {
  * Whether `port` is ours to hand out: this process can bind it on every loopback the machine has, and
  * nothing answers on it.
  *
- * 🔴 Bound, not only asked (LOOK4). A port Windows reserves (`netsh interface ipv4 show excludedportrange
- * protocol=tcp`) answers nothing, so asking called it free, and nobody can bind it: the engine opened no
- * debug port and said nothing. A listener that never answers HTTP read as free the same way. The bind
+ * 🔴 Bound, not only asked. A port Windows reserves (`netsh interface ipv4 show excludedportrange
+ * protocol=tcp`) answers nothing, so asking calls it free, and nobody can bind it: the engine opens no
+ * debug port and says nothing. A listener that never answers HTTP reads as free the same way. The bind
  * sees both; the asking stays for a listener on an address the bind does not collide with.
  */
 export async function portIsFree(port) {
@@ -95,8 +94,8 @@ export async function freePort(preferred, span = 20, isFree = portIsFree) {
     if (await isFree(port)) return port;
   }
 
-  // A whole walk can sit inside one reservation: Windows held 9309–9408 on LOOK4's machine, every port
-  // the walk from 9333 tries. So the system picks one, and the pick is held to the same test.
+  // A whole walk can sit inside one reservation (Windows can hold 9309–9408, every port a walk from
+  // 9333 tries). So the system picks one, and the pick is held to the same test.
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const port = await systemPort();
     if (port && await isFree(port)) return port;
@@ -111,7 +110,7 @@ export async function freePort(preferred, span = 20, isFree = portIsFree) {
  * else is open. It guards against attaching to a devtools window or a foreign target and reporting
  * its answer as the shell's.
  *
- * 🔴 **The shell no longer has exactly one page** (SURF8). A secondary window — the monitor, a
+ * 🔴 **The shell can have more than one page.** A secondary window — the monitor, a
  * detached session — is a route into the same bundle, so it is a second WebView2 on the same debug
  * port, and which one comes back first is the browser's order rather than the caller's choice.
  * Measured: with the monitor open, `eval` attached to it and then refused, because the monitor's

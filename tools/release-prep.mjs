@@ -6,12 +6,11 @@
  * ## Why a tool rather than five edits
  *
  * The version lives in four files and the changelog headings in two more, and
- * they only mean anything when they agree. The family has already paid for both
- * halves of getting this wrong: a hand-bump made the next release skip a version
- * outright, and a hand-stamped heading left the workflow nothing to stamp, so a
- * release shipped with the previous version's title on its section.
+ * they only mean anything when they agree. A hand-bump makes the next release
+ * skip a version outright, and a hand-stamped heading leaves the workflow nothing
+ * to stamp, so a release ships with the previous version's title on its section.
  *
- * Consistency was never the property at risk — **authorship** was. A hand-bump
+ * Consistency is not the property at risk — **authorship** is. A hand-bump
  * leaves everything perfectly consistent and still wrong.
  *
  *   node tools/release-prep.mjs --version 0.1.0     # rewrite and stamp
@@ -27,9 +26,9 @@ const read = (rel) => readFileSync(join(repoRoot, rel), 'utf8');
 const write = (rel, text) => writeFileSync(join(repoRoot, rel), text, 'utf8');
 
 /**
- * How a consumer installs the CLI (DIST1, D105): the npm package the release publishes, at a version —
- * `npx daoris@X init` in the README, `"source": "daoris@X"` in a manifest. The git ref every reference
- * named before could not run: the root package is a private workspace with no `bin`.
+ * How a consumer installs the CLI: the npm package the release publishes, at a version —
+ * `npx daoris@X init` in the README, `"source": "daoris@X"` in a manifest. A git ref
+ * cannot run: the root package is a private workspace with no `bin`.
  */
 const PACKAGE_REF = 'daoris@';
 const atVersion = (version) => `${PACKAGE_REF}${version}`;
@@ -51,7 +50,7 @@ const exampleManifests = () =>
         .filter((rel) => existsSync(join(repoRoot, rel)))
     : [];
 const CLI_PKG = 'src/Daoris.Cli/package.json'; // the only published package
-// The devkit binary's own version (REV3): its comment said the release stamped it, and nothing did.
+// The devkit binary's own version, stamped by the release.
 const DEVKIT = 'src/Daoris.Devkit/Daoris.Devkit.Cli/Repository.cs';
 const DEVKIT_VERSION = /public const string DevkitVersion = "([^"]+)";/;
 const fail = (message) => {
@@ -103,9 +102,9 @@ export const rewrites = (version) => [
 const CHANGELOGS = ['CHANGELOG.md', 'canon/CHANGELOG.md'];
 
 /**
- * Every file a release rewrites — what the release commit must stage (REV3 CLEAN1). The workflow's
- * `git add` is a second list, and it had already missed the example manifests once, which left
- * `verify` red on main after a release; `dogfood.test.ts` holds that list against this one.
+ * Every file a release rewrites — what the release commit must stage. The workflow's
+ * `git add` is a second list, and a miss leaves `verify` red on main after a release;
+ * `dogfood.test.ts` holds that list against this one.
  */
 export const written = () => [...rewrites('0.0.0').map(([rel]) => rel), ...CHANGELOGS];
 

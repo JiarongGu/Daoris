@@ -1,12 +1,11 @@
 /**
- * ROUTERMERGE1: git's merge driver for a Markdown file whose table rows are keyed by their first cell.
+ * Git's merge driver for a Markdown file whose table rows are keyed by their first cell.
  *
  *   node tools/merge-rows.mjs <base> <ours> <theirs> [<marker size>] [<path>]   (git runs it: %O %A %B %L %P)
  *   node tools/merge-rows.mjs --install                                      (configures the driver, once a clone)
  *
- * `docs/README.md` merged by union, so a branch that changed a row `main` also changed, or that still carried a row `main`
- * had since replaced, left both rows and no conflict: on 2026-10-24 six landings left a row twice, an older copy coming
- * back each time. This merges such a file three ways, base, ours and theirs:
+ * A union merge of `docs/README.md` leaves both rows and no conflict when a branch changed a row `main` also changed, or
+ * still carries a row `main` replaced, so an older copy comes back. This merges such a file three ways, base, ours and theirs:
  *
  * - each table's body rows by their first cell: a row one side changed takes that side, a row both changed differently
  *   (or one changed and the other removed, or both added differently) is a conflict marked in git's own form, a row one
@@ -23,7 +22,7 @@
  * The result is written over ours (git's %A), its line endings ours'. `--install` sets `merge.rows.driver` in the
  * repository's own configuration (never the global one); the root `npm ci` runs it as the workspace's `prepare`, and it
  * does nothing outside a git work tree. Exit 0 clean, 1 conflicted (the result written, marked), 2 a tool error (usage,
- * an unreadable file, git failing), the file left as it was.
+ * an unreadable file, git failing), the file left unchanged.
  */
 import { readFileSync } from 'node:fs';
 import { fenced } from './doc-duplicates.mjs';

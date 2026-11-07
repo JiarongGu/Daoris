@@ -1,4 +1,4 @@
-// A minimal Agent Client Protocol (ACP) client for the DSH1 probes: JSON-RPC 2.0, newline-delimited,
+// A minimal Agent Client Protocol (ACP) client for the probes: JSON-RPC 2.0, newline-delimited,
 // over the agent's stdio. It drives one session end to end and logs EVERY frame in both directions
 // verbatim to a JSONL file, because the frames are the evidence — what the driver and the timeline
 // would see is exactly this, nothing more.

@@ -1,12 +1,12 @@
 /**
- * The fabric probe's hook logger (FABRIC-PROBE1; the C0 audit §2).
+ * The fabric probe's hook logger.
  *
  *   node tools/fabric-probe/hook.mjs <log>
  *
  * A launcher hands it to Claude Code as an exec-form hook on `PreToolUse` (every tool), `SubagentStart` and
  * `SubagentStop`. It appends the input the harness handed it, whole, to the log as one JSON object a line, and exits 0
  * with nothing on stdout: no decision, so the harness's own rules decide as they would without it. Written
- * synchronously, before it exits, so a kill of the harness right after loses nothing the hook was told.
+ * synchronously, before it exits, so a kill of the harness right after loses nothing the hook is told.
  */
 import { appendFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';

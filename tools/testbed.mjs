@@ -11,7 +11,7 @@
  * place to *use* Daoris the way an adopter does, with a real service, real quests and real sessions.
  * The rehearsal must stay hermetic; a person needs somewhere that is not.
  *
- * **Why a workspace of its own (WSP1/WSP2).** These repositories join `testbed`, not `default`, so the
+ * **Why a workspace of its own.** These repositories join `testbed`, not `default`, so the
  * machine's real family cannot see them and they cannot see it: a quest across the boundary is refused
  * naming both sides, and a search answers from one circle only. That is the whole point of putting the
  * testbed on the real registry rather than in a scratch directory — it exercises the boundary instead
@@ -27,7 +27,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OWN } from './desktop-publish.mjs';
 import { execGit } from './fsx.mjs';
-// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+// Every home place is asked of the home's table, never joined here.
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -134,17 +134,17 @@ const dirty = (where) => new Set(
 /**
  * Commit what THIS run wrote — the adoption, the sync, the connector — and nothing else.
  *
- * 🔴 The script wrote the connector and never committed it, so a re-run that re-pointed `.mcp.json`
- * left every testbed dirty, and the driver — correctly — HELD each of their quests as *"the working
- * tree has uncommitted changes — somebody's work in progress"* (measured on the deployed shell,
- * 2026-09-23, after D63 moved the installed host). The difference between the tree before the run
- * and after it is exactly what the run owns; a path that was dirty before it is somebody's, and stays.
+ * 🔴 A connector left uncommitted after a re-run that re-points `.mcp.json` leaves every testbed
+ * dirty, and the driver — correctly — HOLDS each of their quests as *"the working
+ * tree has uncommitted changes — somebody's work in progress"*. The difference between the tree
+ * before the run and after it is exactly what the run owns; a path that is dirty before it is
+ * somebody's, and stays.
  */
 function landed(where, before) {
   const after = dirty(where);
-  // What this run wrote wholesale is this script's whether or not an earlier run left it dirty —
+  // What this run writes wholesale is this script's whether or not an earlier run left it dirty —
   // the connector and the declaration are rewritten every time, so "dirty before" is not "somebody's"
-  // for them; it is the previous run's, and the previous run was this script too.
+  // for them; it is an earlier run's, by this script too.
   const mine = [...after].filter((path) => !before.has(path) || WRITTEN.has(path));
   if (mine.length === 0) return false;
   git(where, ['add', '--', ...mine]);
@@ -183,7 +183,7 @@ function declare(where, repo) {
  * 🔴 **Without this the testbed cannot be driven over the pipe door at all.** That door leans on the
  * repository's `.mcp.json`, and the driver may never reach in and write one (it is the very edit the
  * whole arrangement exists to prevent) — so wiring it is the *connector's* job at adoption, which
- * here means this script's. The protocol door carries its servers on `session/new` instead (ACP4) and
+ * here means this script's. The protocol door carries its servers on `session/new` instead and
  * needs nothing on disk; a testbed that only worked there would be proving the easier half.
  *
  * It names an installed binary by absolute path because that is what an adopter's own file says —
@@ -191,7 +191,7 @@ function declare(where, repo) {
  * unpublished, which is why a machine path is fine here and in nothing this repository tracks.
  */
 function connector(where) {
-  // The installed host lives under the Daoris home (D63) — the same `bin/` `service-publish
+  // The installed host lives under the Daoris home — the same `bin/` `service-publish
   // --install` fills — and a machine with no home has no installed host to wire.
   const home = process.env.DAORIS_HOME?.trim();
   if (!home) return false;
@@ -215,12 +215,11 @@ function connector(where) {
   // the tools OFFERED; the harness still refuses to call them unless the repository says it trusts
   // them. A driven session then does the work, cannot take or close its quest, and the driver
   // correctly records `failed — exited without touching its quest` while a tree full of good work
-  // sits uncommitted. Measured on the first real deployment; DRV4 had this file and its entry named
-  // the dependency in a parenthetical, which is where it stayed until the second deployment found it.
+  // sits uncommitted.
   //
-  // The list is narrow on purpose and is the one DRV4 proved: the two quest verbs, and the git
+  // The list is narrow on purpose: the two quest verbs, and the git
   // commands a session needs to land and describe its own work. **Nothing outward-facing** — no
-  // push, no publish, no release — so D37's boundary is exactly where it was. `Bash(node --test:*)`
+  // push, no publish, no release. `Bash(node --test:*)`
   // is this family's gate command; a real adopter names its own, which is why this belongs to the
   // repository rather than to the canon.
   mkdirSync(join(where, '.claude'), { recursive: true });
@@ -269,8 +268,7 @@ let connected = 0;
 for (const repo of FAMILY) {
   const where = born(repo);
   // 🔴 `init` REFUSES an existing manifest, by design — it is the one command that must never
-  // silently overwrite a repository's own adoption. So re-running was not idempotent at all, though
-  // the header above promised it was: the second run died on the first repository. Adopt once;
+  // silently overwrite a repository's own adoption, so adopt once;
   // everything after this line is safe to repeat.
   const before = dirty(where);
   if (!existsSync(join(where, 'daoris.json'))) daoris(`init --name ${repo.name}`, where);
@@ -283,7 +281,7 @@ for (const repo of FAMILY) {
     + (wired ? '' : '  (no connector — install the service host)')
     + (committed ? '  (committed)' : '');
   try {
-    // `--workspace` is the wiring, and it is a REGISTRY row rather than anything on disk (WSP1):
+    // `--workspace` is the wiring, and it is a REGISTRY row rather than anything on disk:
     // nothing in the repository records which circle it joined, which is why re-running is safe.
     const said = daoris(`repository connect --workspace ${WORKSPACE}`, where);
     connected += 1;

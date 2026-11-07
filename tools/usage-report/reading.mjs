@@ -18,8 +18,8 @@ const TIME_SHAPE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,7})?Z$/;
 export const named = (value) => (typeof value === 'string' && value.length > 0 ? value : null);
 
 /**
- * The door a line names: its `door`, else the word a log line written before the door was named spelt it (`adapter` on a session's lines,
- * `harness` on an agent action's). A line already written is read, never rewritten; the older word ends when those files age out.
+ * The door a line names: its `door`, else the legacy word (`adapter` on a session's lines,
+ * `harness` on an agent action's). A line already written is read, never rewritten; the legacy word ends when those files age out.
  */
 export const doorOf = (data, older = 'adapter') => named(data.door) ?? named(data[older]);
 
@@ -87,8 +87,7 @@ export function readLogs(folder, { since } = {}) {
 }
 
 /**
- * The states a rule proposal can stand in, as its file's other reader knows them (`RuleProposals.cs`, PERM2, D74; the CLI's
- * `ruleproposals.ts` left in PUSH1f2d). A state not among them is read as `proposed`, as it reads it.
+ * The states a rule proposal can stand in, as its file's other reader knows them (`RuleProposals.cs`). A state not among them is read as `proposed`, as it reads it.
  */
 const PROPOSAL_STATES = ['proposed', 'applied', 'waiting', 'accepted', 'declined', 'refused', 'unchanged'];
 
@@ -96,7 +95,7 @@ export const text = (value) => (typeof value === 'string' && value.trim() ? valu
 export const record = (value) => (value !== null && typeof value === 'object' && !Array.isArray(value) ? value : null);
 
 /**
- * The rule proposals in a home's `proposals/` (UNBLOCK5): each as `{ proposed, state }`, and nothing else
+ * The rule proposals in a home's `proposals/`: each as `{ proposed, state }`, and nothing else
  * of it. The file is the contract its readers share (the twins rule), so this reads it by their rules: a
  * file that is not JSON, has no id or no `change` object is not a proposal and is left out; a state they
  * do not know is `proposed`; a proposal with no readable time takes its file's. None of its words (the
@@ -130,7 +129,7 @@ export function readProposals(folder) {
   return read;
 }
 
-/** This machine's own addresses (OUTCOME1): the outcomes read the local host, never a shared one (D47 §4). */
+/** This machine's own addresses: the outcomes read the local host, never a shared one. */
 const LOOPBACK = /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/i;
 
 const LOCAL_HOST = '--service takes the local host\'s address, such as http://localhost:5177';

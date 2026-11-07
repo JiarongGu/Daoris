@@ -50,7 +50,7 @@ describe('the table both twins read (machine-admission.json)', () => {
 });
 
 /**
- * The whole take's rows (INTEGRATE1b, design §4.5, C7): N entries with one `since` and ids that sort together. The driver's
+ * The whole take's rows (design §4.5): N entries with one `since` and ids that sort together. The driver's
  * MachineAdmissionTests reads the same rows: full while held, a session's ask behind every one of them, a foreign hold a doubt.
  */
 describe('the whole take, in the table both twins read', () => {
@@ -257,7 +257,7 @@ describe('the edges', () => {
 });
 
 /**
- * INTEGRATE1b (design §4.5, C7, F34): the confirm run takes the whole admission as the capacity's worth of ordinary entries in one
+ * Design §4.5: the confirm run takes the whole admission as the capacity's worth of ordinary entries in one
  * write, beats each, lets them go in one write, and reads the record at its start, at each beat and at its end; anything there that
  * does not show the machine held for it alone makes it inconclusive.
  */

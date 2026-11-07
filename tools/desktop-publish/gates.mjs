@@ -7,7 +7,7 @@ import { refusal } from './staging.mjs';
 export const GATE_COMMAND = 'node tools/merge-branch.mjs --full';
 
 /**
- * The line `merge-branch --passed` ends a refusal with (GATE6b): what to run and the smallest command that runs it,
+ * The line `merge-branch --passed` ends a refusal with: what to run and the smallest command that runs it,
  * `--stale`, `--rerun <gate>…` or `--full`. Read from its output, as the rest is: the publish never imports the tool.
  */
 const REMEDY = /^\s*Run (.+?) on it: (node tools\/merge-branch\.mjs .+?)\s*$/;
@@ -35,9 +35,9 @@ export function askGates(repoRoot, tool = join(dirname(dirname(fileURLToPath(imp
 const indented = (text) => text.split(/\r?\n/).filter((line) => line.trim()).map((line) => `  ${line.trimEnd()}`).join('\n');
 
 /**
- * What stops a publish into `to` for want of gates (GATE3), as the sentence to print, and what to say when it
+ * What stops a publish into `to` for want of gates, as the sentence to print, and what to say when it
  * goes ahead: nothing is asked for a folder under `_fixtures`; a tree the full set passed publishes; any other
- * is refused, naming what has not passed and the smallest command the tool names that would pass it (GATE6b), or
+ * is refused, naming what has not passed and the smallest command the tool names that would pass it, or
  * the one that runs it all, unless `force` (`--force-ungated`, the person's explicit override), when it publishes
  * and says it is ungated.
  */
@@ -52,7 +52,7 @@ export function ungatedRefusal(to, repoRoot, { force = false, ask = askGates, re
     return { refusal: null, note: `desktop-publish: publishing ungated (--force-ungated): ${why}.\n${indented(out)}` };
   }
   // The tool's own last line names the command too; it is said once, below. A tool that names none, or cannot tell, gets the full set.
-  // CI1: a stage from the gate tree is handed its own `remedy`, the CI's command, which runs there what the commit's verdicts lack.
+  // A stage from the gate tree is handed its own `remedy`, the CI's command, which runs there what the commit's verdicts lack.
   const lines = out.split(/\r?\n/);
   const named = lines.map((line) => REMEDY.exec(line)).find(Boolean);
   const [what, command] = remedy ? [remedy.what, remedy.command] : named ? [named[1], named[2]] : ['every gate', GATE_COMMAND];
@@ -67,4 +67,4 @@ export function ungatedRefusal(to, repoRoot, { force = false, ask = askGates, re
 }
 
 // ---------------------------------------------------------------------------------------------
-// GATEWT1: a stage built from the gate tree, never from the moving main checkout
+// A stage built from the gate tree, never from the moving main checkout

@@ -5,9 +5,9 @@ import { sampleOf } from './figures.mjs';
 export const minute = (iso) => iso.slice(0, 16).replace('T', ' ');
 
 /**
- * The routes the outcomes read (OUTCOME1), each a GET the local host answers, closed records included: the quests as
- * their operations replay to (a local host serves no operations, D143's note), the session records as this machine is
- * answered them (its accounts included, D49 §4), and the asks with the person's words (DRIFT1a), a local host's alone.
+ * The routes the outcomes read, each a GET the local host answers, closed records included: the quests as
+ * their operations replay to (a local host serves no operations), the session records as this machine is
+ * answered them (its accounts included), and the asks with the person's words, a local host's alone.
  */
 export const RECORD_ROUTES = Object.freeze({
   quests: '/api/quests?includeClosed=true',
@@ -16,7 +16,7 @@ export const RECORD_ROUTES = Object.freeze({
 });
 
 /**
- * The host's records for the outcomes: each route's list, or null and the sentence saying why it was not read (a route
+ * The host's records for the outcomes: each route's list, or null and the sentence saying why it is not read (a route
  * that failed, answered no list, or did not answer). Every request is a GET; nothing is sent but the route.
  */
 export async function readRecords(service, { fetch: get = globalThis.fetch, timeoutMs = 15_000 } = {}) {
@@ -50,7 +50,7 @@ export async function readRecords(service, { fetch: get = globalThis.fetch, time
   };
 }
 
-/** A sender that is an ask: `ask #<id>`, the service's `AskDesk.SenderOf` (D65 §1a), a chain step's included. */
+/** A sender that is an ask: `ask #<id>`, the service's `AskDesk.SenderOf`, a chain step's included. */
 const ASK_SENDER = 'ask #';
 
 /**
@@ -64,8 +64,8 @@ export function askOf(sender) {
 }
 
 /**
- * How a session record ended, as the strikes read it (`ServiceClient.ReadStrikes`, D58 as D104 and D125 amend it): a
- * failure an account's limit made is `limit`, a stop that was not the person's is `interrupted`, and anything else is
+ * How a session record ended, as the strikes read it (`ServiceClient.ReadStrikes`): a
+ * failure an account's limit causes is `limit`, a stop that is not the person's is `interrupted`, and anything else is
  * its state as the record says it. A flag counts only as the boolean true.
  */
 export function endingOf(session) {
@@ -75,10 +75,10 @@ export function endingOf(session) {
   return state ?? '(unsaid)';
 }
 
-/** The endings after which the next run on the quest carries it on (D80, D104): a failure, a limit, an interrupted stop. */
+/** The endings after which the next run on the quest carries it on: a failure, a limit, an interrupted stop. */
 const CUT_OFF = ['failed', 'limit', 'interrupted'];
 
-/** The endings that are strikes (D58 as amended): a failure that was not a limit, and a stop that was not the person's. */
+/** The endings that are strikes: a failure that is not a limit, and a stop that is not the person's. */
 const STRIKES = ['failed', 'interrupted'];
 
 /** A moment a record carries, in milliseconds, or null where it carries none that reads. */
@@ -88,12 +88,12 @@ export const momentOf = (value) => {
 };
 const isoOf = (time) => (time === null ? null : new Date(time).toISOString());
 
-/** The outcomes when the records were not read, and why. */
+/** The outcomes when the records are not read, and why. */
 const unreadOutcomes = (why) => ({ read: false, unread: why, quests: [], byRepository: [], byAgent: [] });
 
 /**
- * One quest's outcome (OUTCOME1), from its record, its sessions on the host, its ask's words and the log's parks. Each
- * fact no store keeps is null and said in `missing`, with why. A teammate's record (keyed `origin/id`, SYNC4) is listed
+ * One quest's outcome, from its record, its sessions on the host, its ask's words and the log's parks. Each
+ * fact no store keeps is null and said in `missing`, with why. A teammate's record (keyed `origin/id`) is listed
  * and counted apart: its account and its log are on its machine, and a strike is this machine's judgement of its own
  * runs (`ReadStrikes`).
  */
@@ -220,9 +220,9 @@ function outcomeOf(quest, runs, facts) {
 }
 
 /**
- * The outcomes rolled up by a key (OUTCOME1): how many quests, done and declined; first passes of those done, with how
+ * The outcomes rolled up by a key: how many quests, done and declined; first passes of those done, with how
  * many are not known; the quests carried on of those this machine ran, and the carry-ons; and the answers over the quests
- * whose answers are kept, with how many are not. Each figure carries its count, and none is folded into a score (D54).
+ * whose answers are kept, with how many are not. Each figure carries its count, and none is folded into a score.
  */
 function rollUp(outcomes, keyOf) {
   const groups = new Map();

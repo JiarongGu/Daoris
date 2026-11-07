@@ -140,7 +140,7 @@ export const LOCK = `${OWN_OUTPUT}.lock`;
 
 /**
  * Write the files, one run at a time: the web gates' pre-scripts start together, and two builds into the one output fight over its
- * files (CS2012), as two generators would over the files they write. A run that waited reads the files again, and builds nothing
+ * files, as two generators would over the files they write. A run that waited reads the files again, and builds nothing
  * where the run before it wrote them. `build` and `look` are a test's.
  */
 export function writeContracts(root, mode, { build = generate, look = standing } = {}) {

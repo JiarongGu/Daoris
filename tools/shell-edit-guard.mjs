@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Refuses a branch-worker's edit through the shell before it runs (D161).
+ * Refuses a branch-worker's edit through the shell before it runs.
  *
  * A PreToolUse hook in `.claude/agents/branch-worker.md`: the harness hands it the tool call as JSON on stdin, and an
  * exit of 2 refuses the call, its stderr being what the worker reads. A shell command that writes a file of the work
@@ -9,10 +9,9 @@
  *
  * ## Why
  *
- * `file-tool-discipline` is always loaded and every worker's prompt restated it, and still 6 of 14 Sonnet workers edited
- * through the shell, one by deleting lines at computed offsets (D160's second SUBLOAD1c note). A rule an agent drops,
- * a transcript shows it dropping, belongs in a mechanism, not a sentence (D161). A call the guard cannot read passes, so
- * a broken input never blocks the work.
+ * `file-tool-discipline` is always loaded and every worker's prompt restates it, and still workers edit through the
+ * shell, some by deleting lines at computed offsets. A rule an agent drops, a transcript shows it dropping, belongs in
+ * a mechanism, not a sentence. A call the guard cannot read passes, so a broken input never blocks the work.
  */
 import { readFileSync } from 'node:fs';
 import { isMain } from './fsx.mjs';

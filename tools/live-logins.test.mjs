@@ -1,5 +1,5 @@
 /**
- * LIVELOGIN1: the live-logins census (no test starts a real sign-in or runs a real agent binary).
+ * The live-logins census (no test starts a real sign-in or runs a real agent binary).
  *
  *   node --test tools/live-logins.test.mjs
  *

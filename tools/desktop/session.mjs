@@ -27,9 +27,9 @@ export const targetExe = () => readRun()?.exe ?? assemblyExe(DESKTOP_PROJECT);
 /**
  * The running applications this loop started: the one its record names by pid, when it names one.
  *
- * 🔴 By pid, not by path (D93). After `run --install`, the record names the install's application,
- * and the person's own start of that install runs from the same path: a kill by path closed the
- * window they had opened themselves. A record from before pids were kept keeps the path's answer.
+ * 🔴 By pid, not by path. After `run --install`, the record names the install's application,
+ * and the person's own start of that install runs from the same path: a kill by path closes the
+ * window they opened themselves. A record without a pid keeps the path's answer.
  */
 export function startedHere(live, record) {
   return Number.isInteger(record?.pid) ? live.filter((pid) => pid === record.pid) : live;
@@ -63,7 +63,7 @@ export function pruneShots() {
 }
 
 /**
- * Take a `--window <name>` off an argument list, and say which window was asked for (SURF8).
+ * Take a `--window <name>` off an argument list, and say which window is asked for.
  *
  * One flag for both instruments, deliberately: `eval` and `click` reach a *page* over CDP and `shot`
  * photographs a *window* through the OS, and a tool that needed a URL parameter for one and a

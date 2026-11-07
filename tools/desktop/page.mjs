@@ -2,7 +2,7 @@ import { applicationsIn, browsersIn } from '../processes.mjs';
 import { startedHere } from './session.mjs';
 
 /**
- * The shell page's origin on the Chromium it ships (D92) — the shell's `DesktopPage.VirtualHost`,
+ * The shell page's origin on the Chromium it ships — the shell's `DesktopPage.VirtualHost`,
  * spelled here too so the instruments can tell the shell from any other page (`twins.md`).
  */
 export const SHELL_ORIGIN = 'https://daoris.localhost';
@@ -10,9 +10,9 @@ export const SHELL_ORIGIN = 'https://daoris.localhost';
 /**
  * Whether a page is THIS run's shell, from what the page says of itself (`PAGE_IDENTITY`).
  *
- * On Chromium (CHR2) the page is on the app's own origin, carries Shenora's Chromium mark, and names
- * the host it was told to reach. That host is how a run is told apart, because every shell's page has
- * the same origin. A WebView2 page is no shell of Daoris's since D93.
+ * On Chromium the page is on the app's own origin, carries Shenora's Chromium mark, and names
+ * the host it is told to reach. That host is how a run is told apart, because every shell's page has
+ * the same origin. A WebView2 page is no shell of Daoris's.
  */
 export function isShell(page, serviceUrl) {
   if (!page?.chromium) return false;
@@ -22,13 +22,13 @@ export function isShell(page, serviceUrl) {
   return page.origin === SHELL_ORIGIN && (!service || told === service);
 }
 
-/** What `isShell` reads, evaluated in the page — here and by the deployment gate (DEPLOY5). */
+/** What `isShell` reads, evaluated in the page — here and by the deployment gate. */
 export const PAGE_IDENTITY ='({ webview: !!window.chrome?.webview, chromium: !!window.__shenora_chromium, '
   + "origin: location.origin, host: new URLSearchParams(location.search).get('host') })";
 
 /**
  * Where the page remembers the viewer's theme choice: `theme.ts`'s `THEME_KEY`, spelled here too
- * (`twins.md`), because `shot --theme` sets the choice for a capture and puts it back (LOOK1).
+ * (`twins.md`), because `shot --theme` sets the choice for a capture and puts it back.
  */
 export const THEME_KEY = 'daoris.theme';
 
@@ -48,7 +48,7 @@ export const PAGE_THEME = '(() => { const forced = document.documentElement.data
  *
  * The page hears a write through `followStoredTheme`, which the browser calls only in the OTHER
  * documents of the origin. So this document is told as they are, by the same event, and nothing new is
- * reached into the page: it follows the write as it follows one made in a second window (WINDOW1).
+ * reached into the page: it follows the write as it follows one made in a second window.
  */
 export function themeChoiceExpression(value) {
   return `(() => { const key = ${JSON.stringify(THEME_KEY)}; let prior;
@@ -61,14 +61,14 @@ export function themeChoiceExpression(value) {
 }
 
 /**
- * Do `work` with the page in `theme`, and leave the viewer's choice as it was (LOOK1).
+ * Do `work` with the page in `theme`, and leave the viewer's choice unchanged.
  *
  * The system's scheme is emulated first, which is all a viewer on System needs, and it ends with the
  * debug session. A viewer who chose light or dark overrides the emulation, and `--theme light`
- * photographed their dark window with nothing said. So where the emulation does not take, the viewer's
+ * would photograph their dark window with nothing said. So where the emulation does not take, the viewer's
  * choice is set for the capture through the page's own store, and put back after it, whether the
  * capture worked or not. A page that still is not in the theme is refused rather than photographed, and
- * a choice that could not be put back fails the shot and names what it was.
+ * a choice that cannot be put back fails the shot and names the choice.
  */
 export async function withPageTheme(cdp, theme, work, { settle = 700 } = {}) {
   await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
@@ -117,18 +117,18 @@ export async function withPageTheme(cdp, theme, work, { settle = 700 } = {}) {
 
 /** What the shell captions that window — how the OS-level capture finds it. */
 function windowCaption(window) {
-  // Daoris's own browser (D85) is the engine's own window, captioned `<page> - Chromium`.
+  // Daoris's own browser is the engine's own window, captioned `<page> - Chromium`.
   if (window === 'browser') return 'Chromium';
   return window === 'monitor' ? 'Monitor' : window;
 }
 
 /**
  * Which process `shot` photographs, and the caption it looks for among that process's windows
- * (SHOTPICK1), from the `pid|command line` rows of every process running from the shell's executable.
+ * from the `pid|command line` rows of every process running from the shell's executable.
  *
- * Since D99 the browser runs from that executable too, with windows of its own, so the capture script's
- * "the first process from this path with a window" was Windows' choice between two processes. On an
- * install it was the browser, photographed in the application's place. So the choice is made here, by
+ * The browser runs from that executable too, with windows of its own, so the capture script's
+ * "the first process from this path with a window" is Windows' choice between two processes, and on an
+ * install can be the browser, photographed in the application's place. So the choice is made here, by
  * command line, as `eval` chooses the application's page, and the script is handed the id:
  * `--window browser` is the browser; every other window, the main one, the monitor or a detached
  * session, is the application's own. Among applications from one path (a scratch run and a `--real` one

@@ -15,7 +15,7 @@ import { endOrphans } from './processes.mjs';
 
 /**
  * Every run leaves a transcript under `_fixtures/rehearsal-logs/`, outside anything a passing run
- * deletes, so a failure is evidence rather than a memory (REH1). Console output is mirrored into it;
+ * deletes, so a failure is evidence rather than a memory. Console output is mirrored into it;
  * `beforeExit` runs first on the way out — the family rehearsal stops its hosts there.
  */
 export function openTranscript(repoRoot, name, { beforeExit } = {}) {
@@ -38,17 +38,17 @@ export function openTranscript(repoRoot, name, { beforeExit } = {}) {
 }
 
 /**
- * Where a run keeps what its failed checks read (DEV3b): a folder of its own beside the transcripts, which no run deletes,
+ * Where a run keeps what its failed checks read: a folder of its own beside the transcripts, which no run deletes,
  * named for the rehearsal and the moment it started. The rehearsal's scratch is wiped at every start, so evidence kept
- * there went with the rerun that followed the failure, and the next sighting was a quote.
+ * there would go with the rerun that follows the failure.
  */
 export function evidenceFolder(repoRoot, name, started = new Date()) {
   return join(repoRoot, '_fixtures', 'rehearsal-logs', `${name}-${started.toISOString().replace(/[:.]/g, '-')}`);
 }
 
 /**
- * Where a rehearsal builds what the git half builds (REHLANE1): a folder of its own under `_fixtures/rehearsal-builds/`.
- * The family and deployment rehearsals run beside the driver's git half (REHLANE2b the deployment's), which builds into and
+ * Where a rehearsal builds what the git half builds: a folder of its own under `_fixtures/rehearsal-builds/`.
+ * The family and deployment rehearsals run beside the driver's git half, which builds into and
  * runs from the desktop projects' own `bin/` and `obj/`; two builds of one project there fight over them, and a build can
  * find a file a running test holds. Outside the rehearsal's scratch, which each run wipes, so the next run's build is
  * incremental.
@@ -56,22 +56,22 @@ export function evidenceFolder(repoRoot, name, started = new Date()) {
 export const ownBuildRoot = (repoRoot, name) => join(repoRoot, '_fixtures', 'rehearsal-builds', name);
 
 /**
- * The `dotnet build` of `project` into a rehearsal's own output (REHLANE1). `--artifacts-path` is the SDK's own option: every
+ * The `dotnet build` of `project` into a rehearsal's own output. `--artifacts-path` is the SDK's own option: every
  * project the build reaches, the referenced ones too, puts its `obj/` and `bin/` under the root, and none under its folder.
  */
 export const ownBuild = (project, root) => `dotnet build "${project}" --artifacts-path "${root}"`;
 
 /**
- * A file `ownBuild` wrote for `project` (REHLANE1): the SDK's artifacts layout, `bin/<the project's name>/<configuration, lower
+ * A file `ownBuild` writes for `project`: the SDK's artifacts layout, `bin/<the project's name>/<configuration, lower
  * case>/`, with no framework folder for a project of one framework. Measured on the driver host with `-getProperty:TargetPath`.
  */
 export const ownBuilt = (root, project, file) => join(root, 'bin', basename(project), 'debug', file);
 
 /**
- * Build servers of a rehearsal's own (REHLANE2b), as a run beside's (`BESIDE_ENVIRONMENT` in `tools/merge-branch.mjs`, whose
+ * Build servers of a rehearsal's own, as a run beside's (`BESIDE_ENVIRONMENT` in `tools/merge-branch.mjs`, whose
  * twin a merge test holds this to): no MSBuild node outlives the build that started it, none is joined that a build before it
  * left, and no MSBuild or compiler server serves it. So a build beside the Process lane stops no other build's servers and
- * borrows none of their environment, which is what a shutdown before the deployment rehearsal once guarded against.
+ * borrows none of their environment.
  */
 export const OWN_BUILD_SERVERS = Object.freeze({ MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
 
@@ -93,7 +93,7 @@ export function checkFolderName(label) {
 }
 
 /**
- * Keep what a failed check read (DEV3b): its print as `print.txt` and a copy of each file it names, under `root`, in a
+ * Keep what a failed check read: its print as `print.txt` and a copy of each file it names, under `root`, in a
  * folder named for the check, a second failure of the same check beside the first. A file that is not there is listed in
  * `missing.txt`, and the checker says a folder it could not write on the FAIL line: keeping evidence fails no check.
  *
@@ -129,7 +129,7 @@ export function keepEvidence(root, label, { print = '', files = [] } = {}) {
 /**
  * The check/section vocabulary, with the counters the final summary reads.
  *
- * With `keep` (DEV3b, `evidenceFolder`), a failed check that hands `evidence` (`{ print, files }`, or a function answering
+ * With `keep` (`evidenceFolder`), a failed check that hands `evidence` (`{ print, files }`, or a function answering
  * it, asked only on a failure) keeps it there, and its FAIL line names the folder.
  */
 export function makeChecker({ keep } = {}) {
@@ -164,11 +164,11 @@ export function makeChecker({ keep } = {}) {
  * timeout kills the child and returns its partial output, so a hung child is a captured FAIL rather
  * than a frozen gate.
  *
- * 🔴 The kill ends what the command started too (FAMILYFAIL1). The command runs in a shell, as `execSync` ran it, and on
- * Windows the timeout's kill reached the shell alone: on a starved machine a drive outlived its bound, its `dotnet` ran on
- * holding the home's lease, and the 22 checks after it failed on what it went on to do. So the shell's id is kept
- * (`spawnSync` answers it, `execSync` did not) and whatever the shell left running is ended (`endOrphans`). On success the
- * answer is standard output alone, on a failure both streams, as before.
+ * 🔴 The kill ends what the command started too. The command runs in a shell, and on
+ * Windows the timeout's kill reaches the shell alone: on a starved machine a drive outlives its bound, its `dotnet` runs on
+ * holding the home's lease, and the checks after it fail on what it goes on to do. So the shell's id is kept
+ * (`spawnSync` answers it) and whatever the shell left running is ended (`endOrphans`). On success the
+ * answer is standard output alone, on a failure both streams.
  */
 export function capture(command, cwd, { env = {}, timeout = 0, input } = {}) {
   const started = Date.now();
@@ -177,7 +177,7 @@ export function capture(command, cwd, { env = {}, timeout = 0, input } = {}) {
     encoding: 'utf8',
     shell: true,
     windowsHide: true,
-    // stdin stays closed unless a check hands the command something to read (`agent key`, AGT3).
+    // stdin stays closed unless a check hands the command something to read (`agent key`).
     stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
     ...(input === undefined ? {} : { input }),
     env: { ...process.env, ...env },
@@ -195,7 +195,7 @@ export function capture(command, cwd, { env = {}, timeout = 0, input } = {}) {
 
 /**
  * Ask `ready` every `every` ms until it answers something truthy, `within` ms have passed, or `settled` settles first
- * (DEV3d). Bounded by the clock rather than by a count of asks, because under load each ask is slow and a count ran out
+ * Bounded by the clock rather than by a count of asks, because under load each ask is slow and a count runs out
  * before a late session had said what the phase waited for. An ask that throws (a host refusing while it restarts) is not
  * ready. Each ask is awaited whole, so a slow one can carry the wait past `within` by its own length.
  *
@@ -224,7 +224,7 @@ export async function waitFor(ready, { within, every = 250, settled } = {}) {
 }
 
 /**
- * Restart a host only between the requests of a session that talks to it (DEV3d): `quiet` is asked, by `waitFor`, until it
+ * Restart a host only between the requests of a session that talks to it: `quiet` is asked, by `waitFor`, until it
  * says no request of the session's is in flight, and then the host is stopped, `gap` ms pass and it is started again.
  * A restart cuts a request in flight off at the session's end, which then fails as a crash, not as anything the phase means
  * to prove. `quiet` must stay true for as long as the restart takes: a session that lingers between requests is how.
@@ -243,7 +243,7 @@ export async function restartBetweenRequests({ quiet, stop, start, within, every
 }
 
 /**
- * The band a run takes its hosts' ports from (REHEARSEPORT1): below the ephemeral range Linux and Windows hand out by default
+ * The band a run takes its hosts' ports from: below the ephemeral range Linux and Windows hand out by default
  * (32768–60999, 49152–65535), so a connection this run makes is not given one of its ports between their pick and a host's
  * start, and clear of the dev loop's fixed ports (5188, 9333) and the web gate's (5196).
  */
@@ -253,9 +253,9 @@ export const PORT_BAND = { from: 20000, to: 32000 };
 const PORT_TRIES = 1000;
 
 /**
- * Free ports for one run, one per name, none twice (REHEARSEPORT1). The family rehearsal's hosts sat on fixed ports, and a
- * second run beside the first (the merge gate's beside a worktree's) found the first run's host answering there, read its
- * registry and failed ten checks. Taken by walking the band from a random port, so two runs started together take ports
+ * Free ports for one run, one per name, none twice. Fixed ports would let a
+ * second run beside the first (the merge gate's beside a worktree's) find the first run's host answering there and read its
+ * registry. Taken by walking the band from a random port, so two runs started together take ports
  * apart; a port another holds is walked past. A port is free at its pick, not reserved: `portRefusal` asks again before a
  * host starts on it.
  *
@@ -280,10 +280,10 @@ export async function takePorts(names, { start, band = PORT_BAND, isFree = portI
 }
 
 /**
- * Who holds `port`, as the system names its listener: `pid <id> <name> <command line>`, or a sentence saying it was not
+ * Who holds `port`, as the system names its listener: `pid <id> <name> <command line>`, or a sentence saying it is not
  * named. Asked only for a refusal, so its cost (a PowerShell on Windows) is paid when something is already wrong, and it
- * is given two minutes: on a fully loaded machine the PowerShell and its two CIM queries ran past thirty seconds and the
- * refusal named nobody (FLAKE1, 2026-10-28), when naming the holder is the refusal's whole use.
+ * is given two minutes: on a fully loaded machine the PowerShell and its two CIM queries can run past thirty seconds and the
+ * refusal would name nobody, when naming the holder is the refusal's whole use.
  */
 export function portHolder(port) {
   const ran = process.platform === 'win32'
@@ -306,7 +306,7 @@ export function portHolder(port) {
 }
 
 /**
- * Before a host starts on `port` (REHEARSEPORT1): null once the port is free, waited for up to `within` ms because a host
+ * Before a host starts on `port`: null once the port is free, waited for up to `within` ms because a host
  * this run stopped lets its port go a beat after it is told; otherwise the refusal, naming who holds it. A host started on a
  * held port fails to bind and ends, and the readiness probe reads the holder's answer as its own.
  *
@@ -349,9 +349,9 @@ const GIT_MAKES = new Set(['init', 'clone']);
 const GIT_ELSEWHERE = /^(-C|--git-dir|--work-tree)(=|$)/;
 
 /**
- * Why a rehearsal must not run `command` in `cwd`, or null when it may (REHEARSEGIT1). git walks UP from a folder that is not
- * a repository and answers for whichever one encloses it: the family rehearsal's fallback to its scratch ran `git add -A` and
- * `git commit` there, and committed a worktree's uncommitted work as "Family Rehearsal". So a git command runs only in a
+ * Why a rehearsal must not run `command` in `cwd`, or null when it may. git walks UP from a folder that is not
+ * a repository and answers for whichever one encloses it: `git add -A` and `git commit` run there would commit a
+ * worktree's uncommitted work as "Family Rehearsal". So a git command runs only in a
  * folder that is the top of a working tree of its own, as `rev-parse --show-toplevel` says (the driver's trees ask the same,
  * `SessionTrees.OpenAsync`), or a bare repository's own folder; `init` and `clone` make one and are not asked. With `within`,
  * the folder must also be inside it: a run makes its repositories in its scratch, and a checkout's own root is the top of
@@ -414,8 +414,8 @@ export function rehearsalRun({ within }) {
 }
 
 /**
- * A stub's commit, as source each stub carries (REHEARSEGIT1): `commitHere(author, message)` stages everything and commits in
- * the folder the stub was started in, and only where that folder is the top of a repository of its own; anywhere else it
+ * A stub's commit, as source each stub carries: `commitHere(author, message)` stages everything and commits in
+ * the folder the stub starts in, and only where that folder is the top of a repository of its own; anywhere else it
  * throws, naming the repository git would have committed in. The driver starts a session only in a tree it proved is one, so
  * this never refuses a session's work: it is there for a stub started anywhere else. Self-contained: it imports what it uses.
  */
@@ -445,40 +445,40 @@ const commitHere = async (author, message) => {
 
 /**
  * The ACP stub, as source for a rehearsal to write into its scratch and name in `commands['acp-stub']`:
- * the same fake-session trick as the family rehearsal's pipe-door stub, one door over (D46 §8). It
+ * the same fake-session trick as the family rehearsal's pipe-door stub, one door over. It
  * speaks JSON-RPC on stdout and nothing else — every human word goes to stderr, because stdout belongs
  * to the protocol — and it does REAL work through the same HTTP door its pipe-door twin uses. No model,
  * no account, no credential anywhere in it.
  *
  * Given a quest (`DAORIS_QUEST_ID`), a prompt is that quest's work; given none, it is a conversation,
- * each prompt answered with what was heard, open until its input closes. A quest titled as a set-up
- * (LAYOUT7a) is done as its body says: the doctrine tool run by its bare name from the PATH the driver
+ * each prompt answered with what it heard, open until its input closes. A quest titled as a set-up
+ * is done as its body says: the doctrine tool run by its bare name from the PATH the driver
  * handed the session, each verb said on stderr with whether the body asks for it, then a commit.
  *
- * It resumes a conversation (ANSWER1b, D131): `initialize` advertises `session/resume`, and a resumed
+ * It resumes a conversation: `initialize` advertises `session/resume`, and a resumed
  * conversation's next prompt is the person's answer. A quest titled to ask the person first asks which
- * port and ends its turn holding the quest; resumed, it serves the report on the port it was told. Any
- * other quest's conversation, resumed with words said after it ended (MSG1e3), says what it heard and
+ * port and ends its turn holding the quest; resumed, it serves the report on the port it is told. Any
+ * other quest's conversation, resumed with words said after it ended, says what it heard and
  * ends its turn a few seconds later, touching nothing. The stub keeps no history, so it resumes
  * whichever conversation it is asked, and says which on stderr.
  *
- * A quest titled as Daoris titles a set-up step (REVIEWENV1h, D154) says what it showed through the
+ * A quest titled as Daoris titles a set-up step says what it showed through the
  * connector the protocol handed it, `review_ready` over MCP on stdio, and closes done with no commit of
  * its own; resumed with the person's *not yet*, it corrects the work in its tree and says a new set-up.
  *
- * A brainstorm's turn (BRAINSTORM1a3, D176 points 3 and 4), started in a brainstorm's room with its variables and no quest, is
+ * A brainstorm's turn, started in a brainstorm's room with its variables and no quest, is
  * answered as a maker answers one: through the one result tool its connector offers, never by writing the answer file. A
- * generator gives one proposal on the scales, resting on the packet's first source; a synthesis puts every anonymous id it was
- * handed in one group, ranked first. It commits nothing and asks the service nothing.
+ * generator gives one proposal on the scales, resting on the packet's first source; a synthesis puts every anonymous id it
+ * gets in one group, ranked first. It commits nothing and asks the service nothing.
  *
- * Here rather than inside the family rehearsal since DEPLOY5, whose deployment gate opens a
+ * Here rather than inside the family rehearsal, because the deployment gate opens a
  * conversation on it in the installed shell: one copy, for the reason this module exists at all.
  *
- * Every commit it makes is `STUB_COMMIT`'s (REHEARSEGIT1): in the folder it was started in, and only where that is the top of
+ * Every commit it makes is `STUB_COMMIT`'s: in the folder it starts in, and only where that is the top of
  * a repository of its own. A turn refused that way fails, as any turn whose work throws does.
  *
- * With `DAORIS_STUB_QUEUEING=1` in its environment it declares `promptQueueing` at `initialize` (COAGENT1b; the co-agent design
- * §8.1), as claude-agent-acp does; without it, it declares nothing of the kind, as before.
+ * With `DAORIS_STUB_QUEUEING=1` in its environment it declares `promptQueueing` at `initialize` (the co-agent design
+ * §8.1), as claude-agent-acp does; without it, it declares nothing of the kind.
  */
 export const ACP_STUB_AGENT = `
 import { execSync, spawn } from 'node:child_process';
@@ -927,7 +927,7 @@ lines.on('close', () => {
 `;
 
 /**
- * The turn-end stand-in, shaped on codex-acp (COAGENT1b; the co-agent design §8.1), as source for a rehearsal or a test to write into
+ * The turn-end stand-in, shaped on codex-acp (the co-agent design §8.1), as source for a rehearsal or a test to write into
  * its scratch and name as an agent's command. It speaks ACP on stdout and nothing else, as `ACP_STUB_AGENT` does, and differs from it
  * where codex-acp differs from claude-agent-acp, so a test reads a door that takes words only at its turn's end:
  *
@@ -935,12 +935,12 @@ lines.on('close', () => {
  *   never uses: a `_session/steering` asked of it is answered, said on stderr, and changes nothing;
  * - `session/new` offers the modes `read-only`, `agent` and `agent-full-access`, starting in `read-only`, and `session/set_mode`
  *   moves it;
- * - each prompt is one turn that writes one file in the folder it was started in, `stand-in-<n>.md` holding the prompt's first line.
+ * - each prompt is one turn that writes one file in the folder it starts in, `stand-in-<n>.md` holding the prompt's first line.
  *   In `read-only` it asks `session/request_permission` before the write, and writes only where the answer allows it;
- * - its answer is its last words, and its turn's result carries no counts (codex-acp reports none, M4).
+ * - its answer is its last words, and its turn's result carries no counts (codex-acp reports none).
  *
  * It commits nothing and asks no service: a partner's work is its files, which Daoris keeps (the design §7.9). No model, no account and
- * no credential anywhere in it. Its input closed is its ending, never `process.exit` (STUB1).
+ * no credential anywhere in it. Its input closed is its ending, never `process.exit`.
  */
 export const ACP_TURN_END_AGENT = `
 import { writeFileSync } from 'node:fs';
@@ -1061,7 +1061,7 @@ lines.on('close', () => {
 `;
 
 /**
- * A second maker, declared by a file (COAGENT1b; the co-agent design §8.1): a plugin manifest whose one harness, `stub-b`, names
+ * A second maker, declared by a file (the co-agent design §8.1): a plugin manifest whose one harness, `stub-b`, names
  * `maker: "Stub Two"` and `product: "Stub B"` over the script at `script`, as the family rehearsal declares its `gate-agent`. A
  * rehearsal writes it as `plugin.json` under its scratch home's `plugins/rehearsal.stub-two/`, so a partner of another maker than the
  * kit's own stub joins with no Daoris code. The measurements rows that admit it as a partner are the tests' stand-in rows alone.

@@ -1,8 +1,7 @@
 /**
- * What the real-run proofs share — `acp2-proof`, `int4f-proof` and `perm2-proof` (REV3 CLEAN1). Each
- * carried its own copy of the readiness report, the scratch host, the adoption loop and the fixtures,
- * about 150 lines apiece, and each lesson in them (confine the host, unref the child, commit the
- * adoption) had been written down three times. What each proof PROVES stays in its own script.
+ * What the real-run proofs share — `acp2-proof`, `int4f-proof` and `perm2-proof`: the readiness
+ * report, the scratch host, the adoption loop and the fixtures, with the lessons in them (confine the
+ * host, unref the child, commit the adoption). What each proof PROVES stays in its own script.
  *
  * A proof is not a gate: it spends a login, and it is run by a person on a machine set up for it.
  * Without `--drive` it answers only what the machine has and what is left to do.
@@ -27,8 +26,8 @@ const driverDll = join(
 const driverExe = join(dirname(driverDll), process.platform === 'win32' ? 'daoris-driver.exe' : 'daoris-driver');
 
 /**
- * The program this machine would actually run for an agent (TOOL2/D57 rule 4), asked of this checkout's driver
- * (`daoris agent which <agent> --json`, PUSH1f2e): the command `driver.json` names, else its pin, else `PATH`'s, so a proof
+ * The program this machine would actually run for an agent, asked of this checkout's driver
+ * (`daoris agent which <agent> --json`): the command `driver.json` names, else its pin, else `PATH`'s, so a proof
  * cannot disagree with a start about what would run. `{ agent, run, managed, pinned, missing }`, or null where the driver is not
  * built or refuses (no home named, a wiring file that does not read), which the readiness says on its own lines; its refusal is
  * written to the error stream.
@@ -62,7 +61,7 @@ export const PACKAGE = '@agentclientprotocol/claude-agent-acp';
  * host on `port`, which is its own so that two proofs can share a machine.
  *
  * @param name the script's short name (`acp2`): the transcript, the scratch folder, the `--drive` hint.
- * @param label the item it proves (`ACP2`), as its scratch repositories and commits name it.
+ * @param label the name its scratch repositories and commits carry.
  */
 export function openProof(name, { label, port }) {
   const scratch = join(repoRoot, '_fixtures', `${name}-proof`);
@@ -196,8 +195,8 @@ export function openProof(name, { label, port }) {
    * Say what a repository is, which `connect` requires before it will register one.
    *
    * 🔴 Not a formality, and the refusal says so: *"that declaration is how siblings know whether a
-   * quest is yours"*. A fixture that skipped it was refused by name — the system defending its own
-   * premise against a script that had not read it.
+   * quest is yours"*. A fixture that skips it is refused by name — the system defending its own
+   * premise against a script that has not read it.
    */
   const declare = (where, domain) => {
     const manifest = join(where, 'daoris.json');
@@ -218,9 +217,9 @@ export function openProof(name, { label, port }) {
    */
   const startHost = async () => {
     // 🔴 CONFINE THE HOST TO THIS SCRATCH FAMILY. Without `DAORIS_KNOWLEDGE_ROOT` the host falls back
-    // to a parent-of-CWD heuristic and indexes every repository beside this one — measured: a run
-    // without it read the developer's neighbouring projects into its registry. Nothing was written to
-    // them, and nothing should have been read either. `DAORIS_KNOWLEDGE_DB` keeps the index here too,
+    // to a parent-of-CWD heuristic and indexes every repository beside this one — a run
+    // without it reads the developer's neighbouring projects into its registry, which nothing
+    // should do. `DAORIS_KNOWLEDGE_DB` keeps the index here too,
     // so a scratch run never touches the machine's real one.
     const env = {
       DAORIS_SERVICE_URL: base,
@@ -271,8 +270,8 @@ export function openProof(name, { label, port }) {
       const connected = capture(`node "${cliBin}" repository connect`, where, { env });
       // 🔴 COMMIT THE ADOPTION. `init` and `sync` leave `daoris.json`, `daoris.lock` and `.claude/`
       // uncommitted, and the driver refuses a tree with work in flight — *"somebody's work in flight;
-      // the driver holds rather than entangling a session with it"*. It was right and the fixture was
-      // wrong: a repository is adopted in a commit, not left dirty.
+      // the driver holds rather than entangling a session with it"*.
+      // A repository is adopted in a commit, not left dirty.
       execGit(['add', '-A'], { cwd: where, encoding: 'utf8' });
       execGit(['commit', '-qm', 'adopt daoris'], { cwd: where, encoding: 'utf8' });
       const ok = adopted.code === 0 && connected.code === 0;
@@ -283,7 +282,7 @@ export function openProof(name, { label, port }) {
   };
 
   /**
-   * Write `config` as the driver's `driver.json` in the scratch folder, the run's own home (ONEWAY1c-i), so the proposals, the rules
+   * Write `config` as the driver's `driver.json` in the scratch folder, the run's own home, so the proposals, the rules
    * and the transcripts land there too, and run it until idle. This is the step that spends the login, and it says so before it
    * starts.
    */

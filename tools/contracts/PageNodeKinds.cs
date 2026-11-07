@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.ContractsGen;
 
 /// <summary>
-/// The page's list of the node kinds, written from the kit the driver registers (<see cref="NodeKit"/>, D247) so the chart, the step picker
+/// The page's list of the node kinds, written from the kit the driver registers (<see cref="NodeKit"/>) so the chart, the step picker
 /// and the run titles hold no second list: each built-in's id, the picker's group, how the chart draws it, the step a run draws it as, how it
 /// is reached and the outcomes it routes on, in the kit's order. Written as a JSON array, so the names check reads it with no TypeScript.
 /// </summary>

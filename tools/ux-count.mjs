@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The screen counter (UX6a; docs/2026-10-04-ux6-redesign.md §9.1–§9.3, D150 point 9). One function counts a
+ * The screen counter (docs/2026-10-04-ux6-redesign.md §9.1–§9.3). One function counts a
  * screen in its regions, the view's list pane and its main area, and the frame apart, and it runs in two places
  * from one source:
  *
@@ -475,8 +475,8 @@ export function writeWindowScript({ out = DEFAULT_SCRIPT, terms }, renameOptions
 }
 
 /**
- * Eval's answer, as the shell between wrote it: UTF-16 or UTF-8, a byte-order mark or none, and npm's banner above
- * the JSON where `--silent` was not said. Throws, with the file's first line, where it holds no answer.
+ * Eval's answer, as the shell between writes it: UTF-16 or UTF-8, a byte-order mark or none, and npm's banner above
+ * the JSON where `--silent` is not said. Throws, with the file's first line, where it holds no answer.
  */
 export function readAnswer(bytes) {
   const text = bytes[0] === 0xff && bytes[1] === 0xfe ? bytes.subarray(2).toString('utf16le')

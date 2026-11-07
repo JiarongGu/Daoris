@@ -1,6 +1,6 @@
 /**
  * The checkout hooks write the ignored `docs/index/` where a branch's work tree moves, and the notes driver merges the
- * decisions (NOTEBREAK1).
+ * decisions.
  *
  *   node --test tools/index-hook.test.mjs
  *
@@ -118,7 +118,7 @@ test('a merge into a branch writes the index', () => {
   assert.ok(existsSync(indexOf(dir)));
 });
 
-// NOTEBREAK1: a union merge coalesces the blank line two branches each add before their note.
+// A union merge coalesces the blank line two branches each add before their note.
 const noteRepository = () => {
   const dir = repository();
   mkdirSync(join(dir, 'docs', 'decisions'), { recursive: true });

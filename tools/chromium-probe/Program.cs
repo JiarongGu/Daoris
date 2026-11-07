@@ -2,7 +2,7 @@ using System.Text.Json;
 using CefSharp;
 using CefSharp.WinForms;
 
-// CHR1's probe host (docs/2026-09-28-chromium-host-design.md §5). One window embedding Chromium
+// The probe host (docs/2026-09-28-chromium-host-design.md §5). One window embedding Chromium
 // through CefSharp, in the two roles a Daoris window would give it:
 //
 //   --page <url>     the APP's page, in the global request context (<root>/page) — the one that would
@@ -10,7 +10,7 @@ using CefSharp.WinForms;
 //   --browser <url>  the in-app browser, in a request context of its own (<root>/browser).
 //   --browser-global the browser in the GLOBAL request context instead (a process with no page).
 //
-//   --root <dir>     the root cache path, under _fixtures (D63's rule, in miniature)
+//   --root <dir>     the root cache path, under _fixtures (the home's rule, in miniature)
 //   --port <n>       a remote debugging port; there is no per-context one, which is what is measured
 //   --persist        keep session cookies across a restart, the engine's own setting
 //   --style chrome   Chrome-styled browsers instead of CefSharp's default Alloy
@@ -123,7 +123,7 @@ sealed class Spans(string role, Log log) : ILifeSpanHandler
     {
         log.Write(role, "before-popup", new { targetUrl, disposition = targetDisposition.ToString(), userGesture });
         newBrowser = null!;
-        return false; // CEF makes its own window: what is measured is only that the app was asked
+        return false; // CEF makes its own window: what is measured is only that the app is asked
     }
 
     public void OnAfterCreated(IWebBrowser chromiumWebBrowser, IBrowser browser) =>

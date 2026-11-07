@@ -1,5 +1,5 @@
 /**
- * The fabric probe's launchers (FABRIC-PROBE1; the C0 audit §2, `docs/2026-10-16-fabric-contract-audit.md`).
+ * The fabric probe's launchers (`docs/2026-10-16-fabric-contract-audit.md`).
  *
  *   node tools/fabric-probe/launch.mjs claude [--scenario child|family|kill] [--run <name>] [--model <id>]
  *   node tools/fabric-probe/launch.mjs codex --codex <codex executable> [--scenario …] [--model <id>] [--effort low]
@@ -19,7 +19,7 @@
  * account's Daoris home, never an install. The harness's own sign-in is its own: Claude Code's account, and Codex's
  * `CODEX_HOME` where the person set one, else its default.
  *
- * What a run leaves in the harness's own home (D175): Claude Code keeps a project folder for each probe repository under the
+ * What a run leaves in the harness's own home: Claude Code keeps a project folder for each probe repository under the
  * account's `~/.claude/projects/`, named from the repository's path, so every one carries `fixtures-fabric-probe-<run>-repo`;
  * Codex keeps its sessions under its `CODEX_HOME`. The kit removes neither: that is the person's to say.
  *
@@ -32,7 +32,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execGit, isMain } from '../fsx.mjs';
-// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+// Every home place is asked of the home layout's table, never joined here.
 import { homeEntry } from '../../src/Daoris.Cli/src/platform/home.ts';
 import { receipt, receiptText } from './receipt.mjs';
 

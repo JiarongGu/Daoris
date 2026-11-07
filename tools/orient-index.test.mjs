@@ -1,5 +1,5 @@
 /**
- * ORIENT1h: the decisions digest's half of a twin with the service's `DecisionNotes` (D134's ORIENT1g note).
+ * The decisions digest's half of a twin with the service's `DecisionNotes`.
  *
  *   node --test tools/orient-index.test.mjs
  *
@@ -7,8 +7,7 @@
  * and label a decision's dated notes with code of their own. Both are held to one table,
  * `orient-index-fixtures/decision-notes.json`, row for row: each decision's lines, the lines of its own entry and
  * each note's row, then each label line and the label it opens. The service's `DecisionNotesTests` reads the same
- * file. Before ORIENT1h the service was held to rows this side wrote once, so a note's form changed here alone
- * passed every gate.
+ * file, so a note's form cannot change on one side alone.
  *
  * Run by `npm run verify`, which every merge runs, unlike the benches beside it: it takes a fraction of a second,
  * and a twin table no gate reads holds nothing.
@@ -78,11 +77,11 @@ test('the table holds a decision with notes and one without, and a line that is 
 });
 
 // ---------------------------------------------------------------------------------------------------
-// The mark a note carries (KNOWFRESH1a-i): the twin table the service's DecisionNotes is held to, and the gate
+// The mark a note carries: the twin table the service's DecisionNotes is held to, and the gate
 
 const MARKS = JSON.parse(readFileSync(join(here, 'orient-index-fixtures', 'note-marks.json'), 'utf8'));
 
-/** A decision's marks as the table writes them: `D10:19 amended by D121 replacing D10:5`. */
+/** A decision's marks as the table writes them: `D<n>:<line> amended by D<m> replacing D<n>:<line>`. */
 function markRows(id, lines) {
   return readMarks(readDecision(id, lines)).map((mark) => {
     const target = mark.quote === null ? '' : ` replacing ${mark.target === null ? 'none' : `${id}:${mark.target}`}`;

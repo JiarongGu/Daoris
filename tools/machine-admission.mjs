@@ -1,9 +1,9 @@
 /**
- * The machine's heavy-run admission, the queue's side of it (HEAVYQUEUE1, D180's HEAVYRUN1 notes): the merge queue's heavy gates and
+ * The machine's heavy-run admission, the queue's side of it: the merge queue's heavy gates and
  * a driven session's heavy runs take one place each before they start a heavy process, so the machine never runs more of them at
  * once than it admits, and each that waits is told what it waits for.
  *
- * One file in the Daoris home, `locks/admission/admission.json` (the home's `locks` entry, D172), read and written by two twins, this
+ * One file in the Daoris home, `locks/admission/admission.json` (the home's `locks` entry), read and written by two twins, this
  * and the driver's `MachineAdmission.cs`, which share no code. The file is the contract; `machine-admission.json`, the driver tests'
  * fixture, is the table both carry, case for case:
  *
@@ -45,8 +45,8 @@ export const CAPACITY = 'DAORIS_ADMISSION_SLOTS';
 
 /**
  * How many heavy runs the machine admits at once (the twin's `CapacityOf`): `DAORIS_ADMISSION_SLOTS` where it is a whole number
- * from 1 to 64, else one for each seven processors, two at least and six at most. On the 22-processor machine this was built for it
- * is three: a gate beside two others ran as it does alone, and beside six sessions' runs it took twice as long.
+ * from 1 to 64, else one for each seven processors, two at least and six at most. On a 22-processor machine it
+ * is three: a gate beside two others runs as it does alone, and beside six sessions' runs it takes twice as long.
  */
 export function capacityOf(cpus = availableParallelism(), env = process.env) {
   const said = String(env[CAPACITY] ?? '').trim();
@@ -100,7 +100,7 @@ export function readState(file) {
 }
 
 /**
- * The file read strictly, for the whole admission's readings (INTEGRATE1b, design §4.5 *Inconclusive*): both lists of entries that
+ * The file read strictly, for the whole admission's readings (design §4.5 *Inconclusive*): both lists of entries that
  * read, and `unread`, how many holds do not read as an entry. A missing file is empty only where `missing` allows it; one that is
  * missing otherwise, does not read as JSON, is not an object or keeps a list that is not a list throws, since its holds are unknown.
  */
@@ -123,7 +123,7 @@ export function readStrict(file, { missing = false, read = (path) => readFileSyn
 const whoOf = (entry) => `${entry.kind === 'queue' ? 'the merge queue' : entry.session ? `session ${entry.session}` : 'a driven run'}'s ${entry.what}`;
 
 /**
- * What doubts a whole admission at one reading (INTEGRATE1b, design §4.5 *Inconclusive*, F34), over the record pruned and read
+ * What doubts a whole admission at one reading (design §4.5 *Inconclusive*), over the record pruned and read
  * strictly: each of its own places (`ids`) not held, any live hold not its own (a writer of a larger capacity, a run that took a
  * place while the record could not be read), and any hold that does not read as an entry. None is a reading that shows the
  * machine held for it alone. The asks behind it are no doubt: they wait for it.
@@ -174,7 +174,7 @@ export function waitingSentence({ holds, ahead }, { capacity, now = Date.now() }
  * The admission of one process. `take` waits its turn and answers the hold, or null where it has nothing to take (no home, a gate
  * that is not heavy) or `halted` ended the wait; the hold's `release` lets it go and is safe to call twice.
  *
- * `takeWhole` takes every place at once, for a confirm run (INTEGRATE1b): see its own contract below.
+ * `takeWhole` takes every place at once, for a confirm run: see its own contract below.
  *
  * `daorisHome` null admits everything at once. The seams (`alive`, `now`, `sleep`, `say`, and `readText` and `writeText`, which the
  * whole admission alone reads and writes through) are a test's.
@@ -289,7 +289,7 @@ export function createAdmission({
   });
 
   /**
-   * The whole admission, for a confirm run (INTEGRATE1b, design §4.5, C7, F34): every place the machine admits, taken as that many
+   * The whole admission, for a confirm run (design §4.5): every place the machine admits, taken as that many
    * ordinary entries of today's schema, so a writer of any build reads, counts and keeps each one.
    *
    * - **The take of N.** N is `capacityOf`'s count, the one the driver's twin reads. The N entries share one `since`, each its own
@@ -461,7 +461,7 @@ export function createAdmission({
   return { take, takeWhole, file, capacity: size };
 }
 
-/** What `--queue` says of the machine's admission (HEAVYQUEUE1): its places held, whose and for how long, and how many ask. */
+/** What `--queue` says of the machine's admission: its places held, whose and for how long, and how many ask. */
 export function admissionLines(look, now = Date.now()) {
   const who = (entry) => `${entry.kind === 'queue' ? 'the merge queue' : entry.session ? `session ${entry.session}` : 'a driven run'}'s ${entry.what}`;
   const lines = [`machine heavy-run admission (the Daoris home): ${look.holds.length} of ${look.capacity} places held, ${look.waits.length} asking`];

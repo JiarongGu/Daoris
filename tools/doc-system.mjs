@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// DOCSYS1: structural documentation drift. Semantic claims still require a source review.
+// Structural documentation drift. Semantic claims still require a source review.
 // Mirrors doc-duplicates.mjs: pure audit, an import-safe runner, no dependency and no file writes.
 import { readFileSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';

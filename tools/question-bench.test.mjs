@@ -1,10 +1,10 @@
 /**
- * The question bench's helpers (KNOWUSE2): the cases file, the floor's word search, the model tier's prompt and
+ * The question bench's helpers: the cases file, the floor's word search, the model tier's prompt and
  * reply, and the score against the classes a person gave.
  *
  *   node --test tools/question-bench.test.mjs
  *
- * Run by `npm run verify`'s `node --test` list, as `knowledge-bench.test.mjs` is (TOOLTESTCENSUS1). Every case runs on
+ * Run by `npm run verify`'s `node --test` list, as `knowledge-bench.test.mjs` is. Every case runs on
  * the constructed fixture in `question-bench-fixtures/`, and the model tier only against its stub harness: nothing
  * here starts a model or reads an account. Its scratch is a gitignored folder of the repository.
  */

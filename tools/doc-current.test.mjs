@@ -1,10 +1,10 @@
 /**
- * KNOWFRESH1a-iii: the report of present records naming what the code lacks.
+ * The report of present records naming what the code lacks.
  *
  *   node --test tools/doc-current.test.mjs
  *
  * The cases are the design's negative fixtures (`docs/2026-10-30-knowledge-freshness-design.md` §5 iii): each reports as it should
- * be. The landing run on this repository is reviewed by hand and its count pinned nowhere (D220). The one case that reads git
+ * be. The landing run on this repository is reviewed by hand and its count pinned nowhere. The one case that reads git
  * builds a scratch repository in a gitignored folder.
  */
 import assert from 'node:assert/strict';

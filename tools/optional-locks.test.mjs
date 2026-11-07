@@ -1,5 +1,5 @@
 /**
- * REVIEWLOCK1: the optional-locks census (FIX-LOG 2026-10-23, REVIEWLOCK1).
+ * The optional-locks census.
  *
  *   node --test tools/optional-locks.test.mjs
  *
@@ -8,7 +8,7 @@
  * marked one, another command, an indexer, a command only shown to a person and a word in a comment pass. The case after holds the
  * repository's own driver clean.
  *
- * QUEUELOCK1: `checkToolLocks` reads the same of a tools folder's scripts (single, double and template quotes, `diff-index`, a
+ * `checkToolLocks` reads the same of a tools folder's scripts (single, double and template quotes, `diff-index`, a
  * `return`ed array, tests skipped), and the last cases hold the repository's own tools clean and the merge tool and its helpers
  * among those read: each one with its flags taken out is refused.
  */
@@ -113,7 +113,7 @@ test("the repository's own driver asks every status and diff with --no-optional-
   assert.deepEqual(checkOptionalLocks(root).problems, []);
 });
 
-// QUEUELOCK1: the tools' own scripts, where the merge queue's runner asks git of the main checkout.
+// The tools' own scripts, where the merge queue's runner asks git of the main checkout.
 
 /** A fresh `tools/` folder from `{ 'x.mjs': 'source' }`; returns its root. */
 function tools(files) {

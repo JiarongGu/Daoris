@@ -1,10 +1,10 @@
 /**
- * GATE1: a check run while a merge is open judges the commit the merge would make, not the commit before it.
+ * A check run while a merge is open judges the commit the merge would make, not the commit before it.
  *
  *   node --test tools/as-merged.test.mjs
  *
- * Run by the `tool-tests` gate, beside the merge tool's other tests (`src/Daoris.Cli`'s `tooltests` script names it;
- * TOOLTESTCENSUS1: it sat outside every gate and rotted unseen). It is there rather than in `npm run verify` because it
+ * Run by the `tool-tests` gate, beside the merge tool's other tests (`src/Daoris.Cli`'s `tooltests` script names it).
+ * It is there rather than in `npm run verify` because it
  * takes minutes and gates the merge tool, which only reaches `tool-tests`. The cases build scratch repositories in a
  * gitignored folder of this one; one runs the merge tool in its own, and the last builds and runs the devkit's docs
  * gate, so it needs `dotnet`.
@@ -62,7 +62,7 @@ writeFileSync(CHECK, [
 ].join('\n'));
 
 /**
- * A repository with a merge open, TOOL4e's shape: main holds the README and the source from day 1 and another
+ * A repository with a merge open: main holds the README and the source from day 1 and another
  * file from day 2, and a branch changed the source on day 5 (and the README with it, when `readme`). With
  * `conflict`, main changed the same source line, so the merge stops on it.
  */
@@ -96,7 +96,7 @@ function mergeOpen(name, { readme = false, conflict = false, files = {} } = {}) 
   return repo;
 }
 
-/** What git says of a checkout's state: a run through the tool must leave all of it as it was. */
+/** What git says of a checkout's state: a run through the tool must leave all of it unchanged. */
 function state(repo) {
   const gitDir = git(repo, ['rev-parse', '--absolute-git-dir']);
   return {
@@ -118,7 +118,7 @@ test('during a merge, a check of commit dates judges the commit the merge would 
   mkdirSync(killed);
   writeFileSync(join(killed, 'HEAD'), `${before.head}\n`);
 
-  // As the gate ran before GATE1: HEAD is main, where the README and the source last changed on the same day.
+  // Run bare: HEAD is main, where the README and the source last changed on the same day.
   const direct = run(repo, 'node', [CHECK]);
   assert.equal(direct.status, 0, direct.stdout);
   assert.match(direct.stdout, /keeping up: 2026-01-01, src 2026-01-01/);
@@ -227,11 +227,11 @@ test('the merge tool, gating a merge it has not committed, fails the check run t
   write('src/a.txt', 'one\n');
   write('docs-check.mjs', readFileSync(CHECK, 'utf8'));
   for (const file of ['as-merged.mjs', 'fsx.mjs']) write(`tools/${file}`, readFileSync(join(here, file), 'utf8'));
-  // What `fsx.mjs` starts git through (GITSTART4), at the paths it imports them from.
+  // What `fsx.mjs` starts git through, at the paths it imports them from.
   for (const file of ['tools/gitforwindows.ts', 'platform/fsx.ts', 'platform/errors.ts']) {
     write(`src/Daoris.Cli/src/${file}`, readFileSync(join(root, 'src', 'Daoris.Cli', 'src', file), 'utf8'));
   }
-  // The same check twice: as the declared gates ran it before GATE1, and through this tool.
+  // The same check twice: bare, and through this tool.
   write('daoris.gates.json', `${JSON.stringify({
     gates: [{ name: 'bare', run: 'node docs-check.mjs' }, { name: 'universal', run: 'node tools/as-merged.mjs node docs-check.mjs' }],
   }, null, 2)}\n`);
@@ -243,7 +243,7 @@ test('the merge tool, gating a merge it has not committed, fails the check run t
   git(repo, ['commit', '-q', '-m', `two${trailer}`], day(5));
   git(repo, ['checkout', '-q', 'main']);
 
-  // GATESLIM1: a merge blocks on the universal gates alone, so `--gated` runs the fixture's other gate beside them.
+  // A merge blocks on the universal gates alone, so `--gated` runs the fixture's other gate beside them.
   const merged = run(repo, 'node', [join(here, 'merge-branch.mjs'), 'work', '--keep-going', '--no-prune', '--gated']);
   const said = `${merged.stdout}${merged.stderr}`;
   assert.equal(merged.status, 1, said);
@@ -264,7 +264,7 @@ test("this repository's gates that run the devkit's docs gate run it through thi
   const devkitSteps = steps.filter((step) => /Daoris\.Devkit\.Cli -- verify\b/.test(step));
   assert.ok(devkitSteps.length > 0, 'verify no longer runs the devkit');
   for (const step of devkitSteps) assert.match(step, devkitVerify, 'every devkit verify in npm run verify');
-  // GATE1 must not reorder the plan: a devkit check run through it is still a check, so it runs with the fast ones.
+  // Running through this tool must not reorder the plan: a devkit check run through it is still a check, so it runs with the fast ones.
   return import('./merge-branch.mjs').then(({ gateKind }) => {
     assert.equal(gateKind(universal.run), 'check');
     assert.equal(gateKind('node tools/as-merged.mjs npm run verify'), 'suite');
@@ -282,7 +282,7 @@ test("the devkit's own docs gate fails the merge TOOL4e made, bare and through i
   const repo = mergeOpen('devkit', { files: { 'daoris.gates.json': `${JSON.stringify(declaration, null, 2)}\n` } });
   const verify = ['run', '--project', join(root, 'src', 'Daoris.Devkit', 'Daoris.Devkit.Cli'), '--', 'verify', '--universal-only', '--allow-builtins-only'];
 
-  // GATE1b: the devkit judges the open merge itself, and says so. Before it, this run passed on HEAD.
+  // The devkit judges the open merge itself, and says so.
   const direct = run(repo, 'dotnet', verify);
   assert.equal(direct.status, 1, `${direct.stdout}${direct.stderr}`);
   assert.match(direct.stdout, /README\.md last changed 2026-01-01, but src changed 2026-01-05/);

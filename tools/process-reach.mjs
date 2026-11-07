@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Which test classes of a `Process` half a change reaches (PROCREACH1, D180 point 2), so the CI runs those again and keeps
+ * Which test classes of a `Process` half a change reaches, so the CI runs those again and keeps
  * the rest of the half's verdicts.
  *
  * ## Why
  *
  * A release's verification at `c557800` ran the driver's git half (693 tests, 272 minutes of test time in 69 of wall) and its
- * other Process half (666 tests, 130 minutes in 23), and any driver or modules change reached both whole: CI1 skips a gate no
- * changed path reaches, and a gate reached ran every class in it. This goes one level finer, to the class.
+ * other Process half (666 tests, 130 minutes in 23), and any driver or modules change reached both whole: the CI skips a gate no
+ * changed path reaches, and a gate reached runs every class in it. This goes one level finer, to the class.
  *
  * ## What a class reaches (the census, `censusOf`)
  *
@@ -21,7 +21,7 @@
  *   reaches.
  * - **Its reach** is the source areas its files name: each top-level type and extension method of a project the test project
  *   compiles against (`ProjectReference`, read through) is defined in a file, and its area is that project's first folder
- *   (`Daoris.Desktop.Driver/Sessions`, a driver module, D166). A program the test project builds only to start
+ *   (`Daoris.Desktop.Driver/Sessions`, a driver module). A program the test project builds only to start
  *   (`ReferenceOutputAssembly="false"`) is an area of its own, reached by the classes whose strings name it, with the areas of
  *   the sources it compiles in by link, and every area where it compiles against a source project (the driver's host).
  * - Only what the files name is followed, not what the named types use in turn: the driver's modules name each other nearly
@@ -73,7 +73,7 @@ const READ = (path) => path === 'daoris.gates.json' || (path.startsWith('src/Dao
 
 /**
  * The repository's tracked files at `commit` (the working tree's when null), `/`-separated, and a reader of each. A commit's
- * files are read by one `git cat-file --batch`: a `git show` a file took half a second to start on this machine (DEVDRIVE1),
+ * files are read by one `git cat-file --batch`: a `git show` a file took half a second to start on this machine,
  * and the census reads about two thousand.
  */
 export function repository(root, commit = null) {

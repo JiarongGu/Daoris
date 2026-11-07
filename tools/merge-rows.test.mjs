@@ -1,5 +1,5 @@
 /**
- * ROUTERMERGE1: the router's merge driver merges table rows by their first cell three ways, and prose as text.
+ * The router's merge driver merges table rows by their first cell three ways, and prose as text.
  *
  *   node --test tools/merge-rows.test.mjs
  *

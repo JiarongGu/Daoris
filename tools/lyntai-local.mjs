@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * LYNTAILOCAL1: an opt-in local build of the Lyntai sibling for development (D22's note).
+ * An opt-in local build of the Lyntai sibling for development.
  *
  *   node tools/lyntai-local.mjs [path-to-Lyntai-checkout]
  *
  * Packs the sibling's main line (`master`, as its checkout holds it; never a session branch), and does nothing when the
  * tip is already packed, at `<released>-local.<sha7>` into the ignored `local/lyntai-feed/` and writes the ignored
- * `local/lyntai-local.props`, which the service's and the desktop's package props import whenever it exists (D248). The merge tool copies it
+ * `local/lyntai-local.props`, which the service's and the desktop's package props import whenever it exists. The merge tool copies it
  * into its gate trees. Delete it to restore the released pin.
  * The checkout is the argument, `DAORIS_LYNTAI_PATH`, or `Lyntai` beside the main checkout. It is only read.
  *

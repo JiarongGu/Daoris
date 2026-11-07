@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
  * Publish the service hosts as standalone executables — the server the family actually runs, not a
- * source checkout with a build step (D43).
+ * source checkout with a build step.
  *
  *   node tools/service-publish.mjs                # publish both hosts for this platform
- *   node tools/service-publish.mjs --install      # …and land them in $DAORIS_HOME/bin (D63), printing
+ *   node tools/service-publish.mjs --install      # …and land them in $DAORIS_HOME/bin, printing
  *                                                 #    the ready .mcp.json snippet with the root filled in
  *   node tools/service-publish.mjs --rid linux-x64
  *
@@ -15,7 +15,7 @@
  * The HTTP host's web bundle travels as a wwwroot directory BESIDE its executable — the host resolves
  * its content root there when the working directory has no bundle.
  *
- * **The one recipe** (CONNECTOR1). `desktop-publish --service` lays both hosts under an install's `app/`
+ * **The one recipe.** `desktop-publish --service` lays both hosts under an install's `app/`
  * by the exports above the divider, each in the folder named for its binary that this script publishes
  * it into, so a host is built one way wherever it is published. The runner below the divider is guarded
  * (`isMain`), because importing this file must publish nothing.
@@ -25,7 +25,7 @@ import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copyTree, isMain } from './fsx.mjs';
-// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+// Every home place is asked of the home layout's table, never joined here.
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 
 /** The two hosts, each published into a folder named for its binary. */
@@ -38,9 +38,9 @@ export const HOSTS = Object.freeze([
 export const executableFor = (binary, rid) => (rid.startsWith('win') ? `${binary}.exe` : binary);
 
 /**
- * A `dotnet publish` built into `artifacts` when one is given (REHLANE2b): the SDK's `--artifacts-path`, which puts the
+ * A `dotnet publish` built into `artifacts` when one is given: the SDK's `--artifacts-path`, which puts the
  * `obj/` and `bin/` of every project the publish reaches, the referenced ones too, under that folder and none under the
- * project's own, and leaves `-o`, where the published files go, as it was. With none, the command as it is.
+ * project's own, and leaves `-o`, where the published files go, unchanged. With none, the command as it is.
  */
 export const builtInto = (command, artifacts = null) => (artifacts ? `${command} --artifacts-path "${artifacts}"` : command);
 
@@ -52,7 +52,7 @@ export const STAMPED = '-p:DaorisStamp=true';
 
 /**
  * The recipe: the `dotnet publish` that makes `host` a self-contained single-file executable in `folder`, run from the
- * workspace root; its builds into `artifacts` when one is given (`builtInto`, REHLANE2b).
+ * workspace root; its builds into `artifacts` when one is given (`builtInto`).
  *
  * IncludeNativeLibrariesForSelfExtract, because "single file" otherwise leaves e_sqlite3 BESIDE the executable — and an
  * installed copy that took only the exe dies on first store open with a DllNotFound. Found by running the installed
@@ -64,8 +64,8 @@ export function publishCommand(host, rid, folder, artifacts = null) {
 }
 
 /**
- * Publish one host by the recipe, answering whether it was built. stdout is KEPT and shown when the publish fails (REV3):
- * MSBuild writes its errors to stdout, and a publish that discarded it failed with nothing but an exit code to read.
+ * Publish one host by the recipe, answering whether it is built. stdout is KEPT and shown when the publish fails:
+ * MSBuild writes its errors to stdout, and a publish that discards it fails with nothing but an exit code to read.
  */
 export function publishHost(repoRoot, host, rid, folder, said = 'service-publish', artifacts = null) {
   try {
@@ -111,7 +111,7 @@ function main() {
       process.exit(1);
     }
 
-    // Under the Daoris home, never under the profile (D63): the installed desktop sets `DAORIS_HOME`
+    // Under the Daoris home, never under the profile: the installed desktop sets `DAORIS_HOME`
     // for the account, and a machine with no home has nowhere Daoris may put a binary.
     const home = process.env.DAORIS_HOME?.trim();
     if (!home) {
@@ -125,18 +125,17 @@ function main() {
     copyFileSync(join(out, 'daoris-knowledge', exe('daoris-knowledge')), join(bin, exe('daoris-knowledge')));
     // 🔴 REPLACED, not merged into. A copy over the old directory leaves every previous hashed bundle
     // in `wwwroot/assets` — harmless, because `index.html` names the current one, and actively
-    // misleading to anybody trying to tell which build is live by listing the folder. That is exactly
-    // how a stale deployment was diagnosed the slow way once.
+    // misleading to anybody trying to tell which build is live by listing the folder.
     const installedHost = join(bin, 'daoris-knowledge-http');
     rmSync(installedHost, { recursive: true, force: true });
-    // The tools' one recursive copy (REV3 CLEAN1): `fs.cpSync` has crashed on this platform.
+    // The tools' one recursive copy: `fs.cpSync` has crashed on this platform.
     copyTree(join(out, 'daoris-knowledge-http'), installedHost);
 
     // The published binary has no workspace above it to walk to, so the root must be NAMED — this is
     // exactly the trap the README records, closed here by printing the snippet already filled in.
     const familyRoot = dirname(repoRoot);
     console.log(`service-publish: installed to ${bin}`);
-    // CONNECTOR1: an install published with `--service` carries both hosts under its `app/`, and its sessions are
+    // An install published with `--service` carries both hosts under its `app/`, and its sessions are
     // handed that connector ahead of this one; this copy serves a repository's own `.mcp.json` and a shell without them.
     console.log('  A desktop install published with --service runs the hosts it carries ahead of these.');
     console.log('');
@@ -146,7 +145,7 @@ function main() {
         'daoris-knowledge': {
           command: join(bin, exe('daoris-knowledge')),
           // The home named explicitly, because a harness spawns its servers with whatever environment
-          // it was itself started with — and a terminal opened before the desktop set the variable
+          // it is itself started with — and a terminal opened before the desktop set the variable
           // has none. The snippet and the binary move together either way.
           env: { DAORIS_HOME: home, DAORIS_KNOWLEDGE_ROOT: familyRoot },
         },

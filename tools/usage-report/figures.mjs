@@ -44,7 +44,7 @@ export function shortVersion(version) {
   return commit ? `${release}+${commit.slice(0, 8)}` : release;
 }
 
-/** What failed, grouped by what it was: most first, a tie in the order each first happened. */
+/** What failed, grouped by kind: most first, a tie in first-seen order. */
 export function failures(lines) {
   const groups = new Map();
   const note = (line, key, what, sample) => {
@@ -89,8 +89,8 @@ export function failures(lines) {
 }
 
 /**
- * A previewed file's kind (LEFT3 f): its extension, lower case, or `(none)`. The kind is what the report says, never the
- * path: whether the side bar's reading room is used, and for what, is the question (LEFT2).
+ * A previewed file's kind: its extension, lower case, or `(none)`. The kind is what the report says, never the
+ * path: whether the side bar's reading room is used, and for what, is the question.
  */
 export function kindOf(path) {
   const name = named(path)?.split('/').pop() ?? '';
@@ -122,9 +122,9 @@ function spread(counts) {
 }
 
 /**
- * The asks (UNBLOCK5, D122 §3.10): every session started in the period with how many of its calls were
+ * The asks: every session started in the period with how many of its calls were
  * refused (`permission.refused`, one line per refused call), spread overall, by adapter and by repository,
- * so a week before a repository declares its safe work can be held against a week after. What was refused
+ * so a week before a repository declares its safe work can be held against a week after. What got refused
  * is counted over every ask in the period: by tool kind, by tool, and by what decided it, where the wire
  * said (`(unsaid)` where it did not). An ask from a session whose start the period does not hold is counted
  * apart, and in no session's spread.
@@ -176,7 +176,7 @@ export function weekOf(time) {
 }
 
 /**
- * The rule proposals (UNBLOCK5): how many wait for the person now, whenever they were made, and those
+ * The rule proposals: how many wait for the person now, whenever they were made, and those
  * made in the period by the week they were made in and the state each stands in, oldest week first.
  */
 export function proposalsOf(proposals, { from, to }) {
@@ -196,17 +196,17 @@ export function proposalsOf(proposals, { from, to }) {
 /** A count as a line carries it: a number at or above zero, or null for anything else. Absent is never zero. */
 export const countOf = (value) => (typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null);
 
-/** The sum of what was measured, or null when nothing was. */
+/** The sum of what is measured, or null when nothing is. */
 export const sumOf = (values) => {
   const known = values.filter((value) => value !== null);
   return known.length === 0 ? null : known.reduce((sum, value) => sum + value, 0);
 };
 
-/** The counts a turn's end carries (WSSETUP11): its tokens as METER1 splits them, its calls, and its context. */
+/** The counts a turn's end carries: its tokens as the meter splits them, its calls, and its context. */
 export const TURN_COUNTS = ['input', 'cacheRead', 'cacheWrite', 'output', 'calls'];
 
 /**
- * Each set-up's cost (WSSETUP11, D124 §7.3): every session whose start says `setup` true, in the order they
+ * Each set-up's cost: every session whose start says `setup` true, in the order they
  * started, with how it stands (its end's state, `awaiting-person` when it parked and has not ended, or
  * `not ended`), how many times it parked, its seconds as its end says them, and its turns summed: the tool
  * calls, the tokens read anew, read from the cache, written to it and written out, and the context at its
@@ -265,8 +265,8 @@ export function setupsOf(lines) {
 }
 
 /**
- * The models an `actor.ran` line names (USAGECOST1): a list of names, or one name. The log once wrote a collection as
- * its CLR type name (`System.String[]`, LOGCOLLECTION1), which names no model and is read as none, never as a model.
+ * The models an `actor.ran` line names: a list of names, or one name. A collection written as
+ * its CLR type name (`System.String[]`) names no model and is read as none, never as a model.
  */
 export function modelsOf(value) {
   const names = Array.isArray(value) ? value : [value];

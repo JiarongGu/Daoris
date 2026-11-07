@@ -15,7 +15,7 @@ import { repoRoot, scratchRoot } from './paths.mjs';
 /**
  * Attach to one of the running shell's pages, having first established that it IS the shell.
  *
- * @param window - null for the application's own window, or a secondary window's name (SURF8):
+ * @param window - null for the application's own window, or a secondary window's name:
  * `monitor`, or `session:<id>`. Since the shell can hold more than one page, the caller says which.
  */
 export async function attach(window = null) {
@@ -27,7 +27,7 @@ export async function attach(window = null) {
   const { Cdp, pickPageTarget, targetsAt } = await import('./cdp.mjs');
   const targets = await targetsAt(state.cdpPort);
   if (!targets && state.debugPortOpen === false) {
-    // `run` waited and said so (LOOK4); the same sentence here, rather than a guess at why.
+    // `run` waited and said so; the same sentence here, rather than a guess at why.
     fail(`nothing is listening on the debug port ${state.cdpPort}: the window \`run\` started never opened it, `
       + 'as `run` said. `node tools/desktop.mjs restart` picks a port again.');
   }
@@ -66,7 +66,7 @@ export async function build(args) {
   const configuration = args.includes('--release') ? 'Release' : 'Debug';
 
   // 🔴 An orphaned host from this checkout holds the assemblies this build has to overwrite, and
-  // MSBuild says so in eleven lines ending `MSB3027 … Exceeded retry count of 10`. The trap is
+  // MSBuild says so in eleven lines ending `… Exceeded retry count of 10`. The trap is
   // already documented on `stopAll` below; naming it here is what makes the documentation reach the
   // person who hit it. NAMED, never killed: a host this tool did not start belongs to whoever did,
   // which is the same distinction the shell's own supervisor makes.
@@ -82,20 +82,20 @@ export async function build(args) {
   // wwwroot, so a host built before the bundle serves the previous one, and the shell shows it.
   run('npm', ['--prefix', WEB, 'run', 'build'], { shell: true });
   run('dotnet', ['build', HTTP_PROJECT, '-c', configuration]);
-  // Daoris's browser is this same application started with the browser's argument (CHR8, D99), so
+  // Daoris's browser is this same application started with the browser's argument, so
   // there is no second project to build.
   run('dotnet', ['build', DESKTOP_PROJECT, '-c', configuration]);
-  // The driver's program a scratch run's `daoris …` is handed to (PUSH1f2a): its apphost, named by the run's environment.
+  // The driver's program a scratch run's `daoris …` is handed to: its apphost, named by the run's environment.
   run('dotnet', ['build', DRIVER_HOST_PROJECT, '-c', configuration]);
   console.log('\nbuilt — `node tools/desktop.mjs run` to look at it.');
 }
 
 export async function start(command, args) {
-  /* 🔴 The DEPLOYED shell, addressed by the folder it was published to. It implies `--real` and
+  /* 🔴 The DEPLOYED shell, addressed by the folder it is published to. It implies `--real` and
      cannot mean anything else: an install has no `DAORIS_*` overrides and makes its own `data/` the
-     Daoris home by construction (D63) — that is what makes it a deployment rather than a preview.
+     Daoris home by construction — that is what makes it a deployment rather than a preview.
      What this adds is the debug port, and it adds it AT LAUNCH through the environment: the shipped
-     application still exposes nothing, which is the half of case study 2d that was right. */
+     application still exposes nothing. */
   const install = takeInstall(args);
   const exe = install ? installedExe(install) : assemblyExe(DESKTOP_PROJECT);
   if (install && !exe) {
@@ -143,22 +143,22 @@ export async function start(command, args) {
 
     if (args.includes('--fresh')) rmSync(family, { recursive: true, force: true });
     if (!existsSync(family)) {
-      // The example family (D39) is the fixture: two adopters the store's bootstrap import registers
+      // The example family is the fixture: two adopters the store's bootstrap import registers
       // on first sight, so the window has something in it. COPIED rather than pointed at, because
       // the shell can write a repository's own `daoris.json` from Projects — and the tracked
       // examples are a gate's fixture, not a scratchpad. The MEMBERS, not the folder: `examples/`
-      // also holds the example plugin (D64), which is not a project and must not be imported as one.
+      // also holds the example plugin, which is not a project and must not be imported as one.
       mkdirSync(family, { recursive: true });
       for (const name of ['engine', 'game']) copyTree(join(repoRoot, 'examples', name), join(family, name));
       console.log(`copied examples/{engine,game} -> ${family}`);
     }
-    // The install's offers (PLUG9 d, D103), laid out in this run's Daoris folder as a publish lays them in an install's, so the
+    // The install's offers, laid out in this run's Daoris folder as a publish lays them in an install's, so the
     // Plugins place shows them here too. None is installed by this.
     layOffers(join(repoRoot, 'examples', 'plugins'), plan.root);
 
     const httpHost = assemblyExe(HTTP_PROJECT);
     if (!httpHost) fail('the service host is not built — `node tools/desktop.mjs build`.');
-    // Optional: a run without it drives, and a session simply has no connector (ACP4).
+    // Optional: a run without it drives, and a session simply has no connector.
     const mcpHost = assemblyExe(MCP_PROJECT) ?? '';
     // Optional too: a run without it is the window, and its terminal's `daoris …` says where the program is.
     const driverProgram = assemblyExe(DRIVER_HOST_PROJECT) ?? '';
@@ -191,7 +191,7 @@ export async function start(command, args) {
   console.log(`  debug port ${cdpPort}`);
   console.log(`  machine    ${real ? `${home ?? '(no DAORIS_HOME)'} — YOUR OWN` : home}`);
 
-  // The port asked for is not a port opened (LOOK4): wait until it answers, or say why it did not.
+  // The port asked for is not a port opened: wait until it answers, or say why it did not.
   const outcome = await awaitDebugPort({ answers: () => answersOn(cdpPort), gone: () => ended });
   writeFileSync(RUN_FILE, `${JSON.stringify({ ...record, debugPortOpen: outcome.open }, null, 2)}\n`);
   if (!outcome.open) {
@@ -207,7 +207,7 @@ export function doctor() {
   const shell = assemblyExe(DESKTOP_PROJECT);
   const host = assemblyExe(HTTP_PROJECT);
   const bundle = join(HTTP_PROJECT, 'wwwroot', 'index.html');
-  // Where `publish:service --install` lands one (D63) — and no home means none installed.
+  // Where `publish:service --install` lands one — and no home means none installed.
   const installed = process.env.DAORIS_HOME
     ? homeEntry(process.env.DAORIS_HOME, 'bin', 'daoris-knowledge-http', 'daoris-knowledge-http.exe')
     : null;
@@ -247,7 +247,7 @@ export function doctor() {
 }
 
 /**
- * What `eval` evaluates: its words joined, or with `--file <script>` that file's text, whole (UX6a). The screen
+ * What `eval` evaluates: its words joined, or with `--file <script>` that file's text, whole. The screen
  * counter's script (`ux-count.mjs --window`) is longer than the line `npm run` hands cmd.exe holds, and its quotes
  * do not survive the shells between, so a script travels as a file. A byte-order mark is dropped. Null when there
  * is nothing to evaluate, or `--file` is not the only thing said; a file that cannot be read throws, naming it.

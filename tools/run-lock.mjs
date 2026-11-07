@@ -4,7 +4,7 @@
  * The lock is `{ pid, since }` at the path it is named by. Taking it puts it in place with no overwrite, written beside first, so it
  * is never read half written; a run that finds it held waits, looking again every `POLL_MS`. A lock is stale where it does not read
  * as one, where its process is gone (a run that died holds nothing), or where it is older than the bound (a reused process id holds
- * it that long at most); a stale lock is removed only while it still says what was judged stale, and taken. A release removes the
+ * it that long at most); a stale lock is removed only while it still says what the run judged stale, and taken. A release removes the
  * lock only while it still says what its holder wrote.
  */
 import { randomBytes } from 'node:crypto';

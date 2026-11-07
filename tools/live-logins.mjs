@@ -1,5 +1,5 @@
 /**
- * LIVELOGIN1: no test starts a real sign-in or runs a real agent binary (docs/development.md, "Run the full product gates").
+ * No test starts a real sign-in or runs a real agent binary (docs/development.md, "Run the full product gates").
  *
  *   node tools/live-logins.mjs        check every test source (exit 0 clean, 1 breach, 2 tool error)
  *
@@ -12,7 +12,7 @@
  *  - an agent command that falls back to PATH: a `HarnessCommand` built on an agent's bare binary or on a toolchain's `.Binary`;
  *    a configured command (`"commands": { "x": ["claude"] }`, `["x"] = ["codex"]`) whose first word is an agent's bare binary; or
  *    configured commands that name a door onto another agent's accounts and not that agent (`claude-code-acp` without
- *    `claude-code`), so the account agent's reads run PATH's (RESUMEOWN1's `HelpChatTests`).
+ *    `claude-code`), so the account agent's reads run PATH's (`HelpChatTests`).
  *
  * The agents' binaries are read from the driver's toolchains (`Binary: ["…"]`), so a new agent is held without an edit here. A stub
  * is what a test runs instead: a script at a path (`["node", script]`, a pin's managed binary under the scratch home), whose own
@@ -32,7 +32,7 @@ const EXEMPT = '// live-logins: refused, never started';
 const OWN_TEST = 'tools/live-logins.test.mjs';
 
 // The driver's answer of whose accounts each door runs as, written down once and held equal to the registry's by ProviderRegistryTests
-// (AGENTPROVIDER1 row d), so this census keeps no list of its own.
+// so this census keeps no list of its own.
 const OWNERS = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-owner.json';
 
 /** The doors onto another agent's accounts, `{ door: agent }`: each built door whose owner is not itself, but a stand-in's twin, which runs in its own home. */

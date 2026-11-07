@@ -1,9 +1,9 @@
 /**
- * The screen counter (UX6a, docs/2026-10-04-ux6-redesign.md §9.1–§9.3):
+ * The screen counter (docs/2026-10-04-ux6-redesign.md §9.1–§9.3):
  *
  *   node --test tools/ux-count.test.mjs
  *
- * Run by `npm run verify`'s `node --test` list, as the benches' are (TOOLTESTCENSUS1). The counting runs in
+ * Run by `npm run verify`'s `node --test` list, as the benches' are. The counting runs in
  * Playwright's chromium, the web's own (`src/Daoris.Web`, installed by its `npm ci`), over the fixed pages in
  * `ux-count-fixtures/`, whose counts are known by hand. Where that browser is not installed here, the cases that
  * need it are skipped and say why. Nothing here starts Storybook or the window: the runner is driven against a
@@ -134,7 +134,7 @@ test('the glossary is read as the names check reads it: each term without `use`,
 });
 
 test('the spellings the counter reads are the page’s own', () => {
-  // A page source by its name wherever it lies under the page's source (STRUCT5c, D166), so a move into a folder edits no
+  // A page source by its name wherever it lies under the page's source, so a move into a folder edits no
   // reader here; a name no file has, or two have, is refused.
   const sources = readdirSync(join(web, 'src'), { recursive: true, encoding: 'utf8' }).map((path) => path.split('\\').join('/'));
   const read = (name) => {
@@ -228,7 +228,7 @@ test('the window’s path gives the same answer: the same expression, through th
   }
 });
 
-// REFAC2: the script was renamed into place bare, so a scanner holding the last one failed `--window` outright.
+// A script renamed into place bare makes a scanner holding the last one fail `--window` outright.
 test('the window’s script is written whole through a held rename, and a refused one leaves the last script as it was', () => {
   const out = join(scratch, 'held', 'window.js');
   const calls = [];

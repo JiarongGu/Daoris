@@ -1,5 +1,5 @@
 /**
- * TESTPATIENCE3: the test-patience census (FIX-LOG 2026-10-28, TESTPATIENCE3).
+ * The test-patience census (FIX-LOG 2026-10-28).
  *
  *   node --test tools/test-patience.test.mjs
  *
@@ -164,7 +164,7 @@ test("the repository's own tests wait by the patience or say why they do not, an
 });
 
 test('a short wait planted in a copy of a real test is refused, and the patience in its place is clean', () => {
-  // The merge-queue test's own guard, as TOOLTESTHANG1 wrote it before the shared patience: the wait the census exists to refuse.
+  // The merge-queue test's own guard with a fixed wait: the wait the census exists to refuse.
   const guard = 'const HANG_MS = 10_000;\nasync function until(holds, ms = HANG_MS) { for (const end = Date.now() + ms; !holds() && Date.now() < end;) await pause(100); }\n';
   const red = checkTestPatience(tree({ 'src/Daoris.Cli/tool-test/merge-queue.test.ts': guard }));
   assert.equal(red.problems.length, 1);

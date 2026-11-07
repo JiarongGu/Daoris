@@ -47,7 +47,7 @@ export function readDecision(id, lines) {
   const heading = lines.findIndex((line, i) => !inFence[i] && line.startsWith(`## ${id}`));
   const title = heading >= 0 ? lines[heading].slice(`## ${id}`.length).replace(/^\s*[—–-]\s*/, '') : '';
   const notes = [];
-  // The entry's own first paragraph is never a note, even dated (`*Decided 2026-08-05.*`, `**Decision (DOC8, …)**`);
+  // The entry's own first paragraph is never a note, even dated (`*Decided 2026-08-05.*`, `**Decision (<task>, …)**`);
   // an entry whose title carries no date is dated there.
   const opening = lines.findIndex((line, i) => i > heading && line.trim() !== '');
   const date = /\((\d{4}-\d{2}-\d{2})\)\s*$/.exec(title)?.[1] ?? (opening >= 0 ? /\d{4}-\d{2}-\d{2}/.exec(lines[opening])?.[0] : null) ?? null;

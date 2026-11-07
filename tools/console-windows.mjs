@@ -1,5 +1,5 @@
 /**
- * CONSOLEWINDOWS1: every child process the tools, the CLI and the web's scripts start hides its console window.
+ * Every child process the tools, the CLI and the web's scripts start hides its console window.
  *
  *   node tools/console-windows.mjs        check the scripts (exit 0 clean, 1 a start with no `windowsHide`, 2 tool error)
  *
@@ -66,7 +66,7 @@ export function unhidden(src) {
     // A declaration (`function spawn(`, `async spawn(`) is no call.
     if (/\b(?:function|async)\s+$/.test(src.slice(Math.max(0, m.index - 12), m.index))) continue;
     const open = m.index + m[0].length - 1;
-    // REVIEW2 T7: `windowsHide: false` hides nothing, so only the literal `true` (or a spread of options that name it) is a hidden start.
+    // `windowsHide: false` hides nothing, so only the literal `true` (or a spread of options that name it) is a hidden start.
     if (/windowsHide\s*:\s*true\b/.test(src.slice(open, closing(src, open) + 1))) continue;
     if (lines[line - 1].includes(MARK) || (lines[line - 2] ?? '').includes(MARK)) {
       marked++;

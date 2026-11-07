@@ -1,5 +1,5 @@
 /**
- * FABRIC-PROBE1: the fabric probe kit, without a harness — the stand-in server and the hook logger as real processes, the
+ * The fabric probe kit, without a harness — the stand-in server and the hook logger as real processes, the
  * launchers' environments and arguments, and the receipt over logs shaped as the C0 audit's runs wrote them.
  *
  *   node --test tools/fabric-probe.test.mjs

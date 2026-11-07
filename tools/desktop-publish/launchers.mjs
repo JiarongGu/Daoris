@@ -1,7 +1,7 @@
 import { join, posix, relative } from 'node:path';
 
 /**
- * Where the install carries its doctrine tool (WSSETUP2, D124 §1.2), as path segments: the CLI package the
+ * Where the install carries its doctrine tool, as path segments: the CLI package the
  * release publishes, unpacked the way npm lays a package out under a prefix, `<prefix>/node_modules/daoris`.
  *
  * 🔴 The `node_modules` folder is load-bearing. The CLI reads the canon it ships only when its own folder sits
@@ -17,9 +17,9 @@ export const CLI_PACKAGE = Object.freeze([...CLI_HOME, 'node_modules', 'daoris']
 export const CLI_ENTRY = Object.freeze(['bin', 'daoris.mjs']);
 
 /**
- * The launchers' folder, beside the application, and `daoris`'s launchers in it (D124 §1.2; ONEWAY1ai): `daoris`, a
+ * The launchers' folder, beside the application, and `daoris`'s launchers in it: `daoris`, a
  * shell script, for Git Bash, and `daoris.cmd` for Command Prompt, which PowerShell finds too by `PATHEXT`. Nothing here
- * puts the folder on any `PATH`: the account's stays the person's (D124 §10).
+ * puts the folder on any `PATH`: the account's stays the person's.
  */
 export const CLI_BIN = Object.freeze(['app', 'bin']);
 export const CLI_LAUNCHERS = Object.freeze(['daoris', 'daoris.cmd']);
@@ -38,10 +38,10 @@ export function cliLaunchers() {
 }
 
 /**
- * The desktop's program (DRIVERDOOR1, ONEWAY1ai): the Host, published framework-dependent into a folder of its own under
+ * The desktop's program: the Host, published framework-dependent into a folder of its own under
  * `app/` that keeps its name for good, replaced whole by a republish (and carried by an update's swap of `app/`), and run
  * from `app/bin/` by `daoris`'s launchers, so the PATH every child Daoris starts has it by that bare name. It finds the
- * home by `DAORIS_HOME`, as the CLI does (D105).
+ * home by `DAORIS_HOME`, as the CLI does.
  */
 export const DRIVER_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Host';
 export const DRIVER_HOME = Object.freeze(['app', 'daoris-driver']);

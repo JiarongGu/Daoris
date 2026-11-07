@@ -1,5 +1,5 @@
 /**
- * CHR1 (2026-09-28): what an embedded Chromium does under a Daoris window, measured before the host
+ * What an embedded Chromium does under a Daoris window, measured before the host
  * is built (`docs/2026-09-28-chromium-host-design.md` §5). The host is `tools/chromium-probe/`, a
  * WinForms window embedding Chromium through CefSharp, in the two roles a Daoris window gives it: the
  * APP's page (the one that would hold the bridge) and the in-app browser, each in its own request

@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * The background run's schedule and its safeguards (CISCOPE1d, D207; design `docs/2026-10-24-ci-scope-design.md` §5.1 to §5.3,
+ * The background run's schedule and its safeguards (design `docs/2026-10-24-ci-scope-design.md` §5.1 to §5.3,
  * §8 row 4). The merge tool's CI (`--ci`, `--ci --watch`) and the install's publisher read and write these records; each is
  * kept in the main checkout's ignored `local/`, outside `local/scratch/`, so no prune and no CI run's rewrite of the gate tree's
  * record loses it.
  *
  * ## Why
  *
- * The scoped run a merge will wait on (CISCOPE1e) runs what a change reaches, so what it misses is found by the full set in
+ * The scoped run a merge will wait on runs what a change reaches, so what it misses is found by the full set in
  * the background, and the owner's install is republished only on a commit that background run passed. That needs four records
- * the CI did not keep: when each Process half was last run whole and when a night last finished (the due record), which tests
- * fail on main and since when (known red), which runs finished on which tree (the receipts), and what was staged (the history).
+ * the CI otherwise does not keep: when each Process half last ran whole and when a night last finished (the due record), which tests
+ * fail on main and since when (known red), which runs finished on which tree (the receipts), and what staged (the history).
  *
  * ## The due record, `local/ci-sweep.json`
  *
@@ -36,9 +36,9 @@
  * `signatureOf`: the location by method and source text, never its line), and the first lines of its failure. The fingerprint
  * is the record; the signature is the match: a sighting whose signature an open finding holds moves its *last seen*, else it is
  * a new finding. A known red is cleared only by a pass of the test on a commit that descends, on main's first-parent line, from
- * the commit it was last seen failing on, given by a CI run (`CLEARING_KINDS`); a sighting within a day of a clearing restores
+ * the commit it last failed on, given by a CI run (`CLEARING_KINDS`); a sighting within a day of a clearing restores
  * the finding with its first sighting. A test known red past `KNOWN_RED_MS` from the first sighting of the test under any
- * fingerprint has expired: no candidate inherits it (CISCOPE1e), the watch says it, and twelve hours before, warns.
+ * fingerprint has expired: no candidate inherits it, the watch says it, and twelve hours before, warns.
  *
  * ## The receipts, `local/ci-runs.jsonl`, and the stage history, `local/stage-history.jsonl`
  *
@@ -61,7 +61,7 @@ export const STAGE_HISTORY = 'local/stage-history.jsonl';
 
 const HOUR_MS = 60 * 60 * 1000;
 
-/** PROCREACH1's bound, the merge tool's `SWEEP_BOUND_MS`: a half's next sweep is due a day after its last. */
+/** The merge tool's `SWEEP_BOUND_MS`: a half's next sweep is due a day after its last. */
 export const SWEEP_BOUND_MS = 24 * HOUR_MS;
 
 /** The hour, local time, the nightly run is due at: overnight, when the machine is least used. */
@@ -77,7 +77,7 @@ export const KNOWN_RED_WARN_MS = 12 * HOUR_MS;
 export const CONTRADICTED_MS = 24 * HOUR_MS;
 
 /**
- * §5.1's matrix: what each kind of run runs, and whether its receipt counts for a stage. `rehearsals`: `owed` (CIFAST1, a plain
+ * §5.1's matrix: what each kind of run runs, and whether its receipt counts for a stage. `rehearsals`: `owed` (a plain
  * run never starts the family and deployment rehearsals), `run`, or `none` (a sweep runs the due half and nothing else).
  */
 export const RUN_KINDS = Object.freeze({
@@ -94,7 +94,7 @@ export const COUNTED_KINDS = Object.freeze(Object.keys(RUN_KINDS).filter((kind) 
 
 /**
  * The kinds whose pass clears a known red (§5.2): a run of the background's own (its verdicts count for the stage), never a
- * bisection's, recall's, or a candidate's that was not promoted. A promoted candidate's scoped run (CISCOPE1e) is `promoted`.
+ * bisection's, recall's, or a candidate's that is not promoted. A promoted candidate's scoped run is `promoted`.
  */
 export const CLEARING_KINDS = Object.freeze(['ordinary', 'ci', 'sweep', 'nightly', 'stage', 'full', 'promoted']);
 
@@ -186,7 +186,7 @@ export function noteSweeps(record, swept) {
   return { ...record, halves };
 }
 
-/** The most recent instant the night was due at, at or before `now`: today's `hour` local time, or yesterday's. */
+/** The most recent instant a night falls due, at or before `now`: today's `hour` local time, or yesterday's. */
 export function lastNight(now = Date.now(), hour = NIGHT_HOUR) {
   const at = new Date(now);
   at.setHours(hour, 0, 0, 0);
@@ -195,7 +195,7 @@ export function lastNight(now = Date.now(), hour = NIGHT_HOUR) {
 }
 
 /**
- * Whether a night is due at `now`: no night finished since the last instant one was due at. A night missed is so at the next
+ * Whether a night is due at `now`: no night finished since the last instant one fell due. A night missed is due at the next
  * start, which the watch runs before any other background run. `since` is that instant.
  */
 export function nightDue(record, now = Date.now(), hour = NIGHT_HOUR) {
@@ -350,8 +350,8 @@ export function fileSighting(record, sighting) {
 
 /**
  * Known reds cleared by passes on `commit` (§5.2): each open finding whose test `passed(finding)` says passed, when the run's
- * `kind` is one that clears (`CLEARING_KINDS`) and `commit` descends, on main's first-parent line, from the commit it was last
- * seen failing on (`descends(from, to)`). A late run on an older commit, a bisection's run on a passing ancestor, or a run that
+ * `kind` is one that clears (`CLEARING_KINDS`) and `commit` descends, on main's first-parent line, from the commit it last
+ * failed on (`descends(from, to)`). A late run on an older commit, a bisection's run on a passing ancestor, or a run that
  * does not clear, clears nothing. Answers the record and the findings cleared.
  */
 export function clearPasses(record, { commit, at, kind, passed, descends, provenance = null }) {
@@ -371,7 +371,7 @@ export function clearPasses(record, { commit, at, kind, passed, descends, proven
 const passedVerdict = (verdict) => verdict === 'PASS' || verdict === 'FLAKE';
 
 /**
- * CIFINDINGSKEEP1: known reds cleared by the passes a CI run kept rather than ran, under the rules of `clearPasses`. A kept
+ * Known reds cleared by the passes a CI run kept rather than ran, under the rules of `clearPasses`. A kept
  * verdict (`kept`: `{ name, verdict, standing }` as `ciPlan` answers, `verdict` the stored record with its `tree`, `commit`, `at`
  * and `kind`) qualifies only when its standing is `exact` and its tree is the run's `tree`, it passed, and the run completed
  * (`stopped` false) and is no sweep alone. It clears a finding of its own gate: a gate finding (`test === gate`) by the verdict
@@ -413,7 +413,7 @@ export function knownRedStanding(finding, now = Date.now()) {
   return { expired: age > KNOWN_RED_MS, warn: age <= KNOWN_RED_MS && age > KNOWN_RED_MS - KNOWN_RED_WARN_MS, expires: iso(timeOf(finding.since) + KNOWN_RED_MS) };
 }
 
-/** The open finding a failure's signature matches, inherited and not expired, or null: what a candidate's base run asks (CISCOPE1e). */
+/** The open finding a failure's signature matches, inherited and not expired, or null: what a candidate's base run asks. */
 export function knownRed(record, { test, signature }, now = Date.now()) {
   const key = signatureKey(signature);
   return record.findings.find((each) => open(each) && each.test === test && each.key === key && !knownRedStanding(each, now).expired) ?? null;
@@ -432,7 +432,7 @@ export function knownRedLines(record, now = Date.now()) {
 }
 
 /**
- * The tests a trx shows passing, by name with their case: what clears a known red. A test that failed and passed alone (FLAKE1)
+ * The tests a trx shows passing, by name with their case: what clears a known red. A test that failed and passed alone
  * is not among them, its trx holding the failure.
  */
 export function passingTests(trx) {

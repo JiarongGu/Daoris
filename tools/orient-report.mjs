@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
- * What a session spent finding its way before its first edit, read from a harness's transcript (ORIENT1d) or, for the
- * sessions Daoris drives, from the typed events Daoris keeps of them (ORIENT1e).
+ * What a session spent finding its way before its first edit, read from a harness's transcript or, for the
+ * sessions Daoris drives, from the typed events Daoris keeps of them.
  *
  * ## Why
  *
- * ORIENT1 was measured by a scratch script over ten branches of 2026-10-04: 60 to 100 calls and 370 to 600 KB read
- * before the first edit, about a third of each branch, 278 shell greps and 117 shell dumps between them. The
- * orientation index (`tools/orient-index.mjs`) is meant to halve both. This is that script made a tool, so the
- * same numbers are read the same way after as before. ORIENT2 asks the same of every repository Daoris drives, and
- * its before is read first, while none of them keeps an index (D151 §7, the orientation-everywhere design §5).
+ * The orientation index (`tools/orient-index.mjs`) is meant to halve the calls and the bytes read before the first
+ * edit (measured over ten branches: 60 to 100 calls and 370 to 600 KB, about a third of each branch, 278 shell greps
+ * and 117 shell dumps between them), so the same numbers are read the same way before and after. The same question
+ * is asked of every repository Daoris drives, its before read first, while none of them keeps an index (the
+ * orientation-everywhere design §5).
  *
  * ## A transcript
  *
@@ -21,13 +21,13 @@
  * A shell command is classed by its words, first match wins, in the scratch script's order so the numbers compare:
  * a search (grep, rg, Select-String), a dump (sed -n, cat, head, tail, Get-Content), a listing (ls, find,
  * Get-ChildItem), a git read, a build or test, or other. Decision files are counted as one row among the files
- * read most, as the measurement counted them. A call of the workspace's knowledge server (`mcp__daoris-knowledge__*`,
- * ORIENT1c) is an ask, counted in all and before the first edit, so whether branches ask it is read here too.
+ * read most, as the measurement counted them. A call of the workspace's knowledge server (`mcp__daoris-knowledge__*`)
+ * is an ask, counted in all and before the first edit, so whether branches ask it is read here too.
  *
  * ## A Daoris home
  *
- * A driven session's own transcript lives in an account's home, which Daoris never reads (D125). What Daoris keeps is
- * each session's typed events, `<home>/sessions/<id>.events.jsonl` (D76 §2), named by `session.started` in the
+ * A driven session's own transcript lives in an account's home, which Daoris never reads. What Daoris keeps is
+ * each session's typed events, `<home>/sessions/<id>.events.jsonl`, named by `session.started` in the
  * machine log under `<home>/logs/` (read with `usage-report.mjs`' reader). The `.log` beside the events is rendered
  * text and is never read. Every session whose start says `driven` is read; a set-up's is left out.
  *
@@ -45,7 +45,7 @@
  * - A read is whole when its input names neither an offset nor a limit. A whole read that returned 40 × 1024
  *   characters or more ("40K+") is one of a file the orientation index would outline (files over 40 KB).
  * - The index is `docs/index/`, and the folder of the path a tree's `daoris.json` declares under `documents.index`
- *   (ORIENT2b), read from a session's tree while it is on disk and kept for its repository's other sessions. A read
+ *   read from a session's tree while it is on disk and kept for its repository's other sessions. A read
  *   inside it, or a shell command naming it, opens it.
  * - A subagent's calls run beside the session in a stream of their own and are not in its events: its call is one.
  *
@@ -53,8 +53,8 @@
  * its calls, characters, shell searches and dumps, and large whole reads; how many opened the index first; the parks
  * (§5.4); and per repository the files read most.
  *
- * It reads only. It touches no process and writes nothing under the home, and what it prints stays on this machine
- * (D47 §4): a design that quotes it records counts.
+ * It reads only. It touches no process and writes nothing under the home, and what it prints stays on this machine:
+ * a design that quotes it records counts.
  *
  *   node tools/orient-report.mjs --home <dir> [--repository <name>] [--since <date>] [--json]
  *   node tools/orient-report.mjs [--json] <transcript.jsonl>…
@@ -65,7 +65,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, join, posix, resolve } from 'node:path';
 import { isMain } from './fsx.mjs';
-// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+// Every home place is asked of the home layout, never joined here.
 import { homeEntry, homePlaces } from '../src/Daoris.Cli/src/platform/home.ts';
 import { readLogs } from './usage-report.mjs';
 
@@ -73,7 +73,7 @@ const EDITS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit']);
 const SHELLS = new Set(['Bash', 'PowerShell']);
 const KINDS = ['search', 'dump', 'list', 'git', 'build', 'other'];
 const INDEX = 'docs/index/';
-/** The workspace's knowledge server's tools, as the harness names them (ORIENT1c). */
+/** The workspace's knowledge server's tools, as the harness names them. */
 const SERVER = 'mcp__daoris-knowledge__';
 const asksOf = (calls) => calls.filter((call) => call.name.startsWith(SERVER)).length;
 
@@ -204,7 +204,7 @@ export function summarize({ cwd, calls }, label) {
     shell,
     reads,
     indexReads: reads.filter((read) => read.path.startsWith(INDEX)).length,
-    // Whether it asked the knowledge server, in all and before its first edit (ORIENT1c).
+    // Whether it asked the knowledge server, in all and before its first edit.
     asks: asksOf(calls),
     asksBefore: asksOf(before),
     firstEdit: first < 0 ? null : { name: calls[first].name, path: relative(calls[first].input.file_path ?? calls[first].input.notebook_path, cwd) },
@@ -258,7 +258,7 @@ export function report(summaries, { top = 20 } = {}) {
   return `${out.join('\n')}\n`;
 }
 
-// ORIENT1e: a driven session's typed events.
+// A driven session's typed events.
 
 /** A text's length, or the length its cut says it had. */
 function stated(text) {
@@ -293,7 +293,7 @@ function inputOf(raw) {
   }
 }
 
-/** Every tool call in a session's events file, in the order each was first said, its updates merged under its id. */
+/** Every tool call in a session's events file, in first-seen order, its updates merged under its id. */
 export function readEvents(text) {
   const calls = [];
   const byId = new Map();
@@ -355,7 +355,7 @@ export function placeOf(path, home) {
   if (!ABSOLUTE.test(at)) return { tree: null, rel: at, inside: !(at === '..' || at.startsWith('../')) };
   const top = home ? topOf(home) : null;
   const lower = at.toLowerCase();
-  // The home's trees, by both its places (D172): the new one under `work/`, the old one at its top.
+  // The home's trees, by both its places: one under `work/`, one at its top.
   for (const place of top ? homePlaces(top, 'trees') : []) {
     const trees = `${slash(place).replace(/\/+$/, '').toLowerCase()}/`;
     const parts = lower.startsWith(trees) ? at.slice(trees.length).split('/') : [];
