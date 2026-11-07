@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The resume reason codes the notes word (FOUNDATION1 mod-ix). This is their one literal owner; Agents' ContinueWhy forwards
+/// The resume reason codes the notes word. This is their one literal owner; Agents' ContinueWhy forwards
 /// these codes and owns the rules and sentences that select them, while Events owns their note keys and value declarations.
 /// </summary>
 public static class ContinueCodes

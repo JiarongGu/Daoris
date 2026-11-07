@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A run's sink that says whose each reading is and where in the run it came (the agent-provider design §3.1, row l): the run it belongs to,
+/// A run's sink that says whose each reading is and where in the run it came: the run it belongs to,
 /// the generation of the process that said it (the first process is 1, a retry's or a go-on's the next) and that process's lineage token, and
 /// its place in the run's order, so a part that keeps readings from several runs, or a replay, can tell them apart without reading the wire
 /// again.
