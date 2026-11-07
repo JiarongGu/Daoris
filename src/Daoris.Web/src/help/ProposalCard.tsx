@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
 import type { PlaceAsk } from '../agents/setup/placePlan';
 import { Button, Inline } from '../design/ui';
-import { SessionHelperFacts } from './SessionHelperFacts';
-import { sessionHelperDoor } from './sessionHelperDoor';
-import { type HelpRulesShown, RulesChange } from './RulesChange';
+import { SessionHelperFacts } from './proposal/SessionHelperFacts';
+import { sessionHelperDoor } from './proposal/sessionHelperDoor';
+import { type HelpRulesShown, RulesChange } from './proposal/RulesChange';
 import type { StarterDoor } from './starters';
 
 /**

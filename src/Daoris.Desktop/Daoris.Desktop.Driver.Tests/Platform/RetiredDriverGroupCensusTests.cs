@@ -49,7 +49,7 @@ public sealed class RetiredDriverGroupCensusTests
         start.ArgumentList.Add("-z");
         start.ArgumentList.Add("--");
         foreach (var each in Roots) start.ArgumentList.Add(each);
-        using var git = Process.Start(start) ?? throw new InvalidOperationException("git did not start");
+        using var git = Process.Start(TestGit.Past(start)) ?? throw new InvalidOperationException("git did not start");
         var listed = git.StandardOutput.ReadToEnd();
         git.WaitForExit();
         return listed.Split('\0', StringSplitOptions.RemoveEmptyEntries)

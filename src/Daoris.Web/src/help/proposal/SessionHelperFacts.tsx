@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Inline } from '../design/ui';
+import { Inline } from '../../design/ui';
 import { type SessionHelperDoor } from './sessionHelperDoor';
 
 /**

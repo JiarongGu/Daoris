@@ -322,7 +322,7 @@ public sealed class EventJournalTests : IAsyncLifetime
             "{\"code\":\"" + new string((char)('a' + i), 100) + "\",\"values\":{}}")) + "]";
         await ExecuteAsync(
             """
-            INSERT INTO sessions (id, repository, adapter, state, created, updated, workspace, kind, from_session, from_why, from_by, entry, quest, ask, opinion, serves, piece, help_mode)
+            INSERT INTO sessions (id, repository, door, state, created, updated, workspace, kind, from_session, from_why, from_by, entry, quest, ask, opinion, serves, piece, help_mode)
             VALUES ($id, 'r', 'a', $state, 'c', 'u', $long, 'Chat', $long, $long, $long, $long, $long, 'a', 'o', 's', 'p', 'm')
             """,
             ("$id", new string('i', 200)), ("$state", new string('S', 200)), ("$long", new string('x', 300)));
@@ -390,7 +390,7 @@ public sealed class EventJournalTests : IAsyncLifetime
     {
         await ExecuteAsync(
             """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, door_version, profile, tree, base_commit, revision)
+            INSERT INTO sessions (id, quest, repository, door, state, note, evidence, transcript, created, updated, workspace, kind, door_version, profile, tree, base_commit, revision)
             VALUES ('older001', NULL, 'Owner', 'stub', 'Queued', NULL, NULL, NULL, 'c', 'u', 'default', 'Driven', NULL, NULL, NULL, NULL, 7)
             """);
         await ExecuteAsync("UPDATE sessions SET state = 'Working', note = 'n', evidence = NULL, transcript = NULL, updated = 'u2' WHERE id = 'older001'");

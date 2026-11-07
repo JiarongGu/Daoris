@@ -152,7 +152,7 @@ public sealed partial class AccountsStateSliceTests : DriverModuleBridge
 
         static JsonObject Record(string id, string state, string? profile = "account-1") => new()
         {
-            ["id"] = id, ["adapter"] = "claude-code-acp", ["state"] = state, ["profile"] = profile,
+            ["id"] = id, ["door"] = "claude-code-acp", ["state"] = state, ["profile"] = profile,
         };
         var held = new List<JsonObject> { Record("s1", "working"), Record("s2", "completed"), Record("team/s3", "working") };
         var counted = AccountsStateSlice.RunningOn(held, AccountsRoutes.Owners(loop.Harnesses));

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../locales/i18n';
-import { type HelpProposal, ProposalCard } from './ProposalCard';
+import i18n from '../../locales/i18n';
+import { type HelpProposal, ProposalCard } from '../ProposalCard';
 import { sessionHelperDoor } from './sessionHelperDoor';
 
 // COWORKUX1: the helper and pass doors of a `session` proposal, drawn from the command the driver wrote for them.

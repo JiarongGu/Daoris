@@ -30,10 +30,10 @@ public sealed class SessionWordsWaitingTests : IDisposable
 
     private static JsonObject Record(
         string id, string state, string? quest = null, string kind = "driven", string repository = "engine", string[]? said = null,
-        string adapter = "claude-code", string? profile = "work") => new()
+        string door = "claude-code", string? profile = "work") => new()
         {
             ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["quest"] = quest,
-            ["adapter"] = adapter, ["profile"] = profile,
+            ["door"] = door, ["profile"] = profile,
             ["created"] = T0.ToString("O"), ["updated"] = T0.AddMinutes(5).ToString("O"),
             ["said"] = new JsonArray([.. (said ?? []).Select(word => (JsonNode)new JsonObject
             {
@@ -293,7 +293,7 @@ public sealed class SessionWordsWaitingTests : IDisposable
         var taken = Quest("q1", "Taken");
         var json = Json(
             Record("s1", "completed", "q1", said: ["w1"]),
-            Record("s2", "completed", "q2", said: ["w2"], adapter: "codex"),
+            Record("s2", "completed", "q2", said: ["w2"], door: "codex"),
             Record("s3", "completed", "q3", said: ["w3"], profile: "home"),
             Record("s4", "completed", "q4", said: ["w4"]));
         new NewSessionChoices(_home).Choose("s4", ["w4"], T0);
@@ -315,7 +315,7 @@ public sealed class SessionWordsWaitingTests : IDisposable
     [Fact]
     public void A_driven_record_on_another_agent_than_the_machine_s_waits_for_its_own_agent_s_reset()
     {
-        var json = Json(Record("s2", "completed", "q2", said: ["w2"], adapter: "codex"));
+        var json = Json(Record("s2", "completed", "q2", said: ["w2"], door: "codex"));
         Consideration[] considered = [GoesOn(Quest("q2", "Taken"), json, "s2")];
 
         var held = Assert.Single(Waiting(json, considered, coolingOf: (adapter, profile) => adapter == "codex" && profile == "work" ? Cooling : null).Held);

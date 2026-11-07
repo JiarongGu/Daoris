@@ -429,7 +429,7 @@ test('a browser’s What needs you is the app’s, and an ask’s record names i
 
   // Its intake opens, works, and parks asking the person.
   const room = join(repoRoot, '_fixtures', 'web-e2e', 'intake', 'default');
-  const opened = await request.post('/api/sessions/intake', { data: { ask: ask.id, adapter: 'stub', room } });
+  const opened = await request.post('/api/sessions/intake', { data: { ask: ask.id, door: 'stub', room } });
   expect(opened.ok(), await opened.text()).toBe(true);
   const session = (await opened.json() as { session: { id: string } }).session;
   for (const state of ['starting', 'working']) {

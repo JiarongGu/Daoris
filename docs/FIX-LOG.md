@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - The session record's rename left its fixtures on `adapter`, and three merged chunks went past their censuses (CI 10)
+
+- **Symptom:** CI run 10's fast half on 8863b15619: eight `SessionWordsWaitingTests` and two `SessionsCommandTests` found no cool-off
+  for a record whose account cools; two `EventJournalTests` failed with *table sessions has no column named adapter*; the driver's git
+  ceiling, console-window and direct-start censuses named `RetiredDriverGroupCensusTests`; the page's provider census and structure
+  test failed on `help/`; and the read-shares check refused `BindingFilesStep.cs`. Beside them: two modules tests counted no running
+  session, the INT4d spec's intake named no door, and REHLANE2's tool test refused the retired-words census.
+- **Root cause:** aa18f4bc74 (AGENTPROVIDER1t-ii) renamed the record's `adapter` to `door`, the store's column and `OpenIntake`'s field
+  with it, but these fixtures and the spec still wrote the old key and column, so the reader saw no door: the reading and the words
+  were right. c28e5916ae (ONEWAY1) started its census's `git ls-files` bare, and named a file of the CLI's `tool-test`, a folder
+  REHLANE2 did not count as unpacked. 6b2da9a709 (COWORKUX1) added two sources at `help/`'s top, 22 over the twenty, and a story's
+  sample naming `codex`. d785480704 (AGENTPROVIDER1t t-iii) hashed a binding file with `File.ReadAllBytes`.
+- **Fix:** the fixtures and the spec name `door` (24896a2d0b, 34f28fd14e); the census's git goes through `TestGit.Past`
+  (500ac8c809), and `tool-test` is among the folders no pack writes (eccf191be1); the binding file is read through
+  `AtomicFile.ReadBytes` (7eecd425f5); the proposal card's parts move to `help/proposal/` and the story's site is listed with its
+  reason (e7eeeb03c5).
+- **Verify:** the CI 10 logs are the red at this commit; each class, file and the tool test green filtered; the driver's fast half (two
+  reds beside a running CI, `HeldFilesTests` and `LayerUsageParityTests`, each green alone), `check:web-rules`, `read-shares`, `quick`
+  and the page's typecheck. The browser spec was not run beside a running CI.
 ## 2026-11-07 - A refused `--now` answered "installed now", and a refusal outlived its cause
 
 - **Symptom:** on the owner's install, `daoris update --now` said the build was installed now and nothing closed; the banner and

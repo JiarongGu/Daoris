@@ -35,7 +35,7 @@ public sealed class SessionsCommandTests : IDisposable
         {
             ["entry"] = entry,
             ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["quest"] = quest, ["ask"] = ask,
-            ["deletable"] = deletable, ["adapter"] = "claude-code",
+            ["deletable"] = deletable, ["door"] = "claude-code",
             ["created"] = T0.AddMinutes(minutes).ToString("O"), ["updated"] = T0.AddMinutes(minutes + 5).ToString("O"),
         };
 
