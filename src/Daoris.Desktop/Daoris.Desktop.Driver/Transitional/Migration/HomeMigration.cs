@@ -51,7 +51,6 @@ public static class HomeMigration
         new SupervisorStep(),
     ];
 
-    public static bool Recorded(string home, string step) => Done(DaorisHome.Entry(home, HomeEntry.Migration)) is { } done && done.Contains(step);
 
     /// <summary>
     /// Run the steps <paramref name="home"/>'s record does not hold, under the home's lease, recording each as it finishes. A lease still
@@ -118,19 +117,7 @@ public static class HomeMigration
     }
 
     /// <summary>The steps the record holds for this migration; null where there is no record, or one of another migration.</summary>
-    private static List<string>? Done(string record)
-    {
-        try
-        {
-            if (!File.Exists(record) || JsonNode.Parse(AtomicFile.ReadText(record)) is not JsonObject root) return null;
-            if ((string?)root["migration"] != Name || root["steps"] is not JsonArray steps) return null;
-            return [.. steps.Select(each => each?.GetValue<string>()).OfType<string>()];
-        }
-        catch (Exception error) when (error is JsonException or IOException or InvalidOperationException or FormatException)
-        {
-            return null;
-        }
-    }
+    private static List<string>? Done(string record) => MigrationRecord.Read(record) is { Migration: Name } read ? [.. read.Steps] : null;
 
     private static void Write(string record, IReadOnlyList<string> steps, DateTimeOffset at)
     {

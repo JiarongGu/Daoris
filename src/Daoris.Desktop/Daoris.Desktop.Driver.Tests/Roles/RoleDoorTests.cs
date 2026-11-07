@@ -111,8 +111,8 @@ public sealed class RoleDoorTests : IDisposable
             new RoleHold(AppointedRoles.Supervisor, [], RoleHolders.Rules) { Decides = [SupervisorKinds.Allow] });
 
         var refused = Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(staffing, RoleChange.Set(gatekeeper)));
-        Assert.Equal((SupervisorStep.NotConverted, SupervisorStep.NotConvertedSaid), (refused.Code, refused.Message));
-        Assert.Contains(SupervisorStep.NotConverted, RoleCatalog.Codes);
+        Assert.Equal((SupervisorConversion.NotConverted, SupervisorConversion.NotConvertedSaid), (refused.Code, refused.Message));
+        Assert.Contains(SupervisorConversion.NotConverted, RoleCatalog.Codes);
 
         HomeMigration.Run(home, [new SupervisorStep(() => null)]);
         RoleDoor.Apply(staffing, RoleChange.Set(gatekeeper));

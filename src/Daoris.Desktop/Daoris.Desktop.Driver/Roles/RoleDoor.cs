@@ -126,9 +126,9 @@ public static class RoleDoor
 
             if (Judge(judged, change, choices) is { } refused) throw new RoleRefusedException(refused);
             // Nothing of the supervisors' new shape stands in a home an older build may still be rolled back onto.
-            if (change is RoleChange.SetRole { Role.Hold.Kind: AppointedRoles.Supervisor } && !SupervisorStep.Converted(staffing.Home))
+            if (change is RoleChange.SetRole { Role.Hold.Kind: AppointedRoles.Supervisor } && !SupervisorConversion.Converted(staffing.Home))
             {
-                throw new RoleRefusedException(new RoleRefusal(SupervisorStep.NotConverted, SupervisorStep.NotConvertedSaid));
+                throw new RoleRefusedException(new RoleRefusal(SupervisorConversion.NotConverted, SupervisorConversion.NotConvertedSaid));
             }
 
             judged = judged.With(change);

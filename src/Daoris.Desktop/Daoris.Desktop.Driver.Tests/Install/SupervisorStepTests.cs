@@ -65,7 +65,7 @@ public sealed class SupervisorStepTests : IDisposable
 
         Assert.Null(migrated.Failed);
         Assert.Equal([SupervisorStep.StepName], migrated.Ran);
-        Assert.True(SupervisorStep.Converted(_home));
+        Assert.True(SupervisorConversion.Converted(_home));
         Assert.Equal(Version, HomeLastBuild.Read(_home));
         Assert.All(Records(), record => Assert.Contains("\"authority\":[\"question.answer\",\"course.go-on\",\"limit.move\"]", record, StringComparison.Ordinal));
         Assert.Equal(SupervisorKinds.Seeded, RoleCatalog.Read(Store).Slots.Single(slot => slot.Id == AppointedRoles.Supervisor).Role!.Hold!.Acts);
@@ -86,13 +86,13 @@ public sealed class SupervisorStepTests : IDisposable
         var failed = HomeMigration.Run(_home, [new SupervisorStep(() => Version)]);
 
         Assert.Equal(SupervisorStep.StepName, failed.Failed?.Step);
-        Assert.False(SupervisorStep.Converted(_home));
+        Assert.False(SupervisorConversion.Converted(_home));
         Assert.All(Records(), record => Assert.Equal(old, record));
         Assert.False(System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(Decisions, "d1.json")))!.AsObject().ContainsKey("kind"));
 
         Directory.Delete(kept);
         Assert.Null(HomeMigration.Run(_home, [new SupervisorStep(() => Version)]).Failed);
-        Assert.True(SupervisorStep.Converted(_home));
+        Assert.True(SupervisorConversion.Converted(_home));
         Assert.All(Records(), record => Assert.DoesNotContain("\"defer\"", record, StringComparison.Ordinal));
     }
 

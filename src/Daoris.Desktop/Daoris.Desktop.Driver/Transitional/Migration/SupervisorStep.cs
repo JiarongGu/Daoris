@@ -12,26 +12,16 @@ namespace Daoris.Driver;
 /// An older build reads the new shape wrongly (it takes any <c>authority</c>, ignores <c>decides</c> and reads no grant), so before it
 /// converts anything the step keeps this build's version as the home's newest build, the record the launcher refuses an older build by,
 /// and reads it back; a write or read-back that fails throws, the step stays unrecorded, and the role door writes no supervisor record
-/// until it is (<see cref="NotConverted"/>).
+/// until it is (<see cref="SupervisorConversion"/>).
 /// </remarks>
 public sealed class SupervisorStep(Func<string?>? running = null) : IHomeMigrationStep
 {
-    /// <summary>The step's name in the migration's record.</summary>
-    public const string StepName = "supervisor-kinds";
-
-    /// <summary>The role door's refusal of a supervisor's record while the step is not recorded.</summary>
-    public const string NotConverted = "not-converted";
-
-    /// <summary>What the refusal says.</summary>
-    public const string NotConvertedSaid = "This home is converted once the update confirms; set the supervisor then.";
+    public const string StepName = SupervisorConversion.Step;
 
     private const string Answer = "answer";
     private const string Defer = "defer";
 
     public string Name => StepName;
-
-    /// <summary>Whether <paramref name="home"/>'s supervisors are in this build's shape, so the role door may write one.</summary>
-    public static bool Converted(string home) => HomeMigration.Recorded(home, StepName);
 
     public void Run(HomeMigrationRun run)
     {
