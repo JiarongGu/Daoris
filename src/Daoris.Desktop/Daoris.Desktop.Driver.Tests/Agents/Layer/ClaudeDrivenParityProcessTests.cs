@@ -145,7 +145,9 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
     {
         var file = Path.Combine(_scratch, "b1.output");
         await File.WriteAllTextAsync(file, "listening on 4200\nready\n", _bound.Token);
-        var (daoris, layer) = await BothAsync("claude-output-file", OutputFile(file));
+        var lines = OutputFile(file);
+        // The follower's first read runs beside the stream, so the turn's result waits for it: the file's lines then come in the same place on both paths.
+        var (daoris, layer) = await BothAsync("claude-output-file", lines[..^1], lines[^1..]);
 
         ParityOracle.Equal(daoris, layer, Relation, []);
         foreach (var seen in new[] { daoris, layer })
@@ -259,9 +261,9 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
     private Task<(ParityObservation Daoris, ParityObservation Layer)> BothAsync(string fixture) => BothAsync(
         Path.GetFileNameWithoutExtension(fixture), [.. File.ReadAllLines(Path.Combine(Fixtures, fixture)).Where(each => each.Length > 0)]);
 
-    private async Task<(ParityObservation Daoris, ParityObservation Layer)> BothAsync(string name, string[] lines)
+    private async Task<(ParityObservation Daoris, ParityObservation Layer)> BothAsync(string name, string[] lines, string[]? after = null)
     {
-        var command = LayerTestProvider.Scenario(_scratch, new { @out = lines }, name);
+        var command = LayerTestProvider.Scenario(_scratch, new { @out = lines, wait = after is null ? 0 : 1500, after = after ?? [] }, name);
         using var daoris = new ParityDaorisPath(Path.Combine(_scratch, "daoris-" + name), ParityDaorisPath.Shipped(ClaudeDrivenLayer.Door));
         using var layer = new ParityLayerPath(Path.Combine(_scratch, "layer-" + name));
         var program = LayerTestProvider.Shim(_scratch, command, name);
