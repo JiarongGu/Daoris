@@ -7,7 +7,8 @@
  *   node tools/comment-gate.mjs --root <dir>       the repository at <dir> instead of the one the tool sits in
  *   node tools/comment-gate.mjs --all              every source file of the work tree, held to the naming rule alone (no base, no share)
  *
- * For each source file the change touches (`.cs`, `.ts`, `.tsx`, `.mjs`, `.js`; generated and build output skipped):
+ * For each source file the change touches (`.cs`, `.ts`, `.tsx`, `.mjs`, `.js`; generated and build output skipped; a `*.template`
+ * file under `src/` is read as the source its extension before `.template` names):
  *
  * 1. The share of its non-blank lines that are comment lines does not rise. A comment line has nothing on it but a comment:
  *    a line comment, or a line of a block comment. A renamed file is held against its old self; a new file has no old
@@ -27,6 +28,10 @@ import { execGit, isMain, repositoryFiles } from './fsx.mjs';
 const SOURCE = /\.(cs|ts|tsx|mjs|js)$/;
 const SKIPPED = /(^|\/)(bin|obj|node_modules|_fixtures|wwwroot|dist|generated|local)\//;
 const MAIN = 'main';
+const TEMPLATE = /^src\/.*\.template$/;
+
+/** Whether `path` is source: a source file, or a template under `src/` whose extension before `.template` is a source one. */
+export const isSource = (path) => SOURCE.test(TEMPLATE.test(path) ? path.slice(0, -'.template'.length) : path);
 
 const ROW = /\b[A-Z]{2,}\d+[a-z]?\b/g;
 const KNOWN = /^(?:UTF|SHA|MD|HTTP|HS|RS|ES|PS|AES|X|ISO|RFC|TLS|SSL|CRC|BASE|GB|PBKDF|SSH|IPV|WIN|MP|H|OS)\d+$/;
@@ -240,7 +245,7 @@ function touched(root, base, tip) {
       files.push({ path, from: path, status: 'A' });
     }
   }
-  return files.filter((f) => f.status !== 'D' && SOURCE.test(f.path) && !SKIPPED.test(f.path));
+  return files.filter((f) => f.status !== 'D' && isSource(f.path) && !SKIPPED.test(f.path));
 }
 
 /** The breaches of the change `base`..`tip` (the working tree where `tip` is null) in the repository at `root`. */
@@ -262,7 +267,7 @@ export function checkAll(root) {
   const problems = [];
   let checked = 0;
   for (const path of repositoryFiles(root)) {
-    if (!SOURCE.test(path) || SKIPPED.test(path)) continue;
+    if (!isSource(path) || SKIPPED.test(path)) continue;
     problems.push(...judge(path, null, readFileSync(join(root, path), 'utf8')));
     checked++;
   }

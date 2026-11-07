@@ -1,4 +1,4 @@
-// The contract test Daoris's plugin kit writes beside a plugin that performs (FABRIC-PERFORM1e; the fabric events design §D9). It
+// The contract test Daoris's plugin kit writes beside a plugin that performs. It
 // starts the plugin the way the driver does, in the kit's stand-in world (DAORIS_PLUGIN_WORLD), and shows over the wire what the kit
 // promises of a performer: one external effect under duplicate delivery; each `work/reconcile` answer; `already-gone` on a repeated
 // cleanup; an event sent again under the id it first had; and no frame claiming what a plugin may not, nor anything written to the
@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 const folder = dirname(fileURLToPath(import.meta.url));
 const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
 
-/** The hook wire this file was written for, and the capability a performer's handshake names. */
+/** The hook wire this file is written for, and the capability a performer's handshake names. */
 const PROTOCOL = {{protocol}};
 const CAPABILITY = '{{capability}}';
 
