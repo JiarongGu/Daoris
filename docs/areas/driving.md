@@ -89,7 +89,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SessionTrees` | `Workplace/SessionTrees.cs` | Opens a fresh tree; the front over every tree part (`TreeContext`) |
 | `TreeHeads` | `Workplace/TreeHeads.cs` | The branch each listed tree has checked out, one `worktree list` per repository; a tree git does not list is asked on its own |
 | `TreeDependencies`, `TreeLocalInputs` | `Workplace/` | Copy installed dependencies and declared machine-local files into a tree as it opens |
-| `LaneRooms`, `TreeClassesReader`, `RoomCheck`, `RoomCheckReport`, `RoomPaths` | `Workplace/` | The rooms the lanes file declares and the classes the gates file's `trees` declares, read and checked: claim groups by build closure, crossings, refusals |
+| `LaneRooms`, `RoomCheck`, `RoomCheckReport`, `RoomPaths` | `Workplace/` | The rooms the lanes file declares, read and checked with the repository's rule file: claim groups by build closure, crossings, refusals |
+| `FileRules`, `FileRuleFile`, `RepositoryFilesReader`, `PersonFiles`, `FoundFiles`, `FilePermissions`, `FileFloor` | `Workplace/Files/` | The rule file's one format, its four layers and the floor, each path's effective rule, the person's permissions; `FilesCommand` is `daoris files` |
+| `FileAnalysis`, `FileSignatures`, `FileGit`, `FileWalk` | `Workplace/Files/` | The analysis that writes the found layer from git's view, bounded walks, the shipped signatures and the tracked scripts |
 | `RoomsProposal` | `Knowledge/` | The words the set-up's brief and Ask Daoris's room both say to ask a repository with no rooms or classes to propose them |
 | `AutoTidies`, `TreeSetAside`, `TreeSweeps` | `Workplace/` | The look's own tidy, the move aside, and the clean-up press's one path |
 | `EndJudgement`, `EndKeeping` | `Workplace/EndJudgement.cs`, `Workplace/EndKeeping.cs` | Whether a branch's work ended, from git alone, and the one writer of that fact |
@@ -164,8 +166,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 21. While the tree is locked as opening, it gets copies, never links, of the checkout's installed dependencies and of
     the machine-local files the gates declare, read-only. A failed open removes its tree and branch. (from D51, D216)
 22. A tree serves one line of work and is never handed to another. A repository may declare its rooms (lanes carrying
-    `builds`, joined by a `room`) and the classes of its ignored files (`trees` in its gates file); `RoomCheck` checks
-    them over git's tracked files and names the claim groups, and no open, placement or commit reads them. (from D51, D214)
+    `builds`, joined by a `room`); `RoomCheck` checks them with its rule file over git's tracked files and names the claim
+    groups. Every path git does not manage has an effective rule from four layers, a later one's match winning and the last
+    match deciding within one: the analysis's found layer (`data/files-found.json`, git's view, the walks, the local and
+    toolchain signatures of `Defaults/file-signatures.json` and the tracked scripts, read at the commit and writing nothing in
+    a tree), the repository's tracked `daoris.files.json` read from git's objects at the line's tip, and the person's
+    `data/files.json`, its `machine` rules then the repository's. The floor is read over all: a tracked path is git's, a top
+    that is or holds another repository, a linked worktree or a bare repository's shape is `repository`, and a harness's or
+    an editor's settings are never copied. The person's `deny`, `allow` and `ask` over `run`, `copy` and `share` are empty by
+    default; a `files.json` that does not read holds every act as an ask and is never written over. `daoris files` shows each
+    path's rule and its layer; nothing yet acts on them. (from D51, D214)
 23. A session commits on its tree's branch as it goes. An agent that moves its tree onto a branch of its own is
     followed there. (from D164)
 24. One decision says how a line goes on after any trigger (words kept, an answer, a limit, a transient bound, a
@@ -310,7 +320,8 @@ look and the run, the lazily built parts and the settables, and grows by a one-l
 | a machine setting, or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key: the verb in `DriverChoicesCommand` and `ChoiceRoutes`, `SET_<KEY>` in the modules, Ask Daoris's door, the page's `settings.<key>.*` words | the modules' `Platform/MachineSettingsCensusTests`, the page's `settings/everySetting.test.tsx`, and each door's own tests |
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees`' front | `Workplace/SessionTreesTests`, `Workplace/FreshTreeTests`, `Workplace/TreeDependenciesTests`, `Workplace/TreeLocalInputsTests`, `Workplace/TreeReturnsTests` |
-| a room's or a class's declaration, or the room check | `Workplace/LaneRooms.cs`, `TreeClassesReader.cs`, `RoomCheck.cs`; the conventions in canon's `rooms-and-classes` | `Workplace/LaneRoomsTests`, `TreeClassesTests`, `RoomCheckTests`, `RoomsDeclaredCensusTests` (this repository's own) |
+| a room's declaration, or the room check | `Workplace/LaneRooms.cs`, `RoomCheck.cs`; the conventions in canon's `rooms-and-classes` | `Workplace/LaneRoomsTests`, `RoomCheckTests`, `RoomsDeclaredCensusTests` (this repository's own) |
+| a rule file's layer, the floor, the permissions or the analysis | `Workplace/Files/`; the signatures in `Defaults/file-signatures.json` | `Workplace/Files/FileRulesTests`, `PersonFilesTests`, `RepositoryFilesTests`, `FileAnalysisTests` (Process, git: a fixture per toolchain) |
 | the tidy and branch ends | `Workplace/EndJudgement.cs`, `Workplace/TreeSetAside.cs`, `Workplace/AutoTidies.cs` | `Workplace/EndJudgementTests`, `Workplace/EndJudgementGitTests`, `Workplace/BranchTidyingTests`, `Workplace/TreeScratchTests`, `Workplace/TidyGitCountTests` |
 | a rule every door shares | `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs` (with the ledger's parts above), `Service/Asks/AskDesk.cs` (with the desk's parts above) | `Quests/QuestExchangeTests`, `Quests/QuestMovesTests`, `Quests/QuestDeleteTests`, `Quests/QuestHandbackTests`, `Sessions/SessionLedgerTests`, `Sessions/SessionLockAcrossHostsTests`, `Asks/AskDeskTests`, `Remote/QuestSyncTests` |
 | intakes | `Loop/DriverIntakes.cs`, `WorkOrders/IntakeRoom.cs`, `WorkOrders/IntakeKinds.cs` | `WorkOrders/IntakeTests`, `WorkOrders/IntakeRoutingTests`, `WorkOrders/IntakePromptGoldenTests`, service `Asks/IntakeTests` |

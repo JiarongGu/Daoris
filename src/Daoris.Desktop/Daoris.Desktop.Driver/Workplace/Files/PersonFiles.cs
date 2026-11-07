@@ -10,7 +10,7 @@ internal sealed record FileScope(IReadOnlyList<FileRule> Rules, FilePermissions 
 }
 
 /// <summary>
-/// The person's layer as it was read: the <c>machine</c> scope, each repository's, the rules and permissions refused alone, and
+/// The person's layer as read: the <c>machine</c> scope, each repository's, the rules and permissions refused alone, and
 /// <see cref="Unread"/>, why a file that stands does not read.
 /// </summary>
 internal sealed record PersonFilesRead(FileScope Machine, IReadOnlyDictionary<string, FileScope> Repositories, IReadOnlyList<string> Problems)

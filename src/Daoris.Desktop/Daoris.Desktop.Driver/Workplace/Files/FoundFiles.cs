@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One reading of a repository: the commit it was read at, when, and the rules it found.</summary>
+/// <summary>One reading of a repository: the commit read, when, and the rules found.</summary>
 internal sealed record FoundReading(string Commit, DateTimeOffset At, IReadOnlyList<FileRule> Rules);
 
 /// <summary>A repository's last reading in the found layer, or none, and why the file or a rule of it does not read.</summary>

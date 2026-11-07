@@ -270,10 +270,7 @@ public sealed partial class SetupBriefTests
         Assert.DoesNotContain(".gitattributes", declaring);
     }
 
-    /// <summary>
-    /// A set-up that declares the safe work proposes the rooms where none are, and one that declares nothing asks none. What git does
-    /// not manage is Daoris's own analysis to read, so no class is proposed.
-    /// </summary>
+    /// <summary>A set-up that declares the safe work proposes the rooms where none are, and one that declares nothing asks none.</summary>
     [Fact]
     public void A_set_up_proposes_rooms_for_a_repository_with_none()
     {

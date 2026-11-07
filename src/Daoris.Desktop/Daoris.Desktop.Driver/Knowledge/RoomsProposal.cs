@@ -1,11 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a repository with no rooms is asked to propose: the set-up's brief and Ask Daoris's room say it in these words, so the two
-/// proposals ask the same. The conventions are the canon's knowledge, never code, and a model writes the declaration, so nothing is
-/// proposed where none runs. The declaration is the repository's own change, on its own branch, accepted by the person where it
-/// lands; Daoris writes none of it. What git does not manage is Daoris's own analysis to read (<see cref="FileAnalysis"/>), so no
-/// class of it is proposed.
+/// What a repository with no rooms is asked to propose, in the words the set-up's brief and Ask Daoris's room both say; a model
+/// writes the declaration on the repository's own branch, and Daoris writes none of it.
 /// </summary>
 internal static class RoomsProposal
 {

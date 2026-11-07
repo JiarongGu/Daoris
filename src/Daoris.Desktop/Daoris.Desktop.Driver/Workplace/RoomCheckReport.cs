@@ -4,8 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the room check found (<see cref="RoomCheck"/>): the rooms in the order declared, its claim groups (rooms whose build closures
-/// meet, one session in place per group), every reference across rooms, what is said to be in no room, the repository's own rules
-/// for what git does not manage, and why the declaration does not pass.
+/// meet, one session in place per group), the crossings, what lies in no room, the repository's rules and why it does not pass.
 /// </summary>
 internal sealed record RoomCheckReport(
     IReadOnlyList<string> Rooms, IReadOnlyList<IReadOnlyList<string>> Groups, IReadOnlyList<RoomCrossing> Crossings, IReadOnlyList<string> InNone,
