@@ -177,6 +177,28 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
     }
 
     [Fact]
+    public async Task The_roles_answer_says_who_decides_each_kind_at_each_place_a_supervisor_names()
+    {
+        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code" }""");
+        RoleStaffing.Wire(Home, () => StoreSettled.Yes).ImportFile();
+        HomeMigration.Run(Home, [new SupervisorStep(() => null)]);
+        var module = Module();
+        await AnswerAsync(module, "SET_ROLE", new
+        {
+            change = "set", id = "gatekeeper",
+            role = new { name = "Gatekeeper", takes = Array.Empty<string>(), scope = new { kind = "workspace", id = "games" }, filled = "appointed", kind = "supervisor", authority = new[] { "allow.once" }, holder = "terminal", window = 5, decides = new[] { "allow" } },
+        });
+
+        var places = (await AnswerAsync(module, "ROLES")).GetProperty("deciders").GetProperty("places").EnumerateArray()
+            .ToDictionary(place => place.GetProperty("place").GetString()!, place => place.GetProperty("kinds").EnumerateArray().ToDictionary(line => line.GetProperty("kind").GetString()!));
+        Assert.Equal(["machine", "workspace:games"], places.Keys);
+        var allow = places["workspace:games"]["allow"];
+        Assert.Equal(("gatekeeper", "workspace:games", "allow.once"), (allow.GetProperty("role").GetString(), allow.GetProperty("scope").GetString(), allow.GetProperty("granted")[0].GetString()));
+        Assert.Equal("supervisor", places["workspace:games"]["question"].GetProperty("role").GetString());
+        Assert.Empty(places["machine"]["allow"].GetProperty("granted").EnumerateArray());
+    }
+
+    [Fact]
     public async Task A_home_whose_actors_are_the_file_s_own_sets_no_role()
     {
         File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code" }""");

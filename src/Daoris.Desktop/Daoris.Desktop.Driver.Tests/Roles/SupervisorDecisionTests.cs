@@ -29,11 +29,10 @@ public sealed class SupervisorDecisionTests : IDisposable
     {
         public string? Generation { get; set; } = "g-1";
 
-        /// <summary>The overrule window the appointment set; null sets none.</summary>
         public TimeSpan? Window { get; set; }
 
-        public DecisionAdmitted Admit(string repository) =>
-            Generation is { } generation && repository == Repository
+        public DecisionAdmitted Admit(string kind, RolePlace place, string? act) =>
+            Generation is { } generation && place.Repository == Repository
                 ? new(generation, null) { Window = Window }
                 : DecisionAdmitted.Refused("not-appointed");
     }
@@ -106,7 +105,7 @@ public sealed class SupervisorDecisionTests : IDisposable
         var kept = await Decisions(NoDecisionAdmission.Instance).KeepAsync(Answer(), Park(), Kept);
 
         Assert.Equal((false, SupervisorWhy.RoleChanged), (kept.Kept, kept.Why));
-        Assert.Equal(SupervisorWhy.NotStaffed, NoDecisionAdmission.Instance.Admit(Repository).Why);
+        Assert.Equal(SupervisorWhy.NotStaffed, NoDecisionAdmission.Instance.Admit(SupervisorKinds.Question, new(Repository: Repository), null).Why);
         Assert.False(Directory.Exists(Folder));
     }
 

@@ -328,6 +328,7 @@ public sealed class DriverRoutes(DriverContext context)
             PolicyFields = StaffCapabilities.Fields,
             PolicyPresets = StaffPresets.Names,
             Supervisor = SupervisorRuleRows.Of(_loop.Home),
+            Deciders = SupervisorDeciders.Of(catalogue.Slots, new RuleWiderPlaceStore(_loop.Home).Read()),
             Works = RoleWork.Codes,
             Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
             // The choices suggested for the seeded roles, whole; the page leaves out an agent this machine has not set up.

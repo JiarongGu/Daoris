@@ -43,7 +43,7 @@ public sealed record RoleFound(RoleRecord? Role, string? Held);
 public sealed class RoleCatalog
 {
     /// <summary>The store's version this family's tables arrive at.</summary>
-    private const int Step = 10;
+    internal const int Step = 10;
 
     /// <summary>The seeded roles in the screen's order, one per id of <see cref="ActorChoices.Ids"/> and the two appointed: Defaults/roles.json, carried in the assembly.</summary>
     public static IReadOnlyList<RoleRecord> Seed { get; } = ReadSeed();
@@ -222,12 +222,8 @@ public sealed class RoleCatalog
     /// <summary>Every appointed role that reads, the supervisors and the steward, in the catalogue's order.</summary>
     public IReadOnlyList<RoleRecord> HoldingActs => [.. Slots.Select(slot => slot.Role).OfType<RoleRecord>().Where(role => role.Hold is not null)];
 
-    /// <summary>
-    /// The appointed role of <paramref name="kind"/> that acts at <paramref name="place"/>: the most specific scope's that covers it, as a
-    /// work's role is found; null where none does. The judge keeps one of a kind per scope.
-    /// </summary>
-    public RoleRecord? Appointed(string kind, RolePlace place) =>
-        HoldingActs.Where(role => role.Hold!.Kind == kind && role.Scope.Covers(place)).OrderByDescending(role => role.Scope.Rank).FirstOrDefault();
+    /// <summary>The supervisor that answers a decision of <paramref name="kind"/> at <paramref name="place"/>: <see cref="SupervisorResolution.Find"/>.</summary>
+    public SupervisorFound Supervising(string kind, RolePlace place, RuleWiderPlaces? wider = null) => SupervisorResolution.Find(Slots, kind, place, wider);
 
     /// <summary>Where the person gives a work its role, named in every hold that waits for one.</summary>
     private const string Configured = "Agents → Roles, or `daoris role`";
@@ -241,7 +237,7 @@ public sealed class RoleCatalog
 
     /// <summary>The judge's refusal codes, the closed set every door answers; <c>policy</c> is a staffing policy's (<see cref="StaffPolicy.Judge"/>).</summary>
     public static IReadOnlyList<string> Codes { get; } =
-        ["appointed-not-configurable", "mixed-shape", "unknown-work", "bad-record", "may-not-be-off", "two-roles-one-work", "choices", StaffPolicy.Code];
+        ["appointed-not-configurable", "mixed-shape", "unknown-work", "bad-record", "may-not-be-off", "two-roles-one-work", "choices", StaffPolicy.Code, SupervisorConversion.NotConverted];
 
     /// <summary>
     /// Whether <paramref name="choices"/> may be the staffing of a role taking <paramref name="work"/>: today's <see cref="ActorChoices.Judge"/>
@@ -314,17 +310,19 @@ public sealed class RoleCatalog
                 return Refused("two-roles-one-work", $"`{clash.Id}` already takes `{clash.Takes.Intersect(set.Takes).First()}` in that scope: at most one role takes a work in one scope.");
             }
 
-            if (set.Hold?.Kind is { } kind
-                && after.FirstOrDefault(slot => slot.Role is { } other && other.Id != set.Id && other.Scope == set.Scope && other.Hold?.Kind == kind) is { Role: { } twin })
+            if (set.Hold is { } hold)
             {
-                return Refused("two-roles-one-work", $"`{twin.Id}` is already the {kind} in that scope: at most one role of a kind acts in one scope.");
+                foreach (var other in after.Select(slot => slot.Role).OfType<RoleRecord>().Where(other => other.Id != set.Id && other.Scope == set.Scope && other.Hold is not null))
+                {
+                    if (SupervisorResolution.Shared(hold, other.Hold!) is { } shared) return Refused("two-roles-one-work", $"`{other.Id}` {shared}.");
+                }
             }
         }
 
-        // The supervisor's rules always act, so a supervisor stays on the machine to hold them.
-        if (!after.Any(slot => slot.Role is { Hold.Kind: AppointedRoles.Supervisor, Scope.Rank: 0 }) && !after.Any(slot => slot is { State: RoleState.Unreadable, Id: AppointedRoles.Supervisor }))
+        // The supervisor's rules always act, so a generic supervisor stays on the machine to hold them and answer what no kind takes.
+        if (!after.Any(slot => slot.Role is { Hold.Generic: true, Scope.Rank: 0 }) && !after.Any(slot => slot is { State: RoleState.Unreadable, Id: AppointedRoles.Supervisor }))
         {
-            return Refused("may-not-be-off", $"the supervisor may not be off: your rules hold it on the machine, so `{change.Id}` cannot be removed or scoped away from it.");
+            return Refused("may-not-be-off", $"the supervisor for every decision may not be off: your rules hold it on the machine, so `{change.Id}` cannot be removed, scoped away from it or given kinds.");
         }
 
         // An unreadable seeded id is left to the person's next edit of it, so it is not counted as uncovered here.

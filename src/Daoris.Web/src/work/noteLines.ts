@@ -237,7 +237,7 @@ export const NOTE_VALUES: Readonly<
   // A chat run's workflow, by its id, and why it cannot be bound or land, in the driver's words.
   workflow: 'text', problem: 'text',
   // The limit an attempt just after its reset met again, in the agent's own words.
-  hit: 'text',
+  hit: 'text', reason: 'text',
   // The build an update installed when its close cut a run, as `version` is said.
   build: 'text',
   until: 'moment', at: 'moment', seen: 'moment',

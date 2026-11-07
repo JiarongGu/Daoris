@@ -209,6 +209,6 @@ public sealed class SupervisorQuestCourseTests : IDisposable
 
     private sealed class Admits(string generation) : IDecisionAdmission
     {
-        public DecisionAdmitted Admit(string repository) => new(generation, null) { Window = TimeSpan.FromMinutes(1) };
+        public DecisionAdmitted Admit(string kind, RolePlace place, string? act) => new(generation, null) { Window = TimeSpan.FromMinutes(1) };
     }
 }

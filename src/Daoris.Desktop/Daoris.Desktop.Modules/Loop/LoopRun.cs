@@ -243,8 +243,6 @@ internal sealed class LoopRun(
             // A restart forgets every steward's release, so what an earlier run left in the file is withdrawn before the first look;
             // the owner's own releases are kept whole.
             RoleStarts.Sweep(served.StandingConfirmation, loop.ConfigPath);
-            // A workspace's supervisor covers what the registry places in it as each act is judged.
-            served.StandingConfirmation.WorkspaceOf = repository => shared.Placed.GetValueOrDefault(repository);
             // The presses that waited when Daoris last stopped come back before the pipe is served, on this home's lease, which makes
             // this loop their records' one writer; what could not come back, and what a newer Daoris kept, is said once in Done and failed.
             served.Confirmations.Restarted = loop.Notices.Restarted;

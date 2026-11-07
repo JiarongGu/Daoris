@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// </summary>
 public interface IDecisionAdmission
 {
-    /// <summary>The effective supervisor's hold for <paramref name="repository"/>, or why none admits (<c>not-staffed</c>, <c>not-started</c>).</summary>
-    DecisionAdmitted Admit(string repository);
+    /// <summary>The hold of the supervisor answering <paramref name="kind"/> at <paramref name="place"/>; a null act is a leave, needing no grant.</summary>
+    DecisionAdmitted Admit(string kind, RolePlace place, string? act);
 }
 
 /// <summary>What <see cref="IDecisionAdmission"/> answers: the effective generation, or why no holder is admitted.</summary>
@@ -17,9 +17,8 @@ public sealed record DecisionAdmitted(string? Generation, string? Why)
     public static DecisionAdmitted Refused(string why) => new(null, why);
 
     /// <summary>
-    /// The overrule window the effective supervisor's role keeps (<see cref="RoleHold.Window"/>), within
-    /// <see cref="QuestionSupervisorDecisions.ShortestWindow"/> and <see cref="QuestionSupervisorDecisions.LongestWindow"/>; null keeps
-    /// <see cref="QuestionSupervisorDecisions.Window"/>.
+    /// The overrule window the effective supervisor's role keeps (<see cref="RoleHold.Window"/>), within the decisions' shortest and
+    /// longest; null keeps <see cref="QuestionSupervisorDecisions.Window"/>.
     /// </summary>
     public TimeSpan? Window { get; init; }
 }
@@ -29,7 +28,7 @@ public sealed class NoDecisionAdmission : IDecisionAdmission
 {
     public static readonly NoDecisionAdmission Instance = new();
 
-    public DecisionAdmitted Admit(string repository) => DecisionAdmitted.Refused(SupervisorWhy.NotStaffed);
+    public DecisionAdmitted Admit(string kind, RolePlace place, string? act) => DecisionAdmitted.Refused(SupervisorWhy.NotStaffed);
 }
 
 /// <summary>
@@ -93,6 +92,8 @@ public static class SupervisorWhy
 
     /// <summary>The role is staffed by the terminal and its terminal is not started this run.</summary>
     public const string NotStarted = "not-started";
+
+    public const string NotGranted = "not-granted";
 
     /// <summary>The hold an act names is not the role's now: its terminal is started again, or its role changed.</summary>
     public const string RoleChanged = "role-changed";

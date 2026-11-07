@@ -48,12 +48,11 @@ public static class HomeMigration
         new LineageFilesStep(),
         new BrainstormFilesStep(),
         new StandingGrantStep(),
+        new SupervisorStep(),
     ];
 
-    /// <summary>
-    /// Run the steps <paramref name="home"/>'s record does not hold, under the home's lease, recording each as it finishes. A lease still
-    /// held after <paramref name="leaseWait"/> runs nothing; a step that throws stops the run there, recorded as not done.
-    /// </summary>
+
+    /// <summary>Run the steps the record does not hold under the home's lease, each recorded as it finishes; one that throws stops the run.</summary>
     public static HomeMigrated Run(string home, IReadOnlyList<IHomeMigrationStep>? steps = null, TimeSpan? leaseWait = null, Func<DateTimeOffset>? clock = null)
     {
         steps ??= Steps;
@@ -114,20 +113,7 @@ public static class HomeMigration
         if (migrated.Failed is { } failed) log.Warn("home.migration-failed", ("migration", migrated.Migration), ("step", failed.Step), ("reason", failed.Said));
     }
 
-    /// <summary>The steps the record holds for this migration; null where there is no record, or one of another migration.</summary>
-    private static List<string>? Done(string record)
-    {
-        try
-        {
-            if (!File.Exists(record) || JsonNode.Parse(AtomicFile.ReadText(record)) is not JsonObject root) return null;
-            if ((string?)root["migration"] != Name || root["steps"] is not JsonArray steps) return null;
-            return [.. steps.Select(each => each?.GetValue<string>()).OfType<string>()];
-        }
-        catch (Exception error) when (error is JsonException or IOException or InvalidOperationException or FormatException)
-        {
-            return null;
-        }
-    }
+    private static List<string>? Done(string record) => MigrationRecord.Read(record) is { Migration: Name } read ? [.. read.Steps] : null;
 
     private static void Write(string record, IReadOnlyList<string> steps, DateTimeOffset at)
     {

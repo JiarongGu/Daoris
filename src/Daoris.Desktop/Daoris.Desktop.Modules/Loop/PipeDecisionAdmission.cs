@@ -8,6 +8,6 @@ namespace Daoris.Desktop;
 /// </summary>
 internal sealed class PipeDecisionAdmission(DriverLoop loop) : IDecisionAdmission
 {
-    public DecisionAdmitted Admit(string repository) =>
-        loop.Pipe?.StandingConfirmation is { } judge ? judge.Admit(repository) : NoDecisionAdmission.Instance.Admit(repository);
+    public DecisionAdmitted Admit(string kind, RolePlace place, string? act) =>
+        loop.Pipe?.StandingConfirmation is { } judge ? judge.Admit(kind, place, act) : NoDecisionAdmission.Instance.Admit(kind, place, act);
 }

@@ -10,6 +10,11 @@ public sealed class RuleWiderPlaces(IReadOnlyDictionary<string, string> workspac
     /// <summary>No repository's workspace known.</summary>
     public static RuleWiderPlaces None { get; } = new(new Dictionary<string, string>());
 
+    /// <summary>Why the kept map did not read, so the supervisors' resolver holds what it cannot place for the person.</summary>
+    public string? Error { get; init; }
+
+    public static RuleWiderPlaces Unread(string error) => new(new Dictionary<string, string>()) { Error = error };
+
     /// <summary>Each repository's workspace, for those registered in one.</summary>
     public IReadOnlyDictionary<string, string> WorkspaceOf { get; } = workspaceOf;
 

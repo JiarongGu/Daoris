@@ -116,6 +116,7 @@ internal sealed class SupervisorDecisionFiles(string home)
         ParkQuestion question, string generation, DateTimeOffset kept, DateTimeOffset goesOn, IReadOnlyList<CountFact>? counts) => Written(writer =>
     {
         writer.WriteString("decision", id);
+        writer.WriteString("kind", SupervisorKinds.Question);
         writer.WriteString("session", session);
         writer.WriteStartObject("question");
         writer.WriteString("id", question.Id);

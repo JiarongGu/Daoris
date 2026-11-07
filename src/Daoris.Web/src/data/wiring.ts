@@ -263,8 +263,12 @@ export type RoleRow = {
   hold?: RoleHoldRead | null;
 };
 
-/** What an appointed role holds: its kind, its acts, who holds it (none is a role not staffed) and the supervisor's window in minutes. */
-export type RoleHoldRead = { kind: 'supervisor' | 'steward'; acts: string[]; holder?: 'rules' | 'terminal' | null; window?: number };
+/** What an appointed role holds: kind, acts, holder (none is not staffed), a supervisor's window and its kinds (none is generic). */
+export type RoleHoldRead = { kind: 'supervisor' | 'steward'; acts: string[]; holder?: 'rules' | 'terminal' | null; window?: number; decides?: string[] };
+
+/** A kind at a place as `ROLES`' `deciders` says it: its supervisor, where set, its holder and granted acts, or why it is yours. */
+export type DeciderLine = { kind: string; role?: string | null; scope?: string | null; holder?: string | null; granted: string[]; held?: string | null };
+export type DecidersRead = { places: { place: string; kinds: DeciderLine[] }[]; elsewhere: DeciderLine[] };
 
 /** A role Daoris suggests adding: the Designer while no role takes design, applied only by the person's press. */
 
@@ -307,6 +311,7 @@ export type RoleCatalogue = {
   suggestedChoices?: { role: string; choices: RoleChoice[] }[]; suggestedChoicesDated?: string;
   /** The supervisor's rules: every place's set and what each ruled count takes; absent from a driver without them. */
   supervisor?: SupervisorRulesRead;
+  deciders?: DecidersRead;
 };
 
 /** One supervisor rule as `ROLES` answers it and a press carries it: when `count` reaches `at`, `do`; `upTo` minutes for `wait`, `roles` none for every role. */
@@ -331,8 +336,8 @@ export type RoleChangePress = {
   change: 'set' | 'remove' | 'default' | 'default-all'; id: string; revision?: number | null;
   role?: {
     name: Authored; takes: string[]; scope: { kind: string; id?: string | null };
-    /** An appointed role's record: `filled`, its acts (`authority`), its holder (null is none) and the supervisor's window. */
-    filled?: 'appointed'; authority?: string[]; holder?: string | null; window?: number;
+    /** An appointed role's record: `filled`, its kind, its acts (`authority`), its holder (null is none) and the supervisor's window and kinds. */
+    filled?: 'appointed'; kind?: RoleHoldRead['kind']; authority?: string[]; holder?: string | null; window?: number; decides?: string[];
   };
   choices?: RoleChoice[] | null;
   /** A preset's name, a record, or null to clear; absent leaves the policy as it is. Only `SET_ROLE`/`SET_ROLES` write it. */

@@ -21,6 +21,7 @@ public sealed class RoleDoorTests : IDisposable
         Assert.Equal(StaffingImported.Done, Staffing.ImportFile().How);
         // The seeded Design role takes design machine-wide; these cases add a role taking it, so it is removed first.
         RoleCatalog.Write(Staffing.Location, RoleChange.Remove("design"), () => StoreSettled.Yes);
+        Assert.Null(HomeMigration.Run(_home, [new SupervisorStep(() => null)]).Failed);
     }
 
     public void Dispose()
@@ -51,9 +52,9 @@ public sealed class RoleDoorTests : IDisposable
 
         (RoleChange Change, IReadOnlyList<ActorChoice>? Choices, string Code)[] cases =
         [
-            (RoleChange.Set(Designer(new RoleScope(RoleScope.Workspace, "w1")) with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, RoleHolders.Terminal) }), Opus, "appointed-not-configurable"),
-            (RoleChange.Set(Designer() with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, RoleHolders.Terminal) }), null, "two-roles-one-work"),
-            (RoleChange.Set(Designer() with { Id = "lead", Hold = new RoleHold(AppointedRoles.Supervisor, ["answer"], RoleHolders.Rules) }), Opus, "mixed-shape"),
+            (RoleChange.Set(Designer(new RoleScope(RoleScope.Workspace, "w1")) with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.Supervisor, SupervisorKinds.Seeded, RoleHolders.Terminal) }), Opus, "appointed-not-configurable"),
+            (RoleChange.Set(Designer() with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.Supervisor, SupervisorKinds.Seeded, RoleHolders.Terminal) }), null, "two-roles-one-work"),
+            (RoleChange.Set(Designer() with { Id = "lead", Hold = new RoleHold(AppointedRoles.Supervisor, ["question.answer"], RoleHolders.Rules) }), Opus, "mixed-shape"),
             (RoleChange.Set(Designer() with { Id = "lead", Takes = ["gardening"] }), Opus, "unknown-work"),
             (RoleChange.Set(Designer() with { Id = "steward" }), Opus, "mixed-shape"),
             (RoleChange.Remove(AppointedRoles.Supervisor), null, "may-not-be-off"),
@@ -81,7 +82,7 @@ public sealed class RoleDoorTests : IDisposable
         var supervisor = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Supervisor);
         var steward = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Steward);
         var place = new RoleRecord("supervisor-engine", AuthoredText.Of("Engine's supervisor"), RoleRecord.Appointed, [], new RoleScope(RoleScope.Repository, "engine"),
-            new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, RoleHolders.Rules));
+            new RoleHold(AppointedRoles.Supervisor, SupervisorKinds.Seeded, RoleHolders.Rules));
 
         RoleDoor.ApplyAll(Staffing, [
             (RoleChange.Set(supervisor with { Hold = supervisor.Hold! with { Holder = RoleHolders.Terminal, Window = 12 } }), null, null),
@@ -92,13 +93,30 @@ public sealed class RoleDoorTests : IDisposable
         var catalogue = Catalogue();
         var held = catalogue.Slots.Single(slot => slot.Id == AppointedRoles.Supervisor);
         Assert.Equal((RoleState.Set, RoleHolders.Terminal, 12), (held.State, held.Role!.Hold!.Holder, held.Role.Hold.Window));
-        Assert.Equal(RoleHolders.Terminal, catalogue.Appointed(AppointedRoles.Steward, new RolePlace())!.Hold!.Holder);
-        Assert.Equal("supervisor-engine", catalogue.Appointed(AppointedRoles.Supervisor, new RolePlace(Repository: "engine"))!.Id);
+        Assert.Equal(RoleHolders.Terminal, AppointedRoles.StewardOf(catalogue.HoldingActs)!.Hold!.Holder);
+        Assert.Equal("supervisor-engine", catalogue.Supervising(SupervisorKinds.Question, new RolePlace(Repository: "engine")).Role!.Id);
         Assert.DoesNotContain(AppointedRoles.Supervisor, Config().Actors.Keys);
         Assert.Equal(RoleHolders.Terminal, RoleDoor.Rows(catalogue, Config()).Single(row => row.Id == AppointedRoles.Supervisor).Hold!.Holder);
 
         RoleDoor.Apply(Staffing, RoleChange.Default(AppointedRoles.Steward));
-        Assert.Null(Catalogue().Appointed(AppointedRoles.Steward, new RolePlace())!.Hold!.Holder);
+        Assert.Null(AppointedRoles.StewardOf(Catalogue().HoldingActs)!.Hold!.Holder);
+    }
+
+    [Fact]
+    public void A_supervisor_s_record_is_refused_not_converted_until_the_home_s_step_is_recorded_and_written_after()
+    {
+        File.Delete(DaorisHome.Entry(_home, HomeEntry.Migration));
+        var (home, staffing) = (_home, Staffing);
+        var gatekeeper = new RoleRecord("gatekeeper", AuthoredText.Of("Gatekeeper"), RoleRecord.Appointed, [], new RoleScope(RoleScope.Workspace, "w1"),
+            new RoleHold(AppointedRoles.Supervisor, [], RoleHolders.Rules) { Decides = [SupervisorKinds.Allow] });
+
+        var refused = Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(staffing, RoleChange.Set(gatekeeper)));
+        Assert.Equal((SupervisorConversion.NotConverted, SupervisorConversion.NotConvertedSaid), (refused.Code, refused.Message));
+        Assert.Contains(SupervisorConversion.NotConverted, RoleCatalog.Codes);
+
+        HomeMigration.Run(home, [new SupervisorStep(() => null)]);
+        RoleDoor.Apply(staffing, RoleChange.Set(gatekeeper));
+        Assert.Equal([SupervisorKinds.Allow], RoleCatalog.Read(staffing.Location).Slots.Single(slot => slot.Id == "gatekeeper").Role!.Hold!.Decides);
     }
 
     /// <summary>A role is named in one language, or in a third, and an old pair reads unchanged; each is shown in the viewer's language, else as written.</summary>

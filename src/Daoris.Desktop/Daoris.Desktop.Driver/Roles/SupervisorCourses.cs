@@ -63,7 +63,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
 
             // One point is asked once: a question decision of the holder still moving on the line answers for it first.
             if (refused is null && book.Live.Values.Any(each => each.Session == course.Session && !SupervisorStates.Final(each.State))) refused = SupervisorWhy.Answered;
-            var admitted = admission.Admit(point.Repository);
+            var admitted = admission.Admit(SupervisorKinds.Course, new RolePlace(Repository: point.Repository), course.Do == SupervisorCourseActs.GoOn ? SupervisorKinds.GoOn : null);
             refused ??= admitted.Why ?? (admitted.Generation != course.Generation ? SupervisorWhy.RoleChanged : null);
             if (refused is not null)
             {
@@ -102,7 +102,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
             var reached = await book.UnderAsync(due.Session, () =>
             {
                 if (due.State != SupervisorState.Held) return Task.FromResult<SupervisorState?>(null);
-                var admitted = admission.Admit(due.Repository);
+                var admitted = admission.Admit(SupervisorKinds.Course, new RolePlace(Repository: due.Repository), SupervisorKinds.GoOn);
                 var why = admitted.Why is null && admitted.Generation == due.Generation ? line.Why(due.Session, due.Point) : SupervisorWhy.RoleChanged;
                 if (why is null && line.Running(due.Session)) return Task.FromResult<SupervisorState?>(null);
                 if (why is null && !line.GoOn(due.Session)) why = SupervisorWhy.Answered;
@@ -151,6 +151,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
     private static string Json(string id, SupervisorCourse course, ReferredPoint point, DateTimeOffset now, DateTimeOffset goesOnAt) => new JsonObject
     {
         ["id"] = id,
+        ["kind"] = SupervisorKinds.Course,
         ["session"] = course.Session,
         ["holder"] = new JsonObject { ["kind"] = course.Holder.Kind, ["parent"] = course.Holder.Parent },
         ["generation"] = course.Generation,
