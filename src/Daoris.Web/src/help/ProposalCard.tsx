@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
 import type { PlaceAsk } from '../agents/setup/placePlan';
 import { Button, Inline } from '../design/ui';
+import { SessionHelperFacts } from './SessionHelperFacts';
+import { sessionHelperDoor } from './sessionHelperDoor';
 import { type HelpRulesShown, RulesChange } from './RulesChange';
 import type { StarterDoor } from './starters';
 
@@ -434,6 +436,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
   const looking = syncing !== null && !syncing.looked;
   const workflow = proposal.kind === 'workflow' ? proposal.workflow ?? null : null;
   const place = proposal.kind === 'setup' ? proposal.place ?? null : null;
+  const helper = proposal.kind === 'session' ? sessionHelperDoor(proposal.terminal) : null;
   // A draft (WORKFLOW1h-b): what is still needed leaves no Apply, only Not now.
   const draft = workflow !== null && workflow.needs.length > 0;
   // A change to the draft open in the editor (FLOWCHART2f): its press opens the editor, and settles nothing.
@@ -451,7 +454,8 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
             : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
               : syncing ? 'help.proposal.titleSync'
                 : composing ? 'help.proposal.titleDraft' : workflow ? 'help.proposal.titleWorkflow'
-                  : proposal.kind === 'setup' ? 'help.proposal.titleSetup' : 'help.proposal.title')}
+                  : proposal.kind === 'setup' ? 'help.proposal.titleSetup'
+                    : helper ? (helper.door === 'pass' ? 'help.proposal.titlePass' : 'help.proposal.titleHelper') : 'help.proposal.title')}
       </p>
       {workflow
         ? composing ? <DraftChange workflow={workflow} /> : <WorkflowChange workflow={workflow} />
@@ -460,6 +464,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
       {plugin && <PluginRuns plugin={plugin} />}
       {grant && <GrantTools grant={grant} />}
       {place && <PlaceChanges place={place} />}
+      {helper && <SessionHelperFacts door={helper} />}
       {looking && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncLook')}</p>}
       {syncing?.looked && (
         <>

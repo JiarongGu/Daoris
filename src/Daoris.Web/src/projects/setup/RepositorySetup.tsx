@@ -256,7 +256,7 @@ export const FOLD_SECTIONS: readonly SetupSectionId[] = ['landing', 'opinion', '
  *
  * **A value from above says so and offers *Set for this repository***, which opens its control in place; one set here
  * carries *Clear*, which hands it back to what stands above. **Each row's hint is its terminal twin** (D41 §4, D50):
- * `daoris driver <verb> <repository>`, the same file either door edits, so a refusal is the driver's sentence.
+ * `daoris place <verb> <repository>`, the same file either door edits, so a refusal is the driver's sentence.
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */

@@ -57,7 +57,7 @@ internal sealed class HelpRoomAgents : IHelpRoomSection
 }
 
 /// <summary>One agent as the room tells it: installed or not, and which of Daoris's accounts are signed in.</summary>
-/// <param name="Name">The harness's name, as `daoris driver` takes it.</param>
+/// <param name="Name">The harness's name, as `daoris agent` takes it.</param>
 public sealed record HelpAgent(string Name)
 {
     /// <summary>What a person calls the tool, where it says.</summary>

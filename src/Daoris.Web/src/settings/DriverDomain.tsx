@@ -18,7 +18,7 @@ export function settingOf(key: string): MachineSetting {
 
 /**
  * The Driver domain (D75): where this machine's Daoris lives, and the driver's dials over
- * `driver.json`, the same file `daoris driver` edits (D50). The file is the truth and this is an
+ * `driver.json`, the same file `daoris place` and `daoris settings` edit (D50). The file is the truth and this is an
  * editor over it: hand-editing keeps working, and neither surface is the only way to say anything.
  *
  * **Shell-only, like every machine domain.** A browser over a keyed remote must never read where a

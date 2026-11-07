@@ -43,7 +43,7 @@ internal static class HoldVerdicts
         };
     }
 
-    /// <summary>Held by the person's stop: the sentence says whose stop, what Try again does, and the terminal's door, which names the session since `daoris driver` cannot see this verdict.</summary>
+    /// <summary>Held by the person's stop: the sentence says whose stop, what Try again does, and the terminal's door, which names the session since `daoris place` cannot see this verdict.</summary>
     internal static Consideration Stopped(QuestView quest, PriorSession stop) =>
         stop.StewardStopped
             // The steward's stop, held the same way and said as the steward's, never as the person's.

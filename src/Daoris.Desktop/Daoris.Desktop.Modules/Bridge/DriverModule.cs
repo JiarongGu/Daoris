@@ -189,7 +189,7 @@ public sealed class DriverModule : ModuleBase
         catch (ChoiceRefusal coded)
         {
             // PUSH1f2a: a standing choice's operation refusing by a named check, said in the code the library's table gives it, the
-            // code `daoris driver` says it in alone.
+            // code the terminal says it in alone.
             throw Refusals.Declared(ChoiceCodes.Of(coded), coded.Message, [.. coded.Facts]);
         }
         catch (ToolRefusal coded) when (ToolCodes.Coded(coded))

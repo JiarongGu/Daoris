@@ -1,8 +1,8 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The driver's standing choices from a terminal (PUSH1f2a, D194, D50): <c>daoris driver</c>, the words <c>daoris driver …</c>
-/// hands this program. The grammar, the switch and the words are the library's (<see cref="DriverChoicesCommand"/>); this hands it the
+/// The driver's standing choices from a terminal (PUSH1f2a, D194, D50): <c>daoris place …</c> and <c>daoris settings …</c>
+/// hand this program. The grammar, the switch and the words are the library's (<see cref="DriverChoicesCommand"/>); this hands it the
 /// process's terminal, the <c>driver.json</c> the host resolves, and the two facts a choice judges by when it acts alone: the service's
 /// registry, for a review's procedure, and the planner's verdicts over the service's snapshot, for *Try again*.
 /// </summary>
@@ -15,7 +15,7 @@ internal static class DriverChoicesConsole
         var world = new DriverChoicesWorld
         {
             Verbs = DriverChoiceVerbs.With(VerdictsAsync),
-            // Said under `daoris`, as the CLI said each of these verbs before it handed them here: the person typed `daoris driver …`.
+            // Said under `daoris`, as the CLI said each of these verbs before it handed them here.
             Instance = InstanceHost.World(DriverConfig.HomeOf(path), "daoris"),
             ConfigPath = path,
             Registry = RegistryAsync,

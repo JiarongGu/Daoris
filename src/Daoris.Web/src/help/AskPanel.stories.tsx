@@ -181,6 +181,17 @@ export const ProposingEveryKind: Story = {
                 apart: ['docs', 'site', 'tools'],
               },
             },
+            // COWORKUX1: the helper and pass doors of a session proposal.
+            {
+              id: 'y4', kind: 'session' as const,
+              describe: 'Ask agent `codex`, read-only, a question about session `s1`\'s work at the driver\'s next look. Its answer comes to you, and reaches that session only once you pass it to the lead.',
+              terminal: 'daoris session helper s1 "does the retry loop stop?" --agent codex --after a7 --to-me', why: 'you want a second look',
+            },
+            {
+              id: 'y5', kind: 'session' as const,
+              describe: 'Pass the answer to ask `#a7`, kept for you, to session `s1`.',
+              terminal: 'daoris session pass a7', why: 'the answer reads right',
+            },
           ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
         </ul>
       ),

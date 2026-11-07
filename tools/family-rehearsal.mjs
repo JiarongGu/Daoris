@@ -4956,7 +4956,7 @@ const unreadyRead = readPlace(unready.out);
 check(
   '`daoris place --adoption --plan` refuses a repository with no tree of its own, saying its door, and not for being undriven',
   atlasAdded.status === 200 && unready.code === 1 && unreadyRead.refusals.length === 1
-    && /`daoris driver trees atlas on`/.test(unreadyRead.refusals[0]) && !/is not driven here/.test(unready.out)
+    && /`daoris place trees atlas on`/.test(unreadyRead.refusals[0]) && !/is not driven here/.test(unready.out)
     && unreadyRead.nothingWritten && unreadyRead.quests.length === 0,
   `${atlasAdded.text}\n${unready.out}`,
 );

@@ -7,7 +7,7 @@ import type { NodeWordAnswer, NodeWordAsk, RunScope, WorkflowRunAnswer } from '.
 import { call } from '../call';
 
 // How work moves in a repository or a workspace (WORKFLOW1b; D157 point 7, the workflow design §2.7, §6.1): its Current
-// workflow, which the driver derives from this machine's driver file, plugins and registry exactly as `daoris driver
+// workflow, which the driver derives from this machine's driver file, plugins and registry exactly as `daoris
 // workflow show` reads them. The page draws it and derives nothing.
 
 /**

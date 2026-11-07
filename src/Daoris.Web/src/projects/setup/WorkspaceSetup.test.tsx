@@ -162,7 +162,7 @@ describe("a workspace's Setup", () => {
     expect(acts.read).toHaveBeenLastCalledWith(undefined);
   });
 
-  /** Each row's hint is its terminal twin (D41 §4, D50): `daoris driver <verb> --workspace <name>`. */
+  /** Each row's hint is its terminal twin (D41 §4, D50): `daoris place <verb> --workspace <name>`. */
   it('names each row\'s terminal twin', async () => {
     at();
     await userEvent.click(section('Defaults'));

@@ -47,7 +47,7 @@ public static class HelpRoom
     /// <remarks>
     /// 🔴 Since D81 a session runs in its harness's own <c>auto</c> mode, which judges each action
     /// itself — and the first real conversation ran shell commands under it, reading a checkout to
-    /// research its answer. A helper that can run a command can run <c>daoris driver …</c>, a change
+    /// research its answer. A helper that can run a command can run <c>daoris …</c>, a change
     /// nobody confirmed (D89). In this mode every tool off the room's allow-list asks, and over the
     /// protocol door every ask is refused by construction (D52). Never wider than the agent's default.
     /// </remarks>

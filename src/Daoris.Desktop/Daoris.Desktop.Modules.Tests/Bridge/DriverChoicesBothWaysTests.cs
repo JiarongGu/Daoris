@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Each standing choice both ways (PUSH1f2a, D194 points 4 and 6, the alone-path design §3): <c>daoris driver</c> acting alone,
+/// Each standing choice both ways (PUSH1f2a, D194 points 4 and 6, the alone-path design §3): <c>daoris</c> acting alone,
 /// through the library's operation, and the same words' press sent to the window's route, its answer said by the same words function,
 /// over one home from the same choices. The bytes written, the text, the refusal's line and the exit are equal: red where a route and
 /// its operation disagree, or where the payload the command writes does not read back through the route as the command judged it.
