@@ -576,7 +576,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     {
         Accounts("claude-code", "account-1", "account-2");
         Wiring("""{ "rotation": { "claude-code": ["account-1", "account-2"] } }""");
-        // Both weeks end in ten hours with room in one band, so what would lapse decides: account-2 has 60% unused, read an hour ago.
+        // Room in one band, so the lapse decides: account-2 has 60% unused, read an hour ago.
         var seen = Now.AddHours(-1);
         AccountWindows.Said(Home, "claude-code", "account-1", [new WindowReading("weekly", 0.41, Now.AddHours(10))], Now, "s1");
         AccountWindows.Said(Home, "claude-code", "account-2", [new WindowReading("weekly", 0.40, Now.AddHours(10))], seen, "s2");
