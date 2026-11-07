@@ -32,7 +32,6 @@ const ROW = /\b[A-Z]{2,}\d+[a-z]?\b/g;
 const KNOWN = /^(?:UTF|SHA|MD|HTTP|HS|RS|ES|PS|AES|X|ISO|RFC|TLS|SSL|CRC|BASE|GB|PBKDF|SSH|IPV|WIN|MP|H|OS)\d+$/;
 const DECISION = /\bD\d{1,4}\b/g;
 const HISTORY = /\b(?:was|used to|formerly|previously)\b/gi;
-const EXEMPT = "Not the tools' environment (TOOLS5):"; // the census marker the modules read: no naming
 
 /**
  * The comments of `src`, one entry per line that carries one: `{ line, text, whole, ranges }`, `text` the comment's words on that
@@ -186,8 +185,7 @@ export function added(before, after) {
 }
 
 /** What a comment's text names that a comment may not: `[kind, word]` pairs. */
-export function namings(raw) {
-  const text = raw.split(EXEMPT).join(' ');
+export function namings(text) {
   const names = [];
   for (const m of text.matchAll(ROW)) if (!KNOWN.test(m[0])) names.push(['a row id', m[0]]);
   for (const m of text.matchAll(DECISION)) names.push(['a decision number', m[0]]);

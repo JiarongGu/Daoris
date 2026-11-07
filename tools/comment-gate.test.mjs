@@ -204,7 +204,3 @@ test('--all holds a comment the share rule would let pass, since it has no base 
   assert.equal(checkAll(dir).problems.length, 1);
 });
 
-test('the census marker of child environments is no naming', () => {
-  assert.deepEqual(namings("Not the tools' environment (TOOLS5): git's own git."), []);
-  assert.equal(namings("Not the tools' environment (TOOLS5): see TOOLS6.").length, 1);
-});
