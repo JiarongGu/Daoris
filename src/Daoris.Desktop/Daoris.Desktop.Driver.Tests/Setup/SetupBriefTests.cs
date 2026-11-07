@@ -270,6 +270,27 @@ public sealed partial class SetupBriefTests
         Assert.DoesNotContain(".gitattributes", declaring);
     }
 
+    /// <summary>A set-up that declares the safe work proposes the rooms and classes where none are, and one that declares nothing asks none.</summary>
+    [Fact]
+    public void A_set_up_proposes_rooms_and_classes_for_a_repository_with_none()
+    {
+        foreach (var kind in new[] { SetupCase.Whole, SetupCase.Move })
+        {
+            var (_, body) = SetupBrief.Compose(Input(kind));
+
+            Assert.Contains("**Propose the rooms and the classes** where none are declared", body);
+            Assert.Contains("Read the doctrine's `rooms-and-classes` knowledge first", body);
+            Assert.Contains("the lanes file's rooms and the `trees` section of `daoris.gates.json`", body);
+            Assert.Contains("the rooms and classes proposed, the rooms whose builds meet, or why none were", body);
+            Assert.True(body.IndexOf("**Declare the safe work**", StringComparison.Ordinal) < body.IndexOf("**Propose the rooms", StringComparison.Ordinal));
+        }
+
+        foreach (var kind in new[] { SetupCase.Declare, SetupCase.Index })
+        {
+            Assert.DoesNotContain("**Propose the rooms and the classes**", SetupBrief.Compose(Input(kind)).Body);
+        }
+    }
+
     /// <summary>D124 §2.7: the close names what the owner reviews.</summary>
     [Fact]
     public void The_close_names_what_the_owner_reviews_or_the_reason_it_declined()

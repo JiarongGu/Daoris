@@ -12,6 +12,12 @@ network.
 
 ## Unreleased
 
+- **A new core knowledge document, `rooms-and-classes`, says how to declare a repository's rooms and the classes of its
+  ignored files.** A lane that carries `builds` (its units, and what its builds read and write outside them) is a room, and
+  lanes that are one build name one `room`; the gates file's `trees` names the dependencies, intermediates and outputs, and
+  never a tracked path. It says how to propose both for a repository that has none and how to check them. **Adopting
+  repositories:** run `daoris sync`; declaring rooms is optional, and nothing declared carries nothing.
+
 - **`no-global-memory` says a memory the repository owns is not global.** A memory written by the repository's own
   sessions, reviewed with their work and read by every other session there is repository knowledge, and a confirmed
   fact belongs in it; the rule stays about the assistant's own memory, which no clone carries. **Adopting

@@ -166,7 +166,8 @@ as a pack.
     declared ones, and stops at the first failure. A skipped gate says skipped; a disabled gate is printed every run.
     (from D20)
 42. Gates are declared in `daoris.gates.json`, which the CLI never reads. Its `devkit` field pins the toolkit version,
-    checked before any gate runs. (from D26, D27)
+    checked before any gate runs. Its `trees` names the classes of the repository's ignored files (dependencies,
+    intermediates, outputs, `prepare`), which only the driver reads. (from D26, D27, D214)
 43. The `doctrine` gate runs `daoris check` and nothing else. (from D19, D20)
 44. The binary is acquired explicitly, with its published sha256, and never downloaded implicitly. The binary does not
     verify itself; whoever installs it does. (from D27)
@@ -179,8 +180,9 @@ as a pack.
     declaring nothing is the declaration; no index is the index quest; otherwise done. A reconcile is asked for, never
     found. (from D117, D124, D151, D230)
 47. The whole set-up runs `init --harness agents`, `analyze`, `sync`, then writes the domain, the knowledge a neighbour
-    needs, the brief, the documents, the safe work and the checks. It never pushes, publishes, runs `connect` or
-    `upstream`, or changes code. (from D124)
+    needs, the brief, the documents, the safe work and the checks, and, where the repository declares none, proposes its
+    rooms and the classes of its ignored files by the canon's `rooms-and-classes`; a move proposes them too. It never
+    pushes, publishes, runs `connect` or `upstream`, or changes code. (from D124, D214)
 48. The rule is exact `daoris` verbs as `Bash(…)`, never a runner: `--version`, `init --harness agents`, `analyze --json`,
     `sync` (plain, `--dry-run`, `--force`), `check`, `status --json`, `doctor`. A reconcile adds `reconcile` and
     `upstream --all`; an index quest's own are `--version`, `sync`, `check`, `status --json` and its generator's two commands. (from D122, D124, D230)
@@ -192,7 +194,8 @@ as a pack.
     first, pausing after a pilot of two. It is `daoris place --workspace <w> --adoption`, kept in `<home>/setup/<w>.json`.
     (from D124)
 52. The driver registers a repository from `daoris.json` and `daoris.lanes.json` read on its line, after a line moves, at
-    start, and on `daoris repository register`. (from D34, D124)
+    start, and on `daoris repository register`. A lane's `builds` and `room`, and a laneless group's `room`, declare the
+    repository's rooms; the registration sends none of them. (from D34, D124, D214)
 53. A place page offers the reconcile where `daoris status --json` says the canon moved or a keep reopened. The press is
     the person's (`RECONCILE_PLAN`, `RECONCILE_APPLY`). (from D230)
 

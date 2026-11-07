@@ -185,6 +185,7 @@ public static class SetupBrief
             steps.Add(Brief(facts));
             steps.Add(Documents(facts));
             steps.Add(SafeWork(input.Builds));
+            steps.Add(RoomsProposal.Step());
         }
 
         steps.Add(input.Case == SetupCase.Declare ? VerifyDeclared() : Verify());
@@ -353,7 +354,8 @@ public static class SetupBrief
             .Append(init ? "the `.gitattributes` that `daoris init` writes where there is none, holding `* text=auto eol=lf`; " : "")
             .Append("`AGENTS.md` and `CLAUDE.md` (the region, the brief, the import); `.agents/`, with the ")
             .Append("shared documents and this repository's own knowledge; the copies under `.claude/skills/` the tool ")
-            .Append("writes; each room's `AGENTS.md`; the `safe` section of `daoris.gates.json`; and a document that keeps a ")
+            .Append("writes; each room's `AGENTS.md`; the `safe` section of `daoris.gates.json`; where it declares none, the lanes ")
+            .Append("file's rooms and the `trees` section of `daoris.gates.json`; and a document that keeps a ")
             .Append("collision's mechanism. Never push, merge or open a pull request; never write outside this tree (another ")
             .Append("repository's checkout you may read is read only); never publish a request to another repository; never ")
             .Append("run `daoris connect` or `daoris upstream`; never set `remote.join` or `remote.knowledge` in `daoris.json`, ")
@@ -374,7 +376,8 @@ public static class SetupBrief
                   ? "the domain, in its words; each knowledge document, the question it answers, and each fact marked not confirmed; "
                   : "")
               + "what the brief took in and where each line it let go now lives; the documents, rooms and safe work declared, "
-              + "and that the safe work waits for the person's yes; the budget `daoris check` reports and the root `AGENTS.md`'s "
+              + "and that the safe work waits for the person's yes; " + RoomsProposal.Close
+              + "; the budget `daoris check` reports and the root `AGENTS.md`'s "
               + "bytes; what was chosen about links; and what you found that needs a request elsewhere";
         body.Append("**How to close it.** Close it `done`, saying: ").Append(items)
             .Append(". Or decline, with the reason, *the doctrine command could not run here* among them.\n");

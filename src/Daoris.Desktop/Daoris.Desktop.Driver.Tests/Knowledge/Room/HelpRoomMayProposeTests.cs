@@ -31,6 +31,18 @@ public sealed class HelpRoomMayProposeTests
     /// the rule its session needs, refused in `--plan`'s words, and never a shell or a write into the repository. The owner's
     /// helper could only name the terminal command; now it proposes the press.
     /// </summary>
+    /// <summary>A repository with no rooms and no classes is offered them through its own session; the room drafts nothing itself.</summary>
+    [Fact]
+    public void The_room_proposes_rooms_and_classes_for_a_repository_with_none()
+    {
+        var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("declares no rooms (no lane with `builds`) and no classes of its ignored files", proposes);
+        Assert.Contains("is offered them by `ask_propose` at its workspace", proposes);
+        Assert.Contains("by the doctrine's `rooms-and-classes` knowledge, on its own branch", proposes);
+        Assert.Contains("a set-up's adoption asks the same", proposes);
+    }
+
     [Fact]
     public void The_room_says_how_a_set_up_is_proposed_and_what_it_never_does()
     {

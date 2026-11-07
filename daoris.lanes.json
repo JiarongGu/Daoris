@@ -1,22 +1,28 @@
 {
-  "_why": "This repository's lanes: the domains inside it that work is dispatched to, each owning its paths (D115, docs/2026-10-01-self-development-design.md §2.1; the map of docs/2026-09-30-parallel-development-design.md §5, which a test holds to this file by id and title). Today tools/merge-branch.mjs reads it, prints which lanes a branch touched, and never refuses a merge on it; the driver, its queue and `connect` are to read it as DEV4 to DEV6 land. `id` is how work addresses a lane: lower-case letters, digits and dashes, starting with a letter, unique here. `title` and `summary` are for the people and agents that address it. A path belongs to the first lane that owns it, the steward's before the rest. `steward` marks the one lane that keeps the records, which a lane session never edits. `gates` names the declared gates a landing of that lane alone needs; absent is every gate, only the steward's narrows, and the merge tool chooses gates by its own lane table (GATE3), with the full set owed before a stage. `laneless` lists what belongs to no lane on purpose, each group with its reason; a test refuses a tracked file that is in no lane and not listed there, so a new path is placed when it is added, never left outside silently (LEFT1). A repeated or malformed id, a lane with no paths, two stewards, or a gate nobody declared makes the file unreadable. Globs: `*` stays inside one folder, `**` crosses folders, `{a,b}` is either, and a path starting `!` carves a narrower lane's files out of a wider one.",
+  "_why": "This repository's lanes: the domains inside it that work is dispatched to, each owning its paths (D115, docs/2026-10-01-self-development-design.md §2.1; the map of docs/2026-09-30-parallel-development-design.md §5, which a test holds to this file by id and title). Today tools/merge-branch.mjs reads it, prints which lanes a branch touched, and never refuses a merge on it; the driver, its queue and `connect` are to read it as DEV4 to DEV6 land. `id` is how work addresses a lane: lower-case letters, digits and dashes, starting with a letter, unique here. `title` and `summary` are for the people and agents that address it. A path belongs to the first lane that owns it, the steward's before the rest. `steward` marks the one lane that keeps the records, which a lane session never edits. `gates` names the declared gates a landing of that lane alone needs; absent is every gate, only the steward's narrows, and the merge tool chooses gates by its own lane table (GATE3), with the full set owed before a stage. `laneless` lists what belongs to no lane on purpose, each group with its reason; a test refuses a tracked file that is in no lane and not listed there, so a new path is placed when it is added, never left outside silently (LEFT1). A repeated or malformed id, a lane with no paths, two stewards, or a gate nobody declared makes the file unreadable. The rooms (docs/2026-10-26-tree-pool-design.md R5.3, R5.4): a lane with `builds` or a `room` is a room, its own or the one its `room` names, so the two web lanes keep their names and are one room; a laneless group naming a `room` is part of it, and one naming none is in no room. `builds` lists its `units` (the project and package files whose folders hold its sources), what its builds `reads` outside them and what they `writes`, in the gates file's path grammar; the room check (the driver's `RoomCheck`) refuses a malformed or overlapping declaration and joins rooms whose builds meet into one claim group. Nothing acts on the rooms yet; the canon knowledge `rooms-and-classes` says how to declare them. Globs: `*` stays inside one folder, `**` crosses folders, `{a,b}` is either, and a path starting `!` carves a narrower lane's files out of a wider one.",
 
   "lanes": [
     {
       "id": "web-shell",
       "title": "Web shell",
       "summary": "The page but its Settings: the frame, the bridge, the atoms, the work frame, every other screen, the modules they share, the catalogues outside Settings' areas, and the page's build and end-to-end suite.",
+      "room": "web",
       "paths": [
         "src/Daoris.Web/**",
         "!src/Daoris.Web/src/settings/**",
         "!src/Daoris.Web/src/locales/*/settings.json",
         "!src/Daoris.Web/src/locales/*/settings.*.json"
-      ]
+      ],
+      "builds": {
+        "units": ["src/Daoris.Web/package.json"],
+        "writes": ["src/Daoris.Service/Daoris.Service.Http/wwwroot/"]
+      }
     },
     {
       "id": "web-settings",
       "title": "Web settings",
       "summary": "The Settings screen: its frame, one file per domain, and its catalogue areas.",
+      "room": "web",
       "paths": [
         "src/Daoris.Web/src/settings/**",
         "src/Daoris.Web/src/locales/*/settings.json",
@@ -34,7 +40,25 @@
         "src/Daoris.Desktop/Daoris.Desktop.PieceStart/**",
         "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/**",
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**"
-      ]
+      ],
+      "builds": {
+        "units": [
+          "src/Daoris.Desktop/Daoris.Desktop.Driver/Daoris.Desktop.Driver.csproj",
+          "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Daoris.Desktop.Driver.Host.csproj",
+          "src/Daoris.Desktop/Daoris.Desktop.GitDoor/Daoris.Desktop.GitDoor.csproj",
+          "src/Daoris.Desktop/Daoris.Desktop.PieceStart/Daoris.Desktop.PieceStart.csproj",
+          "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/Daoris.Desktop.OwnerStandIn.csproj",
+          "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Daoris.Desktop.Driver.Tests.csproj"
+        ],
+        "reads": [
+          "src/Daoris.Contracts/",
+          "src/Daoris.Desktop/Daoris.Desktop.Launcher/",
+          "src/Daoris.Desktop/Directory.Packages.props",
+          "src/Daoris.Desktop/Directory.Build.props",
+          "Directory.Build.props",
+          "canon/canon.json"
+        ]
+      }
     },
     {
       "id": "modules",
@@ -47,19 +71,52 @@
         "src/Daoris.Desktop/Daoris.Desktop.App/**",
         "src/Daoris.Desktop/Daoris.Desktop.Launcher/**",
         "src/Daoris.Desktop/Directory.Packages.props"
-      ]
+      ],
+      "builds": {
+        "units": [
+          "src/Daoris.Desktop/Daoris.Desktop.Modules/Daoris.Desktop.Modules.csproj",
+          "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Daoris.Desktop.Modules.Tests.csproj",
+          "src/Daoris.Desktop/Daoris.Desktop.App/Daoris.Desktop.App.csproj",
+          "src/Daoris.Desktop/Daoris.Desktop.Launcher/Daoris.Desktop.Launcher.csproj"
+        ],
+        "reads": [
+          "src/Daoris.Desktop/Daoris.Desktop.Driver/",
+          "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/",
+          "src/Daoris.Contracts/",
+          "tools/contracts/",
+          "src/Daoris.Desktop/Directory.Build.props",
+          "Directory.Build.props",
+          "canon/canon.json",
+          "src/Daoris.Service/Daoris.Service.Http/wwwroot/"
+        ]
+      }
     },
     {
       "id": "service",
       "title": "Service",
       "summary": "The cross-repository knowledge service, whole: its core, its hosts, its tests and the declaration of its HTTP API.",
-      "paths": ["src/Daoris.Service/**", "src/Daoris.Contracts/**"]
+      "paths": ["src/Daoris.Service/**", "src/Daoris.Contracts/**"],
+      "builds": {
+        "units": [
+          "src/Daoris.Contracts/Daoris.Contracts.csproj",
+          "src/Daoris.Service/Daoris.Service.Core/Daoris.Service.Core.csproj",
+          "src/Daoris.Service/Daoris.Service.Http/Daoris.Service.Http.csproj",
+          "src/Daoris.Service/Daoris.Service.Http.Tests/Daoris.Service.Http.Tests.csproj",
+          "src/Daoris.Service/Daoris.Service.Mcp/Daoris.Service.Mcp.csproj",
+          "src/Daoris.Service/Daoris.Service.Tests/Daoris.Service.Tests.csproj"
+        ],
+        "reads": ["Directory.Build.props"]
+      }
     },
     {
       "id": "cli",
       "title": "CLI",
       "summary": "The npm package daoris, whole: its sources, its entry point and its tests.",
-      "paths": ["src/Daoris.Cli/**"]
+      "paths": ["src/Daoris.Cli/**"],
+      "builds": {
+        "units": ["src/Daoris.Cli/package.json"],
+        "reads": ["canon/", "README.md", "LICENSE", "CHANGELOG.md"]
+      }
     },
     {
       "id": "tools",
@@ -77,7 +134,18 @@
         "src/Daoris.Devkit/**",
         "src/Daoris.Desktop/process.runsettings",
         "src/Daoris.Desktop/git.process.runsettings"
-      ]
+      ],
+      "builds": {
+        "units": [
+          "tools/contracts/ContractsGen.csproj",
+          "tools/chromium-probe/ChromiumProbe.csproj",
+          "src/Daoris.Devkit/Daoris.Devkit.Cli/Daoris.Devkit.Cli.csproj",
+          "src/Daoris.Devkit/Daoris.Devkit.Core/Daoris.Devkit.Core.csproj",
+          "src/Daoris.Devkit/Daoris.Devkit.Tests/Daoris.Devkit.Tests.csproj"
+        ],
+        "reads": ["src/Daoris.Contracts/", "src/Daoris.Desktop/Daoris.Desktop.Modules/", "Directory.Build.props", "src/"],
+        "writes": ["src/Daoris.Web/src/data/generated/", "src/Daoris.Web/src/bridge/generated/", "docs/code-map.json", "docs/index/"]
+      }
     },
     {
       "id": "records",
@@ -86,17 +154,20 @@
       "summary": "The backlog, its archive, and this map: the steward's records, which a lane session never edits.",
       "_why": "The steward's lane (D115 §5), holding what the parent's list held and the map itself. The parent keeps them as the steward until a steward session does (DEV9). A landing of this lane alone needs the universal gates, which scan and link-check its files, and the cli gate, whose verify reads them: the budgets, the duplicate check and the lanes test.",
       "paths": ["TASKS.md", "docs/task-archive.md", "daoris.lanes.json"],
-      "gates": ["universal", "cli"]
+      "gates": ["universal", "cli"],
+      "builds": {}
     }
   ],
 
   "laneless": [
     {
       "what": "The docs: read by every lane and written by the change that makes them stale. The steward's archive is carved out: it is the records lane's.",
-      "paths": ["docs/**", "!docs/task-archive.md", "README.md", "llms.txt", "context7.json", "CLAUDE.md", "ROADMAP.md", "LICENSE", "src/Daoris.Desktop/README.md"]
+      "room": "docs",
+      "paths": ["docs/**", "!docs/task-archive.md", "README.md", "CHANGELOG.md", "llms.txt", "context7.json", "CLAUDE.md", "ROADMAP.md", "LICENSE", "src/Daoris.Desktop/README.md"]
     },
     {
       "what": "The doctrine and what it is synced into: a canon change re-syncs this repository's own copy and the example family in the same commit, whichever lane asked for it.",
+      "room": "docs",
       "paths": ["canon/**", "AGENTS.md", "daoris.json", "daoris.lock", ".claude/**", "examples/**"]
     },
     {
@@ -105,10 +176,12 @@
     },
     {
       "what": "Build settings every desktop project shares, the driver's and the modules' alike.",
+      "room": "docs",
       "paths": ["src/Daoris.Desktop/Directory.Build.props"]
     },
     {
       "what": "Build settings every .NET project of the repository builds with, each tree's importing them: the commit stamped only where a publish builds.",
+      "room": "docs",
       "paths": ["Directory.Build.props"]
     }
   ]
