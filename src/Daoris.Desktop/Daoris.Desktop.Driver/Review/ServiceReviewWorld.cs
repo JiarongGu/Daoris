@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the landing gate reads of the service (XAGENT1f): the review's quests and asks (<see cref="IReviewWorld"/>, the workplace's), and the
+/// What the landing gate reads of the service: the review's quests and asks (<see cref="IReviewWorld"/>, the workplace's), and the
 /// local host's opinions by id. A seam, so its tests stand in.
 /// </summary>
 public interface IOpinionWorld : IReviewWorld
@@ -12,7 +12,7 @@ public interface IOpinionWorld : IReviewWorld
 
 /// <summary>
 /// The gate's world over this machine's service: the quests read once per instance, as a door reads them once, and the local
-/// host's opinions (XAGENT1f), which the whole landing gate reads beside them.
+/// host's opinions, which the whole landing gate reads beside them.
 /// </summary>
 /// <remarks>
 /// The service's reads behind the review's port (<see cref="IReviewWorld"/>) and the landing gate's (<see cref="IOpinionWorld"/>).

@@ -61,7 +61,7 @@ public interface IWorkflowRunRecords
     IReadOnlyList<LandedBranch> Landings();
 
     /// <summary>
-    /// When each session's work was accepted into its line: the newest acceptance its conversation's record keeps, by its id.
+    /// When each session's work is accepted into its line: the newest acceptance its conversation's record keeps, by its id.
     /// A teammate's record is on its machine, and a record that does not read keeps none.
     /// </summary>
     IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions);

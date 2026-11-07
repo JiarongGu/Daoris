@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// the kind the check's <c>ask</c> option names as its choice, so the start node routes it into the development pipeline chosen for that kind.
 /// </summary>
 /// <remarks>
-/// An ask is sent with no key of the sender's, so a restart between its send and its answer could not tell whether it was made. Before it
+/// An ask is sent with no key of the sender's, so a restart between its send and its answer cannot tell whether it is made. Before it
 /// publishes, the look reads the workspace's asks for one whose words are Daoris's own and name this line and gate: one naming this run is the
 /// ask already made; another still open takes the new failure on its channel, so there is one per gate; none, it publishes. A person's words
 /// are never read, and nothing in the service changes.

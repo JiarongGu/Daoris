@@ -3,34 +3,33 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>daoris workflow</c> says (PUSH1f2b, D194 point 6; D157, the workflow design §4.7): a Current drawn in words, a named
-/// step as <c>show</c> draws it, which level chose a workflow and the landed route, the door a version was saved through, a graph
-/// version, and Current copied into a version's steps. The words the CLI's <c>workflowdoor.ts</c> and <c>workflows.ts</c> said, kept
-/// by <c>fixtures/driver-workflows-text.json</c>; the command (<see cref="DriverWorkflowsCommand"/>) says them on both paths.
+/// What <c>daoris workflow</c> says: a Current drawn in words, a named
+/// step as <c>show</c> draws it, which level chose a workflow and the landed route, the door that saved a version, a graph
+/// version, and Current copied into a version's steps. The words are held by <c>fixtures/driver-workflows-text.json</c>; the command (<see cref="DriverWorkflowsCommand"/>) says them on both paths.
 /// </summary>
 public static class WorkflowWords
 {
-    /// <summary>Said by every verb that names a named workflow (WORKFLOW1e): a choice names one, and every gate reads the version bound.</summary>
+    /// <summary>Said by every verb that names a named workflow: a choice names one, and every gate reads the version bound.</summary>
     public const string WhatChooses = "  A choice names a workflow (`daoris workflow use <id> --repository <name>|--workspace <name> "
         + "[--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version.";
 
-    /// <summary>Said by every verb that edits the choice (WORKFLOW1e): what the gate reads of it (WORKFLOW1f).</summary>
+    /// <summary>Said by every verb that edits the choice: what the gate reads of it.</summary>
     public const string GateReads = "  Every gate reads the version a run bound at its first start: how it lands, your look and its second "
         + "opinion follow that version.";
 
-    /// <summary>Said by <c>new --from current:&lt;repository&gt;</c> where Current drew the <c>integrate</c> step (INTEGRATE1r, F43): a version's steps hold none.</summary>
+    /// <summary>Said by <c>new --from current:&lt;repository&gt;</c> where Current drew the <c>integrate</c> step: a version's steps hold none.</summary>
     public const string IntegrateLeftOut = "  Current's `integrate` step is not one of the steps saved: the rule's graph integrates the steps run's branch.";
 
-    /// <summary>Said by <c>use … --landed</c> (FABRIC-PIPELINE1a): what reads the landed route.</summary>
+    /// <summary>Said by <c>use … --landed</c>: what reads the landed route.</summary>
     public const string LandedReads = "  A verification binds the newest version of its pipeline when it starts, and keeps it; this build keeps the "
         + "route and does not run its checks yet.";
 
     /// <summary>
-    /// What <c>workflow show</c> says of a Current (design §4.7): whose it is and its version, the plugins that may hold a start, then
+    /// What <c>workflow show</c> says of a Current: whose it is and its version, the plugins that may hold a start, then
     /// each step with its source and its limit.
     /// </summary>
     /// <param name="whose"><c>`web-app`</c> or <c>the workspace `work`</c>, as the header names it.</param>
-    /// <param name="where">What the header adds of where it was read, such as the workspace a repository is in.</param>
+    /// <param name="where">What the header adds of where it is read, such as the workspace a repository is in.</param>
     public static IReadOnlyList<string> CurrentSaid(CurrentWorkflow workflow, string whose, string where)
     {
         var lines = new List<string>
@@ -97,7 +96,7 @@ public static class WorkflowWords
                         + (Set("plugin") is null ? ", for you to push" : $", pushed by `{Set("plugin")}`");
                 set += $"{(Set("tidy") is true ? "; its tree and branch go once it lands" : "")}.";
                 break;
-            // INTEGRATE1r: a graph-only kind, drawn by its node's kind (F43), said by what the rule asks.
+            // A graph-only kind, drawn by its node's kind, said by what the rule asks.
             case NodeKinds.Integrate:
             {
                 title = "The integration";
@@ -121,7 +120,7 @@ public static class WorkflowWords
 
         var lines = new List<string> { $"  {title} — {participation} · {executor}{press}. {set} {SourceSaid(step.Source)}" };
         if (step.Kind == WorkflowKinds.Work && Set("standing") is string standing) lines.Add($"      Your standing answer, handed to each session: \"{standing}\"");
-        // FABRIC-PIPELINE1b: the checks its sessions run, where the repository sets them (`daoris place checks`, Setup).
+        // The checks its sessions run, where the repository sets them (`daoris place checks`, Setup).
         if (step.Kind == WorkflowKinds.Work && Has("checks") && (string?)Set("checks") == "light")
         {
             lines.Add("      Its sessions' checks: light: the gates it does not mark heavy and the checks a change reaches; its heavy gates are its "
@@ -137,7 +136,7 @@ public static class WorkflowWords
         return lines;
     }
 
-    /// <summary>Where a step was read, as a door says it.</summary>
+    /// <summary>Where a step is read from, as a door says it.</summary>
     private static string SourceSaid(WorkflowSource source)
     {
         if (source.Rule is null) return "Always.";
@@ -168,7 +167,7 @@ public static class WorkflowWords
             _ => "Automatic",
         };
         var row = WorkflowKindTable.Of(step.Kind);
-        // A field written only where set (FABRIC-PIPELINE1b2) is said only where set, as its version holds it.
+        // A field written only where set is said only where set, as its version holds it.
         var set = string.Join("; ", step.Fields
             .Where(field => field.Value is not null || row?.Fields.FirstOrDefault(each => each.Name == field.Name) is not { WhereSet: true })
             .Select(field => $"{field.Name} {WorkflowDiff.Rendered(field.Value)}"));
@@ -177,9 +176,7 @@ public static class WorkflowWords
         return lines;
     }
 
-    /// <summary>
-    /// Which level chose a workflow, in words (design §4.1, <i>the run says why</i>): <i>chosen by `web-app` for Documentation</i>.
-    /// </summary>
+    /// <summary>Which level chose a workflow, in words: <i>chosen by `web-app` for Documentation</i>.</summary>
     public static string WhyChosen(WorkflowSelected selected, string? repository, string workspace)
     {
         var kind = selected.Label ?? selected.Kind;
@@ -196,8 +193,8 @@ public static class WorkflowWords
     }
 
     /// <summary>
-    /// A landed route as <c>show</c> says it (FABRIC-PIPELINE1a, the pipeline design §1.3): the verification pipeline it names, who
-    /// chose it and the gates accepted, or that it names no verification, which is today's.
+    /// A landed route as <c>show</c> says it: the verification pipeline it names, who
+    /// chose it and the gates accepted, or that it names no verification.
     /// </summary>
     public static string LandedSaid(WorkflowLandedSelected route, string? repository, string workspace)
     {
@@ -208,7 +205,7 @@ public static class WorkflowWords
         return $"`{route.Workflow}`, {who}; {gates}";
     }
 
-    /// <summary>Which door saved a version, as <c>show</c> says it (design §2.5): never <i>the person</i>, since a terminal's edit cannot be told from an agent's.</summary>
+    /// <summary>Which door saved a version, as <c>show</c> says it: never <i>the person</i>, since a terminal's edit cannot be told from an agent's.</summary>
     public static string DoorSaid(string door) => door switch
     {
         "screen" => "on the screen",
@@ -216,7 +213,7 @@ public static class WorkflowWords
         _ => $"through Ask Daoris (`{(door.StartsWith("ask-daoris:", StringComparison.Ordinal) ? door["ask-daoris:".Length..] : door)}`)",
     };
 
-    /// <summary>A graph version, as a writer says it: its size, its end and its digest (FABRIC-CUTOVER1d: it runs as a version of steps does).</summary>
+    /// <summary>A graph version, as a writer says it: its size, its end and its digest.</summary>
     public static string GraphSaid(NamedVersion version)
     {
         var graph = version.Graph!;
@@ -225,7 +222,7 @@ public static class WorkflowWords
     }
 
     /// <summary>
-    /// Why a verb that reads or changes a version's steps cannot take a graph version (FABRIC-CUTOVER1d): it holds none, and is read and saved
+    /// Why a verb that reads or changes a version's steps cannot take a graph version: it holds none, and is read and saved
     /// whole. A sentence that names the version.
     /// </summary>
     public static string NoSteps(string id, NamedVersion version) =>
@@ -233,10 +230,10 @@ public static class WorkflowWords
         + "prints it whole, and a version saved after it is saved whole.";
 
     /// <summary>
-    /// Current copied into steps (design §2.7's <i>Save as a workflow…</i>), each as Current draws it so the two read the same: the
+    /// Current copied into steps (<i>Save as a workflow…</i>), each as Current draws it so the two read the same: the
     /// opinion with its reviewers and switches, the look in its environment, the landing with its form, its press, and on a branch its
-    /// pattern and plugin, <c>none</c> where it names none. The standing answer and the landing's <c>tidy</c> stay declarations (§2.3),
-    /// and so does the <c>integrate</c> step (INTEGRATE1r): the rule's graph holds it, so it is left out and said
+    /// pattern and plugin, <c>none</c> where it names none. The standing answer and the landing's <c>tidy</c> stay declarations,
+    /// and so does the <c>integrate</c> step: the rule's graph holds it, so it is left out and said
     /// (<see cref="IntegrateLeftOut"/>).
     /// </summary>
     public static JsonArray StepsOfCurrent(CurrentWorkflow current)
@@ -244,7 +241,7 @@ public static class WorkflowWords
         var steps = new JsonArray();
         foreach (var step in current.Steps)
         {
-            // INTEGRATE1r (F43): the rule's graph holds the `integrate` step, never a version's steps, which refuse the kind.
+            // The rule's graph holds the `integrate` step, never a version's steps, which refuse the kind.
             if (step.Kind == NodeKinds.Integrate) continue;
             object? Set(string name) => step.Settings.FirstOrDefault(setting => setting.Name == name)?.Value;
             JsonObject saved = step.Kind switch
@@ -270,7 +267,7 @@ public static class WorkflowWords
                         ["pattern"] = (string?)Set("pattern"),
                         ["plugin"] = (string?)Set("plugin") ?? "none",
                     },
-                // The checks its sessions run, where the repository sets them (FABRIC-PIPELINE1b2), so a light repository's stay light.
+                // The checks its sessions run, where the repository sets them, so a light repository's stay light.
                 WorkflowKinds.Work => step.Settings.Any(setting => setting.Name == "checks")
                     ? new JsonObject { ["id"] = "work", ["kind"] = "work", ["checks"] = (string?)Set("checks") }
                     : new JsonObject { ["id"] = "work", ["kind"] = "work" },
@@ -283,11 +280,11 @@ public static class WorkflowWords
     }
 
     /// <summary>
-    /// Current copied into a graph with its landing written out as a <c>land</c> node (LANDNODE1h; the land node design §4, <i>Save as a
+    /// Current copied into a graph with its landing written out as a <c>land</c> node (<i>Save as a
     /// workflow…</i>): the rule's form, press, pattern and plugin as the node's options, and the tail its method brings. Current never derives
     /// <c>push</c>, so a plugin makes a <c>pull-request</c>, and an <c>integrate</c> step an <c>integrate</c>. The opinion and the look are
-    /// nodes wired straight into the landing (D157 §2.2), the opinion never into the look; the work's requests, then the quest's holds and what
-    /// the line holds (LANDNODE1k), are held before them.
+    /// nodes wired straight into the landing, the opinion never into the look; the work's requests, then the quest's holds and what
+    /// the line holds, are held before them.
     /// </summary>
     public static JsonObject GraphOfCurrent(CurrentWorkflow current, bool opinion, bool look)
     {
@@ -306,7 +303,7 @@ public static class WorkflowWords
 
         Node("work", NodeKinds.Claimed, "observed", Options(steps.First(step => (string?)step!["kind"] == WorkflowKinds.Work)!.AsObject()));
         Node("requests", NodeKinds.WorkRequests, "observed");
-        // LANDNODE1k: the quest's holds and what the line holds, judged before any gate as the landing's start judged them.
+        // The quest's holds and what the line holds are judged before any gate, as the landing's start judges them.
         Node("holds", NodeKinds.QuestHolds, "observed");
         Node("content", NodeKinds.ContentHolds, "observed");
         var gates = steps.Select(step => step!.AsObject()).Where(step => (string?)step["kind"] is WorkflowKinds.Opinion or WorkflowKinds.Look).ToList();
@@ -316,7 +313,7 @@ public static class WorkflowWords
         var method = (string?)landing["form"] == LandingForm.Merge ? LandNodes.Merge
             : integrate is not null ? LandNodes.Integrate
             : LandNodes.Branch;
-        // LANDNODE1c2: the press is a `review` before the `land`, which takes no `accept` of its own.
+        // The press is a `review` before the `land`, which takes no `accept` of its own.
         var reviewed = (string?)landing["accept"] != "automatic";
         var land = new JsonObject { ["method"] = method };
         if (method != LandNodes.Merge && (string?)landing["pattern"] is { } pattern) land["pattern"] = pattern;

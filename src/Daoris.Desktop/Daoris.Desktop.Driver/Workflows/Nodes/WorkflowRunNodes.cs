@@ -89,7 +89,7 @@ public sealed record WorkflowRunProjection(WorkflowRun Run, DecodedVersion Versi
 }
 
 /// <summary>
-/// A D157 run's step states read as its decoded graph's statuses, and the two
+/// A run's step states read as its decoded graph's statuses, and the two
 /// readings compared. Read-only: it moves no authority, so schema 1 governs every run as it does, and the cutover settles each difference.
 /// </summary>
 /// <remarks>

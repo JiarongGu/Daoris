@@ -1,34 +1,34 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Abandon an ask's work, or one quest's, on this machine (PAUSE1d, D132 points 6–10, design §3): listed first, then done on
+/// Abandon an ask's work, or one quest's, on this machine: listed first, then done on
 /// a second press that sends exactly what the list held, with the person's reason. One implementation the screen's
-/// <c>WORK_PLAN</c> and <c>WORK_ABANDON</c> and the terminal's <c>ask --abandon</c> and <c>quest abandon</c> call (D50).
+/// <c>WORK_PLAN</c> and <c>WORK_ABANDON</c> and the terminal's <c>ask --abandon</c> and <c>quest abandon</c> call.
 /// </summary>
 public static class WorkAbandoning
 {
     /// <summary>The sentence both doors say when the second press carries no reason (<c>WORK_REASON</c>).</summary>
     public const string NeedsReason = "abandoning needs your reason: each declined quest keeps it.";
 
-    /// <summary>What a record this abandon stopped says (design §4.1): a person reads it, and nothing decides from it (D104).</summary>
+    /// <summary>What a record this abandon stopped says: a person reads it, and nothing decides from it.</summary>
     public static string Note(WorkScope scope, string id) => NoteOf(scope, id).Note;
 
-    /// <summary><see cref="Note"/> with its code and the work's id (LANG1a, the language design §4 rows 54–55).</summary>
+    /// <summary><see cref="Note"/> with its code and the work's id.</summary>
     public static Noted NoteOf(WorkScope scope, string id) => scope == WorkScope.Ask
         ? Noted.Of(EndNoteCodes.StoppedAbandonedAsk, $"ask `#{id}` abandoned.", ("ask", id))
         : Noted.Of(EndNoteCodes.StoppedAbandonedQuest, $"quest `#{id}` abandoned.", ("quest", id));
 
-    /// <summary>The terminal's door to the first press, and with <c>--reason</c> and <c>--yes</c> the second (design §7.2).</summary>
+    /// <summary>The terminal's door to the first press, and with <c>--reason</c> and <c>--yes</c> the second.</summary>
     public static string Door(WorkScope scope, string id) =>
         scope == WorkScope.Ask ? $"daoris ask abandon {id}" : $"daoris quest abandon {id}";
 
     /// <summary>
-    /// What an abandon would do with each piece of a work (design §3.2). Pure: the pause's plan, this machine's claim on each
+    /// What an abandon would do with each piece of a work. Pure: the pause's plan, this machine's claim on each
     /// taken quest, the proof of each tree, what each kept tree holds for its review, and the archive marks.
     /// </summary>
-    /// <param name="claims">This machine's claim on each taken quest (D68 §4): <c>held</c>, <c>unconfirmed</c>, <c>lost</c> or <c>none</c>.</param>
+    /// <param name="claims">This machine's claim on each taken quest: <c>held</c>, <c>unconfirmed</c>, <c>lost</c> or <c>none</c>.</param>
     /// <param name="judged">Each tree's proof, by <see cref="AbandonKeys.TreeKey"/>.</param>
-    /// <param name="held">What each kept tree holds for its review (D88's proof, the reader's), by <see cref="AbandonKeys.TreeKey"/>; null is no tree to read.</param>
+    /// <param name="held">What each kept tree holds for its review (the reader's), by <see cref="AbandonKeys.TreeKey"/>; null is no tree to read.</param>
     /// <param name="grounds">Each tree's base and registered checkout, by <see cref="AbandonKeys.TreeKey"/>, which the second press judges it again from.</param>
     public static AbandonPlan Plan(
         WorkPlan work, IReadOnlyDictionary<string, string> claims, IReadOnlyDictionary<string, TreeOnlyHere> judged,
@@ -53,7 +53,7 @@ public static class WorkAbandoning
         var named = WorkPausing.Named(id);
         if (await WorkPausing.PlanAsync(world, scope, named, ct).ConfigureAwait(false) is not { } work) return null;
 
-        // Whose take each taken quest is (D68 §4): this machine's, or another's.
+        // Whose take each taken quest is: this machine's, or another's.
         var claims = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var reopened = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var quest in work.Quests.Select(each => each.Quest.Quest).Where(quest => quest.Status == "Taken"))
@@ -91,7 +91,7 @@ public static class WorkAbandoning
     }
 
     /// <summary>
-    /// The second press (design §3.4): the pieces the first press listed, each judged again, taken in order: the scope paused,
+    /// The second press: the pieces the first press listed, each judged again, taken in order: the scope paused,
     /// the sessions stopped and ended, the quests declined with the reason and the ask closed with it, one pass per wired
     /// workspace, the trees discarded behind the proof, the sessions archived, <c>driver.json</c> tidied, and the record.
     /// </summary>
@@ -113,7 +113,7 @@ public static class WorkAbandoning
         var listed = (pieces ?? plan.Pieces).Where(piece => !string.IsNullOrWhiteSpace(piece)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         if (listed.Count == 0) return new AbandonOutcome(scope, named, AbandonVerdict.Nothing);
 
-        // Each piece judged again (design §3.1): one listed that the reader no longer takes changed since the list; one the reader
+        // Each piece judged again: one listed that the reader no longer takes changed since the list; one the reader
         // takes now that the list did not hold joined since, and is not taken, since the person did not see it.
         var now = plan.Pieces.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var goes = listed.Where(now.Contains).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -156,7 +156,7 @@ public static class WorkAbandoning
             }
         }
 
-        // Each stop recorded on the pause, so a Resume after a step that failed releases it (design §2.4).
+        // Each stop recorded on the pause, so a Resume after a step that failed releases it.
         if (stopped.Any(stop => stop.Quest is not null))
         {
             var paused = DriverConfig.Load(world.ConfigPath);
@@ -166,7 +166,7 @@ public static class WorkAbandoning
             WorkPausing.WithPause(paused, scope, named, entry with { Stopped = stops }).Save(world.ConfigPath);
         }
 
-        // 3. Each listed quest declined with the reason, verbatim: an open one only while it is open (PAUSE1c). A quest whose
+        // 3. Each listed quest declined with the reason, verbatim: an open one only while it is open. A quest whose
         // session could not be stopped is kept, since declining it would leave its session working on a declined quest.
         var declined = new List<string>();
         foreach (var quest in plan.Quests.Where(quest => quest.Act == AbandonAct.Decline && goes.Contains(quest.Key)))
@@ -264,7 +264,7 @@ public static class WorkAbandoning
         // 6. Each listed session the reader now places in Ended archived; a session stopped whose tree stays with work is left to review.
         var archived = await ArchiveAsync(world, plan, goes, unreached, changed, stayed, failed, ct).ConfigureAwait(false);
 
-        // 7. driver.json tidied: a closed quest is never planned again (D46 §3), so its release and mark go; then the pause,
+        // 7. driver.json tidied: a closed quest is never planned again, so its release and mark go; then the pause,
         // unless a step failed or something joined, since a half-finished abandon must never leave its work starting again.
         var closedNow = new HashSet<string>(declined, StringComparer.OrdinalIgnoreCase);
         try
@@ -285,14 +285,14 @@ public static class WorkAbandoning
         foreach (var quest in closedNow)
         {
             tidy = tidy.WithoutQuest(quest);
-            // A quest held on another agent (MIXAGENT1a-ii) goes back to the machine's when it closes.
+            // A quest held on another agent goes back to the machine's when it closes.
             handed.Clear(quest);
         }
 
         if (!stillPaused) tidy = WorkPausing.WithPause(tidy, scope, named, null);
         tidy.Save(world.ConfigPath);
 
-        // 8. The record (design §4.2) and the log line (§4.3).
+        // 8. The record and the log line.
         stayed.InsertRange(0, plan.Kept.Where(keep => !changed.Any(each => string.Equals(each.Piece, keep.Piece, StringComparison.OrdinalIgnoreCase))));
         var outcome = new AbandonOutcome(scope, named, AbandonVerdict.Abandoned)
         {
@@ -315,7 +315,7 @@ public static class WorkAbandoning
     }
 
     /// <summary>
-    /// Step 4 (design §3.4, §5.2): one pass for each wired workspace a declined quest is held in, as D95's delete runs one, then
+    /// Step 4: one pass for each wired workspace a declined quest is held in, as a delete runs one, then
     /// each decline read back. Lost where another machine's take stood, unconfirmed where the pass did not reach the remote or
     /// left the quest behind, confirmed otherwise. A workspace with no remote answers none: its declines travel nowhere.
     /// </summary>
@@ -366,8 +366,8 @@ public static class WorkAbandoning
     }
 
     /// <summary>
-    /// Step 6 (design §3.4): each listed session archived through <see cref="SessionArchive"/>, judged by Sessions' own reader as
-    /// it now places it, so the abandon never hides what needs the person (D126 §5.2).
+    /// Step 6: each listed session archived through <see cref="SessionArchive"/>, judged by Sessions' own reader as
+    /// it now places it, so the abandon never hides what needs the person.
     /// </summary>
     private static async Task<IReadOnlyList<string>> ArchiveAsync(
         WorkWorld world, AbandonPlan plan, IReadOnlySet<string> goes, IReadOnlySet<string> unreached,
@@ -455,7 +455,7 @@ public static class WorkAbandoning
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // A record not written is no record, and the abandon still abandoned (design §4.2).
+            // A record not written is no record, and the abandon still abandoned.
         }
 
         world.Log?.Info("work.abandoned",
@@ -469,7 +469,7 @@ public static class WorkAbandoning
             ("door", door));
     }
 
-    /// <summary>A quest's act (design §3.2): what Daoris made for this work on this machine goes, and what is somewhere else stays.</summary>
+    /// <summary>A quest's act: what Daoris made for this work on this machine goes, and what is somewhere else stays.</summary>
     private static AbandonQuest QuestAct(
         WorkQuest quest, IReadOnlyList<WorkSession> sessions, IReadOnlyDictionary<string, string> claims, IReadOnlySet<string>? reopened)
     {
@@ -481,12 +481,12 @@ public static class WorkAbandoning
             case "Done":
                 return new AbandonQuest(quest, AbandonAct.Keep) { Why = AbandonWhy.Done };
             case "Taken" when claims.GetValueOrDefault(id) is "held" or "unconfirmed":
-                // This machine's take: Daoris's where a session record of this machine's took it (STANDDOWN2), else outside Daoris.
+                // This machine's take: Daoris's where a session record of this machine's took it, else outside Daoris.
                 return sessions.Any(session => !session.Teammate && session.Record.Took && Same(session.Record.Quest, id))
                     ? new AbandonQuest(quest, AbandonAct.Decline)
                     : new AbandonQuest(quest, AbandonAct.Keep) { Why = AbandonWhy.TakenOutside };
             case "Taken" when reopened?.Contains(id) == true && claims.GetValueOrDefault(id) == "lost":
-                // FABRIC-CLOSE1c20: lost to the person's own reopen, said as that, never as another machine's take.
+                // Lost to the person's own reopen, said as that, never as another machine's take.
                 return new AbandonQuest(quest, AbandonAct.Keep) { Why = AbandonWhy.SourceReopened };
             case "Taken":
                 return new AbandonQuest(quest, AbandonAct.Keep)
@@ -501,7 +501,7 @@ public static class WorkAbandoning
         }
     }
 
-    /// <summary>A tree's act (design §3.3): discarded behind the proof; a session a landing names keeps it whatever git says.</summary>
+    /// <summary>A tree's act: discarded behind the proof; a session a landing names keeps it whatever git says.</summary>
     private static AbandonTree TreeAct(
         WorkTree tree, IReadOnlyDictionary<string, TreeOnlyHere> judged, IReadOnlySet<string> landed,
         IReadOnlyDictionary<string, (string? Base, string? Root)>? grounds)
@@ -518,8 +518,8 @@ public static class WorkAbandoning
     }
 
     /// <summary>
-    /// A session's act (design §3.2): stopped or ended, then archived once nothing keeps it needing the person. A teammate's
-    /// live session is named and never reached (D47 §4); a teammate's ended one may be archived here, a mark of this machine's.
+    /// A session's act: stopped or ended, then archived once nothing keeps it needing the person. A teammate's
+    /// live session is named and never reached; a teammate's ended one may be archived here, a mark of this machine's.
     /// </summary>
     private static AbandonSession SessionAct(
         WorkSession session, IReadOnlyDictionary<string, AbandonTree> trees, IReadOnlyDictionary<string, TreeWork?> held, IReadOnlySet<string> archived)
@@ -530,7 +530,7 @@ public static class WorkAbandoning
             return new AbandonSession(session, AbandonAct.Keep) { Why = AbandonWhy.Teammate, Machine = record.Id[..record.Id.IndexOf('/')] };
         }
 
-        // To review where its tree stays and holds work nobody accepted, as Sessions' reader reads it (D126 §5.2).
+        // To review where its tree stays and holds work nobody accepted, as Sessions' reader reads it.
         var review = session.Branch is { } branch
             && trees.TryGetValue(AbandonKeys.TreeKey(record.Repository, branch), out var tree)
             && tree.Act == AbandonAct.Keep
@@ -566,7 +566,7 @@ public static class WorkAbandoning
         return new AbandonKeep(piece, AbandonWhy.Gone);
     }
 
-    /// <summary>The base the tree's commits are judged from: its first session's that has one (D80: a carry-on goes back into its tree).</summary>
+    /// <summary>The base the tree's commits are judged from: its first session's that has one, since a carry-on goes back into its tree.</summary>
     private static string? FirstBase(WorkTree tree, IReadOnlyList<WorkSession> sessions) =>
         tree.Sessions
             .Select(id => sessions.FirstOrDefault(session => string.Equals(session.Record.Id, id, StringComparison.Ordinal))?.Record.BaseCommit)

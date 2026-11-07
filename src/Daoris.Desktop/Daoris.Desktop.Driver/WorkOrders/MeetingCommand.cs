@@ -5,7 +5,7 @@ using Daoris.Contracts.Brainstorms;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A meeting at the terminal (AGENTROOM1a, D177 points 1, 2, 4 and 7; ONEWAY1t): <c>daoris brainstorm "&lt;question&gt;" --kind meeting --agents a,b</c>
+/// A meeting at the terminal: <c>daoris brainstorm "&lt;question&gt;" --kind meeting --agents a,b</c>
 /// asks the running service's brainstorm desk for a meeting, which writes the request the driver's look takes, so every turn runs in
 /// whichever process holds the loop; <c>send</c> is the person's press for a round, the first by itself and a later one only named;
 /// <c>stop</c> ends the meeting at once; <c>clear</c> removes it, each the desk's. <c>show</c> prints the round's packet whole, what a
@@ -74,7 +74,7 @@ public static class MeetingCommand
                 case "--agents":
                     agents = [.. rest[at + 1].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
                     break;
-                // The caller's own id, as the brainstorm's (D176 point 6), which the desk judges.
+                // The caller's own id, as the brainstorm's, which the desk judges.
                 case "--id":
                     named = rest[at + 1];
                     break;
@@ -140,7 +140,7 @@ public static class MeetingCommand
     }
 
     /// <summary>
-    /// What a refreshed packet adds beyond the one the person sent (D177 point 2's show): another maker's words, and whether anything
+    /// What a refreshed packet adds beyond the one the person sent: another maker's words, and whether anything
     /// else changed, which a refresh never does.
     /// </summary>
     internal static string Adds(MeetingPacket previous, MeetingPacket packet)

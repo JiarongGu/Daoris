@@ -1,17 +1,17 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris quest reopen</c> or <c>quest go-on</c> was asked: the quest, which, and the person's words.</summary>
+/// <summary>What <c>daoris quest reopen</c> or <c>quest go-on</c> asks: the quest, which, and the person's words.</summary>
 public sealed record QuestReopenAsk(string Quest, bool GoOn, string? Note);
 
 /// <summary>
-/// The terminal's doors to the person's reopen of a sealed submission and their go-on with the step it held (FABRIC-CLOSE1c3, §E5;
-/// D173's CLOSE1c note; D50): <c>daoris quest reopen &lt;id&gt; [--note "…"]</c> and <c>quest go-on &lt;id&gt;</c>, through the
+/// The terminal's doors to the person's reopen of a sealed submission and their go-on with the step it held:
+/// <c>daoris quest reopen &lt;id&gt; [--note "…"]</c> and <c>quest go-on &lt;id&gt;</c>, through the
 /// service's own person doors, printing the service's sentence. The quest page's <i>Reopen…</i> and <i>Go on with it</i> are the
 /// other doors; abandoning a held step is <c>quest abandon</c>, its decline.
 /// </summary>
 /// <remarks>
-/// <para><b>The person's, never an agent's</b> (D156): both are person-only doors, which a host given its key refuses a call without
-/// it, and which a terminal is asked to confirm in the window once that confirmation is built (RPC1c).</para>
+/// <para><b>The person's, never an agent's</b>: both are person-only doors, which a host given its key refuses a call without
+/// it.</para>
 ///
 /// <para><b>The submission reopened is the quest's current one</b>, read just before the reopen is sent: the door refuses it once
 /// another is current, so a <c>ready</c> made between the two is never reopened in its place.</para>
@@ -53,7 +53,6 @@ public static class QuestReopenCommand
     {
         if (ask.GoOn) return Say(await service.ContinueQuestAsync(ask.Quest, ct).ConfigureAwait(false), output);
 
-        // The submission the quest answers now: the door refuses another, so a `ready` made since is never reopened in its place.
         var quest = await service.FindQuestAsync(ask.Quest, ct).ConfigureAwait(false);
         if (quest?.Submission is not { } submission)
         {

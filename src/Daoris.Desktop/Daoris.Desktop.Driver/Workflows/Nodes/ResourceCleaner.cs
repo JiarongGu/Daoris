@@ -45,7 +45,7 @@ public sealed class ResourceCleaner(ResourceRecordFiles receipts, IWorkPerformPo
 
     /// <summary>
     /// Whether a receipt is Daoris's to ask its plugin to clean now: not settled, temporary (a superseded attempt's whatever it declared), its
-    /// schema declared, its back-off passed, and its unit's end over (<paramref name="ended"/>) unless its attempt was superseded.
+    /// schema declared, its back-off passed, and its unit's end over (<paramref name="ended"/>) unless its attempt is superseded.
     /// </summary>
     public static bool Due(ResourceReceipt receipt, bool? ended, DateTimeOffset now) =>
         !receipt.Settled && receipt.Effective == PluginResourceRoles.Temporary

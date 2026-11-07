@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>The verdicts D192's runner contract gives a gate (<c>pass</c>, <c>flake</c>, <c>fail</c>, <c>ended</c>, <c>not-run</c>).</summary>
+/// <summary>The verdicts the runner contract gives a gate (<c>pass</c>, <c>flake</c>, <c>fail</c>, <c>ended</c>, <c>not-run</c>).</summary>
 internal static class RunnerVerdicts
 {
     internal const string Pass = "pass";
@@ -27,7 +27,7 @@ internal static class RunnerStandings
 /// <param name="Declared">The gates the accepted declaration declares, by the names it writes.</param>
 internal sealed record RunnerAsk(string Commit, IReadOnlyList<string> Declared)
 {
-    /// <summary>The mode asked (<c>run</c>, <c>plan</c>, <c>probe</c> or <c>commits</c>); null where none is, which is D192's schema 1.</summary>
+    /// <summary>The mode asked (<c>run</c>, <c>plan</c>, <c>probe</c> or <c>commits</c>); null where none is, which is the contract's schema 1.</summary>
     public string? Mode { get; init; }
 
     /// <summary>The candidate's base, which every schema-2 answer names.</summary>
@@ -36,7 +36,7 @@ internal sealed record RunnerAsk(string Commit, IReadOnlyList<string> Declared)
     /// <summary>The accepted declaration's blob id, which every schema-2 answer names.</summary>
     public string? Declaration { get; init; }
 
-    /// <summary>The gates a <c>run</c> or <c>plan</c> was narrowed to by the call's own list of gates (§5.9); null where the runner chose its own plan.</summary>
+    /// <summary>The gates a <c>run</c> or <c>plan</c> is narrowed to by the call's own list of gates; null where the runner chose its own plan.</summary>
     public IReadOnlyList<string>? Gates { get; init; }
 }
 
@@ -83,7 +83,7 @@ internal enum RunnerKind
     /// <summary>The runner's own run holds its lock: the executor waits it out.</summary>
     Busy,
 
-    /// <summary>D192's schema 1: the gates of the declaration, each with its verdict.</summary>
+    /// <summary>Schema 1: the gates of the declaration, each with its verdict.</summary>
     Gates,
 
     Run,
@@ -124,12 +124,12 @@ internal enum RunnerStandingKind
     Busy,
 }
 
-/// <summary>How a run stands by its gates alone (D192): reached, failed naming the gate, or unknown naming each gate missing, ended or not run.</summary>
+/// <summary>How a run stands by its gates alone: reached, failed naming the gate, or unknown naming each gate missing, ended or not run.</summary>
 internal sealed record RunnerStanding(RunnerStandingKind Kind)
 {
     public string? Why { get; init; }
 
-    /// <summary>The gates that passed only on a second run alone (a FLAKE1 re-run): read as a pass, and said.</summary>
+    /// <summary>The gates that passed only on a second run alone (a flaky re-run): read as a pass, and said.</summary>
     public IReadOnlyList<string> Flaked { get; init; } = [];
 }
 
@@ -157,7 +157,7 @@ internal sealed record RunnerPromotion(RunnerStandingKind Kind)
 }
 
 /// <summary>
-/// A repository's runner answer, read (INTEGRATE1f part f1; the integration design §5.9; D192's runner contract, extended). The answer is
+/// A repository's runner answer, read. The answer is
 /// <b>unknown, never a pass</b>, where the file is missing, does not read, or names another schema; names another commit, another base, or
 /// another declaration blob than the accepted one; names a gate the accepted declaration does not declare, or a plan names one; or a
 /// <c>run</c> lacks a gate its plan's <c>run</c> named or holds one <c>ended</c> or <c>not-run</c>. Promotion consumes only a <c>run</c> for the
@@ -418,7 +418,7 @@ internal static class RunnerAnswers
     }
 
     /// <summary>
-    /// How a run stands by its gates alone, as D192 judges it: <b>failed</b> where any gate's verdict is <c>fail</c>, naming it with its exit;
+    /// How a run stands by its gates alone, as the runner contract judges it: <b>failed</b> where any gate's verdict is <c>fail</c>, naming it with its exit;
     /// else <b>reached</b> where every gate <paramref name="required"/> is there as <c>pass</c> or <c>flake</c>; else <b>unknown</b>, naming
     /// each gate missing, ended or not run. An empty list of gates is never a pass, and a check that names no gate shows nothing.
     /// </summary>

@@ -19,7 +19,7 @@ public static class WorkflowGraphs
 {
     /// <summary>
     /// A stored version decoded: one that does not read in this build (<see cref="NamedVersion.Problem"/>) or holds no graph is
-    /// unreadable with that reason, kept as it is; a graph version is a graph already, judged where it was read, and its identity is its
+    /// unreadable with that reason; a graph version is a graph already, judged where it is read, and its identity is its
     /// own digest, which is what a run on it binds.
     /// </summary>
     public static DecodedVersion Decode(NamedVersion version) =>

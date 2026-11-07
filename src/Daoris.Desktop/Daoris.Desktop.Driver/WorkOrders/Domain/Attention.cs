@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// <para><b>The two halves are found differently, and that is the design.</b> A <b>park</b> is a state
 /// change on the record that nothing local performs — the session asks, through its own connector — so
 /// it is seen by diffing what is active from tick to tick. An <b>end</b> is something this driver
-/// concluded, so it is KNOWN rather than inferred, including whose decision it was.</para>
+/// concluded, so it is KNOWN rather than inferred, including whose decision it is.</para>
 ///
 /// <para>🔴 <b>That asymmetry is what makes "never for an ending the person caused" structural.</b> An
 /// end the driver did not conclude is one the person performed here — a resolve, an ended chat, a
@@ -35,7 +35,7 @@ namespace Daoris.Driver;
 /// same look is not said beside it.</para>
 ///
 /// <para><b>A conversation's end is deliberately not reported</b>, though a conversation that PARKS
-/// is — parks come from the tick and are blind to how the session was started. The reason: this exists because nobody should have to watch an <i>unattended</i> session, and a
+/// is — parks come from the tick and are blind to how the session is started. The reason: this exists because nobody should have to watch an <i>unattended</i> session, and a
 /// conversation is something the person is in, whose ending appears in the stream they are looking
 /// at. `ChatRunner` concludes outside the tick and so never reaches here at all, which is the
 /// mechanism; this paragraph is the intent, so the next reader can tell one from the other. If real
@@ -54,17 +54,17 @@ public sealed class AttentionWatch
 {
     private Dictionary<string, string>? _seen;
 
-    // Each conversation's turns as this watch judged them, by session: whether the person spoke since its last
-    // answer, and the turn's end it was last judged at. Told from the conversations' threads, so each is locked on its own.
+    // Each conversation's turns as this watch judges them, by session: whether the person spoke since its last
+    // answer, and the turn's end it last judged at. Told from the conversations' threads, so each is locked on its own.
     private readonly ConcurrentDictionary<string, Turns> _turns = new(StringComparer.OrdinalIgnoreCase);
 
-    // The waits already said, by account, with the cool-off each was for: a wait lasts every look until its
+    // The waits already said, by account, with the cool-off each is for: a wait lasts every look until its
     // reset, and a look that planned no start says nothing of it, so the cool-off — not the look — is what is said once. A
     // wait on signed-out accounts is said once per set of accounts, as the log's line is, and kept apart from a
     // cool-off of the tool's own sign-in, whose account is null too.
     private readonly Dictionary<string, string> _waits = new(StringComparer.OrdinalIgnoreCase);
 
-    // The quests' parks already said or seen at the first look, by quest, with the last session each park was for
+    // The quests' parks already said or seen at the first look, by quest, with the last session each park is for.
     // Bounded by what the planner still considers. A null session is a park seen at a first look whose records
     // were not read, taken as said when they are.
     private readonly Dictionary<string, string?> _parks = new(StringComparer.OrdinalIgnoreCase);
@@ -84,11 +84,11 @@ public sealed class AttentionWatch
         SessionStates.IsParked(session.State) && session.Answered ? AnsweredPark : session.State;
 
     /// <summary>
-    /// What this tick is worth saying, in the order it was found.
+    /// What this tick is worth saying, in the order it is found.
     /// </summary>
     /// <remarks>
     /// <b>The first look is a baseline, never a backlog.</b> A machine that has just started has no
-    /// previous view, and a session already parked then is one the person was told about on an
+    /// previous view, and a session already parked then is one the person had been told about on an
     /// earlier run — so the first observation reports nothing and only records what it saw. A shell
     /// that toasted every parked session on every launch is a shell people close.
     /// </remarks>
@@ -102,7 +102,7 @@ public sealed class AttentionWatch
 
         _seen = now;
 
-        // A wait whose cool-off was not said yet, and a quest's park not said yet: the first look's too, since a
+        // A wait whose cool-off is not said yet, and a quest's park not said yet: the first look's too, since a
         // restart's baseline is the said-set's (`AttentionNews`).
         var waits = report.Waits.Where(Unsaid).ToList();
         var parked = UnsaidParks(report, parks);
@@ -172,7 +172,7 @@ public sealed class AttentionWatch
         lock (turns) turns.Asked = false;
     }
 
-    /// <summary>A conversation is over here: what it was waited on for goes with it.</summary>
+    /// <summary>A conversation is over here: what it is waited on for goes with it.</summary>
     public void Forget(string sessionId) => _turns.TryRemove(sessionId, out _);
 
     /// <summary>

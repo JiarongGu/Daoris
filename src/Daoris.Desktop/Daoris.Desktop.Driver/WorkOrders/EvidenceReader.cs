@@ -221,7 +221,7 @@ public static class EvidenceReader
     /// <summary>
     /// How <paramref name="commit"/> spells <paramref name="path"/> where it holds it only in another case: each folder's entries
     /// listed in turn, a few spellings followed at each. The first in ordinal order is named, judged as a path first. Absent
-    /// where every listing the walk needed was given and none spells it; unread where git did not give one, since
+    /// where every listing the walk needs is given and none spells it; unread where git does not give one, since
     /// that folder may hold the first spelling, so what the walk would name is not known.
     /// </summary>
     private static async Task<(Looked Looked, string? Spelled)> SpelledAsync(
@@ -266,7 +266,7 @@ public static class EvidenceReader
     /// <summary>
     /// Whether <paramref name="path"/> stands in the tree as named, its case included: each folder listed in turn rather than
     /// asked by name, since a filesystem that folds case would say yes to another spelling. Found or absent once each listing
-    /// it needed was given (a file where a folder is named holds nothing beneath it); unread where the disk would not list one
+    /// it needs is given (a file where a folder is named holds nothing beneath it); unread where the disk would not list one
     /// naming that folder from the tree's root and why.
     /// </summary>
     private static Standing InTree(string tree, string path, FolderList list)

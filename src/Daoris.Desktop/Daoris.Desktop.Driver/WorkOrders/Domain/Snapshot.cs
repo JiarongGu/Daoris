@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 /// <summary>Everything a tick's decisions are made from, fetched once so the plan is coherent.</summary>
 /// <param name="Strikes">
 /// How many sessions have <b>failed</b> on each quest, by quest id — <b>derived</b> from the session records this machine already
-/// wrote, never a tally the driver keeps. Only `failed` counts, and a stop that was not the person's: a stand-down means somebody
-/// else got there first, a decline is a real answer, and the person's stop was theirs. A failure an account's limit made is not
+/// wrote, never a tally the driver keeps. Only `failed` counts, and a stop that is not the person's: a stand-down means somebody
+/// else got there first, a decline is a real answer, and the person's stop is theirs. A failure an account's limit made is not
 /// counted either: the account cools, and the quest waits for it. A quest nobody has failed is simply absent.
 /// </param>
 public sealed record Snapshot(
@@ -95,7 +95,7 @@ public sealed record Snapshot(
 
     /// <summary>
     /// Whose the take is on each taken quest a look would carry on, by quest id: read only for those, since the ledger refuses a
-    /// carry-on over a take that is not this machine's. Absent is unread, and the quest is carried on as before, for the ledger to judge.
+    /// carry-on over a take that is not this machine's. Absent is unread, and the quest is carried on, for the ledger to judge.
     /// </summary>
     public IReadOnlyDictionary<string, QuestTake> Takes { get; init; } =
         new Dictionary<string, QuestTake>(StringComparer.OrdinalIgnoreCase);
@@ -136,7 +136,7 @@ public sealed record Snapshot(
 
     /// <summary>
     /// How many commits the tree of each open quest's last session here holds beyond the commit it opened at, by quest id, where that
-    /// session was cut off before it took the quest (<see cref="CommittedWork"/>): the look reads them from git, and the planner
+    /// session is cut off before it takes the quest (<see cref="CommittedWork"/>): the look reads them from git, and the planner
     /// carries a quest with any on in that tree rather than starting it again in a new one. Absent is unread or none.
     /// </summary>
     public IReadOnlyDictionary<string, int> Committed { get; init; } =

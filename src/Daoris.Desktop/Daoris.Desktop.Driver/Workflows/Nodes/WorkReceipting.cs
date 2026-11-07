@@ -9,9 +9,9 @@ internal sealed class WorkReceipting(
     private ResourceRecordFiles? Receipts => receipts();
 
     /// <summary>
-    /// An attempt's receipts taken on its unit's resource record (FABRIC-PERFORM1d, §D3) before its outcome is applied: each resource its
+    /// An attempt's receipts taken on its unit's resource record before its outcome is applied: each resource its
     /// plugin names, once, with the role its manifest declares, and marked superseded where its node has already moved off the attempt (a
-    /// guess the outcome's own judgement corrects, <see cref="Supersede"/>). Null where they were taken or none was named; else what came of
+    /// guess the outcome's own judgement corrects, <see cref="Supersede"/>). Null where they are taken or none is named; else what came of
     /// the completion, which is then not applied: held for the person where the record would keep too many, not taken where the record
     /// could not be written.
     /// </summary>
@@ -45,8 +45,8 @@ internal sealed class WorkReceipting(
     }
 
     /// <summary>
-    /// The attempt's receipts marked as its outcome was judged (FABRIC-PERFORM1d, §D3): superseded where it came as a stale attempt's, which has
-    /// no result, so what it made is temporary and cleaned at once; else as its declared role. Only an attempt that was not settled before:
+    /// The attempt's receipts marked as its outcome is judged: superseded where it came as a stale attempt's, which has
+    /// no result, so what it made is temporary and cleaned at once; else as its declared role. Only an attempt that is not settled before:
     /// a replay changes nothing it already said.
     /// </summary>
     internal void Supersede(string unit, NodeAttempt attempt, IReadOnlyList<WorkResource> resources, WorkPerformed applied)

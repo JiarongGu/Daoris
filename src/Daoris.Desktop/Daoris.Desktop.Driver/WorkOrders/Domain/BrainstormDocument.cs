@@ -50,7 +50,7 @@ public sealed record BrainstormRow(int? Rank, string Title, string Idea, string?
 
 /// <summary>
 /// The brainstorm's document: the ranked groups with every member's provenance, or the validated proposals
-/// unranked where the synthesis did not finish; what was left out; what the passes needed; and which passes ran, how.
+/// unranked where the synthesis did not finish; what is left out; what the passes needed; and which passes ran, how.
 /// </summary>
 /// <param name="Unranked">Why the document is unranked; null where the synthesis ranked it.</param>
 public sealed record BrainstormDocument(
@@ -224,7 +224,7 @@ public static class BrainstormDocuments
     }
 
     /// <summary>
-    /// The document as a person reads it at the terminal, in Daoris's fixed words around the agents' own: what was
+    /// The document as a person reads it at the terminal, in Daoris's fixed words around the agents' own: what is
     /// asked, which packet, whether the rank is the synthesis's claim, and whether any maker diversity stands behind it.
     /// </summary>
     public static string Markdown(BrainstormDocument document)

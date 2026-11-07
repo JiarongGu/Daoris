@@ -170,7 +170,7 @@ public sealed record OpinionDelivered(string? Person, DateTimeOffset? PersonAt, 
     /// <summary>The recheck the driver asked of it, by its opinion's id; null where none is asked.</summary>
     public string? Recheck { get; init; }
 
-    /// <summary>Why no recheck was asked, a code of <see cref="OpinionRechecks"/> or the choice's; null where one is, or none judged yet.</summary>
+    /// <summary>Why no recheck is asked, a code of <see cref="OpinionRechecks"/> or the choice's; null where one is, or none judged yet.</summary>
     public string? RecheckWhy { get; init; }
 
     /// <summary>Nothing done yet.</summary>

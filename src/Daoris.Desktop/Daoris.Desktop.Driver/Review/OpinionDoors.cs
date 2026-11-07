@@ -6,8 +6,8 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The local host's opinion doors, as the driver asks them (XAGENT1c–XAGENT1e): a pass's ask, an opinion's read and its findings'
-/// hand: a class over the service's client, reached as its <c>ServiceClient.Opinions</c> (PART8), a member the review declares over the client (<see cref="OpinionDoorsOfClient"/>).
+/// The local host's opinion doors, as the driver asks them: a pass's ask, an opinion's read and its findings'
+/// hand: a class over the service's client, reached as its <c>ServiceClient.Opinions</c>, a member the review declares over the client (<see cref="OpinionDoorsOfClient"/>).
 /// </summary>
 public sealed class OpinionDoors
 {
@@ -16,7 +16,7 @@ public sealed class OpinionDoors
     internal OpinionDoors(ServiceClient service) => _service = service;
 
     /// <summary>
-    /// Ask the local host for a pass (XAGENT1c, D155 point 11): it keeps the opinion and opens its reviewer's record in one
+    /// Ask the local host for a pass: it keeps the opinion and opens its reviewer's record in one
     /// transaction, a chat on no quest naming the opinion, in its own copy, as its account. A refusal is an answer, not an
     /// exception, and so is a host older than the door.
     /// </summary>
@@ -33,7 +33,7 @@ public sealed class OpinionDoors
             return new(null, null, $"the service at {_service.BaseUrl} answered `{Door}` with no opinion and no record.");
         }
 
-        // The door the record opened by, for the session log (LOG1b): a reviewer's record is a chat that serves no quest.
+        // The door the record opened by, for the session log: a reviewer's record is a chat that serves no quest.
         _service.RecordOpened(new SessionOpened(session.Id, OpinionPass.OpenedKind, session.Door ?? body.Door, session.Repository ?? body.Candidate.Repository)
         {
             Workspace = session.Workspace,
@@ -55,7 +55,7 @@ public sealed class OpinionDoors
     }
 
     /// <summary>
-    /// The opinion under <paramref name="id"/> as the local host answers it (XAGENT1c), with where its pass stands; null where
+    /// The opinion under <paramref name="id"/> as the local host answers it, with where its pass stands; null where
     /// there is none, or the host is older than the door.
     /// </summary>
     /// <exception cref="DriverException">The host refused for another reason.</exception>
@@ -68,15 +68,15 @@ public sealed class OpinionDoors
     }
 
     /// <summary>
-    /// Hand a first pass's findings to its working session (XAGENT1c's <c>POST /api/opinions/{id}/hand</c>; design §6.3): the
-    /// host keeps them on its record as a word whose <c>by</c> names the opinion, in its fixed words, once, and answers the word (CHATFLOW1e): a
+    /// Hand a first pass's findings to its working session (<c>POST /api/opinions/{id}/hand</c>): the
+    /// host keeps them on its record as a word whose <c>by</c> names the opinion, in its fixed words, once, and answers the word: a
     /// chat run's runner takes it as its reserved turn's message, under the record's id, so it leaves the record once that turn is on the wire. A
-    /// refusal is an answer, the host's sentence, not an exception, and so is a host older than the door. COMMS1b: the hand to the working session's
+    /// refusal is an answer, the host's sentence, not an exception, and so is a host older than the door. The hand to the working session's
     /// line asks for a settled answer under the opinion's key, and its answer is read as the helper's and the partner's are
-    /// (<see cref="SolicitedHand.Read"/>); a chat run's hand to the record it names asks none, as before.
+    /// (<see cref="SolicitedHand.Read"/>); a chat run's hand to the record it names asks none.
     /// </summary>
     /// <param name="to">
-    /// A chat run's record of the line to hand them to (CHATFLOW1e, the chat-flow design §6.1 (a)), live between turns or ended and newest;
+    /// A chat run's record of the line to hand them to, live between turns or ended and newest;
     /// null for the working session itself.
     /// </param>
     public async Task<OpinionHand> HandWordAsync(string id, CancellationToken ct = default, string? to = null)
@@ -107,14 +107,14 @@ public sealed record OpinionHand(SolicitedAnswer Answer, OpinionView? Opinion, S
 }
 
 /// <summary>
-/// The client's opinion doors, as the review's own member of it (FOUNDATION1 mod-iv, the design §14.2: the door classes are their owners', over
+/// The client's opinion doors, as the review's own member of it (the door classes are their owners', over
 /// the service's client, which names none of them): each read hands a door over the client, which holds no state of its own.
 /// </summary>
 public static class OpinionDoorsOfClient
 {
     extension(ServiceClient client)
     {
-        /// <summary>The local host's opinion doors (XAGENT1c–XAGENT1e), over this client.</summary>
+        /// <summary>The local host's opinion doors, over this client.</summary>
         public OpinionDoors Opinions => new(client);
     }
 }

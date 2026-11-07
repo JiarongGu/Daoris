@@ -10,7 +10,7 @@ internal static class WireEligible
     /// <summary>
     /// One node's eligibility on <paramref name="receipts"/>: its data inputs, its join members, and its groups; and the binding a
     /// start takes on its subject, none while it is withheld there. An input from another subject is resolved on its producer's
-    /// reach as any is: the producer's acceptance was judged on its own subject in step 1.
+    /// reach as any is: the producer's acceptance is judged on its own subject first.
     /// </summary>
     internal static WireEligibility Eligible(
         NodeDeclaration node, NodeStatus status, IReadOnlyList<Wire> wires, Dictionary<string, WireReceipt> receipts, WireRun run, Subjected subjected,

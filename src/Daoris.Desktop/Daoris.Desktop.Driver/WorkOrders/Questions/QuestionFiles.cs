@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Gone as each run of its record opens</b> (<see cref="Clear"/>), so while a resumed run works no question of the park
 /// before it stands, and a press another window made on it is refused as changed; <b>bound to its park as the run concludes</b>
-/// (<see cref="SettleRun"/>): kept only where the run parks and the question was asked since the run last handed its agent words, or
+/// (<see cref="SettleRun"/>): kept only where the run parks and the question has been asked since the run last handed its agent words, or
 /// does not read, deleted otherwise. So a question on file while its record is parked is its last turn's. The connector writes during the run, and
 /// these clear before it and settle after it, so two never write at once.</para>
 ///
@@ -63,7 +63,7 @@ public sealed class QuestionFiles(string home)
 
     /// <summary>
     /// Whether the session asked the person a question at or after <paramref name="since"/>:
-    /// false where no file is on disk or its question was asked before, true where it was asked since, and null where a file is there and
+    /// false where no file is on disk or its question is older, true where it is newer, and null where a file is there and
     /// does not read (busy, broken, past a bound), which a caller deciding that nobody waits on the person must read as a question.
     /// </summary>
     public bool? AskedSince(string session, DateTimeOffset since)
@@ -77,11 +77,11 @@ public sealed class QuestionFiles(string home)
 
     /// <summary>
     /// Bind the session's question to the park its run ended in: kept where <paramref name="state"/> parks and the
-    /// question was asked at or after <paramref name="since"/>; deleted otherwise, and said where the disk would not let it go.
+    /// question has been asked at or after <paramref name="since"/>; deleted otherwise, and said where the disk would not let it go.
     /// </summary>
     /// <remarks>
     /// A park keeps a file that does not read (busy, broken, past a bound) too. Neither its
-    /// question nor when it was asked can be read, so nothing proves it was not this turn's; it is what made the turn park rather than wait
+    /// question nor its time can be read, so nothing proves it is not this turn's; it is what made the turn park rather than wait
     /// on its helper (<see cref="AskedSince"/> null), and a park never shows it, since a read of it is none. The next run's opening clears it.
     /// </remarks>
     public QuestionSettle Settle(string session, string state, DateTimeOffset since)
@@ -175,7 +175,7 @@ public sealed class QuestionFiles(string home)
     }
 }
 
-/// <summary>What a settle or a clear did with a session's question: there was none, it is kept for the park, it went, or it stayed.</summary>
+/// <summary>What a settle or a clear did with a session's question: there is none, it is kept for the park, it goes, or it stays.</summary>
 public enum QuestionSettle
 {
     None,

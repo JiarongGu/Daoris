@@ -106,7 +106,7 @@ public static class IntegrateChoice
     }
 
     /// <summary>
-    /// What a refused choice says: each repository that cannot carry the version, its sentences after its name, and that nothing was written.
+    /// What a refused choice says: each repository that cannot carry the version, its sentences after its name, and that nothing has been written.
     /// </summary>
     internal static string Refusal(string workflow, int version, IEnumerable<Reach> refused) =>
         $"`{workflow}` v{version} cannot be chosen here: "

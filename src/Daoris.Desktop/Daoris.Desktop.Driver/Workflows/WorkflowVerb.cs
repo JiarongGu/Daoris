@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris workflow</c> (PUSH1f2b, D194; FOUNDATION1 mod-iii): the workflows' own verb, the settings' port
+/// <c>daoris workflow</c>: the workflows' own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the terminal's door to workflows (<see cref="DriverWorkflowsCommand"/>). Its words run whole,
 /// never planned.
 /// </summary>
@@ -16,8 +16,8 @@ public sealed class WorkflowVerb : ChoiceVerb
         Run(args, before, world, ct);
 
     /// <summary>
-    /// <c>workflow …</c> (PUSH1f2b): a read said, and a write the person's press (REVIEW2 3): its route, confirmed in the running Daoris's
-    /// window, else done here on the terminal's word and refused from a session's terminal (D194 point 5). <see cref="DriverWorkflowsCommand"/>
+    /// <c>workflow …</c>: a read said, and a write the person's press: its route, confirmed in the running Daoris's
+    /// window, else done here on the terminal's word and refused from a session's terminal. <see cref="DriverWorkflowsCommand"/>
     /// is the verb.
     /// </summary>
     private static async Task<int> Run(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct)

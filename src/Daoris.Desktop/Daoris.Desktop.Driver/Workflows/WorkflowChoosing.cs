@@ -72,7 +72,7 @@ internal sealed class WorkflowChoosing(WorkflowTerminal run)
         }
 
         var own = run.Choices.Workflows.TryGetValue(repository.Trim(), out var held) ? held.Landed : null;
-        // A tip that cannot be read keeps what was accepted for the same pipeline: an acceptance names a blob, never a moment.
+        // A tip that cannot be read keeps what is accepted for the same pipeline: an acceptance names a blob, never a moment.
         var kept = own is not null && own.Workflow == chosen ? own.Gates : null;
         var read = await run.World.Registry(run.Ct).ConfigureAwait(false);
         var inWorkspace = read.Checkouts?.FirstOrDefault(each => InScope(each.Repository, repository)).Workspace;
@@ -120,7 +120,7 @@ internal sealed class WorkflowChoosing(WorkflowTerminal run)
         return LandedDone(Edit(tip.Gates), inWorkspace, lines, repository, workspace, chosen);
     }
 
-    /// <summary>The landed route edited, said and written, or not with <c>--plan</c>: its pipeline, what was accepted, and what it lowers.</summary>
+    /// <summary>The landed route edited, said and written, or not with <c>--plan</c>: its pipeline, what is accepted, and what it lowers.</summary>
     internal int LandedDone(WorkflowUse edit, string? inWorkspace, IReadOnlyList<string> accepted, string? repository, string? workspace, string? chosen)
     {
         var edited = Judge(edit);

@@ -13,7 +13,7 @@ public sealed record LandingGate(OpinionGateState Opinion, ReviewGateState Revie
     /// </summary>
     public IWorkflowGatePart? Workflow { get; init; }
 
-    /// <summary>The process the gate is read with, which the landing lands by; null where none was read.</summary>
+    /// <summary>The process the gate is read with, which the landing lands by; null where none is read.</summary>
     public IWorkplaceProcess? Process => Workflow?.Process;
 
     /// <summary>

@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The agents that wrote the work a second opinion reads (D155 point 4, the second-agent design §3.1), as the reviewer's walk judges
+/// The agents that wrote the work a second opinion reads, as the reviewer's walk judges
 /// its independence against them (<see cref="ReviewerChoice.ChooseAsync"/>): every agent the line ran on, never only its last
-/// part's (LIMITRESUME1j, D206; the limit-resume design §3.6). A line cut off by a limit on one maker's agent and carried on by
+/// part's. A line cut off by a limit on one maker's agent and carried on by
 /// another's has two makers, and a reviewer of either is the work's own family.
 /// </summary>
 /// <remarks>
@@ -15,7 +15,7 @@ internal static class OpinionWriters
 {
     /// <summary>
     /// The adapters of every part of <paramref name="candidate"/>'s line and of every record on <paramref name="quests"/>, each once:
-    /// the candidate's line oldest first, then the quests' records by when each was made.
+    /// the candidate's line oldest first, then the quests' records by when each is made.
     /// </summary>
     /// <param name="records">This machine's records by id (<see cref="ServiceClient.ReadRecords"/>).</param>
     /// <param name="candidate">The working session whose work is read.</param>

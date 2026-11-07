@@ -3,8 +3,8 @@ using System.Runtime.CompilerServices;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the workplace asks of the review when it integrates a candidate, installed when the driver loads (<see cref="IIntegrationVerdicts"/>;
-/// INTEGRATE1f part f2): the candidate's gates run in one job and judged as the merge tool judges them.
+/// What the workplace asks of the review when it integrates a candidate, installed when the driver loads (<see cref="IIntegrationVerdicts"/>):
+/// the candidate's gates run in one job and judged as the merge tool judges them.
 /// </summary>
 internal sealed class IntegrationVerdictOperations(IntegrationWorld? world = null) : IIntegrationVerdicts
 {
@@ -13,6 +13,6 @@ internal sealed class IntegrationVerdictOperations(IntegrationWorld? world = nul
 
     /// <inheritdoc />
     public Task<IntegrationVerdict> JudgeAsync(IntegrationVerdictAsk ask) =>
-        // The environment gates are composed from is read for each judgement: it is the install's as it stands, not as it was when the driver loaded.
+        // The environment gates are composed from is read for each judgement: it is the install's as it stands, not as it is when the driver loads.
         new IntegrationJudging(ask, world ?? new IntegrationWorld()).RunAsync();
 }

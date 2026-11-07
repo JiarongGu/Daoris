@@ -11,8 +11,8 @@ public sealed record NodeUnitsRead(IReadOnlyList<WorkUnit> Units, IReadOnlyDicti
     public IReadOnlyDictionary<string, string?>? Tips { get; init; }
 
     /// <summary>
-    /// Why the work's attribution was not read: without the service, or where it did not answer, the units are the branches alone, with none
-    /// of the links sessions make. Empty where it was read. A missing link is never read as unbound work.
+    /// Why the work's attribution is not read: without the service, or where it did not answer, the units are the branches alone, with none
+    /// of the links sessions make. Empty where it is read. A missing link is never read as unbound work.
     /// </summary>
     public IReadOnlyList<string> Unread { get; init; } = [];
 }

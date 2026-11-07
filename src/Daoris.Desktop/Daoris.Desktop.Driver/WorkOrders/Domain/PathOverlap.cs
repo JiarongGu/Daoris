@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An overlap the planner found at a start (INTEGRATE1l, the integration design §9 point 1): the earlier quest of the repository whose
+/// An overlap the planner found at a start: the earlier quest of the repository whose
 /// declared or changed paths meet this one's, and this quest's declared paths that meet them.
 /// </summary>
 public sealed record OverlapFact(string Quest, IReadOnlyList<string> Paths)
@@ -11,7 +11,7 @@ public sealed record OverlapFact(string Quest, IReadOnlyList<string> Paths)
 }
 
 /// <summary>
-/// Whether declared globs meet another unit's work (INTEGRATE1l): a glob meets a changed path it matches (<see cref="KindPaths"/>), and
+/// Whether declared globs meet another unit's work: a glob meets a changed path it matches (<see cref="KindPaths"/>), and
 /// another glob where either matches the other or their literal folders nest, so two declarations that may touch one file are taken to.
 /// </summary>
 public static class PathOverlap

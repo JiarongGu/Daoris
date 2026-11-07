@@ -85,7 +85,7 @@ public static class InvolvementRoutes
     public static InvolvementJudged Judge(IReadOnlyList<string> lowered, bool byThePerson) => new(lowered, byThePerson || lowered.Count == 0);
 
     /// <summary>
-    /// The gates <paramref name="was"/> runs that <paramref name="now"/> does not, in order: the heavy gates where <paramref name="now"/>
+    /// The gates the first list runs that <paramref name="now"/> does not, in order: the heavy gates where <paramref name="now"/>
     /// does not run them, and a name where it lists names and not that one. Names given up for the heavy gates are none, since which gates
     /// are heavy is the declaration's, read when the check runs.
     /// </summary>

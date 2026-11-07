@@ -35,7 +35,7 @@ internal sealed record JudgedFailure(FailureNames Names, string Gate, string? Te
     public string Label => Test ?? Gate;
 }
 
-/// <summary>The open known red a failure's signature matches: whether its 72 hours are past, and the commit it was last seen failing on.</summary>
+/// <summary>The open known red a failure's signature matches: whether its 72 hours are past, and the commit it last failed on.</summary>
 internal sealed record KnownRed(bool Expired, string? LastSeen);
 
 /// <summary>A reason the whole admission could not be shown, where it arose (<c>start</c>, <c>beat</c>, <c>end</c>).</summary>

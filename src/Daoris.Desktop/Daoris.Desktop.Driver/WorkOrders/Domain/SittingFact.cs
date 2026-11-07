@@ -19,10 +19,10 @@ public sealed record SittingFact(string Code)
     /// <summary>The other quest the sentence names: one queued ahead, the question waited on, the step before, the reopened source.</summary>
     public string? Quest { get; init; }
 
-    /// <summary>The repository a question waited on was asked of.</summary>
+    /// <summary>The repository the awaited question is asked of.</summary>
     public string? Repository { get; init; }
 
-    /// <summary>The environment a set-up step waited on waits for review in, where it names one.</summary>
+    /// <summary>The environment a set-up step waits for review in, where it names one.</summary>
     public string? Environment { get; init; }
 
     /// <summary>The second opinion's state (<see cref="OpinionGateStates"/>); null where it is not judged yet.</summary>
@@ -64,22 +64,22 @@ public sealed record SittingFact(string Code)
     /// <summary><see cref="StartVerdict.Waiting"/>: the question is not answered yet.</summary>
     public const string Asked = "asked";
 
-    /// <summary><see cref="StartVerdict.Waiting"/>: the question was closed done, its evidence read when its session ends.</summary>
+    /// <summary><see cref="StartVerdict.Waiting"/>: the question is closed done, its evidence read when its session ends.</summary>
     public const string UnreadRunning = "unreadRunning";
 
-    /// <summary><see cref="StartVerdict.Waiting"/>: the question was closed done, its evidence not read yet.</summary>
+    /// <summary><see cref="StartVerdict.Waiting"/>: the question is closed done, its evidence not read yet.</summary>
     public const string Unread = "unread";
 
     /// <summary><see cref="StartVerdict.Waiting"/>: as <see cref="Unread"/>, and no session here ended on it, so its check names a commit.</summary>
     public const string UnreadAtCommit = "unreadAtCommit";
 
-    /// <summary><see cref="StartVerdict.Waiting"/>: the question was closed done without the evidence it names.</summary>
+    /// <summary><see cref="StartVerdict.Waiting"/>: the question is closed done without the evidence it names.</summary>
     public const string Missing = "missing";
 
     /// <summary><see cref="StartVerdict.Waiting"/>: the question is a set-up step waiting for the person's review.</summary>
     public const string Unreviewed = "unreviewed";
 
-    /// <summary><see cref="StartVerdict.Waiting"/>: the question was closed done departing from what the person required.</summary>
+    /// <summary><see cref="StartVerdict.Waiting"/>: the question is closed done departing from what the person required.</summary>
     public const string Departed = "departed";
 
     /// <summary><see cref="StartVerdict.NotAdopted"/>: the repository is not registered on this machine.</summary>

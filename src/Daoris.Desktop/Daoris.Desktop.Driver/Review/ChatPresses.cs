@@ -21,7 +21,7 @@ public interface IChatPressing
 /// <param name="Live">Whether that record is still a live conversation, which some runner holds; an ended one needs no reservation.</param>
 public sealed record ChatPressAsk(string Session, string Tree, string Run, string Repository, string Workspace, bool Live);
 
-/// <summary>What the press came to: the landing, or its refusal, and the gate it was judged by at the captured tip; and the tip.</summary>
+/// <summary>What the press came to: the landing, or its refusal, and the gate that judged it at the captured tip; and the tip.</summary>
 public sealed record ChatPressed(TreeLanding Landed, LandingGate? Gate, string? Tip)
 {
     /// <summary>
@@ -76,7 +76,7 @@ public static class ChatPresses
     /// <param name="gate">The whole gate read at a tip, keyed by the run, every part in its fixed order, and a press's answer to what it showed.</param>
     /// <param name="land">The landing, pinned to the gate's tip.</param>
     /// <param name="turns">The person's turn count, read once the conversation is reserved.</param>
-    /// <param name="head">The tree's <c>HEAD</c>, read once to capture and again where the landing was refused; git's where null.</param>
+    /// <param name="head">The tree's <c>HEAD</c>, read once to capture and again where the landing is refused; git's where null.</param>
     public static async Task<ChatPressed> PressAsync(
         string home, ChatPressAsk ask, IChatPressing? holder, Func<string, CancellationToken, Task<LandingGate>> gate,
         Func<LandingGate, CancellationToken, Task<TreeLanding>> land, Func<int> turns, CancellationToken ct = default,

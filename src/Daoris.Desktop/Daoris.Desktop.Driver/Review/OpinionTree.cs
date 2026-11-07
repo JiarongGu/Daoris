@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>A reviewer's copy as it was made (XAGENT1d): where it is, and the candidate's tip it stands at.</summary>
+/// <summary>A reviewer's copy as made: where it is, and the candidate's tip it stands at.</summary>
 public sealed record OpinionTreeOpened(string Path, string Tip);
 
 /// <summary>
-/// A second opinion's own tree (XAGENT1d, D155 point 5; the second-agent design §5.1): a clone of the repository at the
+/// A second opinion's own tree: a clone of the repository at the
 /// candidate's tip, made by Daoris under the home's trees, with no remote, and removed when the pass ends. Nothing in it is read
 /// back: the only thing a pass takes is the opinion said through its tool.
 /// </summary>
@@ -15,16 +15,16 @@ public sealed record OpinionTreeOpened(string Path, string Tip);
 /// store is one the repository holds too. What the copy cannot hold alone is a push that names the repository's own path: the
 /// rules handed (<c>no-push</c>) and the instruction hold that one.</para>
 ///
-/// <para><b>Where it lives</b>: <c>trees/&lt;workspace&gt;/&lt;repository&gt;/o-&lt;8 hex&gt;</c>, the layout a session tree has
-/// (D51), so every reader of that layout finds a workspace and a repository where it looks, and the tree guard can hold the
+/// <para><b>Where it lives</b>: <c>trees/&lt;workspace&gt;/&lt;repository&gt;/o-&lt;8 hex&gt;</c>, the layout a session tree has,
+/// so every reader of that layout finds a workspace and a repository where it looks, and the tree guard can hold the
 /// reviewer to it. <c>o-</c> beside a session tree's <c>s-</c>.</para>
 ///
 /// <para><b>Removed whatever happened</b>, read-only objects cleared first, which a recursive delete refuses on Windows. A folder
-/// something still holds is said, never left silently. A copy a kill left names the process whose pass it was, in its own
-/// <c>.git</c>; the next pass in that repository moves it aside once that process is gone and the copy was left quiet
-/// (<see cref="PassLeftovers"/>, STRAYOTHERS1).</para>
+/// something still holds is said, never left silently. A copy a kill left names the process whose pass it is, in its own
+/// <c>.git</c>; the next pass in that repository moves it aside once that process is gone and the copy is quiet
+/// (<see cref="PassLeftovers"/>).</para>
 ///
-/// <para>A top file, not the Domain's (FLAT1b-ii): making and removing a copy runs git and clears a folder, so the type holds I/O.</para>
+/// <para>A top file, not the Domain's: making and removing a copy runs git and clears a folder, so the type holds I/O.</para>
 /// </remarks>
 public static class OpinionTree
 {
@@ -41,7 +41,7 @@ public static class OpinionTree
 
     /// <summary>
     /// Make the copy: a clone of <paramref name="root"/> with no hard links and nothing checked out, its remote removed, then
-    /// checked out detached at <paramref name="tip"/>. A failure removes what was made and throws, in git's words.
+    /// checked out detached at <paramref name="tip"/>. A failure removes what it made and throws, in git's words.
     /// </summary>
     /// <param name="root">The repository's registered checkout, where the candidate's commits are.</param>
     /// <param name="tip">The candidate's tip, by its full id.</param>
@@ -53,7 +53,7 @@ public static class OpinionTree
         var trees = Path.GetDirectoryName(path)!;
         try
         {
-            // STRAYOTHERS1: a copy a killed pass left here goes aside first, once no running process holds it and it was left quiet.
+            // A copy a killed pass left here goes aside first, once no running process holds it and it is quiet.
             new SessionTrees(home).ClearPassCopies(trees, DateTimeOffset.UtcNow);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -71,7 +71,7 @@ public static class OpinionTree
             throw new DriverException($"could not make a copy of `{repository}` for a second opinion — git said: {Failure(cloneError)}");
         }
 
-        // The copy names the process whose pass it is (STRAYOTHERS1), so a later pass tells a copy in use from one a kill left.
+        // The copy names the process whose pass it is, so a later pass tells a copy in use from one a kill left.
         try
         {
             await File.WriteAllTextAsync(
@@ -85,7 +85,7 @@ public static class OpinionTree
         }
 
         // Its one remote goes, and with it every branch the person's repository had: the copy has nowhere configured to push.
-        // Long paths for the reviewer's own git too: a copy's prefix is longer than its repository's (2026-09-28's finding).
+        // Long paths for the reviewer's own git too: a copy's prefix is longer than its repository's.
         string[][] steps =
         [
             ["remote", "remove", "origin"],
@@ -115,7 +115,7 @@ public static class OpinionTree
     /// Remove a copy, and only a copy: a folder named as one under the home's trees. Null where it is gone; otherwise why it
     /// stays, in a sentence a line can carry.
     /// </summary>
-    /// <param name="prefix">The copy's own prefix: an opinion's or a helper's <see cref="Prefix"/>, a partner's <c>p-</c> (COAGENT1b).</param>
+    /// <param name="prefix">The copy's own prefix: an opinion's or a helper's <see cref="Prefix"/>, a partner's <c>p-</c>.</param>
     public static async Task<string?> RemoveAsync(string home, string path, string prefix = Prefix)
     {
         string full;
@@ -140,7 +140,7 @@ public static class OpinionTree
             {
                 if (!Directory.Exists(full)) return null;
                 Writable(full);
-                // Never following a link (TREELINK1b): .NET's recursive delete is not proven safe against what a link points at.
+                // Never following a link: .NET's recursive delete is not proven safe against what a link points at.
                 TreeSetAside.DeleteNeverFollowing(full);
                 return null;
             }

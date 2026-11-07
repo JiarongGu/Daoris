@@ -49,7 +49,7 @@ public static class VerifyCommand
         return new VerifyAsk(args[0].Trim()) { Branch = branch, Commit = commit };
     }
 
-    /// <summary>Bind the person's run in <paramref name="checkout"/>, saying on <paramref name="output"/> what was bound and where its verdict shows.</summary>
+    /// <summary>Bind the person's run in <paramref name="checkout"/>, saying on <paramref name="output"/> what is bound and where its verdict shows.</summary>
     /// <returns>0 bound · 1 refused: no verification pipeline, no gates accepted, no version that reads · 2 the commit could not be read.</returns>
     public static async Task<int> BindAsync(
         string home, string checkout, VerifyAsk ask, WorkflowLandedSelected route, string? workspace, TextWriter output, CancellationToken ct)

@@ -164,7 +164,7 @@ public sealed class ChannelReach
     }
 
     /// <summary>
-    /// What its started part was handed, acknowledged once the part works: each message its packet
+    /// What its started part is handed, acknowledged once the part works: each message its packet
     /// carried whole <see cref="ChannelAcks.Taken"/>, and each it cut or left out among the older ones
     /// <see cref="ChannelAcks.Partly"/>, which a new part is handed again and the agent reads whole with <c>channel_read</c>. A miss is
     /// the next part's to be handed again, never a failure of the start.

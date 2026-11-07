@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The quest adapter (FABRIC-UNIT1a; the fabric events design §D2): each quest the service answered, read as a <see cref="WorkUnit"/>
+/// The quest adapter: each quest the service answered, read as a <see cref="WorkUnit"/>
 /// of kind <see cref="WorkUnitKind.Quest"/>. Its canonical record is the service's quest store and its one writer the service, through
 /// its quest exchange; this reads the answer and writes nothing, so a quest's every move stays the service's.
 /// </summary>
 /// <remarks>
 /// <para><b>Its end is its status</b>, never judged here: a done is the end, unless the service holds it for the person's yes or its
-/// evidence (D144), which is no end yet; a decline drops it; a status this reader does not know is unknown, never read as ended.</para>
+/// evidence, which is no end yet; a decline drops it; a status this reader does not know is unknown, never read as ended.</para>
 /// <para><b>What it relates to is linked by id</b> (<see cref="WorkLink"/>), never copied onto it: the ask its sender names, the chain's
-/// step before it, the question its taker waits on (D79). The branch units its sessions worked are linked by <see cref="WorkUnits.Linked"/>.</para>
+/// step before it, the question its taker waits on. The branch units its sessions worked are linked by <see cref="WorkUnits.Linked"/>.</para>
 /// </remarks>
 public static class QuestUnits
 {

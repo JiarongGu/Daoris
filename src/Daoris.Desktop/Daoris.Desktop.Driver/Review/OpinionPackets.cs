@@ -3,12 +3,12 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The packet's own rules and reads (XAGENT1d): an opinion's folder, the most commits a candidate names, git's lists read as
+/// The packet's own rules and reads: an opinion's folder, the most commits a candidate names, git's lists read as
 /// commits and paths, and the packet read from git and from the copy: the candidate, the diff written beside the opinion, and the
 /// rules named. Nothing here is read from the copy after its reviewer starts; the rules are read before it does.
 /// </summary>
 /// <remarks>
-/// A top file, not the Domain's (FLAT1b-ii): reading the candidate asks git and naming the rules reads the tree's files, so the
+/// A top file, not the Domain's: reading the candidate asks git and naming the rules reads the tree's files, so the
 /// type holds I/O; the records it reads into stay in <c>Domain/OpinionPacket.cs</c>. Outside Review only the loop, which composes
 /// every layer, names it.
 /// </remarks>
@@ -20,16 +20,16 @@ public static class OpinionPackets
     /// <summary>The diff's file in an opinion's folder.</summary>
     public const string DiffName = "candidate.diff";
 
-    /// <summary>The root files a repository's agents are told to read first, in the order named: one harness reads each (D59).</summary>
+    /// <summary>The root files a repository's agents are told to read first, in the order named: one harness reads each.</summary>
     private static readonly string[] Instructions = ["AGENTS.md", "CLAUDE.md"];
 
     private const string Manifest = "daoris.json";
 
-    /// <summary>The gates file by its own name, where a manifest declares none (D122).</summary>
+    /// <summary>The gates file by its own name, where a manifest declares none.</summary>
     private const string GatesFile = "daoris.gates.json";
 
     /// <summary>
-    /// An opinion's own folder under the home (design §4), where the larger parts of its packet are kept. Refused for an id
+    /// An opinion's own folder under the home, where the larger parts of its packet are kept. Refused for an id
     /// that is not one plain name, so no id names a path elsewhere.
     /// </summary>
     /// <exception cref="DriverException">The id is not one plain name.</exception>
@@ -80,7 +80,7 @@ public static class OpinionPackets
 
     /// <summary>
     /// The candidate from <paramref name="root"/>'s git: <paramref name="base"/> and <paramref name="tip"/> as commits by their
-    /// full ids, the commits reachable from the tip and not the base, oldest first, and the paths the work changes since the
+    /// full ids, the commits reachable from the tip and not the base, oldest first, and the paths the work changes after the
     /// two met.
     /// </summary>
     /// <exception cref="DriverException">Git cannot name a commit, there is no work between them, or more than the service keeps.</exception>

@@ -96,8 +96,8 @@ public sealed record ResourceRecord(string Unit)
 
 /// <summary>
 /// The units' resource records under a home: one file per unit, <c>&lt;home&gt;/workflows/resources/&lt;key&gt;.json</c>,
-/// its key the unit's node record's (<see cref="NodeRecordFiles.KeyOf"/>). A folder of its own, not a field on the node record: a build
-/// before this one writes that record whole and would drop a field it never read, losing the receipts; none of those builds looks here. Changed only by <see cref="Edit{T}"/>, as the node records are: read, judged
+/// its key the unit's node record's (<see cref="NodeRecordFiles.KeyOf"/>). A folder of its own, not a field on the node record.
+/// Changed only by <see cref="Edit{T}"/>, as the node records are: read, judged
 /// and written whole in one hold of the record's lock with the lease asked inside it, atomically, BOM-less and LF; machine-local, never on
 /// the wire. A file that does not read is never taken for an empty record: a receipt it holds would never be cleaned.
 /// </summary>
@@ -160,7 +160,7 @@ public sealed class ResourceRecordFiles(string home, Func<bool>? holdsLease = nu
     /// One change of a unit's record, as <see cref="NodeRecordFiles.Edit{T}"/> is: the lock held, the lease asked, the record read as it is
     /// now, <paramref name="change"/> judged on it and what it returns written whole; a null record writes nothing. Nothing is awaited inside.
     /// </summary>
-    /// <returns>Why nothing was judged (<see cref="NotHeld"/>, <see cref="Unreadable"/>), else null with what the change said.</returns>
+    /// <returns>Why nothing is judged (<see cref="NotHeld"/>, <see cref="Unreadable"/>), else null with what the change says.</returns>
     public (string? Refused, T? Result) Edit<T>(string unit, Func<ResourceRecord, (ResourceRecord? Next, T Result)> change)
     {
         var path = PathOf(home, unit);

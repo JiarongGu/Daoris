@@ -6,18 +6,18 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris place opinion</c> (XAGENT1a; FOUNDATION1 mod-iii): the review's own verb, the settings' port
+/// <c>daoris place opinion</c>: the review's own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rule it edits (<see cref="OpinionRules"/>). The agents a reviewer is judged the
 /// working agent's family over, plugins' harnesses among them, are handed it by Loop (<paramref name="adapters"/>, by the home).
 /// </summary>
-/// <param name="adapters">The machine's agents with the plugins beside the file's home as the driver reads them (XAGENT1b2).</param>
+/// <param name="adapters">The machine's agents with the plugins beside the file's home as the driver reads them.</param>
 public sealed class OpinionVerb(Func<string, ProviderRegistry> adapters) : ChoiceVerb
 {
     public override string Word => "opinion";
 
     /// <summary>
-    /// <c>opinion</c> (XAGENT1a): the person's words made one edit, judged by the rules' table, and said in the driver's sentences, the
-    /// working agent's own family named among the reviewers, then what the gate does with it (XAGENT1f4).
+    /// <c>opinion</c>: the person's words made one edit, judged by the rules' table, and said in the driver's sentences, the
+    /// working agent's own family named among the reviewers, then what the gate does with it.
     /// </summary>
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {

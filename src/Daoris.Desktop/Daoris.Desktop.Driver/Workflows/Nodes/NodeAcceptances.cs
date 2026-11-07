@@ -142,7 +142,7 @@ public static class NodeLapse
     public const string Outcome = "outcome";
 }
 
-/// <summary>One acceptance invalidated: why, and, where it was carried from upstream, the acceptance it rests on.</summary>
+/// <summary>One acceptance invalidated: why, and, where it comes from upstream, the acceptance it rests on.</summary>
 public sealed record NodeInvalidation(string Acceptance, string Because, string? Upstream);
 
 /// <summary>The results a record writer keeps after one more (<see cref="NodeAcceptances.Keep"/>), or as they stand with the refusal's code.</summary>

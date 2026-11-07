@@ -42,7 +42,7 @@ public sealed record PlaceWork(
 
 /// <summary>
 /// The default a place follows, by its id, and each option the place says otherwise, as <c>accept `automatic`</c>: under Current
-/// the default its landing rule matches, and for a chosen version the default it was copied from.
+/// the default its landing rule matches, and for a chosen version the default it copies.
 /// </summary>
 public sealed record PlaceDefault(string? Default, IReadOnlyList<string> Differs)
 {
@@ -283,7 +283,7 @@ public static class PlaceProjection
         var scope = level == PlaceSource.RepositoryLevel ? repository : "";
         var steps = StepsFollowed(flow.Workflow, workflows);
         var lands = steps is null ? null : SetupPresets.Match(driven: true, SetupPresets.LandOf(steps));
-        // A saved workflow's delivery is the default its version was copied from, and what the copy changed.
+        // A saved workflow's delivery is the default its version copies, and what the copy changes.
         if (FollowsOf(flow.Workflow, workflows) is { Default: { } copied } held && SetupPresets.Of(copied) is not null)
         {
             lands = new SetupMatch(copied, held.Differs);
@@ -317,7 +317,7 @@ public static class PlaceProjection
         Newest(chosen, workflows)?.Graph is { } graph ? Involvement.StepsOf(graph) : null;
 
     /// <summary>
-    /// The default a place's saved workflow follows: the default its newest graph version was copied from, with what the copy changed. Null for a
+    /// The default a place's saved workflow follows: the default its newest graph version copies, with what the copy changes. Null for a
     /// version copied from none, one this build cannot read, or where none is chosen.
     /// </summary>
     private static PlaceDefault? FollowsOf(string chosen, IWorkflowStore? workflows)

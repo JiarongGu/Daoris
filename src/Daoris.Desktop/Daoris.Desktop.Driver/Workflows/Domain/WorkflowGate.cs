@@ -3,8 +3,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where a run's own part of the landing gate stands (WORKFLOW1f, D157 points 4, 6 and 10; the workflow design §2.3, §4.4–§4.6,
-/// §5): the workflow its run was bound to, read before the second opinion and the person's look. Three let the work go.
+/// Where a run's own part of the landing gate stands: the workflow bound to its run, read before the second opinion and the person's look. Three let the work go.
 /// </summary>
 public static class WorkflowGateStates
 {
@@ -14,13 +13,13 @@ public static class WorkflowGateStates
     /// <summary>A named version governs it, and nothing of the run's own holds it.</summary>
     public const string Follows = "follows";
 
-    /// <summary>The person kept the kind's workflow for this work, though it changed paths outside the kind's (§4.4).</summary>
+    /// <summary>The person kept the kind's workflow for this work, though it changed paths outside the kind's.</summary>
     public const string Kept = "kept";
 
-    /// <summary>The workflow its run was bound to cannot be read here, so none of its steps can start (§3.7).</summary>
+    /// <summary>The workflow bound to its run cannot be read here, so none of its steps can start.</summary>
     public const string CannotStart = "cannot-start";
 
-    /// <summary>The kind's workflow asks less of the person, and the chain changed paths outside the kind's (§4.4).</summary>
+    /// <summary>The kind's workflow asks less of the person, and the chain changed paths outside the kind's.</summary>
     public const string KindPaths = "kind-paths";
 
     /// <summary>Whether it holds could not be read: the service named no chain, or git no paths.</summary>
@@ -28,17 +27,16 @@ public static class WorkflowGateStates
 }
 
 /// <summary>
-/// The process a chain's work in a repository follows at its gate (WORKFLOW1f, D157 points 4 and 6; the workflow design §2.3,
-/// §4.6): how it lands, the review rule its look reads and what rows 5 and 6 say, and the second opinion it waits for: its bound graph
+/// The process a chain's work in a repository follows at its gate: how it lands, the review rule its look reads and what rows 5 and 6 say, and the second opinion it waits for: its bound graph
 /// version over what the repository declares, each node choosing among what is declared and never beyond it. Work with no binding follows
 /// no workflow and is held.
 /// </summary>
 /// <param name="Landing">The landing intent the work lands by: the bound version's <c>land</c>.</param>
-/// <param name="Review">The review rule as declared: its environments, which the chain's and the ask's <c>on</c> reads (§2.3).</param>
+/// <param name="Review">The review rule as declared: its environments, which the chain's and the ask's <c>on</c> reads.</param>
 /// <param name="Opinion">The second-opinion rule the gate reads; null where none is set, or the version has no opinion node.</param>
 public sealed record WorkflowProcess(string Repository, Landing Landing, ResolvedReview? Review, ResolvedOpinion? Opinion) : IWorkplaceProcess, IReviewedProcess, ICheckedProcess
 {
-    /// <summary>The run it was read for: the chain's first quest in the repository; null where none was named.</summary>
+    /// <summary>The run it is read for: the chain's first quest in the repository; null where none is named.</summary>
     public string? Run { get; init; }
 
     /// <summary>The run's binding here; null where it has none.</summary>
@@ -48,15 +46,14 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     public IReadOnlyList<NamedStep> Steps { get; init; } = [];
 
     /// <summary>
-    /// The options of the bound graph version's <c>claimed</c> node, each its JSON text as written (FABRIC-PIPELINE1b3; the pipeline design
-    /// §3.1): its sessions' <c>checks</c> and its <c>callMinutes</c>; empty where the graph holds no <c>claimed</c>. Null where the graph
+    /// The options of the bound graph version's <c>claimed</c> node, each its JSON text as written: its sessions' <c>checks</c> and its <c>callMinutes</c>; empty where the graph holds no <c>claimed</c>. Null where the graph
     /// version is not the one its run bound.
     /// </summary>
     public IReadOnlyDictionary<string, string>? Claimed { get; init; }
 
     /// <summary>
-    /// The bound graph version's graph, as its file holds it and never decoded (FABRIC-CUTOVER1e; D190 point 4, the cutover design §4):
-    /// what the run's view draws from the run's record, and the landing gate's graph part reads it from (FABRIC-CUTOVER1d). Null where the
+    /// The bound graph version's graph, as its file holds it and never decoded:
+    /// what the run's view draws from the run's record, and the landing gate's graph part reads it from. Null where the
     /// graph version is not the one its run bound.
     /// </summary>
     public NodeGraph? Graph { get; init; }
@@ -101,16 +98,16 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
             options.ToJsonString(), digest, $"workflow:{binding.Workflow}@{binding.Version}:{Repository}");
     }
 
-    /// <summary>Rows 5 and 6 of D154's table as the version says them; null where no version was read.</summary>
+    /// <summary>The look's presence and environment as the version says them; null where no version could be read.</summary>
     public WorkflowLook? Look { get; init; }
 
-    /// <summary>Why the version's opinion step cannot start (§3.7): it names reviewers the repository does not declare.</summary>
+    /// <summary>Why the version's opinion step cannot start: it names reviewers the repository does not declare.</summary>
     public string? OpinionCannot { get; init; }
 
-    /// <summary>Why the version's landing step cannot start (§3.7): it lands on a branch no pattern names.</summary>
+    /// <summary>Why the version's landing step cannot start: it lands on a branch no pattern names.</summary>
     public string? LandingCannot { get; init; }
 
-    /// <summary>Why the named workflow its run was bound to cannot be read here: none of its steps can start, and nothing is swapped in.</summary>
+    /// <summary>Why the named workflow bound to its run cannot be read here: none of its steps can start, and nothing is swapped in.</summary>
     public string? Problem { get; init; }
 
     /// <summary>The <see cref="Problem"/> as a code and its values, which the page words in each language; null where it is the driver's sentence only.</summary>
@@ -119,7 +116,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     /// <summary>Why it could not be read whether a named workflow governs this work: the service named no chain.</summary>
     public string? Unread { get; init; }
 
-    /// <summary>Whether a saved workflow governs this work: its run was bound to one.</summary>
+    /// <summary>Whether a saved workflow governs this work: its run is bound to one.</summary>
     public bool Named => Binding is { IsCurrent: false };
 
     /// <summary>How the work is said to follow it: <c>`docs-to-pr` v2</c>, or no workflow.</summary>
@@ -127,7 +124,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         ? named.Version is { } version ? $"`{named.Workflow}` v{version}" : $"`{named.Workflow}`"
         : "no workflow";
 
-    /// <summary>What the landing record keeps of it (design §5.5): the version that decided; null where none was read.</summary>
+    /// <summary>What the landing record keeps of it: the version that decided; null where none could be read.</summary>
     public LandingWorkflow? Record => Binding is { IsCurrent: false, Version: { } version } named && Problem is null && Unread is null
         ? new LandingWorkflow(named.Workflow, version, named.Level) { Kind = named.Kind }
         : null;
@@ -157,7 +154,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         $"no workflow is chosen for `{repository}`, so nothing runs or lands its work: Set up… chooses one.";
 
     /// <summary>
-    /// A graph version holding a <c>land</c> as a process (WORKFLOWCLEAN1 1c, design §2.6): the landing is the intent it binds
+    /// A graph version holding a <c>land</c> as a process: the landing is the intent it binds
     /// (<see cref="LandNodes.LandingOf"/>) and the gates are read from the node options by <see cref="GraphGates.Of"/>, no step between.
     /// </summary>
     public static WorkflowProcess Of(DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, GraphGateReading gates, Landing bound)
@@ -179,7 +176,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
             ? "its `land` puts the work on a branch, and neither the node nor the bind names a pattern for it."
             : null;
 
-    /// <summary>The look (D154 rows 5 and 6): its presence is <c>required</c>, in an environment the review rule declares.</summary>
+    /// <summary>The look: its presence is <c>required</c>, in an environment the review rule declares.</summary>
     internal static WorkflowLook ReadLook(WorkflowProcess declared, string repository, string? id, string? asked)
     {
         if (id is null) return new WorkflowLook(null, null);
@@ -235,15 +232,15 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
 }
 
 /// <summary>
-/// The person's part in a workflow, compared (WORKFLOW1f, D157 point 10; the workflow design §4.3–§4.4): lowering is a table, not a
+/// The person's part in a workflow, compared: lowering is a table, not a
 /// reading. A look or an opinion dropped, an opinion made not required, a landing or a stage made automatic, a go-ahead removed or a
-/// pull request skipped each lower it; raising one never does. WORKFLOW1i's intake reads the same table. The routes' and the
-/// verification pipelines' rows are <see cref="InvolvementRoutes"/>'s (FABRIC-PIPELINE1a).
+/// pull request skipped each lower it; raising one never does. The intake reads the same table. The routes' and the
+/// verification pipelines' rows are <see cref="InvolvementRoutes"/>'s.
 /// </summary>
 public static class Involvement
 {
     /// <summary>
-    /// How <paramref name="chosen"/> asks less of the person than <paramref name="otherwise"/> (design §4.3), each said as what it
+    /// How <paramref name="chosen"/> asks less of the person than <paramref name="otherwise"/>, each said as what it
     /// does; empty where it lowers nothing.
     /// </summary>
     public static IReadOnlyList<string> Lowers(IReadOnlyList<NamedStep> chosen, IReadOnlyList<NamedStep> otherwise)
@@ -273,8 +270,7 @@ public static class Involvement
             lowered.Add($"it removes the go-ahead \"{goAhead.Field("act")}\"");
         }
 
-        // FABRIC-PIPELINE1b (the pipeline design §1.3's fourth row): light leaves the heavy gates to a verification, and no route runs one
-        // in this build (FABRIC-PIPELINE1a's `landed` route is its row), so light lowers from anything else.
+        // Light leaves the heavy gates to a verification, and no route runs one in this build, so light lowers from anything else.
         if ((string?)Of(chosen, WorkflowKinds.Work)?.Field("checks") == SessionChecks.Light
             && (string?)Of(otherwise, WorkflowKinds.Work)?.Field("checks") != SessionChecks.Light)
         {
@@ -289,8 +285,8 @@ public static class Involvement
             lowered.Add($"it starts `{stage.Field("stage")}` with no press of yours");
         }
 
-        // INTEGRATE1n (§17.6 point 9, C29): the graph-only kinds have no step of their own, so each is a part of its own, matched by its node's
-        // id, which a version keeps (§2.5). An `integrate` whose `request` moves off the owner (none is the owner's, the install's table) to
+        // The graph-only kinds have no step of their own, so each is a part of its own, matched by its node's
+        // id, which a version keeps. An `integrate` whose `request` moves off the owner (none is the owner's, the install's table) to
         // `done` or `steward` asks you for nothing where it asked for your card; moving among those, adding and removing one lower nothing.
         foreach (var before in otherwise.Where(step => step.Kind == NodeKinds.Integrate && RequestOf(step) == LandingIntegrate.Owner))
         {
@@ -301,15 +297,15 @@ public static class Involvement
             }
         }
 
-        // INTEGRATE1o (§17.6 point 9, C29): a `work.requests` the chosen version no longer holds under its node id. It held the work on the quests
-        // its sessions published and asked you about one declined, so its removal asks you for less; one kept or added lowers nothing.
+        // A `work.requests` the chosen version drops under its node id: it holds the work on the quests its sessions published and asks you
+        // about one declined, so its removal asks you for less; one kept or added lowers nothing.
         var held = chosen.Where(step => step.Kind == NodeKinds.WorkRequests).Select(step => step.Id).ToHashSet(StringComparer.Ordinal);
         if (otherwise.Any(step => step.Kind == NodeKinds.WorkRequests && !held.Contains(step.Id)))
         {
             lowered.Add("it no longer holds the work on its requests, nor asks you about one declined");
         }
 
-        // LANDNODE1k: a `quest.holds` the chosen version no longer holds under its node id, or holds with its `yes` off, lands a done held for your
+        // A `quest.holds` the chosen version drops under its node id, or keeps with its `yes` off, lands a done held for your
         // yes; one kept, or added, lowers nothing.
         foreach (var before in otherwise.Where(step => step.Kind == NodeKinds.QuestHolds && step.Field(QuestHoldsReading.Yes) is not false))
         {
@@ -319,8 +315,8 @@ public static class Involvement
             }
         }
 
-        // INTEGRATE1p (§17.6 point 9, C29): a `request` that sends with no press of yours where, under its node id, it waited for your Send or
-        // was not there. Each is named, so of two requests only the one moved is said; one removed, or added with `start: you`, lowers nothing.
+        // A `request` that sends with no press of yours where, under its node id, it waits for your Send or
+        // is not there. Each is named, so of two requests only the one moved is said; one removed, or added with `start: you`, lowers nothing.
         foreach (var after in chosen.Where(step => step.Kind == NodeKinds.Request && StartOf(step) == RequestOptions.Automatic))
         {
             if (otherwise.FirstOrDefault(step => step.Kind == NodeKinds.Request && step.Id == after.Id) is { } before
@@ -343,12 +339,12 @@ public static class Involvement
         step.Field("request") is string request && LandingIntegrate.Requests.Contains(request) ? request : LandingIntegrate.Owner;
 
     /// <summary>
-    /// A graph version's person part as the steps <see cref="Lowers"/> reads (FABRIC-CUTOVER1e; D190 point 4, the cutover design §11.1): its
+    /// A graph version's person part as the steps <see cref="Lowers"/> reads: its
     /// gate and go-ahead nodes in the graph's order, each as the step of its kind, its options as that step's fields (the work's checks, the
     /// opinion's switches, the look's environment, the landing's form and press, each go-ahead's act). A plugin's node, a person's task, a
-    /// stop and every other node is no part of it, as no step stood for one; except the graph-only kinds the comparison reads by their node's
-    /// id (INTEGRATE1n: <c>integrate</c>; INTEGRATE1o: <c>work.requests</c>, each kept under its own kind). An option absent is a field absent, so a graph that leaves the
-    /// landing's press to the repository's rule lowers nothing by it, as 1d reads that press from the rule.
+    /// stop and every other node is no part of it; except the graph-only kinds the comparison reads by their node's
+    /// id (<c>integrate</c>, <c>work.requests</c>, each kept under its own kind). An option absent is a field absent, so a graph that leaves the
+    /// landing's press to the repository's rule lowers nothing by it, as the gate reads that press from the rule.
     /// </summary>
     public static IReadOnlyList<NamedStep> StepsOf(NodeGraph graph) =>
     [
@@ -356,7 +352,7 @@ public static class Involvement
         {
             var kind = NodeKit.Of(node.Kind)?.Part(node).Lowered;
             if (kind == WorkflowKinds.PullRequest) return new NamedStep(node.Id, kind, [new WorkflowSetting("plugin", PullRequestKind.PluginOf(node.Kind))]);
-            // LANDNODE1c2: a `land`'s press is the graph's `review`, so a review taken away lowers as an `accept` moved to automatic did.
+            // A `land`'s press is the graph's `review`, so a review taken away lowers as an `accept` moved to automatic did.
             IEnumerable<WorkflowSetting> pressed = node.Kind == NodeKinds.Land
                 ? [new WorkflowSetting(LandNodes.AcceptOption, LandNodes.Reviewed(graph) ? "you" : "automatic")]
                 : [];
@@ -369,7 +365,7 @@ public static class Involvement
 }
 
 /// <summary>
-/// What a run's kind paths came to at the gate (design §4.4): what its workflow lowers against the one it would follow without the
+/// What a run's kind paths came to at the gate: what its workflow lowers against the one it would follow without the
 /// kind, that one's name, and the paths the chain changed, or null where git could not say.
 /// </summary>
 /// <param name="Lowered">How the kind's workflow asks less of the person (<see cref="Involvement.Lowers"/>); empty where it lowers nothing.</param>
@@ -378,7 +374,7 @@ public static class Involvement
 public sealed record KindPathsRead(IReadOnlyList<string> Lowered, string Otherwise, IReadOnlyList<string>? Changed);
 
 /// <summary>
-/// The run's own part of the landing gate (WORKFLOW1f; the workflow design §3.7, §4.4–§4.5, §5.2): the process it read, and what of
+/// The run's own part of the landing gate: the process it read, and what of
 /// the run's own holds the work before the second opinion and the look.
 /// </summary>
 /// <param name="State">One of <see cref="WorkflowGateStates"/>.</param>
@@ -408,7 +404,7 @@ public sealed record WorkflowGateState(string State, WorkflowProcess Process) : 
     /// <summary>Whether it has anything to say: its state is not <see cref="WorkflowGateStates.None"/>.</summary>
     public bool Speaks => State != WorkflowGateStates.None;
 
-    /// <summary>The process the part was read with, as the review's gate reads it.</summary>
+    /// <summary>The process the part is read with, as the review's gate reads it.</summary>
     IWorkplaceProcess IWorkflowGatePart.Process => Process;
 
     /// <summary>The machine log's line for a landing this part held: a landing step that cannot start is told as such (see <see cref="WorkflowLines.Held"/>).</summary>
@@ -417,16 +413,16 @@ public sealed record WorkflowGateState(string State, WorkflowProcess Process) : 
 }
 
 /// <summary>
-/// The run's own part of the landing gate (WORKFLOW1f, D157 points 6, 10 and 11; the workflow design §3.7, §4.4–§4.6, §5): whether
-/// the workflow its run was bound to can be read here, and whether a kind's paths hold. A table: the binding, the version, git's
-/// changed paths and the person's say-so, and no model reads any of it (§9).
+/// The run's own part of the landing gate: whether
+/// the workflow bound to its run can be read here, and whether a kind's paths hold. A table: the binding, the version, git's
+/// changed paths and the person's say-so, and no model reads any of it.
 /// </summary>
 /// <remarks>
-/// <para><b>One gate, in its order</b> (D155 §7, design §2.2, §4.4): the content the line already holds, then the run's own part,
+/// <para><b>One gate, in its order</b>: the content the line already holds, then the run's own part,
 /// then the second opinion, then the person's look, then the landing step's own declarations. Every landing door reads it through
 /// <see cref="SessionTreeGates.GateAsync"/>, and <see cref="SessionTrees.LandAsync"/> refuses the first part that holds.</para>
 ///
-/// <para><b>A kind's paths</b> (§4.4) are checked only where the kind chose the workflow (its level is the repository's or the
+/// <para><b>A kind's paths</b> are checked only where the kind chose the workflow (its level is the repository's or the
 /// workspace's for the kind), the kind declares paths, and its workflow asks less of the person than the one the work would follow
 /// without the kind. Inside them the work goes on; outside them it holds for the person, whose <i>Keep</i> is kept on the run. It
 /// never switches by itself, and nothing infers a kind from the paths.</para>
@@ -434,7 +430,7 @@ public sealed record WorkflowGateState(string State, WorkflowProcess Process) : 
 public static class WorkflowGate
 {
     /// <summary>
-    /// The run's own part for a process and, where its kind's paths were read, what they came to (design §4.4): Current is today's;
+    /// The run's own part for a process and, where its kind's paths were read, what they came to: Current is today's;
     /// a workflow that cannot be read holds; a kind's paths hold where the kind's workflow lowers the person's part and the chain
     /// changed a path outside them, unless the person kept it.
     /// </summary>
@@ -460,11 +456,11 @@ public static class WorkflowGate
         return outside.Count == 0 ? read : read with { State = WorkflowGateStates.KindPaths, Outside = outside };
     }
 
-    /// <summary>Whether a kind's paths are checked for this run (design §4.4): the kind chose its workflow, and declares paths.</summary>
+    /// <summary>Whether a kind's paths are checked for this run: the kind chose its workflow, and declares paths.</summary>
     public static bool ChecksPaths(WorkflowProcess process) =>
         process is { Named: true, Problem: null, Binding: { Level: WorkflowLevels.RepositoryKind or WorkflowLevels.WorkspaceKind, Paths.Count: > 0 } };
 
-    /// <summary>What the run's own part says (design §3.7, §4.4, §5.2): what holds it and the door that moves it, or what it follows.</summary>
+    /// <summary>What the run's own part says: what holds it and the door that moves it, or what it follows.</summary>
     public static string Says(WorkflowGateState gate)
     {
         var process = gate.Process;
@@ -488,7 +484,7 @@ public static class WorkflowGate
         };
     }
 
-    /// <summary>What a landing step that cannot start says (design §3.7): the door that declares what it needs.</summary>
+    /// <summary>What a landing step that cannot start says: the door that declares what it needs.</summary>
     public static string LandingSays(WorkflowProcess process) =>
         $"It follows {process.Name}, and {process.LandingCannot} Nothing was landed.";
 
@@ -504,7 +500,7 @@ public static class WorkflowGate
 }
 
 /// <summary>
-/// The machine log's workflow lines (WORKFLOW1f, the workflow design §5.5, D94): <c>workflow.chosen</c> and <c>workflow.held</c>,
+/// The machine log's workflow lines: <c>workflow.chosen</c> and <c>workflow.held</c>,
 /// codes, ids and counts only, never a sentence, a path or anyone's words. They ride the landing line's channel
 /// (<see cref="ServiceClient.LandingSaid"/>), which writes the event each names.
 /// </summary>
@@ -519,7 +515,7 @@ public static class WorkflowLines
             ("version", binding.Version), ("problem", binding.Problem is not null),
         ]);
 
-    /// <summary>A landing the run's own part held: whose, where, its code, the step that cannot start, and the door it was tried at.</summary>
+    /// <summary>A landing the run's own part held: whose, where, its code, the step that cannot start, and the door it is tried at.</summary>
     /// <param name="step">The kind of step that cannot start, for a landing step's own; null for the run's.</param>
     public static LandingLine Held(string session, string? repository, string? workspace, WorkflowGateState gate, string door, string? step = null) =>
         new("workflow.held",
@@ -531,8 +527,8 @@ public static class WorkflowLines
         ]);
 
     /// <summary>
-    /// A landing a run's graph part held (FABRIC-CUTOVER1d): whose, where, <c>graph</c> as its code and the part's state, the workflow and its
-    /// version, the node <c>handed</c> waits on where it waits, and the door it was tried at. Ids and codes, never a sentence.
+    /// A landing a run's graph part held: whose, where, <c>graph</c> as its code and the part's state, the workflow and its
+    /// version, the node <c>handed</c> waits on where it waits, and the door it is tried at. Ids and codes, never a sentence.
     /// </summary>
     public static LandingLine GraphHeld(string session, string? repository, string? workspace, WorkflowProcess? process, GraphGateState graph, string door) =>
         new("workflow.held",

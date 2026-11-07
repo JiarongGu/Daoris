@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="Ask">The ask's id.</param>
 /// <param name="Said">Its words, oldest first, the ask's own sentence first; null where they could not be read.</param>
-/// <param name="KeptFrom">For an ask from before its words were kept: from when they are, since nothing is back-filled.</param>
+/// <param name="KeptFrom">For an ask from before its words are kept: from when they are, since nothing is back-filled.</param>
 public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, DateTimeOffset? KeptFrom = null) : IAgentAskWords
 {
     /// <summary>
@@ -50,7 +50,7 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
     public static AskWords Unread(string ask) => new(ask, null);
 
     /// <summary>
-    /// The ask a quest was asked by, read from its sender — the reverse of the service's <c>AskDesk.SenderOf</c> and a twin
+    /// The ask that asked a quest, read from its sender — the reverse of the service's <c>AskDesk.SenderOf</c> and a twin
     /// of its <c>AskOf</c>: null for a quest a repository asked, which is on no ask.
     /// </summary>
     public static string? AskOf(string? sender) => AskSender.AskOf(sender);
@@ -116,8 +116,8 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
 }
 
 /// <summary>
-/// How the person's words are written into an instruction: verbatim and quoted, each saying how it was
-/// given, when, and on which quest, oldest first and newest last — and bounded, saying what was left out.
+/// How the person's words are written into an instruction: verbatim and quoted, each saying how it is
+/// given, when, and on which quest, oldest first and newest last — and bounded, saying what is left out.
 /// </summary>
 /// <remarks>
 /// <para><b>What bounds it.</b> The ask's own sentence is kept whole, as the quest's body and the intake's instruction
@@ -230,7 +230,7 @@ public static class AskWordsText
         return text.ToString();
     }
 
-    /// <summary>How a word was given, and on which quest: this one, another by its id, or none named.</summary>
+    /// <summary>How a word is given, and on which quest: this one, another by its id, or none named.</summary>
     private static string Given(AskWordView word, string? questId)
     {
         var on = word.Quest is not { Length: > 0 } quest ? ""

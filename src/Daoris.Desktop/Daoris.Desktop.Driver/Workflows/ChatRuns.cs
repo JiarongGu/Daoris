@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>What a chat run's bind came to: bound, already bound, or failed.</summary>
-/// <param name="Binding">The binding kept or already there; null where nothing was bound.</param>
+/// <param name="Binding">The binding kept or already there; null where none is bound.</param>
 /// <param name="Failed">Why the home could not keep the binding; null otherwise.</param>
 public sealed record ChatRunBound(WorkflowRunBinding? Binding, string? Failed = null)
 {
-    /// <summary>Whether this bind wrote the binding: false where it was there already, or nothing was bound.</summary>
+    /// <summary>Whether this bind wrote the binding: false where it is there already, or none is bound.</summary>
     public bool Wrote { get; init; }
 }
 

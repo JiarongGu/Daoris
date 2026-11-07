@@ -56,7 +56,7 @@ public static class BrainstormPackets
     public const string LeftForMachinePath = "machine-path";
 
     /// <summary>
-    /// The packet from what was found: the question first, then the sources in the search's order, each cut to the bound for one
+    /// The packet from what the search found: the question first, then the sources in the search's order, each cut to the bound for one
     /// and all, and what is found and left out listed with why. One path and range found twice is one source. A path that is not
     /// relative to the repository's root is left out, never written (no machine path in a packet).
     /// </summary>

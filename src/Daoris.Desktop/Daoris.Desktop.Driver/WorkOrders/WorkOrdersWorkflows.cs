@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// What work orders ask of Workflows, which owns the saved workflows and the nodes' records: what a unit still owes in them, whether a saved
 /// workflow can be chosen for an ask, and which workflow each kind of a workspace's declaration maps to. Workflows installs it when the driver
-/// loads and answers exactly as the work inventory, the ask's door and the intake's kinds read them before it was a port.
+/// loads.
 /// </summary>
 internal interface IWorkOrdersWorkflows
 {
@@ -15,7 +15,7 @@ internal interface IWorkOrdersWorkflows
 
     /// <summary>
     /// Why the saved workflow <paramref name="workflow"/> cannot be chosen, in the door's sentence, or null where it is saved here and its
-    /// newest version reads (design §3.9).
+    /// newest version reads.
     /// </summary>
     string? Unusable(string home, string workflow);
 

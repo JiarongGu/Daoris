@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A line as a look read it: its repository and workspace, the checkout its tip was read in, the line's branch and its tip.</summary>
+/// <summary>A line as a look read it: its repository and workspace, the checkout its tip is read in, the line's branch and its tip.</summary>
 public sealed record LineHead(string Repository, string Workspace, string Root, string Line, string Tip);
 
 /// <summary>
@@ -42,7 +42,7 @@ public static class LineBatching
     /// <summary>
     /// The run <paramref name="head"/>'s line owes now under <paramref name="route"/>, or null: none where the route names no verification
     /// pipeline, no gates are accepted or no version reads; none while a run of the line is in flight (an unknown holds it for the person), or
-    /// where its newest run was bound at this tip, whatever it came to. Its base is the tip of the newest run with a verdict, so a run the person
+    /// where its newest run is bound at this tip, whatever it came to. Its base is the tip of the newest run with a verdict, so a run the person
     /// put off (<i>Not now</i>) is taken into the next batch; none before any verdict, the line's first verification.
     /// </summary>
     public static VerifyRun? Owed(string home, LineHead head, WorkflowLandedSelected route, NodeRecordFiles records, DateTimeOffset now)

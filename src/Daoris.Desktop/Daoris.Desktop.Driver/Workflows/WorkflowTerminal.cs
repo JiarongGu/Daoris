@@ -172,7 +172,7 @@ internal sealed class WorkflowTerminal(IReadOnlyList<string> argv, DriverConfig 
             return 0;
         }
 
-        // Every value as read (FABRIC-GRAPH1f): a graph version's numbers by their own text and its keys in their order.
+        // Every value as read: a graph version's numbers by their own text and its keys in their order.
         Write = new WorkflowDeferred(ChoiceRoutes.WorkflowSave, payloads, () => WorkflowPorts.Store(Home).Write(id, file),
             [$"  Written to {WorkflowStore.PathOf(Home, id)}.", WorkflowWords.WhatChooses]) { Cannot = cannot };
         return 0;
@@ -181,7 +181,7 @@ internal sealed class WorkflowTerminal(IReadOnlyList<string> argv, DriverConfig 
     /// <summary>The places that choose a workflow, as <c>WORKFLOW_SAVE</c> asks them authorized to append a version to it.</summary>
     internal JsonArray Authorize(string id) => new(WorkflowOperations.ScopesOf(choices, id).Select(each => (JsonNode)JsonValue.Create(each.Key)!).ToArray());
 
-    /// <summary>A file the terminal names: absolute as given, else from the folder it was run in.</summary>
+    /// <summary>A file the terminal names: absolute as given, else from the folder the terminal runs in.</summary>
     internal string FileOperand(string? token)
     {
         if (token is null || token.StartsWith("--", StringComparison.Ordinal)) throw new ChoiceWords(Usage);

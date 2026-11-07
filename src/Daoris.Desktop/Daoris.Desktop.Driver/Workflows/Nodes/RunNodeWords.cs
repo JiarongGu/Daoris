@@ -151,7 +151,7 @@ public static class RunNodeWords
     /// The person's words a run's record holds, applied through the one table under the run's declarations and its scope (the graph's digest and
     /// the run, as its starts are scoped), each kept with what it cleared; every word is taken off, applied or not. Pure: the runtime writes it.
     /// </summary>
-    /// <returns>The record after them, null where none waited; and each word with why it was not applied, or null where it was.</returns>
+    /// <returns>The record after them, null where none waited; and each word with why it is not applied, or null where it is.</returns>
     public static (NodeRecord? Next, IReadOnlyList<(NodeWord Word, string? Refused)> Applied) Apply(
         NodeRecord record, IReadOnlyDictionary<string, NodeDeclaration> declared, NodeScope scope, DateTimeOffset now, IReadOnlySet<string>? promoted = null)
     {
@@ -280,7 +280,7 @@ public static class RunNodeWords
         (var code, _) => $"workflow: your {done.Act} of `{done.Node}` on run {done.Run} was not kept ({code}).",
     };
 
-    /// <summary>What the pass says of a word it applied, or why one was not applied, on the run's unit.</summary>
+    /// <summary>What the pass says of a word it applies, or why one is not applied, on the run's unit.</summary>
     public static string AppliedSaid(string unit, NodeWord word, string? refused) => refused is null
         ? $"work  {unit}: your {word.Act} of `{word.Node}` is applied{(word.Words is null ? "" : ", with your words")}."
         : $"work  {unit}: your {word.Act} of `{word.Node}` was not applied ({refused}): it moved before Daoris's look came, so say again what it should do.";

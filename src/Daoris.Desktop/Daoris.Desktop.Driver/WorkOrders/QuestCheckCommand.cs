@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris quest check</c> was asked: the quest, and the commit to read, or null for the done's own.</summary>
+/// <summary>What <c>daoris quest check</c> asks: the quest, and the commit to read, or null for the done's own.</summary>
 public sealed record QuestCheckAsk(string Quest, string? Commit);
 
 /// <summary>What the terminal's check reads through: the service, and the git Daoris runs (a test stands it in).</summary>
@@ -10,27 +10,27 @@ public sealed class QuestCheckWorld(ServiceClient service)
 {
     public ServiceClient Service => service;
 
-    /// <summary>How git is read: the review's seam (REVIEW3).</summary>
+    /// <summary>How git is read: the review's seam.</summary>
     internal WorkingTree.GitRead Git { get; init; } = WorkingTree.ReadGitAsync;
 }
 
 /// <summary>
-/// The terminal's door to a done's evidence (EVID1b, D144 §3, §5, D50): <c>daoris quest check &lt;id&gt; [--commit
+/// The terminal's door to a done's evidence: <c>daoris quest check &lt;id&gt; [--commit
 /// &lt;sha&gt;]</c> reads it again, posts what it read as the terminal's, and prints the verdict. The quest page's
-/// <i>Check again</i> is the other door, EVID1c's.
+/// <i>Check again</i> is the other door.
 /// </summary>
 /// <remarks>
 /// <para><b>Which commit.</b> The one named, which must be the done's commit or come after it on the same history, so work that
 /// arrived later lifts the hold. Named or not, the done's commit is the one a driven end on this machine read (a session's
 /// end or the sweep), from its record's evidence bundle, else from the quest's last verdict where a driven end wrote it. With
-/// no driven end on record, the commit must be named: Daoris never guesses it from what stands now (D143 §3).</para>
+/// no driven end on record, the commit must be named: Daoris never guesses it from what stands now.</para>
 ///
 /// <para><b>Where.</b> The driven end's own tree while it is still here and still the top of its own repository, else the
 /// repository's registered checkout, which holds the same objects. Its base is the record's, for whether the work changed
 /// each path; with no record, that is not read.</para>
 ///
-/// <para><b>Exit codes</b> (D144 §5): 0 when every item was found and the verdict kept, 1 when anything is missing or unread or
-/// the check was refused, and 2 when a store did not answer.</para>
+/// <para><b>Exit codes</b>: 0 when every item is found and the verdict kept, 1 when anything is missing or unread or
+/// the check is refused, and 2 when a store did not answer.</para>
 /// </remarks>
 public static class QuestCheckCommand
 {

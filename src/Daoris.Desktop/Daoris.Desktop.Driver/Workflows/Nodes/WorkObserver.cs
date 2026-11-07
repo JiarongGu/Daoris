@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An observed plugin node reached by its believed event (FABRIC-PERFORM1i; the fabric events design §C4, §E2, §E10): a <c>work/step</c>
-/// naming no invocation, bound to the last <c>work/watch</c> frame actually sent to the process it was read from and to one eligible observed
-/// node of its unit's governing graph, believed by §C4's five rules with each tip read fresh once per judgement, and accepted through §E2's
+/// An observed plugin node reached by its believed event: a <c>work/step</c>
+/// naming no invocation, bound to the last <c>work/watch</c> frame actually sent to the process it came from and to one eligible observed
+/// node of its unit's governing graph, believed by five rules with each tip read fresh once per judgement, and accepted through the
 /// one table on that node's binding, written before the evaluation that fires its wires.
 /// </summary>
 /// <remarks>
-/// <para><b>Binding.</b> The frame's repository and branch are looked up in the frame the process was actually sent (<see cref="IWorkRuntimePort.SentTo"/>),
+/// <para><b>Binding.</b> The frame's repository and branch are looked up in the frame actually sent to the process (<see cref="IWorkRuntimePort.SentTo"/>),
 /// whose host-side half names the canonical unit and the repository's identity (<see cref="WatchedUnit.Unit"/>, <see cref="WatchedUnit.Identity"/>),
 /// never in the set desired since nor by the repository's name alone. The step, normalised (<c>&lt;plugin&gt;/</c> taken off, and only its sender's),
 /// names one observed node of the governing graph: a graph holding two of that kind names neither, never the first.</para>
@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// <c>unknown</c> establishes nothing and is not kept, so no later word is ordered behind it.</para>
 /// <para><b>One outcome per binding.</b> Only an active node bound to the event's commit is moved. Its binding's first outcome stands: the same
 /// outcome again is a replay, another is <c>late</c>; a node the person stopped or skipped is no longer awaited, and evidence never brings it back.
-/// An event the one table refuses on its binding moves nothing, is not kept, and is counted by the table's code (FABRIC-PERFORM1n).</para>
+/// An event the one table refuses on its binding moves nothing, is not kept, and is counted by the table's code.</para>
 /// </remarks>
 public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port, Func<DateTimeOffset> clock)
 {
@@ -32,8 +32,8 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
     /// each read of a checkout's refs made once for the whole judgement, whatever number of events and branches it serves.
     /// </summary>
     /// <param name="lagging">
-    /// Where given, an event at the tip read now whose node still awaits an older binding is put here rather than refused or counted
-    /// (FABRIC-PERFORM1o): the pass hears it again once its evaluation has rebound the node, and only that hearing's answer stands.
+    /// Where given, an event at the tip read now whose node still awaits an older binding is put here rather than refused or counted:
+    /// the pass hears it again once its evaluation has rebound the node, and only that hearing's answer stands.
     /// </param>
     public async Task<IReadOnlyList<WorkPerformed>> HearAsync(
         IReadOnlyList<WorkStepHeard> heard, IReadOnlyDictionary<string, GovernedUnit> governed,
@@ -51,9 +51,8 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
 
         if (bound.Count == 0) return done;
 
-        // §C4's fourth rule: each tip read fresh, never a cached unit's revision, with one read of each checkout's refs for the judgement.
-        // FABRIC-CUTOVER1c (the cutover design §2.4.1, a change to the fourth rule for a landing's telling alone): a landed branch told at a
-        // landing's tip is judged on that tip, which the landing's record keeps, so its live tip is not read for it.
+        // Each tip is read fresh, never a cached unit's revision, with one read of each checkout's refs for the judgement.
+        // A landed branch told at a landing's tip is judged on that tip, which the landing's record keeps, so its live tip is not read for it.
         var fresh = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.Ordinal);
         foreach (var root in bound.Where(each => !each.Told.Landing).Select(each => each.Told.Root).Distinct(StringComparer.Ordinal))
         {
@@ -67,7 +66,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
             var frame = each.Heard.Step;
             var unit = each.Governed.Unit.Id;
 
-            // An unread tip establishes nothing; a tip moved since the frame was told makes the event another commit's.
+            // An unread tip establishes nothing; a tip that has moved since the frame's telling makes the event another commit's.
             var read = each.Told.Landing ? each.Told.Tip : fresh[each.Told.Root].GetValueOrDefault(each.Told.Branch);
             var code = read is not { Length: > 0 } tip || !string.Equals(tip, frame.Commit, StringComparison.OrdinalIgnoreCase)
                 ? WorkRefusals.Stale
@@ -87,7 +86,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
         return done;
     }
 
-    /// <summary>§C4's first three rules and the second's naming: the event's sender, its unit in the frame actually sent, and its one node.</summary>
+    /// <summary>The first three rules and the second's naming: the event's sender, its unit in the frame actually sent, and its one node.</summary>
     private (Bound? Bound, string Unit, string Node, string? Code) Bind(WorkStepHeard heard, IReadOnlyDictionary<string, GovernedUnit> governed)
     {
         var frame = heard.Step;
@@ -97,16 +96,16 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
         if (slash >= 0 && !string.Equals(frame.Step[..slash], heard.Plugin, StringComparison.Ordinal)) return (null, "", "", WorkRefusals.NotNamed);
         var step = frame.Step[(slash + 1)..];
 
-        // §C4's third rule: the unit this very process was told of, by the frame whose send completed, and none other.
+        // The unit this very process is told of, by the frame whose send completed, and none other.
         var told = port.SentTo(heard.Plugin, heard.Generation)?.Units
             .Where(unit => unit.Unit is not null && string.Equals(unit.Repository, frame.Repository, StringComparison.Ordinal)
                            && string.Equals(unit.Branch, frame.Branch, StringComparison.Ordinal) && unit.Awaiting.Contains(step, StringComparer.Ordinal))
             .ToList() ?? [];
 
-        // FABRIC-CUTOVER1c (the cutover design §2.4.1): one landed branch may carry several runs' landings, each told at its own tip, so an event on
+        // One landed branch may carry several runs' landings, each told at its own tip, so an event on
         // a branch told for several units is taken by the one whose told tip is its commit; two at that tip still name neither.
         if (told.Count > 1) told = [.. told.Where(unit => string.Equals(unit.Tip, frame.Commit, StringComparison.OrdinalIgnoreCase))];
-        // The unit still governed, in the repository the process was told of: a checkout moved since names another repository's identity.
+        // The unit still governed, in the repository the process is told of: a checkout moved since names another repository's identity.
         if (told.Count != 1 || !governed.TryGetValue(told[0].Unit!, out var unit) || unit.Watched.Identity != told[0].Identity)
         {
             return (null, "", "", WorkRefusals.NotWatched);
@@ -120,16 +119,16 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
     }
 
     /// <summary>
-    /// The fifth rule's order and §E2's acceptance, in one locked edit of the unit's record with the lease asked inside it: the node moved on its
+    /// The fifth rule's order and the one table's acceptance, in one locked edit of the unit's record with the lease asked inside it: the node moved on its
     /// own binding and the event kept beside it, both written before the evaluation reads the record. <c>Lags</c> where the event, at the tip
-    /// read now, found its node still active on an older binding, which this pass's evaluation moves to that tip (FABRIC-PERFORM1o).
+    /// read now, found its node still active on an older binding, which this pass's evaluation moves to that tip.
     /// </summary>
     private (WorkPerformed Result, bool Lags) Take(Bound bound, DateTimeOffset now)
     {
         var (unit, node, frame) = (bound.Governed.Unit.Id, bound.Node, bound.Heard.Step);
         var (plugin, identity, step, commit, state) = (bound.Heard.Plugin, bound.Told.Identity ?? "", bound.Step, frame.Commit!, frame.Outcome.State);
-        // FABRIC-CUTOVER1c (the cutover design §2.2): on a run's record the event is its node's subject's, the unit it was told under, and is kept
-        // naming it, so a branch at the same commit inherits no replay or late refusal from the one it replaced.
+        // On a run's record the event is its node's subject's, the unit it is told under, and is kept
+        // naming it, so a branch at the same commit inherits no replay or late refusal from the one it displaces.
         var subject = bound.Governed.Scope is null ? null : bound.Told.Unit;
         var (refused, result) = records.Edit<WorkPerformed>(unit, record =>
         {
@@ -148,7 +147,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
             var status = WorkPerformer.StatusOf(record, node.Id);
             if (subject is not null && status.Binding is { } other && !string.Equals(other.Observes, subject, StringComparison.Ordinal))
             {
-                // Its node is bound to another subject of the run now: the event was told for one it has left.
+                // Its node is bound to another subject of the run now: the event is told for one it has left.
                 return (null, new(unit, node.Id, PerformedWhat.NotTaken, WorkRefusals.NotWatched));
             }
 
@@ -168,7 +167,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
                     Source = NodeSource.Plugin, Attempt = status.Attempt, Acceptance = WorkPerformer.Accepted(node, frame.Id, binding, frame.Outcome),
                 }
                 : new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Plugin, Attempt = status.Attempt, Code = frame.Outcome.Code ?? WorkPerformer.NoCode };
-            // FABRIC-PERFORM1n: an event the one table refuses (evidence of another schema than the node declares, an output undeclared or of
+            // An event the one table refuses (evidence of another schema than the node declares, an output undeclared or of
             // another schema) moves nothing and is kept nowhere, and is no answer: counted as a plugin.step line of the table's code. A
             // completion the table refuses holds its attempt for the person instead (WorkPerformer.Hold); an event has no attempt to hold.
             var moved = NodeLifecycle.Apply(node, status, move);
@@ -185,7 +184,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
         return (result!, result is { What: PerformedWhat.NotTaken, Code: WorkRefusals.Stale });
     }
 
-    /// <summary>A refusal of §C4's codes counted as a <c>plugin.step</c> line of its plugin and code, with no words.</summary>
+    /// <summary>A refusal of the belief codes counted as a <c>plugin.step</c> line of its plugin and code, with no words.</summary>
     private WorkPerformed Counted(string plugin, WorkPerformed result)
     {
         if (result is { What: PerformedWhat.NotTaken, Code: { } code }) port.Refused(plugin, code);
@@ -194,17 +193,17 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
 }
 
 /// <summary>
-/// An event at its branch's tip read this pass, heard while its node still awaited an older tip (FABRIC-PERFORM1o; §C4's fourth rule): the
+/// An event at its branch's tip read this pass, heard while its node still awaited an older tip: the
 /// pass's hearing comes before its rebinding, so it is held for the pass, neither refused nor counted, and heard again, the five rules and
 /// all, once the evaluation has rebound the node. Never kept past the pass.
 /// </summary>
 public sealed record WorkLagging(WorkStepHeard Heard, string Unit);
 
 /// <summary>
-/// Each named branch's tip in one checkout, read fresh (FABRIC-PERFORM1i, §C4's fourth rule; D88's PROC1d-ii), never held across judgements,
+/// Each named branch's tip in one checkout, read fresh, never held across judgements,
 /// so a ref moved outside Daoris is read at the next: from git's own ref files with no process (<see cref="TreeTips.Named"/>), and one
 /// <c>for-each-ref</c> of the checkout for the branches those files cannot say. A pass asks it once a checkout, for its events and its
-/// observed nodes' bindings alike (<see cref="PassTips"/>, FABRIC-PERFORM1m).
+/// observed nodes' bindings alike (<see cref="PassTips"/>).
 /// </summary>
 public static class NodeTips
 {
@@ -213,8 +212,8 @@ public static class NodeTips
         RefsAsync(root, "refs/heads/", branches, absentIsEmpty: false, ct);
 
     /// <summary>
-    /// The commit origin's remote-tracking ref holds for each of <paramref name="branches"/> in <paramref name="root"/> (FABRIC-RUN1b, NODE1's
-    /// choice 8: what <c>pushed</c> reads): <c>refs/remotes/origin/&lt;branch&gt;</c>, read as the tips are. Empty where git says the ref is
+    /// The commit origin's remote-tracking ref holds for each of <paramref name="branches"/> in <paramref name="root"/>
+    /// (what <c>pushed</c> reads): <c>refs/remotes/origin/&lt;branch&gt;</c>, read as the tips are. Empty where git says the ref is
     /// not there; absent where its read failed, which establishes nothing.
     /// </summary>
     public static Task<IReadOnlyDictionary<string, string>> RemotesAsync(string root, IReadOnlyCollection<string> branches, CancellationToken ct) =>
@@ -253,9 +252,9 @@ public static class NodeTips
 }
 
 /// <summary>
-/// One pass's git reads for the observed built-ins (FABRIC-RUN1b; NODE1's choice 8): each checkout's remote-tracking refs read once, at the
+/// One pass's git reads for the observed built-ins: each checkout's remote-tracking refs read once, at the
 /// first ask, for every landed branch the pass may judge <c>pushed</c> on there as well as the one asked; each ancestry asked once. Made for
-/// one pass and dropped with it, so nothing git said is carried into the next (LANDGIT1).
+/// one pass and dropped with it, so nothing git said is carried into the next.
 /// </summary>
 /// <param name="remotes">The look's read of one checkout's remote-tracking refs (<see cref="NodeRuntimeLook.Remotes"/>).</param>
 /// <param name="pushing">Each checkout's landed branches the pass may judge <c>pushed</c> on.</param>
@@ -280,7 +279,7 @@ public sealed class PassGit(
 }
 
 /// <summary>
-/// One pass's reads of D157's gates (FABRIC-RUN1c): the second opinion's and the look's gate for a unit's work, read once a pass for each
+/// One pass's reads of the gates: the second opinion's and the look's gate for a unit's work, read once a pass for each
 /// unit whose <c>opinion</c> or <c>look</c> waits on them, however many rounds ask. Made for one pass and dropped with it.
 /// </summary>
 /// <param name="read">The look's read of one unit's gates at a commit, or at its tree's <c>HEAD</c> (<see cref="NodeRuntimeLook.Gates"/>).</param>
@@ -289,8 +288,8 @@ public sealed class PassGates(Func<WorkUnit, string?, CancellationToken, Task<(O
     private readonly Dictionary<(string Unit, string? Tip), (OpinionGateState? Opinion, ReviewGateState? Review)> _read = [];
 
     /// <summary>
-    /// The gates of <paramref name="unit"/>'s work at <paramref name="tip"/> (FABRIC-CUTOVER1d), or at its newest tree's <c>HEAD</c> where none
-    /// is given, read at the first ask this pass; either null where it was not read.
+    /// The gates of <paramref name="unit"/>'s work at <paramref name="tip"/>, or at its newest tree's <c>HEAD</c> where none
+    /// is given, read at the first ask this pass; either null where it is not read.
     /// </summary>
     public async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> OfAsync(WorkUnit unit, string? tip, CancellationToken ct)
     {
@@ -300,9 +299,9 @@ public sealed class PassGates(Func<WorkUnit, string?, CancellationToken, Task<(O
 }
 
 /// <summary>
-/// One pass's tips (FABRIC-PERFORM1m; §C4's fourth rule, D88's PROC1d-ii): each checkout read once, by whatever asks of it first (an event's
+/// One pass's tips: each checkout read once, by whatever asks of it first (an event's
 /// belief, a rebinding's check, an observed node's binding), for every branch the pass governs there as well as those asked, so they share
-/// the one read. Made for one pass and dropped with it, so no tip is carried into the next (LANDGIT1).
+/// the one read. Made for one pass and dropped with it, so no tip is carried into the next.
 /// </summary>
 /// <param name="read">The look's read of one checkout (<see cref="NodeRuntimeLook.Tips"/>).</param>
 /// <param name="governed">Each checkout's branches the pass may bind an observed node on.</param>
@@ -324,20 +323,20 @@ public sealed class PassTips(
         return _read[root] = all.Count == 0 ? None : await read(root, all, ct).ConfigureAwait(false);
     }
 
-    /// <summary>One branch's tip read this pass, or null where it was not read.</summary>
+    /// <summary>One branch's tip read this pass, or null where it is not read.</summary>
     public async Task<string?> TipAsync(string root, string branch, CancellationToken ct) =>
         branch.Length == 0 ? null : (await ReadAsync(root, [branch], ct).ConfigureAwait(false)).GetValueOrDefault(branch);
 
     /// <summary>
-    /// One branch's tip where this pass already read its checkout, else null, reading nothing (FABRIC-PERFORM1p): the tip a pass tells, so
+    /// One branch's tip where this pass already read its checkout, else null, reading nothing: the tip a pass tells, so
     /// telling starts no git of its own.
     /// </summary>
     public string? Known(string root, string branch) => _read.TryGetValue(root, out var tips) ? tips.GetValueOrDefault(branch) : null;
 }
 
 /// <summary>
-/// A repository's identity (§B5; FABRIC-PERFORM1i): its common git folder's file identity, read from git's own files with no process, else that
-/// folder's spelling, so the main checkout and any linked worktree of it name one repository, as LANDRACE1's branch hold does.
+/// A repository's identity: its common git folder's file identity, read from git's own files with no process, else that
+/// folder's spelling, so the main checkout and any linked worktree of it name one repository, as the branch hold does.
 /// </summary>
 public static class RepositoryIdentity
 {

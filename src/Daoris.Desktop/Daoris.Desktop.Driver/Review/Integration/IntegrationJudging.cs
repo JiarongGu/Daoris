@@ -4,8 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A candidate's gates run and judged, the way the merge tool does (INTEGRATE1f part f2; the integration design §4.5, §5.2 steps 6 and 7,
-/// §5.3, §5.9): the candidate's runs start in one job, closed before any place in the machine's admission is let go; the gates run at the
+/// A candidate's gates run and judged, the way the merge tool does: the candidate's runs start in one job, closed before any place in the machine's admission is let go; the gates run at the
 /// tip through the repository's declared runner or, with none, each whole; a red run's failures are judged by <see cref="FailureJudge"/>
 /// (a known red, the confirm run holding the whole admission, the base, the prefixes) and the candidate's action is
 /// <see cref="CandidateJudgement"/>'s. Nothing here promotes: the answer says what the step may do next, and a sighting is never a pass.
@@ -285,7 +284,7 @@ internal sealed class IntegrationJudging(IntegrationVerdictAsk ask, IntegrationW
             Units = reading.Composition?.Units,
         };
 
-    /// <summary>A failure judged, with the confirm run's reading of it where it had one: a failure that failed again was confirmed, and its evidence is kept with the placement it led to.</summary>
+    /// <summary>A failure judged, with the confirm run's reading of it where it has one: a failure that fails again is confirmed, and its evidence is kept with the placement it led to.</summary>
     private VerdictJudgement Named(JudgedEntry entry) => new(Named(entry.Failure), entry.Judged.Outcome.ToString().ToLowerInvariant())
     {
         Why = entry.Judged.Why,

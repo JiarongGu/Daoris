@@ -14,13 +14,13 @@ public sealed record ChatSendBackAsk(string Session, int Pressed, IReadOnlyList<
     public required Func<string, CancellationToken, Task<SaidWordView?>> Hand { get; init; }
 
     /// <summary>
-    /// The answering turn's completion: its ending tip and answers frozen, told whether a word of the person's was handed to it at a
+    /// The answering turn's completion: its ending tip and answers frozen, told whether a word of the person's reached it at a
     /// step, before the turns take another word.
     /// </summary>
     public required Func<bool, Task> Answered { get; init; }
 }
 
-/// <summary>What a send-back came to: the outcome, and where it was no reservation, why, in the driver's English.</summary>
+/// <summary>What a send-back came to: the outcome, and where there is no reservation, why, in the driver's English.</summary>
 public sealed record SentBack(SendBack Outcome, string? Why = null);
 
 /// <summary>

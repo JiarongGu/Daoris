@@ -5,7 +5,7 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>Where a repository's second-opinion rule was set, for the screen, the room and the terminal.</summary>
+/// <summary>Where a repository's second-opinion rule is set, for the screen, the room and the terminal.</summary>
 public static class OpinionSource
 {
     public const string Repository = CommitRules.RepositorySource;
@@ -33,7 +33,7 @@ public sealed record OpinionSet
 }
 
 /// <summary>
-/// One change to a second-opinion rule, as every door makes it (design §2.5): for a <see cref="Repository"/> or a
+/// One change to a second-opinion rule, as every door makes it: for a <see cref="Repository"/> or a
 /// <see cref="Workspace"/>, <see cref="Set"/> what it names over the rule set there, say a repository has <see cref="None"/>,
 /// or <see cref="Clear"/>.
 /// </summary>
@@ -47,21 +47,19 @@ public sealed record OpinionEdit
 }
 
 /// <summary>
-/// The second-opinion rule, <c>opinions</c> and <c>workspaceOpinions</c> in <c>driver.json</c> (XAGENT1a, D155 point 3, the
-/// second-agent design §2.2–§2.6): read, refused, resolved, said and edited — the one place every door asks.
+/// The second-opinion rule, <c>opinions</c> and <c>workspaceOpinions</c> in <c>driver.json</c>: read, refused, resolved, said and edited — the one place every door asks.
 /// </summary>
 /// <remarks>
-/// <para>One table, this suite's tests' <c>fixtures/opinion-rules.json</c>, cell for cell (<c>OpinionRulesTests</c>; its CLI twin,
-/// <c>opinions.ts</c>, left with the driver family's TypeScript in PUSH1f2b): the reading and its precedence, every refusal in
+/// <para>One table, this suite's tests' <c>fixtures/opinion-rules.json</c>, cell for cell (<c>OpinionRulesTests</c>): the reading and its precedence, every refusal in
 /// the same words, each door's sentences and what each says after them of the gate, the edits, and which reviewers are the
 /// working agent's own family.</para>
 ///
-/// <para>Nothing here chooses a reviewer, starts a pass or holds a landing: the choice (XAGENT1b), the look and the landing gate
-/// (XAGENT1f) read it, and each door says so after a rule's sentences (<see cref="Gate"/>, XAGENT1f4).</para>
+/// <para>Nothing here chooses a reviewer, starts a pass or holds a landing: the choice, the look and the landing gate
+/// read it, and each door says so after a rule's sentences (<see cref="Gate"/>).</para>
 /// </remarks>
 public static class OpinionRules
 {
-    /// <summary>The occasion before a chain's work in a repository lands (design §2.1).</summary>
+    /// <summary>The occasion before a chain's work in a repository lands.</summary>
     public const string Landing = OpinionKey.Landing;
 
     /// <summary>The occasion before a chain's next step starts.</summary>
@@ -70,19 +68,17 @@ public static class OpinionRules
     /// <summary>The occasions a rule may name, in the order a rule keeps them — the CLI's <c>OPINION_OCCASIONS</c>.</summary>
     public static readonly IReadOnlyList<string> Occasions = OpinionKey.Occasions;
 
-    /// <summary>One pass's bound where the rule names none (design §2.3): a starting point, not a measurement.</summary>
+    /// <summary>One pass's bound where the rule names none: a starting point, not a measurement.</summary>
     public const int DefaultMinutes = OpinionKey.DefaultMinutes;
 
     /// <summary>
-    /// What each door said after a rule's sentences until the gate read it (XAGENT1a–XAGENT1f), untrue since XAGENT1f. No door
-    /// says it now (XAGENT1f4, <see cref="Gate"/>); it is kept so the tests that hold its absence name it, the workflow tables'
-    /// among them.
+    /// The sentence of a rule that nothing reads. No door says it (<see cref="Gate"/>); the tests that hold its absence name it.
     /// </summary>
     public const string DeclaredOnly = "Declared only: nothing reads it yet, so no reviewer is chosen and no landing waits for it.";
 
     /// <summary>
-    /// Said by each door after the sentences of a rule that reads at <see cref="Landing"/> (XAGENT1f4, through <see cref="Gate"/>):
-    /// what the landing's gate does with work that waits for another agent's reading since XAGENT1f, and the person's two
+    /// Said by each door after the sentences of a rule that reads at <see cref="Landing"/> (through <see cref="Gate"/>):
+    /// what the landing's gate does with work that waits for another agent's reading, and the person's two
     /// terminal doors that answer it. The CLI's <c>OPINION_WAITING</c>, the page's <c>settings.opinion.says.waiting</c> and
     /// <c>setting_propose</c>'s copy, held to the shared table's <c>gate</c> rows: the doors' words change together.
     /// </summary>
@@ -91,20 +87,20 @@ public static class OpinionRules
         + "`daoris session opinion myself <session>`.";
 
     /// <summary>
-    /// Said after the sentences of a rule that reads at <see cref="Steps"/> (XAGENT1f4): the look sits the chain's next step while
-    /// the opinion on the step before is unsettled (XAGENT1f). The CLI's <c>OPINION_STEP_WAITING</c>.
+    /// Said after the sentences of a rule that reads at <see cref="Steps"/>: the look sits the chain's next step while
+    /// the opinion on the step before is unsettled. The CLI's <c>OPINION_STEP_WAITING</c>.
     /// </summary>
     public const string StepWaiting = "Where a chain's next step here waits for another agent's reading of the step before it, it "
         + "starts only once that reading is settled.";
 
     /// <summary>
-    /// Said after the sentences of a rule that lets a reviewer run what is declared safe (XAGENT1f4): nothing hands a reviewer the
-    /// repository's declared safe commands yet (XAGENT1f3), so the rule's own sentence is a promise the gate does not keep yet.
+    /// Said after the sentences of a rule that lets a reviewer run what is declared safe: nothing hands a reviewer the
+    /// repository's declared safe commands yet, so the rule's own sentence is a promise the gate does not keep yet.
     /// The CLI's <c>OPINION_SAFE_NOT_HANDED</c>.
     /// </summary>
     public const string SafeNotHanded = "What this repository declares safe is not handed to a reviewer yet.";
 
-    /// <summary>What stands where nothing is set anywhere (design §2.6): today's behaviour, said as such.</summary>
+    /// <summary>What stands where nothing is set anywhere: no other agent reads work, said as such.</summary>
     public const string NoneSet = "None: no other agent reads work here.";
 
     /// <summary>The refusal of an edit naming neither a repository nor a workspace, or both; Ask Daoris's door says it first.</summary>
@@ -132,7 +128,7 @@ public static class OpinionRules
     /// The second-opinion rule standing for a repository: its own (a rule or none), else its workspace's (one in no workspace
     /// being in <c>default</c>), else null, which is nothing set anywhere — names matched in any case, as every door matches them.
     /// </summary>
-    /// <remarks>Read by the policy's one reader (<see cref="WorkPolicies.Opinion"/>, FOUNDATION1q).</remarks>
+    /// <remarks>Read by the policy's one reader (<see cref="WorkPolicies.Opinion"/>).</remarks>
     public static ResolvedOpinion? Resolve(DriverConfig config, string repository, string? workspace) => WorkPolicies.Opinion(config, repository, workspace);
 
     /// <summary>Names in backticks, in the order they are tried: <c>a</c>, <c>a, else b</c>, <c>a, else b, else c</c>.</summary>
@@ -146,7 +142,7 @@ public static class OpinionRules
     }
 
     /// <summary>
-    /// What each door says as a rule is set (design §2.5): when its reviewers read and where their findings go, what they may
+    /// What each door says as a rule is set: when its reviewers read and where their findings go, what they may
     /// run, what happens when none can read, the bound of a pass, a recheck turned off, and which of them are the working
     /// agent's own family — the CLI's <c>opinionSays</c>, word for word.
     /// </summary>
@@ -186,7 +182,7 @@ public static class OpinionRules
     }
 
     /// <summary>
-    /// What each door says after the rule's own sentences (XAGENT1f4): what the gate does with work that waits for another agent's
+    /// What each door says after the rule's own sentences: what the gate does with work that waits for another agent's
     /// reading, at landing (<see cref="Waiting"/>) and before a chain's next step (<see cref="StepWaiting"/>), as the rule's
     /// occasions name them, then that what is declared safe is not handed to a reviewer yet where the rule lets one run it
     /// (<see cref="SafeNotHanded"/>); nothing after <see cref="OpinionRule.None"/>, where nothing waits. The CLI's
@@ -203,14 +199,14 @@ public static class OpinionRules
     }
 
     /// <summary>
-    /// Whether two adapters are one family (design §3.1): they run as the same agent's accounts (AGT7's owner), or both declare
+    /// Whether two adapters are one family: they run as the same agent's accounts, or both declare
     /// the same maker — read from <paramref name="adapters"/>, as the CLI reads its toolchain table and the plugins it is
     /// handed. A name the set does not carry is its own owner and declares no maker: its own family only by its own name. The
     /// judgement is <see cref="AgentFamily"/>'s, the one the reviewer's choice makes over the machine's agents.
     /// </summary>
     /// <param name="adapters">
     /// The machine's set, a plugin's harnesses among them, so a maker a plugin declares counts at a door as it counts in the
-    /// choice (XAGENT1b2); null is the built-in set alone.
+    /// choice; null is the built-in set alone.
     /// </param>
     public static bool OneFamily(string a, string b, ProviderRegistry? adapters = null)
     {
@@ -327,8 +323,8 @@ public static class OpinionRules
     }
 
     /// <summary>
-    /// The room's cell for a repository (design §2.5–§2.6): its reviewers in order, when they read, what they may run, the
-    /// bound of a pass, and where it was set; <c>no second opinion</c> where nothing is.
+    /// The room's cell for a repository: its reviewers in order, when they read, what they may run, the
+    /// bound of a pass, and where it is set; <c>no second opinion</c> where nothing is.
     /// </summary>
     public static string RoomCell(ResolvedOpinion? opinion)
     {

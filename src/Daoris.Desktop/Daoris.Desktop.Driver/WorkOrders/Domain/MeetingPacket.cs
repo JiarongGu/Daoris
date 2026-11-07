@@ -4,20 +4,19 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A participant of a meeting as its packet names it (AGENTROOM1a, D177 point 1): Daoris's id for it, <c>a1</c> and on in the
+/// A participant of a meeting as its packet names it: Daoris's id for it, <c>a1</c> and on in the
 /// person's order, and the maker and adapter its turns run on. Never an account: a packet names none.
 /// </summary>
 public sealed record MeetingParticipant(string Id, string Maker, string Adapter);
 
 /// <summary>
-/// One message as Daoris relays it (D177 point 1): the round, the participant whose turn carried it, that participant's maker and
+/// One message as Daoris relays it: the round, the participant whose turn carried it, that participant's maker and
 /// adapter from Daoris's own records (never from what the message says), its text, and the digest of the packet it answered.
 /// </summary>
 public sealed record MeetingMessage(int Round, string Participant, string Maker, string Adapter, string Text, string Packet);
 
 /// <summary>
-/// A meeting's packet (AGENTROOM1a, D177 point 2): the brainstorm's assembly of the question and its sources (D176 point 2,
-/// unchanged), the participants in the person's order, the round it is for, and the transcript so far. Frozen once per round as
+/// A meeting's packet: the brainstorm's assembly of the question and its sources, the participants in the person's order, the round it is for, and the transcript so far. Frozen once per round as
 /// <c>meeting: 1</c>, named by the digest of its content, and handed byte for byte to every turn of its round.
 /// </summary>
 public sealed record MeetingPacket(
@@ -37,7 +36,7 @@ public static class MeetingPackets
     /// <summary>The most characters one message keeps (a first value, read again on the first real run, as the packet's bounds are).</summary>
     public const int MessageChars = 4_000;
 
-    /// <summary>The rounds a meeting holds in this slice (D177 point 7): one, and a second only by the person's press.</summary>
+    /// <summary>The rounds a meeting holds: one, and a second only by the person's press.</summary>
     public const int MostRounds = 2;
 
     /// <summary>A meeting turn's role in its pass record, beside a brainstorm's <c>generate</c> and <c>synthesize</c>.</summary>
@@ -48,7 +47,7 @@ public static class MeetingPackets
         new(basis.Question, basis.Repository, basis.Tier, basis.Sources, basis.LeftOut, [.. participants], 1, []);
 
     /// <summary>
-    /// The next round's packet (D177 point 2): the same question, sources and participants, and the transcript so far, under a new
+    /// The next round's packet: the same question, sources and participants, and the transcript so far, under a new
     /// digest. Nothing else changes, so what a refresh adds is the messages alone.
     /// </summary>
     public static MeetingPacket Refresh(MeetingPacket previous, IReadOnlyList<MeetingMessage> transcript) =>
@@ -58,7 +57,7 @@ public static class MeetingPackets
     public static IReadOnlyList<MeetingMessage> Added(MeetingPacket previous, MeetingPacket packet) =>
         [.. packet.Transcript.Where(message => !previous.Transcript.Contains(message))];
 
-    /// <summary>The packet's file: its schema version, its digest, then its content, as the digest was taken of it.</summary>
+    /// <summary>The packet's file: its schema version, its digest, then its content, as the digest is taken of it.</summary>
     public static byte[] Bytes(MeetingPacket packet) => Write(packet, withDigest: true);
 
     /// <summary><c>sha256:</c> and the hex of the content's bytes, everything the file holds but its version and its digest.</summary>
@@ -159,7 +158,7 @@ public static class MeetingPackets
 public sealed record MeetingChecked(string? Text, IReadOnlyList<string> Codes);
 
 /// <summary>
-/// A turn's answer read as a message (AGENTROOM1a, D177 point 1): <c>{ meeting: 1, text }</c>, by its shape alone and with no model.
+/// A turn's answer read as a message: <c>{ meeting: 1, text }</c>, by its shape alone and with no model.
 /// Nothing else in it is read: who said it is Daoris's binding of the turn, so a field or a sentence naming another participant
 /// is the sender's words, kept as theirs.
 /// </summary>
@@ -193,7 +192,7 @@ public static class MeetingMessages
 }
 
 /// <summary>
-/// A meeting turn's fixed instruction (AGENTROOM1a, D177 points 1 and 2): the packet named first by its digest, so the turn reads
+/// A meeting turn's fixed instruction: the packet named first by its digest, so the turn reads
 /// what the person sent; then who it is in Daoris's records, its one job and its one result tool. Never another participant's
 /// process, the person's conversation, or anything outside its room.
 /// </summary>

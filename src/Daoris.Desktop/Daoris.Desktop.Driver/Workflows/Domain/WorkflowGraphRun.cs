@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A graph node's option read as a step's field (FABRIC-CUTOVER1e): a node keeps each option as its JSON text, and a step reads text, a
+/// A graph node's option read as a step's field: a node keeps each option as its JSON text, and a step reads text, a
 /// switch or a list of names, so the person's part (<see cref="Involvement.StepsOf(NodeGraph)"/>) and a graph run's drawing read an option
 /// as its step would.
 /// </summary>
@@ -39,9 +39,9 @@ public static class NodeOptions
 }
 
 /// <summary>
-/// Which row a graph run's node stands at (FABRIC-CUTOVER1e; D190 points 2 and 3, the cutover design §2, §3): its state on the run's record
-/// by the one lifecycle (<see cref="NodeStates"/>). Read with <see cref="WorkflowRunStep.Node"/> set, never with a step's kind. FABRIC-CUTOVER1d
-/// took away the one more, <c>not-begun</c>, with the guards it named: an answer that holds it reads as recorded.
+/// Which row a graph run's node stands at: its state on the run's record
+/// by the one lifecycle (<see cref="NodeStates"/>). Read with <see cref="WorkflowRunStep.Node"/> set, never with a step's kind. An answer
+/// holding a state this build does not know reads as recorded.
 /// </summary>
 public static class WorkflowGraphDetails
 {
@@ -61,7 +61,7 @@ public static class WorkflowGraphDetails
 }
 
 /// <summary>
-/// What a graph run's node is said to observe (FABRIC-CUTOVER1e; the cutover design §2.2's table, <see cref="RunSubjects"/>): its newest work
+/// What a graph run's node is said to observe (<see cref="RunSubjects"/>): its newest work
 /// quest here, its branch at a tip, or that branch at its landing's tip. The run itself is no subject named.
 /// </summary>
 public static class WorkflowGraphSubjects
@@ -74,32 +74,32 @@ public static class WorkflowGraphSubjects
 /// <summary>One wire of a graph run's graph, as the page draws it: from a node to a node, by its kind (<c>after</c>, <c>failed</c>, …).</summary>
 public sealed record WorkflowGraphWire(string From, string To, string Kind)
 {
-    /// <summary>The outcome a <c>when</c> wire follows (DECIDE1c); null on every other kind.</summary>
+    /// <summary>The outcome a <c>when</c> wire follows; null on every other kind.</summary>
     public string? Outcome { get; init; }
 
-    /// <summary>What a <c>back</c> wire is taken on: <c>rejected</c>, <c>failed</c> or an outcome (DECIDE1c); null on every other kind.</summary>
+    /// <summary>What a <c>back</c> wire is taken on: <c>rejected</c>, <c>failed</c> or an outcome; null on every other kind.</summary>
     public string? On { get; init; }
 }
 
 /// <summary>
-/// A run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e; D190 points 2, 3 and 7, the cutover design §2, §3, §6): its
+/// A run bound to a graph version, drawn from its record: its
 /// graph's entries, end and wires, the subjects its nodes observe, and what its record says of it. Its nodes are the run's steps
 /// (<see cref="WorkflowRun.Steps"/>), each with <see cref="WorkflowRunStep.Node"/>.
 /// </summary>
 /// <param name="Run">The run's id: its chain's first quest in its repository, whose record is <c>run:&lt;run&gt;</c>.</param>
-/// <param name="Wires">The wires the run is read along, every kind but <c>back</c>, which <see cref="Backs"/> holds apart (DECIDE1c).</param>
+/// <param name="Wires">The wires the run is read along, every kind but <c>back</c>, which <see cref="Backs"/> holds apart.</param>
 public sealed record WorkflowGraphRun(string Run, IReadOnlyList<string> Entries, string End, IReadOnlyList<WorkflowGraphWire> Wires)
 {
-    /// <summary>Its <c>back</c> wires (DECIDE1c): each a way back to a node before its source, drawn as a return and never read as an order.</summary>
+    /// <summary>Its <c>back</c> wires: each a way back to a node before its source, drawn as a return and never read as an order.</summary>
     public IReadOnlyList<WorkflowGraphWire> Backs { get; init; } = [];
 
-    /// <summary>The nodes no route can start any more given the outcomes reached (DECIDE1c, <see cref="WireEvaluated.NotTaken"/>), in node-id order.</summary>
+    /// <summary>The nodes no route can start any more given the outcomes reached (<see cref="WireEvaluated.NotTaken"/>), in node-id order.</summary>
     public IReadOnlyList<string> NotTaken { get; init; } = [];
 
-    /// <summary>Each reached decision's outcome, by node (DECIDE1c): what its <c>when</c> wires were taken on.</summary>
+    /// <summary>Each reached decision's outcome, by node: what its <c>when</c> wires were taken on.</summary>
     public IReadOnlyDictionary<string, string> Outcomes { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
-    /// <summary><c>claimed</c>'s subject: its newest work quest here; null where none was read.</summary>
+    /// <summary><c>claimed</c>'s subject: its newest work quest here; null where none is read.</summary>
     public string? Quest { get; init; }
 
     /// <summary>The branch its newest session here worked, the one its gates, its landing and a plugin's node before it observe; null where none.</summary>
@@ -111,7 +111,7 @@ public sealed record WorkflowGraphRun(string Run, IReadOnlyList<string> Entries,
     /// <summary>Its record does not read, so nothing on it is judged or started until a person mends it.</summary>
     public bool Unread { get; init; }
 
-    /// <summary>The quest it ended at, where its record keeps its end (FABRIC-CUTOVER1c); null while it goes on.</summary>
+    /// <summary>The quest it ended at, where its record keeps its end; null while it goes on.</summary>
     public string? Ended { get; init; }
 
     /// <summary>
@@ -121,7 +121,7 @@ public sealed record WorkflowGraphRun(string Run, IReadOnlyList<string> Entries,
     public string? At { get; init; }
 }
 
-/// <summary>What a run bound to a graph version is drawn from (FABRIC-CUTOVER1e): the run's records as a steps run's, its graph and its record.</summary>
+/// <summary>What a run bound to a graph version is drawn from: the run's records as a steps run's, its graph and its record.</summary>
 /// <param name="Run">The records a steps run is read from: its quests here, its sessions, its review's gate, its landings, its process.</param>
 /// <param name="RunId">The run: its chain's first quest in its repository.</param>
 /// <param name="Graph">The graph version it is bound to, as its file holds it (<see cref="WorkflowProcess.Graph"/>).</param>
@@ -132,31 +132,31 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
     public IReadOnlyList<GrownBranch> Branches { get; init; } = [];
 
     /// <summary>
-    /// The nodes whose integration the integration record says promoted (INTEGRATE1n part n3, <see cref="IntegrateNodes.PromotedAsync"/>): their stop
-    /// is not offered, since nothing reverses the line (F50). Read by the reader, which asks the door; none here is none promoted.
+    /// The nodes whose integration the integration record says promoted (<see cref="IntegrateNodes.PromotedAsync"/>): their stop
+    /// is not offered, since nothing reverses the line. Read by the reader, which asks the door; none here is none promoted.
     /// </summary>
     public IReadOnlySet<string> Promoted { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 
-    /// <summary>The unit's integration state as its record says (INTEGRATE1h, §17.9), drawn on the <c>integrate</c> node; null where none was asked or read.</summary>
+    /// <summary>The unit's integration state as its record says, drawn on the <c>integrate</c> node; null where none is asked or read.</summary>
     public IntegrationHead? Integration { get; init; }
 
-    /// <summary>The gate each failed check named (FABRIC-PIPELINE1d), by node, read by the reader from the attempt's result; none where unread.</summary>
+    /// <summary>The gate each failed check named, by node, read by the reader from the attempt's result; none where unread.</summary>
     public IReadOnlyDictionary<string, string> Failures { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 }
 
 /// <summary>
-/// A run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e; D190 points 2, 3 and 7, the cutover design §2.2, §2.3, §6, §11.1).
+/// A run bound to a graph version, drawn from its record.
 /// Pure: its reader gathers the records, and this reads them alone, so <c>WorkflowGraphRunTests</c> holds each row without a process.
 /// </summary>
 /// <remarks>
 /// <para><b>Each node is a step</b>, in its graph's order, its state its record's status read by one table (<see cref="StateOf"/>): blocked is
 /// not reached, a reach done, a skip skipped, a failure failed, the person's refusal and stop stopped, unknown not known; an active node the
-/// person answers (a go-ahead, a person's task, the look) waits on them, any other works. Its subject is the one its binding names, the
-/// cutover design §2.2's (<see cref="RunSubjects"/>), named: a quest by its id, a branch by its name as this machine's records hold it, a
+/// person answers (a go-ahead, a person's task, the look) waits on them, any other works. Its subject is the one its binding names
+/// (<see cref="RunSubjects"/>), named: a quest by its id, a branch by its name as this machine's records hold it, a
 /// landing by the landed branch at its tip.</para>
-/// <para><b>Begun as any node</b> (FABRIC-CUTOVER1d): the runtime begins a run's second opinion and look and starts its plugin's performed
-/// nodes now its landing doors read its record, so one its wires let start is ready, then under way, as every node is.</para>
-/// <para><b>A look the work's choice adds</b> (D190 point 7, §6) is D154's hold at every landing door, drawn beside the graph as a steps run
+/// <para><b>Begun as any node</b>: the runtime begins a run's second opinion and look and starts its plugin's performed
+/// nodes, so one its wires let start is ready, then under way, as every node is.</para>
+/// <para><b>A look the work's choice adds</b> is a hold at every landing door, drawn beside the graph as a steps run
 /// draws one (<see cref="WorkflowRuns.AddedLook"/>), never as one of its nodes, and only where the graph holds no look.</para>
 /// </remarks>
 public static class WorkflowGraphRuns
@@ -180,7 +180,7 @@ public static class WorkflowGraphRuns
         var handed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land);
         NodeStatus StatusOf(string node) => statuses.GetValueOrDefault(node) ?? NodeLifecycle.Start(self, node);
 
-        // The run's branch: the one its newest session here worked, as its tree is named and this machine's records follow it (TREEFOLLOW1);
+        // The run's branch: the one its newest session here worked, as its tree is named and this machine's records follow it;
         // else the one its record last bound its landing to.
         var runBranch = newestHere?.Tree is { Length: > 0 } tree ? BranchOfTree(tree, facts.Branches) : null;
         runBranch ??= handed is not null && Bound(StatusOf(handed.Id)) is { } landingBound && landingBound.Observes != self
@@ -189,17 +189,17 @@ public static class WorkflowGraphRuns
 
         var cells = graph.Nodes.Select(node => Cell(node, run.Process)).ToList();
         var steps = new List<WorkflowRunStep>();
-        // FABRIC-CUTOVER1f: a run that ended, or whose record does not read, takes no word; a node holding one waiting offers nothing more.
+        // A run that ended, or whose record does not read, takes no word; a node holding one waiting offers nothing more.
         var open = facts.Record is { Ended: null };
         foreach (var (node, cell) in graph.Nodes.Zip(cells))
         {
             var status = StatusOf(node.Id);
-            // INTEGRATE1o part o2: a declined request is read from the quests' records at this look, so the hold's code is never stored on the node.
+            // A declined request is read from the quests' records at this look, so the hold's code is never stored on the node.
             var held = node.Kind == NodeKinds.WorkRequests && status.State == NodeStates.Active && WorkRequests.Declined(run.Requests);
             var (state, detail) = StateOf(node, status.State, held ? WorkRequests.DeclinedCode : status.Code);
             var cannot = GraphCannotStart.Of(node, status.State, run.Process);
             if (cannot is not null) state = WorkflowRunStates.CannotStart;
-            // FABRIC-PIPELINE1d: a check's newest attempt, held unknown for the person or settled by their stop, says why it is unknown.
+            // A check's newest attempt, held unknown for the person or settled by their stop, says why it is unknown.
             var checkHeld = node.Kind == NodeKinds.Check && status.State == NodeStates.Unknown ? CheckHeld(facts.Record, node.Id) : null;
             var asked = facts.Record?.Pending.LastOrDefault(word => word.Node == node.Id);
             var acts = open && asked is null ? RunNodeWords.Acts(node, status, facts.Promoted.Contains(node.Id)) : [];
@@ -218,7 +218,7 @@ public static class WorkflowGraphRuns
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }
 
-        // §6: a look the chain's, the ask's or a set-up step's choice adds stays D154's hold, drawn beside the graph, before its landing.
+        // A look the chain's, the ask's or a set-up step's choice adds stays a hold, drawn beside the graph, before its landing.
         if (!graph.Nodes.Any(node => node.Kind == NodeKinds.Look))
         {
             var claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed);
@@ -235,7 +235,7 @@ public static class WorkflowGraphRuns
         }
 
         var record = facts.Record;
-        // DECIDE1c: a `back` wire is drawn apart, so nothing that reads the run's order walks it; a `when` names its outcome.
+        // A `back` wire is drawn apart, so nothing that reads the run's order walks it; a `when` names its outcome.
         var drawn = graph.Wires.Where(wire => wire.From is { Unit: null } && wire.To.Unit is null)
             .Select(wire => new WorkflowGraphWire(wire.From!.Node, wire.To.Node, wire.Kind) { Outcome = wire.Outcome, On = wire.On })
             .ToList();
@@ -279,7 +279,7 @@ public static class WorkflowGraphRuns
                         On = WorkflowGraphSubjects.Branch, Branch = branch, Commit = observes is null ? null : bound!.SubjectRevision, Session = newestHere?.Id,
                     };
                 case RunSubject.Landing:
-                    // What follows `handed` binds the landing it reached on, at that landing's tip, as its record keeps it (§2.2).
+                    // What follows `handed` binds the landing it reached on, at that landing's tip, as its record keeps it.
                     var reached = handed is null ? null : StatusOf(handed.Id) is { State: NodeStates.Reached, Acceptance: { } acceptance } ? acceptance : null;
                     var on = observes ?? (reached is { Subject: { } landedOn } ? landedOn : null);
                     var tip = observes is not null ? bound!.SubjectRevision : reached?.Evidence?.Revision;
@@ -303,7 +303,7 @@ public static class WorkflowGraphRuns
     }
 
     /// <summary>
-    /// What the run's view says of one node standing at <paramref name="status"/>, its subject unnamed (FABRIC-CUTOVER1d): the words a landing door
+    /// What the run's view says of one node standing at <paramref name="status"/>, its subject unnamed: the words a landing door
     /// holds with where <c>handed</c> waits on it (<see cref="GraphGate"/>). Not reached says so.
     /// </summary>
     public static string Said(NodeDeclaration node, NodeStatus status)
@@ -334,7 +334,7 @@ public static class WorkflowGraphRuns
         NodeStates.Ready => (WorkflowRunStates.Working, WorkflowGraphDetails.Ready),
         NodeStates.Active when node.Kind is NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.Look or NodeKinds.Review =>
             (WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active),
-        // INTEGRATE1o part o2 (§17.3): a decline holds `work.requests` active, never failed, and it waits on the person, whose pass lets the flow go on.
+        // A decline holds `work.requests` active, never failed, and it waits on the person, whose pass lets the flow go on.
         NodeStates.Active when node.Kind == NodeKinds.WorkRequests && code == WorkRequests.DeclinedCode =>
             (WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active),
         NodeStates.Active => (WorkflowRunStates.Working, WorkflowGraphDetails.Active),
@@ -349,7 +349,7 @@ public static class WorkflowGraphRuns
     };
 
     /// <summary>
-    /// A node as a step's cell (FABRIC-CUTOVER1e), so the page and the terminal draw it as they draw a step: a built-in with a step kind as that
+    /// A node as a step's cell, so the page and the terminal draw it as they draw a step: a built-in with a step kind as that
     /// kind (<c>claimed</c> the work, <c>handed</c> the landing), any other as its own kind; the person's part, who acts and their press by its
     /// kind; its options as its settings, the landing's form and press where the graph leaves them to the repository's rule, as that rule says
     /// them.
@@ -363,7 +363,7 @@ public static class WorkflowGraphRuns
             if (value is not null && settings.All(setting => setting.Name != name)) settings.Add(new WorkflowSetting(name, value));
         }
 
-        // LANDNODE1c2: a `land` waits on no press of its own; the person's Accept is its `review`'s.
+        // A `land` waits on no press of its own; the person's Accept is its `review`'s.
         if (node.Kind == NodeKinds.Land)
         {
             Default("accept", "automatic");
@@ -377,7 +377,7 @@ public static class WorkflowGraphRuns
             new WorkflowSource("workflow", process?.Binding?.Level ?? level ?? WorkflowLevels.Repository), settings, WorkflowRuntime.Built, null);
     }
 
-    /// <summary>What a node's status is bound to: its reach's acceptance where it is reached, else its attempt's binding, kept as history.</summary>
+    /// <summary>What a node's status is bound to: its reach's acceptance where it is reached, else its attempt's binding.</summary>
     private static NodeAcceptance? Bound(NodeStatus status) =>
         status.State == NodeStates.Reached ? status.Acceptance ?? status.Binding : status.Binding ?? status.Acceptance;
 
@@ -390,14 +390,14 @@ public static class WorkflowGraphRuns
         return unit;
     }
 
-    /// <summary>A session's branch by its tree's name (the inventory's join, <c>WorkInventory.AttachTrees</c>), where its agent moved it since.</summary>
+    /// <summary>A session's branch by its tree's name (the inventory's join, <c>WorkInventory.AttachTrees</c>), where its agent has moved it.</summary>
     private static string BranchOfTree(string tree, IReadOnlyList<GrownBranch> branches)
     {
         var name = TreeFollows.SessionPrefix + Path.GetFileName(Path.TrimEndingDirectorySeparator(tree));
         return branches.LastOrDefault(entry => entry.Branch == name)?.Now ?? name;
     }
 
-    /// <summary>Where a graph run stands (<see cref="WorkflowGraphRun.At"/>): never at a node no route takes (DECIDE1c).</summary>
+    /// <summary>Where a graph run stands (<see cref="WorkflowGraphRun.At"/>): never at a node no route takes.</summary>
     private static string? At(WorkflowGraphRun part, IReadOnlyList<WorkflowRunStep> steps, string end)
     {
         if (part.Ended is not null) return null;

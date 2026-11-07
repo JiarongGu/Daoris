@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The pieces on file (COAGENT1b), whose reservations every starter after counts under the cap.</summary>
+/// <summary>The pieces on file, whose reservations every starter after counts under the cap.</summary>
 [LookPass("pieces", LookPhase.Read, "unable")]
 internal sealed class PiecesOnFileLook(ILookWiring wiring) : ILookPass
 {

@@ -346,7 +346,7 @@ public static class WorkflowOperations
             }
 
             var version = newest;
-            // An update to a copy's shipped default keeps where the version came from, so the copy follows the shipped digest it was updated to.
+            // An update to a copy's shipped default keeps where the version came from, so the copy follows the shipped digest it is updated to.
             if (updates is not null && WorkflowDefaults.Of(updates) is null) return Refuse("refused", $"this build ships no default `{updates}` to update `{id}` from. Nothing was written.");
             var planAgainst = PlanGraph(home, found, id, version, null, "screen", at, graph, updates is null ? null : WorkflowDefaults.Of(updates)!.From);
             if (planAgainst.Same) return new(id, true, null, $"`{id}` v{version.Version} already says this: nothing was written.", version.Version, false, true, [], []);

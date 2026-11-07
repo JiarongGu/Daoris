@@ -1,17 +1,17 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris quest done</c> was asked: the quest, and the person's words, or null for none.</summary>
+/// <summary>What <c>daoris quest done</c> asks: the quest, and the person's words, or null for none.</summary>
 public sealed record QuestDoneAsk(string Quest, string? Note);
 
 /// <summary>
-/// The terminal's door to the person's done (QUESTCLOSE1, D126's note, D50): <c>daoris quest done &lt;id&gt; [--note
+/// The terminal's door to the person's done: <c>daoris quest done &lt;id&gt; [--note
 /// "…"]</c> marks an open or taken quest done as the person's, through the service's own door for it, and prints the service's
 /// sentence. The quest page's <i>Mark done…</i> is the other door, and a finish at a checkpoint names this one right after it
 /// where the session's quest is still taken.
 /// </summary>
 /// <remarks>
 /// <para><b>The person's done, never the agent's</b>: it answers none of the quest's requirements one by one, and the quest's
-/// note says the done was theirs, with their words after it. That sentence is the service's, so every door writes the same.</para>
+/// note says the done is theirs, with their words after it. That sentence is the service's, so every door writes the same.</para>
 ///
 /// <para><b>Exit codes</b>: 0 closed, 1 refused (a closed quest, no such quest, a host older than the door), 2 the usage.</para>
 /// </remarks>

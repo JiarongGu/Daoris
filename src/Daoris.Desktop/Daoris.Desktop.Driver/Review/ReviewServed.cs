@@ -3,19 +3,19 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the review's serving looks at and decides (REVIEWENV1d; design §2.3 step 3): which folder of a step's tree may be served
+/// What the review's serving looks at and decides: which folder of a step's tree may be served
 /// and found there, never through a link, the build's base and the head of its <c>index.html</c>, where the tab is taken, whether
 /// a tree still stands, and whether the person's verdict answered the set-up a tab shows.
 /// </summary>
 /// <remarks>
-/// A top file, not the Domain's (FLAT1b-ii): finding the folder in the tree and reading the build's head look at the disk, so the
+/// A top file, not the Domain's: finding the folder in the tree and reading the build's head look at the disk, so the
 /// type holds I/O; the records the showing is made of stay in <c>Domain/ReviewShowing.cs</c>. It is <c>partial</c> only because
 /// its patterns are source-generated. The showing itself is <see cref="ReviewDesk"/>.
 /// </remarks>
 public static partial class ReviewServed
 {
     /// <summary>
-    /// The folders a review step in progress shows from (REVIEWENV1d): the tree of the session that said each set-up waiting
+    /// The folders a review step in progress shows from: the tree of the session that said each set-up waiting
     /// for the person's verdict, read from the service's records as the review's gate reads them, whether or not this loop has
     /// a desk, since <i>Show it again</i> serves from that tree; and, where the shell has a desk, each build it serves to a tab
     /// now. The branch tidy keeps each tree it lies in as a session's in use is (<c>BranchTidying.LookAsync</c>'s <c>reviewing</c>).
@@ -41,9 +41,9 @@ public static partial class ReviewServed
     }
 
     /// <summary>
-    /// The full path of <paramref name="folder"/> in <paramref name="tree"/>, or null with why not (design §2.3 step 3): a path
+    /// The full path of <paramref name="folder"/> in <paramref name="tree"/>, or null with why not: a path
     /// from the tree's root with forward slashes, no <c>.</c> or <c>..</c>, and every folder on the way a folder of its own, never
-    /// a link, as the service judges <c>review_serve</c>'s folder and a <c>${proof}</c> name is read (D146 §11).
+    /// a link, as the service judges <c>review_serve</c>'s folder and a <c>${proof}</c> name is read.
     /// </summary>
     public static string? FolderIn(string tree, string folder, out string? why)
     {
@@ -164,7 +164,7 @@ public static partial class ReviewServed
     public static string Origin(string address) =>
         Uri.TryCreate(address, UriKind.Absolute, out var at) ? at.GetLeftPart(UriPartial.Authority) : address.TrimEnd('/');
 
-    /// <summary>A set-up step's newest set-up, the one a verdict answers; null where none was shown.</summary>
+    /// <summary>A set-up step's newest set-up, the one a verdict answers; null where none is shown.</summary>
     public static QuestSetUpView? Newest(QuestView quest) => quest.SetUps.Count == 0 ? null : quest.SetUps[^1];
 
     /// <summary>A set-up's reference, <c>machine/sequence</c>, as a verdict names it; null where it carries none.</summary>

@@ -34,8 +34,8 @@ public sealed record WireEvaluated(
     public IReadOnlyList<string> NotTaken { get; init; } = [];
 
     /// <summary>
-    /// The <c>back</c> wires taken, each keyed as a trigger's firing on its source's receipt of its <c>on</c>: its target was invalidated
-    /// for a new attempt, and what rests on the target lapsed after it. The record writer keeps their keys with the moves, so one is taken once.
+    /// The <c>back</c> wires taken, each keyed as a trigger's firing on its source's receipt of its <c>on</c>: its target is invalidated
+    /// for a new attempt, and what rests on the target lapses after it. The record writer keeps their keys with the moves, so one is taken once.
     /// </summary>
     public IReadOnlyList<WireFiring> Backs { get; init; } = [];
 

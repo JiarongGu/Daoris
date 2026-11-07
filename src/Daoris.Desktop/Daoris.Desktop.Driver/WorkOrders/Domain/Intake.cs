@@ -3,23 +3,22 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The intake's instruction (D65 §1b), composed once and delivered by the harness's own door — the
-/// claiming instruction's sibling. It names no model (D24) and no repository layout: which harness
+/// The intake's instruction, composed once and delivered by the harness's own door — the
+/// claiming instruction's sibling. It names no model and no repository layout: which harness
 /// reads it is the machine's choice, and the circle is whatever the room says.
 /// </summary>
 public static class IntakePrompt
 {
     /// <param name="ask">The ask the intake answers.</param>
     /// <param name="language">
-    /// Its workspace's session language (LANG1c, D142 point 7), named in one line after the close; null where none is set,
-    /// and the instruction reads as it did.
+    /// Its workspace's session language, named in one line after the close; null where none is set.
     /// </param>
     /// <param name="browser">
-    /// The line telling it the browser it was handed (<see cref="InAppBrowserServers.Told"/>, BRWHINT1b); null where none was.
+    /// The line telling it the browser it is handed (<see cref="InAppBrowserServers.Told"/>); null where none is.
     /// </param>
     /// <param name="routedByIntake">
-    /// The workspace's repositories whose access setup takes the intake's route without the person's accept (AUTONOMY1c, D184
-    /// point 3: <c>routing</c> <c>intake</c>), as <see cref="RoutedByIntake"/> reads them. None, today's, and the instruction reads as it did.
+    /// The workspace's repositories whose access setup takes the intake's route without the person's accept
+    /// (<c>routing</c> <c>intake</c>), as <see cref="RoutedByIntake"/> reads them.
     /// </param>
     public static string Compose(
         AskView ask, SessionLanguage? language = null, string? browser = null, IReadOnlyList<string>? routedByIntake = null)
@@ -33,11 +32,10 @@ public static class IntakePrompt
         foreach (var line in ask.Sentence.Split('\n')) text.Append($"> {line.TrimEnd('\r')}\n");
         text.Append('\n');
 
-        // What they said on it after the ask (DRIFT1b, D133 §2), as every session on the ask is handed it.
+        // What they said on it after the ask, as every session on the ask is handed it.
         text.Append(AskWordsText.Since(ask));
 
-        // A URL in the words is a link as much as one given apart: the first real ask was a ticket's
-        // address typed as the sentence, and the guidance below was offered only for the field.
+        // A URL in the words is a link as much as one given apart.
         var links = ask.Links
             .Concat(System.Text.RegularExpressions.Regex.Matches(ask.Sentence, @"https?://[^\s<>""')\]]+")
                 .Select(match => match.Value.TrimEnd('.', ',', ';', ':')))
@@ -49,7 +47,7 @@ public static class IntakePrompt
             text.Append("Links they gave — read them; a ticket usually says more than the sentence does:\n");
             foreach (var link in links) text.Append($"- {link}\n");
             text.Append('\n');
-            // A ticket system is usually behind a sign-in, which a plain fetch cannot pass (D77): a
+            // A ticket system is usually behind a sign-in, which a plain fetch cannot pass: a
             // browser a plugin handed over is the person's signed-in one, and anything else is unread.
             text.Append("A page behind a sign-in — a ticket system, usually — needs a browser that is signed in: use\n");
             text.Append("one if you were handed it. If you cannot read a page, say so; never guess what it says.\n\n");
@@ -78,7 +76,7 @@ public static class IntakePrompt
         text.Append("and accepts, and — for one that declares nothing — what its own files say about it.\n");
         text.Append("A declaration outranks what a repository says about itself. Decide from those; the `registry`\n");
         text.Append("tool answers the declarations, live.");
-        // ASKNAME1b: a repository the sentence names was proposed for that name, not for its words, so it is said as named.
+        // A repository the sentence names is proposed for that name, not for its words, so it is said as named.
         var named = ask.Proposed.Where(repository => ask.Named.Contains(repository, StringComparer.Ordinal)).ToList();
         var matched = ask.Proposed.Where(repository => !named.Contains(repository, StringComparer.Ordinal)).ToList();
         if (named.Count > 0)
@@ -98,7 +96,7 @@ public static class IntakePrompt
         text.Append("\n\n");
         text.Append("When they settle it — a declaration does, or what one repository says about itself plainly\n");
         text.Append("fits and no other's does — publish the work with `quest_publish`: to the repository that owns\n");
-        // SESSUX1j: the short title is the publisher's words, so the intake is asked for one; a list shows it.
+        // The short title is the publisher's words, so the intake is asked for one; a list shows it.
         text.Append("it, a title that says what is wanted, a `shortTitle` of the few words that tell it apart in a list\n");
         text.Append("(at most 40 characters, about 20 in Chinese), and a body with the why and the evidence — what the\n");
         text.Append("ticket says, and what decided the owner (its declaration, or what its own files say), not the change\n");
@@ -109,7 +107,7 @@ public static class IntakePrompt
         text.Append("plainly one lane's, address that lane as `repository:lane` (several as `repository:lane+lane`);\n");
         text.Append("otherwise address the repository.\n\n");
 
-        // DRIFT1c (D133 §3): a paraphrase kept a word and lost what it meant where the work lived, so a
+        // A paraphrase keeps a word and loses what it meant where the work lives, so a
         // requirement is the person's words, which the service checks, and the reading stays in the body.
         text.Append("Name what the person requires as the quest's `requirements`: each one their own words, copied\n");
         text.Append("exactly from the ask or from what they said on it since, with the check that proves the work\n");
@@ -118,15 +116,15 @@ public static class IntakePrompt
         text.Append("reading of their words belongs in the body, never in a requirement; a quote they did not say is\n");
         text.Append("refused, naming it. A `then` step carries the quest's requirements with it.\n\n");
 
-        // WORKFLOW1i-b (the workflow design §4.3, D157): a kind is proposed, never set — the person's press applies it — and one that
+        // A kind is proposed, never set — the person's press applies it — and one that
         // lowers their part needs their words, which the room's kinds section says per repository.
         text.Append("Where the room lists kinds of work and the ask plainly is one, you may propose it on the quest as\n");
         text.Append("`workflowProposal`: `{ \"kind\": \"docs\", \"reason\": \"…\" }`, a `kind` its workspace declares, and its `reason` the\n");
         text.Append("person's own words, copied exactly. You never set a kind; the person's press applies a proposal. Propose\n");
         text.Append("a kind the room says lowers the person's part only where the person's words say so.\n\n");
 
-        // EVID1b (D144 §2): the part of a check a fact settles, named by whoever writes the requirement and never the session it
-        // judges; a path only where the work plainly leaves one, and no gate while gates are refused at publish (EVID1d).
+        // The part of a check a fact settles, named by whoever writes the requirement and never the session it
+        // judges; a path only where the work plainly leaves one, and no gate while gates are refused at publish.
         text.Append("Where a requirement's check plainly turns on a file or folder the work leaves, one the person\n");
         text.Append("can name, name it as that requirement's `evidence`: `{ \"path\": \"docs/report.md\" }`, relative to\n");
         text.Append("that repository's root with forward slashes, at most five. Daoris reads each in the work's last\n");
@@ -136,7 +134,7 @@ public static class IntakePrompt
         text.Append("When they do not settle it — nothing points at one repository, or more than one could —\n");
         if (routedByIntake is { Count: > 0 } routed)
         {
-            // AUTONOMY1c (D184 point 3): the route to a repository set so is the intake's, and the person may route it again; the
+            // The route to a repository set so is the intake's, and the person may route it again; the
             // repository chosen is the one whose setup counts, so any other is still the person's to settle.
             text.Append(string.Join(", ", routed.Select(repository => $"`{repository}`")));
             text.Append(": the person has set them to take your choice of route without accepting it\n");
@@ -151,10 +149,10 @@ public static class IntakePrompt
             text.Append("person decides.\n\n");
         }
 
-        // BRWHINT1b (D78): the browser it was handed, in a block of its own; nothing where none was.
+        // The browser it is handed, in a block of its own; nothing where none is.
         if (browser is not null) text.Append(browser).Append("\n\n");
 
-        // LANG1c: what it says to the person in the workspace's language, beside the close it governs; nothing where none is set.
+        // What it says to the person in the workspace's language, beside the close it governs; nothing where none is set.
         if (language is not null) text.Append(SessionLanguageText.Line(language)).Append("\n\n");
 
         text.Append("Never edit a repository, and never write outside this room: publishing is the whole of your work.\n");
@@ -163,7 +161,7 @@ public static class IntakePrompt
 
     /// <summary>
     /// Those of <paramref name="repositories"/>, in their order, whose access setup in <paramref name="workspace"/> routes by the
-    /// intake (AUTONOMY1c, D184 point 3), full access among them: the route an intake chooses to one is taken without the person's
+    /// intake, full access among them: the route an intake chooses to one is taken without the person's
     /// accept. Read per repository, since the repository the intake chooses is the one whose setup counts.
     /// </summary>
     public static IReadOnlyList<string> RoutedByIntake(DriverConfig config, string workspace, IEnumerable<string> repositories) =>
@@ -173,7 +171,7 @@ public static class IntakePrompt
     ];
 
     /// <summary>
-    /// Whether an intake may answer <paramref name="ask"/> at all (QUESTDELETE1): never one whose receiver the person named,
+    /// Whether an intake may answer <paramref name="ask"/> at all: never one whose receiver the person named,
     /// which stands with no quest once that quest is deleted, since an intake would route it by its proposal to repositories
     /// nobody named. The service's own refusal says the same.
     /// </summary>
@@ -184,7 +182,7 @@ public static class IntakePrompt
 }
 
 /// <summary>
-/// An intake's end, concluded from what the driver can see (D46 §4): the exit code, and what became
+/// An intake's end, concluded from what the driver can see: the exit code, and what became
 /// of the ASK — never from what the session said about itself.
 /// </summary>
 public static class IntakeObservation
@@ -195,11 +193,11 @@ public static class IntakeObservation
     /// <param name="before">How many quests the ask had when the intake opened.</param>
     /// <param name="after">The ask as it stands now — null when the service no longer has it.</param>
     /// <param name="turnFailed">
-    /// What the protocol door said when the agent refused the turn itself (ACPEND1), or null — the
+    /// What the protocol door said when the agent refused the turn itself, or null — the
     /// exit after stdin closes is 0 either way, so this is what tells a cut-off intake from an asking one.
     /// </param>
     /// <remarks>
-    /// Each line is a code with its values beside its English (LANG1a, the language design §4 rows 42–48); the person's
+    /// Each line is a code with its values beside its English; the person's
     /// closing note and the agent's failure are words of their own, never a value.
     /// </remarks>
     public static SessionConclusion Conclude(int exitCode, int before, AskView? after, string? turnFailed = null)
@@ -207,7 +205,7 @@ public static class IntakeObservation
         var exit = exitCode == 0 ? "" : $" (exit {exitCode})";
         if (after is null)
         {
-            // Only a person's delete takes an ask away (D95): the ask was settled under it, as a close is.
+            // Only a person's delete takes an ask away: the ask is settled under it, as a close is.
             return SessionConclusion.Of("stood-down", Observation.Exit(
                 Noted.Of(PeerNoteCodes.IntakeAskDeleted, $"the ask it answered was deleted while it ran{exit}."), exitCode));
         }
@@ -225,8 +223,8 @@ public static class IntakeObservation
                 exitCode));
         }
 
-        // Somebody else answered it while this ran — the person, publishing or closing. The ask was
-        // theirs to settle, which is what standing down has always meant.
+        // Somebody else answered it while this ran — the person, publishing or closing. The ask is
+        // theirs to settle, which is what standing down means.
         if (after.State == "Closed")
         {
             var closed = Noted.Of(PeerNoteCodes.IntakeAskClosed, $"ask `#{after.Id}` was closed while it ran", ("ask", after.Id));
@@ -240,7 +238,7 @@ public static class IntakeObservation
                 ("ask", after.Id), ("quests", gained)));
         }
 
-        // 🔴 A refused turn is not a clean exit (ACPEND1): parked as "asking", it would send the person
+        // 🔴 A refused turn is not a clean exit: parked as "asking", it would send the person
         // to a question the transcript does not end with.
         if (turnFailed is { Length: > 0 })
         {
@@ -269,7 +267,7 @@ public static class IntakeObservation
     /// </summary>
     public static SessionConclusion? Answered(AskView ask) => ask.State switch
     {
-        // Done is published with every quest closed (USE1c) — the service derives it, and a quest can
+        // Done is published with every quest closed — the service derives it, and a quest can
         // close between two ticks.
         "Published" or "Done" => SessionConclusion.Of("completed", Noted.Of(
             PeerNoteCodes.IntakePersonAnswered, $"the person answered ask `#{ask.Id}` — it became {Quests(ask.Quests)}.",
@@ -281,7 +279,7 @@ public static class IntakeObservation
     };
 
     /// <summary>
-    /// A PARKED intake whose ask the person deleted (D95): there is nothing left to answer, so its record
+    /// A PARKED intake whose ask the person deleted: there is nothing left to answer, so its record
     /// ends — the person's own act, as a close is.
     /// </summary>
     public static SessionConclusion Deleted(string ask) =>

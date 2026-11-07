@@ -3,25 +3,25 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The working session's answers, read when its turn ends (XAGENT1e, D155 point 7; design §6.4): each finding's latest answer,
+/// The working session's answers, read when its turn ends: each finding's latest answer,
 /// a fix's commit checked against the tree's history, and a finding with none read as <c>unresolved</c>, not answered. What a
 /// fix fixes is the session's claim; that its commit is one the turn made is a fact git answers.
 /// </summary>
 /// <remarks>
-/// A top file, not the Domain's (FLAT1b-ii): reading the tree asks git and the disk, so the type holds I/O; the records and
+/// A top file, not the Domain's: reading the tree asks git and the disk, so the type holds I/O; the records and
 /// codes it reads stay in <c>Domain/OpinionDelivery.cs</c>. The lines are pure. The git it runs is the one it is handed
 /// (<see cref="WorkingTree.GitRead"/>), so a test stands in.
 /// </remarks>
 public static class OpinionAnswers
 {
     /// <summary>
-    /// The driver's line in the working session's conversation once its answers are read: whose findings they were, and how
-    /// each counts. The person's view of the answers beside the claims is the page's (XAGENT1g); this is the record's.
+    /// The driver's line in the working session's conversation once its answers are read: whose findings they are, and how
+    /// each counts. The person's view of the answers beside the claims is the page's; this is the record's.
     /// </summary>
     public static string Line(OpinionView opinion, OpinionReading reading) => Told(opinion, reading).Note;
 
     /// <summary>
-    /// <see cref="Line"/> by code (CONVNOTE2h), the English byte for byte: a lead for whose findings and how many, then a part for
+    /// <see cref="Line"/> by code, the English byte for byte: a lead for whose findings and how many, then a part for
     /// each way they count that is above nought, in the English's order, and the disputed <c>must</c> findings last.
     /// </summary>
     public static Noted Told(OpinionView opinion, OpinionReading reading)
@@ -63,7 +63,7 @@ public static class OpinionAnswers
     }
 
     /// <summary>
-    /// How the reviewer's own run ended, by code (XAGENT1g4a, D142): the English as <c>Driver.Read</c> has always worded it, a
+    /// How the reviewer's own run ended, by code: the English as <c>Driver.Read</c> words it, a
     /// failed turn's own message beneath as the program's words (it may hold a path).
     /// </summary>
     public static Noted Concluded(string opinion, int exitCode, string? turnFailed) =>
@@ -121,7 +121,7 @@ public static class OpinionAnswers
     }
 
     /// <summary>
-    /// Whether <paramref name="commit"/> is one the turn made (design §6.4): a commit the tree holds, after
+    /// Whether <paramref name="commit"/> is one the turn made: a commit the tree holds, after
     /// <paramref name="tip"/>, at or before <paramref name="head"/>. Its full id where it is; else why not, by code.
     /// </summary>
     internal static async Task<(string? Fix, string? Why)> CheckFixAsync(

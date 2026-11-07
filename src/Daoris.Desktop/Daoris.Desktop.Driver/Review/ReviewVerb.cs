@@ -6,7 +6,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris place review</c> (REVIEWENV1a, D154 point 2; FOUNDATION1 mod-iii): the review's own verb, the settings' port
+/// <c>daoris place review</c>: the review's own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rule it edits (<see cref="ReviewRules"/>).
 /// </summary>
 public sealed class ReviewVerb : ChoiceVerb
@@ -14,7 +14,7 @@ public sealed class ReviewVerb : ChoiceVerb
     public override string Word => "review";
 
     /// <summary>
-    /// <c>review</c> (REVIEWENV1a, D154 point 2): the person's words made one edit, judged by the rules' table, then, for an environment
+    /// <c>review</c>: the person's words made one edit, judged by the rules' table, then, for an environment
     /// put, its procedure looked for in the checkouts the registry names (<see cref="ReviewLooks.Of"/>) before anything is written.
     /// </summary>
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)

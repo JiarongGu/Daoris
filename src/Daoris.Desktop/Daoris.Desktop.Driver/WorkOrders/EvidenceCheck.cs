@@ -34,7 +34,7 @@ public static partial class EvidenceCheck
         {
             try
             {
-                // A submitted quest's verdict names the submission it was read for; a done's names none.
+                // A submitted quest's verdict names the submission it is read for; a done's names none.
                 var named = quest is { Status: "Taken", Submission: { } submission } ? new QuestSubmissionRef(submission.Machine, submission.Sequence) : null;
                 posted = await service.EvidenceAsync(quest.Id, verdict with { Submission = named }, ct).ConfigureAwait(false);
             }
@@ -51,8 +51,8 @@ public static partial class EvidenceCheck
 
     /// <summary>
     /// The record's evidence at a session's end: <paramref name="commits"/>, and beneath them what is read
-    /// of its done's evidence, where <paramref name="quest"/> waits on some. A quest that waits on none, or that the service no
-    /// longer answers, ends unchanged: git is asked nothing more and nothing is posted. Never throws but for the caller's own
+    /// of its done's evidence, where <paramref name="quest"/> waits on some. A quest that waits on none, or that the service does
+    /// not answer, ends unchanged: git is asked nothing more and nothing is posted. Never throws but for the caller's own
     /// cancellation, since the record is written whatever the read came to.
     /// </summary>
     /// <param name="at">Where and how: the tree's HEAD at a session's end or the sweep, with its base and its session.</param>
@@ -120,7 +120,7 @@ public static partial class EvidenceCheck
         }
     }
 
-    /// <summary>The record's lines for one read: the commit and how, then each item; or why nothing was read.</summary>
+    /// <summary>The record's lines for one read: the commit and how, then each item; or why nothing is read.</summary>
     private static string Bundle(EvidenceReading reading, EvidencePosted posted)
     {
         if (reading.Verdict is not { } verdict) return $"evidence not read: {reading.Unread}";

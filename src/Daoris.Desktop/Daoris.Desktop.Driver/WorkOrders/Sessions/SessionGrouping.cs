@@ -59,7 +59,7 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
 
     /// <summary>
     /// This row held by <paramref name="holds"/>: where its words wait for an account's reset it is <see cref="ShownState.LimitWaits"/>
-    /// in place of the state it ended in, whatever that was; a record a limit ended keeps its own <see cref="ShownState.Limited"/>,
+    /// in place of the state it ended in, whatever it is; a record a limit ended keeps its own <see cref="ShownState.Limited"/>,
     /// which says it already.
     /// </summary>
     public SessionGrouping HeldBy(WordsHold holds) => this with

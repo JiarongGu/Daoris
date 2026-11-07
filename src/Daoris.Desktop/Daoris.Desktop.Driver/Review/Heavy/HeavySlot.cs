@@ -96,7 +96,7 @@ public sealed class HeavySlot : IDisposable
         Before = before;
     }
 
-    /// <summary>The record the slot held when it was taken: the run before, which died holding it; null where it let go as it should.</summary>
+    /// <summary>The record the slot holds when it is taken: the run before, which died holding it; null where it let go as it should.</summary>
     public HeavyHolder? Before { get; }
 
     /// <summary>The checkout <paramref name="directory"/> is in: the nearest folder at or above it holding a <c>.git</c>; null where none does.</summary>

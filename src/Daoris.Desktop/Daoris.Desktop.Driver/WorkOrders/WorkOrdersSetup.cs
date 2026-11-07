@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a repository's own files say it is, as the intake's room tells it (D77): its summary, what it is built with, and the file the
+/// What a repository's own files say it is, as the intake's room tells it: its summary, what it is built with, and the file the
 /// summary came from. Setup's <see cref="RepositoryDescription"/> implements it directly.
 /// </summary>
 public interface IIntakeDescription
@@ -17,8 +17,8 @@ public interface IIntakeDescription
 }
 
 /// <summary>
-/// What the intake's room asks of Setup: a checkout's own words about itself, read from its files at the top (D77). Setup installs it when
-/// the driver loads and reads exactly what the room read before it was a port.
+/// What the intake's room asks of Setup: a checkout's own words about itself, read from its files at the top. Setup installs it when
+/// the driver loads.
 /// </summary>
 internal interface IWorkOrdersSetup
 {

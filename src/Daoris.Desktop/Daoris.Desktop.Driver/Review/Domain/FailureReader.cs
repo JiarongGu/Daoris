@@ -595,7 +595,7 @@ internal static class FailureReader
 
     /// <summary>
     /// A gate that names no failing test, signed by its step: for a build, the set of its compiler errors' codes with their files
-    /// (<c>CS0103 src/.../X.cs</c>), sorted, since MSBuild prints each project's errors as its node finishes; otherwise the step's first
+    /// (<c>src/.../X.cs</c>), sorted, since MSBuild prints each project's errors as its node finishes; otherwise the step's first
     /// error line, normalised.
     /// </summary>
     public static FailureSignature GateSignature(string gate, string step, string? output, string? root = null)

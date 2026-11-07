@@ -22,7 +22,7 @@ public static class RunRepairs
     }
 
     /// <summary>
-    /// Whether <paramref name="tip"/> descends from the tip the Accept was given at, so the commits since are the session's own continuation:
+    /// Whether <paramref name="tip"/> descends from the tip the Accept is given at, so the commits since are the session's own continuation:
     /// asked of git, false where it cannot be told.
     /// </summary>
     public static async Task<bool> ContinuesAsync(string root, NodeRepair repair, string tip, CancellationToken ct)

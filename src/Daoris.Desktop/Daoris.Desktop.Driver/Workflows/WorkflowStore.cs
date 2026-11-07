@@ -3,20 +3,19 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where named workflows live and how a version is added (WORKFLOW1d, D157 point 5, the workflow design §2.4–§2.6): one file
-/// per workflow, <c>&lt;home&gt;/workflows/&lt;id&gt;.json</c>, the home's (D63), written atomically, BOM-less and LF, and
+/// Where named workflows live and how a version is added: one file
+/// per workflow, <c>&lt;home&gt;/workflows/&lt;id&gt;.json</c>, the home's, written atomically, BOM-less and LF, and
 /// machine-local. A version is whole and never edited: saving adds the next number, keeping the file's other fields and every
 /// version as written, then the newest 20 and every version a kept run names.
 /// </summary>
 /// <remarks>
 /// <para>The plan, <see cref="WorkflowNamed.PlanAdd"/>, is held to this suite's tests' <c>fixtures/workflow-named.json</c>
-/// <c>store</c>, cell for cell. A run binds a named workflow's newest version at its first start (WORKFLOW1e,
-/// <see cref="WorkflowRunBindings"/>), which every gate reads (WORKFLOW1f, <see cref="WorkflowProcesses"/>); the screen's editor
-/// (WORKFLOW1g), Ask Daoris (WORKFLOW1h) and <c>daoris workflow</c> (<see cref="DriverWorkflowsCommand"/>, the CLI's
-/// <c>workflowdoor.ts</c> until PUSH1f2b) write through here.</para>
+/// <c>store</c>, cell for cell. A run binds a named workflow's newest version at its first start
+/// (<see cref="WorkflowRunBindings"/>), which every gate reads (<see cref="WorkflowProcesses"/>); the screen's editor,
+/// Ask Daoris and <c>daoris workflow</c> (<see cref="DriverWorkflowsCommand"/>) write through here.</para>
 ///
-/// <para><b>Layered</b> (STRUCT3b, D166): the store's use cases, written against <see cref="IWorkflowStore"/> and
-/// <see cref="IWorkflowRunStore"/>; a caller that holds only the home reaches them by it, as every module did before.</para>
+/// <para><b>Layered</b>: the store's use cases, written against <see cref="IWorkflowStore"/> and
+/// <see cref="IWorkflowRunStore"/>; a caller that holds only the home reaches them by it.</para>
 /// </remarks>
 public static class WorkflowStore
 {
@@ -39,7 +38,7 @@ public static class WorkflowStore
     /// <summary>
     /// A version added and written, atomically: the plan, then the file whole. Refused, naming why, where the plan writes nothing.
     /// </summary>
-    /// <param name="kept">The versions a kept run names; absent, those this home's runs name (WORKFLOW1e, <see cref="WorkflowRunBindings.KeptVersions(string, string)"/>).</param>
+    /// <param name="kept">The versions a kept run names; absent, those this home's runs name (<see cref="WorkflowRunBindings.KeptVersions(string, string)"/>).</param>
     /// <returns>The version's number.</returns>
     public static int Add(string home, WorkflowVersionAdded add, IReadOnlyCollection<int>? kept = null) =>
         Add(WorkflowPorts.Store(home), WorkflowPorts.Runs(home), add, kept);
