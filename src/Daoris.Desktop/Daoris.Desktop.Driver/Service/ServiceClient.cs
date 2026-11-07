@@ -411,9 +411,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         IReadOnlyDictionary<string, ForwardTake?>? forwards = null, IReadOnlyDictionary<string, DateTimeOffset?>? taken = null) =>
         SessionReads.Takes(SessionReads.Parse(json), claims, whys, forwards, taken);
 
-    internal static PriorSession? ReadRecord(string json, string id) => SessionReads.Record(SessionReads.Listed(json), id);
+    internal static PriorSession? ReadRecord(string json, string id) => ListedPriors.Of(json).GetValueOrDefault(id);
 
-    internal static IReadOnlyDictionary<string, PriorSession> ReadRecords(string json) => SessionReads.Records(SessionReads.Listed(json));
+    internal static IReadOnlyDictionary<string, PriorSession> ReadRecords(string json) => ListedPriors.Of(json);
 
     internal static IReadOnlyDictionary<string, string> ReadEntries(string json) => SessionReads.Entries(SessionReads.Listed(json));
 

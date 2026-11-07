@@ -103,6 +103,10 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         // six times, not once per tree; the nodes' read one worktree list; a tree's walk, the offer's judgement, the starts it made.
         StartsWithin("look", 0);
         SessionReadsWithin("look", 2);
+        // Of those, every record once and only as its change, and the open ones once.
+        Assert.True(BenchDoors.ListReads(_taken["look"].Asked) <= 1, $"the look read every record {BenchDoors.ListReads(_taken["look"].Asked)} times");
+        Assert.Equal(0, _taken["look"].Asked.GetValueOrDefault(BenchDoors.WholeList));
+        Assert.True(_taken["look"].Asked.GetValueOrDefault(BenchDoors.Open) <= 1, "the look read the open records more than once");
         StartsWithin("tidy", 8);
         SessionReadsWithin("tidy", 0);
         StartsWithin("nodes' read", 2);

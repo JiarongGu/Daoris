@@ -14,7 +14,8 @@ namespace Daoris.Driver;
 /// whatever is staged when the application next looks.</para>
 ///
 /// <para>The printing lives in the library so a test runs the whole door in-process. Exit codes keep the family contract:
-/// 0 said or written · 1 refused, nothing staged · 2 a word it does not answer, or a status with no install to read.</para>
+/// 0 said or written · 1 refused: nothing staged, or <c>--now</c> for a build the application refuses (<see cref="UpdateRefusal"/>), said
+/// in its sentence with the word still written · 2 a word it does not answer, or a status with no install to read.</para>
 /// </remarks>
 [CommandGroup("update", Whole = true)]
 public static class UpdateCommand
@@ -95,6 +96,14 @@ public static class UpdateCommand
         log?.Info("update.requested", ("mode", mode), ("door", "terminal"), ("build", build));
 
         var what = build is null ? "whatever is staged" : $"build {build}";
+        // The application's own refusal, checked here as it checks it, so the word is never answered as taken when nothing will close.
+        if (mode == UpdateMode.Now && install is not null && UpdateRefusal.Of(install, home, manifest?.Version, InstallRollback.This) is var (_, why))
+        {
+            output.AppendLine($"update: {what} is not installed now: {why}");
+            output.AppendLine("  Nothing closes. `daoris update --now` tries again once that has moved.");
+            return 1;
+        }
+
         output.AppendLine($"update: {Meaning(mode)} — for {what}.");
         if (install is null)
         {

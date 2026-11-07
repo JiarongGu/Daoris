@@ -12,6 +12,15 @@ internal sealed class BenchDoors(IServiceDoors inner) : IServiceDoors
     private readonly object _gate = new();
     private readonly Dictionary<string, (int Count, long Ms)> _asked = new(StringComparer.Ordinal);
 
+    /// <summary>The whole session list read with its closed records, counted apart from the open ones.</summary>
+    public const string WholeList = "/api/sessions?includeClosed=true";
+
+    /// <summary>The widest list read as its change since a mark, the kept list's one request.</summary>
+    public const string Changes = "/api/sessions/changes";
+
+    /// <summary>The open records alone.</summary>
+    public const string Open = "/api/sessions";
+
     public string BaseUrl => inner.BaseUrl;
 
     /// <summary>How many requests each path had at the last <see cref="Take"/>.</summary>
@@ -28,6 +37,9 @@ internal sealed class BenchDoors(IServiceDoors inner) : IServiceDoors
             return said.Length == 0 ? "nothing asked" : said;
         }
     }
+
+    /// <summary>How often a read asked for every record, closed ones included: the whole list, or its change since a mark.</summary>
+    public static int ListReads(IReadOnlyDictionary<string, int> asked) => asked.GetValueOrDefault(WholeList) + asked.GetValueOrDefault(Changes);
 
     public Task<string> GetAsync(string path, CancellationToken ct) => CountedAsync(path, () => inner.GetAsync(path, ct));
 
@@ -46,6 +58,8 @@ internal sealed class BenchDoors(IServiceDoors inner) : IServiceDoors
         finally
         {
             var key = path.Split('?')[0];
+            // The whole list with its closed records is a read of its own, apart from the open ones the same path answers.
+            if (key == "/api/sessions" && path.Contains("includeClosed=true", StringComparison.OrdinalIgnoreCase)) key = WholeList;
             lock (_gate)
             {
                 var (count, ms) = _asked.GetValueOrDefault(key);

@@ -11,7 +11,7 @@ const STATE_TONE: Record<string, string> = { draining: 'taken', applying: 'taken
 const OUTCOME_TONE: Record<string, string> = { installed: 'done', 'rolled-back': 'declined', refused: 'declined' };
 
 /** The words each state offers, the move first (D41 §4), as the banner offers them. */
-const WORDS: Record<string, readonly UpdateMode[]> = { waiting: ['when-idle', 'now'], draining: ['now', 'not-now'] };
+const WORDS: Record<string, readonly UpdateMode[]> = { waiting: ['when-idle', 'now'], draining: ['now', 'not-now'], refused: ['now'] };
 
 const WORD_KEY: Record<UpdateMode, string> = { 'when-idle': 'update.whenIdle', now: 'update.now', 'not-now': 'update.notNow' };
 

@@ -40,6 +40,11 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\SessionChangeShape.cs" Link="SessionChangeShape.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Trees\GitSeed.cs" Link="GitSeed.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\AccountStandIn.cs" Link="AccountStandIn.cs" />
+    <!-- The benchmark home of a working machine's size over the service's own host, held once: the shell's reads are counted on it. -->
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\BenchHome.cs" Link="BenchHome.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\BenchDoors.cs" Link="BenchDoors.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\RealServiceHost.cs" Link="RealServiceHost.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\WorkspaceRoot.cs" Link="WorkspaceRoot.cs" />
     <!-- The scan of every console start's window (CONSOLEWINDOWS1), with the named exemptions, held once. -->
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Platform\NoConsoleStarts.cs" Link="NoConsoleStarts.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Platform\TestProcessStarts.cs" Link="TestProcessStarts.cs" />

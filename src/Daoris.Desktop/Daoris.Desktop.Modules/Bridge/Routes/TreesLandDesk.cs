@@ -21,7 +21,11 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         var id = asked.Id;
         var service = _loop.Service ?? throw NotReady();
 
-        var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
+        // Every record read once: this session's tree and quest, its line's other parts and a chat's run are all read from it.
+        var recordsJson = await service.SessionRecordsJsonAsync(cancellationToken);
+        var records = SessionRecords.Parse(recordsJson);
+        var mine = records.FirstOrDefault(record => string.Equals(record.Id, id, StringComparison.OrdinalIgnoreCase));
+        var tree = mine?.Tree;
         var press = asked.Press;
         // `trees land --plan` asks for the verb's words (`said`) in place of the page's fields, and gets them for the two
         // cases the verb answers before it plans, as its alone path does: a landing its review reads as landed, and no tree to land.
@@ -56,10 +60,8 @@ internal sealed class TreesLandDesk(DriverLoop loop)
                 "this session's record names no working tree on this machine, so there is nothing here to land.", cancellationToken);
         }
 
-        var recordsJson = await service.SessionRecordsJsonAsync(cancellationToken);
         // a chat that took a quest is gated by that quest's chain, read as the view reads it.
-        var questId = await service.SessionQuestAsync(id, cancellationToken) ?? ChatRuns.TakenOf(id, recordsJson);
-        var records = SessionRecords.Parse(recordsJson);
+        var questId = mine?.Quest ?? ChatRuns.TakenOf(id, recordsJson);
         // a partner's record lands nothing, at the press, the plan and the verb alike.
         if (TreesWords.PartnerLands(records, id) is { } partner)
         {

@@ -494,17 +494,17 @@ describe("the driver domain: the install's update", () => {
       'Nothing is staged beside this install, so there is nothing to install.', 'error'));
   });
 
-  it('refused, says which check failed and that it is not tried again, and offers nothing to press', async () => {
+  it('refused, says which check failed, and offers Update now alone, which checks it again', async () => {
     invoke.mockImplementation(answer(update({
       state: 'refused', staged: STAGED, problem: { code: 'hash', message: 'app/Daoris.Desktop.App.dll is not the file its manifest names.' },
     })));
     show(<SettingsView notify={() => {}} section="driver" />);
     const row = await section();
 
-    expect(await row.findByText(/Not installed: a file is not the one its manifest names\. It is not tried again/)).toBeTruthy();
+    expect(await row.findByText(/Not installed: a file is not the one its manifest names\. Update now checks it again/)).toBeTruthy();
     expect(row.getByText('refused')).toBeTruthy();
     expect(row.getByText(STAGED.id)).toBeTruthy();
-    expect(row.queryByRole('button')).toBeNull();
+    expect(row.getAllByRole('button').map((button) => button.textContent)).toEqual(['Update now']);
   });
 
   it('says how the last swap ended, installed, and still says it once the banner has put the outcome away', async () => {

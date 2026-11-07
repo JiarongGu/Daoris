@@ -24,6 +24,46 @@ repository.
 - **Verify:** the CI 10 logs are the red at this commit; each class, file and the tool test green filtered; the driver's fast half (two
   reds beside a running CI, `HeldFilesTests` and `LayerUsageParityTests`, each green alone), `check:web-rules`, `read-shares`, `quick`
   and the page's typecheck. The browser spec was not run beside a running CI.
+## 2026-11-07 - A refused `--now` answered "installed now", and a refusal outlived its cause
+
+- **Symptom:** on the owner's install, `daoris update --now` said the build was installed now and nothing closed; the banner and
+  Settings' row offered nothing to press on the refused build, and a word written after the cause had moved met the old refusal.
+- **Root cause:** the terminal's door wrote the word and answered it as taken without asking what the application would answer
+  (736c8f4826, UPDATE1). The application kept a build's refusal for as long as it ran (ca177119be, UPDATE1), right for a check the
+  build's files fail, wrong for a going back refused while a delivery is unresolved (275acd7d48, LANDNODE1c2), whose cause settles.
+- **Fix:** `UpdateRefusal` is the one check both doors ask; `--now` says its sentence and exits 1, the word still written. The
+  updater keeps a refusal with the word it met (`UpdateRefusals`), and a new word from either door checks again (510049d830). The
+  banner and the row offer *Update now* on a refused build (a988d9ffa8).
+- **Verification:** `UpdateCommandTests.Now_for_a_build_the_application_refuses_says_why_and_exits_1`, both
+  `UpdateRefusalRetryTests` and the two refused-state web cases failed before the change and pass after it; `UpdateCommandTests`,
+  `InstallUpdaterTests`, `UpdateBanner.test.tsx`, `DriverDomain.test.tsx` and `machine/Update.test.tsx` pass.
+
+## 2026-11-07 - A delivery whose landing made nothing stayed unresolved, and held every update back
+
+- **Symptom:** two branch deliveries of 2026-11-03 on the owner's install, each with only `prepared` entries ended `withdrawn` (a
+  replay's conflict), stayed unresolved for four days, and every update was refused with `deliveries`.
+- **Root cause:** a landing refused before any ref ends its preparation withdrawn and leaves its delivery unresolved for its unit's
+  next landing (e6a5eafc31, LANDNODE1b2). The reconciler's look read it as going on from `prepared` and said nothing (d4bb15f4db,
+  LANDNODE1b3), so one whose unit never landed again was never settled. The checkout was not the cause: a closed preparation reads no
+  git. An open preparation, though, was held for a missing checkout it never reads.
+- **Fix:** the look settles withdrawn a delivery whose every entry is a preparation its landing withdrew (`WithdrawnPreparations`),
+  with its sentence and no checkout; its unit's own next landing still goes on from it; an open preparation is read with no
+  checkout (2272f53ce9, whose message names a sha that does not exist for the commit that introduced it: these two are the ones).
+- **Verification:** two of the three `WithdrawnPreparationsTests` failed before the change (`goes-on`, `held`); all three pass,
+  with `DeliveryStore*`, `DeliveryDoorsTests`, and the git half's `DeliveryReconcileGitTests` and `LandDeliveryGitTests` (28).
+
+## 2026-11-07 - Every staged build read as a going back to an older one
+
+- **Symptom:** every update on the owner's install was refused with `deliveries` while any delivery was unresolved, as if it went
+  back to an older build.
+- **Root cause:** nothing stamped the desktop assemblies' version, so each said the SDK's `1.0.0`, while the publish writes
+  `canon/canon.json`'s (`0.0.1`) into a stage's `build.json`. `InstallRollback` compared the two (275acd7d48, LANDNODE1c2), and the
+  launcher's last-build check read the same unstamped `1.0.0`.
+- **Fix:** the desktop's `Directory.Build.props` stamps `canon/canon.json`'s version on every assembly, so the running build, the
+  launcher's read of `app/` and a stage's manifest read one number (e7e96cfaa6). A home whose `data/last-build.json` an unstamped
+  build kept holds `1.0.0`, which the launcher reads as newer than every stamped build until the file is removed.
+- **Verification:** both `BuildVersionTests` failed before the change (`1.0.0` against `0.0.1`) and pass after it, with
+  `DeliveryDoorsTests`, `HomeLastBuildTests`, `HomeDefaultTests`, `UpdateCommandTests` and the store's tests.
 
 ## 2026-11-07 - The relay took a folder made while it was read for a link, and stopped with `home`
 
