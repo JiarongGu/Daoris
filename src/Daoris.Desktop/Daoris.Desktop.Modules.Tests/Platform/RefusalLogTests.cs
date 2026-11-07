@@ -146,10 +146,10 @@ public sealed class RefusalLogTests : Bridge
         var (dispatcher, services) = Compose(log);
         using var _ = services;
 
-        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new", name = "person@example.invalid" });
-        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_ACTION", new { harness = "claude-code", action = "key-add", key = "sk-ant-secret-0000" });
-        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_INPUT", new { harness = "claude-code", action = "login", text = "PASTED-CODE-1234" });
-        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_CANCEL", new { harness = "X:/daoris/agent", action = "person@example.invalid" });
+        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_ACTION", new { door = "codex-acp", action = "login-new", name = "person@example.invalid" });
+        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_ACTION", new { door = "claude-code", action = "key-add", key = "sk-ant-secret-0000" });
+        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_INPUT", new { door = "claude-code", action = "login", text = "PASTED-CODE-1234" });
+        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_CANCEL", new { door = "X:/daoris/agent", action = "person@example.invalid" });
         await Dispatch(dispatcher, "DAORIS.DRIVER", "START_CHAT", new { action = "login" });
 
         var lines = Lines();

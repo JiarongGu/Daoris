@@ -64,7 +64,7 @@ internal static class AgentAccountUse
             named = true;
         }
 
-        JsonObject Payload() => new() { ["action"] = "use", ["harness"] = owner };
+        JsonObject Payload() => new() { ["action"] = "use", ["door"] = owner };
 
         var clear = at.Args.Contains("--clear");
         if (clear && named)

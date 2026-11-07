@@ -183,7 +183,7 @@ describe('the proposals against an open draft', () => {
   });
 
   it('names who made it by the agent a person calls it and the models its conversation reported', () => {
-    const doors = [{ harness: 'claude', product: 'Claude Code' }] as unknown as Parameters<typeof makerOf>[1];
+    const doors = [{ door: 'claude', product: 'Claude Code' }] as unknown as Parameters<typeof makerOf>[1];
     expect(makerOf({ adapter: 'claude', ran: { models: ['claude-opus-5-5'], more: 0, entries: [], entriesMore: 0 } }, doors))
       .toEqual({ agent: 'Claude Code', models: ['claude-opus-5-5'] });
     expect(makerOf({ adapter: 'codex', ran: null }, [])).toEqual({ agent: 'codex', models: [] });

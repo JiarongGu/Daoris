@@ -11,7 +11,7 @@ import { namer } from './namer';
 describe('the roster’s one namer', () => {
   const roster: ToolDoor[] = [
     {
-      harness: 'claude-code', present: true,
+      door: 'claude-code', present: true,
       ownAccount: 'you@example.com',
       profiles: [
         { name: 'acct-3f9c1a2b', displayName: 'work', home: 'h1', login: 'in', account: 'you@work.example' },
@@ -20,8 +20,8 @@ describe('the roster’s one namer', () => {
         { name: 'acct-0badc0de', home: 'h4', login: 'in', key: 'sk-…a1b2' },
       ],
     },
-    { harness: 'claude-code-acp', present: true, accountOf: 'claude-code' },
-    { harness: 'codex-acp', present: true, accountOf: 'codex' },
+    { door: 'claude-code-acp', present: true, accountOf: 'claude-code' },
+    { door: 'codex-acp', present: true, accountOf: 'codex' },
   ];
   const nameOf = namer(i18n.t.bind(i18n), roster);
 
@@ -48,7 +48,7 @@ describe('the roster’s one namer', () => {
   it('says the organisation after an email two sign-ins of the agent share, the own sign-in among them', () => {
     const email = 'person@example.invalid';
     const shared = namer(i18n.t.bind(i18n), [{
-      harness: 'claude-code', present: true, ownAccount: email, ownOrg: 'Org C',
+      door: 'claude-code', present: true, ownAccount: email, ownOrg: 'Org C',
       profiles: [
         { name: 'acct-0000000a', home: 'ha', login: 'in', account: email, org: 'Org A' },
         { name: 'acct-0000000b', home: 'hb', login: 'in', account: email, org: null, plan: 'max' },

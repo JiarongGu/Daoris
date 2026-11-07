@@ -161,7 +161,7 @@ export function useAttendedHead({
       onTryNow={() => {
         setLimitRefusal(null);
         accountUse.mutate(
-          { harness: attended.adapter, action: 'ready', ...(waitAccount ? { profile: waitAccount } : {}) },
+          { door: attended.adapter, action: 'ready', ...(waitAccount ? { profile: waitAccount } : {}) },
           { onError: (error) => setLimitRefusal({ session: attended.id, sentence: sentence(error) }) },
         );
       }}
@@ -183,7 +183,7 @@ export function useAttendedHead({
       actor: attendedActor,
     })
     : null;
-  const offerTo = offer ? roster.find((row) => row.harness === offer.agent) : null;
+  const offerTo = offer ? roster.find((row) => row.door === offer.agent) : null;
   const asked = attended ? stopAsk(attended, quest) : null;
   // A pause's ask says what it stops from the driver's plan of the work (D132 §2.6); one that stops nothing applies at once.
   const pausing = pauseAsking && attended?.id === pauseAsking.session ? pauseAsking : null;
@@ -232,12 +232,12 @@ export function useAttendedHead({
     session: attended,
     shown: attendedShown,
     grouping,
-    ownSignIn: roster.some((row) => row.harness === attended.adapter),
+    ownSignIn: roster.some((row) => row.door === attended.adapter),
     branch,
     nameOf,
     // The agent it continues by the roster's name for it, as the hand-over's ask names agents (MIXAGENT3a-i).
     continuesAgent: continues
-      ? roster.find((row) => row.harness === continues.session.adapter)?.product || continues.session.adapter
+      ? roster.find((row) => row.door === continues.session.adapter)?.product || continues.session.adapter
       : null,
     leadingAgent: leadingAgentOf(attendedEntry, sessions ?? [], roster, sheets),
     helping: helps?.title,
@@ -292,7 +292,7 @@ export function useAttendedHead({
         <HandOverAsk
           key={attended.id}
           from={attended.adapter}
-          first={[...new Set(nextChoices(attended, roster, attendedActor).map((step) => step.door.harness))]}
+          first={[...new Set(nextChoices(attended, roster, attendedActor).map((step) => step.door.door))]}
           working={SESSION_ACTIVE.has(attended.state)}
           roster={agentRoster}
           initial={handOverChosen?.choice}

@@ -36,7 +36,7 @@ const role = (id: string, name: string, takes: string[], scopeKind: string, scop
 const ROSTER = {
   settingsPath: 'x', adapter: 'claude-code',
   harnesses: [{
-    harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', wire: 'pipe', present: true, version: 'claude 9.9.9', problem: null,
+    door: 'claude-code', product: 'Claude Code', maker: 'Anthropic', wire: 'pipe', present: true, version: 'claude 9.9.9', problem: null,
     machineDefault: null, pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [], profiles: [],
   }],
 };

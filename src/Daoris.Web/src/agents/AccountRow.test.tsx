@@ -24,7 +24,7 @@ const ACTS: AgentActs = {
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },
 };
 
-const CLAUDE = DOORS.find((door) => door.harness === 'claude-code')!;
+const CLAUDE = DOORS.find((door) => door.door === 'claude-code')!;
 const HOME = 'C:/somewhere/data/harnesses/claude-code/';
 
 /** Claude Code's page with these accounts, each in the set's order, as every account is (D197); its sessions speak unless told. */

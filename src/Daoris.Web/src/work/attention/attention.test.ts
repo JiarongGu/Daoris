@@ -1048,7 +1048,7 @@ describe('the groups', () => {
    * and the agent as the roster names it, with *Hand over to {agent}* and *Not now*, in each language.
    */
   it('words an agent’s ask to hand its session over, with the session, the agent and its presses', async () => {
-    const tools = byTool([{ harness: 'codex-acp', accountOf: 'codex', present: true, product: 'Codex', signsIn: true, profiles: [] }]);
+    const tools = byTool([{ door: 'codex-acp', accountOf: 'codex', present: true, product: 'Codex', signsIn: true, profiles: [] }]);
     const pushed = row('hand-over', 'h1', '2026-09-21T09:30:00Z', {
       where: 'engine', session: 'c0nv0001', title: 'Near my limit.', agent: 'codex-acp', stands: true,
     });
@@ -1373,7 +1373,7 @@ describe('what an account’s row offers', () => {
   const named = (id: string | null, state: NamedAccount['state'], read: string | null = '2026-10-05T10:42:00Z'): NamedAccount =>
     ({ id, label: id ?? 'Your own sign-in', state, read, until: null });
   const facts = (over: Partial<AccountRowFacts> = {}): AccountRowFacts => ({
-    agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, named: [], ...over,
+    agent: 'claude-code', product: 'Claude Code', door: 'claude-code', signsIn: true, named: [], ...over,
   });
   const accountRow = (kind: 'account-wait' | 'signed-out', account: AccountRowFacts): Attention =>
     ({ id: 'x', kind, title: 't', where: 'w', since: '2026-10-05T10:00:00Z', account });
@@ -1438,12 +1438,12 @@ describe('what an account’s row offers', () => {
  */
 describe('what needs a person, with the accounts as last known', () => {
   const tools = byTool([{
-    harness: 'claude-code', present: true, product: 'Claude Code', signsIn: true,
+    door: 'claude-code', present: true, product: 'Claude Code', signsIn: true,
     profiles: [{ name: 'account-1', home: 'H/account-1', login: 'out', read: '2026-09-21T11:58:00Z' }, { name: 'account-2', home: 'H/account-2', login: 'out', read: '2026-09-21T08:00:00Z' }],
   }]);
   const signedOut = (account: string, read: string) => row('signed-out', `signed-out:claude-code/${account}`, null, {
     read, where: 'Claude Code',
-    account: { agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, named: [{ id: account, name: null, state: 'out', read, until: null }] },
+    account: { agent: 'claude-code', product: 'Claude Code', door: 'claude-code', signsIn: true, named: [{ id: account, name: null, state: 'out', read, until: null }] },
   });
 
   it('lists a signed-out account after a parked session, which says how long it waited, and never moves it by a reading', () => {

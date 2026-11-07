@@ -16,7 +16,7 @@ export function namer(t: ReturnType<typeof useTranslation>['t'], harnesses: Tool
   // By the tool, or by a door onto it: usage is counted per door, and a door's accounts are its
   // owner's (AGT7).
   const toolFor = (owner: string) =>
-    tools.find((tool) => tool.name === owner) ?? tools.find((tool) => tool.doors.some((door) => door.harness === owner));
+    tools.find((tool) => tool.name === owner) ?? tools.find((tool) => tool.doors.some((door) => door.door === owner));
   return (owner: string, profile?: string | null) => {
     const tool = toolFor(owner);
     // The tool's own home is named as its row names it: who signed in, else this machine's own. It

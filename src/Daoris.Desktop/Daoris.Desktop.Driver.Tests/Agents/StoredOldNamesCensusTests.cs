@@ -99,15 +99,6 @@ public sealed class StoredOldNamesCensusTests : IDisposable
             "Daoris.Service/Daoris.Service.Core/Sessions/LineageFile.cs",
         ],
         ["the chat start's press"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Instance/HeldVerbs.cs"],
-        ["the account presses"] =
-        [
-            "Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountUse.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs",
-            "Daoris.Desktop/Daoris.Desktop.Modules/Loop/AccountAttention.cs",
-            "Daoris.Desktop/Daoris.Desktop.Modules/Loop/AttentionStateSlice.cs",
-            "Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeReads.cs",
-        ],
         ["not a seam's word"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpWired.cs",

@@ -40,7 +40,7 @@ export type AccountRowFacts = {
   /** What a person calls it: the door's words. */
   product: string;
   /** The door a sign-in runs on, the account-owning one; null where the roster has not answered. */
-  harness: string | null;
+  door: string | null;
   /** Whether Daoris can run that agent's sign-in here (installed, and its door has one). */
   signsIn: boolean;
   /** The accounts the row names, in the order a start would walk them. */
@@ -75,9 +75,9 @@ function labelOf(tool: Tool | undefined, id: string | null, name?: string | null
 /** A pushed row's account facts, each account named as the roster names it. */
 export function accountFactsWorded(facts: PushedAccountFacts, tools: readonly Tool[] = []): AccountRowFacts {
   const tool = tools.find((each) => each.name === facts.agent);
-  const { agent, product, harness, signsIn, named, noAccount } = facts;
+  const { agent, product, door: harness, signsIn, named, noAccount } = facts;
   return {
-    agent, product, harness, signsIn,
+    agent, product, door: harness, signsIn,
     named: named.map(({ name, ...one }) => ({ ...one, label: labelOf(tool, one.id, name) })),
     ...(noAccount !== undefined ? { noAccount } : {}),
   };
@@ -140,7 +140,7 @@ export function heldTitle(holding: { quests: readonly string[]; asks: readonly s
  * serves every workspace (POOL1c). A signed-out account's row has no wait (UXFIX3): it says when it was read.
  */
 export function accountRowWorded(row: PushedAttention, names: AttentionNames, now: Date): Attention {
-  const pushed = row.account ?? { agent: '', product: '', harness: null, signsIn: false, named: [] };
+  const pushed = row.account ?? { agent: '', product: '', door: null, signsIn: false, named: [] };
   const account = accountFactsWorded(pushed, names.tools);
   const base = { id: row.id, kind: row.kind, since: row.since, where: row.where ?? '', account };
   if (row.kind === 'account-wait') {

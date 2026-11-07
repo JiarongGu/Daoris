@@ -31,7 +31,7 @@ export function MachineNotes({ onShow }: { onShow: () => void }) {
   const actors = useActors();
   const roster = useHarnesses();
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
-  const agents = harnesses.filter((door) => door.present).map((door) => door.harness);
+  const agents = harnesses.filter((door) => door.present).map((door) => door.door);
   const suggested = roles.data ? suggestedRoles(roles.data, actors.data ?? [], agents) : 0;
   return <MachineNotesView suggested={suggested} onShow={onShow} />;
 }

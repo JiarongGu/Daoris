@@ -87,7 +87,7 @@ public sealed class AgentsRoutes(DriverContext context)
                 var accountActs = AccountActs(harnesses, report.Adapter);
                 return new
                 {
-                    Harness = report.Adapter,
+                    Door = report.Adapter,
                     report.Present,
                     report.Version,
                     report.Problem,
@@ -345,11 +345,11 @@ public sealed class AgentsRoutes(DriverContext context)
     [DriverRoute("HARNESS_ACTION", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("HARNESS_ACTION", None = OwnerNone.MachineSetting)]
     [GroundRead("HARNESS_ACTION", nameof(PipeReads.HarnessToAct))]
-    [Says("HARNESS_ACTION", "harness:agent")]
+    [Says("HARNESS_ACTION", "door:agent")]
     [Publishes("HARNESS_ACTION", StateScopes.Harnesses)]
     private async Task<object?> HarnessActionAsync(HarnessActionPress press, CancellationToken cancellationToken)
     {
-        var (action, harness) = (press.Action, press.Harness);
+        var (action, harness) = (press.Action, press.Door);
         var config = DriverConfig.Load(_loop.ConfigPath);
         // A DriverException, so it travels the same way `Toolchain` already refuses an adapter
         // name it does not know: one mapping, one shape, and the driver's own sentence intact.
@@ -378,7 +378,7 @@ public sealed class AgentsRoutes(DriverContext context)
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
             return new
             {
-                Harness = harness, Action = action, ExitCode = 0, Profile = account,
+                Door = harness, Action = action, ExitCode = 0, Profile = account,
                 Key = HarnessKeys.Handle(HarnessKeys.Of(_loop.Harnesses.Home, owner, account)!),
             };
         }
@@ -401,7 +401,7 @@ public sealed class AgentsRoutes(DriverContext context)
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
             return new
             {
-                Harness = harness, Action = action, ExitCode = 0, Profile = replaced,
+                Door = harness, Action = action, ExitCode = 0, Profile = replaced,
                 Key = HarnessKeys.Handle(HarnessKeys.Of(_loop.Harnesses.Home, owner, replaced)!),
             };
         }
@@ -414,7 +414,7 @@ public sealed class AgentsRoutes(DriverContext context)
             var name = AccountNames.Rename(
                 _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), renamed, press.Name);
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
-            return new { Harness = harness, Action = action, ExitCode = 0, Profile = renamed, Name = name };
+            return new { Door = harness, Action = action, ExitCode = 0, Profile = renamed, Name = name };
         }
 
         // One set of Daoris's accounts serves every workspace (POOL1a, D197; the account-pool design §5.2): there is no list to join
@@ -446,7 +446,7 @@ public sealed class AgentsRoutes(DriverContext context)
             // The report reads the wiring, the directories and the readings fresh at every question, so an edit reads
             // no account again (ROSTER1); an unpin asks its binary.
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
-            return new { Harness = harness, Action = action, ExitCode = code };
+            return new { Door = harness, Action = action, ExitCode = code };
         }
 
         // A pin's version is asked for before anything starts: a pin without one is a malformed call.
@@ -461,7 +461,7 @@ public sealed class AgentsRoutes(DriverContext context)
         var switching = signsIn && press.Switch;
         var reached = await Actions.StartProcessActionAsync(
             harness, action, profile, version, toolchain, command, stream, config, joins: joins, name: named, way: way, switching: switching);
-        return new { Harness = harness, Action = action, Started = true, Profile = reached };
+        return new { Door = harness, Action = action, Started = true, Profile = reached };
     }
 
     /// <summary>
@@ -496,7 +496,7 @@ public sealed class AgentsRoutes(DriverContext context)
     [Owner("HARNESS_INPUT", None = OwnerNone.NamesNothing)]
     private object? HarnessInput(HarnessInputPress press)
     {
-        Actions.Running(press.Harness, press.Action).Send(press.Text);
+        Actions.Running(press.Door, press.Action).Send(press.Text);
         return new { Sent = true };
     }
 
@@ -504,7 +504,7 @@ public sealed class AgentsRoutes(DriverContext context)
     [Owner("HARNESS_CANCEL", None = OwnerNone.NamesNothing)]
     private object? HarnessCancel(HarnessCancelPress press)
     {
-        Actions.Cancel(press.Harness, press.Action);
+        Actions.Cancel(press.Door, press.Action);
         return new { Cancelled = true };
     }
 
@@ -515,14 +515,14 @@ public sealed class AgentsRoutes(DriverContext context)
     [DriverRoute("SET_AGENT_SETTINGS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_AGENT_SETTINGS", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_AGENT_SETTINGS", nameof(PipeReads.ProfileSettings))]
-    [Says("SET_AGENT_SETTINGS", "harness:agent")]
+    [Says("SET_AGENT_SETTINGS", "door:agent")]
     [NotAlready("SET_AGENT_SETTINGS", "merges into a profile's settings")]
     [Publishes("SET_AGENT_SETTINGS", StateScopes.Harnesses)]
     private object? SetAgentSettings(AgentSettingsPress press)
     {
         var (owner, profile, read) = Daoris.Driver.AccountSettings.Write(
-            _loop.Harnesses, press.Harness, press.Profile, () => (Edit(press.Model, "model"), Edit(press.Effort, "effort"), PerModel(press.PerModel)));
-        return new { Harness = owner, Profile = profile, read.Model, read.Effort, PerModel = PerModelOf(read), read.Problem };
+            _loop.Harnesses, press.Door, press.Profile, () => (Edit(press.Model, "model"), Edit(press.Effort, "effort"), PerModel(press.PerModel)));
+        return new { Door = owner, Profile = profile, read.Model, read.Effort, PerModel = PerModelOf(read), read.Problem };
     }
 
     // What sessions consumed (TOOL3/D57 §4) — measured before it is managed.

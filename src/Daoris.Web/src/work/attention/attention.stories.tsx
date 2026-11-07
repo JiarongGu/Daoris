@@ -54,7 +54,7 @@ const resetSaid = moment(RESET, 'en');
 const readSaid = clockOf(READ, new Date(), 'en');
 
 /** Claude Code, whose accounts the rows below name: the agent's page is each one's door. */
-const CLAUDE = { agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true } as const;
+const CLAUDE = { agent: 'claude-code', product: 'Claude Code', door: 'claude-code', signsIn: true } as const;
 
 /**
  * The owner's morning (D150 §6.3's drawing, UX6d): the intake for two asks held behind `home`'s cool-off, having passed two
@@ -512,7 +512,7 @@ export const AccountRows: StoryObj = {
           item={{
             ...ACCOUNT_WAIT, id: 'tick',
             detail: `home cools until ${resetSaid}; account-1 and account-3 signed out.`,
-            account: { ...ACCOUNT_WAIT.account!, harness: null, signsIn: false, product: 'claude-code' },
+            account: { ...ACCOUNT_WAIT.account!, door: null, signsIn: false, product: 'claude-code' },
           }}
           acts={ACTS}
           onOpen={() => {}}

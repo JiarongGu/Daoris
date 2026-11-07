@@ -1264,7 +1264,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     await act(async () => {
       heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
       heard.get('STATE_CHANGED')?.({ scopes: ['harnesses'] });
-      heard.get('HARNESS_ENDED')?.({ harness: 'claude-code', action: 'login' });
+      heard.get('HARNESS_ENDED')?.({ door: 'claude-code', action: 'login' });
       heard.get('SESSION_ENDED')?.({ session: 's-2', state: 'completed' });
       await vi.advanceTimersByTimeAsync(2_000);
     });

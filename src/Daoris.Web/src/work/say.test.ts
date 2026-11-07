@@ -219,8 +219,8 @@ describe('coolingFor', () => {
   });
   const answer = (...agents: AgentAccounts[]): AccountsAnswer => ({ agents });
   const doors: ToolDoor[] = [
-    { harness: 'claude-code', present: true },
-    { harness: 'claude-code-acp', present: true, accountOf: 'claude-code' },
+    { door: 'claude-code', present: true },
+    { door: 'claude-code-acp', present: true, accountOf: 'claude-code' },
   ];
 
   it('reads the cool-off of the account the record ran on, by its own door or a door onto the same tool', () => {

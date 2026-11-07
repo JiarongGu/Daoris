@@ -745,9 +745,9 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
             source: AccountWindows.SourceRead);
         var before = File.ReadAllText(AccountWindows.PathOf(Home));
 
-        var answer = await AnswerAsync(Module(), "ACCOUNTS_READ", new { harness = "claude-code" });
+        var answer = await AnswerAsync(Module(), "ACCOUNTS_READ", new { door = "claude-code" });
 
-        Assert.Equal("claude-code", answer.GetProperty("harness").GetString());
+        Assert.Equal("claude-code", answer.GetProperty("door").GetString());
         Assert.Equal(before, File.ReadAllText(AccountWindows.PathOf(Home)));
     }
 
@@ -757,11 +757,11 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     {
         Accounts("dsh", "account-1");
 
-        var answer = await AnswerAsync(Module(), "ACCOUNTS_READ", new { harness = "dsh" });
+        var answer = await AnswerAsync(Module(), "ACCOUNTS_READ", new { door = "dsh" });
 
-        Assert.Equal("dsh", answer.GetProperty("harness").GetString());
+        Assert.Equal("dsh", answer.GetProperty("door").GetString());
         Assert.False(File.Exists(AccountWindows.PathOf(Home)));
-        await RefusalAsync(Module(), "ACCOUNTS_READ", new { harness = "not-an-agent" });
+        await RefusalAsync(Module(), "ACCOUNTS_READ", new { door = "not-an-agent" });
     }
 
     // ---------------------------------------------------------------- ACCOUNT_USE: the list
@@ -775,19 +775,19 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     {
         Accounts("claude-code", "account-1", "account-2", "account-3");
 
-        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", harness = "claude-code", accounts = new[] { "account-3" } });
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", door = "claude-code", accounts = new[] { "account-3" } });
         Assert.Equal(["account-3", "account-1", "account-2"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
 
         // A door's order is its owner's (AGT7).
-        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", harness = "claude-code-acp", accounts = new[] { "account-2", "account-3" } });
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", door = "claude-code-acp", accounts = new[] { "account-2", "account-3" } });
         Assert.Equal(["account-2", "account-3", "account-1"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
 
-        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", harness = "claude-code", accounts = Array.Empty<string>() });
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", door = "claude-code", accounts = Array.Empty<string>() });
         Assert.Equal(["account-1", "account-2", "account-3"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
 
         var before = File.ReadAllText(HarnessSettingsPath);
         var refused = await RefusalAsync(Module(), "ACCOUNT_USE",
-            new { action = "order", harness = "claude-code", accounts = new[] { "account-1" }, workspace = "work" });
+            new { action = "order", door = "claude-code", accounts = new[] { "account-1" }, workspace = "work" });
         Assert.StartsWith("ACCOUNTS_ONE_SET", refused);
         Assert.Equal(before, File.ReadAllText(HarnessSettingsPath));
     }
@@ -806,7 +806,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Wiring(wiring);
         var before = File.ReadAllText(HarnessSettingsPath);
 
-        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "order", harness = "claude-code", accounts = order });
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "order", door = "claude-code", accounts = order });
 
         Assert.StartsWith(code, refused);
         Assert.Equal(before, File.ReadAllText(HarnessSettingsPath));
@@ -821,7 +821,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     {
         Accounts("claude-code", "account-1", "account-2");
 
-        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "inherit", harness = "claude-code", workspace = "work" });
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "inherit", door = "claude-code", workspace = "work" });
 
         Assert.StartsWith("ACCOUNT_ACTION_UNKNOWN", refused);
         Assert.Contains("order, use, ready, said", refused);
@@ -841,19 +841,19 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
         await AnswerAsync(Module(), "ACCOUNT_USE", new
         {
-            action = "use", harness = "claude-code", use = "order", keep = "account-2", early = false, near = 85,
+            action = "use", door = "claude-code", use = "order", keep = "account-2", early = false, near = 85,
         });
 
         var use = HarnessSettings.LoadSet(HarnessSettingsPath).Set("claude-code").Use;
         Assert.Equal(new RotationUse("order", "account-2", false, 85), use);
 
-        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", noKeep = true, use = "goal" });
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", door = "claude-code", noKeep = true, use = "goal" });
         Assert.Equal(new RotationUse("goal", null, false, 85), HarnessSettings.Load(HarnessSettingsPath).Set("claude-code").Use);
 
-        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", clear = true });
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", door = "claude-code", clear = true });
         Assert.False(HarnessSettings.Load(HarnessSettingsPath).Uses.ContainsKey("claude-code"));
 
-        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", workspace = "work", use = "order" });
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "use", door = "claude-code", workspace = "work", use = "order" });
         Assert.StartsWith("ACCOUNTS_ONE_SET", refused);
     }
 
@@ -871,7 +871,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Accounts("claude-code", [.. new[] { "account-1", "account-2" }.Take(accounts)]);
         Wiring(wiring);
         var before = File.ReadAllText(HarnessSettingsPath);
-        var payload = new Dictionary<string, object?> { ["action"] = "use", ["harness"] = "claude-code", [field] = value };
+        var payload = new Dictionary<string, object?> { ["action"] = "use", ["door"] = "claude-code", [field] = value };
 
         var refused = await RefusalAsync(Module(), "ACCOUNT_USE", payload);
 
@@ -888,7 +888,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Accounts("claude-code", "account-1");
         Wiring("""{ "rotation": { "claude-code": ["account-1"] } }""");
 
-        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", near });
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "use", door = "claude-code", near });
 
         Assert.StartsWith("ACCOUNT_USE_VALUE", refused);
         Assert.Contains("setting=near", refused);
@@ -908,11 +908,11 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
         await AnswerAsync(Module(), "ACCOUNT_USE", new Dictionary<string, object?>
         {
-            ["action"] = "use", ["harness"] = "claude-code", ["switch"] = "curve", ["curve"] = Curve("""{ "weekly": [[0, 30], [50, 70], [100, 100]] }"""),
+            ["action"] = "use", ["door"] = "claude-code", ["switch"] = "curve", ["curve"] = Curve("""{ "weekly": [[0, 30], [50, 70], [100, 100]] }"""),
         });
         await AnswerAsync(Module(), "ACCOUNT_USE", new Dictionary<string, object?>
         {
-            ["action"] = "use", ["harness"] = "claude-code", ["curve"] = Curve("""{ "session": [[0, 80]] }"""),
+            ["action"] = "use", ["door"] = "claude-code", ["curve"] = Curve("""{ "session": [[0, 80]] }"""),
         });
 
         var use = HarnessSettings.Load(HarnessSettingsPath).Set("claude-code").Use;
@@ -920,7 +920,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal([new CurvePoint(0, 80)], use.Curve["session"]);
         Assert.Equal([new CurvePoint(0, 30), new CurvePoint(50, 70), new CurvePoint(100, 100)], use.Curve["weekly"]);
 
-        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", @switch = "off", noCurve = true });
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", door = "claude-code", @switch = "off", noCurve = true });
 
         use = HarnessSettings.Load(HarnessSettingsPath).Set("claude-code").Use;
         Assert.Equal("off", use.Switch);
@@ -951,7 +951,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
         var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new Dictionary<string, object?>
         {
-            ["action"] = "use", ["harness"] = "claude-code", ["switch"] = "curve", ["curve"] = document.RootElement,
+            ["action"] = "use", ["door"] = "claude-code", ["switch"] = "curve", ["curve"] = document.RootElement,
         });
 
         Assert.StartsWith("ACCOUNT_USE_CURVE " + UseCurve.Problem(document.RootElement), refused);
@@ -966,7 +966,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Accounts("claude-code", "account-1");
         Wiring("""{ "rotation": { "claude-code": ["account-1"] } }""");
 
-        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", @switch = "sometimes" });
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "use", door = "claude-code", @switch = "sometimes" });
 
         Assert.StartsWith("ACCOUNT_USE_VALUE", refused);
         Assert.Contains("setting=switch", refused);
@@ -987,9 +987,9 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         AccountCooling.Cool(Home, new CoolingEntry("claude-code", "account-2", Now.AddHours(2), true, null, Now, null), Now);
         AccountCooling.Cool(Home, new CoolingEntry("claude-code", null, Now.AddHours(2), true, null, Now, null), Now);
 
-        var ended = await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "ready", harness = "claude-code-acp", profile = "account-1" });
-        var again = await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "ready", harness = "claude-code", profile = "account-1" });
-        var own = await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "ready", harness = "claude-code", own = true });
+        var ended = await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "ready", door = "claude-code-acp", profile = "account-1" });
+        var again = await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "ready", door = "claude-code", profile = "account-1" });
+        var own = await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "ready", door = "claude-code", own = true });
 
         Assert.True(ended.GetProperty("ended").GetBoolean());
         Assert.False(again.GetProperty("ended").GetBoolean());
@@ -1001,7 +1001,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     [Fact]
     public async Task Try_now_names_an_account_or_the_tools_own_sign_in()
     {
-        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "ready", harness = "claude-code" });
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "ready", door = "claude-code" });
 
         Assert.StartsWith(Refusals.HarnessProfileNeeded, refused);
     }
@@ -1009,7 +1009,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     [Fact]
     public async Task An_account_action_this_build_does_not_have_is_refused_naming_it()
     {
-        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "rotate", harness = "claude-code" });
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "rotate", door = "claude-code" });
 
         Assert.StartsWith("ACCOUNT_ACTION_UNKNOWN", refused);
         Assert.Contains("action=rotate", refused);
@@ -1029,7 +1029,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         var before = File.ReadAllText(HarnessSettingsPath);
 
         var refused = await RefusalAsync(Module(), "HARNESS_ACTION",
-            new { action = "profile-default", harness = "claude-code", profile = "account-2" });
+            new { action = "profile-default", door = "claude-code", profile = "account-2" });
 
         Assert.StartsWith("ACCOUNTS_ONE_SET", refused);
         Assert.Equal(before, File.ReadAllText(HarnessSettingsPath));
@@ -1056,7 +1056,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal(id, receipt.GetProperty("id").GetString());
         Assert.Equal("work", receipt.GetProperty("scopes")[0].GetProperty("workspace").GetString());
 
-        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "said", harness = "claude-code", ids = new[] { id, "nobody" } });
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "said", door = "claude-code", ids = new[] { id, "nobody" } });
 
         Assert.True(HarnessSettings.Load(HarnessSettingsPath).Pooled["claude-code"].Single().Said);
         Assert.Empty(Agent(await AnswerAsync(Module(), "ACCOUNTS", new { }), "claude-code").GetProperty("pooled").EnumerateArray());
@@ -1082,7 +1082,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
               "workspaceRotation": { "aurora": { "claude-code": ["account-1"] } } }
             """);
 
-        await AnswerAsync(Module(), "HARNESS_ACTION", new { harness = "claude-code-acp", action = "profile-remove", profile = "account-1" });
+        await AnswerAsync(Module(), "HARNESS_ACTION", new { door = "claude-code-acp", action = "profile-remove", profile = "account-1" });
 
         var settings = HarnessSettings.Load(HarnessSettingsPath);
         Assert.False(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "account-1")));

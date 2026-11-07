@@ -222,7 +222,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
       const holder = tools.find((tool) => tool.takesRules);
       if (holder) onChoose(holder.name);
     } else if (part !== 'rules' && !chosenTool) {
-      const driving = tools.find((tool) => tool.doors.some((door) => door.harness === adapter)) ?? tools.find((tool) => tool.present);
+      const driving = tools.find((tool) => tool.doors.some((door) => door.door === adapter)) ?? tools.find((tool) => tool.present);
       if (driving) onChoose(driving.name);
     }
   }, [active, part, harnesses, chosenTool, tools, adapter, onChoose]);
@@ -430,7 +430,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     if (!stale || readOnOpen.current === tool.name) return;
     readOnOpen.current = tool.name;
     // Unasked, so a failure is not said: *Read now* says its own.
-    mutateRead({ harness: door });
+    mutateRead({ door: door });
   }, [stale, tool.name, door, mutateRead]);
   // The new account this agent's sign-in kept, waiting on its name (UX7b, POOL1c): the add flow's step 3.
   const addedHere = added && added.harness === door ? added : null;
@@ -468,7 +468,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   // ACCT2's rename, the terminal's `daoris agent profile rename` (D50), said as it lands.
   const rename = async (account: string, name: string | null) => {
     // Naming an account its own id gives it no name of its own (ACCT2): the one way to clear it at the door.
-    const answer = await act.mutateAsync({ harness: door, action: 'profile-rename', profile: account, name: name ?? account });
+    const answer = await act.mutateAsync({ door: door, action: 'profile-rename', profile: account, name: name ?? account });
     notify(answer.name
       ? t('agents.renamed', { id: account, name: answer.name })
       : t('agents.unnamed', { id: account }));
@@ -484,10 +484,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
 
   // The set's order and its one entry of settings (POOL1c, D197 point 2): no workspace is named, since one set serves them all.
   const scope: ScopeActs = {
-    onOrder: (list) => accountUse.mutate({ harness: door, action: 'order', accounts: list }, { onError }),
+    onOrder: (list) => accountUse.mutate({ door: door, action: 'order', accounts: list }, { onError }),
     // A refusal the press's own place says (the curve's editor, PUSH1e) is told there, in the reader's language, and toasted nowhere.
     onUse: (change, refused) => accountUse.mutate(
-      { harness: door, action: 'use', ...change },
+      { door: door, action: 'use', ...change },
       { onError: refused ? (error: unknown) => refused(sentence(error)) : onError },
     ),
   };
@@ -498,21 +498,21 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const acts: AgentActs = {
     onReadAgain: () => read.mutate({ agent: tool.name }, { onError }),
     onReadOne: (account) => read.mutate({ agent: tool.name, profile: account }, { onError }),
-    onReadNow: () => readAccounts.mutate({ harness: door }, { onError }),
+    onReadNow: () => readAccounts.mutate({ door: door }, { onError }),
     onSignInNew: () => run(door, 'login-new'),
     // ACCTUX3: told back to the key's field, which closes once the key is kept and says a refusal in it; kept, the account
     // goes to the add flow's last step for its name, where a toast said it was added.
     onAddKey: (key, answered) => told((async () => {
-      const result = await act.mutateAsync({ harness: door, action: 'key-add', key });
+      const result = await act.mutateAsync({ door: door, action: 'key-add', key });
       if (result.profile) setKeyAdded({ profile: result.profile, key: result.key ?? null });
     })(), answered),
     // KEYREPLACE1b: the key goes into the same account, which keeps its name and its place in the order, so no add flow follows.
     onReplaceKey: (account, key, answered) => told(
-      act.mutateAsync({ harness: door, action: 'key-replace', profile: account, key }), answered,
+      act.mutateAsync({ door: door, action: 'key-replace', profile: account, key }), answered,
     ),
     onSignIn: (account) => run(door, 'login', account),
     onTryNow: (account, label) => accountUse.mutate(
-      { harness: door, action: 'ready', profile: account },
+      { door: door, action: 'ready', profile: account },
       { onSuccess: (answer) => notify(t(answer.ended ? 'harness.cooling.ready' : 'harness.cooling.notCooling', { account: label })), onError },
     ),
     onRemove: (account, answered) => run(door, 'profile-remove', account, undefined, answered),
@@ -531,10 +531,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     },
     // *Got it* (POOL1a; the account-pool design §6.3): the receipts the page showed, by id, marked said; a failure is a toast,
     // since the block stays and the press is offered again.
-    onPooledSaid: (ids) => accountUse.mutate({ harness: door, action: 'said', ids }, { onError }),
+    onPooledSaid: (ids) => accountUse.mutate({ door: door, action: 'said', ids }, { onError }),
     // ACCTUX3: told back to its editor, which closes once the save lands and says a refusal under it, the choice kept.
     onSaveSettings: (account, label, change, answered) => told((async () => {
-      await tune.mutateAsync({ harness: door, profile: account, ...change });
+      await tune.mutateAsync({ door: door, profile: account, ...change });
       notify(t('harness.settings.saved', { account: label }));
     })(), answered),
     onDoor: (harness, action) => run(harness, action),
@@ -567,7 +567,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   };
 
   const rulesAnswer = rules.data && Array.isArray(rules.data.defaults) && Array.isArray(rules.data.scopes) ? rules.data : null;
-  const doorRunning = tool.doors.find((each) => DOOR_ACTIONS.some((action) => running === `${each.harness}:${action}`))?.harness ?? null;
+  const doorRunning = tool.doors.find((each) => DOOR_ACTIONS.some((action) => running === `${each.door}:${action}`))?.door ?? null;
   // Not answered yet is not nothing measured (PUSHUX1): the fold says it is reading until the usage is known.
   const used = usage.isPending ? null : Array.isArray(usage.data?.accounts) ? usage.data.accounts : [];
 

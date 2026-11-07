@@ -585,7 +585,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
 
 /** An agent's door by what a person calls it (the frame's hand-over roster's): its product, else its tool's, else its id. */
 function agentNamed(harness: string, tools: readonly Tool[] = []): string {
-  const door = tools.flatMap((tool) => tool.doors.map((each) => ({ tool, door: each }))).find((each) => each.door.harness === harness);
+  const door = tools.flatMap((tool) => tool.doors.map((each) => ({ tool, door: each }))).find((each) => each.door.door === harness);
   return door?.door.product || door?.tool.product || harness;
 }
 

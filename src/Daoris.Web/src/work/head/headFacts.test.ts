@@ -229,7 +229,7 @@ describe('a session’s facts line', () => {
    */
   it('says the agent the line is on now where its parts moved between agents, in both languages', async () => {
     const entry = { leading: 'p2', parts: [{ session: 'p1' }, { session: 'p2' }] } as never;
-    const roster = [{ harness: 'codex', product: 'Codex' }];
+    const roster = [{ door: 'codex', product: 'Codex' }];
     const moved = [session({ id: 'p1', adapter: 'claude-code' }), session({ id: 'p2', adapter: 'codex' })];
     expect(leadingAgentOf(entry, moved, roster)).toBe('Codex');
     expect(leadingAgentOf(entry, moved, [])).toBe('codex');
@@ -247,7 +247,7 @@ describe('a session’s facts line', () => {
     const doors = [session({ id: 'p1', adapter: 'claude-code' }), session({ id: 'p2', adapter: 'claude-code-acp' })];
     expect(leadingAgentOf(entry, doors, roster, sheets)).toBeNull();
     expect(leadingAgentOf(entry, doors, roster)).toBe('claude-code-acp');
-    expect(leadingAgentOf(entry, [doors[0]!, session({ id: 'p2', adapter: 'codex-acp' })], [{ harness: 'codex-acp', product: 'Codex' }], sheets)).toBe('Codex');
+    expect(leadingAgentOf(entry, [doors[0]!, session({ id: 'p2', adapter: 'codex-acp' })], [{ door: 'codex-acp', product: 'Codex' }], sheets)).toBe('Codex');
 
     expect(sessionFacts(t, { session: session(), shown: 'working', leadingAgent: 'Codex' }))
       .toEqual(['engine', 'the line is on Codex now', '2m']);

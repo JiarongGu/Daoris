@@ -221,14 +221,14 @@ internal static class PipeReads
     public static PipeGround KeepRule() => Setting("SYSTEM_SPACE", ["kind"], _ => null,
         (a, p) => Fp(Raw(At(Named(At(a, "kinds"), "id", Text(p, "kind")), "rule")), Raw(At(a, "volume", "floor"))));
 
-    public static PipeGround ProfileSettings() => Setting("HARNESSES", ["harness", "profile"], _ => null,
+    public static PipeGround ProfileSettings() => Setting("HARNESSES", ["door", "profile"], _ => null,
         (a, p) => Fp([.. Each(At(a, "harnesses")).SelectMany(each => Each(At(each, "profiles")))
             .Where(each => Text(At(each, "name")) == Text(p, "profile")).Select(each => Raw(At(each, "settings")))]));
 
     public static PipeGround RuleLists() => Setting("RULES", ["scope", "name", "list", "rule", "id"], _ => null,
         (a, _) => Fp(Raw(At(a, "scopes")), Raw(At(a, "defaults"))));
 
-    public static PipeGround AgentAccounts() => Setting("ACCOUNTS", ["harness"], _ => null, (a, _) => Fp(Raw(At(a, "agents"))));
+    public static PipeGround AgentAccounts() => Setting("ACCOUNTS", ["door"], _ => null, (a, _) => Fp(Raw(At(a, "agents"))));
 
     public static PipeGround ToolChoice() => Setting("TOOLS_LIST", ["tool"], _ => null,
         (a, p) => Fp(Pick(Named(At(a, "tools"), "tool", Text(p, "tool")), "way", "version", "file")));
@@ -252,7 +252,7 @@ internal static class PipeReads
     public static PipeGround RemoteWiring() => Setting("STATE", ["workspace"], _ => null,
         (a, p) => Text(At(Named(At(a, "remotes"), "workspace", Text(p, "workspace")), "url")) ?? "").Of("DAORIS.REMOTES");
 
-    public static PipeGround HarnessToAct() => Plan("HARNESSES", ["harness", "profile"], _ => null, (a, p) => Harness(a, Text(p, "harness")));
+    public static PipeGround HarnessToAct() => Plan("HARNESSES", ["door", "profile"], _ => null, (a, p) => Harness(a, Text(p, "door")));
 
     public static PipeGround HarnessToRefresh() => Plan("HARNESSES", ["agent", "profile"], _ => null, (a, p) => Harness(a, Text(p, "agent")));
 
@@ -343,9 +343,9 @@ internal static class PipeReads
     /// <summary><c>HARNESSES</c>' row for <paramref name="harness"/> (every row where none is named): its install and its accounts' sign-ins.</summary>
     private static string Harness(JsonElement answer, string? harness) =>
         Fp([.. Each(At(answer, "harnesses"))
-            .Where(each => harness is null || Same(Text(At(each, "harness")), harness))
-            .OrderBy(each => Text(At(each, "harness")), StringComparer.Ordinal)
-            .Select(each => Fp(Pick(each, "harness", "present", "version", "problem", "managed", "pinned"), Rows(At(each, "profiles"), ["name"], "login")))]);
+            .Where(each => harness is null || Same(Text(At(each, "door")), harness))
+            .OrderBy(each => Text(At(each, "door")), StringComparer.Ordinal)
+            .Select(each => Fp(Pick(each, "door", "present", "version", "problem", "managed", "pinned"), Rows(At(each, "profiles"), ["name"], "login")))]);
 
     /// <summary>A landing's plan as <c>LANDING</c> answers it: what lands and how, never a subject's words or a gate's time.</summary>
     private static string Landing(JsonElement plan) => Fp(

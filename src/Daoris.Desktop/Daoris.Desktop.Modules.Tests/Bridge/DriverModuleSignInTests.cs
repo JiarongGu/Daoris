@@ -61,7 +61,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
         {
             tried.Add(port);
             return PortHold.Free;
-        }), "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new" });
+        }), "HARNESS_ACTION", new { door = "codex-acp", action = "login-new" });
 
         Assert.DoesNotContain("declares no sign-in flow", refusal);
         Assert.Contains("no-codex-here", refusal);
@@ -91,7 +91,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
             return port == 1455 ? PortHold.InUse : PortHold.Reserved;
         });
 
-        var refusal = await RefusalAsync(module, "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new" });
+        var refusal = await RefusalAsync(module, "HARNESS_ACTION", new { door = "codex-acp", action = "login-new" });
 
         Assert.Contains(
             "`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now: 1455 is held by another "
@@ -103,7 +103,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
         Assert.DoesNotContain(Raised.Select(Line), line => line.StartsWith("$ ", StringComparison.Ordinal));
 
         tried.Clear();
-        var started = await RefusalAsync(module, "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new", way = "device-code" });
+        var started = await RefusalAsync(module, "HARNESS_ACTION", new { door = "codex-acp", action = "login-new", way = "device-code" });
         Assert.Contains("could not be started", started);
         Assert.Empty(tried);
         await UntilAsync(() => Raised.Select(Line).Any(line => line.StartsWith("$ ", StringComparison.Ordinal)));
@@ -122,14 +122,14 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
         var module = Module(_ => PortHold.Free);
 
         var switched = await RefusalAsync(
-            module, "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new", way = "device-code", @switch = true });
+            module, "HARNESS_ACTION", new { door = "codex-acp", action = "login-new", way = "device-code", @switch = true });
         Assert.Contains("could not be started", switched);
         await UntilAsync(() => Raised.Select(Line).Any(line => line.StartsWith("$ ", StringComparison.Ordinal)));
         Assert.Contains($"$ {codex} login --device-auth", Raised.Select(Line));
 
-        var unknown = await RefusalAsync(module, "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new", way = "by-phone" });
+        var unknown = await RefusalAsync(module, "HARNESS_ACTION", new { door = "codex-acp", action = "login-new", way = "by-phone" });
         Assert.Contains("`by-phone` is no way to sign in — `browser` or `device-code`.", unknown);
-        var none = await RefusalAsync(module, "HARNESS_ACTION", new { harness = "claude-code", action = "login-new", way = "device-code" });
+        var none = await RefusalAsync(module, "HARNESS_ACTION", new { door = "claude-code", action = "login-new", way = "device-code" });
         Assert.Contains("`claude-code` signs in by no device code, so nothing was signed in — its own sign-in is its one way.", none);
         Assert.Empty(HarnessSettings.Profiles(Home, "codex"));
         Assert.Empty(HarnessSettings.Profiles(Home, "claude-code"));
@@ -152,7 +152,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
     {
         new HarnessSettings().WithVersion("codex", "0.160.0").Save(HarnessSettingsPath);
 
-        var refusal = await RefusalAsync(Module(_ => PortHold.Free), "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new" });
+        var refusal = await RefusalAsync(Module(_ => PortHold.Free), "HARNESS_ACTION", new { door = "codex-acp", action = "login-new" });
 
         Assert.Contains("`codex` is pinned to 0.160.0 on this machine, and nothing is installed at that version", refusal);
         Assert.Empty(HarnessSettings.Profiles(Home, "codex"));
@@ -173,7 +173,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
             var module = Module(_ => PortHold.Free);
             foreach (var (door, binary) in new[] { ("claude-code", "claude"), ("codex-acp", "codex") })
             {
-                var refusal = await RefusalAsync(module, "HARNESS_ACTION", new { harness = door, action = "login-new" });
+                var refusal = await RefusalAsync(module, "HARNESS_ACTION", new { door = door, action = "login-new" });
 
                 Assert.Contains($"would have run the `{binary}` on PATH, so nothing was started", refusal);
                 Assert.Contains("the stub adapters (`stub`, `acp-stub`)", refusal);

@@ -21,7 +21,7 @@ public sealed class AccountAttentionSliceTests
 
     private static JsonObject Door(string over = "{}") => With(
         """
-        {"harness":"claude-code","present":true,"product":"Claude Code","maker":"Anthropic","signsIn":true,"wire":"pipe",
+        {"door":"claude-code","present":true,"product":"Claude Code","maker":"Anthropic","signsIn":true,"wire":"pipe",
          "ownLogin":"unknown","ownRead":null,
          "profiles":[
            {"name":"account-1","home":"H/account-1","login":"out","read":"2026-10-05T10:42:00Z","account":"you@work.example"},
@@ -101,7 +101,7 @@ public sealed class AccountAttentionSliceTests
         Assert.Equal("2026-10-05T10:25:00Z", row["since"]!.GetValue<string>());
         Is("""{"quests":[],"asks":["a1","a2"]}""", row["holding"]!.AsObject());
         Assert.Equal(("claude-code", "Claude Code", "claude-code", true),
-            (row["account"]!["agent"]!.GetValue<string>(), row["account"]!["product"]!.GetValue<string>(), row["account"]!["harness"]!.GetValue<string>(), row["account"]!["signsIn"]!.GetValue<bool>()));
+            (row["account"]!["agent"]!.GetValue<string>(), row["account"]!["product"]!.GetValue<string>(), row["account"]!["door"]!.GetValue<string>(), row["account"]!["signsIn"]!.GetValue<bool>()));
         Assert.Equal("account-2=cooling,account-1=out,account-3=out", Named(row));
         Is($$"""{"id":"account-2","name":"home","state":"cooling","read":"2026-10-05T09:00:00Z","until":"{{Until}}"}""", row["account"]!["named"]![0]!.AsObject());
     }
@@ -262,7 +262,7 @@ public sealed class AccountAttentionSliceTests
         var row = Assert.Single(Derive(doors: [], noUse: true, waits: [Wait()]));
 
         Assert.Equal(("claude-code", false), (row["account"]!["product"]!.GetValue<string>(), row["account"]!["signsIn"]!.GetValue<bool>()));
-        Assert.Null(row["account"]!["harness"]);
+        Assert.Null(row["account"]!["door"]);
         Assert.Equal("account-2=cooling,account-1=out,account-3=out", Named(row));
         Assert.Equal(["home", null, null], row["account"]!["named"]!.AsArray().Select(each => each!["name"]?.GetValue<string>()));
     }
@@ -336,7 +336,7 @@ public sealed class AccountAttentionSliceTests
         var row = Assert.Single(None());
 
         Assert.Equal(("wait:claude-code:no-account", "work", true), (row["id"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["wholeWorkspace"]!.GetValue<bool>()));
-        Assert.Equal((true, true, "claude-code"), (row["account"]!["noAccount"]!.GetValue<bool>(), row["account"]!["signsIn"]!.GetValue<bool>(), row["account"]!["harness"]!.GetValue<string>()));
+        Assert.Equal((true, true, "claude-code"), (row["account"]!["noAccount"]!.GetValue<bool>(), row["account"]!["signsIn"]!.GetValue<bool>(), row["account"]!["door"]!.GetValue<string>()));
         Assert.Empty(row["account"]!["named"]!.AsArray());
     }
 
@@ -379,7 +379,7 @@ public sealed class AccountAttentionSliceTests
         Assert.Equal("signed-out:claude-code/account-1,signed-out:claude-code/account-3", Ids(rows));
         Is($$$"""
            {"kind":"signed-out","id":"signed-out:claude-code/account-1","since":null,"read":"{{{Read}}}","where":"Claude Code",
-            "account":{"agent":"claude-code","product":"Claude Code","harness":"claude-code","signsIn":true,
+            "account":{"agent":"claude-code","product":"Claude Code","door":"claude-code","signsIn":true,
              "named":[{"id":"account-1","name":null,"state":"out","read":"{{{Read}}}","until":null}]}}
            """, rows[0]);
     }

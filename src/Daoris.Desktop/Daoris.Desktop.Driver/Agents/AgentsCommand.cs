@@ -375,7 +375,7 @@ public static class AgentsCommand
 
         // While Daoris runs, the Settings screen's edit: a key sent as null cleared, one left out untouched. The answer is the file read
         // back, which this verb says as it says its own read.
-        var payload = new JsonObject { ["harness"] = name, ["profile"] = account };
+        var payload = new JsonObject { ["door"] = name, ["profile"] = account };
         if (edit.Value.Model is { } setModel) payload["model"] = setModel.Value;
         if (edit.Value.Effort is { } setEffort) payload["effort"] = setEffort.Value;
         if (edit.Value.PerModel is { } perModel)
