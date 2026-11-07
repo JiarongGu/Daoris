@@ -283,7 +283,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     claim. An unread proof ends nothing. (from D88, D102, D148)
 48. The look's tidy takes, with no press, a session branch the clean-up would clear: empty, landed by ancestry or
     content, or carried. With a tree, only this home's tree on a branch that moved. Landed work goes only once it is on
-    the line. The folder is moved aside into `.tidied`, never deleted; the keeping pass purges it. (from D88, D195)
+    the line, and a session branch whose tree moved onto a branch of its own only once the line holds that branch's work,
+    the tip its end is judged at. The folder is moved aside into `.tidied`, never deleted; the keeping pass purges it. (from D88, D195)
 49. A tree holding only ignored paths or the repository's declared output goes with its branch. Uncommitted or
     untracked work keeps it. An ignored folder of more than 5,000 files is too large to look through and keeps it, counted by
     name before any file's time or bytes are read. (from D195, D218)

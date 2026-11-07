@@ -338,9 +338,10 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
 
     /// <summary>
     /// TREEFOLLOW1 (D164 point 4): an agent that ran <c>git checkout -b feature/x</c> in its tree and committed there, as its
-    /// repository's rules ask, is followed. The look learns the branch (the ledger keeps it, so it outlives the tree), takes the
-    /// session branch no tree has out any more, says where the work is, and warns of nothing; the tree stays on its branch, whose
-    /// commits the head counts, the plan names and Accept lands.
+    /// repository's rules ask, is followed. The look learns the branch (the ledger keeps it, so it outlives the tree) and warns of
+    /// nothing; the tree stays on its branch, whose commits the head counts, the plan names and Accept lands. The session branch no
+    /// tree has out any more goes once the line holds that branch's work, the tip its kept end is judged at, and the look says where
+    /// the work is.
     /// </summary>
     [Fact]
     public async Task A_tree_its_agent_moved_onto_a_branch_of_its_own_is_followed_and_its_empty_session_branch_goes()
@@ -354,6 +355,19 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         using var log = Log();
         var tidying = new BranchTidying(_home) { Pace = TimeSpan.Zero };
 
+        var before = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        Assert.Empty(before);
+        Assert.Contains(moved.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.Equal("feature/x", trees.Grown.Of("engine", moved.Branch)?.Now);
+        var work = await trees.WorkAsync(moved.Path);
+        Assert.Equal(1, work!.Commits);
+        Assert.Equal("feature/x", work.Branch);
+        var process = GraphLand.Gate(_home, GraphLand.Branch("feature/{quest}-{slug}")).Process;
+        var plan = await trees.PlanAsync(moved.Path, new LandingSubject("s1", null, "Fix the gap"), process: process);
+        Assert.Equal(("branch", "feature/x", true), (plan.Form, plan.Target, plan.Own));
+
+        await GitAsync(root, "merge", "--no-ff", "--quiet", "-m", "merge feature/x", "feature/x");
         var first = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
         var second = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
@@ -366,15 +380,8 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         // Learned, and kept so it is known after the tree goes: the removed branch's trace at once (FABRIC-END4a review), never a
         // standing entry of a deleted branch.
         var trace = trees.Grown.Entries().Last(entry => entry.Branch == moved.Branch);
-        Assert.Equal(("feature/x", true), (trace.Now, trace.GoneAt is not null));
+        Assert.Equal(("feature/x", true, true), (trace.Now, trace.GoneAt is not null, trace.Held is not null));
         Assert.Null(trees.Grown.Of("engine", moved.Branch));
-
-        var work = await trees.WorkAsync(moved.Path);
-        Assert.Equal(1, work!.Commits);
-        Assert.Equal("feature/x", work.Branch);
-        var process = GraphLand.Gate(_home, GraphLand.Branch("feature/{quest}-{slug}")).Process;
-        var plan = await trees.PlanAsync(moved.Path, new LandingSubject("s1", null, "Fix the gap"), process: process);
-        Assert.Equal(("branch", "feature/x", true), (plan.Form, plan.Target, plan.Own));
     }
 
     /// <summary>
