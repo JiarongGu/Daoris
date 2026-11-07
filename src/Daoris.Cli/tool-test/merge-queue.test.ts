@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 
 /**
- * CISCOPE1e (D207, design §4 and §5.1, §8 row 5): the merge queue and its candidates, the frozen request, the judgement of a red
+ * The merge queue and its candidates (design §4 and §5.1), the frozen request, the judgement of a red
  * candidate over its base and every prefix by the failure's signature, a death of memory kept out of the base run and the stop,
  * the records-only re-form, resume by ancestry, the scoped set with the git half's budget, and the admission record both runners
  * share (`tools/merge-queue.mjs`). The merge tool's verbs over them are in `merge-branch.test.ts`. Run by the `tool-tests` gate.
@@ -33,7 +33,7 @@ interface Admission { schema: number; reservations: Reservation[]; scopedTier: {
 interface Job { state: string; workingGb?: number; committedGb?: number; why?: string }
 interface Rule { lane?: string; paths?: string[]; gates: string[] | '*' }
 interface Drained { tip: string; at: string; ended: string[]; left: string[]; probe: string | null; strays: number[] }
-/** INTEGRATE1b part 2: a confirm run as the scope run's record keeps it. */
+/** A confirm run as the scope run's record keeps it. */
 interface ConfirmRecord { gate: string; result: string; why: string; composition: { units: string[] | null; digest: string | null } | null; admission: (Evidence & { capacity?: number }) | null; waitedMs: number | null; ms: number | null }
 interface ScopeRun {
   state: string; tip: string; tree: string; members: { branch: string }[]; outcome?: string; judged?: { test: string; outcome: string; member: number | null; why: string | null }[];
@@ -153,7 +153,7 @@ const fail = (signature: Signature): Outcome => ({ result: 'fail', signature });
 const PASS: Outcome = { result: 'pass' };
 const testFailure = (signature: Signature): Failure => ({ unit: 'SessionTests', test: signature.test, gate: 'driver', signature, names: 'test' });
 
-/** A runner over a fixed answer per prefix (and per second run, where given), keeping the order it was asked. */
+/** A runner over a fixed answer per prefix (and per second run, where given), keeping the order it is asked. */
 function prefixes(answers: Outcome[], second: Partial<Record<number, Outcome>> = {}) {
   const asked: number[] = [];
   const seen = new Map<number, number>();
@@ -261,7 +261,7 @@ describe('the queue: a frozen request, read before it is queued', () => {
     assert.deepEqual(drained, { tip: 'c', at: AT, ended: ['check', 'driver'], left: ['modules'], probe: 'driver.prefix-2', strays: [] });
     assert.equal(q.drainedLine(drained), 'ended gates check, driver, the probe driver.prefix-2, each with everything it started; never started: modules');
     assert.equal(q.drainedLine(q.drainedRecord(queue.candidate, {}, AT)), 'ended no gate running, each with everything it started');
-    // QUEUEDROPLEAK1: what a test had left running is said with the gates; a record written before it was kept says nothing of it.
+    // What a test left running is said with the gates; a record without strays says nothing of it.
     assert.equal(q.drainedLine(q.drainedRecord(queue.candidate, { ended: ['check'], strays: [11, 12] }, AT)), 'ended gates check, each with everything it started, and 2 processes their tests had left running under the scope tree (pid 11, 12)');
     assert.equal(q.drainedLine(q.drainedRecord(queue.candidate, { strays: [11] }, AT)), 'ended no gate running, each with everything it started, and 1 process their tests had left running under the scope tree (pid 11)');
     const { strays: _kept, ...older } = drained;
@@ -328,7 +328,7 @@ describe('the queue: a frozen request, read before it is queued', () => {
     trees.hold(102);
     let current: Candidate | null = { ...candidate, state: 'bisecting' };
     let unreadable = false;
-    // DROPWAIT1: the take is said before anything is ended, and once.
+    // The take is said before anything is ended, and once.
     const taken: number[] = [];
     const watch = tool.watchCandidate(candidate, () => {
       if (unreadable) throw new Error('the queue is locked');
@@ -393,7 +393,7 @@ describe('the candidate', () => {
   });
 });
 
-// INTEGRATE1c (design §5.2 step 3, C4): a contained member is recorded as contained, never set aside; one an earlier member holds is
+// A contained member (design §5.2 step 3) is recorded as contained, never set aside; one an earlier member holds is
 // provisional, settled only when that member promotes, and judged again where the candidate ends otherwise.
 describe('a contained member (INTEGRATE1c)', () => {
   /** A merge that finds the `contained` members held by the line, and makes every other one's merge commit. */
@@ -423,7 +423,7 @@ describe('a contained member (INTEGRATE1c)', () => {
     assert.deepEqual(q.settleContained({ ...formed.candidate!, members: formed.candidate!.members.slice(1) }, AT), [], 'a holder no longer a member settles nothing');
   });
 
-  // The review's first finding on INTEGRATE1c: the line's marker was the word `line`, which a branch may be named.
+  // The line's marker is not the word `line`, which a branch may be named.
   test('an earlier member whose branch is named `line` is a member, never the line: what it holds is provisional on it', async () => {
     const queued = [{ branch: 'line', tip: 't1'.padEnd(40, '0'), request: 'r1' }, { branch: 'b2', tip: 't2'.padEnd(40, '0'), request: 'r2' }];
     const formed = await q.formCandidate({ base: 'm0', members: queued, at: AT, merge: inMember('line', 'b2') });
@@ -444,7 +444,7 @@ describe('a contained member (INTEGRATE1c)', () => {
     assert.deepEqual(q.requestsOf(null, retained).map((each) => each.branch), ['b1', 'b3']);
   });
 
-  // The review's third finding on INTEGRATE1c: arrival was read off a clock of whole seconds.
+  // Arrival is not read off a clock of whole seconds.
   test('requests queued within one second are given back in the order they were queued: a sequence the queue assigns orders them, never the clock', async () => {
     let queue = q.emptyQueue();
     for (const [i, name] of ['b1', 'b2', 'b3'].entries()) {
@@ -613,7 +613,7 @@ describe('a red candidate, judged by its signature over the base and every prefi
 });
 
 /**
- * INTEGRATE1b part 1 (design §4.5, §5.3 step 3, §11 row b): the confirm run's pure pieces, which no queue path calls yet. The failing
+ * The confirm run's pure pieces (design §4.5, §5.3 step 3). The failing
  * gate is run once more as composed holding the whole admission; a failure that does not recur is a sighting and splits by default.
  */
 describe('INTEGRATE1b: the confirm run, before any base or prefix run', () => {
@@ -909,7 +909,7 @@ describe('INTEGRATE1b: the confirm run, before any base or prefix run', () => {
     assert.equal(existsSync(join(root, 'local', 'ci-findings.json')), false, 'nothing is filed as a known red or a flake');
   });
 
-  // INTEGRATE1b part 2: what the queue's runner does with the readings it now makes.
+  // What the queue's runner does with the readings it makes.
   test('a confirm run that gives no reading says why in its own words: a death of memory is the machine\'s, and inconclusive', async () => {
     const why = 'it died of memory (exit 0xC0000017), which is the machine\'s: whether it recurs is not shown';
     const confirm = await q.confirmStep({ take: wholeOf(SHOWN).take, run: async () => ({ result: 'memory', why }) });
@@ -1199,11 +1199,11 @@ const GIT_ENV = {
 };
 const TRAILER = '\n\nCo-Authored-By: Claude Fixture (Anthropic) <fixture@example.test>';
 
-/** The test process's environment as this file loaded, before any case could change it (QUEUETESTLEAK1). */
+/** The test process's environment as this file loaded, before any case could change it. */
 const START_ENV: Readonly<Record<string, string | undefined>> = Object.freeze({ ...process.env });
 
 /**
- * QUEUETESTLEAK1: what a case's children never inherit. Git's repository-locating variables point a scratch's git at another
+ * What a case's children never inherit. Git's repository-locating variables point a scratch's git at another
  * repository (`git init` re-initialises it, and the queue home becomes its first worktree); the tool's switches, the stand-in gates'
  * variables and Daoris's home are each case's own or the machine's.
  */
@@ -1213,7 +1213,7 @@ const NOT_INHERITED = [
 ];
 
 /**
- * QUEUETESTLEAK1: the environment a case builds for its children, from the test process's start (never its live `process.env`, which
+ * The environment a case builds for its children, from the test process's start (never its live `process.env`, which
  * a case may not change while others run): nothing `NOT_INHERITED`, the fixture's git identity, `ceiling` as git's ceiling so a
  * scratch whose `.git` is gone is no repository rather than the checkout around it, and the case's own variables.
  */
@@ -1238,7 +1238,7 @@ const pathOf = (env: Record<string, string | undefined>) => Object.entries(env).
 interface ProbeSpec { candidate: Candidate; plan: { name: string; run: string }[]; dir: string; failure: Failure; ks: number[]; live?: string; after?: Record<string, string> }
 
 /**
- * QUEUETESTLEAK1: the tool's failure probe (`prefixRunner`) in a process of its own. It reads its spec from the file it is given:
+ * The tool's failure probe (`prefixRunner`) in a process of its own. It reads its spec from the file it is given:
  * the tool's URL, the root, `ProbeSpec`. The candidate stands while `live` exists (where one is named); `after` is set in its own
  * environment once the tool has loaded. Each probe's answer, or the error it threw, is a line of JSON.
  */
@@ -1286,11 +1286,11 @@ const realPath = (path: string) => realpathSync(path).toLowerCase();
 const pause = (ms: number) => new Promise((done) => { setTimeout(done, ms); });
 
 /**
- * How long one scratch run of the merge tool, or one wait on its queue, may take before the test calls it hung
- * (TOOLTESTHANG1): a guard against the hang, never a pace, so it elapses only on failure. A scratch queue gates real git
- * under whatever else the machine runs, and a healthy run took longer than the two-minute shared patience under load
- * (2026-10-28, the bound ended a run still promoting), so the guard is ten minutes; the hang it catches lasted ninety. It is
- * five times the shared patience (TESTPATIENCE3), so the one knob moves it, and stays longer because a healthy run is.
+ * How long one scratch run of the merge tool, or one wait on its queue, may take before the test calls it hung:
+ * a guard against the hang, never a pace, so it elapses only on failure. A scratch queue gates real git
+ * under whatever else the machine runs, and a healthy run can take longer than the two-minute shared patience under load,
+ * so the guard is ten minutes; the hang it catches lasts ninety. It is
+ * five times the shared patience, so the one knob moves it, and stays longer because a healthy run is.
  */
 const HANG_MS = 5 * PATIENCE;
 
@@ -1309,18 +1309,18 @@ const alive = (pid: number) => {
 };
 
 function queueScratch(name: string) {
-  // QUEUETESTLEAK1: named for this process too, so a second run of the file beside this one, or one after it killed, never
-  // clears a scratch whose processes still stand in it: a scratch that lost its `.git` was git's way out to the checkout around it.
+  // Named for this process too, so a second run of the file beside this one, or one after it killed, never
+  // clears a scratch whose processes still stand in it: a scratch that loses its `.git` is git's way out to the checkout around it.
   const fx = makeFixture(`merge-queue-${name}-${process.pid}`);
   const root = join(fx.root, 'repo');
   mkdirSync(root, { recursive: true });
-  // TOOLTESTHANG1: the runner's own `git status` (its clean-checkout look, every tick while a candidate is held) refreshes the
-  // index and takes `index.lock` to write it back, so a test's git write on this repository met the lock now and then. The
-  // runner is told to take no optional lock: it reads the checkout as before and never holds the index, so the test's writes
+  // The runner's own `git status` (its clean-checkout look, every tick while a candidate is held) refreshes the
+  // index and takes `index.lock` to write it back, so a test's git write on this repository can meet the lock. The
+  // runner is told to take no optional lock: it reads the checkout and never holds the index, so the test's writes
   // need no retry and no sleep. A write the queue itself makes (the fast-forward, the scope tree's merges) is not optional.
-  // QUEUETESTLEAK1: every child of the case, the tool's invocations and every git, gets this environment and no other, with the
+  // Every child of the case, the tool's invocations and every git, gets this environment and no other, with the
   // fixture's folder as git's ceiling.
-  // INTEGRATE1b part 2: the machine's admission is the case's own, in a Daoris home of its own two places wide, so a red candidate's
+  // The machine's admission is the case's own, in a Daoris home of its own two places wide, so a red candidate's
   // confirm run takes the whole of it as the runner does on a machine, and no case waits on what the machine around it runs. Without
   // it every confirm run would read inconclusive, since no admission could be shown.
   const home = join(fx.root, 'home');
@@ -1328,7 +1328,7 @@ function queueScratch(name: string) {
   const env = caseEnvironment(fx.root, {
     GIT_OPTIONAL_LOCKS: '0', MERGE_BRANCH_MEMORY: 'off', MERGE_BRANCH_CI_NIGHT_HOUR: 'off', MERGE_BRANCH_QUEUE_POLL_MS: '200', MERGE_BRANCH_QUEUE_TICK_MS: '300', MERGE_BRANCH_DROP_POLL_MS: '200',
     MERGE_BRANCH_ADMISSION: 'on', DAORIS_HOME: home, DAORIS_ADMISSION_SLOTS: '2',
-    // PROCLEAK1: the runner and the waiter this case starts end with this process, so a test killed leaves neither polling on.
+    // The runner and the waiter this case starts end with this process, so a test killed leaves neither polling on.
     MERGE_BRANCH_QUEUE_OWNER: String(process.pid),
   });
   const git = (...args: string[]) => sh(env, root, ...args);
@@ -1352,7 +1352,7 @@ function queueScratch(name: string) {
     : null);
   const admissionFile = join(root, 'local', 'admission.json');
   let probes = 0;
-  /** A node process of the case, bounded by `ms` (TOOLTESTHANG1), ended with its tree at the bound; `extra` over the case's environment. */
+  /** A node process of the case, bounded by `ms`, ended with its tree at the bound; `extra` over the case's environment. */
   const node = (args: string[], extra: Record<string, string>, ms: number, cwd: string): Promise<{ status: number | null; out: string }> => {
     const child = spawn(process.execPath, args, { cwd, env: withEnv(env, extra), windowsHide: true });
     started.add(child);
@@ -1371,9 +1371,9 @@ function queueScratch(name: string) {
   };
   return {
     root,
-    /** The case's Daoris home, whose machine admission the runner takes its places in (INTEGRATE1b). */
+    /** The case's Daoris home, whose machine admission the runner takes its places in. */
     home,
-    /** The environment the case's children get (QUEUETESTLEAK1). */
+    /** The environment the case's children get. */
     env,
     /** Git in the scratch with the case's environment. */
     git,
@@ -1407,7 +1407,7 @@ function queueScratch(name: string) {
     },
     /**
      * A failure probe of the tool's runner (`prefixRunner`) in a process of its own, with the case's environment and `extra`
-     * (QUEUETESTLEAK1: never in the test process, whose environment no case may change): `PROBE_DRIVER` over `spec`, each probe's
+     * (never in the test process, whose environment no case may change): `PROBE_DRIVER` over `spec`, each probe's
      * answer or error a line of JSON.
      */
     async probe(spec: ProbeSpec, extra: Record<string, string> = {}): Promise<{ status: number | null; out: string; lines: { k: number; answer?: Outcome; error?: string }[] }> {
@@ -1424,7 +1424,7 @@ function queueScratch(name: string) {
     log: () => (existsSync(join(root, 'local', 'merge-queue.log')) ? readFileSync(join(root, 'local', 'merge-queue.log'), 'utf8') : ''),
     until,
     async cleanup() {
-      // An invocation a failed assertion left waiting is ended first, so nothing started here can hold the run (TOOLTESTHANG1).
+      // An invocation a failed assertion leaves waiting is ended first, so nothing started here can hold the run.
       for (const child of started) tool.endTree(child.pid!);
       // The runner ends once idle; its scope tree goes with the fixture.
       // A grace for an idle runner to end by itself, kept at five seconds: a runner holding a candidate never does, and is ended below.
@@ -1447,8 +1447,8 @@ const pidsIn = (dir: string) => TREE.filter((role) => existsSync(join(dir, `${ro
 /**
  * A gate that, when `holdWhen` holds, writes its pid, starts a child that starts a grandchild (each writing its own), and waits
  * for `release` in `dir`: a process tree three deep, the shape a build and its test hosts make. `count` is how many times `check`
- * has run there. With `record`, the arguments it was given are kept in `args`. The folder is written into the gate
- * (QUEUETESTLEAK1): the queue's runner passes no test's variable on to a gate.
+ * has run there. With `record`, the arguments it is given are kept in `args`. The folder is written into the gate:
+ * the queue's runner passes no test's variable on to a gate.
  */
 function treeGate(dir: string, holdWhen: string, record = ''): string {
   return [
@@ -1474,7 +1474,7 @@ function treeGate(dir: string, holdWhen: string, record = ''): string {
 }
 
 /**
- * INTEGRATE1b: a `check` that counts its runs in `dir` (`runs`) and fails where `failWhen` holds, an expression over `count` and
+ * A `check` that counts its runs in `dir` (`runs`) and fails where `failWhen` holds, an expression over `count` and
  * `load`, how many holds named `the load beside it` the machine's admission file `admission` keeps. Where `holdWhen` holds it first
  * writes `<count>.started` and waits for `release` in `dir`. Every other gate passes.
  */
@@ -1498,10 +1498,10 @@ function confirmGate(dir: string, { failWhen, holdWhen = 'false', admission = ''
   ].join('\n');
 }
 
-/** QUEUETESTLEAK1: a gate that writes what of its environment a leak would carry into `file`, then passes. */
+/** A gate that writes what of its environment a leak would carry into `file`, then passes. */
 const envGate = (file: string, admission = '', role = 'check') => [
   "import { existsSync, readFileSync, writeFileSync } from 'node:fs';",
-  // INTEGRATE1a: also what of the install's home, a role and git's locating variables reached it, and the admission file it can read.
+  // Also what of the install's home, a role and git's locating variables reached it, and the admission file it can read.
   `const admission = ${JSON.stringify(admission)};`,
   "const held = admission && existsSync(admission) ? JSON.parse(readFileSync(admission, 'utf8')).holds.map((hold) => hold.what) : null;",
   `if (process.argv[2] === ${JSON.stringify(role)}) writeFileSync(${JSON.stringify(file)}, JSON.stringify({ drain: process.env.QUEUE_DRAIN_DIR ?? null, tick: process.env.MERGE_BRANCH_QUEUE_TICK_MS ?? null, gitDir: process.env.GIT_DIR ?? null, ceiling: process.env.GIT_CEILING_DIRECTORIES ?? null, home: process.env.DAORIS_HOME ?? null, role: process.env.DAORIS_ROLE ?? null, beside: process.env.MSBUILDDISABLENODEREUSE ?? null, held, path: process.env.PATH ?? '' }));`,
@@ -1509,10 +1509,10 @@ const envGate = (file: string, admission = '', role = 'check') => [
   '',
 ].join('\n');
 
-/** INTEGRATE1a: what `envGate` records. */
+/** What `envGate` records. */
 interface SeenEnvironment { drain: string | null; tick: string | null; gitDir: string | null; ceiling: string | null; home: string | null; role: string | null; beside: string | null; held: string[] | null; path: string }
 
-// QUEUETESTLEAK1 (2026-10-28): a case's enqueue waited on the main checkout's queue and started a runner there from the tree's tool,
+// A case's enqueue must not wait on the main checkout's queue or start a runner there from the tree's tool,
 // with the class-probe case's PATH. Its cases run one at a time here, so the variables it sets in the test process meet no other case.
 describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and queue', () => {
   test("only the queue's own checkout queues to it or runs it, and a tree's tool never runs the main checkout's queue", () => {
@@ -1526,7 +1526,7 @@ describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and que
     assert.equal(tool.queueHomeRefusal({ root: home, home, tool: 'X:/elsewhere', sameRepository: false, run: true }), null, "another repository's tool (the tool tests' scratch queues) runs it");
   });
 
-  // GITWORKTREECONFIG1: a shared `core.worktree` can make a linked worktree report another checkout's root as its own.
+  // A shared `core.worktree` can make a linked worktree report another checkout's root as its own.
   test("a tree that reports another folder as its working root is refused before any write, the same folder spelled otherwise is not", () => {
     const path = 'X:/daoris/local/scope-tree';
     assert.equal(tool.treeBindingRefusal({ path, reported: path }), null);
@@ -1544,7 +1544,7 @@ describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and que
     assert.deepEqual(tool.gateEnvironment(start), { Path: 'X:/bin', HOME: 'X:/home', GIT_OPTIONAL_LOCKS: '0', ...tool.BESIDE_ENVIRONMENT });
   });
 
-  // INTEGRATE1a (design §5.5, F20): the steward's shell held the install's home on 2026-10-28, and every gate the queue's runners started inherited it.
+  // A steward's shell can hold the install's home (design §5.5), and every gate the queue's runners start would inherit it.
   test("a gate gets no Daoris home, role or key and none of git's locating variables, in either spelling, and what a person set for git otherwise stays", () => {
     const start = {
       Path: 'X:/bin', DAORIS_HOME: 'X:/install', daoris_role: 'steward', DAORIS_SUPERVISOR_KEY: 'k', DAORIS_ADMISSION_HOLD: 'h-1',
@@ -1555,7 +1555,7 @@ describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and que
     assert.ok(tool.GATE_REMOVED.length > 0, 'the list is exported, so the driver\'s twin and a census read the same names');
   });
 
-  // INTEGRATE1d part 4 (design §5.5, §4.1's `env.pass`): the names an accepted declaration passes come back from the tool's own start environment,
+  // The names (design §5.5, §4.1's `env.pass`) an accepted declaration passes come back from the tool's own start environment,
   // the removed list's included, and never a Daoris name; a name not passed stays out.
   test("the names an accepted declaration passes reach a gate from the start environment, a removed one's among them; a Daoris name and a name not passed never do", () => {
     const start = { Path: 'X:/bin', GIT_CONFIG_GLOBAL: 'X:/cfg', git_config_key_0: 'k', MERGE_BRANCH_MEMORY: 'off', DAORIS_HOME: 'X:/install', daoris_role: 'steward', TOKEN_FOR_GATE: 't' };
@@ -1624,7 +1624,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     try {
       const gate = [
         "import { existsSync, writeFileSync } from 'node:fs';",
-        // QUEUETESTLEAK1: the hold's path is written into the gate, since the runner passes no test's variable on to a gate.
+        // The hold's path is written into the gate, since the runner passes no test's variable on to a gate.
         `const hold = ${JSON.stringify(hold)};`,
         "if (process.argv[2] === 'check') {",
         "  writeFileSync(`${hold}.started`, 'started');",
@@ -1734,7 +1734,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       const red = runs.find((each) => each.state === 'red');
       assert.deepEqual(red?.members.map((each) => each.branch), ['good', 'bad'], `one candidate takes both, never good alone first:\n${repo.log()}`);
       assert.deepEqual(red?.judged?.map((each) => [each.outcome, each.member]), [['pinned', 2]]);
-      // INTEGRATE1b part 2: it failed again when run once more holding the whole admission, so it was bisected as before.
+      // It fails again when run once more holding the whole admission, so it is bisected.
       assert.deepEqual(red?.confirms?.map((each) => [each.gate, each.result, each.admission?.conclusive]), [['check', 'confirmed', true]], repo.log());
       assert.equal(runs.at(-1)?.state, 'green', 'the retained candidate is judged again, and promoted on its own green');
     } finally {
@@ -1769,7 +1769,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  // INTEGRATE1c (C4): 2026-10-28's set-aside, a branch whose merge commit could not be made because its work was already in an earlier
+  // A branch whose merge commit cannot be made because its work is already in an earlier
   // member of the batch. `inner` is a branch at the first of `outer`'s two commits, so queued after it, a candidate holds it already.
   const nested = (repo: ReturnType<typeof queueScratch>, files: Record<string, string> = { 'a.txt': 'a\n', 'b.txt': 'b\n' }, outer = 'outer') => {
     const [head, ...rest] = Object.entries(files);
@@ -1820,7 +1820,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     try {
       nested(repo);
       // Queued behind a candidate in flight: the enqueue refuses a branch the line holds, but main lacks inner until outer promotes.
-      // Outer's `check` gate waits on `gate` until inner is queued, so outer cannot promote first on a loaded machine (FLAKE1).
+      // Outer's `check` gate waits on `gate` until inner is queued, so outer cannot promote first on a loaded machine.
       for (const name of ['outer', 'inner']) assert.equal((await repo.run([name, '--preview'])).status, 0);
       const outer = repo.run(['outer', '--message', 'local/outer.msg'], { QGATE_HOLD: gate });
       await repo.until(() => repo.queue()?.candidate !== null && repo.queue()?.candidate !== undefined);
@@ -1867,7 +1867,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  // The review's second finding on INTEGRATE1c: the run's own copy of the candidate still held a contained member dropped meanwhile.
+  // The run's own copy of the candidate must not keep a contained member dropped meanwhile.
   test('a contained member dropped by name while its container runs, and queued again, is not brought back by the container\'s hand-back: only the new request lands', async () => {
     const repo = queueScratch('contained-dropped');
     const dir = join(repo.root, 'local', 'drain');
@@ -1909,7 +1909,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  // The review's fourth finding on INTEGRATE1c: the row tables were read from the candidate's tip, which an earlier member had changed.
+  // The row tables are not read from the candidate's tip, which an earlier member may have changed.
   test("a row table a member's own declaration adds settles nothing for a later member of its candidate: the declaration read is the line's the candidate started on", async () => {
     const repo = queueScratch('rows-line');
     const hold = join(repo.root, 'local', 'go');
@@ -1964,7 +1964,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  // The review's first finding on INTEGRATE1c: the line's marker was the word `line`, which a branch may be named.
+  // The line's marker is not the word `line`, which a branch may be named.
   test('a container whose branch is named `line` holds its member provisionally, as any member does: handed back, the member is judged again on its own', async () => {
     const repo = queueScratch('contained-named-line');
     const hold = join(repo.root, 'local', 'go');
@@ -2022,7 +2022,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       enqueue =repo.running();
       runner = (repo.queue()!.runner as { pid: number }).pid;
       assert.equal(enqueue.length, 1);
-      // The lock the sighting met, held by another writer: the test's own git write is refused, as it was.
+      // The lock the sighting met, held by another writer: the test's own git write is refused.
       writeFileSync(join(repo.root, '.git', 'index.lock'), '');
       const refused = spawnSync('git', ['checkout', '--quiet', '--', 'qgate.mjs'], { cwd: repo.root, encoding: 'utf8', env: repo.env, windowsHide: true });
       assert.notEqual(refused.status, 0);
@@ -2056,7 +2056,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  // QUEUETESTLEAK1: the leaked runner was started in a folder git read as the session's tree, whose queue home is the main checkout's.
+  // A runner started in a folder git reads as the session's tree would use the main checkout's queue home.
   test('QUEUETESTLEAK1: a runner, a preview, an enqueue, a drop or a recheck started in a linked worktree of the repository is refused, saying whose the queue is, and its queue is left as it was', async () => {
     const repo = queueScratch('linked');
     try {
@@ -2083,7 +2083,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       const record = join(repo.root, 'local', 'gate-env.json');
       repo.branch('b1', { 'qgate.mjs': envGate(record) });
       assert.equal((await repo.run(['b1', '--preview'])).status, 0);
-      // The enqueue the leak's was: its environment holds the class probe's folder, and the runner it starts inherits it.
+      // An enqueue whose environment holds the class probe's folder: the runner it starts would inherit it.
       const done = await repo.run(['b1', '--message', 'local/b1.msg'], { QUEUE_DRAIN_DIR: join(repo.root, 'local', 'drain') });
       assert.equal(done.status, 0, `${done.out}\n${repo.log()}`);
       const seen = JSON.parse(readFileSync(record, 'utf8')) as { drain: string | null; tick: string | null };
@@ -2094,8 +2094,8 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  // INTEGRATE1a (F20): the invoker's shell held the install's home, a role and git's locating variables; the runner it started, and the gates
-  // of every verb, inherited them, while the machine's admission is still found from the home the tool read at its start.
+  // The invoker's shell can hold the install's home, a role and git's locating variables; the runner it starts, and the gates
+  // of every verb, must not inherit them, while the machine's admission is still found from the home the tool read at its start.
   const ownedGate = () => JSON.stringify({ gates: [{ name: 'universal', run: 'node qgate.mjs universal' }, { name: 'check', run: 'node qgate.mjs check', memoryGb: 0.1 }] });
   // GIT_DIR is set only where the tool's own git may take it: in the queue's verbs it makes the tool's checkout and the scratch one repository,
   // and the tool refuses (`queueHomeRefusal`); git's ceiling, which the case's environment always sets, is the locating variable proved there.
@@ -2158,7 +2158,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  // INTEGRATE1j part 1 (design §5.9, D192 points 6 and 9): this tool as the declared runner, `--full --beside --daoris-verify`, its inputs in
+  // This tool (design §5.9) as the declared runner, `--full --beside --daoris-verify`, its inputs in
   // DAORIS_VERIFY_* set on the job alone, the gates read from the declaration handed and never from the tree.
   type Scratch = ReturnType<typeof queueScratch>;
   const VERIFY = ['--full', '--beside', '--daoris-verify'];
@@ -2174,7 +2174,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       read: () => (existsSync(answer) ? JSON.parse(readFileSync(answer, 'utf8')) as Record<string, any> : null),
     };
   };
-  /** A gate that records which Daoris variables reached it, where it runs, and whether the private patterns file was copied in. */
+  /** A gate that records which Daoris variables reach it, where it runs, and whether the private patterns file is copied in. */
   const recorderGate = (file: string) => [
     "import { existsSync, writeFileSync } from 'node:fs';",
     `writeFileSync(${JSON.stringify(file)}, JSON.stringify({ daoris: Object.keys(process.env).filter((name) => /^DAORIS_/i.test(name)), cwd: process.cwd(), copied: existsSync('local/sensitive-patterns.txt') }));`,
@@ -2248,7 +2248,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  // INTEGRATE1d part 4: the declaration the runner is handed is the accepted blob (design §5.9), so its `env.pass` is the owner's.
+  // The declaration the runner is handed is the accepted blob (design §5.9), so its `env.pass` is the owner's.
   test('INTEGRATE1d: the declared runner passes the names the declaration handed lists, from its start environment, and no Daoris name or other removed one', async () => {
     const repo = queueScratch('verify-pass');
     try {
@@ -2393,7 +2393,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  // INTEGRATE1j part 2 (design §4.3, §4.5, §5.9): the schema-2 run, plan and probe modes.
+  // The schema-2 run (design §4.3, §4.5, §5.9), plan and probe modes.
   type Answered = Record<string, any>;
   const modes = (repo: Scratch, run: ReturnType<typeof verifier>, base: string) => (mode: string, commit: string, more: Record<string, string> = {}) => (
     repo.run(VERIFY, run.env(commit, { DAORIS_VERIFY_MODE: mode, DAORIS_VERIFY_BASE: base, ...more })));
@@ -2536,7 +2536,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       writeFileSync(join(shims, 'dotnet.mjs'), pollutedDotnet(calls));
       if (process.platform === 'win32') writeFileSync(join(shims, 'dotnet.cmd'), '@node "%~dp0dotnet.mjs" %*\r\n');
       else writeFileSync(join(shims, 'dotnet'), '#!/bin/sh\nexec node "$(dirname "$0")/dotnet.mjs" "$@"\n', { mode: 0o755 });
-      // The stand-in is first on the runner's own PATH as it starts (QUEUETESTLEAK1): the test process's environment is never changed.
+      // The stand-in is first on the runner's own PATH as it starts: the test process's environment is never changed.
       const PATH = `${shims}${delimiter}${pathOf(repo.env)}`;
       const base = repo.git('rev-parse', 'HEAD');
       const settings = '<RunSettings><RunConfiguration><MaxCpuCount>1</MaxCpuCount></RunConfiguration></RunSettings>\n';
@@ -2638,8 +2638,8 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  // QUEUEWAITEND1 (2026-10-28): eleven waiters whose requests had left the queue (dropped while queued, or merged in another branch's
-  // batch) started a runner every second for a day.
+  // A waiter whose request has left the queue (dropped while queued, or merged in another branch's
+  // batch) must not start a runner every second.
   test('QUEUEWAITEND1: a request dropped while queued is told to its waiter, which ends saying so; a request gone from every record ends its wait too', async () => {
     const repo = queueScratch('wait-ends');
     const hold = join(repo.root, 'local', 'go');
@@ -2729,7 +2729,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     const hold = join(repo.root, 'local', 'go');
     mkdirSync(dir, { recursive: true });
     try {
-      // The first run of `check` (the candidate's) fails, and so does its second, the confirm run (INTEGRATE1b); every run after
+      // The first run of `check` (the candidate's) fails, and so does its second, the confirm run; every run after
       // them is a probe, and a probe holds.
       writeFileSync(join(repo.root, 'qgate.mjs'), treeGate(dir, 'count >= 3'));
       repo.git('commit', '--quiet', '-am', `a gate that holds its probes${TRAILER}`);
@@ -2777,7 +2777,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     mkdirSync(shims, { recursive: true });
     const live = join(dir, 'live');
     try {
-      // A `dotnet` that records what it was asked and holds, with a child and a grandchild, as a test host does.
+      // A `dotnet` that records what it is asked and holds, with a child and a grandchild, as a test host does.
       writeFileSync(join(shims, 'dotnet.mjs'), treeGate(dir, 'true', 'args'));
       if (process.platform === 'win32') writeFileSync(join(shims, 'dotnet.cmd'), `@node "%~dp0dotnet.mjs" check %*\r\n`);
       else {
@@ -2789,8 +2789,8 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       const candidate: Candidate = { base, tip: commit, members: [{ branch: 'b1', tip: commit, commit, request: 'first' }], state: 'running', reforms: 0, recordsOnly: false };
       const plan = [{ name: 'driver', run: 'dotnet test Fixture.csproj --filter "Category!=Process"' }];
       const failure: Failure = { unit: 'SessionTests', test: 'Driver.Tests.SessionTests.Resumes', gate: 'driver', signature: sig('x'), names: 'test' };
-      // QUEUETESTLEAK1: the stand-in `dotnet` is first on the probe's own PATH, as its process starts; the test process's environment,
-      // which every other case's children were once spawned from, is never changed.
+      // The stand-in `dotnet` is first on the probe's own PATH, as its process starts; the test process's environment,
+      // which every other case's children are spawned from, is never changed.
       writeFileSync(live, '');
       const probing = repo.probe({ candidate, plan, dir, failure, ks: [1, 0], live }, { PATH: `${shims}${delimiter}${pathOf(repo.env)}` });
       await repo.until(() => TREE.every((role) => existsSync(join(dir, `${role}.pid`))));
@@ -2811,7 +2811,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
   });
 
   // ---------------------------------------------------------------------------------------------------
-  // INTEGRATE1b part 2 (design §4.5, §5.3 step 3, §11 row b): the confirm run in the queue's runner, before any base or prefix run.
+  // The confirm run (design §4.5, §5.3 step 3) in the queue's runner, before any base or prefix run.
 
   /** Two branches queued into one candidate: the runner is held until both are queued, then forms them together. Answers both waits. */
   const queueTogether = async (repo: ReturnType<typeof queueScratch>, names: [string, string]) => {
@@ -2915,7 +2915,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       writeFileSync(join(shims, 'dotnet.mjs'), pollutedDotnet(calls, 'pollute'));
       if (process.platform === 'win32') writeFileSync(join(shims, 'dotnet.cmd'), '@node "%~dp0dotnet.mjs" %*\r\n');
       else writeFileSync(join(shims, 'dotnet'), '#!/bin/sh\nexec node "$(dirname "$0")/dotnet.mjs" "$@"\n', { mode: 0o755 });
-      // The stand-in is first on the runner's own PATH as it starts (QUEUETESTLEAK1): the test process's environment is never changed.
+      // The stand-in is first on the runner's own PATH as it starts: the test process's environment is never changed.
       const PATH = `${shims}${delimiter}${pathOf(repo.env)}`;
       writeFileSync(join(repo.root, 'Fixture.csproj'), '<Project />\n');
       writeFileSync(join(repo.root, 'daoris.gates.json'), `${JSON.stringify({ gates: [{ name: 'universal', run: 'node qgate.mjs universal' }, { name: 'fixture', run: 'dotnet test Fixture.csproj --filter "Category!=Process"' }] }, null, 2)}\n`);
@@ -3027,8 +3027,8 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.equal(holds().length, 2, 'the confirm run holds every place');
       const asked = Date.now();
       const dropping = repo.run(['--drop-batch', 'bad']);
-      // DROPWAIT1: the runner has ended the tree, and its report is kept late past the drop's thirty seconds on the machine's clock, as
-      // a loaded runner's was: the drop waits on the clock only for the runner to take it, then on what it says.
+      // The runner has ended the tree, and its report is kept late past the drop's thirty seconds on the machine's clock, as
+      // a loaded runner's can be: the drop waits on the clock only for the runner to take it, then on what it says.
       // The tree is looked at before the pause, whose half minute lets Windows give its pids to other processes.
       await repo.until(() => pids.every((pid) => !alive(pid)));
       assert.deepEqual(pids.filter(alive), [], 'the confirm run, its child and its grandchild are gone');
@@ -3054,8 +3054,8 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
   });
 });
 
-// PROCLEAK1 (2026-10-30): the machine was found slowed by what the merge tool and its tests had left running: waiters whose requests
-// were gone, runners no record named, a stand-in polling for a file its killed test never wrote.
+// What the merge tool and its tests leave running slows the machine: waiters whose requests
+// are gone, runners no record names, a stand-in polling for a file its killed test never wrote.
 /** A process of the test's own that does nothing, ended by `kill`: a live pid a record can name, and an owner that can end. */
 const idle = () => spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore', windowsHide: true });
 
@@ -3326,9 +3326,9 @@ describe('PROCLEAK1: nothing the merge tool and its tests start outlives what st
   });
 });
 
-// QUEUEDROPLEAK1 (2026-10-31): a drop said it ended the run "with everything it started", yet minutes later the tool-tests gate's
-// processes ran on with their parents gone: a fixture's `tree.mjs`, and a `node qgate.mjs check` with two node children. The drop
-// ends each step by its tree of parent ids; a test killed with its step had already orphaned those, or never got to end them.
+// A drop that says it ended the run "with everything it started" must leave no tool-tests gate process running with its parent
+// gone: a fixture's `tree.mjs`, or a `node qgate.mjs check` with two node children. The drop ends each step by its tree of
+// parent ids; a test killed with its step has already orphaned those, or never gets to end them.
 describe('QUEUEDROPLEAK1: a dropped run ends what its tests had left running under the scope tree', { concurrency: true }, () => {
   const row = (pid: number, ppid: number, created: number, command: string) => ({ pid, ppid, created, command });
   const FOLDER = 'D:/work/repo/local/scope-tree';

@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * INTEGRATE1f part f1 (D207, the integration design §4.5, §5.3, §11 row f): how a red candidate's failures are judged, held to ONE
+ * How a red candidate's failures are judged (the integration design §4.5, §5.3, §11 row f), held to ONE
  * table with the driver's twin. `tools/merge-queue.mjs` (`placeOnPrefixes`, `judgeFailure`, `candidateOutcome`, `confirmStep`,
  * `confirmReadings`, `memoryStep`, `recheckDue`, `noteRecheck`) and `tools/ci-background.mjs` (`knownRedStanding`) read
  * `fixtures/failure-judging.json` here, row for row, and the driver's `FailureJudge` reads it there (`FailureJudgeTests`), so the
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 
 // The census of test units reads this file's strings as data, not as reads; what it reads is declared.
 // test-map: strings name paths as data
-// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/failure-judging.json — INTEGRATE1f's driver twin reads the table row for row
+// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/failure-judging.json — the driver twin reads the table row for row
 
 interface Signature { test?: string; gate?: string }
 interface Failure { unit?: string; test?: string | undefined; gate: string; signature: Signature | null; names: 'test' | 'gate' }

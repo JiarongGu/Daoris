@@ -10,14 +10,14 @@ import { listenFetchable } from '../../../tools/listen-port.mjs';
 import { makeFixture, PATIENCE, unroled } from '../test/_fixture.ts';
 
 /**
- * The family rehearsal's set-up phase, held where it can be without a host or a driver (LAYOUT7a): the reading
+ * The family rehearsal's set-up phase, held where it can be without a host or a driver: the reading
  * of what `daoris place --adoption` prints, the launcher a child finds `daoris` by, and the protocol stub's set-up
  * branch, run for real in a scratch repository against a stand-in for the service's quest door. Every turn over
- * the stub also holds how it ends, with exit 0 once its input closes (STUB1).
+ * the stub also holds how it ends, with exit 0 once its input closes.
  *
  * Workspace tooling (`tools/setup-kit.mjs`, `tools/rehearsal-kit.mjs`), tested from here for the reason
  * `desktop-tool.test.ts` states, and run by the `tool-tests` gate with the merge tool's and the publisher's tests,
- * not by `npm run verify`: only the parent runs the kit (GATESLIM1, reversing TEST3).
+ * not by `npm run verify`: only the parent runs the kit.
  */
 
 /** What `readPlace` reads back. Declared here because the tool itself is untyped. */
@@ -38,7 +38,7 @@ const {
   SETUP_RULES: string[];
   SETUP_TITLE: RegExp;
   doctrineLauncher: (cliBin: string, platform?: string) => { name: string; text: string };
-  // WSSETUP5a and WSSETUP6a's readers, asserted here by shape: what they read back is held by deepEqual below.
+  // The follow and workspace-setup readers, asserted here by shape: what they read back is held by deepEqual below.
   readEvents: (out: string, event: string) => Record<string, unknown>[];
   readFollowed: (out: string) => { repository: unknown; outcome: unknown; fields: string[] }[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- read back field by field below
@@ -139,7 +139,7 @@ test('what is not the command\'s output reads as nothing at all', () => {
   assert.equal(nothing.nothingWritten, false);
 });
 
-// What `RegisterCommand` writes (WSSETUP5), spelled as it writes it: a line per repository, two spaces, the outcome
+// What `RegisterCommand` writes, spelled as it writes it: a line per repository, two spaces, the outcome
 // padded to sixteen as C#'s `{0,-16}` pads it, a space, the name, two spaces and the sentence; then the counts.
 const followedLine = (outcome: string, repository: string, said: string) => `  ${outcome.padEnd(16)} ${repository}  ${said}`;
 const REGISTER_SENT = [
@@ -223,7 +223,7 @@ test('the machine log\'s lines of one event are read as the data each carried, i
   assert.deepEqual(readEvents(logged, 'setup.stopped'), []);
 });
 
-// What `WorkspaceSetupCommand` writes (WSSETUP6), spelled as it writes it: the list a press works from, with its table
+// What `WorkspaceSetupCommand` writes, spelled as it writes it: the list a press works from, with its table
 // padded as C# pads it, then the pacing, the agent and the rule; a press's message and the rules it added; a steer's
 // message and where the plan stands.
 const WORKSPACE_LIST = [
@@ -412,19 +412,19 @@ type Update = { sessionUpdate: string; title?: string; status?: string };
 type Frame = { id?: number; method?: string; params?: { update: Update }; result?: { stopReason?: string } };
 
 /**
- * How long a row waits for each thing the stub owes it, its answers and then its exit (STUB3, FLAKE1): the shared patience,
- * since the bound elapses only when the stub never answers. It was 10 s and 30 s, a few seconds past the slowest a row expects
+ * How long a row waits for each thing the stub owes it, its answers and then its exit: the shared patience,
+ * since the bound elapses only when the stub never answers. A few seconds past the slowest a row expects is too short
  * (`speak()`'s the resumed turn, about 3 s; `driveTurn()`'s a set-up turn, which runs the doctrine tool six times and takes
- * about 7 s alone), and a stub still answering 3 (session/prompt) ten seconds after its first answer failed the merge queue's
- * gate beside a machine at full load (TESTPATIENCE3). The rows that test the bound itself pass a bound of their own.
+ * about 7 s alone): a stub still answering 3 (session/prompt) ten seconds after its first answer fails the merge queue's
+ * gate beside a machine at full load. The rows that test the bound itself pass a bound of their own.
  */
 const STUB_WAIT_MS = PATIENCE;
 const TURN_WAIT_MS = PATIENCE;
 
 /**
- * How long `speak()` waits for a stub's first answer, which is when its process is up (STUB3b): the start is the machine's
+ * How long `speak()` waits for a stub's first answer, which is when its process is up: the start is the machine's
  * load, not the stub's silence, so a row's `wait` is timed from that answer and the start has this bound of its own. Under
- * parallel builds a start took longer than a row's whole 1000 ms; this is the slowest row's whole wait, as before.
+ * parallel builds a start can take longer than a row's whole 1000 ms; this is the slowest row's whole wait.
  */
 const STUB_START_MS = STUB_WAIT_MS;
 
@@ -432,9 +432,9 @@ const STUB_START_MS = STUB_WAIT_MS;
 type Stub = { child: ChildProcess; closed: Promise<number | null> };
 
 /**
- * What a row awaits of the stub, bounded (STUB3): `until` settles it, or `wait` passes first and the row fails saying what
- * never came, and from when the bound was counted where `since` names it (STUB3b). A `quiet` bound starts again at each
- * chunk the stub writes on either stream (FLAKE2), so it counts only the stub's silence, never how long its work takes on a
+ * What a row awaits of the stub, bounded: `until` settles it, or `wait` passes first and the row fails saying what
+ * never came, and from when the bound is counted where `since` names it. A `quiet` bound starts again at each
+ * chunk the stub writes on either stream, so it counts only the stub's silence, never how long its work takes on a
  * loaded machine. Either way a failure stops the stub and waits for it to end, so nothing outlives the row and its folder
  * can go (Windows holds a running process's folder), and carries its stderr.
  */
@@ -466,11 +466,11 @@ async function bounded<T>(
 
 /**
  * One driven turn over the protocol, as the driver holds one: the handshake, a session on the tree, the prompt,
- * a permission the stub asks for refused (the driver refuses one by construction, D52), and end of input once
+ * a permission the stub asks for refused (the driver refuses one by construction), and end of input once
  * the prompt is answered. Resolves with the prompt's answer, every update, stderr, and the code the stub exited with.
  * `agent` is the stub's text, ACP's stub unless a row puts one at work.
  *
- * The prompt's `wait` is counted from the stub's last output (FLAKE2), after its start's own bound (STUB3b): a set-up turn
+ * The prompt's `wait` is counted from the stub's last output, after its start's own bound: a set-up turn
  * runs the doctrine tool six times and says each, so on a loaded machine the whole turn may take longer than any bound
  * while no step of it is silent for long.
  */
@@ -484,7 +484,7 @@ async function driveTurn({ cwd, env, agent: text = ACP_STUB_AGENT, wait = TURN_W
   child.stderr.on('data', (chunk) => { stderr += chunk; });
   const send = (frame: object) => child.stdin.write(`${JSON.stringify(frame)}\n`);
   const updates: Update[] = [];
-  // Bounded as `speak()` is (STUB3): the prompt's answer, then the exit, each failing the row where it never comes.
+  // Bounded as `speak()` is: the prompt's answer, then the exit, each failing the row where it never comes.
   const closed = new Promise<number | null>((resolve) => child.on('close', (code) => resolve(code)));
   let up = () => {};
   const first = new Promise<void>((resolve) => { up = resolve; });
@@ -555,7 +555,7 @@ test('a set-up quest is done as its body says: the doctrine tool by its bare nam
     assert.deepEqual(calls.map((call) => call.title), ran);
     assert.equal(updates.filter((update) => update.sessionUpdate === 'tool_call_update' && update.status === 'completed').length, ran.length);
 
-    // One commit on what was there, holding the doctrine on the agents layout, the domain and the knowledge.
+    // One commit on what is there, holding the doctrine on the agents layout, the domain and the knowledge.
     assert.equal(git(tree, 'rev-parse', 'HEAD~1').trim(), born);
     assert.match(git(tree, 'log', '-1', '--format=%s'), /^setup: take up the doctrine and initialise the knowledge \(quest 0123456789ab\)/);
     const manifest = JSON.parse(git(tree, 'show', 'HEAD:daoris.json'));
@@ -593,7 +593,7 @@ test('a tool that answers another version than the body says is the decline the 
   }
 });
 
-/** How many turns the ending is held over: it failed some turns and not others, so one proves little (STUB1). */
+/** How many turns the ending is held over: it fails some turns and not others, so one proves little. */
 const ENDINGS = 6;
 
 test('the stub\'s ordinary quest turn ends with exit 0 once its input closes, after its fetches, every time (STUB1)', async () => {
@@ -625,13 +625,13 @@ type Heard = {
 
 /**
  * One process of the stub, spoken to as the driver speaks to one: the frames sent in order, a permission it asks for
- * refused (D52), and end of input once every frame is answered. Resolves with each answer by its id and when it came (in
+ * refused, and end of input once every frame is answered. Resolves with each answer by its id and when it came (in
  * `performance.now()` milliseconds), the text of every update, stderr, and the code the stub exited with. `agent` is the
  * stub's text, ACP's stub unless a row cuts one short.
  *
- * Each wait is bounded (STUB3): a stub that exits before answering fails the row as it exits, one that stays silent fails
+ * Each wait is bounded: a stub that exits before answering fails the row as it exits, one that stays silent fails
  * it at `wait`, and one that does not exit once its input closes fails it there too, each naming what never came. The
- * answers' `wait` is counted from the stub's first answer, and a stub that gives none fails at `start` (STUB3b), so how
+ * answers' `wait` is counted from the stub's first answer, and a stub that gives none fails at `start`, so how
  * long a process takes to start on a loaded machine is never counted as the stub's silence.
  */
 async function speak({ cwd, env, frames, agent: text = ACP_STUB_AGENT, wait = STUB_WAIT_MS, start = STUB_START_MS }: {
@@ -672,7 +672,7 @@ async function speak({ cwd, env, frames, agent: text = ACP_STUB_AGENT, wait = ST
   const stub = { child, closed };
   const told = { stderr: () => stderr };
   const unanswered = () => `the stub never answered ${missing()}`;
-  // Its start first (STUB3b): the answers' bound is counted from its first answer, so a slow start is not its silence.
+  // Its start first: the answers' bound is counted from its first answer, so a slow start is not its silence.
   await bounded(stub, Promise.race([first, answered]), { wait: start, late: unanswered, since: 'its start', ...told });
   await bounded(stub, answered, { wait, late: unanswered, since: 'its first answer', ...told });
   child.stdin.end();
@@ -681,7 +681,7 @@ async function speak({ cwd, env, frames, agent: text = ACP_STUB_AGENT, wait = ST
 }
 
 /**
- * ANSWER1b (D131 §1): the stub resumes a conversation, as the family rehearsal's answer phase needs it to. A quest that
+ * The stub resumes a conversation, as the family rehearsal's answer phase needs it to. A quest that
  * asks the person first is taken, asks which port and ends its turn holding the quest, doing nothing else. The next
  * process, as the driver's next look starts one, is sent `session/resume` on the conversation the first one named,
  * never `session/new`, and its prompt is the person's answer: the report is served where it says, committed, and done.
@@ -739,7 +739,7 @@ test('the stub resumes the conversation it is asked to, and the person\'s answer
   }
 });
 
-/** The frames of a first turn on a quest that asks the person first: its work is one fetch, the take (ANSWER1b). */
+/** The frames of a first turn on a quest that asks the person first: its work is one fetch, the take. */
 const ASKING_FRAMES = (cwd: string): Said[] => [
   { id: 1, method: 'initialize', params: { protocolVersion: 1 } },
   { id: 2, method: 'session/new', params: { cwd, mcpServers: [] } },
@@ -747,9 +747,8 @@ const ASKING_FRAMES = (cwd: string): Said[] => [
 ];
 
 /**
- * FLAKE4: ANSWER1b's stub once answered its prompt with `turn failed: fetch failed` under load, and Node's fetch says
- * nothing more, so what refused it was lost. A turn whose fetch fails now says the door, the move and the cause beneath
- * it: here a door that has closed, refused by the system with its code and the address.
+ * A turn whose fetch fails says the door, the move and the cause beneath it, since Node's fetch alone says only
+ * `fetch failed`: here a door that has closed, refused by the system with its code and the address.
  */
 test('a stub whose fetch to its quest door fails answers its prompt with the door, the move and what refused it (FLAKE4)', async () => {
   const fx = makeFixture('setup-kit-stub-refused');
@@ -773,11 +772,11 @@ test('a stub whose fetch to its quest door fails answers its prompt with the doo
   }
 });
 
-/** How the stub's fetch is held under load (FLAKE4): this many turns at once, this many times, against one door. */
+/** How the stub's fetch is held under load: this many turns at once, this many times, against one door. */
 const LOADED = { wide: 12, rounds: 3 };
 
 /**
- * FLAKE4: the fetch held in a loaded loop. ANSWER1b's first turn is one fetch to the door, so many of them at once, round
+ * The fetch held in a loaded loop. The stub's first turn is one fetch to the door, so many of them at once, round
  * after round, are the load itself: every turn takes its quest and ends its turn, and the door hears every take. A turn
  * that fails says why (the row above). Its start has the shared patience, since starting a dozen processes at once is the
  * machine's load, not a stub's silence.
@@ -812,13 +811,13 @@ test('the stub\'s fetch to its quest door holds with a dozen turns at once, roun
 });
 
 /**
- * How long the stub's resumed turn is held to last: about three seconds, never at once and never a hang (STUB2). The elapsed
+ * How long the stub's resumed turn is held to last: about three seconds, never at once and never a hang. The elapsed
  * time is the claim, not a patience.
  */
 const HEARD_TURN_MS = { least: 2900, most: 6000 };
 
 /**
- * STUB2 (D137's MSG1e4 and MSG1e3 note): words said to a session after it ended resume its own conversation, and the
+ * Words said to a session after it ended resume its own conversation, and the
  * person's words are the prompt. On a quest whose title asks nothing of it, the stub says what it heard, touches nothing
  * and takes nothing, since its quest had closed. Its turn lasts about three seconds, which family phase 17a2 leans on:
  * the verb says *going on* only if it sees the record working at one of its looks, 250 ms apart.
@@ -860,9 +859,9 @@ test('the stub resumed on a quest that asks nothing says what it heard, takes no
 });
 
 /**
- * A stub cut short (STUB3): it answers `initialize`, then, at the next frame, either ends without a word or hears nothing
+ * A stub cut short: it answers `initialize`, then, at the next frame, either ends without a word or hears nothing
  * more and stays. Either is a stub that will never answer what the row waits for. `startsAfter` holds its start that many
- * milliseconds before it reads a frame, as a machine under load does (STUB3b).
+ * milliseconds before it reads a frame, as a machine under load does.
  */
 const cutShort = (then: 'exits' | 'stays', { startsAfter = 0 } = {}) => `
 import { createInterface } from 'node:readline';
@@ -881,17 +880,16 @@ const RESUME_FRAMES: Said[] = [
 ];
 
 /**
- * STUB3 (FLAKE1): `speak()` awaited the stub's answers with no bound, so ANSWER1b's row hung ten minutes under load when
- * the stub exited without answering, and passed alone. A stub that exits early now fails its row as it exits, naming each
- * answer that never came, with the stub's stderr beside it.
+ * A stub that exits early fails its row as it exits, naming each answer that never came, with the stub's stderr beside
+ * it, rather than hanging the row on answers that cannot arrive.
  */
 test('a stub that exits without answering fails its row in seconds, naming the answers that never came (STUB3)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-early');
   const tree = join(fx.root, 'atlas');
   mkdirSync(tree, { recursive: true });
   try {
-    // Its start is the machine's load, not what this row tests: beside five workers the CI on b0a786d took past the
-    // 10 s start bound to start it (FLAKE1). The exit's own message, never a bound's, shows it failed as the stub exited.
+    // Its start is the machine's load, not what this row tests: beside five workers a start can take past a
+    // 10 s start bound. The exit's own message, never a bound's, shows it failed as the stub exited.
     await assert.rejects(
       speak({ cwd: tree, env: unroled(), frames: RESUME_FRAMES, agent: cutShort('exits'), start: PATIENCE }),
       /^Error: the stub exited with code 3 and never answered 2 \(session\/new\), 3 \(session\/prompt\)/,
@@ -901,7 +899,7 @@ test('a stub that exits without answering fails its row in seconds, naming the a
   }
 });
 
-/** STUB3: a stub that stays without answering fails its row at the bound, naming what never came, and is stopped. */
+/** A stub that stays without answering fails its row at the bound, naming what never came, and is stopped. */
 test('a stub that stays without answering fails its row at the bound, and is stopped (STUB3)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-stays');
   const tree = join(fx.root, 'atlas');
@@ -919,10 +917,9 @@ test('a stub that stays without answering fails its row at the bound, and is sto
 });
 
 /**
- * STUB3b (FLAKE1): the case above failed three times on 2026-10-07 under parallel builds. Its stub had not answered even
- * `initialize` within the 1000 ms bound, so the row named three unanswered requests where it expects two: the bound was
- * counted from the spawn, so a process's start under load counted as the stub's silence. It counts from the stub's first
- * answer now, and the start has a bound of its own.
+ * The bound counts from the stub's first answer, not from the spawn, so a process's start under load is not counted as
+ * the stub's silence (a stub slow to answer even `initialize` would otherwise name three unanswered requests where the
+ * row expects two); the start has a bound of its own.
  */
 test('a stub slow to start is not counted against the bound, which runs from its first answer (STUB3b)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-slow');
@@ -939,7 +936,7 @@ test('a stub slow to start is not counted against the bound, which runs from its
   }
 });
 
-/** STUB3b: a stub that never answers at all fails its row at the start's own bound, naming every request, and is stopped. */
+/** A stub that never answers at all fails its row at the start's own bound, naming every request, and is stopped. */
 test('a stub that answers nothing fails its row at the bound on its start, naming every request (STUB3b)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-silent');
   const tree = join(fx.root, 'atlas');
@@ -956,7 +953,7 @@ test('a stub that answers nothing fails its row at the bound on its start, namin
 });
 
 /**
- * A stub at work (FLAKE2): it answers `initialize` and `session/new`, then, at the prompt, says an update every `every` ms,
+ * A stub at work: it answers `initialize` and `session/new`, then, at the prompt, says an update every `every` ms,
  * `times` times, as a set-up turn says each command it runs, and answers the prompt after them, or with `answers` false
  * falls silent instead. Its input closing ends it.
  */
@@ -980,9 +977,8 @@ lines.on('close', () => process.exit(0));
 `;
 
 /**
- * FLAKE2 (FLAKE1's sightings): *a set-up quest is done as its body says* failed three times under load, its stub having run
- * all four commands, because `driveTurn()` counted the prompt's 30 s from the request: a turn that kept working past it was
- * counted as silent. The bound runs from the stub's last output now, as STUB3b's runs from its first answer.
+ * The prompt's bound runs from the stub's last output, not from the request, so a turn that keeps working past it is
+ * not counted as silent; the start's bound runs from the first answer.
  */
 test('a turn still at work past the bound is not counted as silent, which runs from its last output (FLAKE2)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-at-work');
@@ -1002,7 +998,7 @@ test('a turn still at work past the bound is not counted as silent, which runs f
   }
 });
 
-/** FLAKE2: a turn that falls silent still fails at the bound, counted from its last output, and is stopped. */
+/** A turn that falls silent still fails at the bound, counted from its last output, and is stopped. */
 test('a turn that falls silent fails at the bound from its last output, and is stopped (FLAKE2)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-falls-silent');
   const tree = join(fx.root, 'atlas');

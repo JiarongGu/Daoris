@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 
 /**
- * HEAVYQUEUE1: the queue's heavy gates and a driven session's heavy runs share one admission in the Daoris home, so a session's
+ * The queue's heavy gates and a driven session's heavy runs share one admission in the Daoris home, so a session's
  * focused run beside a candidate no longer doubles the candidate's gate times: the gate waits for the session's place, says so, and is
  * never failed or timed out for the wait. The admission's own table is `tools/machine-admission.test.mjs`; this holds the merge tool's
  * use of it (`runGates`' `admission`, `admitted`, `machineAdmission`). Run by the `tool-tests` gate.

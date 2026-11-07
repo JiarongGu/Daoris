@@ -5,8 +5,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * INTEGRATE1f part f1 (the integration design §5.5, §5.9): the environment a gate is composed with and the digest of a gate's
- * composition, held to ONE table with the driver's twin. `tools/merge-branch.mjs` (`gateEnvironment`, `GATE_REMOVED`,
+ * The environment a gate is composed with and the digest of a gate's
+ * composition (the integration design §5.5, §5.9), held to ONE table with the driver's twin. `tools/merge-branch.mjs` (`gateEnvironment`, `GATE_REMOVED`,
  * `BESIDE_ENVIRONMENT`, `compositionDigest`) reads `fixtures/gate-environment.json` here, row for row, and the driver's
  * `GateEnvironment` and `GateComposition` read it there (`GateEnvironmentTests`). The table's `driverOnly` rows are what the driver's
  * gate is given that the tool's is not yet; this file holds the tool to nothing there. Run by the `tool-tests` gate.
@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 // The census of test units reads this file's strings as data, not as reads; what it reads is declared.
 // test-map: strings name paths as data
-// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/gate-environment.json — INTEGRATE1f's driver twin reads the table row for row
+// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/gate-environment.json — the driver twin reads the table row for row
 
 type Environment = Record<string, string>;
 interface Composition { name: string; units: string[] | null; settings: Record<string, unknown>; digest: string }

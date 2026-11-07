@@ -5,15 +5,15 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * INTEGRATE1f part f1 (D207, the integration design §5.3): the failure reader and the signature, held to ONE table with the driver's
+ * The failure reader and the signature (the integration design §5.3), held to ONE table with the driver's
  * twin. `tools/test-failures.mjs` reads `fixtures/failure-signatures.json` here row for row, and the driver's `FailureReader` reads it
- * there (`FailureReadingTests`), so a change to one reader without the other fails its own suite. The table's expected values were read
+ * there (`FailureReadingTests`), so a change to one reader without the other fails its own suite. The table's expected values come
  * from this tool; the driver's reader must give the same. Run by the `tool-tests` gate.
  */
 
 // The census of test units reads this file's strings as data, not as reads; what it reads is declared.
 // test-map: strings name paths as data
-// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/failure-signatures.json — INTEGRATE1f's driver twin reads the table row for row
+// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/failure-signatures.json — the driver twin reads the table row for row
 
 interface Frame { method: string; file: string | null; line: number | null }
 interface Failure { runner: string; unit: string | null; test: string; exception: string; message: string; frames: Frame[] }

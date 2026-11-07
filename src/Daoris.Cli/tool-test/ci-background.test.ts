@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 /**
- * CISCOPE1d (D207, design §5.1 to §5.3 and §8 row 4): the background run's due record (the sweep, the night and its catch-up,
+ * The background run's due record (the sweep, the night and its catch-up,
  * the overdue report), the run-kind matrix, known red by test and fingerprint matched by signature with its clearing and
  * expiry, the receipts a stage counts, and the stage history (`tools/ci-background.mjs`). The merge tool's own use of them, and
  * the stage's refusals, are in `merge-branch.test.ts`. Run by the `tool-tests` gate.
@@ -76,7 +76,7 @@ const HALVES = ['driver-process', 'driver-process-git', 'modules-process'];
 // The due record (§5.1)
 
 test('a night missed is caught up at the next start, before any other background run, and a finished night satisfies it', () => {
-  // The last night finished two days ago: the machine was off last night.
+  // The last night finished two days ago: the machine stayed off last night.
   let record: Sweep = { ...empty(), night: { last: at(bg.lastNight(NOON) - 48 * HOUR), commit: 'a'.repeat(40), ended: at(bg.lastNight(NOON) - 47 * HOUR) } };
   for (const gate of HALVES) record = bg.noteSweeps(record, [{ gate, at: at(NOON - HOUR), commit: 'a'.repeat(40), kind: 'ordinary' }]);
   assert.equal(bg.nightDue(record, NOON).due, true);
@@ -106,7 +106,7 @@ test('a red whole run satisfies the sweep; a run stopped before its classes ran,
 
   // The git half ran whole and failed, its trx read: every class has a verdict, so its sweep is satisfied.
   assert.equal(bg.sweepSatisfied({ whole: 'its sweep is due', verdict: 'FAIL', trx: 'driver-process-git.trx' }), true);
-  // The run was stopped mid-half: ENDED gives no class a verdict.
+  // A run stopped mid-half: ENDED gives no class a verdict.
   assert.equal(bg.sweepSatisfied({ whole: 'its sweep is due', verdict: 'ENDED', trx: null }), false);
   // A build failure: the half failed with no trx, its classes unrun.
   assert.equal(bg.sweepSatisfied({ whole: 'its sweep is due', verdict: 'FAIL', trx: null }), false);
@@ -304,7 +304,7 @@ test('clearing by lineage: an older run finishing late and a bisection on a pass
   assert.equal(cleared.cleared.length, 1);
   record = cleared.record;
   assert.equal(record.findings[0]!.state, 'cleared');
-  // Seen again within a day of the clearing: the clearing was contradicted, and the first sighting is kept.
+  // Seen again within a day of the clearing: the clearing is contradicted, and the first sighting is kept.
   const filed = bg.fileSighting(record, sightings(trxOf([{ name: 'N.Tests.WidgetTests.Opens', outcome: 'Failed', message: 'Assert.True() Failure', line: 7 }]), 'c4', at(NOON + 5 * HOUR))[0]!);
   assert.equal(filed.how, 'restored');
   assert.equal(filed.finding.firstSeen.commit, 'c2');
@@ -316,7 +316,7 @@ test('clearing by lineage: an older run finishing late and a bisection on a pass
   assert.equal(later.finding.since, at(NOON + 51 * HOUR));
 });
 
-// CIFINDINGSKEEP1: a finding is cleared by a gate's kept pass under the rules of one the run executed.
+// A finding is cleared by a gate's kept pass under the rules of one the run executed.
 test('clearing from kept proof: an exact passing kept verdict of the same gate clears a finding from the run\'s commit, with its provenance; every other case clears nothing', () => {
   const line = ['c1', 'c2', 'c3', 'c4'];
   const descends = (from: string, to: string): boolean => line.indexOf(to) >= line.indexOf(from);
