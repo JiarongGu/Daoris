@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Course cut: the behaviour the cut keeps, written against the surface that exists on both sides of
+/// The Workplace-names-Course cut: the behaviour the cut keeps, written against the surface that exists on both sides of
 /// it (the literal historical bytes, the rebase key's text, the press's values and refusals, the land press's told note), so the same
 /// cases pass on the base and after it.
 /// </summary>

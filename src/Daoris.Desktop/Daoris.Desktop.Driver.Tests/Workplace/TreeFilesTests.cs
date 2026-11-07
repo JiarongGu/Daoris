@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The files a person may `@` in a conversation (CONV4d): what the session's tree holds, as git
+/// The files a person may `@` in a conversation: what the session's tree holds, as git
 /// answers it. Driven against REAL git, as the diff is, because the answer is git's.
 /// </summary>
 /// <remarks>

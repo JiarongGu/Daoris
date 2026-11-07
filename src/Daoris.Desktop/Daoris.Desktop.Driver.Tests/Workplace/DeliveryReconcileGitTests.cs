@@ -128,7 +128,7 @@ public sealed class DeliveryReconcileGitTests : IDisposable
     }
 
     /// <summary>
-    /// A merge stopped at each git boundary, then a restart: cut while prepared, nothing was pressed, the preparation is withdrawn and the
+    /// A merge stopped at each git boundary, then a restart: cut while prepared, nothing is pressed, the preparation is withdrawn and the
     /// merge goes on; cut after the promotion moved its line, or after its record, the line read holding the commit settles it delivered. Merged once.
     /// </summary>
     [Theory]
@@ -192,7 +192,7 @@ public sealed class DeliveryReconcileGitTests : IDisposable
     }
 
     /// <summary>
-    /// A merge press whose request was left waiting, its line's entry withdrawn as 1b2 writes it: while the request waits, nothing is pressed again;
+    /// A merge press whose request is left waiting, its line's entry withdrawn: while the request waits, nothing is pressed again;
     /// once the line takes it, the restart's settlement reads the line holding the commit and settles it reached.
     /// </summary>
     [Fact]
@@ -278,7 +278,7 @@ public sealed class DeliveryReconcileGitTests : IDisposable
         Assert.Equal(("run-a", 1L), (Store("run-b").Delivery(claim.Key)!.ClaimRun, Store("run-b").Delivery(claim.Key)!.ClaimGeneration));
     }
 
-    /// <summary>A push a pre-G8 build began, stopped after its record: the git phases are done, and what followed was a landing plugin's, a wire that is gone, said and left as it stands.</summary>
+    /// <summary>A push an older build began, stopped after its record: the git phases are done, and what follows is a landing plugin's, a wire that is gone, said and left as it stands.</summary>
     [Fact]
     public async Task A_push_stopped_after_its_record_is_left_said_as_a_retired_plugin_wire_s()
     {

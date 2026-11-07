@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR7 (D112), without git: which repositories bringing up to date takes. By default those holding a branch of
+/// Without git: which repositories bringing up to date takes. By default those holding a branch of
 /// Daoris's; every one with `--all`; one the person named; and, at the press, each one a listed row names.
 /// </summary>
 public sealed class SyncScopeTests
@@ -28,7 +28,7 @@ public sealed class SyncScopeTests
         Assert.True(SyncScope.Named(["tools"]).Includes(Holding));
     }
 
-    /// <summary>The press acts on what the person was shown: a row listed as `repository:branch` includes its repository.</summary>
+    /// <summary>The press acts on what the person saw listed: a row listed as `repository:branch` includes its repository.</summary>
     [Fact]
     public void A_press_takes_each_repository_a_listed_row_names_and_no_other()
     {

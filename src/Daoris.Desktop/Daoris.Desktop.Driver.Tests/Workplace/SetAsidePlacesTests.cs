@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPSIZE1a (D195's KEEPSIZE1 note; the keep-size design §1.1 and §6): the folders set aside at every place of the trees entry. Before
-/// it, the purge, the slim, the press's list, the floor, the look and the card read <c>.tidied</c> under the trees entry's answered place
-/// alone, so the folders set aside before the home's layout moved, at the old place, were never purged, listed or counted as set aside.
+/// The folders set aside at every place of the trees entry: the purge, the slim, the press's list, the floor, the look and the card
+/// read <c>.tidied</c> at each place, so a folder set aside at an earlier place is purged, listed and counted as set aside.
 /// A home holding a set-aside folder at each place, as the look leaves them: files only, so no git and no process is needed.
 /// </summary>
 public sealed class SetAsidePlacesTests : IDisposable
@@ -30,7 +29,7 @@ public sealed class SetAsidePlacesTests : IDisposable
 
     /// <summary>
     /// A folder as the look sets it aside under <paramref name="place"/>'s <c>.tidied</c>, moved at <paramref name="moved"/>: one file of
-    /// <paramref name="bytes"/>, every entry dated an hour before the move, and no manifest, as a folder set aside before KEEP1a has none.
+    /// <paramref name="bytes"/>, every entry dated an hour before the move, and no manifest, as a folder set aside before manifests were written has none.
     /// </summary>
     private static string Aside(string place, string name, DateTimeOffset moved, int bytes)
     {
@@ -57,7 +56,7 @@ public sealed class SetAsidePlacesTests : IDisposable
     private static JsonObject KindOf(JsonObject space, string id) =>
         space["kinds"]!.AsArray().Select(node => node!.AsObject()).Single(kind => (string?)kind["id"] == id);
 
-    /// <summary>§6: a folder at each place past its days, both purged by the Keeping pass's removal, each place's record left clean.</summary>
+    /// <summary>A folder at each place past its days, both purged by the Keeping pass's removal, each place's record left clean.</summary>
     [Fact]
     public void A_folder_at_each_place_is_purged_at_its_days()
     {
@@ -76,7 +75,7 @@ public sealed class SetAsidePlacesTests : IDisposable
         Assert.Empty(trees.SetAsideFailed());
     }
 
-    /// <summary>§6: a folder at the old place within its days stays; one written into after its move is kept and said, at its days too.</summary>
+    /// <summary>A folder at an earlier place within its days stays; one written into after its move is kept and said, at its days too.</summary>
     [Fact]
     public void A_folder_at_the_old_place_within_its_days_or_written_into_stays()
     {
@@ -96,7 +95,7 @@ public sealed class SetAsidePlacesTests : IDisposable
         Assert.True(Directory.Exists(written));
     }
 
-    /// <summary>§6: the press's list, the trees' list and the work inventory name the folders at both places.</summary>
+    /// <summary>The press's list, the trees' list and the work inventory name the folders at both places.</summary>
     [Fact]
     public async Task The_folders_at_both_places_are_listed()
     {
@@ -116,7 +115,7 @@ public sealed class SetAsidePlacesTests : IDisposable
                 .Select(each => Path.GetFileName(each.Path)[..Path.GetFileName(each.Path).LastIndexOf('-')]).Order(StringComparer.Ordinal));
     }
 
-    /// <summary>§6: the card counts both places' folders under set-aside, none under the rest, and its next reads both.</summary>
+    /// <summary>The card counts both places' folders under set-aside, none under the rest, and its next reads both.</summary>
     [Fact]
     public void The_card_counts_both_places_under_set_aside_and_none_under_the_rest()
     {

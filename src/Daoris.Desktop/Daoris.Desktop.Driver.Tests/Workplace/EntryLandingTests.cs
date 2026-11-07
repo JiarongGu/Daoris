@@ -3,9 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ACCEPTALL1 (D167's 2026-10-15 amendment points 1 to 3): an entry's Accept lands its parts' work on one branch, in ledger order.
-/// On the install one ask's entry held parts that ran alongside, each in a tree of its own, and each offered its own Accept, so the
-/// person pressed once per part and the earlier attempt at the same fix became a branch of its own. Now the entry's one press lands
+/// An entry's Accept lands its parts' work on one branch, in ledger order.
+/// One ask's entry can hold parts that run alongside, each in a tree of its own. The entry's one press lands
 /// the first part on the branch named for its first quest and replays each later part's commits onto it; a part a later part redid
 /// is named in the plan and left out only where the person chose; a conflict with the entry's earlier work is refused naming both
 /// parts. Real git in a scratch repository, so this is the suite's Process half; nothing reaches a network.
@@ -60,7 +59,7 @@ public sealed class EntryLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// ACCEPTCONFLICT1, the install's case: two parts add files of their own and edit one line of a shared file. They meet only in that
+    /// Two parts add files of their own and edit one line of a shared file. They meet only in that
     /// line, so the earlier part has work the line would keep: said as a clash naming the file, never superseded.
     /// </summary>
     [Fact]
@@ -103,7 +102,7 @@ public sealed class EntryLandingTests : LandedFixture
         Assert.Equal(new PartSuperseded("s5e6f7a8", "fix.txt", Conflicts: false), plan.Parts[0].Superseded);
     }
 
-    /// <summary>After the entry's branch was squash-merged, its next work makes a new branch, still named for its first quest.</summary>
+    /// <summary>After the entry's branch is squash-merged, its next work makes a new branch, still named for its first quest.</summary>
     [Fact]
     public async Task After_the_entrys_branch_merged_its_next_work_lands_on_a_new_branch()
     {
@@ -124,7 +123,7 @@ public sealed class EntryLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// ACCEPTALL1b (D167's amendment point 2): a part's own Accept, in its review, is its entry's Accept for that part alone. Two parts
+    /// A part's own Accept, in its review, is its entry's Accept for that part alone. Two parts
     /// that ran alongside, each accepted from its own review, land on the entry's one branch: the second joins it as the entry's press would.
     /// </summary>
     [Fact]
@@ -159,7 +158,7 @@ public sealed class EntryLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// ACCEPTALL1f (D167's amendment point 2): every door that lands one session (the review's, the terminal's <c>trees land</c>, the look's
+    /// Every door that lands one session (the review's, the terminal's <c>trees land</c>, the look's
     /// at done) names it by <see cref="SessionTrees.OwnSubjectAsync"/> over the service's records. Pressed in either order, an entry's
     /// parts land on its one branch: the later part, pressed first, makes it under the first part's name, and the first part's own
     /// landing joins it; each landing records its own session.
@@ -205,7 +204,7 @@ public sealed class EntryLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// ACCEPTFOOT2 (D164's 2026-10-16 note): a conversation's entry is named for its first part's work, never for the tree a part's own
+    /// A conversation's entry is named for its first part's work, never for the tree a part's own
     /// Accept is pressed in, so parts whose oldest commits differ still land on the entry's one branch, in either order.
     /// </summary>
     [Fact]
@@ -242,7 +241,7 @@ public sealed class EntryLandingTests : LandedFixture
     private static DateTimeOffset At(int minute) => new(2026, 10, 16, 9, minute, 0, TimeSpan.Zero);
 
     /// <summary>
-    /// ACCEPTALL1g (D167's amendment point 2, D145 §3): the plan says whether the branch Accept lands on already stands. Before the
+    /// The plan says whether the branch Accept lands on already stands. Before the
     /// entry's first landing its branch is one the press makes; after it, the next part's plan names the same branch, standing, which
     /// its press moves on, so the review stops promising a new branch there.
     /// </summary>
@@ -267,7 +266,7 @@ public sealed class EntryLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// ACCEPTALL1d, with ACCEPTALL1b's join: under a squash rule a part's own later work, grown from the tip its first landing squashed,
+    /// Under a squash rule a part's own later work, grown from the tip its first landing squashed,
     /// still advances by its own tip, with nothing replayed, as a chain's later step under a squash does.
     /// </summary>
     [Fact]
@@ -293,7 +292,7 @@ public sealed class EntryLandingTests : LandedFixture
         Assert.Equal(tip, (await GitAsync(first.Path, "rev-parse", "HEAD")).Trim());
     }
 
-    /// <summary>Each landing squashed into one commit (PROCESS1b-ii), its branch named as the plain landing names it.</summary>
+    /// <summary>Each landing squashed into one commit, its branch named as the plain landing names it.</summary>
     private void Squashing() => Lands = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}", squash: true));
 
     /// <summary>A part joining its entry, read by the run's bound process, whose <c>land</c> names the entry's branch, as a door's gate reads it.</summary>

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-END2a (the fabric events design §B3 and §B7, canary 6): the end judgement, pure over the facts the proofs found. One test
-/// per cycle of §B3, a named workflow's landing included, and one per case never ended by a guess. The same proofs over real git are
+/// The end judgement, pure over the facts the proofs found. One test
+/// per cycle, a named workflow's landing included, and one per case never ended by a guess. The same proofs over real git are
 /// <see cref="EndJudgementGitTests"/>'.
 /// </summary>
 public sealed class EndJudgementTests
@@ -107,8 +107,8 @@ public sealed class EndJudgementTests
     }
 
     /// <summary>
-    /// CLEANUP1b and CLEANUP1c: a landing whose branch git said is missing is judged at the tip its landing recorded. The line's ancestry of
-    /// that commit ends it, and so does its content proof on a form of the line (CLEANUP1c: a platform's squash leaves no ancestry). Content
+    /// A landing whose branch git says is missing is judged at the tip its landing recorded. The line's ancestry of
+    /// that commit ends it, and so does its content proof on a form of the line (a platform's squash leaves no ancestry). Content
     /// only a branch of the person's holds, and a pull request's word, end nothing here; a branch standing again is not judged as gone, and
     /// a line git could not read says nothing.
     /// </summary>
@@ -186,7 +186,7 @@ public sealed class EndJudgementTests
     }
 
     /// <summary>
-    /// 🔴 FABRIC-END2d (D102's group, as the clean-up's <c>Inside</c> proves it): a landing whose files differ on the line, inside one whose own
+    /// As the clean-up's <c>Inside</c> proves it, a landing whose files differ on the line, inside one whose own
     /// proof ended it, is ended inside that one, which its fact names.
     /// </summary>
     [Fact]
@@ -200,7 +200,7 @@ public sealed class EndJudgementTests
     }
 
     /// <summary>
-    /// 🔴 FABRIC-END2d: never inside one ended only by being inside, nor one not ended, nor where its files were never compared (the clean-up's
+    /// Never inside one ended only by being inside, nor one not ended, nor where its files are never compared (the clean-up's
     /// <c>Judgeable</c>), nor for a landing whose branch went.
     /// </summary>
     [Fact]
@@ -272,7 +272,7 @@ public sealed class EndJudgementTests
     public void A_session_branch_a_completed_pull_request_carried_is_ended_as_carried()
     {
         var verdict = EndJudgement.Judge(EndCycle.NoLanding, Branch(EndRole.Session), Facts() with { Carrier = "feature/q1-work" });
-        // FABRIC-END2d, after the merge: the end rests on the form of the line its merge commit was found on, which stands once the
+        // After the merge, the end rests on the form of the line its merge commit is found on, which stands once the
         // platform and the person deleted the carrier's branch, so its fact can be kept; the carrier is still named.
         var on = EndJudgement.Judge(EndCycle.NoLanding, Branch(EndRole.Session), Facts() with { Carrier = "feature/q1-work", CarrierOn = "origin/main" });
         Assert.Equal((EndState.Ended, EndBy.Carried, "origin/main"), (on.State, on.By, on.Where));

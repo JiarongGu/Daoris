@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LINESTOGETHER1d (the review-flow design §4, <i>The combined Accept</i>, <i>Inclusion, in every form</i>): three branches (the head, a
+/// Three branches (the head, a
 /// part beside it, another session), the members replayed onto the head, the line moved after the head's turn, then one Accept. It lands
 /// by branch, squash and merge; the members are carried in the record, read <i>brought into</i>, and never land a second time. A member
-/// held by its own gate lands nothing, and a head moved since it was checked is refused under the hold before anything is made.
+/// held by its own gate lands nothing, and a head moved since its check is refused under the hold before anything is made.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]

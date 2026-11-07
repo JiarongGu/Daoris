@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The HTTPS tables (the git design §2.3, D241 point 6): what an identity's HTTPS act is handed and what is taken out of it, the
+/// The HTTPS tables: what an identity's HTTPS act is handed and what is taken out of it, the
 /// credential door's answers, an identity's tokens, the address's host, user-info and password, and the resolution of an HTTPS address.
 /// No process starts.
 /// </summary>

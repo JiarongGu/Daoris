@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STRAYOTHERS1 (D88's note) over real git: what a killed opinion's pass or replay left under a repository's trees is moved aside
-/// by the next pass of its kind, once no running process holds it and nothing in it was written for ten minutes; one in use, one
+/// Over real git: what a killed opinion's pass or replay left under a repository's trees is moved aside
+/// by the next pass of its kind, once no running process holds it and nothing in it changed for ten minutes; one in use, one
 /// written in lately and one a person locked stay. A kill is played by naming a process that ran and ended, and ten quiet minutes
 /// by setting every time in the folder an hour back.
 /// </summary>

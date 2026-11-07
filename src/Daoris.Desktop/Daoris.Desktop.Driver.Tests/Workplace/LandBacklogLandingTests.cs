@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDBACKLOG1 (D87's LANDBACKLOG1 note): a landing's replay onto the line's tip (LANDREBASE1) that conflicts only in the backlog the
-/// line's <c>daoris.json</c> declares settles it by the merge base, as the merge tool settles it (MERGETASKS1): a row one side added is
-/// kept, one a side removed is dropped. Replaying a branch onto <c>main</c> once conflicted in <c>TASKS.md</c> alone and was refused,
-/// and in a repository where every session archives its own row that refusal cost the session a rebase turn over a line the merge tool
+/// A landing's replay onto the line's tip that conflicts only in the backlog the
+/// line's <c>daoris.json</c> declares settles it by the merge base, as the merge tool settles it: a row one side added is
+/// kept, one a side removed is dropped. Refusing a conflict in <c>TASKS.md</c> alone would cost the session, in a repository where
+/// every session archives its own row, a rebase turn over a line the merge tool
 /// settles by itself. A row both sides edited, a backlog conflict beside one in code, and a file only the session declares its backlog
 /// stay the session's conflict, refused with the rebase words. Real git in a scratch repository, so this is the suite's Process half.
 /// The rule itself is <c>BacklogMergeTests</c>' table.
@@ -60,7 +60,7 @@ public sealed class LandBacklogLandingTests : LandedFixture
 
     /// <summary>
     /// One row both sides edited is the session's, as the merge tool leaves it for a hand: refused with git's line and the rebase words,
-    /// nothing made and the tree as it was. With no manifest the backlog is <c>TASKS.md</c>.
+    /// nothing made and the tree unchanged. With no manifest the backlog is <c>TASKS.md</c>.
     /// </summary>
     [Fact]
     public async Task A_backlog_row_edited_on_both_sides_is_refused_with_the_rebase_words()
@@ -148,8 +148,8 @@ public sealed class LandBacklogLandingTests : LandedFixture
     private const string RowsDeclared = "{ \"integration\": { \"merge\": [ { \"paths\": \"docs/development.md\", \"by\": \"rows\" } ] } }\n";
 
     /// <summary>
-    /// INTEGRATE1c: the line's <c>daoris.gates.json</c> declares <c>docs/development.md</c> a row table. The work and the line each add a
-    /// row at the census table's last line (the merge queue's set-aside of 2026-10-28), which git reads as one conflict: the press lands
+    /// The line's <c>daoris.gates.json</c> declares <c>docs/development.md</c> a row table. The work and the line each add a
+    /// row at the census table's last line, which git reads as one conflict: the press lands
     /// the work replayed with both rows, the line's first, and says it settled the table.
     /// </summary>
     [Fact]
@@ -202,9 +202,9 @@ public sealed class LandBacklogLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// INTEGRATE1c: the work and the line each append an entry to a union-merged record (the task archive). Git's union merge keeps the
+    /// The work and the line each append an entry to a union-merged record (the task archive). Git's union merge keeps the
     /// blank line they both open with once, so the work's heading lands under the line's last line; the replay sets it apart in a commit on
-    /// top, as the merge tool does (UNIONGLUE1), and says so. The entry the line already held that way is left alone.
+    /// top, as the merge tool does, and says so. The entry the line already held that way is left alone.
     /// </summary>
     [Fact]
     public async Task A_heading_union_joined_to_the_line_above_in_the_replay_is_set_apart_in_a_commit_on_top()
@@ -238,7 +238,7 @@ public sealed class LandBacklogLandingTests : LandedFixture
     private static async Task<int> TreesAsync(string root) =>
         (await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n').Count(line => line.StartsWith("worktree ", StringComparison.Ordinal));
 
-    /// <summary>What a refused landing must leave as it was, as <c>LandRebaseLandingTests</c> reads it.</summary>
+    /// <summary>What a refused landing must leave unchanged, as <c>LandRebaseLandingTests</c> reads it.</summary>
     private static async Task<string> StateAsync(string root, TreeOpened tree) =>
         string.Join("\n",
             (await GitAsync(root, "for-each-ref", "--format=%(objectname) %(refname)", "refs/heads/", "refs/daoris/")).Trim(),

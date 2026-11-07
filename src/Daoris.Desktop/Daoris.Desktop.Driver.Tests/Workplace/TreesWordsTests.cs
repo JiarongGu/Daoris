@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1b3 (the terminal RPC design §7.3, D171's RPC1b note): each <c>trees</c> press's route answers the verb's own words beside the
+/// Each <c>trees</c> press's route answers the verb's own words beside the
 /// page's fields (<c>said</c>), and the verb that becomes a client prints them. Per verb, the text a stand-in's answer is printed
 /// as equals the alone path's, case for case, refusals included: the alone path prints through <see cref="TreesWords"/> too, which
 /// <c>TreesConsoleUsesTheWords</c> holds by reading the console's source.
@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Windows only, as the pipe is: each test serves its own stand-in in process, on its own home's name.</remarks>
 public sealed class TreesWordsTests : IAsyncLifetime
 {
-    /// <summary>A press the census opens, as the trees verbs' will be once RPC1c confirms them in the window.</summary>
+    /// <summary>A press the census opens.</summary>
     private static readonly InstanceRoute Open = new(TreesRoutes.DriverModule, "TREES_PRESS", RouteClass.Open);
 
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-trees-words-tests", Guid.NewGuid().ToString("N")[..8]);
@@ -101,8 +101,8 @@ public sealed class TreesWordsTests : IAsyncLifetime
         AssertSameAsync(TreesWords.Land(new TreeLanding(false, "Nothing was landed: its tree holds uncommitted work."), []));
 
     /// <summary>
-    /// CHATFLOW1d (the chat-flow design §5.2): a chat run's press refused, a turn running, another window holding it, the work moved while it
-    /// was judged, or its opinion asked at that press, is its sentence and exit 1, the same on the connected terminal as alone.
+    /// A chat run's press refused, a turn running, another window holding it, the work moved while it
+    /// is judged, or its opinion asked at that press, is its sentence and exit 1, the same on the connected terminal as alone.
     /// </summary>
     [Theory]
     [InlineData(ChatPresses.Busy)]
@@ -136,7 +136,7 @@ public sealed class TreesWordsTests : IAsyncLifetime
         await AssertSameAsync(said);
     }
 
-    // trees sync --yes: TREES_SYNC, with what was left apart and what the registry followed.
+    // trees sync --yes: TREES_SYNC, with what is left apart and what the registry followed.
     private static SyncDone Synced(bool conflict) => new(
         [new PullResult(new LinePull("engine", "aurora", "main", PullKind.FastForward, "aaaa", "bbbb", 2, "no route to host", null), !conflict, conflict ? "diverged since" : "moved to `bbbb`")],
         [new RebaseResult(new RebaseItem("engine", "aurora", "feature/x", false, RebaseKind.Replay, "main", null, null, null, 1, null), true, "replayed")],
@@ -212,7 +212,7 @@ public sealed class TreesWordsTests : IAsyncLifetime
         await AssertSameAsync(none);
     }
 
-    // trees land <session> refused where the route used to throw, or to say nothing (RPC1b4).
+    // trees land <session> refused with a sentence, where the route could throw or say nothing.
     [Fact]
     public async Task A_session_with_no_tree_to_land_is_a_sentence_on_the_error_exit_1()
     {
@@ -314,13 +314,13 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("TreesWords.NotAgain(")]
     [InlineData("TreesWords.NoTreeToLand(")]
     [InlineData("TreesWords.LandedBeforeAsync(")]
-    // RPCOPEN1: the reads' words, which the routes answer as `said` and the verb prints as a client of the running Daoris.
+    // The reads' words, which the routes answer as `said` and the verb prints as a client of the running Daoris.
     [InlineData("TreesPlanWords.CleanPlan(")]
     [InlineData("TreesPlanWords.SyncPlan(")]
     [InlineData("TreesPlanWords.LandPlanAsync(")]
     [InlineData("TreesPlanWords.LandedPlan(")]
     [InlineData("TreesPlanWords.EntryPlanned(")]
-    // CHATFLOW1g (D228): the press keeps the word for the run's `land`, or says what holds the work, in the words the routes say too.
+    // The press keeps the word for the run's `land`, or says what holds the work, in the words the routes say too.
     [InlineData("TreesWords.AcceptedForPass(")]
     public void TreesConsoleUsesTheWords(string call)
     {

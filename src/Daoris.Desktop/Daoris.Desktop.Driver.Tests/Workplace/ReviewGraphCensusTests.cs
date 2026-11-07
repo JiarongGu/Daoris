@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP1a-ii's census (the git-app design P1.4, P1.7), in the fast half: Review's graph run over every combination of a review's
+/// The census, in the fast half: Review's graph run over every combination of a review's
 /// conditions, git stood in for under the seam (<see cref="WorkingTree.Runs"/>) by a scripted world whose every answer is held until
 /// the test releases it. Released a round at a time, each of the review's nodes must start in the round its generated depth names
-/// (none before its needs answered, none later than they had), no two Π reads may run together, the answer must be today's chain's on
+/// (none before its needs answered, none later than they answered), no two Π reads may run together, the answer must be today's chain's on
 /// the same world, and the commands the chain's but for the graph's wasted speculative starts and the shared <c>--show-toplevel</c>.
 /// The untracked window's held cases are held at w = 1 and w = 4.
 /// </summary>
@@ -979,7 +979,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
         await CensusAsync(world with { MergeConflicts = true });
     }
 
-    /// <summary>The design's P1.4 table, generated: where the graph's numbers differ from the table, the generated ones stand.</summary>
+    /// <summary>The generated table: where the graph's numbers differ from the written table, the generated ones stand.</summary>
     [Fact]
     public async Task The_named_paths_have_the_tables_depth_and_starts()
     {
@@ -1004,7 +1004,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
 
     private static int Started(ReviewGraph graph) => graph.Nodes.Count(node => node.Order >= 0);
 
-    // The untracked window's held cases (P1.3), at w = 1 (part one's) and w = 4 (the protocol part two would widen).
+    // The untracked window's held cases, at w = 1 and w = 4.
     [Theory]
     [InlineData(1)]
     [InlineData(4)]
@@ -1028,7 +1028,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
         await Task.Delay(20);
         Assert.Equal(window, started.Count);
 
-        // The fold reaching the budget mid-window: what was started ahead is stopped, wasted, and listed with no patch.
+        // The fold reaching the budget mid-window: what started ahead is stopped, wasted, and listed with no patch.
         started["u0.txt"].TrySetResult((new string('+', WorkingTree.PatchBudget), 1));
         var wasted = await folding;
         Assert.Equal(window - 1, wasted);

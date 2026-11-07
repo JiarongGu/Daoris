@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDSYNC3 (D87's 2026-10-15 amendment point 1): <i>Bring up to date</i> judges a session branch's commits as a landing does. WSR6's
-/// plan said <i>replays 3 commit(s)</i> for a branch whose first was squash-merged, and <i>replays 1</i> for one whose only commit was:
-/// now what the line holds is neither counted nor replayed, and a branch it holds entirely moves onto the line as holding nothing of
-/// its own. Beside <see cref="TreeSyncTests"/>, in a class of its own so the git-only classes still run four at once (PROC1b).
+/// <i>Bring up to date</i> judges a session branch's commits as a landing does. The plan does not say <i>replays 3 commit(s)</i>
+/// for a branch whose first commit is squash-merged, nor <i>replays 1</i> for one whose only commit is:
+/// what the line holds is neither counted nor replayed, and a branch it holds entirely moves onto the line as holding nothing of
+/// its own. Beside <see cref="TreeSyncTests"/>, in a class of its own so the git-only classes run four at once.
 /// </summary>
 /// <remarks>
 /// 🔴 <b>Nothing here reaches a network</b>: `origin` is a bare repository under the scratch folder, and the platform's merge is a
@@ -144,7 +144,7 @@ public sealed class TreeSyncHeldTests : TreeSyncFixture
         Assert.Equal("", (await GitAsync(tree.Path, "status", "--porcelain")).Trim());
     }
 
-    /// <summary>The platform's side: <paramref name="files"/> as one commit on origin's `main`, made in the bare origin itself (PROCSPEED1b).</summary>
+    /// <summary>The platform's side: <paramref name="files"/> as one commit on origin's `main`, made in the bare origin itself.</summary>
     private static Task PlatformAsync(string origin, string message, params (string File, string Content)[] files) =>
         CommitOnOriginAsync(origin, message, files);
 }

@@ -4,16 +4,16 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Session trees (D51/SURF3): the worktree half of "the tree is the unit of exclusion, and a
+/// Session trees: the worktree half of "the tree is the unit of exclusion, and a
 /// repository may have more than one". These tests drive REAL git — worktree semantics are git's, and
 /// a mock agreeing with a guess about them is the mock-vs-mock trap the modules tests already paid
 /// for once.
 /// </summary>
 /// <remarks>
 /// Fixtures live under the repository's gitignored `_fixtures/` — the family's own scratch rule —
-/// except the path-length test's, which needs a root shorter than the checkout's (MOD8). Each test
+/// except the path-length test's, which needs a root shorter than the checkout's. Each test
 /// makes its own repository, so nothing here is order-dependent, and it starts git alone (a git hook the
-/// cut-off open waits in included): it runs four at once with the git-only classes (PROC1f).
+/// cut-off open waits in included): it runs four at once with the git-only classes.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -35,7 +35,7 @@ public sealed class SessionTreesTests : IDisposable
     {
         try
         {
-            // Never following a link, and read-only git objects made writable (TREESCRATCH2).
+            // Never following a link, and read-only git objects made writable.
             if (Directory.Exists(folder)) TreeSetAside.DeleteNeverFollowing(folder);
         }
         catch (IOException)
@@ -58,7 +58,7 @@ public sealed class SessionTreesTests : IDisposable
 
         Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine"), opened.Path);
         Assert.StartsWith("daoris/", opened.Branch);
-        // WSP4's resolution: the canonical line where one is declared — and a fresh `git init` fixture
+        // The canonical line where one is declared — and a fresh `git init` fixture
         // HAS one (its own main/master, found by the local-branch fallback) — and it SAYS which it
         // used, because a branch based on the wrong point is invisible until merge time.
         Assert.Contains("canonical line", opened.BasedOn);
@@ -72,7 +72,7 @@ public sealed class SessionTreesTests : IDisposable
         Assert.True(File.Exists(Path.Combine(opened.Path, ".git")), ".git is a FILE in a linked worktree");
     }
 
-    /// <summary>Two sessions, two trees, two branches — a name is never reused (D51 rule 2).</summary>
+    /// <summary>Two sessions, two trees, two branches — a name is never reused.</summary>
     [Fact]
     public async Task Two_opens_never_share_a_path_or_a_branch()
     {
@@ -120,7 +120,7 @@ public sealed class SessionTreesTests : IDisposable
         Assert.Equal("", branches.Trim());
     }
 
-    /// <summary>Nothing deletes itself (D51 rule 7): uncommitted work refuses, and names itself.</summary>
+    /// <summary>Nothing deletes itself: uncommitted work refuses, and names itself.</summary>
     [Fact]
     public async Task A_tree_with_uncommitted_work_refuses_to_be_removed()
     {
@@ -197,7 +197,7 @@ public sealed class SessionTreesTests : IDisposable
     /// A root that is not the top of its own working tree refuses BEFORE git grows anything. Git
     /// resolves a repository by walking UP, so without this check a folder that merely sits inside
     /// some other checkout would grow worktrees and branches on THAT repository — this suite's own
-    /// first run did it to the Daoris repository itself, which is the incident this test now pins.
+    /// first run did it to the Daoris repository itself, which is the incident this test pins.
     /// </summary>
     [Fact]
     public async Task A_folder_inside_another_repository_refuses_rather_than_growing_worktrees_on_it()
@@ -236,8 +236,8 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// TREEOPENERR1: git's let-go of the opening's lock returns failure and says nothing (stood in; a real git has done it on a loaded
-    /// machine). The open says what git did where it once said "nothing", and still undoes itself: no tree, no branch.
+    /// Git's let-go of the opening's lock returns failure and says nothing (stood in; a real git can do it on a loaded
+    /// machine). The open says what git did, not "nothing", and still undoes itself: no tree, no branch.
     /// </summary>
     [Fact]
     public async Task An_unlock_git_fails_without_a_word_is_refused_with_what_git_did_and_the_open_is_undone()
@@ -266,15 +266,14 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Windows' 260-character path limit, found on the first real workspace (2026-09-27): a
+    /// 🔴 Windows' 260-character path limit: a
     /// repository's deepest tracked file fitted under its own root and not under a session tree, whose
     /// prefix is longer. `worktree add` failed on every tick, and the quest sat.
     /// </summary>
     /// <remarks>
-    /// MOD8: the depth was a constant sized for where the main checkout sits. In a git worktree the
-    /// repository sits deeper, the fixture's own `git add` crossed the limit, and the test failed in
-    /// every worktree. It now makes its repository under a short root of its own and sizes the path
-    /// from that root, so it proves the same thing wherever the repository sits.
+    /// In a git worktree the repository sits deeper than in the main checkout, so the test makes its
+    /// repository under a short root of its own and sizes the path from that root, and proves the same
+    /// thing wherever the repository sits.
     /// </remarks>
     [Fact]
     public async Task A_tracked_path_that_fits_the_root_but_not_a_trees_longer_prefix_still_opens()
@@ -338,7 +337,7 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// OPENCUT1: an open cut off once git has added its tree, by a cancel as the app's close cuts it, leaves nothing: no branch,
+    /// An open cut off once git has added its tree, by a cancel as the app's close cuts it, leaves nothing: no branch,
     /// no folder, no record of a tree in git. While it opens, the tree is locked, and the lock's reason says who holds it.
     /// </summary>
     [Fact]
@@ -374,7 +373,7 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// OPENCUT1: an open cut off while git is still adding its tree, the branch made and the tree checked out, leaves nothing.
+    /// An open cut off while git is still adding its tree, the branch made and the tree checked out, leaves nothing.
     /// git runs <c>post-checkout</c> before its add returns, so a hook that waits holds git there while the open is cancelled.
     /// </summary>
     [Fact]
@@ -396,7 +395,7 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// TREEDEPS1 (D51's note): a tree whose npm lockfile is its checkout's opens with the dependencies the checkout installed at it,
+    /// A tree whose npm lockfile is its checkout's opens with the dependencies the checkout installed at it,
     /// copied in and never linked, and its opening and its agent say so. Git ignores the copy in the tree as in the checkout.
     /// </summary>
     [Fact]
@@ -406,7 +405,7 @@ public sealed class SessionTreesTests : IDisposable
 
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
 
-        // The opening first, whole in the failure: where nothing was copied, it says why.
+        // The opening first, whole in the failure: where nothing is copied, it says why.
         Assert.True(opened.Sentence.Contains("copied in: `node_modules`.", StringComparison.Ordinal), opened.Sentence);
         var copied = Path.Combine(opened.Path, "node_modules", "left-pad", "index.js");
         Assert.Equal("module.exports = 'left-pad';\n", await File.ReadAllTextAsync(copied));
@@ -418,7 +417,7 @@ public sealed class SessionTreesTests : IDisposable
         Assert.Equal("module.exports = 'left-pad';\n", await File.ReadAllTextAsync(Path.Combine(root, "node_modules", "left-pad", "index.js")));
     }
 
-    /// <summary>TREEDEPS1: a checkout whose lockfile moved since it was committed installed another set; the tree copies none, and says why.</summary>
+    /// <summary>A checkout whose lockfile moved after its install holds another set; the tree copies none, and says why.</summary>
     [Fact]
     public async Task A_tree_whose_lockfile_moved_opens_without_dependencies_and_says_why()
     {
@@ -433,7 +432,7 @@ public sealed class SessionTreesTests : IDisposable
         Assert.Null(opened.Dependencies);
     }
 
-    /// <summary>TREEDEPS1, OPENCUT1: an open cut off while it copies the checkout's dependencies leaves nothing, no half copy among it.</summary>
+    /// <summary>An open cut off while it copies the checkout's dependencies leaves nothing, no half copy among it.</summary>
     [Fact]
     public async Task An_open_cancelled_while_it_copies_dependencies_leaves_nothing()
     {
@@ -454,7 +453,7 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// TREEDEPS1, TIDIEDLINK1: a tree holding a copied workspace link is removed as any other, and git's removal takes the link, never
+    /// A tree holding a copied workspace link is removed as any other, and git's removal takes the link, never
     /// what the checkout's own link leads to.
     /// </summary>
     [Fact]
@@ -475,7 +474,7 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// TREELOCAL1 (D216): a tree of a repository declaring its private pattern list holds a read-only copy of the checkout's, which
+    /// A tree of a repository declaring its private pattern list holds a read-only copy of the checkout's, which
     /// git ignores there as in the checkout, and the repository's own sensitive scan, run in the tree, finds a token only that list
     /// names. Without it the devkit's scan refuses to run, and a scan of a repository's own falls back to its built-in patterns.
     /// </summary>
@@ -501,7 +500,7 @@ public sealed class SessionTreesTests : IDisposable
         Assert.Contains("notes.md: private pattern", said);
     }
 
-    /// <summary>TREELOCAL1: a declared input the checkout does not hold is said on the opening, and the tree holds none.</summary>
+    /// <summary>A declared input the checkout does not hold is said on the opening, and the tree holds none.</summary>
     [Fact]
     public async Task A_declared_input_the_checkout_lacks_is_said_on_the_tree_s_opening()
     {
@@ -517,7 +516,7 @@ public sealed class SessionTreesTests : IDisposable
         Assert.Null(opened.Dependencies);
     }
 
-    /// <summary>TREELOCAL1, OPENCUT1: an open cut off while it copies the machine-local inputs leaves nothing, the checkout's untouched.</summary>
+    /// <summary>An open cut off while it copies the machine-local inputs leaves nothing, the checkout's untouched.</summary>
     [Fact]
     public async Task An_open_cancelled_while_it_copies_machine_local_inputs_leaves_nothing()
     {
@@ -538,7 +537,7 @@ public sealed class SessionTreesTests : IDisposable
         Assert.Equal("quiltmark\n", await File.ReadAllTextAsync(Path.Combine(root, "local", "sensitive-patterns.txt")));
     }
 
-    /// <summary>TREELOCAL1: a tree holding a read-only copy is removed as any other, the copy with it, and the checkout's file stays.</summary>
+    /// <summary>A tree holding a read-only copy is removed as any other, the copy with it, and the checkout's file stays.</summary>
     [Fact]
     public async Task Removing_a_tree_holding_a_read_only_machine_local_input_removes_it_and_leaves_the_checkout_s()
     {
@@ -556,7 +555,7 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// CHAIN2, the owner's answer: a chain's next step to the same repository starts ON the branch the
+    /// A chain's next step to the same repository starts ON the branch the
     /// step before it landed on, so a verify step sees the unmerged work it exists to check.
     /// </summary>
     [Fact]
@@ -590,7 +589,7 @@ public sealed class SessionTreesTests : IDisposable
 
     // ---------------------------------------------------------------------------------- fixtures
 
-    /// <summary>OPENCUT1: the repository as it was before the open: no session branch, no folder under its trees, no tree in git but the root.</summary>
+    /// <summary>The repository as it stood before the open: no session branch, no folder under its trees, no tree in git but the root.</summary>
     private async Task AssertNothingLeftAsync(string root)
     {
         Assert.Equal("", (await GitAsync(root, "branch", "--list", "daoris/*")).Trim());
@@ -615,7 +614,7 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// A repository with an npm project its checkout installed (TREEDEPS1): the lockfile committed, <c>node_modules</c> ignored and
+    /// A repository with an npm project its checkout installed: the lockfile committed, <c>node_modules</c> ignored and
     /// installed, npm's hidden lockfile written after the lockfile; with <paramref name="workspace"/>, a workspace npm links in.
     /// </summary>
     private async Task<string> MakeNodeRepositoryAsync(string name, bool workspace = false)
@@ -651,7 +650,7 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// A repository whose gates file is <paramref name="gates"/> (TREELOCAL1): <c>local/</c> ignored and made in the checkout, and a
+    /// A repository whose gates file is <paramref name="gates"/>: <c>local/</c> ignored and made in the checkout, and a
     /// tracked file holding a token no built-in pattern names.
     /// </summary>
     private async Task<string> MakeLocalRepositoryAsync(string name, string gates)
@@ -670,8 +669,8 @@ public sealed class SessionTreesTests : IDisposable
     private static string? _devkit;
 
     /// <summary>
-    /// The devkit's own CLI run in <paramref name="cwd"/> (TREELOCAL1): built once a run with <c>--artifacts-path</c> under this
-    /// project's own <c>obj</c>, never referenced, as the service's host is (KEEPSIZE1b3), so the devkit's gate builds beside it.
+    /// The devkit's own CLI run in <paramref name="cwd"/>: built once a run with <c>--artifacts-path</c> under this
+    /// project's own <c>obj</c>, never referenced, as the service's host is, so the devkit's gate builds beside it.
     /// </summary>
     private static async Task<(int Code, string Said)> DevkitAsync(string cwd, params string[] arguments)
     {

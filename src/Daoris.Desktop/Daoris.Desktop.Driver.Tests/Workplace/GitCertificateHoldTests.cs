@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The §3.3 certificate hold (GITAUTH1c, D198 point 3): a client certificate or key named in configuration (<c>http.sslCert</c>,
+/// The certificate hold: a client certificate or key named in configuration (<c>http.sslCert</c>,
 /// <c>http.sslKey</c>), which git gives no way to clear, holds an HTTPS remote as <c>own-input</c> where a git identity of Daoris's
 /// serves it, naming the key and never its value, until the person chooses their own sign-ins for it or removes the setting. Where
 /// nothing serves, or the person chose their own, the remote keeps today's credentials; a key scoped to another address holds nothing.

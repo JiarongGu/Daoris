@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ONEWAY1r's list (D204, D228): a repository's deletes are read from the journal alone. A judged delete names the recovery ref its door kept at
+/// A repository's deletes are read from the journal alone. A judged delete names the recovery ref its door kept at
 /// the commit, the row carries its Undo until the act is undone or the name stands again, and a person's delete is a row the same way.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2e over real git (D204; the git-writes design §6 <i>Rename</i>, §12 row e): a branch moved by one transaction through the act journal
+/// Rename over real git: a branch moved by one transaction through the act journal
 /// (the old name deleted and the new one made, both checked at once, the old tip kept on a recovery ref), then its section renamed under git's
 /// own <c>config.lock</c>; the held branches and an occupied one refused; a rename stopped between its ref and its section step offering
 /// <i>Finish</i> and <i>Undo</i>, each conditional; the reversal checking both names.

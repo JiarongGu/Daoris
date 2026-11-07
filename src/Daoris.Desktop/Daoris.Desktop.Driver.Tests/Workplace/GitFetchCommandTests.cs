@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2f's terminal verb (D204; the git-writes design §9): <c>git fetch &lt;repository&gt; [--plan|--yes]</c>. A plan says what it would fetch and
+/// The terminal verb <c>git fetch &lt;repository&gt; [--plan|--yes]</c>. A plan says what it would fetch and
 /// writes nothing; <c>--yes</c> with no Daoris running fetches itself through the journal's act, refused from a session's terminal.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

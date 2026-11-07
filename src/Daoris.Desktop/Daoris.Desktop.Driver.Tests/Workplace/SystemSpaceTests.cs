@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEP1c (D195 point 5; the cleanup design §4, §9): This Daoris's <i>Disk space</i> read and its terminal twin. A kind never counted says
+/// This Daoris's <i>Disk space</i> read and its terminal twin. A kind never counted says
 /// so and the read walks nothing; each kind's walk counts its own places alone, within its own budget, a partial count saying why; each
 /// kind's <i>next</i> from the disk and the policy, its <i>last</i> from <c>keeping.json</c>, the run lock's holder from its file; and
 /// <c>daoris space</c> printing the same read, its <c>--json</c> field for field. Files only, in a home under <c>_fixtures/</c>.
@@ -58,7 +58,7 @@ public sealed class SystemSpaceTests : IDisposable
         Write(Path.Combine(engine, "Default", "Cookies"), 5);
         Write(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Sessions), "s-1.events.jsonl"), 40);
         Write(Path.Combine(_home, "webview2", "EBWebView", "x"), 9);
-        // Three bytes that read as choices (KEEP1d): a file that does not read is the policy that keeps the most.
+        // Three bytes that read as choices: a file that does not read is the policy that keeps the most.
         File.WriteAllText(Write(DaorisHome.Entry(_home, HomeEntry.DriverConfig), 3), "{}\n");
     }
 
@@ -80,13 +80,13 @@ public sealed class SystemSpaceTests : IDisposable
             Assert.Null(kind!["bytes"]);
             Assert.Null(kind["measured"]);
             Assert.False((bool)kind["counting"]!);
-            // KEEP1d: the person sets the set-aside folders', the downloads' and the logs' rules, and history's age (KEEP1g); the rest are
+            // The person sets the set-aside folders', the downloads' and the logs' rules, and history's age; the rest are
             // not theirs here.
             Assert.Equal((string?)kind["id"] is "set-aside" or "downloads" or "browser-cache" or "logs" or "history", (bool)kind["settable"]!);
         });
         Assert.All(SpaceKinds.Table, kind => Assert.Null(world.Sizes.Of(_home, kind.Id)));
         Assert.Equal(143L << 30, (long)space["volume"]!["free"]!);
-        // KEEP1f: the floor this volume is held to, by default the smaller of 10% of it and 20 GB, and nothing freed early.
+        // The floor this volume is held to, by default the smaller of 10% of it and 20 GB, and nothing freed early.
         Assert.Equal("default", (string?)space["volume"]!["floor"]!["from"]);
         Assert.False((bool)space["volume"]!["below"]!);
         Assert.Null(space["volume"]!["freedEarly"]);
@@ -154,7 +154,7 @@ public sealed class SystemSpaceTests : IDisposable
         Assert.Equal(1000, (long)after["bytes"]!);
     }
 
-    /// <summary>§4.1, KEEP1b: the downloads' next is when the rule takes the first version nothing uses, its unused stretch's start and seven days.</summary>
+    /// <summary>The downloads' next is when the rule takes the first version nothing uses, its unused stretch's start and seven days.</summary>
     [Fact]
     public void The_downloads_next_is_the_first_unused_version_by_its_stretch_and_days()
     {
@@ -242,7 +242,7 @@ public sealed class SystemSpaceTests : IDisposable
     }
 
     /// <summary>
-    /// KEEP1d (§2.2, §4.1): the rules the person set in <c>driver.json</c>'s <c>keep</c> are the ones the card says, none of them the
+    /// The rules the person set in <c>driver.json</c>'s <c>keep</c> are the ones the card says, none of them the
     /// default; and the machine log's next is its oldest day's files at the person's days.
     /// </summary>
     [Fact]
@@ -264,12 +264,12 @@ public sealed class SystemSpaceTests : IDisposable
         Assert.Equal(("days", "30", "true", "false"), (Rule("set-aside", "kind"), Rule("set-aside", "days"), Rule("set-aside", "whole"), Rule("set-aside", "default")));
         Assert.Equal(("never", null, "false"), (Rule("downloads", "kind"), Rule("downloads", "days"), Rule("downloads", "default")));
         Assert.Equal(("days", "14", "false"), (Rule("logs", "kind"), Rule("logs", "days"), Rule("logs", "default")));
-        // KEEPSIZE1d: the set-aside folders and the downloads take a size limit beside their days, and say its bounds.
+        // The set-aside folders and the downloads take a size limit beside their days, and say its bounds.
         Assert.Equal("{\"min\":1,\"max\":90,\"whole\":true,\"never\":false,\"gb\":{\"min\":1,\"max\":1048576}}", KindOf(space, "set-aside")["bounds"]!.ToJsonString());
         Assert.Equal("{\"min\":0,\"max\":365,\"whole\":false,\"never\":true,\"gb\":{\"min\":1,\"max\":1048576}}", KindOf(space, "downloads")["bounds"]!.ToJsonString());
         Assert.Equal((8, 5), ((int?)KindOf(space, "set-aside")["rule"]!["gb"], (int?)KindOf(space, "downloads")["rule"]!["gb"]));
         Assert.Equal("{\"min\":7,\"max\":30,\"whole\":false,\"never\":false}", KindOf(space, "logs")["bounds"]!.ToJsonString());
-        // KEEP1g: history's age, its default the press alone.
+        // History's age, its default the press alone.
         Assert.Equal(("days", "365", "false"), (Rule("history", "kind"), Rule("history", "days"), Rule("history", "default")));
         Assert.Equal("{\"min\":30,\"max\":3650,\"whole\":false,\"never\":true}", KindOf(space, "history")["bounds"]!.ToJsonString());
         Assert.Null(KindOf(space, "trees")["bounds"]);

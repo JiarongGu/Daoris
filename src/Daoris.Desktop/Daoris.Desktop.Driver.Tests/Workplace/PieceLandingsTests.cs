@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b2 (D199 point 3; the co-agent design §2.4): a partner's record lands nothing at any landing door, in one sentence naming the
+/// A partner's record lands nothing at any landing door, in one sentence naming the
 /// lead's merge of the frozen ref. A run's <c>land</c> refuses it before it reads the tree, says so once, and the verb's words are the same
 /// sentence.
 /// </summary>

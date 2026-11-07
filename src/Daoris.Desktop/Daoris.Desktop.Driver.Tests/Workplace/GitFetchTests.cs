@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2f over real git and a local bare origin (D204; the git-writes design §9 <i>Fetch</i>, §12 row f): a fetch confined to
+/// Over real git and a local bare origin, a fetch confined to
 /// <c>refs/remotes/origin/*</c> whatever the repository's configuration says of origin, its prune's removals named, <c>FETCH_HEAD</c> kept by a
 /// failed and a successful one, refused where the configuration widens it, not offered where Daoris's git doors are not installed, and journaled
 /// and reconciled as an act. Nothing here reaches a network.

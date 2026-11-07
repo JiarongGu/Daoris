@@ -3,12 +3,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A review's range read from ONE git answer and split into each file's patch (REVIEW3). The answer is handed in as git
+/// A review's range read from ONE git answer and split into each file's patch. The answer is handed in as git
 /// wrote it, captured from real git over a fixture that holds every shape below, so this class starts no process and runs
 /// in the fast half. The same shapes over real git, with the processes a review starts counted, are <c>TreeDiffTests</c>.
 /// </summary>
 /// <remarks>
-/// One git start on a large repository costs about a second, and the review used to make one per changed file: a session
+/// One git start on a large repository costs about a second, so one per changed file adds up: a session
 /// of 61 files took 52.7 s to review on an install. The count is held here by the seam the review reads git through.
 /// </remarks>
 public sealed class TreeDiffSplitTests
@@ -23,7 +23,7 @@ public sealed class TreeDiffSplitTests
     /// over a range holding a modification, an addition, a deletion, a symlink become a file (a typechange, whose patch git
     /// writes in two halves), a binary file, two renames with spaces and without changes, a path holding a double quote and
     /// a tab (which git quotes on the `diff --git` line and not in the lists), a rename with a change, a mode-only change, a
-    /// path with a space and one outside ASCII. Captured from git 2.53; the quoted path was committed through the index,
+    /// path with a space and one outside ASCII. Captured from git 2.53; the quoted path is committed through the index,
     /// since no Windows disk can hold it.
     /// </summary>
     private static readonly string Captured = string.Concat(
@@ -139,7 +139,7 @@ public sealed class TreeDiffSplitTests
                 // A rename is its new path, with the counts the whole range gave it and git's own rename as its patch.
                 new("moved space.txt", "renamed", 0, 0, Patches.MovedSpace),
                 new("pure-moved.txt", "renamed", 0, 0, Patches.PureMoved),
-                // The lists carry the path verbatim; only the `diff --git` line quotes it, and that is what it was matched by.
+                // The lists carry the path verbatim; only the `diff --git` line quotes it, and that is what it is matched by.
                 new("quo\"te\ttab.txt", "modified", 1, 0, Patches.Quoted),
                 new("renamed.txt", "renamed", 1, 1, Patches.Renamed),
                 new("run.sh", "modified", 0, 0, Patches.RunSh),
@@ -184,7 +184,7 @@ public sealed class TreeDiffSplitTests
     }
 
     /// <summary>
-    /// 🔴 The point of REVIEW3: a review asks git twice — whether the root is a repository's top, and the range — whatever
+    /// 🔴 A review asks git twice — whether the root is a repository's top, and the range — whatever
     /// the number of files, and no read names a file.
     /// </summary>
     [Theory]
@@ -307,14 +307,14 @@ public sealed class TreeDiffSplitTests
         Assert.Single(git.Calls);
     }
 
-    /// <summary>The plan's count asks only a tree this home opened: a folder it did not make (a person's checkout) is not counted (D49 §3).</summary>
+    /// <summary>The plan's count asks only a tree this home opened: a folder it did not make (a person's checkout) is not counted.</summary>
     [Fact]
     public async Task The_plan_s_uncommitted_count_is_not_asked_of_a_folder_this_home_did_not_open()
     {
         Assert.Null(await new SessionTrees(Root).UncommittedAsync(Root));
     }
 
-    /// <summary>git that answers each kind of ask its own way, as the uncommitted read makes three of them (REVIEWDIRTY1-a).</summary>
+    /// <summary>git that answers each kind of ask its own way, as the uncommitted read makes three of them.</summary>
     private static WorkingTree.GitRead Dirty(string range, string status, Func<string, (int Code, string Text)> noIndex, List<IReadOnlyList<string>>? calls = null) =>
         (root, arguments, take, ct) =>
         {
@@ -330,7 +330,7 @@ public sealed class TreeDiffSplitTests
             return Task.FromResult(code);
         };
 
-    /// <summary>REVIEWDIRTY1-a: the splitter is agnostic to the revision, so `HEAD` (the index and the files against it) reads as a range does.</summary>
+    /// <summary>The splitter is agnostic to the revision, so `HEAD` (the index and the files against it) reads as a range does.</summary>
     [Fact]
     public async Task The_uncommitted_read_splits_a_head_range_as_it_splits_a_committed_one()
     {
@@ -346,7 +346,7 @@ public sealed class TreeDiffSplitTests
     }
 
     /// <summary>
-    /// REVIEWLOCK1: the uncommitted read asks git not to refresh the index, which would take the tree's <c>index.lock</c>, so a file
+    /// The uncommitted read asks git not to refresh the index, which would take the tree's <c>index.lock</c>, so a file
     /// whose stat data alone moved comes back listed <c>M</c> with no count and no patch (as git 2.53 wrote it), and is no file.
     /// </summary>
     [Fact]
@@ -455,7 +455,7 @@ public sealed class TreeDiffSplitTests
         return text.ToString();
     }
 
-    /// <summary>git as the review reads it, answering from what it was handed, and counting each start.</summary>
+    /// <summary>git as the review reads it, answering from what it is handed, and counting each start.</summary>
     private sealed class FakeGit(string answer, int piece = 1 << 20, int code = 0, string? topLevel = null)
     {
         public List<IReadOnlyList<string>> Calls { get; } = [];

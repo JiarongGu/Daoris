@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1h (the integration design §5.8): the look's read of the declarations owed acceptance, against a real checkout. A line's
+/// The look's read of the declarations owed acceptance, against a real checkout. A line's
 /// committed <c>daoris.gates.json</c> that declares an integration is owed while nothing is accepted (<c>unaccepted</c>) or another blob is
 /// (<c>changed</c>), owes nothing once its blob is accepted, and a line that holds none, or one that declares no <c>integration</c>, owes
 /// nothing. Git is asked once for a tip that moved, and not for one that did not.
@@ -78,7 +78,7 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         Assert.Equal(0, owed.GitReads);
     }
 
-    /// <summary>A blob that is not the accepted one is <c>changed</c>, since when it was first read, and a tip that moved to the accepted blob owes nothing.</summary>
+    /// <summary>A blob that is not the accepted one is <c>changed</c>, since when it is first read, and a tip that moved to the accepted blob owes nothing.</summary>
     [Fact]
     public async Task A_declaration_changed_since_the_acceptance_is_owed_as_changed_and_keeps_its_since_across_looks()
     {
@@ -93,7 +93,7 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         Assert.Equal((IntegrationAcceptance.Changed, changed, _now), (each.State, each.Blob, each.Since));
     }
 
-    /// <summary>A line that holds no declaration, or one that declares no integration, owes nothing whether or not something was accepted.</summary>
+    /// <summary>A line that holds no declaration, or one that declares no integration, owes nothing whether or not something is accepted.</summary>
     [Fact]
     public async Task A_line_with_no_declaration_or_no_integration_owes_nothing()
     {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2m's terminal verbs (D204; the git-writes design §9): <c>git pick|revert &lt;repository&gt; &lt;branch&gt; &lt;commit|A..B&gt;</c> and
+/// The terminal's history-edit verbs: <c>git pick|revert &lt;repository&gt; &lt;branch&gt; &lt;commit|A..B&gt;</c> and
 /// <c>git rebase &lt;repository&gt; &lt;branch&gt; &lt;onto&gt;</c>, each <c>[--plan|--yes]</c>. A plan says what it would do and writes nothing;
 /// <c>--yes</c> says the plan, then with a Daoris running is the person's press over the pipe carrying the ids the plan pinned; with none
 /// it runs the journal's act itself, refused from a session's terminal.

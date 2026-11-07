@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1d (D215 point 2, the integration design §4.1): a repository's <c>daoris.gates.json</c> key <c>integration</c>, read whole
+/// A repository's <c>daoris.gates.json</c> key <c>integration</c>, read whole
 /// in one place, a twin of the merge tool's <c>integrationOf</c>. Held cell for cell to ONE table,
 /// <c>fixtures/integration-declarations.json</c>, which <c>merge-branch.test.ts</c> holds the merge tool to, row for row; and where an
 /// integration's acceptance stands against the line's blob. Reads text only.
@@ -67,8 +67,8 @@ public sealed class IntegrationDeclarationTests
     }
 
     /// <summary>
-    /// The acceptance against the line (the design §4.1, §4.3), in the shape of the landed route's (<c>LandedGates.StateOf</c>): the tip
-    /// unread is unread whatever was accepted; nothing accepted is unaccepted; the accepted blob the tip's is accepted, any other changed.
+    /// The acceptance against the line, in the shape of the landed route's (<c>LandedGates.StateOf</c>): the tip
+    /// unread is unread whatever is accepted; nothing accepted is unaccepted; the accepted blob the tip's is accepted, any other changed.
     /// </summary>
     [Theory]
     [InlineData(null, null, IntegrationAcceptance.Unread)]

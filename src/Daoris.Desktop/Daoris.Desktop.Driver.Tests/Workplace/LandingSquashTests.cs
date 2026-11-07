@@ -4,13 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PROCESS1b-ii (D164's amendment point 2 and its PROCESS1b-ii note): where the repository's landing rule asks for <c>squash</c>,
+/// Where the repository's landing rule asks for <c>squash</c>,
 /// Accept makes the pull request's branch one commit, the first commit Daoris itself makes: the session's tip's tree, its parent
-/// where the session left the line (the line's tip, where it moved since and the work was brought onto it first, LANDREBASE1), its
+/// where the session left the line (the line's tip, where it moved since and the work is brought onto it first), its
 /// message the quest's title and the session's commits' subjects, made as git's own
 /// identity in that repository and refused where git has none. The record keeps the session tip it squashed, which is what
 /// proves the session landed: its head, Discard's offer and the clean-up read the session branch as landed while its tip is
-/// that commit or an ancestor of it. A chain's later landing adds one commit squashing only what was added since. A tree on a
+/// that commit or an ancestor of it. A chain's later landing adds one commit squashing only what has come since. A tree on a
 /// branch of its own lands as it stands. Real git, as <see cref="LandingTidyTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -38,7 +38,7 @@ public sealed class LandingSquashTests : IDisposable
     }
 
     /// <summary>
-    /// One commit: the session's work brought onto the line's tip first, since the line moved on (LANDREBASE1, D87's note), its parent
+    /// One commit: the session's work brought onto the line's tip first, since the line moved on, its parent
     /// that tip, its message the title, each commit's subject and the session, its author git's own identity here; the record names the
     /// tip it squashed, the replay's, which the session's tree follows.
     /// </summary>
@@ -79,7 +79,7 @@ public sealed class LandingSquashTests : IDisposable
     }
 
     /// <summary>
-    /// ACCEPTFOOT2b (D164's 2026-10-16 notes): a conversation's squash is subjected by its work, the oldest commit's subject beyond
+    /// A conversation's squash is subjected by its work, the oldest commit's subject beyond
     /// the line, never its opening; a quest's stays its title, under a pattern that reads words and one that does not.
     /// </summary>
     [Theory]
@@ -145,7 +145,7 @@ public sealed class LandingSquashTests : IDisposable
     }
 
     /// <summary>
-    /// A chain's later landing (point 4) squashes only what was added since the recorded tip: one more commit on the pull
+    /// A chain's later landing squashes only what has come since the recorded tip: one more commit on the pull
     /// request's branch, its tree the new tip's, its parent the branch's tip, its body the new commits alone, and the record moved
     /// to the new tip. A session whose tip does not grow from the recorded one is refused, and nothing moves.
     /// </summary>
@@ -222,7 +222,7 @@ public sealed class LandingSquashTests : IDisposable
         Assert.Equal(1, (await trees.WorkAsync(tree.Path))!.Commits);
     }
 
-    /// <summary>A tree its agent moved onto a branch of its own (TREEFOLLOW1) lands as that branch stands: never squashed.</summary>
+    /// <summary>A tree its agent moved onto a branch of its own lands as that branch stands: never squashed.</summary>
     [Fact]
     public async Task A_tree_on_its_own_branch_lands_as_it_stands_and_is_never_squashed()
     {
@@ -252,7 +252,7 @@ public sealed class LandingSquashTests : IDisposable
     private static async Task<bool> BranchAsync(string root, string branch) =>
         (await GitAsync(root, "branch", "--list", branch)).Trim().Length > 0;
 
-    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>; PROCSPEED1, PROCSPEED1b): no test here reads the first commit's id or time.</summary>
+    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>): no test here reads the first commit's id or time.</summary>
     private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     private static async Task CommitAsync(string tree, string file, string content, string message)

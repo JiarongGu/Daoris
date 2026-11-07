@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2c over real git (D204; the git-writes design §6, §12 row c): a branch or a lightweight tag created by one <c>create</c> through
-/// the act journal, refused where the name stands, undone only at the id it was made at, and reconciled by its postconditions where the
+/// Over real git: a branch or a lightweight tag created by one <c>create</c> through
+/// the act journal, refused where the name stands, undone only at the id it points at, and reconciled by its postconditions where the
 /// act's run died between its start and its end, nothing run again.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

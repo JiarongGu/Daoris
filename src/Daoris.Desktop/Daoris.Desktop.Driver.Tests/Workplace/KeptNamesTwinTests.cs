@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSDEL1c (D126's SESSDEL1 note; <c>.claude/knowledge/twins.md</c>): the names a delete's <c>stayed</c> carries, which the page
+/// Twins (<c>.claude/knowledge/twins.md</c>): the names a delete's <c>stayed</c> carries, which the page
 /// words as <c>work.delete.kept.&lt;name&gt;</c>, are held to one table, this suite's <c>fixtures/kept-names.json</c>, which the
 /// page's <c>sessionActs.test.tsx</c> holds both catalogues and its toast to as well. Here <see cref="SessionHomeFiles"/>' names
 /// are the table's rows, name for name and word for word, so a name added here alone fails here, and one added to the table

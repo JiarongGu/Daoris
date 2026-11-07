@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1e part e4a over real git (D215's note; the integration design §5.2 steps 8 and 9, §5.6, §5.7): a verified candidate promoted onto
+/// Over real git: a verified candidate promoted onto
 /// its line only on a passing verdict for its exact tip, base and blob, and only if the line has not moved under it; the fence read from the
 /// line's committed declaration inside the effect; the line moved by one <c>update-ref</c> verifying its old value, or by a fast-forward in a
 /// clean checkout that has it out; a held member never promoted; each member settled; the candidate's one job closed at each of its ends. Called
@@ -134,7 +134,7 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
     private static IntegrationStep Last(Candidate candidate, string step) => candidate.Store.Steps(candidate.Claim.Candidate).Last(each => each.Step == step);
 
     /// <summary>
-    /// 🔴 LANDNODE1g: the gates run from the declaration the candidate's epoch froze. The owner accepted another declaration after the requests
+    /// The gates run from the declaration the candidate's epoch froze. The owner accepted another declaration after the requests
     /// were admitted, yet the verdict is asked for the declaration they were admitted under, and the candidate promotes. A candidate with no
     /// epoch, or one that froze none, runs under the acceptance as it stands, so the same change leaves it waiting.
     /// </summary>
@@ -166,9 +166,9 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 A green verdict promotes the candidate to its line by one <c>update-ref</c> where no working tree has the line out: the line stands at
+    /// A green verdict promotes the candidate to its line by one <c>update-ref</c> where no working tree has the line out: the line stands at
     /// the candidate's tip, the person's detached checkout never moved, every member settled and its request closed, the candidate ended
-    /// <c>settled</c>. The verdict was asked for the integration tree standing at the tip, on the base, under the accepted blob.
+    /// <c>settled</c>. The verdict is asked for the integration tree standing at the tip, on the base, under the accepted blob.
     /// </summary>
     [Fact]
     public async Task A_green_verdict_promotes_the_candidate_by_one_update_ref_and_settles_its_members()
@@ -211,7 +211,7 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 The ask carries what the accepted declaration says: its runner (D192's <c>verification</c>, with its folder), the gates it names for
+    /// The ask carries what the accepted declaration says: its runner (<c>verification</c>, with its folder), the gates it names for
     /// integration and the variables it passes; read from the accepted blob alone.
     /// </summary>
     [Fact]
@@ -362,8 +362,8 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 The fence: <c>integration.by</c> is read inside the promote effect from the declaration committed at the line's commit being moved,
-    /// never the working tree. <c>by: tool</c>, and a declaration that does not read, hold the step and move nothing, though the verdict was
+    /// The fence: <c>integration.by</c> is read inside the promote effect from the declaration committed at the line's commit being moved,
+    /// never the working tree. <c>by: tool</c>, and a declaration that does not read, hold the step and move nothing, though the verdict is
     /// green; the working tree's copy, saying the other thing, changes neither answer.
     /// </summary>
     [Theory]
@@ -473,7 +473,7 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
         Judging(_ => new IntegrationVerdict(VerdictActions.Hold) { On = "decide", Why = "an unconfirmed failure holds the candidate for a decide: unit" });
 
     /// <summary>
-    /// 🔴 INTEGRATE1h: the owner's decide <c>land</c>, recorded on a candidate held for one, is consumed at the next look: the candidate is promoted
+    /// The owner's decide <c>land</c>, recorded on a candidate held for one, is consumed at the next look: the candidate is promoted
     /// and settled with no gates run again, the promotion's words naming the decide and the hold it released.
     /// </summary>
     [Fact]
@@ -498,7 +498,7 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 INTEGRATE1h: a decide <c>split</c> forms a held candidate of several again to run one at a time, every request open and the next form
+    /// A decide <c>split</c> forms a held candidate of several again to run one at a time, every request open and the next form
     /// taking one; of one member, it hands that member back as unresolved with the hold's words. Nothing moves the line, no gates run again.
     /// </summary>
     [Theory]
@@ -533,7 +533,7 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
         }
     }
 
-    /// <summary>🔴 INTEGRATE1h: a decide <c>hand-back</c> hands every member back with the hold's words and ends the candidate <c>empty</c>.</summary>
+    /// <summary>A decide <c>hand-back</c> hands every member back with the hold's words and ends the candidate <c>empty</c>.</summary>
     [Fact]
     public async Task A_decide_hand_back_hands_every_held_member_back_with_the_hold_s_words()
     {
@@ -551,7 +551,7 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
         Assert.Equal(candidate.Base, await CommitOfAsync(candidate.Root, "main"));
     }
 
-    /// <summary>🔴 INTEGRATE1h: a decide <c>land</c> over a line that moved under the held candidate forms it again and moves nothing.</summary>
+    /// <summary>A decide <c>land</c> over a line that moved under the held candidate forms it again and moves nothing.</summary>
     [Fact]
     public async Task A_decide_land_over_a_line_that_moved_forms_the_held_candidate_again_and_moves_nothing()
     {
@@ -792,7 +792,7 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
         Assert.Equal(IntegrationStepOutcomes.Done, Last(candidate, IntegrationStepNames.Settle).Outcome);
     }
 
-    // A superseded commit's recovery ref and pending disposition are IntegrationSettleGitTests's (INTEGRATE1e part e4b).
+    // A superseded commit's recovery ref and pending disposition are IntegrationSettleGitTests's.
 
     /// <summary>
     /// 🔴 A line whose rule runs the declared gates but whose declaration the owner has not accepted cannot run them: the verdict port is not

@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR6, bringing a repository up to date after its pull request merged: the line pulled by a fast-forward only,
+/// Bringing a repository up to date after its pull request merged: the line pulled by a fast-forward only,
 /// the landed branches whose work reached it deleted, and the branches still at work replayed onto it — only their
-/// own commits, cut at the commit each grew from. The owner's case, the suite's longest test, has this class to itself
-/// (PROC1b); the rest of the sync is <see cref="TreeSyncStepTests"/>, <see cref="TreeSyncLineTests"/> and
+/// own commits, cut at the commit each grew from. The owner's case, the suite's longest test, has this class to itself;
+/// the rest of the sync is <see cref="TreeSyncStepTests"/>, <see cref="TreeSyncLineTests"/> and
 /// <see cref="TreeSyncReplayTests"/>.
 /// </summary>
 /// <remarks>
@@ -32,7 +32,7 @@ public sealed class TreeSyncTests : TreeSyncFixture
         var topic = await RevAsync(root, "topic");
 
         var (parent, b, step) = await ParentAndStepAsync(trees, root);
-        // Where S's session record says it began: its tree's HEAD at the spawn, which was B's tip.
+        // Where S's session record says it began: its tree's HEAD at the spawn, B's tip.
         var began = await RevAsync(root, b);
         Assert.Equal(began, await trees.ReviewBaseAsync(step.Path, began));
         await GitAsync(root, "push", "--quiet", "origin", b);
@@ -55,7 +55,7 @@ public sealed class TreeSyncTests : TreeSyncFixture
         Assert.False(first.Rebases.Single(result => result.Item.Branch == step.Branch).Replayed);
         Assert.Contains(b, await GitAsync(root, "branch", "--list"));
 
-        // S finishes, and its landing makes a branch (LANDSYNC1, D87's 2026-10-15 amendment): B's two commits, on the line by content
+        // S finishes, and its landing makes a branch: B's two commits, on the line by content
         // since the squash, are left out, S's own is replayed onto the line, and S's tree follows it, so the sync has nothing to replay.
         var landed = await trees.LandAsync(step.Path, new LandingSubject("s2", "q2", "Second"), gate: Lands);
         Assert.True(landed.Landed, landed.Message);

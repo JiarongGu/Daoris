@@ -4,11 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2m over real git (D204; the git-writes design §1, §6, §7, §12 row m): pick, revert and rebase onto, on a branch no tree has out,
+/// History edits over real git: pick, revert and rebase onto, on a branch no tree has out,
 /// from <c>merge-tree --merge-base</c> and <c>commit-tree</c>, then one ref transaction through the act journal. Each refusal moves
 /// nothing and journals nothing; a rebase's commits are unpublished while pick and revert take a published source; a configured merge
 /// driver refuses before any <c>merge-tree</c> starts; a branch checked out mid-way is put back; a cut between the objects and the
-/// update leaves the branch where it was.
+/// update leaves the branch at its tip.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -49,7 +49,7 @@ public sealed class GitHistoryEditTests : TreeSyncFixture
         Assert.Equal(1, command.ExecuteNonQuery());
     }
 
-    /// <summary>Nothing moved and nothing journaled: the branch where it was, no recovery ref, no act open.</summary>
+    /// <summary>Nothing moved and nothing journaled: the branch at its tip, no recovery ref, no act open.</summary>
     private async Task NothingMovedAsync(string root, string branch, string tip, HistoryEditRun run)
     {
         Assert.True(run.Run.Refused, run.Run.Said);

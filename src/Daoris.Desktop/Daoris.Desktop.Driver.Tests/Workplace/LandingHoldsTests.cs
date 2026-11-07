@@ -3,13 +3,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, and one push of one
+/// One landing of one session's tree at a time, and one push of one
 /// landed branch, whichever door, in this process and beside another; a landing that waited reads what the one it waited behind kept.
 /// Files only, so it is the fast half's.
 /// </summary>
 public sealed class LandingHoldsTests : IDisposable
 {
-    // TESTCLOCK1: the waits are on the hold's own count, so the bound elapses only on a real failure.
+    // The waits are on the hold's own count, so the bound elapses only on a real failure.
     private static readonly TimeSpan Bound = TimeSpan.FromMinutes(2);
 
     private static readonly LandingAttempt Landed = new("feature/own", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a", AcceptedBy.Auto);
@@ -63,7 +63,7 @@ public sealed class LandingHoldsTests : IDisposable
         }
 
         Assert.Equal(0, LandingHolds.Waiting(_home, _tree));
-        // LANDRACE1's re-check: a key nobody holds or waits for keeps no gate in this process.
+        // A key nobody holds or waits for keeps no gate in this process.
         Assert.False(LandingHolds.Gated(_home, _tree));
         using var later = await LandingHolds.TakeAsync(_home, _tree);
         Assert.Null(later!.Before);
@@ -93,7 +93,7 @@ public sealed class LandingHoldsTests : IDisposable
     }
 
     /// <summary>
-    /// LANDRACE1's review, finding 2: the hold is the tree's, not its spelling. A second name for the same folder (here the long-path
+    /// The hold is the tree's, not its spelling. A second name for the same folder (here the long-path
     /// form; a junction or a <c>subst</c> drive likewise) waits on the same hold, so one tree is never landed twice under two names.
     /// </summary>
     [Fact]
@@ -120,7 +120,7 @@ public sealed class LandingHoldsTests : IDisposable
     }
 
     /// <summary>
-    /// LANDRACE1's review, finding 4: one push of a landed branch at a time, the landing's plugin step and a hand-off alike, and the
+    /// One push of a landed branch at a time, the landing's plugin step and a hand-off alike, and the
     /// one that waited reads the push the other kept. Another branch of the same repository goes beside it.
     /// </summary>
     [Fact]
@@ -144,7 +144,7 @@ public sealed class LandingHoldsTests : IDisposable
     }
 
     /// <summary>
-    /// LANDRACE1's re-check: a branch is held by its repository's common git folder, so a linked worktree (whose <c>.git</c> is a file
+    /// A branch is held by its repository's common git folder, so a linked worktree (whose <c>.git</c> is a file
     /// naming its git folder, which names the common one in <c>commondir</c>) and the main checkout take one hold for the same branch,
     /// whether the link is written absolute or relative. A landing names the repository by the main checkout and a terminal's
     /// hand-off by the registry's, which may be linked.
@@ -161,7 +161,7 @@ public sealed class LandingHoldsTests : IDisposable
         Assert.False(other!.Waited);
     }
 
-    /// <summary>LANDRACE1's re-check: two spellings of a linked worktree take one branch hold, as two of a tree take one tree hold.</summary>
+    /// <summary>Two spellings of a linked worktree take one branch hold, as two of a tree take one tree hold.</summary>
     [Fact]
     public async Task Two_names_for_one_linked_worktree_take_one_branch_hold()
     {
@@ -235,7 +235,7 @@ public sealed class LandingHoldsTests : IDisposable
     }
 
     /// <summary>
-    /// LANDHOLD2: a door that waits for a tree's hold says so before it waits and says it stopped once it has the hold; one that waits
+    /// A door that waits for a tree's hold says so before it waits and says it stopped once it has the hold; one that waits
     /// for nothing says nothing; one that gives up at its bound says it stopped too. Branch holds say the same.
     /// </summary>
     [Fact]
@@ -268,7 +268,7 @@ public sealed class LandingHoldsTests : IDisposable
         Assert.Equal([true, false], Snapshot(said));
     }
 
-    /// <summary>LANDHOLD2: a callback is for the call that handed it: a door outside it, and one after it is disposed, tell nobody.</summary>
+    /// <summary>A callback is for the call that handed it: a door outside it, and one after it is disposed, tell nobody.</summary>
     [Fact]
     public async Task A_waiting_door_outside_the_call_that_handed_a_callback_tells_nobody()
     {
@@ -284,7 +284,7 @@ public sealed class LandingHoldsTests : IDisposable
     }
 
     /// <summary>
-    /// LANDHOLDSWEEP1: a sweep removes a hold's file no door has held for longer than the bound, and keeps one held, however old its
+    /// A sweep removes a hold's file no door has held for longer than the bound, and keeps one held, however old its
     /// time, and one let go within the bound. A door after the sweep takes the tree as one that waited for nothing.
     /// </summary>
     [Fact]
@@ -315,7 +315,7 @@ public sealed class LandingHoldsTests : IDisposable
     }
 
     /// <summary>
-    /// LANDHOLDSWEEP1: beside another process, a file it holds stays, whatever its time says; once that process lets go of it untouched,
+    /// Beside another process, a file it holds stays, whatever its time says; once that process lets go of it untouched,
     /// the next sweep removes it.
     /// </summary>
     [Fact]
@@ -334,7 +334,7 @@ public sealed class LandingHoldsTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
-    /// <summary>LANDHOLDSWEEP1: taking a hold sweeps the home's files left past the bound, so nothing has to call the sweep.</summary>
+    /// <summary>Taking a hold sweeps the home's files left past the bound, so nothing has to call the sweep.</summary>
     [Fact]
     public async Task Taking_a_hold_sweeps_what_was_left_past_the_bound()
     {
@@ -351,8 +351,8 @@ public sealed class LandingHoldsTests : IDisposable
     }
 
     /// <summary>
-    /// LANDHOLD3: a door that waits behind another of this process names it, the holder's session and branch, as it says it waits;
-    /// one behind a holder that said nothing of itself waits unnamed, as LANDHOLD2's did.
+    /// A door that waits behind another of this process names it, the holder's session and branch, as it says it waits;
+    /// one behind a holder that said nothing of itself waits unnamed.
     /// </summary>
     [Fact]
     public async Task A_door_waiting_here_names_the_session_it_waits_behind()
@@ -376,7 +376,7 @@ public sealed class LandingHoldsTests : IDisposable
     }
 
     /// <summary>
-    /// LANDHOLD3: the holder writes who it is to the hold's file as it takes it, beside what the file keeps, and shares reading it, so a
+    /// The holder writes who it is to the hold's file as it takes it, beside what the file keeps, and shares reading it, so a
     /// door in another process reads it through a handle of its own while no door can take it to write; it unwrites itself as it lets
     /// go, and what it kept stands for the one behind.
     /// </summary>
@@ -400,8 +400,8 @@ public sealed class LandingHoldsTests : IDisposable
     }
 
     /// <summary>
-    /// LANDHOLD3: a door waiting behind another process's hold names it once that one has written who it is, by reading the file while
-    /// it waits; a landing that waited reads what that one kept as before, the name beside it changing nothing.
+    /// A door waiting behind another process's hold names it once that one has written who it is, by reading the file while
+    /// it waits; a landing that waited reads what that one kept, the name beside it changing nothing.
     /// </summary>
     [Fact]
     public async Task A_door_waiting_on_another_process_names_it_once_it_says_who_it_is()

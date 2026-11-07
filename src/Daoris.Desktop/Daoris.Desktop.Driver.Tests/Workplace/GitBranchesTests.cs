@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GIT1a (D147 §2.2, §4.1): the branch list read from real repositories through the git Daoris runs: each kind from its
+/// The branch list read from real repositories through the git Daoris runs: each kind from its
 /// facts, the tree holding a branch, its distance from the line, a landed branch against its copy on origin, the last
-/// fetch from <c>FETCH_HEAD</c>, and which repositories D112's scope lists. <c>GitBranchesReadTests</c> holds the calls
+/// fetch from <c>FETCH_HEAD</c>, and which repositories the scope lists. <c>GitBranchesReadTests</c> holds the calls
 /// and the fallbacks with a stand-in; this holds that git answers the format as it is read.
 /// </summary>
 /// <remarks>🔴 <b>Nothing here reaches a network</b>: <c>origin</c> is a bare repository under the scratch folder (<see cref="LandedFixture"/>).</remarks>
@@ -66,7 +66,7 @@ public sealed class GitBranchesTests : LandedFixture
         Assert.StartsWith("git for-each-ref \"--format=", Assert.Single(engine.Commands));
     }
 
-    /// <summary>A landed branch moved on after it was pushed is still the landing's, and is counted against its copy on origin.</summary>
+    /// <summary>A landed branch moved on after its push is still the landing's, and is counted against its copy on origin.</summary>
     [Fact]
     public async Task A_landed_branch_moved_on_after_its_push_is_counted_against_origins_copy()
     {
@@ -105,7 +105,7 @@ public sealed class GitBranchesTests : LandedFixture
     }
 
     /// <summary>
-    /// D112's set: by default the repositories holding a branch of Daoris's are listed and every other is named apart;
+    /// By default the repositories holding a branch of Daoris's are listed and every other is named apart;
     /// <c>--all</c> lists every one, and naming one lists it.
     /// </summary>
     [Fact]

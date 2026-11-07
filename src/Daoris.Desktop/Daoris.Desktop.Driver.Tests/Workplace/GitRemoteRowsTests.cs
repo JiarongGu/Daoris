@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A repository's git remotes with what serves each (GITAUTH1e, the git-auth design §3.2 and §7.3), read through the one reader of an
+/// A repository's git remotes with what serves each, read through the one reader of an
 /// address: the repository's own choice, its workspace's, the host's default, nothing, the person's own sign-ins, and a local path.
 /// </summary>
 /// <remarks>Against a real git in a scratch checkout, its system and global files kept from the person's. Alone: those are the process's variables.</remarks>

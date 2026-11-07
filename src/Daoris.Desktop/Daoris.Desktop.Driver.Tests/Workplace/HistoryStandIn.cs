@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The service's doors a clear of finished history reads and presses, in-process (HIST1c, HIST1d): the records, the quests and
+/// The service's doors a clear of finished history reads and presses, in-process: the records, the quests and
 /// the asks; each scope's listing as set; and a press that clears what it names, taking its records and its kept files as the
 /// service does, unless told to refuse it. <see cref="HistoryClearingTests"/> and <see cref="HistoryCommandTests"/> drive both
 /// doors through it, so the library and the terminal's verbs read one service.
@@ -32,7 +32,7 @@ internal sealed class HistoryStandIn : HttpMessageHandler
 
     /// <summary>
     /// Quests and asks whose kept files the press could not remove: they stay, and the answer names them in <c>failed</c>, as the
-    /// service's does (HIST1j). Empty is every removal made, and the answer carries no <c>failed</c>, as a host before it.
+    /// service's does. Empty is every removal made, and the answer carries no <c>failed</c>, as a host before it.
     /// </summary>
     public HashSet<string> HoldingKept { get; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -77,9 +77,9 @@ internal sealed class HistoryStandIn : HttpMessageHandler
         return unit;
     }
 
-    /// <param name="waits">What waits beside <c>needs-you</c> (HIST1l); null leaves the field out, as a host before it and every other word do.</param>
-    /// <param name="stands">How the work stands beside <c>open</c> (HIST1m); null leaves the field out, as <paramref name="waits"/>.</param>
-    /// <param name="by">The open work naming it beside <c>awaited</c> (HIST1m); null leaves the field out, as <paramref name="waits"/>.</param>
+    /// <param name="waits">What waits beside <c>needs-you</c>; null leaves the field out, as a host before it and every other word do.</param>
+    /// <param name="stands">How the work stands beside <c>open</c>; null leaves the field out, as <paramref name="waits"/>.</param>
+    /// <param name="by">The open work naming it beside <c>awaited</c>; null leaves the field out, as <paramref name="waits"/>.</param>
     public static JsonObject Refusal(string word, string? quest = null, string? ask = null, string? session = null, string? origin = null,
         string? workspace = null, string? error = null, string? waits = null, string? stands = null, string? by = null)
     {
@@ -102,7 +102,7 @@ internal sealed class HistoryStandIn : HttpMessageHandler
         {
             return path switch
             {
-                // KEEP1g: the look's pass reads the registry before its Keeping pass; none here.
+                // The look's pass reads the registry before its Keeping pass; none here.
                 "/api/registry" => Answer(HttpStatusCode.OK, new JsonArray()),
                 "/api/sessions" => Answer(HttpStatusCode.OK, new JsonArray([.. Records.Select(record => record.DeepClone())])),
                 "/api/quests" => Answer(HttpStatusCode.OK, new JsonArray([.. Quests.Select(quest => quest.DeepClone())])),
@@ -116,7 +116,7 @@ internal sealed class HistoryStandIn : HttpMessageHandler
             };
         }
 
-        // KEEPSIZE1b: the daily clear also ages the finished trees' records; this stand-in has no such door, as a service before it.
+        // The daily clear also ages the finished trees' records; this stand-in has no such door, as a service before it.
         if (path == "/api/trees/record/age") return new HttpResponseMessage(HttpStatusCode.NotFound);
         var body = JsonNode.Parse(await request.Content!.ReadAsStringAsync(ct))!;
         var answers = new JsonArray();

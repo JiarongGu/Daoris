@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDRETIRE1 part 2 without git: a landing's branch the line has not held is named to the person with its age and its quest's
+/// Without git: a landing's branch the line has not held is named to the person with its age and its quest's
 /// closing (<see cref="LandedWords"/>), and once its quest is closed and a day has passed the inventory blocks it on the person
 /// (<see cref="InventoryCode.LandingStale"/>), which *What needs you* lists. Which quest is closed is the service's: the seam reads
 /// it once for the entries that ask (<see cref="LandedStanding.ClosedAsync"/>).
@@ -93,7 +93,7 @@ public sealed class LandedStandingTests
         Assert.Contains(said, line => line.Contains("tree remove feature/q2-fix --repository engine --why"));
     }
 
-    // ---- the review of a session whose landing was withdrawn
+    // ---- the review of a session whose landing is withdrawn
 
     [Fact]
     public void The_review_of_a_withdrawn_landing_says_when_why_and_where_its_commits_stay()

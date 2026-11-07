@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The doors' version floor (GITAUTH1c, TOOLS6; the git-auth design §4.1): where Daoris's doors are laid out and the git Tools resolves
+/// The doors' version floor: where Daoris's doors are laid out and the git Tools resolves
 /// is older than 2.31, which reads no command scope, Daoris's own remote acts refuse naming both versions before any git connects, each a
 /// <c>git.refused</c> line coded <c>old-git</c>; with no door laid out the floor stands in front of nothing.
 /// </summary>

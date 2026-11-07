@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1e part e1 over real git (D215's note; the integration design §4.6, §17.4): the landing and its advance write their
+/// Over real git: the landing and its advance write their
 /// acceptance's provenance, and the one door's recorded-landing path admits a landing from its record alone, bound to the tip the record
 /// holds, its gate proof read as the record keeps it, never twice and never one the line holds. Called from no production path yet. The
-/// requests are kept in the home's desktop store (part e2, <see cref="IntegrationStore"/>).
+/// requests are kept in the home's desktop store (<see cref="IntegrationStore"/>).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -32,7 +32,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     private IntegrationRequests Door(IntegrationStore store) =>
         new(new HomeIntegrationRecords(Home), store, () => DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.DriverConfig)), Home);
 
-    /// <summary>This home's own request store, in its desktop store (INTEGRATE1e part e2).</summary>
+    /// <summary>This home's own request store, in its desktop store.</summary>
     private IntegrationStore Requests() => new(Home, () => StoreSettled.Yes);
 
     private static IntegrationAsk Card(string root, string branch, string route = IntegrationRoutes.Recorded) =>
@@ -151,7 +151,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     /// <summary>
     /// The landing writes, beside who accepted it, that <c>integrate</c> stood with its <c>request</c> and its bound version's step as its
     /// source; an advance made under another version writes that version's own, as it writes its own <c>acceptedBy</c>, and the landing's
-    /// stays as it was accepted.
+    /// stays as accepted.
     /// </summary>
     [Fact]
     public async Task A_landing_and_its_advance_each_write_the_integrate_that_stood_at_its_acceptance()
@@ -209,9 +209,9 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     }
 
     /// <summary>
-    /// INTEGRATE1r part r3's check (the integration design §17.4): a landing under a named version whose graph holds <c>integrate</c> writes
+    /// A landing under a named version whose graph holds <c>integrate</c> writes
     /// <c>source: version</c> and the node's own <c>request</c>, though <see cref="WorkflowProcess.Of"/> builds its landing rule without the
-    /// rule's <c>integrate</c> (the value INTEGRATE1n's <c>LandedIntegrate.Of</c> reads under Current only): the version's step is read from
+    /// rule's <c>integrate</c> (the value <c>LandedIntegrate.Of</c> reads under Current only): the version's step is read from
     /// its graph. The place's workflow asks <c>done</c> here and the bound version <c>steward</c>, so a record that took the place's would say so.
     /// </summary>
     [Fact]

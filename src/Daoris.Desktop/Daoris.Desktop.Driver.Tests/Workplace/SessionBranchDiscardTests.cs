@@ -6,10 +6,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LAND3c (D102's LAND3b note): discarding a session branch is one act behind two doors, the screen's
+/// Discarding a session branch is one act behind two doors, the screen's
 /// <c>DISCARD_SESSION_BRANCH</c> by the branch and its repository, and the terminal's <c>trees remove &lt;session|branch&gt;</c>
-/// by the branch or the session. Both keep a branch whose tree a session still running or waiting holds, even forced: LAND3b
-/// built that keep into the screen's door alone, and the terminal's took the live session's tree. No git runs here: the keep
+/// by the branch or the session. Both keep a branch whose tree a session still running or waiting holds, even forced, at either
+/// door. No git runs here: the keep
 /// is read off the layout and the service's ledger before the checkout is asked, so a service standing in is the whole world.
 /// The git half is <c>LandingTidyTests</c>.
 /// </summary>
@@ -25,7 +25,7 @@ public sealed class SessionBranchDiscardTests : IDisposable
         {
             Directory.Delete(_home, recursive: true);
         }
-        catch (DirectoryNotFoundException) { /* nothing was written */ }
+        catch (DirectoryNotFoundException) { /* nothing written */ }
     }
 
     /// <summary>The tree Daoris's layout gives the branch, under this home's trees.</summary>
@@ -165,7 +165,7 @@ public sealed class SessionBranchDiscardTests : IDisposable
 }
 
 /// <summary>
-/// The service's ledger and registry standing in for a discard (LAND3c): the registry's checkouts, the sessions running or
+/// The service's ledger and registry standing in for a discard: the registry's checkouts, the sessions running or
 /// waiting (<c>/api/sessions</c>), and every session with the closed ones (<c>?includeClosed=true</c>). Each path asked is kept.
 /// </summary>
 internal sealed class DiscardLedger : HttpMessageHandler

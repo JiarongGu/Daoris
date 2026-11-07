@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The terminal's git identities (GITAUTH1c; the git-auth design §8): the words each verb takes, the lease a change holds, a session's
+/// The terminal's git identities: the words each verb takes, the lease a change holds, a session's
 /// refusal, the widenings held for the window, and what the verbs say. ssh's tools are never started here: an import needs none.
 /// </summary>
 public sealed class GitIdentityCommandTests : IDisposable
@@ -114,8 +114,8 @@ public sealed class GitIdentityCommandTests : IDisposable
     }
 
     /// <summary>
-    /// GITAUTH1e (§8, D194 point 5): while the window runs, a widening is pressed there as the page presses it, the window's
-    /// confirmation before it, and nothing is done here; a change that is no widening runs here as before.
+    /// While the window runs, a widening is pressed there as the page presses it, the window's
+    /// confirmation before it, and nothing is done here; a change that is no widening runs here.
     /// </summary>
     [Fact]
     public async Task A_widening_while_the_window_runs_is_pressed_there_and_does_nothing_here()

@@ -13,7 +13,7 @@ using Microsoft.DevTunnels.Ssh.Tcp;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A code host on this machine's loopback serving bare repositories over SSH, in the test process (D241 point 8): Microsoft's dev-tunnels
+/// A code host on this machine's loopback serving bare repositories over SSH, in the test process: Microsoft's dev-tunnels
 /// SSH library answers OpenSSH's client, so no sshd is installed or started. It presents a host key made here, admits only the public
 /// keys a test authorizes, and serves <c>exec</c> of <c>git-upload-pack</c> and <c>git-receive-pack</c> with the test's git over the
 /// repositories under <see cref="Projects"/>, by the path git asks. A shell answers a greeting and exits 1, as a hosted service's does.
@@ -59,15 +59,15 @@ public sealed class GitSshHost : IAsyncLifetime
     public int Connections => Volatile.Read(ref _connections);
 
     /// <summary>
-    /// Whether a <c>git-receive-pack</c> is cut off mid-way (GITAPP2): the host lists its refs, takes the pack and applies it, then drops the
-    /// connection with no report and no exit status, so a client cannot know the push was taken. Recorded as exit <see cref="InterruptedExit"/>.
+    /// Whether a <c>git-receive-pack</c> is cut off mid-way: the host lists its refs, takes the pack and applies it, then drops the
+    /// connection with no report and no exit status, so a client cannot know the host took the push. Recorded as exit <see cref="InterruptedExit"/>.
     /// </summary>
     public bool InterruptReceive { get; set; }
 
     /// <summary>The exit a run cut off by <see cref="InterruptReceive"/> is recorded with.</summary>
     public const int InterruptedExit = -1;
 
-    /// <summary>Every public key a client offered, in order, with whether it was admitted.</summary>
+    /// <summary>Every public key a client offered, in order, with whether the host admitted it.</summary>
     public IReadOnlyList<GitSshHostOffer> Offers
     {
         get { lock (_offers) return [.. _offers]; }
@@ -240,7 +240,7 @@ public sealed class GitSshHost : IAsyncLifetime
 
     /// <summary>
     /// What <c>git-receive-pack</c> says is sent on until the ref advertisement's flush-pkt (<c>0000</c>) has gone; everything after it, the
-    /// report of what was taken, is read and dropped, so the client has sent its pack and hears nothing back.
+    /// report of what the host took, is read and dropped, so the client has sent its pack and hears nothing back.
     /// </summary>
     private static async Task ForwardAdvertisementOnlyAsync(Stream from, SshStream to)
     {
@@ -256,7 +256,7 @@ public sealed class GitSshHost : IAsyncLifetime
     }
 
     /// <summary>
-    /// git's program and the repository's folder from what ssh was asked to run (<c>git-upload-pack '/org/engine.git'</c>): only the two
+    /// git's program and the repository's folder from what ssh is asked to run (<c>git-upload-pack '/org/engine.git'</c>): only the two
     /// programs, only a path under <see cref="Projects"/>.
     /// </summary>
     private (string? Program, string? Folder) Parse(string? command)
@@ -302,7 +302,7 @@ public sealed class GitSshHost : IAsyncLifetime
     }
 }
 
-/// <summary>A public key a client offered the stand-in SSH host: as which user, of which algorithm, and whether it was admitted.</summary>
+/// <summary>A public key a client offered the stand-in SSH host: as which user, of which algorithm, and whether the host admitted it.</summary>
 public sealed record GitSshHostOffer(string? User, string Algorithm, bool Admitted);
 
 /// <summary>A command run on the stand-in SSH host: the client's version line (which ssh connected), what it ran (null for a shell) and its exit.</summary>

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1e: <c>daoris history</c>, <c>history clear --workspace</c>, <c>quest clear</c> and <c>ask --clear</c> through the running
-/// Daoris (the terminal RPC design §7.2 and §7.3). A clear's <c>--yes</c> is the person's press, sent to the instance, which shows it in
+/// <c>daoris history</c>, <c>history clear --workspace</c>, <c>quest clear</c> and <c>ask --clear</c> through the running
+/// Daoris. A clear's <c>--yes</c> is the person's press, sent to the instance, which shows it in
 /// its window; the reading and a clear's list are reads of <c>HISTORY_PLAN</c>. The terminal prints the lines the route answers
 /// (<c>said</c>, the alone path's own words), and this process asks the service nothing.
 /// </summary>
@@ -129,7 +129,7 @@ public sealed class HistoryThroughInstanceTests
         Assert.Single(standIn.Presses);
     }
 
-    /// <summary>With no instance running, the reading is this process's own, in the same words, as it was.</summary>
+    /// <summary>With no instance running, the reading is this process's own, in the same words.</summary>
     [Fact]
     public async Task With_no_instance_the_reading_is_this_process_s_own()
     {

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Work-orders cut: the behaviour the cut keeps, written against the surface that exists on both
+/// The Workplace-names-Work-orders cut: the behaviour the cut keeps, written against the surface that exists on both
 /// sides of it (the intake room's folder rule, the question file's suffix, the session group words and the tree rule they share, the
 /// offers a tree makes, an entry's parts and how each began), so the same cases pass on the base and after it. The cases that reach a
 /// moved class through a new seam are <see cref="WorkplaceWorkOrdersPortsTests"/>'.

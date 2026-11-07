@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LINESTOGETHER1d (the review-flow design §4): the look's pass over the operations. What the records say of the head moves it: its
+/// The look's pass over the operations. What the records say of the head moves it: its
 /// line carried to a successor its own word opened, stale on a hand-over, its turn running. An operation whose sessions were deleted is
 /// dropped, and one at <i>landing</i> after a restart is settled by its git effects, never while a landing of the head's tree is under way.
 /// </summary>

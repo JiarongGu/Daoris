@@ -5,7 +5,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What an ended session's tree offers is judged with few git starts (PERF1g): the offer of a tree with work to land asks the head, the
+/// What an ended session's tree offers is judged with few git starts: the offer of a tree with work to land asks the head, the
 /// tree's own branch, the commits no branch of the person's holds, and the content proof's own reads, once each. The figures are said
 /// in the test's output. A tree of two commits the line does not hold made 17 starts: its top asked twice, the line's branch and origin's
 /// asked one at a time, and an empty range and the files it differs in asked of a line that had not moved.

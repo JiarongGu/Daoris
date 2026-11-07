@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREEKEEP1 (D102's note): a session's own scratch in an ignored folder the checkout holds too is not removed with its tree
+/// A session's own scratch in an ignored folder the checkout holds too is not removed with its tree
 /// unasked. These hold the pure halves: the build list, the walk and its bound, and the words. The real-git rows are in
 /// <c>ContentProofLossTests</c>.
 /// </summary>
@@ -105,7 +105,7 @@ public sealed class TreeScratchTests : IDisposable
         Assert.True(tooLarge);
     }
 
-    // ---- TIDYOUTPUT1: a repository's declared output, and a build's own folders ----
+    // ---- A repository's declared output, and a build's own folders ----
 
     [Theory]
     [InlineData("bin/", true)]
@@ -164,7 +164,7 @@ public sealed class TreeScratchTests : IDisposable
         Assert.Empty(TreeScratch.ParseDeclared($$"""{ "integration": { "scratch": ["{{glob.Replace("\\", "\\\\")}}"] } }"""));
 
     /// <summary>
-    /// INTEGRATE1d: the scratch is read through the declaration's one reader, so a declaration that breaks another key's shape declares
+    /// The scratch is read through the declaration's one reader, so a declaration that breaks another key's shape declares
     /// no scratch either: nothing acts on half of one. Which text is read, the accepted blob at the line's tip and never the checkout's
     /// working file, is <c>ContentProofLossTests</c>' real-git rows.
     /// </summary>

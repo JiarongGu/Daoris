@@ -5,7 +5,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 GITWORKTREECONFIG1 (D51's note): a session's tree git binds to another checkout is never removed, reset or written through.
+/// 🔴 A session's tree git binds to another checkout is never removed, reset or written through.
 /// With worktree-specific configuration on (<c>extensions.worktreeConfig</c>), a <c>core.worktree</c> in the repository's shared
 /// configuration applies to every linked tree, so git reports the main checkout as each one's working root (the 2026-10-27 incident).
 /// Each door that writes through a session's tree is driven here over such a tree: it refuses with the sentence that names what binds it
@@ -39,7 +39,7 @@ public sealed class TreeBindingGitTests(ITestOutputHelper output) : BranchTidyin
     }
 
     /// <summary>
-    /// The person's press of the clean-up (D88) over a landed tree: its row is judged kept, what git says its tree holds being the
+    /// The person's press of the clean-up over a landed tree: its row is judged kept, what git says its tree holds being the
     /// checkout's, and says why, before any ref is kept or anything goes.
     /// </summary>
     [Fact]
@@ -79,7 +79,7 @@ public sealed class TreeBindingGitTests(ITestOutputHelper output) : BranchTidyin
         Assert.Equal(before, await CheckoutAsync(root, tree.Branch));
     }
 
-    /// <summary>Bring up to date (REVIEWBASE2-i) where the line moved: no switch, rebase or reset runs in a tree git reads as the checkout.</summary>
+    /// <summary>Bring up to date where the line moved: no switch, rebase or reset runs in a tree git reads as the checkout.</summary>
     [Fact]
     public async Task Bringing_a_bound_tree_up_to_date_is_refused_and_changes_nothing()
     {
@@ -97,7 +97,7 @@ public sealed class TreeBindingGitTests(ITestOutputHelper output) : BranchTidyin
         Assert.Equal(before, await CheckoutAsync(root, tree.Branch));
     }
 
-    /// <summary>A resume in a tree that stands (TREEGONE1): no session goes on where what its agent writes, git writes in the checkout.</summary>
+    /// <summary>A resume in a tree that stands: no session goes on where what its agent writes, git writes in the checkout.</summary>
     [Fact]
     public async Task A_start_does_not_go_on_in_a_bound_tree()
     {
@@ -115,7 +115,7 @@ public sealed class TreeBindingGitTests(ITestOutputHelper output) : BranchTidyin
         Assert.Equal(before, await CheckoutAsync(root, tree.Branch));
     }
 
-    /// <summary>An open undone (OPENCUT1) where the tree it made is bound: the tree and its branch are left, for the look to say.</summary>
+    /// <summary>An open undone where the tree it made is bound: the tree and its branch are left, for the look to say.</summary>
     [Fact]
     public async Task An_undone_opening_leaves_a_bound_tree_and_its_branch()
     {
@@ -131,8 +131,8 @@ public sealed class TreeBindingGitTests(ITestOutputHelper output) : BranchTidyin
     }
 
     /// <summary>
-    /// An opening under the shared configuration (the last door of GITWORKTREECONFIG1): the tree it just made is let go of through the
-    /// opening's own undo, no folder and no branch remain, the checkout is as it was, and the refusal says what binds it.
+    /// An opening under the shared configuration (the last door): the tree it just made is let go of through the
+    /// opening's own undo, no folder and no branch remain, the checkout is unchanged, and the refusal says what binds it.
     /// </summary>
     [Fact]
     public async Task An_opening_under_a_shared_core_worktree_is_refused_and_leaves_nothing()
@@ -230,7 +230,7 @@ public sealed class TreeBindingGitTests(ITestOutputHelper output) : BranchTidyin
         Assert.True(TreeGit.SamePath(answer, root), $"git answered {answer} for the tree at {tree}, not the checkout {root}");
     }
 
-    /// <summary>The refusal's sentence: what git reports, what binds it there and where, that nothing was done, and what to do.</summary>
+    /// <summary>The refusal's sentence: what git reports, what binds it there and where, that nothing changed, and what to do.</summary>
     private static void Refused(string message, string tree)
     {
         Assert.Contains($"as the working root of the tree at {Path.GetFullPath(tree)}", message, StringComparison.Ordinal);

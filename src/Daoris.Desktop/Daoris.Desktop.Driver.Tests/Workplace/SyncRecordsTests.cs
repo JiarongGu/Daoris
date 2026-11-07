@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR6's records and words, without git: where each session branch started (<c>session-branches.json</c>), where a
+/// The sync records and words, without git: where each session branch started (<c>session-branches.json</c>), where a
 /// landing's branch grew from (<c>landings.json</c>'s <c>from</c>), and the sentences each door says a row in.
 /// </summary>
 public sealed class SyncRecordsTests : IDisposable
@@ -102,13 +102,13 @@ public sealed class SyncRecordsTests : IDisposable
         Assert.Contains("no `origin/main`", SyncWords.Describe(Pull(PullKind.NoRemote)));
         Assert.Contains("no local `main`", SyncWords.Describe(Pull(PullKind.NoLocal)));
         Assert.Contains("git said so", SyncWords.Describe(Pull(PullKind.Unknown)));
-        // A short mark on the row (WSR7): the reason is said once, before the rows (`SyncWords.NotFetched`).
+        // A short mark on the row: the reason is said once, before the rows (`SyncWords.NotFetched`).
         Assert.EndsWith("up to date with `origin/main` (not fetched)", SyncWords.Describe(Pull(PullKind.UpToDate, fetch: "there is no `origin` remote here")));
         Assert.Contains("no line is set", SyncWords.Describe(new LinePull("engine", "aurora", null, PullKind.NoLine, null, null, 0, null, null)));
     }
 
     /// <summary>
-    /// WSR7: every fetch failed on the owner's workspace, and the look said so only at the end of each of 29 rows. It is
+    /// When every fetch fails, the look does not say so at the end of each row. It is
     /// said once, first: how many, grouped by git's reason, when each last heard from origin, and what the git Daoris
     /// runs needs to reach an origin over SSH or HTTPS — in no product's name.
     /// </summary>
@@ -191,7 +191,7 @@ public sealed class SyncRecordsTests : IDisposable
     }
 
     /// <summary>
-    /// LANDSYNC3b (D87's 2026-10-15 amendment point 4, by analogy): the list says what a replay leaves out because the line holds it,
+    /// The list says what a replay leaves out because the line holds it,
     /// as the press's answer does, beside what it carries; a row from before reads none left out, and says what it said.
     /// </summary>
     [Fact]

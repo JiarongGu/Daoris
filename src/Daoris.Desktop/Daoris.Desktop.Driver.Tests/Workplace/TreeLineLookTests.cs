@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A look asks git for a checkout's line once (UIFREEZE1): the sweep's list asked it three times a repository, up to three git
+/// A look asks git for a checkout's line once: the sweep's list would ask it three times a repository, up to three git
 /// processes each, and a frozen window's stack held seventeen such asks waiting on .NET's one process-start lock.
 /// </summary>
 /// <remarks>

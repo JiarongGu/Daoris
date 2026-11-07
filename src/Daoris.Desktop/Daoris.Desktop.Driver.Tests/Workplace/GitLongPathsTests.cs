@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREELONG1's shapes: a session's start is handed <c>core.longpaths=true</c> in its command scope, after what the scope already
+/// The shapes: a session's start is handed <c>core.longpaths=true</c> in its command scope, after what the scope already
 /// holds, unless the person's configuration or the scope itself already says it. <see cref="GitLongPathsProcessTests"/> holds that a
 /// real git reads a deep tree clean so.
 /// </summary>

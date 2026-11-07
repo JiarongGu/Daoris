@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The session's landed work, as a diff (SURF6, design §5). Driven against REAL git for the same
+/// The session's landed work, as a diff. Driven against REAL git for the same
 /// reason the session-tree tests are: the answers are git's, and a mock that agrees with a guess
 /// about `--name-status` proves only that the guess is self-consistent.
 /// </summary>
@@ -58,7 +58,7 @@ public sealed class TreeDiffTests : IDisposable
     }
 
     /// <summary>
-    /// REVIEWDIRTY1-a (D164 point 4): a modified file, a staged one and an untracked one are all the tree's uncommitted work, each with
+    /// A modified file, a staged one and an untracked one are all the tree's uncommitted work, each with
     /// its patch; the committed list is unchanged by them, and a clean tree reads empty.
     /// </summary>
     [Fact]
@@ -109,7 +109,7 @@ public sealed class TreeDiffTests : IDisposable
     /// <summary>
     /// 🔴 <b>git WALKS UP.</b> Run it in a directory that is not a repository and it answers for
     /// whatever repository encloses it — so an unguarded diff of a session tree that has been
-    /// deleted, or of a checkout that was never a repository, returns the PARENT project's commits
+    /// deleted, or of a checkout that never held a repository, returns the PARENT project's commits
     /// presented as that session's work. Not hypothetical: the example family the desktop drives are
     /// plain directories inside this repository, and before the guard existed a review of a session
     /// in one of them showed Daoris's own last commit.
@@ -190,8 +190,8 @@ public sealed class TreeDiffTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REVIEW3: a review starts two git processes, whether the session changed three files or sixty — one asks whether the
-    /// root is a repository's top, one reads the whole range. The review used to start one more per file, and one git start
+    /// 🔴 A review starts two git processes, whether the session changed three files or sixty — one asks whether the
+    /// root is a repository's top, one reads the whole range. One more per file would add up: one git start
     /// on a large repository costs about a second. Counted at the seam the review reads git through, around real git.
     /// </summary>
     [Fact]
@@ -218,11 +218,11 @@ public sealed class TreeDiffTests : IDisposable
     }
 
     /// <summary>
-    /// The whole range's answer, split, is each file's own read (REVIEW3): every file that is not a rename carries exactly
+    /// The whole range's answer, split, is each file's own read: every file that is not a rename carries exactly
     /// the patch `git diff -M &lt;range&gt; -- &lt;path&gt;` gives it alone — a modification, an addition, a deletion, a
     /// binary file, a mode-only change, a symlink become a file (both of git's halves), a path with a space and one outside
-    /// ASCII. A rename now carries git's rename: a read of its new path alone could not see where it came from, so it showed
-    /// the whole file as added and found no counts for it.
+    /// ASCII. A rename carries git's rename: a read of its new path alone cannot see where it came from, so it would show
+    /// the whole file as added and find no counts for it.
     /// </summary>
     [Fact]
     public async Task Each_file_s_patch_is_the_one_its_own_read_gives_and_a_rename_is_git_s_rename()
@@ -285,7 +285,7 @@ public sealed class TreeDiffTests : IDisposable
     }
 
     /// <summary>
-    /// A person's own settings do not change what the review reads (REVIEW3): no prefixes, colour always, octal paths and
+    /// A person's own settings do not change what the review reads: no prefixes, colour always, octal paths and
     /// a diff program that fails would each change the answer's shape, or the line each patch is matched to its file by.
     /// </summary>
     [Fact]

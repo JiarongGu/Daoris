@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SQUASHTIDY1: how a session branch's work was found held by content, in the one clause every door says it with: the review's
+/// How a session branch's work is found held by content, in the one clause every door says it with: the review's
 /// Discard and <c>trees remove</c> after "removed …", and the clean-up's row in the terminal. The page shows the driver's
 /// sentence as it is, so no catalogue words it again.
 /// </summary>
@@ -19,14 +19,14 @@ public sealed class ContentHoldWordsTests
             "its work is on `feature/x` by content (each file it changed reads the same there)",
             new ContentHold("feature/x", Squash: false).Said);
 
-    /// <summary>SQUASHSEEN1: a squash that carried it with other work says so, since its tree is not the squash's.</summary>
+    /// <summary>A squash that carried it with other work says so, since its tree is not the squash's.</summary>
     [Fact]
     public void A_squash_that_carried_it_with_other_work_says_merging_it_adds_nothing() =>
         Assert.Equal(
             "its work is on `main` by content (a squash carried it: merging it there adds nothing)",
             new ContentHold("main", Squash: false) { Carried = true }.Said);
 
-    /// <summary>REVIEWLANDED1: a landing that replayed its commits onto the line says so, since none of its own commits is there.</summary>
+    /// <summary>A landing that replayed its commits onto the line says so, since none of its own commits is there.</summary>
     [Fact]
     public void A_landings_replay_says_each_commit_is_there() =>
         Assert.Equal(
@@ -34,8 +34,8 @@ public sealed class ContentHoldWordsTests
             new ContentHold("main", Squash: false) { Replayed = true, OnLine = true }.Said);
 
     /// <summary>
-    /// REVIEWLANDED1: a file that reads otherwise on the line is held only where the line's newest change to it holds one of the branch's
-    /// patches (git marks it <c>=</c>); a change after it, or none at all, is the line as it stands, which does not hold it (D148).
+    /// A file that reads otherwise on the line is held only where the line's newest change to it holds one of the branch's
+    /// patches (git marks it <c>=</c>); a change after it, or none at all, is the line as it stands, which does not hold it.
     /// </summary>
     [Theory]
     [InlineData("\u001e=aaa\nf.txt\n\u001e+bbb\nf.txt\ng.txt\n", "f.txt", true)]
@@ -47,7 +47,7 @@ public sealed class ContentHoldWordsTests
         Assert.Equal(held, ReplayHolds.LastChangedByPatch(log, differs.Split('|')));
 
     /// <summary>
-    /// REVIEWLANDED1: a tree whose commits are on the line by content has landed, so it leaves the review where its discard would go; one
+    /// A tree whose commits are on the line by content has landed, so it leaves the review where its discard would go; one
     /// held on a person's branch, one that stays for what no commit holds, and one with uncommitted paths are still the person's.
     /// </summary>
     [Fact]
@@ -64,8 +64,8 @@ public sealed class ContentHoldWordsTests
     }
 
     /// <summary>
-    /// SQUASHSEEN1: the backlog read by rows. Two sessions moved out neighbouring rows and the squash moved both; a row the branch moved
-    /// that the line still has, or one it added that the line lacks, is not held; the line's own other rows are its own.
+    /// The backlog read by rows. Two sessions move out neighbouring rows and the squash moves both; a row the branch moves
+    /// that the line still has, or one it adds that the line lacks, is not held; the line's own other rows are its own.
     /// </summary>
     [Theory]
     [InlineData("- A\n- B\n- C\n", "- C\n", "- B\n- C\n", true)]
@@ -81,7 +81,7 @@ public sealed class ContentHoldWordsTests
     public void A_line_on_origin_is_named_as_git_names_it() =>
         Assert.Equal("its work is on `origin/main` by content (a squash merge)", new ContentHold("origin/main", Squash: true).Said);
 
-    /// <summary>SQUASHTIDY1c: where a content-held removal kept the commits it deleted, and how to have them back or let them go.</summary>
+    /// <summary>Where a content-held removal kept the commits it deleted, and how to have them back or let them go.</summary>
     [Fact]
     public void Where_the_commits_stay_names_the_ref_and_how_to_bring_the_branch_back() =>
         Assert.Equal(
@@ -90,8 +90,8 @@ public sealed class ContentHoldWordsTests
             ContentHold.KeptAt("daoris/s-1a2b3c4d", "refs/daoris/discarded/daoris/s-1a2b3c4d"));
 
     /// <summary>
-    /// SQUASHTIDY1b: where <i>Accept…</i> would be, the session's page says where its work is in Discard's own clause, as a
-    /// sentence, and its discard's ask names the ref the commits stay at, in the words the discard says once it went.
+    /// Where <i>Accept…</i> would be, the session's page says where its work is in Discard's own clause, as a
+    /// sentence, and its discard's ask names the ref the commits stay at, in the words the discard says once it has gone.
     /// </summary>
     [Fact]
     public void A_held_trees_offer_says_where_its_work_is_and_its_ask_names_the_ref()
@@ -104,7 +104,7 @@ public sealed class ContentHoldWordsTests
         Assert.Equal(ContentHold.KeptAt("daoris/s-1a2b3c4d", "refs/daoris/discarded/daoris/s-1a2b3c4d"), offer.KeptAt);
     }
 
-    /// <summary>SQUASHTIDY1b: a held tree whose discard would not go unforced says why it stays, and its ask has nothing to name.</summary>
+    /// <summary>A held tree whose discard would not go unforced says why it stays, and its ask has nothing to name.</summary>
     [Fact]
     public void A_held_tree_that_stays_says_why_and_names_no_ref()
     {
@@ -120,7 +120,7 @@ public sealed class ContentHoldWordsTests
     }
 
     /// <summary>
-    /// SQUASHTIDY1f: a landing of a held tree, at any door, refuses in the head's own clause, and says why landing it again is
+    /// A landing of a held tree, at any door, refuses in the head's own clause, and says why landing it again is
     /// refused and what to do instead. One sentence for the press's refusal and for the plan before it, so it names no tense.
     /// </summary>
     [Fact]
@@ -136,7 +136,7 @@ public sealed class ContentHoldWordsTests
             offer.NotLanded);
     }
 
-    /// <summary>SQUASHTIDY1f: where the discard would not go unforced, the refusal says why the tree stays, as the head does.</summary>
+    /// <summary>Where the discard would not go unforced, the refusal says why the tree stays, as the head does.</summary>
     [Fact]
     public void A_held_tree_that_stays_says_why_its_landing_is_refused_and_why_it_stays()
     {

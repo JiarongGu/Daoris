@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PLUGHOOK1a (D148 point 2, design §2.1 and §2.4): an occasion's asks. One process per plugin, started for the frames and
+/// An occasion's asks. One process per plugin, started for the frames and
 /// stopped after them; frames one at a time, the entry asked longest ago first; each waits its bound, the handshake inside the
 /// first; no frame starts once the occasion's bound has passed; and a failure is a code, never a state. Plugins faked on their
 /// channel, so this is the suite's fast half.
@@ -153,7 +153,7 @@ public sealed class PullRequestAskTests : IDisposable
     }
 
     /// <summary>
-    /// PLUGHOOK1c (design §2.1): <i>Ask again</i> with nobody to ask — no plugin pushed the branch and the rule names none — says
+    /// <i>Ask again</i> with nobody to ask — no plugin pushed the branch and the rule names none — says
     /// so, starts nothing, and says nothing of a state it never had.
     /// </summary>
     [Fact]

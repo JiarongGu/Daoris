@@ -6,10 +6,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// G8's proof (D241 points 4 and 5; the git design §3.1 row G8 and §4.1's workflow row): a workflow <c>land</c> (branch), then <c>push</c>, then a
+/// A workflow <c>land</c> (branch), then <c>push</c>, then a
 /// plugin's <c>pull-request</c> step, each step against its stand-in. The <c>push</c> node's door pushes the landed branch through the same push act
 /// the person's press uses, under its grant, to <see cref="GitSshHost"/>; the pull request is then opened with the identity's token on
-/// <see cref="PullRequestApiHost"/> by the plugin's call (here the stand-in's own HTTP call, the example plugins' real ones being G9's). The graph
+/// <see cref="PullRequestApiHost"/> by the plugin's call (here the stand-in's own HTTP call). The graph
 /// that says it is judged by the save as a graph of steps.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

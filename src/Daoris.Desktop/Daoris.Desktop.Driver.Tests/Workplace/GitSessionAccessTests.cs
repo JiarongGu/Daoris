@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The git access a running session holds (D241 point 7): its record begun at its start, held as its repository resolves narrowed by what
+/// The git access a running session holds: its record begun at its start, held as its repository resolves narrowed by what
 /// the person tightened, a tightening that only narrows, the doors' judge reading it for the session's marker, and
 /// <c>daoris git access --session</c> in the terminal.
 /// </summary>
@@ -53,7 +53,7 @@ public sealed class GitSessionAccessTests : IDisposable
         Assert.Equal("read=allow@default write=deny@session dangerous=deny@default", Show(tightened.Classes));
         Assert.Equal("write=deny@session", Show(GitSessionAccess.Read(Home, "s1")!.Classes.Where(each => each.Source == "session")));
         Assert.Equal("allow", GitSessionAccess.Read(Home, "s2")!.Classes.First(each => each.Class == "write").Value);
-        // Begun again, as a resumed session is, it keeps what was tightened.
+        // Begun again, as a resumed session is, it keeps what the person tightened.
         GitSessionAccess.Begin(Home, "s1", "engine", null);
         Assert.Equal("deny", GitSessionAccess.Held(Home, "s1", "engine", null).Of("write").Value);
         // Another session, and a marker that names none, are judged by the repository's.

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREELOCAL1 (D216): a new session tree carries the machine-local files its repository's gates read, copied from its checkout
+/// A new session tree carries the machine-local files its repository's gates read, copied from its checkout
 /// read-only. These hold the declaration and the copy over a checkout and a tree that are plain folders, git's word on what it
 /// ignores handed in as the open would hand it; the real-git rows (the open, its cut-off, the removal and the gate that reads the
 /// copy) are in <see cref="SessionTreesTests"/>.
@@ -22,7 +22,7 @@ public sealed class TreeLocalInputsTests : IDisposable
         Directory.CreateDirectory(Tree);
     }
 
-    /// <remarks>Deleted never following a link, read-only files made writable first, as the look's purge deletes (TREESCRATCH2).</remarks>
+    /// <remarks>Deleted never following a link, read-only files made writable first, as the look's purge deletes.</remarks>
     public void Dispose()
     {
         TreeLocalInputs.Copying.Value = null;

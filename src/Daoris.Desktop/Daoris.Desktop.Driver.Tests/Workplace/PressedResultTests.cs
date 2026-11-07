@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CLOSE1h3 (D173's note; the fabric design §E5): the person's press and an entry's Accept are judged again under their
-/// landing's holds, on the result the press was made on. Only that result moving stops the press, a reopen, a later submission or
+/// The person's press and an entry's Accept are judged again under their
+/// landing's holds, on the result the press is made on. Only that result moving stops the press, a reopen, a later submission or
 /// another <c>ready</c> at the same commit; a quest's hold never does, since the press is the person's own word. A press on no quest,
 /// or on a quest whose result is not in, holds to nothing and lands as before. Tables and counted reads, so the suite's fast half; the
 /// presses over real git are <see cref="EntryLandingTests"/>.
@@ -41,8 +41,8 @@ public sealed class PressedResultTests
     // ——— what a press holds to
 
     /// <summary>
-    /// Decision 3: a conversation with no quest, and a quest whose result is not in (open, or taken with no submission), hold to nothing,
-    /// so the press lands exactly as before. A done, and a closure graph's submission held or not, are what the press was made on.
+    /// A conversation with no quest, and a quest whose result is not in (open, or taken with no submission), hold to nothing,
+    /// so the press lands exactly as before. A done, and a closure graph's submission held or not, are the result the press is made on.
     /// </summary>
     [Theory]
     [InlineData(null, false)]
@@ -94,8 +94,8 @@ public sealed class PressedResultTests
     // ——— what moves it
 
     /// <summary>
-    /// Decision 2: the result moving is a reopen (taken back, or turned down), a later submission, or another <c>ready</c> at the same
-    /// commit (a submission is known by its machine and sequence, CLOSE1q's identity). Decision 1: a hold on the same result is no move,
+    /// The result moving is a reopen (taken back, or turned down), a later submission, or another <c>ready</c> at the same
+    /// commit (a submission is known by its machine and sequence). A hold on the same result is no move,
     /// nor is its graph closing it done on that submission.
     /// </summary>
     [Theory]
@@ -131,7 +131,7 @@ public sealed class PressedResultTests
     // ——— when it is read again
 
     /// <summary>
-    /// Under the tree's hold the result is read again only where the press waited for another landing of the tree, or was made earlier
+    /// Under the tree's hold the result is read again only where the press waited for another landing of the tree, or came earlier
     /// than its landing (an entry's part, behind the press's fetch and its earlier parts).
     /// </summary>
     [Theory]
@@ -152,7 +152,7 @@ public sealed class PressedResultTests
         Assert.Equal(underHold, service.Reads - read);
     }
 
-    /// <summary>Decision 4: moved under the tree's hold, the press makes nothing and says why, and that the person accepts again once they have looked.</summary>
+    /// <summary>Moved under the tree's hold, the press makes nothing and says why, and that the person accepts again once they have looked.</summary>
     [Theory]
     [InlineData("reopened", LandingCode.Undone, "its quest was taken back")]
     [InlineData("later", LandingCode.Refused, "its quest's submission was made again")]
@@ -172,7 +172,7 @@ public sealed class PressedResultTests
         Assert.Contains("accept it again", refused.Message);
     }
 
-    /// <summary>Decision 1: a hold that comes while the press waits is the quest's, not the press's, and stops nothing.</summary>
+    /// <summary>A hold that comes while the press waits is the quest's, not the press's, and stops nothing.</summary>
     [Fact]
     public async Task A_hold_on_the_same_result_stops_nothing()
     {

@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDSYNC2 (D87's 2026-10-15 amendment point 7): a session going on in an old tree starts from the line. Before its turn the line
+/// A session going on in an old tree starts from the line. Before its turn the line
 /// is fetched once; where it holds some of the tree's commits, <c>UpdateTreeAsync</c> brings the tree up to date, a failed fetch is
-/// said and not refused, and a conflict leaves the tree as it was and is told. A line that merely moved changes nothing. The doors
+/// said and not refused, and a conflict leaves the tree as it stands and is told. A line that merely moved changes nothing. The doors
 /// that ask it are <see cref="StartInSyncTickTests"/>'s.
 /// </summary>
 /// <remarks>
@@ -49,7 +49,7 @@ public sealed class TreeStartSyncTests : TreeSyncFixture
         Assert.Equal(line, await RevAsync(root, "main"));
     }
 
-    /// <summary>Not merely because the line moved (point 7): a tree the line holds none of is left as it was, and told nothing.</summary>
+    /// <summary>Not merely because the line moved: a tree the line holds none of is left as it stands, and told nothing.</summary>
     [Fact]
     public async Task A_tree_the_line_holds_none_of_is_left_as_it_was_though_the_line_moved()
     {
@@ -67,8 +67,8 @@ public sealed class TreeStartSyncTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// A conflict leaves the tree as it was, and the session is told the line holds some of its work, git's lines naming the file, and
-    /// to replay its own commits onto the line itself (point 5's words, for a start).
+    /// A conflict leaves the tree as it stands, and the session is told the line holds some of its work, git's lines naming the file, and
+    /// to replay its own commits onto the line itself.
     /// </summary>
     [Fact]
     public async Task A_conflict_leaves_the_tree_as_it_was_and_is_told_in_the_instruction()
@@ -99,8 +99,8 @@ public sealed class TreeStartSyncTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// A fetch that fails is no refusal at a start (point 7, where the person's own press still refuses it): the tree is judged against
-    /// the line as this checkout last had it, brought up to date, and the session told the fetch failed and when origin was last heard.
+    /// A fetch that fails is no refusal at a start (where the person's own press still refuses it): the tree is judged against
+    /// the line as this checkout last had it, brought up to date, and the session told the fetch failed and when origin last answered.
     /// </summary>
     [Fact]
     public async Task A_failed_fetch_is_said_and_the_tree_is_judged_against_the_last_one()
@@ -131,7 +131,7 @@ public sealed class TreeStartSyncTests : TreeSyncFixture
         Assert.Equal(TreeStartSync.Nothing, await new SessionTrees(Home).StartInSyncAsync(root));
     }
 
-    /// <summary>The platform's side: <paramref name="files"/> as one commit on origin's `main`, made in the bare origin itself (PROCSPEED1b).</summary>
+    /// <summary>The platform's side: <paramref name="files"/> as one commit on origin's `main`, made in the bare origin itself.</summary>
     private static Task PlatformAsync(string origin, string message, params (string File, string Content)[] files) =>
         CommitOnOriginAsync(origin, message, files);
 }

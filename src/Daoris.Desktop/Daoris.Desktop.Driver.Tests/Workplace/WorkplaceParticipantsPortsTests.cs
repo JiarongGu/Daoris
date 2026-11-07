@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Participants cut: the seams the cut adds. Workplace declares the harness bindings' facet and
+/// The Workplace-names-Participants cut: the seams the cut adds. Workplace declares the harness bindings' facet and
 /// factory, the access setup's resolution and words, the pure helper-wait and piece-state rules; Participants implements and installs
 /// them. The cases that need no new seam are <see cref="WorkplaceParticipantsBoundaryTests"/>'.
 /// </summary>

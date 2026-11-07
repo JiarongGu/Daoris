@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>INTEGRATE1h (the integration design §5.8): the Integration view's read and a unit's head, read from the integration record and never copied.</summary>
+/// <summary>The Integration view's read and a unit's head, read from the integration record and never copied.</summary>
 public sealed class IntegrationLooksTests : IDisposable
 {
     private const string Line = "0000000000000000000000000000000000000000";
@@ -70,7 +70,7 @@ public sealed class IntegrationLooksTests : IDisposable
         return claim;
     }
 
-    /// <summary>INTEGRATE1h: a candidate the policy held says it waits for the owner's decide with the judge's words; a decide recorded is said until its run acts.</summary>
+    /// <summary>A candidate the policy held says it waits for the owner's decide with the judge's words; a decide recorded is said until its run acts.</summary>
     [Fact]
     public void A_candidate_held_for_a_decide_names_the_act_and_who_presses_it_and_a_recorded_decide_until_its_run_acts()
     {
@@ -89,7 +89,7 @@ public sealed class IntegrationLooksTests : IDisposable
         Assert.Equal(("decide", (string?)null, IntegrationDecides.Land), (decided.Holds, decided.Release, decided.Decided));
     }
 
-    /// <summary>INTEGRATE1h: the queue is read in its order, each row saying where an order moved it; a member held for its conflict names no act none releases it by.</summary>
+    /// <summary>The queue is read in its order, each row saying where an order moved it; a member held for its conflict names no act none releases it by.</summary>
     [Fact]
     public void The_queue_is_read_in_its_order_with_where_each_was_moved_and_a_conflict_names_no_act_that_would_refuse()
     {

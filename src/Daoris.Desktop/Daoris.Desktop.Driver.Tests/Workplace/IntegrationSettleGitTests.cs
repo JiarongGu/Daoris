@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1e part e4b over real git (D215's note; the integration design §5.2 steps 8 to 11, §5.6, §5.7, §8): a superseded member's work
-/// kept on a recovery ref with its disposition pending in the settle's own end, so the member settles and the candidate no longer stands for
+/// Over real git: a superseded member's work
+/// kept on a recovery ref with its disposition pending in the settle's own end, so the member settles and the candidate stops standing for
 /// it; a crash between the ref and the disposition repaired by the rerun; the come-up's sweep of standing candidates through
 /// <c>Take</c> and <c>ResumeAsync</c>; the tidy step through the landing's own clean-up and the close step that ends the candidate; and the
 /// requester's authority read again at promotion. Called from no production path. The verdict port is the test's stub.

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Every git call has a bound (PARALLEL1e, D181 point 4): git's calls ran with no timeout, so one that never answered (a
-/// lock, a prompt nobody types, a scan) held its caller for ever. The default is the call's kind's; a caller that knows its
+/// Every git call has a bound: with no timeout, one that never answered (a
+/// lock, a prompt nobody types, a scan) would hold its caller for ever. The default is the call's kind's; a caller that knows its
 /// call is long (a fetch, a replay) passes its own.
 /// </summary>
 /// <remarks>
@@ -126,7 +126,7 @@ public sealed class GitBoundsTests
     }
 
     /// <summary>
-    /// The row's proof (PARALLEL1e): a git that never answers ends at its bound (the runner ends its tree there), and its answer
+    /// A git that never answers ends at its bound (the runner ends its tree there), and its answer
     /// is a failure saying so, which a caller reads as it reads any failed read: here a landed proof, unknown.
     /// </summary>
     [Fact]

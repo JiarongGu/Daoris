@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LINESTOGETHER1d (the review-flow design §4, <i>Restart</i>): a landing attempt interrupted after git made its ref and before its
+/// A landing attempt interrupted after git made its ref and before its
 /// record, or after a merge's admission and before its correlation, settled by its git effects and the request at the replayed tip;
 /// what is not proved stays <i>uncertain</i>.
 /// </summary>

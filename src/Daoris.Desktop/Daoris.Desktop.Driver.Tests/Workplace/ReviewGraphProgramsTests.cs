@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP1a-ii's order-sensitive fixture (the git-app design P1.7, Codex R4-1): the tree's files carry a textconv that logs each call
+/// The order-sensitive fixture: the tree's files carry a textconv that logs each call
 /// and writes the count of its calls into its output, a clean filter that logs each call, and a merge driver that logs each call and
 /// writes its count into the merge. The log and the counter are reset before today's chain reads and before the graph does; the two
 /// answers equal byte for byte and the two logs line for line, so the graph ran the same programs, as often, in the same order.

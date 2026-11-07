@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A streamed git read whose caller cancels ends git and what it started (PARALLEL1e, D181 point 4): the review's reads
-/// (<see cref="WorkingTree.ReadGitAsync"/>) and a blob's preview (<see cref="WorkingTree.GitBytesAsync"/>) threw the
-/// cancellation and left git running unowned. <see cref="GitBoundsTests"/> holds the runner's half with a stand-in.
+/// A streamed git read whose caller cancels ends git and what it started: the review's reads
+/// (<see cref="WorkingTree.ReadGitAsync"/>) and a blob's preview (<see cref="WorkingTree.GitBytesAsync"/>) end git with the
+/// cancellation, never leaving it running unowned. <see cref="GitBoundsTests"/> holds the runner's half with a stand-in.
 /// </summary>
 /// <remarks>
 /// git runs an alias through its shell, which writes <c>begun</c>, waits three seconds and writes <c>marker</c>: a tree

@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREEGONE1 (D51, D131): a session's tree asked for before it goes on, over real git. One git lists stands as it is; one whose
+/// A session's tree asked for before it goes on, over real git. One git lists stands as it is; one whose
 /// folder went while its branch stands is made again in its place on that branch, its commits there; one whose branch went too, or
 /// whose branch another tree holds, or that this home never opened, is made nowhere, each said.
 /// </summary>
@@ -43,9 +43,9 @@ public sealed class TreeReturnsTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// TREELOCAL2 (D216): a tree made again carries what an opened one does: the checkout's declared machine-local files, read-only,
+    /// A tree made again carries what an opened one does: the checkout's declared machine-local files, read-only,
     /// with its bytes and a clean status, the dependencies its checkout installed, and a declared file the checkout lacks said; and the
-    /// agent is told what was copied.
+    /// agent is told what has been copied.
     /// </summary>
     [Fact]
     public async Task A_remade_tree_holds_the_same_read_only_copies_and_dependencies_an_opened_one_does()
@@ -76,7 +76,7 @@ public sealed class TreeReturnsTests : BranchTidyingFixture
         Assert.Equal(TreeStand.Stands, (await trees.EnsureAsync(root, tree.Path)).Stand);
     }
 
-    /// <summary>TREELOCAL2: a remake cut off while it copies takes back its copies and its folder, and never the branch holding the session's commits.</summary>
+    /// <summary>A remake cut off while it copies takes back its copies and its folder, and never the branch holding the session's commits.</summary>
     [Fact]
     public async Task A_remake_cancelled_while_it_copies_takes_back_the_folder_and_keeps_the_branch()
     {

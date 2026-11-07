@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2g and n's proof (D241 point 2; the git design §3.1 row G7), against the stand-in SSH host (D241 point 8): the person's press of
+/// The proof against the stand-in SSH host: the person's press of
 /// one branch, one act of the journal, pushes through Daoris's built ssh door under the grant it binds, while the same push made without the
 /// grant is refused; a lightweight tag on the same act is judged Dangerous at the door, <c>deny</c> refusing it and <c>allow</c> passing it.
 /// </summary>
@@ -168,7 +168,7 @@ public sealed class GitPushActProcessTests : IClassFixture<GitSshHost>, IDisposa
         Assert.Equal([ActStepKinds.Push], journal.Steps(act.Id).Select(step => step.Kind));
         var plan = JsonNode.Parse(act.Plan)!;
         Assert.Equal(("refs/heads/work/fix", tip, GitPushActs.Absent), ((string?)plan["ref"], (string?)plan["at"], (string?)plan["old"]));
-        // The grant was bound to this one update and went with the step.
+        // The grant is bound to this one update and goes with the step.
         Assert.Empty(Grants(Home));
     }
 

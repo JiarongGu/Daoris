@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2j over real git (D204; the git-writes design §8 Resolve, §12 row j): a file in conflict resolved per hunk, ours, theirs or both,
+/// Over real git: a file in conflict resolved per hunk, ours, theirs or both,
 /// from the index's stages by <c>merge-file</c>; the bytes at the press equal to those shown; the replaced bytes kept as files beside the
 /// record and the stages by the act's own ref, both surviving a restart; <i>Mark resolved</i> as an index step; Undo of each where the file
 /// and the index are still what the act left.

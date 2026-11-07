@@ -3,13 +3,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWBASE2-i (D164's REVIEWBASE2 note): one session's tree brought up to date at the person's press. The line is fetched once,
-/// as the person, then the tree is replayed onto it by WSR6's replay: a tree on a branch has its branch moved last, from the commit
+/// One session's tree brought up to date at the person's press. The line is fetched once,
+/// as the person, then the tree is replayed onto it by the sync's replay: a tree on a branch has its branch moved last, from the commit
 /// judged; a detached tree is rebased in place and HEAD moves only after the content proof. Each refusal is an answer, and leaves the
-/// tree as it was. Real git in scratch repositories, <c>origin</c> a bare one beside each, the line moved there by a second clone.
+/// tree as it stands. Real git in scratch repositories, <c>origin</c> a bare one beside each, the line moved there by a second clone.
 /// </summary>
 /// <remarks>
-/// The owner, 2026-10-13: "we need to make sure the changes is based of the latest "main" branch". WSR6's look replays only ended
+/// The owner: "we need to make sure the changes is based of the latest "main" branch". The sync's look replays only ended
 /// sessions' branches, never an open conversation's tree, a dirty one or a detached one.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -61,13 +61,13 @@ public sealed class TreeUpdateTests : LandedFixture
         Assert.Equal("mine\n", await CheckedOut(Path.Combine(tree.Path, "own.txt")));
         Assert.Equal(localLine, await RevAsync(root, "main"));
         Assert.Equal(new LineBehind("main", 0, 1), (await trees.ReviewRangeAsync(tree.Path, began)).Behind);
-        // Where it grows from now is the line, as WSR6's replay records it.
+        // Where it grows from now is the line, as the sync's replay records it.
         Assert.Equal(latest, trees.Grown.Of("engine", tree.Branch)!.From);
     }
 
     /// <summary>
-    /// A detached tree with a commit of its own (point 4): rebased in place from the newest commit it shares with the line, HEAD still
-    /// detached and moved after the proof. No ref moves: the session branch it left stays where it was.
+    /// A detached tree with a commit of its own: rebased in place from the newest commit it shares with the line, HEAD still
+    /// detached and moved after the proof. No ref moves: the session branch it left stays where it is.
     /// </summary>
     [Fact]
     public async Task A_detached_tree_with_commits_of_its_own_is_replayed_in_place()
@@ -287,7 +287,7 @@ public sealed class TreeUpdateTests : LandedFixture
 
     /// <summary>
     /// A commit on origin's line, as a platform's merge leaves it: nothing here knows of it until a fetch. Made in the bare origin
-    /// itself (PROCSPEED1b).
+    /// itself.
     /// </summary>
     private static Task PlatformCommitAsync(string origin, string file, string content, string message) =>
         CommitOnOriginAsync(origin, message, (file, content));

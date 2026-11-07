@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Workflows cut: the behaviour the cut keeps, written against the surface that exists on both
+/// The Workplace-names-Workflows cut: the behaviour the cut keeps, written against the surface that exists on both
 /// sides of it (a run's id and files, the chat run's key and its three files in a session's inventory, the landed declaration's name, and
 /// the landing gate of a tree under the rules live, a bound named workflow, a binding that does not read and a chat run), so the same
 /// cases pass on the base and after it. The cases that reach a moved class through a new seam are <see cref="WorkplaceWorkflowsPortsTests"/>'.
@@ -105,7 +105,7 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
         File.WriteAllText(WorkflowRunBindings.PathOf(_home, "chat-s2"), "{}");
 
         var files = new SessionHomeFiles(_home);
-        // Four files of four bytes, the candidate file (WORKFLOWCLEAN1 1d) the fourth.
+        // Four files of four bytes, the candidate file the fourth.
         Assert.Equal(16L, files.Size("s1").Total);
         Assert.Equal(2L, files.Size("s2").Total);
 

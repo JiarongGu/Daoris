@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Workflows cut: the seams the cut adds. Workplace declares the run's files and ids, the process
+/// The Workplace-names-Workflows cut: the seams the cut adds. Workplace declares the run's files and ids, the process
 /// facet it reads, the operations it asks of the workflows (the landed declaration, a quest's process, a chat run's bind and press) and the
 /// gate's two; Workflows keeps and installs them. The cases that need no new seam are <see cref="WorkplaceWorkflowsBoundaryTests"/>'.
 /// </summary>
@@ -317,7 +317,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
         public string? OpinionCannot { get; init; }
     }
 
-    /// <summary>Stands in for the gate's two operations: it records what it was handed and fails the gate as a stand-in would.</summary>
+    /// <summary>Stands in for the gate's two operations: it records what it is handed and fails the gate as a stand-in would.</summary>
     private sealed class GateOperations : IWorkplaceGateWorkflows
     {
         public List<string> Calls { get; } = [];
@@ -349,7 +349,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
         }
     }
 
-    /// <summary>Stands in for the workplace's operations: it records what it was asked and answers as set.</summary>
+    /// <summary>Stands in for the workplace's operations: it records what it is asked and answers as set.</summary>
     private sealed class Operations : IWorkplaceWorkflows
     {
         public List<string> Calls { get; } = [];

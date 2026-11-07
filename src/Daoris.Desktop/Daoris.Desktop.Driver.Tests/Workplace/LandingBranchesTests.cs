@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// What a landing leaves of the session branches: it takes no branch but the pressed session's own, so a chain's earlier step and a failed
-/// attempt stay and wait for their own door, which keeps one a live session's tree holds (LAND3c); a tree its agent moved onto a branch of
+/// attempt stay and wait for their own door, which keeps one a live session's tree holds; a tree its agent moved onto a branch of
 /// its own lands as that branch stands. Real git, as the other tree tests.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -90,8 +90,8 @@ public sealed class LandingBranchesTests : IDisposable
     }
 
     /// <summary>
-    /// LAND3c: the discard both doors call keeps an attempt's branch whose real tree a session still running holds, forced,
-    /// tree and branch alike; once the ledger no longer names that tree, the same call takes both, as LAND3b's screen did.
+    /// The discard both doors call keeps an attempt's branch whose real tree a session still running holds, forced,
+    /// tree and branch alike; once the ledger drops that tree, the same call takes both.
     /// </summary>
     [Fact]
     public async Task The_shared_discard_keeps_a_branch_whose_tree_a_live_session_holds_until_it_is_let_go()
@@ -137,7 +137,7 @@ public sealed class LandingBranchesTests : IDisposable
     }
 
     /// <summary>
-    /// TREEFOLLOW1 (D164 point 4): a tree its agent moved onto a branch of its own (<c>feature/…</c>, as its repository's rules ask)
+    /// A tree its agent moved onto a branch of its own (<c>feature/…</c>, as its repository's rules ask)
     /// is landed as that branch stands, the one the pull request is from: Accept makes no second branch and says it lands the
     /// session's own, which holds the only copy of the commits.
     /// </summary>
@@ -161,7 +161,7 @@ public sealed class LandingBranchesTests : IDisposable
         Assert.Equal("1", (await GitAsync(root, "rev-list", "--count", "main..feature/TK-9-gap")).Trim());
     }
 
-    /// <summary>TREEFOLLOW1: a merge merges the tree's own branch as it would the session branch.</summary>
+    /// <summary>A merge merges the tree's own branch as it would the session branch.</summary>
     [Fact]
     public async Task A_merge_merges_the_branch_the_agent_made()
     {
@@ -182,7 +182,7 @@ public sealed class LandingBranchesTests : IDisposable
     private static async Task<bool> BranchAsync(string root, string branch) =>
         (await GitAsync(root, "branch", "--list", branch)).Trim().Length > 0;
 
-    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>; PROCSPEED1, PROCSPEED1b): no test here reads the first commit's id or time.</summary>
+    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>): no test here reads the first commit's id or time.</summary>
     private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     private static async Task CommitAsync(string tree, string file, string content, string message)

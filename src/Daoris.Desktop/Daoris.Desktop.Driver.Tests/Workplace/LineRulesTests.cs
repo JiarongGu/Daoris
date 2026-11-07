@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1d (D215 point 6, the integration design §4.1's <c>merge</c>): a declared line rule's merge by the base. Where both sides
+/// A declared line rule's merge by the base. Where both sides
 /// changed only lines its pattern matches, the line's side is taken there for the rule's writer to recompute, and every other change
 /// of either side is kept as the merge by the base keeps it; where both changed a line the pattern does not match, it settles nothing.
 /// The landing's real-git rows are <c>LandLineRuleLandingTests</c>'.

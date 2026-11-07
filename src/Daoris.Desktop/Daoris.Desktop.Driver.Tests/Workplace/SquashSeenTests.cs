@@ -3,10 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SQUASHSEEN1 (D102's SQUASHSEEN1 note): the parent landed two sessions' work on the line as one squashed commit, beside Daoris's own
-/// landing. Neither branch's tree was the squash's, and the backlog and the records both changed read otherwise on the line than on
-/// either branch, so SQUASHTIDY1's proofs saw neither as landed: each landing replayed its commits, conflicted in the backlog, and told
-/// its session to rebase onto the line, which ran again and found everything there. Now the content proof reads a squash that carried a
+/// The parent lands two sessions' work on the line as one squashed commit, beside Daoris's own
+/// landing. Neither branch's tree is the squash's, and the backlog and the records both changed read otherwise on the line than on
+/// either branch, so the other proofs see neither as landed. The content proof reads a squash that carried a
 /// branch with other work (<see cref="SquashCarries"/>), so the landing is refused as carried, no rebase is told, and the tree goes
 /// unforced as a landed one does; a commit truly not on the line is still the session's to rebase.
 /// </summary>
@@ -99,7 +98,7 @@ public sealed class SquashSeenTests : LandedFixture
     }
 
     /// <summary>
-    /// The line as it stands, never a commit it passed (D102, D148): the line changed a session's own file again after the squash, so
+    /// The line as it stands, never a commit it passed: the line changed a session's own file again after the squash, so
     /// it no longer holds that work, and the session is not judged landed.
     /// </summary>
     [Fact]
@@ -135,7 +134,7 @@ public sealed class SquashSeenTests : LandedFixture
         await File.WriteAllTextAsync(Path.Combine(root, "a.txt"), "the a work\n");
         await CommitAsync(root, "b.txt", "the b work\n", "Merge A1 and B1 (squashed)");
         await CommitAsync(root, "later.txt", "the line moves on\n", "the line moves on");
-        // Neither branch is the squash's tree, and neither one's backlog or record reads as the line's: SQUASHTIDY1's proofs see neither.
+        // Neither branch is the squash's tree, and neither one's backlog or record reads as the line's: the other proofs see neither.
         Assert.NotEqual((await GitAsync(root, "rev-parse", "HEAD~1^{tree}")).Trim(), (await GitAsync(root, "rev-parse", $"{a.Branch}^{{tree}}")).Trim());
         return (root, trees, a, b, other);
 
@@ -148,7 +147,7 @@ public sealed class SquashSeenTests : LandedFixture
         }
     }
 
-    /// <summary>What a refused landing must leave as it was: every branch and its tip, refs under <c>refs/daoris/</c>, and the tree's head and status.</summary>
+    /// <summary>What a refused landing must leave unchanged: every branch and its tip, refs under <c>refs/daoris/</c>, and the tree's head and status.</summary>
     private static async Task<string> StateAsync(string root, TreeOpened tree) =>
         string.Join("\n",
             (await GitAsync(root, "for-each-ref", "--format=%(objectname) %(refname)", "refs/heads/", "refs/daoris/")).Trim(),

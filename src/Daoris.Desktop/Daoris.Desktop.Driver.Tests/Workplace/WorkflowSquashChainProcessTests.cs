@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D245's proof: a workflow <c>land</c> → <c>push</c> → <c>pull-request</c> → <c>monitor</c> → <c>tidy</c> against G1's stand-ins. A two-part
+/// A workflow <c>land</c> → <c>push</c> → <c>pull-request</c> → <c>monitor</c> → <c>tidy</c> against stand-ins. A two-part
 /// chain lands as one squashed commit, the <c>push</c> door pushes it to <see cref="GitSshHost"/>, the request is opened and then merged as a
 /// squash on <see cref="PullRequestApiHost"/>, the answer is kept as the plugin's <c>work/state</c> keeps it, the monitor reads it merged (its
 /// <c>when merged</c> route to the tidy; <c>when closed</c> goes to a person's task), and the
@@ -141,7 +141,7 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
         return (one, two, squashed);
     }
 
-    /// <summary>The graph a place composes from the prebuilt set (D245 point 4): the landing, the push, the plugin's request, its watch and the tidy.</summary>
+    /// <summary>The graph a place composes from the prebuilt set: the landing, the push, the plugin's request, its watch and the tidy.</summary>
     private const string Graph = """
         {"schemaVersion":2,"entries":["work"],"end":"tidy","nodes":[
           {"id":"work","kind":"claimed","version":1,"reach":"observed"},

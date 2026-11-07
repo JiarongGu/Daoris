@@ -3,14 +3,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// QUEUEDTREE1 (D51, GOONTREE1; D181's PARALLEL1f note): the tree a start opened for a session whose record never opened goes by the
+/// The tree a start opened for a session whose record never opened goes by the
 /// clean path, on no token, on each way out that starts nothing and on the driver's close before the record's open is asked. On the
 /// loop's token the close makes the removal throw at its first git, and the tree is left for the sweep.
 /// </summary>
 /// <remarks>
-/// The fast half: no process starts. The removal is handed in, so each row sees what was let go; the start's own path through the
-/// driver, its tree opened over a stand-in git, is <see cref="StartTreeCloseTests"/>' (QUEUEDTREE1b), and over real git GOONTREE1's
-/// row in the Process half's <c>SessionMessagesTickTests</c>.
+/// The fast half: no process starts. The removal is handed in, so each row sees what is let go; the start's own path through the
+/// driver, its tree opened over a stand-in git, is <see cref="StartTreeCloseTests"/>', and over real git the Process half's
+/// <c>SessionMessagesTickTests</c>'.
 /// </remarks>
 public sealed class FreshTreeTests
 {
@@ -42,7 +42,7 @@ public sealed class FreshTreeTests
         Assert.Equal([Tree], _removed);
     }
 
-    /// <summary>Once the open is asked the ledger may hold the tree (LEFT2): a close leaves it to the sweep, which reads the ledger.</summary>
+    /// <summary>Once the open is asked the ledger may hold the tree: a close leaves it to the sweep, which reads the ledger.</summary>
     [Fact]
     public async Task A_close_once_the_records_open_is_asked_leaves_the_tree_to_the_ledger()
     {
@@ -97,8 +97,8 @@ public sealed class FreshTreeTests
     }
 
     /// <summary>
-    /// Only the close: a start that failed otherwise, or a timeout's cancellation while the loop runs on, fails its look as it always
-    /// did, its tree the sweep's (D51).
+    /// Only the close: a start that fails otherwise, or a timeout's cancellation while the loop runs on, fails its look as always,
+    /// its tree the sweep's.
     /// </summary>
     [Fact]
     public async Task A_failure_that_is_not_the_close_leaves_the_tree_as_it_did()

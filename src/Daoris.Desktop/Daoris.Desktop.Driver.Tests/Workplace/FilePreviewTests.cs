@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A file read for its preview (PREVIEW1, D111): only inside the session's tree, never through a link that
+/// A file read for its preview: only inside the session's tree, never through a link that
 /// leads out of it, never under `.git`, bounded, and a binary file said rather than shown.
 /// </summary>
 /// <remarks>
@@ -143,7 +143,7 @@ public sealed class FilePreviewTests : IDisposable
 
         Assert.Equal(FilePreviewRefusal.None, read.Refusal);
         Assert.Equal("inside\n", read.File!.Text);
-        // Named as it was asked for, which is the name the card showed.
+        // Named as asked for, which is the name the card shows.
         Assert.Equal("alias/real.ts", read.File.Path);
     }
 
@@ -271,11 +271,11 @@ public sealed class FilePreviewTests : IDisposable
         Assert.Equal("", read.File!.Text);
         Assert.False(read.File.Binary);
         Assert.Equal(0, read.File.Size);
-        // A file on disk names no branch: only a landed branch's copy does (REVIEW2).
+        // A file on disk names no branch: only a landed branch's copy does.
         Assert.Null(read.File.Branch);
     }
 
-    // ——— a file as a landed branch holds it (REVIEW2, D113): git's listing, read without git
+    // ——— a file as a landed branch holds it: git's listing, read without git
 
     /// <summary>The one blob listed at exactly the path asked, with its object and its size, padded as git pads it.</summary>
     [Fact]

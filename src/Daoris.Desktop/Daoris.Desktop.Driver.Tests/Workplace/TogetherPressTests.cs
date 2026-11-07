@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LINESTOGETHER1d (the review-flow design §4, <i>The words</i>, <i>The record</i>, <i>It refuses</i>): the press judges its refusals
+/// The press judges its refusals
 /// under the lock order, pins every tip, records the operation at <i>asked</i> and says the fixed words to the head through the say
 /// door under <c>together:&lt;operation&gt;</c>; a refusal, or words that reach nobody, bind nothing.
 /// </summary>

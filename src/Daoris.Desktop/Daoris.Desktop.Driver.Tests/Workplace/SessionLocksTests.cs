@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREELOCK1 (D51's note): a session's tree locked in its name while it holds it, and what git then refuses. REAL git, since what
+/// A session's tree locked in its name while it holds it, and what git then refuses. REAL git, since what
 /// a lock stops is git's to say: <c>git worktree prune</c> keeps a locked tree whose folder went, and <c>git worktree remove</c>
 /// without <c>--force</c> refuses it.
 /// </summary>

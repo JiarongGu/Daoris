@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A sync's list asks git for a checkout's line once, and its git starts are counted (PROC1d-i): the product's own starts are
-/// most of the git starts of the slowest Process tests (PROC1a), and the list guessed the line three times a repository.
+/// A sync's list asks git for a checkout's line once, and its git starts are counted: the product's own starts are
+/// most of the git starts of the slowest Process tests, and the list guessed the line three times a repository.
 /// </summary>
 /// <remarks>
 /// The counter is <see cref="WorkingTree.Started"/>, an async local that is null in production, so classes running in
@@ -50,12 +50,12 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
 
         var report = $"{starts.Count} git starts: {string.Join(" | ", starts)}";
         Assert.True(guessed == 1, $"the line was guessed {guessed} times; {report}");
-        // PROC1d-ii: a branch's tip, the line's forms and an upstream come from one read of the refs per judgement, so asking
+        // A branch's tip, the line's forms and an upstream come from one read of the refs per judgement, so asking
         // git for one ref at a time is left only to the line's guess (`rev-parse --verify refs/heads/main`), whatever N is.
         Assert.True(starts.Count(each => each.StartsWith("rev-parse --verify", StringComparison.Ordinal)) <= 1, report);
-        // PROC1d-iii: the working trees are listed once for the repository's judgement, with its refs (twice before).
+        // The working trees are listed once for the repository's judgement, with its refs.
         Assert.True(starts.Count(each => each.StartsWith("worktree list", StringComparison.Ordinal)) == 1, report);
-        // PROC1d-iv: a question of commits by their ids is asked once a judgement: the three branches left the line at one commit, and
+        // A question of commits by their ids is asked once a judgement: the three branches left the line at one commit, and
         // each asked whether its record's start holds it and which files the line changed since.
         var repeated = starts.Where(each => GitFacts.Kept(each.Split(' '))).GroupBy(each => each).Where(group => group.Count() > 1).ToList();
         Assert.True(repeated.Count == 0, $"asked again: {string.Join("; ", repeated.Select(group => $"{group.Count()} × {group.Key}"))}; {report}");
@@ -66,7 +66,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// PROC1d-iv: what a judgement keeps of a question of commits by their ids is git's own answer, in its checkout: each asked in a
+    /// What a judgement keeps of a question of commits by their ids is git's own answer, in its checkout: each asked in a
     /// judgement answers as it does outside one, git is started once for each it answered, and again for each it could not (a
     /// missing object). Another repository holding the same ids asks its own git, which lacks the work.
     /// </summary>
@@ -142,7 +142,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// PROC1d-iv: what names a ref is never kept, so a branch moved by another process in the middle of a judgement is read as it
+    /// What names a ref is never kept, so a branch moved by another process in the middle of a judgement is read as it
     /// stands; the judgement again reads its refs afresh, and the pair of commits it then asks is git's.
     /// </summary>
     [Fact]
@@ -170,9 +170,9 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// A tree's repository and its branch are one git start (PROC1d-iii): a landing, a removal and an update each asked git for
-    /// the common dir and then for the branch. Their answers are what the two asks answered, on a branch, detached and in the
-    /// repository's own checkout; and the working root the start reads with them (GITWORKTREECONFIG1) is <c>--show-toplevel</c>'s.
+    /// A tree's repository and its branch are one git start: a landing, a removal and an update each need
+    /// the common dir and the branch. Their answers are what the two asks answered, on a branch, detached and in the
+    /// repository's own checkout; and the working root the start reads with them is <c>--show-toplevel</c>'s.
     /// </summary>
     [Fact]
     public async Task A_tree_s_repository_and_branch_are_one_start_and_answer_as_the_two_asks_did()
@@ -209,7 +209,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// The snapshot answers as git does over a real checkout (PROC1d-ii): a branch on origin with its upstream, one whose upstream
+    /// The snapshot answers as git does over a real checkout: a branch on origin with its upstream, one whose upstream
     /// is gone, one tracking a branch here, one pushed under another name, a session branch, a name nobody has, and a name only
     /// case tells from the line's. One read answers them all.
     /// </summary>
@@ -268,7 +268,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
         Assert.Single(starts, each => each.StartsWith("for-each-ref", StringComparison.Ordinal));
     }
 
-    /// <summary>A write in the judgement's own flow drops what it read (PROC1d-ii): the next question reads the ref as it is now.</summary>
+    /// <summary>A write in the judgement's own flow drops what it read: the next question reads the ref as it is now.</summary>
     [Fact]
     public async Task A_write_in_the_flow_makes_the_next_read_fresh()
     {
@@ -287,7 +287,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// 🔴 D88: each removal is judged again right before it goes, from the refs as they are then. Two landed branches whose work
+    /// 🔴 Each removal is judged again right before it goes, from the refs as they are then. Two landed branches whose work
     /// is on the line; while the first is deleted the second moves, and its own judgement again sees it and keeps it, never
     /// reaching its delete.
     /// </summary>

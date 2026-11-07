@@ -103,7 +103,7 @@ public sealed class LandDeliveryGitTests : IDisposable
 
     /// <summary>
     /// The authorization's options squash: one commit of the tip's tree onto the line, written by the transaction, the record keeping the tip
-    /// it squashed; the preparation's evidence is the commit the ref was then written at.
+    /// it squashed; the preparation's evidence is the commit the ref is written at.
     /// </summary>
     [Fact]
     public async Task A_squash_delivery_lands_one_commit_of_the_pinned_tip_s_tree_and_records_what_it_squashed()
@@ -129,7 +129,7 @@ public sealed class LandDeliveryGitTests : IDisposable
     }
 
     /// <summary>
-    /// LANDNODE1f: the node's template rendered into the intent opens the squash commit, over the commits' list, and the maker's line stays.
+    /// The node's template rendered into the intent opens the squash commit, over the commits' list, and the maker's line stays.
     /// </summary>
     [Fact]
     public async Task A_squash_delivery_s_commit_opens_with_its_intent_s_rendered_message_and_keeps_the_makers_line()
@@ -147,7 +147,7 @@ public sealed class LandDeliveryGitTests : IDisposable
         Assert.Contains(DaorisMaker.Trailer, body);
     }
 
-    /// <summary>LANDNODE1f: the merge commit says the intent's message, with the maker's line, where the line's own is <c>Merge branch</c>.</summary>
+    /// <summary>The merge commit says the intent's message, with the maker's line, where the line's own is <c>Merge branch</c>.</summary>
     [Fact]
     public async Task A_merge_delivery_s_merge_commit_says_its_intent_s_rendered_message()
     {
@@ -294,7 +294,7 @@ public sealed class LandDeliveryGitTests : IDisposable
     }
 
     /// <summary>
-    /// LANDNODE1h (the land node design §3): the standing automatic authority is judged again just before the first effect. Revoked, or judged
+    /// The standing automatic authority is judged again just before the first effect. Revoked, or judged
     /// by nothing, it refuses with no phase written ahead and no branch made; standing, it lands as the person's Accept does.
     /// </summary>
     [Fact]

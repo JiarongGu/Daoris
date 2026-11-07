@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LAYOUT7's Process-half case (D117 §7): the reader against real git. A scratch repository whose <c>CLAUDE.md</c> is a
+/// The reader against real git. A scratch repository whose <c>CLAUDE.md</c> is a
 /// link (mode 120000) committed under <c>core.symlinks=false</c>, read from its LINE: the link is said from its mode,
 /// the checkout says it holds links as text, and what is uncommitted, or on another branch, is never read.
 /// </summary>

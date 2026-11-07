@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// No ambient credentials (GITAUTH1e, the git-auth design §6.8): where the doors are laid, an SSH remote nothing serves is held as
+/// No ambient credentials: where the doors are laid, an SSH remote nothing serves is held as
 /// <c>no-identity</c> before the act and an HTTPS refusal is classed so; a serving identity or the person's own choice lifts the hold; the
-/// ssh door refuses a host nothing serves in one line. A home with no doors laid holds nothing (GITMOVED1, D233 choice 7).
+/// ssh door refuses a host nothing serves in one line. A home with no doors laid holds nothing.
 /// </summary>
 [Collection(Alone.Name)]
 public sealed class GitMoveTests : IDisposable

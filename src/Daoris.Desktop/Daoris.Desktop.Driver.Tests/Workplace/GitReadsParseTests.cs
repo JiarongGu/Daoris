@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GIT1b (D147 §4.1): the machine formats the reads behind a page ask, and the pure readers of what git answers: a page of
+/// The machine formats the reads behind a page ask, and the pure readers of what git answers: a page of
 /// history, a commit, a file's history, a blame and the branches holding a commit. No process starts here: each answer is
 /// git's own bytes, written out in the shape Git 2.53 wrote them over a fixture.
 /// </summary>
@@ -226,7 +226,7 @@ public sealed class GitReadsParseTests
     }
 
     /// <summary>
-    /// D111's binary test holds (git's own: a NUL in the first 8,000 bytes): a binary file has a history and no blame, and
+    /// The binary test is git's own (a NUL in the first 8,000 bytes): a binary file has a history and no blame, and
     /// once it is known to be binary nothing more of git's answer is wanted.
     /// </summary>
     [Fact]
@@ -258,7 +258,7 @@ public sealed class GitReadsParseTests
     }
 
     /// <summary>
-    /// D111's bound holds: the first <see cref="FilePreview.Budget"/> bytes, cut at a line's end, and the blame says the last
+    /// The bound is the first <see cref="FilePreview.Budget"/> bytes, cut at a line's end, and the blame says the last
     /// line it shows. git is stopped there rather than read to the end.
     /// </summary>
     [Fact]
@@ -292,7 +292,7 @@ public sealed class GitReadsParseTests
     }
 
     /// <summary>
-    /// Each read says the command a person types in the checkout for the same answer in git's own form (D147 §3.3): the
+    /// Each read says the command a person types in the checkout for the same answer in git's own form: the
     /// read asks a machine form, which a terminal would print as NULs.
     /// </summary>
     [Fact]

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEW2: a repository's URL-scoped header, cookie file or certificate wins by git's urlmatch over Daoris's empty reset of the unscoped
+/// A repository's URL-scoped header, cookie file or certificate wins by git's urlmatch over Daoris's empty reset of the unscoped
 /// key, so it is found the way git finds it, with a real git and a repository-local setting.
 /// </summary>
 public sealed class GitOwnInputScopedGitTests : IDisposable

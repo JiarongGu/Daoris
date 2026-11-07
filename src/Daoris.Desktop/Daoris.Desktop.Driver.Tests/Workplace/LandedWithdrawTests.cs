@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDRETIRE1 part 1 over real git: a landing's branch whose work the person says the line will never take is withdrawn with a
+/// Over real git: a landing's branch whose work the person says the line will never take is withdrawn with a
 /// recovery ref kept and its record saying why, and gone from the next clean; a checked-out, line-held, pull-request, un-recorded or
 /// person's own branch is refused and changed in no way.
 /// </summary>

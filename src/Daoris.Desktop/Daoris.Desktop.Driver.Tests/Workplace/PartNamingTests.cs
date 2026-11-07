@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREEFOLLOWNAME1 (D167's note on it): a part of an entry whose tree is on a branch of its own (TREEFOLLOW1) lands as that
+/// A part of an entry whose tree is on a branch of its own lands as that
 /// branch, so its landing is named for its own quest and title, not the entry's first part's. The name is the part's alone:
 /// the entry's branch and the session recorded stay as they are. The fast half holds the naming apart from git;
 /// <c>EntryLandingTests</c> holds the doors over real git.

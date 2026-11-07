@@ -10,7 +10,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A code host on this machine's loopback serving bare repositories over git's smart HTTP behind TLS (D241 point 8): .NET's
+/// A code host on this machine's loopback serving bare repositories over git's smart HTTP behind TLS: .NET's
 /// <see cref="SslStream"/> with a certificate made at the class's start, each connection relayed in the clear to a
 /// <see cref="GitHttpBackendHost"/> over the same repositories. git trusts the certificate only where a test hands it
 /// <see cref="Authority"/> as <c>http.sslCAInfo</c> (<see cref="TrustedBy"/>), so no store of the machine's or the person's is touched.
