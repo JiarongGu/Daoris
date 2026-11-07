@@ -35,7 +35,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // process listens on, its health from the loop's own record, and whether an update waits. It stays light: the
     // page asks PLUGIN for the rest.
     // Each plugin and offer carries its icon: the bytes PluginIcon.Read judged, as a data URI, and
-    // never the icon's path, so the page draws what it was handed and reaches for nothing; 32 KiB a plugin bounds it.
+    // never the icon's path, so the page draws what it is handed and reaches for nothing; 32 KiB a plugin bounds it.
     [DriverRoute("PLUGINS", PipeClass.Open)]
     private async Task<object?> PluginsAsync(NoPayload _, CancellationToken cancellationToken)
     {
@@ -240,7 +240,7 @@ public sealed class PluginsRoutes(DriverContext context)
         if (_openFolder is null) return new { Opened = false, Folder = folder, Which = which };
         try
         {
-            // The plugins folder is made first if nothing was installed yet, as the log's folder is.
+            // The plugins folder is made first if nothing is installed yet, as the log's folder is.
             if (which == "plugins") Directory.CreateDirectory(folder);
             await _openFolder.OpenAsync(folder, cancellationToken).ConfigureAwait(false);
         }

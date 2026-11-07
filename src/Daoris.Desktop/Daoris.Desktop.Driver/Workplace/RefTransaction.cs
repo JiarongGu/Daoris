@@ -211,7 +211,7 @@ internal sealed class RefTransaction
     };
 
     /// <summary>
-    /// Runs a rollback, and says in a sentence where a condition failed that nothing was moved: what stands at the names is then unknown
+    /// Runs a rollback, and says in a sentence where a condition failed that nothing is moved: what stands at the names is then unknown
     /// to this step, and the caller reports it so.
     /// </summary>
     public async Task<RefRun> RollBackAsync(string root, string what, CancellationToken ct)

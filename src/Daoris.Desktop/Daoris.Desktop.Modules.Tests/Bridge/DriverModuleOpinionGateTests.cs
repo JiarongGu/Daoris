@@ -129,7 +129,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
 
     /// <summary>
     /// A pass carries the reviewer's measured use, read by the reviewer's own session (not the
-    /// working one), and null where none was measured: absent is never zero.
+    /// working one), and null where none is measured: absent is never zero.
     /// </summary>
     [Fact]
     public void A_pass_carries_the_reviewers_measured_use_and_null_where_none_was_recorded()

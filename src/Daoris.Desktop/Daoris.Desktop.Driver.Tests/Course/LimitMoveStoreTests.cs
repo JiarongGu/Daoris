@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-ii part a (D212; the foundation design §3.3, §13.4 steps 1 to 4, §19.4): the live limit move keeps its move record. Decided
+/// The live limit move keeps its move record. Decided
 /// as the turns are held, under this run's claim; <c>old-ended</c> once the old part ends; <c>opening</c> under the key its keyed open is sent
 /// with; <c>opened</c> with every word the open moved, by its id on the destination; <c>delivering</c> and the prompt's mark before the hand;
 /// each handed word's <c>sent</c> as the turn's write returns, then the take, then <c>delivered</c>. A move of no word closes on its effect's
@@ -145,7 +145,7 @@ public sealed class LimitMoveStoreTests : IDisposable
     {
         /// <summary>
         /// The old part's end as its watch writes it, which no process here makes: its record ends once the new part's open is asked, as the
-        /// move's end of the old part leaves it before its open (D51).
+        /// move's end of the old part leaves it before its open.
         /// </summary>
         public void Ends(HttpRequestMessage request)
         {
@@ -276,7 +276,7 @@ public sealed class LimitMoveStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Against a host whose keyed open moves nothing (its mark 1), the move is decided all the same and its record names what was done: a move
+    /// 🔴 Against a host whose keyed open moves nothing (its mark 1), the move is decided all the same and its record names what is done: a move
     /// of no word, closed <c>delivered</c> once its prompt's outcome is recorded as the write returns.
     /// </summary>
     [Fact]
@@ -304,7 +304,7 @@ public sealed class LimitMoveStoreTests : IDisposable
         transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     /// <summary>
-    /// 🔴 MODELROLE1k: the limit move's walk is the line's own, so another account at a model family's week is passed only for a line on
+    /// 🔴 The limit move's walk is the line's own, so another account at a model family's week is passed only for a line on
     /// that family: a line on sonnet moves to it, and a line on opus is held off it and waits.
     /// </summary>
     [Theory]
@@ -404,7 +404,7 @@ public sealed class LimitMoveStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-ii part b (§13.4 step 5, §19.3): before the new part is handed anything its line's head is read; where an older build has
+    /// 🔴 Before the new part is handed anything its line's head is read; where an older build has
     /// continued the new part meanwhile (a record from it that no key of the move's made), nothing is written to it and the move is held
     /// <c>superseded</c>, naming the person's word that waits there, which stays there never attempted for the person to take back.
     /// </summary>
@@ -441,7 +441,7 @@ public sealed class LimitMoveStoreTests : IDisposable
     };
 
     /// <summary>
-    /// 🔴 FOUNDATION1h branch 5 (the foundation design §3.1, §14.2): the live limit move decides through <c>CourseDecision.Decide</c> for
+    /// 🔴 The live limit move decides through <c>CourseDecision.Decide</c> for
     /// <see cref="CourseTrigger.LimitEnd"/>. Heard from the move, another account with room is a <c>limit</c> move by Daoris on the walk's
     /// account; none with room, or an account the person picked, is the course's <c>Stays</c>, and nothing opens or is held.
     /// </summary>
@@ -511,7 +511,7 @@ public sealed class LimitMoveStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-ii part b (§13.5's first row): a dead run's move before its open was asked, whose old part an older build has since
+    /// 🔴 A dead run's move before its open has been asked, whose old part an older build has since
     /// continued (a record from it, under no key of the move's), closes <c>superseded</c> at the take-up rather than falling back on a part
     /// that went on elsewhere.
     /// </summary>

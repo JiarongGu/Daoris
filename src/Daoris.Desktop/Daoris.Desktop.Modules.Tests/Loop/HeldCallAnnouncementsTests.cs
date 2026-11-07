@@ -57,7 +57,7 @@ public sealed class HeldCallAnnouncementsTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, Said()[^1].GetProperty("Detail").ValueKind);
     }
 
-    /// <summary>The switch off says nothing, and what was held meanwhile is seen: turned back on, only what arrives after is said.</summary>
+    /// <summary>The switch off says nothing, and what is held meanwhile is seen: turned back on, only what arrives after is said.</summary>
     [Fact]
     public async Task With_the_switch_off_nothing_is_said_and_nothing_is_said_late()
     {

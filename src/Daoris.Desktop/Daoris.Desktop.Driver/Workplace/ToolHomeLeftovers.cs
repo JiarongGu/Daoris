@@ -12,7 +12,7 @@ public sealed record ToolOrigin(string Folder, string Source, string? Keeps, str
 /// <summary>A project folder in the person's tool home that Daoris's records show a session of its ran in: its name, its place, and the records that name it.</summary>
 public sealed record ToolFolder(string Name, string Path, string Source, string? Keeps, IReadOnlyList<string> By);
 
-/// <summary>What was listed, and why not where nothing could be: <c>Why</c> is a code (<c>linked</c>, <c>relative</c>, <c>inside-daoris</c>, <c>no-tool-home</c>, <c>no-home</c>, <c>records-unread</c>).</summary>
+/// <summary>What is listed, and why not where nothing can be: <c>Why</c> is a code (<c>linked</c>, <c>relative</c>, <c>inside-daoris</c>, <c>no-tool-home</c>, <c>no-home</c>, <c>records-unread</c>).</summary>
 /// <param name="Ambiguous">Folders present whose name two distinct working directories flatten to: listed for neither.</param>
 /// <param name="Uncertain">Folders present whose only claimant's path flattens in a way not proven (a non-ASCII letter, an over-long name).</param>
 public sealed record ToolListing(IReadOnlyList<ToolFolder> Folders, string? Why, bool CaseInsensitive, int Ambiguous, int Uncertain);
@@ -27,7 +27,7 @@ public sealed record ToolMeasure(long Bytes, DateTimeOffset? Newest, bool Partia
 /// </summary>
 /// <remarks>
 /// <para><b>Ownership is provenance, never a pattern.</b> Claude Code names a project folder by the working directory with every
-/// character that is not a letter or a digit turned into <c>-</c> (<see cref="Flatten"/>), which loses what the character was. So a
+/// character that is not a letter or a digit turned into <c>-</c> (<see cref="Flatten"/>), which loses which character it replaced. So a
 /// folder is Daoris's only where its name EQUALS the flattening of a working directory in which one of Daoris's own session
 /// records shows a session ran (<see cref="Origins"/>), inside Daoris's own working roots. A room nobody's record shows a
 /// session in claims nothing (a person's <c>daoris-help</c> folder is not the help room's). No prefix is ever matched. Two
@@ -65,7 +65,7 @@ public static class ToolHomeLeftovers
     // The person's tool home
 
     /// <summary>
-    /// The person's own tool home, where it was read from and why it cannot be used. <c>process</c> where they set
+    /// The person's own tool home, where it is read from and why it cannot be used. <c>process</c> where they set
     /// <see cref="Variable"/> in this process's environment, <c>account</c> where only the account's stored variable names it,
     /// else <c>default</c>, the <c>.claude</c> folder of their profile. A variable that is relative, or that names Daoris's own
     /// folder or a place inside it (a Daoris profile, never the person's), is no tool home: its path is null with the code.
@@ -97,7 +97,7 @@ public static class ToolHomeLeftovers
         OwnHome(world.Process, world.Account, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), world.Home);
 
     /// <summary>
-    /// The tool home a world reads: the one it was handed, or none. 🔴 A world made by hand names none, so a test that builds one
+    /// The tool home a world reads: the one it is handed, or none. 🔴 A world made by hand names none, so a test that builds one
     /// reads no machine's tool home; the window's and the terminal's worlds are handed theirs (<see cref="OwnHome(IToolHomeWorld)"/>).
     /// </summary>
     public static (string? Path, string From, string? Why) ToolHomeOf(IToolHomeWorld world) => (world.ToolHome, world.ToolHomeFrom, world.ToolHomeWhy);

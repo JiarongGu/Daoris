@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The refusals the updater keeps, each for its build and the person's word it was refused under (<see cref="InstallUpdate"/>): a look
+/// The refusals the updater keeps, each for its build and the person's word it is refused under (<see cref="InstallUpdate"/>): a look
 /// says a kept one again and checks nothing, and a new word, a press of the screen's or the terminal's, drops it, so the build is checked
 /// again, since what refused it (an unresolved delivery, a launcher that would not start) may have moved. Not thread-safe: the updater
 /// holds its gate.

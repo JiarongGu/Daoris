@@ -117,7 +117,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
         Assert.Equal(("h1", "alpha"), (alpha.GetProperty("sessionId").GetString(), alpha.GetProperty("workspace").GetString()));
         Assert.Equal(("h2", "beta"), (beta.GetProperty("sessionId").GetString(), beta.GetProperty("workspace").GetString()));
-        // A name is one workspace whatever its letters' case; the answer names it as it was asked.
+        // A name is one workspace whatever its letters' case; the answer names it as it is asked.
         Assert.Equal(("h1", "Alpha"), (again.GetProperty("sessionId").GetString(), again.GetProperty("workspace").GetString()));
         Assert.True(again.GetProperty("starting").GetBoolean());
         Assert.Equal(("h3", "default"), (unnamed.GetProperty("sessionId").GetString(), unnamed.GetProperty("workspace").GetString()));
@@ -160,7 +160,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
     /// <summary>
     /// Starting from an earlier conversation is placed in the workspace its press names, as <c>START_HELP</c> is,
-    /// whatever workspace the earlier one was in.
+    /// whatever workspace the earlier one is in.
     /// </summary>
     [Fact]
     public async Task Starting_from_an_earlier_conversation_is_placed_in_the_workspace_its_press_names()

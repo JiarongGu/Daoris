@@ -2,7 +2,7 @@ using static Daoris.Driver.TreeGit;
 
 namespace Daoris.Driver;
 
-/// <param name="Where">On the line: the form of the line it was proven on (`main`, `origin/main`). Inside: the branch it is inside. Leaned on: the session branch.</param>
+/// <param name="Where">On the line: the form of the line it is proven on (`main`, `origin/main`). Inside: the branch it is inside. Leaned on: the session branch.</param>
 /// <param name="Files">Differs: the files it changed that read otherwise on the line.</param>
 /// <param name="Detail">Git's own words where it could not say.</param>
 /// <param name="PullRequest">The pull request a plugin answered with when it pushed the branch, where the record knows one.</param>
@@ -30,7 +30,7 @@ public sealed record LandedItem(
 
     /// <summary>
     /// Why this look did not ask about its pull request, where it would have: no plugin to ask, the
-    /// plugin not ready, or the occasion's bound reached first. Null where it was asked, was not due, or its work reads on the line.
+    /// plugin not ready, or the occasion's bound reached first. Null where it is asked, is not due, or its work reads on the line.
     /// </summary>
     public PullRequestNotAsked? NotAsked { get; init; }
 
@@ -42,7 +42,7 @@ public sealed record LandedItem(
 
     /// <summary>
     /// Whether the service says <see cref="Quest"/> is closed (<see cref="LandedStanding.IsClosed"/>), as the caller read it once; false where it
-    /// was not read, so a row never says a quest closed on no answer.
+    /// is not read, so a row never says a quest closed on no answer.
     /// </summary>
     public bool QuestClosed { get; init; }
 }

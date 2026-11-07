@@ -95,7 +95,7 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
 
     /// <summary>
     /// Merge a declaration into the repository's own `daoris.json`, keeping everything else exactly
-    /// as it was.
+    /// as it stands.
     /// </summary>
     /// <remarks>
     /// <para><b>Merged, never rewritten.</b> The manifest carries `source`, `packs`, `target`,
@@ -166,7 +166,7 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
         });
     }
 
-    /// <summary>An object with no properties — what every reader below treats as "nothing was sent".</summary>
+    /// <summary>An object with no properties — what every reader below treats as "nothing is sent".</summary>
     private static readonly JsonElement EmptyObject = JsonDocument.Parse("{}").RootElement.Clone();
 
     private static void WriteStrings(Utf8JsonWriter writer, string name, IReadOnlyList<string> values)

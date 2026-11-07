@@ -18,7 +18,7 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     /// </summary>
     public string? Entered { get; init; }
 
-    /// <summary>The entered name trimmed, or null where none was entered.</summary>
+    /// <summary>The entered name trimmed, or null where none is entered.</summary>
     public string? EnteredName => string.IsNullOrWhiteSpace(Entered) ? null : Entered.Trim();
 
     /// <summary>
@@ -30,7 +30,7 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
 
     /// <summary>
     /// That quest's current submission as the door read it, by its machine and sequence, which the record keeps as
-    /// what the landing was made on; null for a done and a conversation.
+    /// what the landing is made on; null for a done and a conversation.
     /// </summary>
     public QuestSubmissionRef? Submission { get; init; }
 
@@ -87,14 +87,14 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
 
     /// <summary>
     /// The title a squash's subject takes: a quest's own title, but for a conversation, whose title is its opening, the
-    /// oldest commit's subject <see cref="ForWork"/> named it by, or null where none was read, so the squash's own fallback takes the
+    /// oldest commit's subject <see cref="ForWork"/> named it by, or null where none is read, so the squash's own fallback takes the
     /// commits' first subject.
     /// </summary>
     public string? SquashTitle => Quest is null && Title is not null ? (string.IsNullOrWhiteSpace(Name) ? null : Name) : Title;
 
     /// <summary>
     /// The subject a quest is landed as: its title for the record, its name for the branch where they differ, and its body and
-    /// links for a ticket's key to be found in. Blank and empty are carried as none, so a quest without them is the subject it was.
+    /// links for a ticket's key to be found in. Blank and empty are carried as none, so a quest without them has none.
     /// </summary>
     public static LandingSubject Of(string session, QuestView quest) => new(session, quest.Id, quest.Title)
     {

@@ -15,7 +15,7 @@ public static class LandCarry
 
     public const string Conflicted = "conflict";
 
-    /// <summary>The landing the kept yes accepted (<see cref="LandTryNotes.Of"/>'s <c>carry</c>): the work landed once its tree was clean.</summary>
+    /// <summary>The landing the kept yes accepted (<see cref="LandTryNotes.Of"/>'s <c>carry</c>): the work lands once its tree is clean.</summary>
     public const string Accepted = "accepted";
 
     /// <summary>What a refused landing asks of its session, or null where the refusal is no work of the session's to do.</summary>
@@ -48,10 +48,10 @@ public static class LandCarry
     public static string WordsOf(string why, LandingConflict? conflict, int paths) =>
         why == Conflicted && conflict is not null ? conflict.Words : DirtyWords(paths);
 
-    /// <summary>What a carry-on is keyed on: a dirty tree's status fingerprint, or the tip a conflict was found at.</summary>
+    /// <summary>What a carry-on is keyed on: a dirty tree's status fingerprint, or the tip a conflict is found at.</summary>
     public static string BasisOf(string why, string? tip, string status) => why == Conflicted ? $"conflict-{tip}" : status;
 
-    /// <summary>The words said under their key; the door's answer, or an untold one where it failed (the refusal then stands as it was).</summary>
+    /// <summary>The words said under their key; the door's answer, or an untold one where it failed (the refusal then stands unchanged).</summary>
     public static async Task<SayAnswer?> TellAsync(RebaseTelling.Say say, string session, string words, string key, CancellationToken ct)
     {
         try

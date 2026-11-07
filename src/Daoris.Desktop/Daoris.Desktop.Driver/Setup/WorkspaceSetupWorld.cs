@@ -103,7 +103,7 @@ public sealed class WorkspaceSetupWorld(ServiceClient service, string home) : IW
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // What was read so far stands: an order is a judgement, and a record held open by a running session still counts.
+            // What is read so far stands: an order is a judgement, and a record held open by a running session still counts.
         }
 
         return touches;

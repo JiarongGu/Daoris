@@ -1,28 +1,26 @@
 #!/usr/bin/env node
-// The names check (NAME1a, D116; docs/2026-10-01-naming-design.md §6), beside the parity check. The parity
+// The names check (docs/2026-10-01-naming-design.md §6), beside the parity check. The parity
 // check holds that both catalogues have every key; this holds that each key a person reads as a name says
 // what the glossary (`src/locales/glossary.json`) says it should, in each language:
-//
 // - glossary: a label whose English names a term says the term's Chinese name, and neither language uses a
-//   word the term must not be called;
+//  word the term must not be called;
 // - budget: a label is no longer than its kind's budget, English in characters and Chinese in units;
 // - form: case by kind, no closing stop or colon, one ellipsis, no pronoun on a Chinese button, Latin set
-//   apart from Chinese and no Latin punctuation inside it;
+//  apart from Chinese and no Latin punctuation inside it;
 // - door: a door says its destination's name;
 // - distinct: no workflow, delivery or step name holds another kind's whole name, in either language
-//   (SETUPUX1g; the glossary's `distinct` lists, D221 §2.5);
+//  (the glossary's `distinct` lists);
 // - person: each person's press names its act in every language (`person-words.mjs`, from the generated routes);
 // - kind: each node kind the driver's kit declares has its two titles and each outcome's word in every language (`kind-words.mjs`);
 // - reword: a word a term lists under `avoid.later` is one a later rewording will forbid. Strings that still say it are
-//   reported; nothing fails on it. The glossary lists none now (SETUPUX1w moved them to `avoid`).
-//
+//  reported; nothing fails on it. The glossary lists none now.
 // Alone it REPORTS and exits 0. It exits 2 when the glossary itself is malformed, since a glossary that
 // cannot be read has stopped checking anything. `--strict` exits 1 on a glossary, form or door finding
 // (facts) and never on a budget (a judgement: a character count estimates a width, and the window is where
-// a width is a fact, D54). NAME1b renamed what NAME1a's audit found and put `--strict` in the web's build,
+// a width is a fact). The web's build runs `--strict`,
 // beside the parity check; `--all` also reads every sentence for the words a term must not be called, and
 // reports. A budget judgement looked at and kept is the glossary's `accepted`, with the name it accepted and
-// why (NAME2): it stops being reported while the name stands, and a rename brings it back to be judged again.
+// why: it stops being reported while the name stands, and a rename brings it back to be judged again.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -45,11 +43,11 @@ const WIDE = /[—…“”⺀-鿿豈-﫿︰-﹏＀-￯]/;
 const HAN = '\\u4e00-\\u9fff';
 const PLACEHOLDER = /\{\{\s*([\w.]+)[^}]*\}\}/g;
 const CODE = /`[^`\n]+`/g;
-/** The kinds of name that never hold one another's (SETUPUX1g, D221 §2.5). */
+/** The kinds of name that never hold one another's. */
 const DISTINCT = ['workflow', 'delivery', 'step'];
 
 /**
- * A glossary and every catalogue present, read from the web's own locales (D222): English and Chinese beside the rest, `others`
+ * A glossary and every catalogue present, read from the web's own locales: English and Chinese beside the rest, `others`
  * by language tag, so a language added as a folder is held by the same checks.
  */
 export function load(root = LOCALES) {
@@ -144,7 +142,7 @@ export function validate(glossary, en, zh, others = {}) {
   for (const { door, opens } of glossary.doors ?? []) {
     for (const key of [door, opens]) if (!(key in en) || !(key in zh)) problems.push(`door ${door}: ${key} is not a key in both catalogues`);
   }
-  // The names of workflows, deliveries and steps (SETUPUX1g): each a pair of names, once in a kind and language.
+  // The names of workflows, deliveries and steps: each a pair of names, once in a kind and language.
   for (const [what, names] of Object.entries(glossary.distinct ?? {})) {
     if (what.startsWith('_')) continue;
     if (!DISTINCT.includes(what)) problems.push(`distinct: ${what} is not one of ${DISTINCT.join(', ')}`);
@@ -173,7 +171,7 @@ export function validate(glossary, en, zh, others = {}) {
     if (english === undefined && chinese === undefined) problems.push(`accepted: ${key} names neither language's name`);
     if (!why || !String(why).trim()) problems.push(`accepted: ${key} gives no reason`);
   }
-  // Every other catalogue present holds the keys the glossary names (D222): the exact keys of a kind, a door's two and an acceptance's.
+  // Every other catalogue present holds the keys the glossary names: the exact keys of a kind, a door's two and an acceptance's.
   const heldKeys = new Set([
     ...Object.values(kinds).flatMap(({ keys: patterns = [] }) => patterns.filter((pattern) => !pattern.endsWith('.*'))),
     ...(glossary.doors ?? []).flatMap(({ door, opens }) => [door, opens]),
@@ -205,7 +203,7 @@ export function check(glossary, en, zh, { all = false, others = {} } = {}) {
   const named = glossary.terms.filter((term) => !term.use);
   const matchers = named.map((term) => ({ term, pattern: new RegExp(term.match, 'i') }));
   // A proper noun keeps its capitals mid-name, and so does a place's own name (*Open Sessions*), a tab's too (*Change in
-  // Setup*, UX6j): a door names either.
+  // Setup*): a door names either.
   const place = (key) => kindFor(key) === 'nav' || kindFor(key) === 'tab';
   const proper = [...glossary.properNouns, ...Object.keys(en).filter(place).map((key) => en[key])]
     .filter((name) => /^[A-Z]/.test(name))
@@ -236,7 +234,7 @@ export function check(glossary, en, zh, { all = false, others = {} } = {}) {
         note(key, kind, 'glossary', 'zh', `names ${term.term} in English, and says ${own.join(' or ')} nowhere`);
       }
       // Only names are set aside: this term's, and those of the other terms the same English names
-      // (NAME1b: *a git remote* says 远程仓库, which holds the 远程 a workspace's remote must not be
+      // (*a git remote* says 远程仓库, which holds the 远程 a workspace's remote must not be
       // called). 规范包 holds 包 and is right, while a short form such as 等你 would hide the 等你决定 it is
       // there to catch, so short forms are never set aside.
       const names = [term.zh, ...said.filter((other) => other !== term).map((other) => other.zh)]
@@ -253,7 +251,7 @@ export function check(glossary, en, zh, { all = false, others = {} } = {}) {
       for (const word of term.avoid.en) if (says(english, word)) note(key, kind, 'glossary', 'en', `says "${word}"; the name is ${target.en}`);
       if (term.use) for (const word of term.avoid.zh) if (chinese.includes(word)) note(key, kind, 'glossary', 'zh', `says ${word}; the name is ${target.zh}`);
     }
-    // Every other catalogue present (D222): the key is there, and the label names a term in it where the glossary gives that term's name
+    // Every other catalogue present: the key is there, and the label names a term in it where the glossary gives that term's name
     // in that language (`term.<tag>`); the rest of the rules are English's and Chinese's own.
     if (label || all) {
       for (const [language, catalogue] of Object.entries(others)) {
@@ -338,7 +336,7 @@ export function check(glossary, en, zh, { all = false, others = {} } = {}) {
       note(door, kind, 'door', 'zh', `opens ${opens} (「${zh[opens]}」) and does not say its name`);
     }
   }
-  // The names of workflows, deliveries and steps: no name holds the whole name of another kind, in either language (SETUPUX1g).
+  // The names of workflows, deliveries and steps: no name holds the whole name of another kind, in either language.
   for (const [what, names] of Object.entries(glossary.distinct ?? {})) {
     if (!DISTINCT.includes(what)) continue;
     for (const [other, others] of Object.entries(glossary.distinct)) {

@@ -244,14 +244,14 @@ export function SessionList({
     return (
       <>
         {groups.map(({ group, members }) => (
-          // Its heading's id is what a door into the group brings into view (ENTRY1b).
+          // Its heading's id is what a door into the group brings into view.
           <ListGroup key={group} id={groupHeading('sessions', group)} title={t(`work.group.${group}`, { count: members.length })}>
             {group === 'ended' || group === 'archived'
               ? ended(members, true, group === 'archived')
               : members.map((each) => drawRow(each, true))}
           </ListGroup>
         ))}
-        {/* Shown and empty (SESSUX1e): the group the tick asked for, saying it holds nothing, rather than no answer. Not a
+        {/* Shown and empty: the group the tick asked for, saying it holds nothing, rather than no answer. Not a
             row, so the list's arrows pass it by. */}
         {archived && !groups.some(({ group }) => group === 'archived') && (
           <ListGroup title={t('work.group.archived', { count: 0 })}>
@@ -287,7 +287,7 @@ export function SessionList({
 
       {/* The ended sessions — the driver's record of what it actually did. No repository group headers here: those
           carry live facts (drivable, held, which tree is busy) and an ended session has none to state; the row's own
-          derived title already names what it was for. Newest first, the rest a press away. */}
+          derived title already names what it is for. Newest first, the rest a press away. */}
       {!live && rest.length > 0 && (
         <section aria-label={t('work.rail.ended')} className="mt-2 border-t border-line pt-2">
           <h3 className="px-3 py-1 text-meta font-semibold uppercase tracking-wide text-ink-faint">{t('work.rail.ended')}</h3>
@@ -299,13 +299,13 @@ export function SessionList({
 }
 
 /**
- * *Archive what ended…*'s first press (SESSUX1e, D126 §5.3): under the list's header, what the second press would
- * archive and what stays because it needs the person, listed before anything is archived, as the clean-up lists (D88).
+ * *Archive what ended…*'s first press: under the list's header, what the second press would
+ * archive and what stays because it needs the person, listed before anything is archived, as the clean-up lists.
  *
  * @remarks
  * **The second press archives what the first listed.** A list is a fact about a moment, and the reader answers again on
  * every tick, so what this said when it opened is held and sent, never a later answer's list; the host judges each
- * again as it goes. Nothing to archive is said, with no press that would archive nothing (D119 §3.2).
+ * again as it goes. Nothing to archive is said, with no press that would archive nothing.
  */
 export function ArchiveEndedAsk({ going, kept, busy = false, onArchive, onCancel }: {
   /** The sessions it would archive, as `endedToArchive` lists them. */
@@ -345,7 +345,7 @@ export function ArchiveEndedAsk({ going, kept, busy = false, onArchive, onCancel
 }
 
 /**
- * Sessions' list closed to its strip (FRAME6, D126 §2.5): what waits on the person first, then what runs, in the open
+ * Sessions' list closed to its strip: what waits on the person first, then what runs, in the open
  * list's order, each its initial and its mark, named in words. What ended is the open list's.
  */
 export function SessionStrip({ arrangement, rows, groupings, selected = null, archived = false, live = false, label, onSelect }: {

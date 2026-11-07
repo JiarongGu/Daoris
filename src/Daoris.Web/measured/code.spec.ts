@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The code map on the canvas measured (CANVAS1f; D224, the canvas design §3.4, §9 row f): no card over another, opened whole or closed, a
+// The code map on the canvas measured (the canvas design §3.4, §9 row f): no card over another, opened whole or closed, a
 // count on a line between closed folders, find opening the path to a module inside a closed folder, and an id cut on its card, in a
 // real browser.
 

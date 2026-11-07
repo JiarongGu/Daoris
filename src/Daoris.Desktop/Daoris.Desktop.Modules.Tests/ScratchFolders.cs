@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 internal static class ScratchFolders
 {
-    /// <summary>Removes <paramref name="path"/>: true once it is gone, false when it was still held after the last try.</summary>
+    /// <summary>Removes <paramref name="path"/>: true once it is gone, false when it is still held after the last try.</summary>
     /// <param name="attempts">How many times it is asked, the first included.</param>
     /// <param name="waitMs">The wait between two tries.</param>
     public static bool Remove(string path, int attempts = 10, int waitMs = 200)

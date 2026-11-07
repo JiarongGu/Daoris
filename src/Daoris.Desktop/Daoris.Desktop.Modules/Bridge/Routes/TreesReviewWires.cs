@@ -24,7 +24,7 @@ public static class TreesReviewWires
     /// and — for a landed session — where its work landed, where that branch stands, and whether the
     /// review reads as landed, which is what the page's acts follow.
     /// </summary>
-    /// <remarks>Never a machine path: the checkout the branch was read in is the registry's, and the page has no use for it.</remarks>
+    /// <remarks>Never a machine path: the checkout the branch is read in is the registry's, and the page has no use for it.</remarks>
     public static object ReviewAnswer(
         string session, TreeDiff? diff, string source, LandedReview? landed, bool treeGone, TreeDiff? uncommitted = null,
         LineBehind? behind = null, string? treeBranch = null, LandOffer? offer = null) => new
@@ -71,7 +71,7 @@ public static class TreesReviewWires
             landed.Entry.Plugin,
             landed.Entry.Pushed,
             landed.Entry.PullRequest,
-            // Who accepted it: `person`, `auto`, or null for a landing from before it was kept.
+            // Who accepted it: `person`, `auto`, or null for a landing that kept none.
             landed.Entry.AcceptedBy,
             landed.State,
             AsLanded = landed.ReadsAsLanded(treeGone),
@@ -85,7 +85,7 @@ public static class TreesReviewWires
                 }
                 : null,
             // A branch the person withdrew, with when, their reason and the recovery ref its commits stay
-            // on; `removed` stays the clean-up's alone, and a trace from before the reason was kept says none.
+            // on; `removed` stays the clean-up's alone, and a trace with no reason says none.
             Withdrawn = landed.Entry is { GoneAs: LandedGone.Withdrawn, GoneAt: { } withdrawnAt }
                 ? new { At = Moments.Write(withdrawnAt), Why = landed.Entry.GoneWhy, landed.Entry.KeptOn }
                 : null,
@@ -174,7 +174,7 @@ public static class TreesReviewWires
         (string, string)[] named = [("session", session), ("path", path)];
         return read switch
         {
-            // The landed branch it was read from, once the tree is gone; null for the file on disk.
+            // The landed branch it is read from, once the tree is gone; null for the file on disk.
             { Refusal: FilePreviewRefusal.None, File: { } file } => new
             {
                 Session = session, file.Path, file.Size, file.Binary, file.Text, file.Truncated, file.Branch,

@@ -66,7 +66,7 @@ public static class GitRefActs
     }
 
     /// <summary>
-    /// Undo the create <paramref name="act"/> made: its ref deleted only at the id it was made at, refused where that act is no closed create
+    /// Undo the create <paramref name="act"/> made: its ref deleted only at the id of its creation, refused where that act is no closed create
     /// of this repository, or the ref has moved or gone.
     /// </summary>
     public static async Task<ActRun> UndoAsync(ActRuns runs, string repository, string checkout, string act, string press, string? confirmed, CancellationToken ct)

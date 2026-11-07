@@ -33,7 +33,7 @@ public sealed class KeptSchemeTests : IDisposable
         Assert.Equal(ColorScheme.System, KeptScheme.Read(Kept));
     }
 
-    /// <summary>Each choice the page sets is the one the next start reads, whatever it was started at.</summary>
+    /// <summary>Each choice the page sets is the one the next start reads, whatever it is started at.</summary>
     [Theory]
     [InlineData(ColorScheme.Light)]
     [InlineData(ColorScheme.Dark)]

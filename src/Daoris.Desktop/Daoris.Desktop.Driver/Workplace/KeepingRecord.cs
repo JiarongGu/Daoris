@@ -93,7 +93,7 @@ public static class KeepingRecord
 
     /// <summary>
     /// <paramref name="kind"/>'s last run written over the record as it stands now, <paramref name="read"/> being the record as this writer
-    /// read it: only <c>last.&lt;kind&gt;</c> is this edit's. Null where it was written; else why not, nothing written.
+    /// read it: only <c>last.&lt;kind&gt;</c> is this edit's. Null where it is written; else why not, nothing written.
     /// </summary>
     public static string? WriteLast(string home, KeepingFile read, string kind, KeepingLast last)
     {
@@ -141,7 +141,7 @@ public static class KeepingRecord
     /// <summary>
     /// Downloads' first-unused times set (a time) or cleared (null) over the record as it stands now, <paramref name="read"/> being the record
     /// as this writer read it: only those <c>unused</c> keys are this edit's, so another writer's entries
-    /// and its <c>last</c> stay. Null where it was written, or there was nothing to change; else why not, nothing written.
+    /// and its <c>last</c> stay. Null where it is written, or there is nothing to change; else why not, nothing written.
     /// </summary>
     public static string? WriteUnused(string home, KeepingFile read, IReadOnlyDictionary<string, DateTimeOffset?> changes)
     {
@@ -245,8 +245,8 @@ public static class KeepingRecord
 }
 
 /// <summary><c>keeping.json</c> as read (<see cref="KeepingRecord.Read"/>).</summary>
-/// <param name="Found">Whether a file was there at the read.</param>
-/// <param name="Problem">Why it did not read; null where it did, or where there was none.</param>
+/// <param name="Found">Whether a file is there at the read.</param>
+/// <param name="Problem">Why it did not read; null where it did, or where there is none.</param>
 /// <param name="Last">Each kind's last run that reads as one.</param>
 /// <param name="Raw">Each kind's last run as written, which an edit of it is made from.</param>
 /// <param name="Schema">The record's <c>schema</c> as written; null where it holds none.</param>

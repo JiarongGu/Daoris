@@ -44,16 +44,16 @@ public sealed class BrowserSessionCookies(string home, ICookieSeal seal)
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    /// <summary>What was last written or read, so the same set is not written again after every page.</summary>
+    /// <summary>What is last written or read, so the same set is not written again after every page.</summary>
     private byte[]? _kept;
 
     /// <summary>Where they are kept: beside the browser's profile, under the home.</summary>
     public static string FilePath(string home) => DaorisHome.Entry(home, HomeEntry.EdgeCookies);
 
-    /// <summary>Why the last <see cref="Load"/> restored nothing from a file that was there, or null.</summary>
+    /// <summary>Why the last <see cref="Load"/> restored nothing from a file that is there, or null.</summary>
     public string? Problem { get; private set; }
 
-    /// <summary>Keep the session cookies among these, replacing what was kept. False when nothing changed.</summary>
+    /// <summary>Keep the session cookies among these, replacing what is kept. False when nothing changed.</summary>
     public bool Save(IEnumerable<BrowserCookie> cookies)
     {
         var plain = JsonSerializer.SerializeToUtf8Bytes(new Kept(Version, [.. cookies.Where(cookie => cookie.Session)]), Json);
@@ -67,7 +67,7 @@ public sealed class BrowserSessionCookies(string home, ICookieSeal seal)
     }
 
     /// <summary>
-    /// What was kept, or nothing, with <see cref="Problem"/> saying why when a file was there. A browser
+    /// What is kept, or nothing, with <see cref="Problem"/> saying why when a file is there. A browser
     /// that cannot put a sign-in back still opens, signed out, which is where Edge alone would be.
     /// </summary>
     public IReadOnlyList<BrowserCookie> Load()

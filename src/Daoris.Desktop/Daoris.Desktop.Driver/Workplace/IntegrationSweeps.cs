@@ -9,16 +9,16 @@ internal sealed record IntegrationSwept(string Candidate, string Kind, string Sa
 /// <summary>What a sweep did with a candidate.</summary>
 internal static class IntegrationSweptKinds
 {
-    /// <summary>The take was refused (its run lives, it moved, it ended, or it is this run's own): nothing was written.</summary>
+    /// <summary>The take is refused (its run lives, it moved, it ended, or it is this run's own): nothing is written.</summary>
     public const string Refused = "refused";
 
-    /// <summary>The caller could not say where its line is (no repository, no checkout): the candidate was left as it stood.</summary>
+    /// <summary>The caller could not say where its line is (no repository, no checkout): the candidate is left as it stands.</summary>
     public const string Unasked = "unasked";
 
-    /// <summary>The resume found nothing to run (the candidate ended, git could not say, or the line was moved back): nothing was written.</summary>
+    /// <summary>The resume found nothing to run (the candidate ended, git could not say, or the line moved back): nothing is written.</summary>
     public const string Resumed = "resumed";
 
-    /// <summary>The candidate was taken, resumed and gone on with as far as it goes; the words are the run's.</summary>
+    /// <summary>The candidate is taken, resumed and gone on with as far as it goes; the words are the run's.</summary>
     public const string Went = "went";
 }
 
@@ -89,7 +89,7 @@ internal sealed class IntegrationSweeps(IntegrationStore store, string treesRoot
                 return Went(claim, await _promotes.FinishAsync(claim, ask.Promote, ct).ConfigureAwait(false));
         }
 
-        // Again or Next: from the step the candidate was at. The replay's steps first, where a member is still to be judged.
+        // Again or Next: from the step the candidate is at. The replay's steps first, where a member is still to be judged.
         if (resumed.Step?.Step is null or IntegrationStepNames.Form or IntegrationStepNames.Replay or IntegrationStepNames.Resolve or IntegrationStepNames.Conflict)
         {
             var replayed = await _replays.ContinueAsync(claim, ask.Replay, ct).ConfigureAwait(false);

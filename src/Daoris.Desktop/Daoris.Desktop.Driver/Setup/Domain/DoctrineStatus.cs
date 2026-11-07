@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>How the canon a doctrine tool carries stands to the one a checkout's lock was written from (<see cref="DoctrineStatus.Update"/>).</summary>
+/// <summary>How the canon a doctrine tool carries stands to the one a checkout's lock records (<see cref="DoctrineStatus.Update"/>).</summary>
 public static class DoctrineUpdates
 {
     /// <summary>The lock's version is older than the tool's canon: its files are behind (the tool's <c>newer</c>).</summary>
@@ -28,7 +28,7 @@ public sealed record DoctrineStatus
     /// <summary>The version of the canon the tool carries, where its answer names one.</summary>
     public string? Carried { get; init; }
 
-    /// <summary>The version the lock was written from, where the answer names one.</summary>
+    /// <summary>The version the lock records, where the answer names one.</summary>
     public string? Locked { get; init; }
 
     /// <summary>How many files a sync would change, add and retire.</summary>
@@ -97,5 +97,5 @@ public sealed record DoctrineStatus
 }
 
 /// <summary>A checkout's status as the doctrine tool answered it, or why it did not.</summary>
-/// <param name="Problem">What was found in place of an answer, in words; null where <paramref name="Status"/> was read.</param>
+/// <param name="Problem">What is found in place of an answer, in words; null where <paramref name="Status"/> is read.</param>
 public sealed record DoctrineReading(DoctrineStatus? Status, string? Problem);

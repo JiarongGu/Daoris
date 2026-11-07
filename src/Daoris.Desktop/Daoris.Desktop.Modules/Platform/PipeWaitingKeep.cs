@@ -23,7 +23,7 @@ internal sealed class PipeWaitingKeep(PipeWaiting records)
     /// <summary>A record's file removed by its confirmation's id.</summary>
     public void Remove(string confirmation) => records.Remove(confirmation);
 
-    /// <summary>A record brought back by the restore, kept as it was read.</summary>
+    /// <summary>A record brought back by the restore, kept as it is read.</summary>
     public void Hold(PipeWaitingRecord record)
     {
         lock (_recording)
@@ -86,7 +86,7 @@ internal sealed class PipeWaitingKeep(PipeWaiting records)
         lock (_recording) return _begun.Contains(confirmation);
     }
 
-    /// <summary>The answer a press's record was rewritten with as its ending was taken, kept for its line.</summary>
+    /// <summary>The answer a press's record is rewritten with as its ending is taken, kept for its line.</summary>
     public void Ended(string confirmation, string text)
     {
         lock (_recording) _endings[confirmation] = text;

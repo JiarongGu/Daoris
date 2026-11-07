@@ -24,7 +24,7 @@ namespace Daoris.Desktop;
 /// attempts held for the person are a partition of their own, <see cref="Held"/>, read from the node records at each judgement (a file
 /// read: no git, no service), with the node records that do not read beside them.</para>
 ///
-/// <para><b>Not judged until the work is.</b> Until the service's answers land, and until every part they name was judged once, the
+/// <para><b>Not judged until the work is.</b> Until the service's answers land, and until every part they name is judged once, the
 /// slice answers <see cref="StateSlice.NotJudged"/>, so a window keeps the pull rather than install the parts judged so far as all
 /// the work there is. After that, a part not judged yet (a repository registered since) is left out until it is.</para>
 ///
@@ -134,7 +134,7 @@ public static class WorkStateSlice
         {
             WakesOn = WakesOn,
             Hears = [wake => HearFacts(facts, wake), _ => HearPresses(bus, facts)],
-            // A node record unreadable: the windows keep what was judged, and the next wake judges again.
+            // A node record unreadable: the windows keep the last judgement, and the next wake judges again.
             Failed = error => log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
     }
@@ -142,11 +142,11 @@ public static class WorkStateSlice
     /// <summary>
     /// One judgement: each part judged, a partition of its units, its recoveries and what it could not read, as <c>WORK_STATE</c> writes
     /// them, and the held attempts' partition. Null where the service's answers were never judged (<paramref name="parts"/> null), or,
-    /// unless <paramref name="partly"/>, while any part was never judged: nothing to judge from yet.
+    /// unless <paramref name="partly"/>, while any part has not been judged: nothing to judge from yet.
     /// </summary>
     /// <param name="parts">The facts' parts (<see cref="HelpFacts.WorkParts(MachineFactsSnapshot)"/>), each as last judged or null.</param>
     /// <param name="held">The attempts held for the person, every unit's.</param>
-    /// <param name="partly">Whether a part never judged is left out rather than leaving the slice not judged: once one judgement was whole.</param>
+    /// <param name="partly">Whether a part never judged is left out rather than leaving the slice not judged: once a whole judgement has been made.</param>
     /// <param name="unreadable">The node records that do not read, pushed beside the held attempts; none where null.</param>
     /// <param name="ends">The closure graphs' ends the milestone tells of, every unit's, carried in the held partition.</param>
     public static IReadOnlyList<SliceJudged>? Judge(

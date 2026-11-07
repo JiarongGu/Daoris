@@ -41,8 +41,8 @@ internal sealed class SetAsideKeeps(TreeContext context)
     /// passes over (<see cref="WrittenSince"/>). One that does not read says nothing, so the folder is read whole: kept more, never less.</para>
     /// </summary>
     /// <param name="top">A finished tree's folder: its own top's time is read too, since a top-level
-    /// entry deleted after the judgement's read leaves no later time on anything that stays. A folder from before, whose top was made when it
-    /// was copied or moved, is read as before.</param>
+    /// entry deleted after the judgement's read leaves no later time on anything that stays. A folder from before, whose top is made when it
+    /// is copied or moved, is read as before.</param>
     internal (string Code, string Sentence)? Kept(string folder, DateTimeOffset moved, bool top = false)
     {
         try

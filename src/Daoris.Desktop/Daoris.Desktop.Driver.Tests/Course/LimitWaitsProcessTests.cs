@@ -3,14 +3,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LIMITRESUME1c (D206 §3.4, §3.5) with real conversations: a conversation whose every account is at its limit waits, its words with it,
+/// With real conversations: a conversation whose every account is at its limit waits, its words with it,
 /// and the look's <c>limits</c> stage wakes it, its own account first, in its own conversation, with the refused turns' words, the words
 /// said while it waited and Daoris's word, each once; or, another account freeing first, moves there handed the brief and both kinds of
 /// words. A conversation it cannot resume because its conversation is lost goes on briefed, never <i>cannot go on</i>; a refusal that
 /// proves no loss waits for the person with no Daoris word left. The limit's move to a new part is delivered once across a shell's end.
 /// </summary>
 /// <remarks>
-/// The conversations run on the <c>acp-stub</c> adapter (a node stand-in on the protocol door), whose accounts are the stub's (TOOL4j);
+/// The conversations run on the <c>acp-stub</c> adapter (a node stand-in on the protocol door), whose accounts are the stub's;
 /// the stand-in reads which one it runs as from the stub's variable, answers a prompt with Claude Code's limit sentence while a gate file
 /// says its account is limited, and refuses a resume as the gate says. The roster's clock is the test's, held: the stage reads it, so a
 /// reset comes when the test moves it, never by the machine's clock. No model, no account, no sign-in.
@@ -101,7 +101,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         return count;
     }
 
-    /// <summary>What the course answered each wake, by session (FOUNDATION1h branch 6), heard from the runner's stage.</summary>
+    /// <summary>What the course answered each wake, by session, heard from the runner's stage.</summary>
     private static List<(string Session, LineCourse Answer)> Deciding(ChatRunner runner)
     {
         var decided = new List<(string Session, LineCourse Answer)>();
@@ -200,7 +200,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.Equal([chat, help], woke.Select(start => start.SessionId).Order());
         Assert.Empty(await runner.WakeLimitsAsync(config));
 
-        // FOUNDATION1h branch 6: the wake of each is the course's answer for the limit's wake, its own conversation resumed, Daoris's word
+        // The wake of each is the course's answer for the limit's wake, its own conversation resumed, Daoris's word
         // keyed by the wake's clock.
         Assert.Equal(
             [(chat, "Resume:limit-reset"), (help, "Resume:limit-reset")],
@@ -251,7 +251,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
             kept = (await runner.SayKeptAsync(chat, "And add a test.", null, null, MessageLevel.Urgent, "press-1"))!.Word!;
         }
 
-        // The shell ended: the conversation ended with it, its waiting word still on its record. FOUNDATION1g part c: as a driven end a limit
+        // The shell ended: the conversation ended with it, its waiting word still on its record. As a driven end a limit
         // made, `failed` with the ledger's flag and the refused turn's cooling line, so every reader reads it limited; its events still hold it
         // waiting for an older build, which reads them alone.
         Assert.Equal(("failed", true), (ledger.State(chat), ledger.Flag(chat, "limit")));
@@ -286,8 +286,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// An ended chat whose person's words wait for its own cooling account (D137 point 7) never met a limit. LIMITSWITCH2 (D137's note of
-    /// 2026-10-25): with every account of its agent cooling, the wait is the earliest reset of any of them, and where that is its own
+    /// An ended chat whose person's words wait for its own cooling account never met a limit. With every account of its agent cooling, the wait is the earliest reset of any of them, and where that is its own
     /// account's the stage goes on at the reset with its words in its own conversation, on that account, nothing moved.
     /// </summary>
     [Fact]
@@ -319,7 +318,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.Equal(1, ledger.Count);
     }
 
-    /// <summary>A model family's cool-off of <paramref name="account"/>, as the cooling store keeps it under the account (MODELROLE1k).</summary>
+    /// <summary>A model family's cool-off of <paramref name="account"/>, as the cooling store keeps it under the account.</summary>
     private void CoolingModel(string account, DateTimeOffset until, string model) =>
         AccountCooling.Cool(_home, new CoolingEntry("stub", account, until, Stated: true, "weekly", _now, null, Model: model), _now);
 
@@ -383,7 +382,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.False(runner.Waits.Holds("c1"));
     }
 
-    /// <summary>The person's words as MSG1d's say door leaves them: kept on the record, and shown in its conversation, which the runner hears.</summary>
+    /// <summary>The person's words as the say door leaves them: kept on the record, and shown in its conversation, which the runner hears.</summary>
     private static void Said(ChatLedger ledger, SessionEvents events, string session, string id, string text)
     {
         ledger.For(session).Say(id, text);
@@ -396,7 +395,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     private static bool IsHandedTo(string account, string line) => line.StartsWith($"prompt[{account}]", StringComparison.Ordinal);
 
     /// <summary>
-    /// 🔴 LIMITSWITCH2 (D137's note of 2026-10-25): an ended conversation the person writes to, its own account cooling for days while
+    /// 🔴 An ended conversation the person writes to, its own account cooling for days while
     /// <c>account-2</c> is ready, goes on at once in one move on <c>account-2</c>: a new part continuing it, handed Daoris's brief and the
     /// words, which leave the old record once, named as taken by the new part. Its own conversation is never resumed on the cooling
     /// account, the words reach the agent once, the start is counted once, and the old record never says it waits.
@@ -436,7 +435,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH2: the same where no runner heard the words (the shell was not running): the limits stage reads the waiting words
+    /// 🔴 The same where no runner heard the words (the shell is not running): the limits stage reads the waiting words
     /// and the cooling own account at its look and goes on at once on <c>account-2</c>, in one move, the start counted once.
     /// </summary>
     [Fact]
@@ -467,7 +466,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1g part c: the wake decides by the record's <c>limited</c> flag. A conversation a limit ended, its events holding none of it,
+    /// 🔴 The wake decides by the record's <c>limited</c> flag. A conversation a limit ended, its events holding none of it,
     /// moves at the wake as one its limit holds, why <c>limit</c>, where the events alone read an ended conversation whose words wait for a
     /// cooling account and moved it why <c>retry</c>.
     /// </summary>
@@ -497,7 +496,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1g part c: the person's stop outranks the limit, as it does a driven end's. A conversation waiting for its limit that the
+    /// The person's stop outranks the limit, as it does a driven end's. A conversation waiting for its limit that the
     /// person stops ends <c>stopped</c>, no flag, and the wake leaves it.
     /// </summary>
     [Fact]
@@ -528,7 +527,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1a-ii (D205 §3.5(d)): the same ended conversation whose account the person picked, its binding in the store saying so,
+    /// 🔴 The same ended conversation whose account the person picked, its binding in the store saying so,
     /// does not go on elsewhere. The person's words wait for <c>account-1</c> though <c>account-2</c> is ready, said as the wait for its own
     /// account, nothing opened, counted or handed; the limits stage's look moves nothing either, and at the account's own reset the
     /// conversation goes on in its own conversation there. A record from before, with no pick, is the test beside it.
@@ -572,7 +571,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1a-ii: the limit's wake of an ended conversation whose account the person picked reads that account's reset alone: the
+    /// 🔴 The limit's wake of an ended conversation whose account the person picked reads that account's reset alone: the
     /// limit that ended it, <c>account-2</c> ready, moves it nowhere, and the stage's wait is its own account's, not the agent's first.
     /// </summary>
     [Fact]
@@ -592,7 +591,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.Empty(await runner.WakeLimitsAsync(config));
         _now = _now.AddDays(2);
         Assert.Empty(await runner.WakeLimitsAsync(config));
-        // FOUNDATION1h branch 6: the course holds a picked account's wake as a wait for its own reset, never a move.
+        // The course holds a picked account's wake as a wait for its own reset, never a move.
         Assert.All(decided, each => Assert.Equal(("c1", "Wait:LimitReset"), (each.Session, WakeSaid(each.Answer))));
         Assert.NotEmpty(decided);
         Assert.Equal(1, ledger.Count);
@@ -601,8 +600,8 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH2: with no account of its agent ready, an ended conversation's words wait and say the earliest reset of any account,
-    /// <c>account-2</c>'s, never its own account's alone, in D206 §3.7's words with the door that starts a conversation with them. At
+    /// 🔴 With no account of its agent ready, an ended conversation's words wait and say the earliest reset of any account,
+    /// <c>account-2</c>'s, never its own account's alone, said with the door that starts a conversation with them. At
     /// that reset, its own account still cooling, the stage goes on on <c>account-2</c> in one move; the start is counted once.
     /// </summary>
     [Fact]
@@ -647,7 +646,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH2's bounds: Ask Daoris's room goes elsewhere only at a limit (D205 §3.5(e)), so its ended conversation whose own account
+    /// The bounds: Ask Daoris's room goes elsewhere only at a limit, so its ended conversation whose own account
     /// cools still waits for that account with another ready; and a conversation whose account is signed out is still the person's press,
     /// its words marked, nothing opened.
     /// </summary>
@@ -700,7 +699,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH2: a closed quest's session whose own account cools with another ready goes on at once as a conversation in its tree, by
+    /// 🔴 A closed quest's session whose own account cools with another ready goes on at once as a conversation in its tree, by
     /// the runner's ended move (the reason <c>account</c> its driver hands over): its words handed once on <c>account-2</c>, taken off the
     /// old record once, the start counted once; a session of a quest still open is the driver's own carry-on, never this.
     /// </summary>
@@ -739,7 +738,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH3 (D137's note of 2026-10-26): the same move carries Daoris's own words that state a fact, said as Daoris's and after the
+    /// 🔴 The same move carries Daoris's own words that state a fact, said as Daoris's and after the
     /// person's, never as theirs: a rebase word goes in the new part's first message once and leaves the old record once; Daoris's resume
     /// word (a limit's) does not, since it asks for the old conversation. A session holding only a rebase word goes on too.
     /// </summary>
@@ -840,7 +839,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
             picked: new HarnessConversations(_home).PickedOn(session, account))).Answer;
 
     /// <summary>
-    /// 🔴 PICKCARRY1 (the steward's call of 2026-10-26, amending row a-ii's reading (3)): a conversation the person picked an account for,
+    /// 🔴 A conversation the person picked an account for,
     /// ended by its limit and proven lost, goes on in the ended move's new part, which the move opens on the account the walk gives (here
     /// its own, ready and first). The new part keeps the pick, and its next go-on waits for that account while it cools, another ready,
     /// where it walked its agent's accounts before.
@@ -872,7 +871,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PICKLOST1 (amending PICKCARRY1's reading (1) and row a-ii's guard in the ended move): a lost conversation has no resume to keep,
+    /// 🔴 A lost conversation has no resume to keep,
     /// but the account the person picked is not the resume. Its words wait for that account while it cools, another ready, and its new part
     /// opens on it once it is ready, keeping the pick, started afresh there. A lost conversation the person picked nothing for walks its
     /// agent's accounts, off its cooling one, and keeps none, as it did.
@@ -931,7 +930,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PICKCARRY1: the new part the live limit move opens is started from its old part on the selection it judged
+    /// 🔴 The new part the live limit move opens is started from its old part on the selection it judged
     /// (<c>ChatRunner.StartAsync</c>'s <c>from</c> and <c>settled</c>, which the live move passes). The move itself leaves a picked conversation
     /// waiting (row a-ii's guard), so the start is made here as it makes it: on the account the person picked, which the part keeps as a pick,
     /// and on another account, which it does not; an unpicked conversation's part keeps none either way.
@@ -1040,7 +1039,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Codex 8, FOUNDATION1f-vi part a: a box an older build wrote after its limit move opened its new part and moved the words there, a
+    /// 🔴 A box an older build wrote after its limit move opened its new part and moved the words there, a
     /// shell ending before they were delivered. The come-up imports it once into the move record and sets it aside; the move is ended by its
     /// phase with the words waiting on the new part never attempted, so the new part goes on with them in its own conversation, heard once,
     /// and nothing is delivered from the box.
@@ -1076,7 +1075,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITWORD1: a word kept on the old record after the move was decided and before the new part opened is in neither the decision's
+    /// 🔴 A word kept on the old record after the move is decided and before the new part opens is in neither the decision's
     /// words nor the new part's record, so the move reads the record again at its go-on: the new part is handed it once, after the word
     /// the move named, and the old part never; it leaves the old record as taken by the new part. No box is written meanwhile.
     /// </summary>
@@ -1119,7 +1118,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Codex 8, FOUNDATION1f-vi part a: a box an older build wrote as its move's words were delivered, its new part having taken its turn
+    /// 🔴 A box an older build wrote as its move's words are delivered, its new part having taken its turn
     /// (the moved word left the new part with it). The come-up imports it and sets it aside, and the move ends by what the new part holds:
     /// nothing is delivered again, said again or taken again.
     /// </summary>
@@ -1147,7 +1146,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// *Stop waiting* (D206 §3.7, N27): an ended conversation held by its limit waits no more. Its waiting word is marked, its record says
+    /// *Stop waiting* (N27): an ended conversation held by its limit waits no more. Its waiting word is marked, its record says
     /// so, and at its account's reset the stage starts nothing; its word waits for the person's next.
     /// </summary>
     [Fact]
@@ -1176,7 +1175,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1a-iii: the live limit move opens on the account it judged, as LIMITSWITCH2 made the ended move do: a conversation whose
+    /// 🔴 The live limit move opens on the account it judged, as the ended move does: a conversation whose
     /// turn its account's limit refused goes on at that turn's end on <c>account-2</c> with one walk asked and one start counted, where it
     /// walked twice and counted two, the second walk free to name another account than the one judged.
     /// </summary>
@@ -1205,7 +1204,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1a-iii (O2-13, D205 §3.5(e)): an ended conversation its limit held, with every account of its agent cooling, goes on
+    /// 🔴 An ended conversation its limit held, with every account of its agent cooling, goes on
     /// with its actor's next choice on another agent where the person allowed one, as the live move does: a new part continuing it by the
     /// limit, handed the brief and both kinds of words once, the one start counted, the old part saying where it went; where it waits,
     /// nothing went on by itself before.
@@ -1248,7 +1247,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     /// <summary>
     /// A conversation the person picked an account for (row a-ii) waits for it with every account cooling and a later choice on another
     /// agent allowed: it goes nowhere, nothing is counted or opened, and its wait is its own account's reset. A conversation whose agent the
-    /// person picked is the same (LIMITGOON2's refusal, D205 §3.5(d)).
+    /// person picked is the same.
     /// </summary>
     [Theory]
     [InlineData("account")]

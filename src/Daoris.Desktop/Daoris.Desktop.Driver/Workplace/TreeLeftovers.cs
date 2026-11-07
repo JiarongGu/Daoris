@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><c>git worktree remove</c> deletes a tree's files, then its registration, and carries on past a folder that
-/// will not go. On Windows, something still holding the folder open — a terminal or a process whose working folder it
-/// was — leaves it registered nowhere and on disk, empty, and git's answer is a failure though the tree is gone. The
+/// will not go. On Windows, something still holding the folder open — a terminal or a process working in it
+/// — leaves it registered nowhere and on disk, empty, and git's answer is a failure though the tree is gone. The
 /// removal is then said plainly: the tree is removed, its folder is left, and why; and the clean-up tries the empty
 /// folder again once nothing holds it.</para>
 ///

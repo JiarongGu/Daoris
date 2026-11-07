@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// <i>accepted; lands when its tree is clean</i>. Daoris carried the session on in its own words, and the
 /// yes is the person's press, so the landing that follows needs no second one.
 /// </summary>
-/// <param name="Session">The session the Accept was pressed on.</param>
+/// <param name="Session">The session the Accept is pressed on.</param>
 /// <param name="Tree">Its tree, where the landing is judged.</param>
 /// <param name="At">When the person pressed.</param>
 /// <param name="Carries">How many times Daoris carried the session on for this Accept, at most <see cref="LandCarry.Bound"/>.</param>

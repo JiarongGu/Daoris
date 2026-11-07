@@ -13,7 +13,7 @@ public static class LandOutcomes
 
     internal static void Kept(string unit, string tip, TreeLanding landed) => Landed[$"{unit}\n{tip}"] = landed;
 
-    /// <summary>The landing the performer made of <paramref name="unit"/> at <paramref name="tip"/>, or was refused; null where none was kept.</summary>
+    /// <summary>The landing the performer made of <paramref name="unit"/> at <paramref name="tip"/>, or is refused; null where none is kept.</summary>
     public static TreeLanding? Of(string unit, string tip) => Landed.GetValueOrDefault($"{unit}\n{tip}");
 
     /// <summary>Forgets a tip's outcome, so a press that asks to try again reads the next one and not the last.</summary>

@@ -85,7 +85,7 @@ public static class TreesWords
     }
 
     /// <summary>
-    /// <c>trees sync --yes</c>: what was not fetched, each row moved or stayed, what was left apart, the lines the registry followed,
+    /// <c>trees sync --yes</c>: what is not fetched, each row moved or stayed, what is left apart, the lines the registry followed,
     /// and the count; 1 where something the proofs cleared did not happen.
     /// </summary>
     /// <param name="followed">The lines the registry's following said, already worded (<see cref="Followed"/>), or none.</param>

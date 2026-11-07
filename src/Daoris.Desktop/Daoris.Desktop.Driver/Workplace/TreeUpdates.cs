@@ -18,12 +18,12 @@ internal sealed class TreeUpdates(
     /// <summary>
     /// Bring <paramref name="tree"/> up to date with its repository's line, fetched now: a tree on a branch, the session's or one of
     /// its own, has its own commits replayed and the branch moved last; a detached tree is rebased in place. Each
-    /// refusal is an answer (<see cref="TreeRefusal"/>, asked in <see cref="TreeFacts.First"/>'s order) and leaves the tree as it was.
+    /// refusal is an answer (<see cref="TreeRefusal"/>, asked in <see cref="TreeFacts.First"/>'s order) and leaves the tree untouched.
     /// </summary>
     /// <remarks>
     /// <para>🔴 <b>This writes into the person's repository</b>, so every guard is here: the replay runs as the person, never
     /// a force push and never a push; a conflict aborts it and names the files; the content proof finds nothing of the tree's own
-    /// changed but what the line brought before anything is kept; a branch moves only from the commit it was judged at.</para>
+    /// changed but what the line brought before anything is kept; a branch moves only from the commit it is judged at.</para>
     ///
     /// <para><b>Only while nothing runs in the tree</b>. Whether a turn is taking or queued, or a driven session works,
     /// is the caller's to say, since only the door knows its chat runner: <paramref name="running"/> is asked first, and again once
@@ -66,7 +66,7 @@ internal sealed class TreeUpdates(
 
         // The repository's own checkout, whose line is the repository's (as the review reads it), and the tree's
         // branch, in one start. Its branch is taken where that start gave a plain name or a detached HEAD; anything
-        // else (no commit yet, or a name git had to tell from another) is asked as before, so the name is the one it was.
+        // else (no commit yet, or a name git had to tell from another) is asked on its own, so the name is the branch's own.
         var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         string? branch;
         if (here.Once && here.Branch.Trim() is var named
@@ -149,7 +149,7 @@ internal sealed class TreeUpdates(
     ///
     /// <para><b>Before the start's own hold.</b> The replay holds the repository's trees alone (<see cref="TreeLock"/>), which a start
     /// takes shared, so the caller asks this before it takes its own; another start in the repository at that moment is the press's
-    /// <c>Held</c>, told as any reason the tree was left.</para>
+    /// <c>Held</c>, told as any reason the tree is left.</para>
     ///
     /// <para><b>A start's git, never a look's per tree</b>: nothing where the tree is not this home's or has no line; else
     /// the fetch, the line's latest, where the tree leaves it and <see cref="LineHolds.JudgeBeyondAsync"/>'s one log, the line's files
@@ -218,7 +218,7 @@ internal sealed class TreeUpdates(
     /// leaves the commit), are rebased onto the commit in its own tree detached, proven, and its branch moved last from the commit
     /// judged; its record then grows from the commit. Never a merge, which the tree sync never makes either.</para>
     ///
-    /// <para><b>A conflict, or any reason it is left</b>, leaves the tree exactly as it was, tells the session, and changes nothing else:
+    /// <para><b>A conflict, or any reason it is left</b>, leaves the tree exactly as it stands, tells the session, and changes nothing else:
     /// the line's sync is not asked. With no commit (a host before it), or one this repository does not hold, only the line's sync
     /// runs, said once in the session's instruction. Before the start's own hold, as <see cref="StartInSyncAsync"/> is.</para>
     /// </remarks>
@@ -237,7 +237,7 @@ internal sealed class TreeUpdates(
 
     /// <summary>
     /// The step's tree replayed onto <paramref name="commit"/>, by <see cref="GoOnInSyncAsync"/>'s rules: what moved and
-    /// what the session is told, or why it was left and that nothing else may change.
+    /// what the session is told, or why it is left and that nothing else may change.
     /// </summary>
     private async Task<SubmissionOnto> OntoSubmissionAsync(string tree, string source, string commit, bool broughtForward, CancellationToken ct)
     {
@@ -468,7 +468,7 @@ internal sealed class TreeUpdates(
         }
     }
 
-    /// <summary>A detached tree put back where it was after a replay that was not kept: true where it is detached at that commit again.</summary>
+    /// <summary>A detached tree put back where it stood after a replay that is not kept: true where it is detached at that commit again.</summary>
     private static async Task<bool> PutBackAsync(string tree, string head, CancellationToken ct)
     {
         await WorkingTree.GitAsync(tree, ["rebase", "--abort"], ct).ConfigureAwait(false);

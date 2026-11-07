@@ -18,7 +18,7 @@ after(() => rmSync(scratch, { recursive: true, force: true }));
 
 const WEB = 'https://dev.azure.com/acme/Proj/_git/app';
 
-/** Azure DevOps' pull-request calls as its REST API answers them, admitting one token as Basic's password and counting what it was asked. */
+/** Azure DevOps' pull-request calls as its REST API answers them, admitting one token as Basic's password and counting what it is asked. */
 async function standIn() {
   const pulls = [];
   const calls = [];

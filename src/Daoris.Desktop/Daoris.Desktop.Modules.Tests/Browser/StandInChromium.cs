@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// A Chromium's debug endpoint, standing in for the review's serving: its pages, the browser's socket with
 /// flattened sessions, <c>Fetch</c> interception per session, and a page's request walked through every interception that holds
-/// it before it reaches the network, a real loopback socket. What it models is what was measured on a real one
+/// it before it reaches the network, a real loopback socket. What it models is measured on a real one
 /// (<c>docs/2026-10-09-review-serving-evidence.md</c>): interceptions chain on one tab, the one attached last first, a
 /// client's own ending with its socket; one that fulfils answers, one that lets the request go on hands it to the next.
 /// </summary>
@@ -33,7 +33,7 @@ internal sealed class StandInChromium : IDisposable
 
     public int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;
 
-    /// <summary>A tab: its id, where it is, where it was sent, and how often it was brought forward.</summary>
+    /// <summary>A tab: its id, where it is, where it has been sent, and how often it has been brought forward.</summary>
     public sealed class Page(string id, string url)
     {
         public string Id { get; } = id;
@@ -436,7 +436,7 @@ internal sealed class StandInChromium : IDisposable
 }
 
 /// <summary>
-/// The person's own dev server, standing in: it answers every path as theirs and counts each hit, so a test can say it was never
+/// The person's own dev server, standing in: it answers every path as theirs and counts each hit, so a test can say it is never
 /// reached for the paths Daoris serves.
 /// </summary>
 internal sealed class PersonServer : IDisposable
@@ -454,7 +454,7 @@ internal sealed class PersonServer : IDisposable
     /// <summary>Where it answers: an origin with no last slash, as a review rule's address is.</summary>
     public string Address => $"http://127.0.0.1:{((IPEndPoint)_listener.LocalEndpoint).Port}";
 
-    /// <summary>The paths it was asked for, in order.</summary>
+    /// <summary>The paths asked for, in order.</summary>
     public IReadOnlyList<string> Hits
     {
         get

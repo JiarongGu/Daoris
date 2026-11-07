@@ -18,7 +18,7 @@ public enum DeleteVerdict
     /// <summary>It served a quest, and is that work's record: archive is how it is cleared.</summary>
     ServedQuest,
 
-    /// <summary>An ask names it as its intake, a quest was published by it, or a landing names it (<see cref="DeleteOutcome.NamedBy"/>).</summary>
+    /// <summary>An ask names it as its intake, a quest is published by it, or a landing names it (<see cref="DeleteOutcome.NamedBy"/>).</summary>
     Named,
 
     /// <summary>Its own tree is still on this machine: discarded or cleaned up first.</summary>

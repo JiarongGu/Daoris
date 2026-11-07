@@ -1,19 +1,16 @@
 #!/usr/bin/env node
-// The parity gate — the bilingual sibling's proven check, adopted here (D42). The build fails when the catalogs' key sets diverge,
+// The parity gate — the bilingual sibling's proven check, adopted here. The build fails when the catalogs' key sets diverge,
 // because a missing translation otherwise "works" in English and is discovered by the first reader it fails — silently, in the other
 // language.
-//
-// And since REV3, when their PLACEHOLDERS diverge: a placeholder is part of the contract
+// And when their PLACEHOLDERS diverge: a placeholder is part of the contract
 // (`translation-parity`), and a key present in both with `{{nmae}}` in one, or with the `{{name}}`
 // the sentence exists to say dropped from the other, passed the key check and failed the reader.
-//
-// And since MOD2, per AREA: each language is `src/locales/<language>/<area>.json`, merged at load
+// And per AREA: each language is `src/locales/<language>/<area>.json`, merged at load
 // (`src/locales/index.ts`). A key lives in the file named by its longest dotted prefix that has a
 // file, so a new key has one home, found by its prefix. The gate holds that every language has the
 // same areas, that each area's files hold the same keys (both directions), that no key is in two
 // files — the merge would keep only the last — and that every key is in its home.
-//
-// And since I18NOPEN1 (D222), across EVERY catalogue present: a language is a folder under `src/locales`, `en` the source the rest
+// And across EVERY catalogue present: a language is a folder under `src/locales`, `en` the source the rest
 // are held to, so adding a language is adding a catalogue and the gate holds it the moment it exists.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -64,15 +61,14 @@ const family = (catalogue, key) => {
 };
 
 // Keys whose English IS the driver's own sentence, passed through as the only copy, which the other
-// language says in its own words (the defaults' reasons, D72; why a quest is sitting, UX5 U27).
+// language says in its own words (the defaults' reasons; why a quest is sitting).
 // Named here, so adding one is noticed.
 const PASSED_THROUGH = [/^settings\.rules\.defaultWhy\./, /^work\.sitting\./];
 
 // The facts the page hands a passed-through sentence beside the driver's words, which the other language may say
-// though the English, the driver's own sentence, names none: the quest, the session a person's stop holds it by
-// (`sittingSentence`, SESSUX1d), how many failed sessions parked it (SESSUX1i), the account a wait holds it for, until
-// when and why (TOOL4g), the ask or quest whose pause holds it (PAUSE1e), the accounts not signed in with each one's
-// sign-in (TOOL6g), and the machine whose take holds it with the session here not carried on (CARRY2c; its `session` is
+// though the English, the driver's own sentence, names none: the quest, the session a person's stop holds it by, how many failed sessions parked it, the account a wait holds it for, until
+// when and why, the ask or quest whose pause holds it, the accounts not signed in with each one's
+// sign-in, and the machine whose take holds it with the session here not carried on (its `session` is
 // that machine's). Named here, as the keys are, so a fact the page does not hand is still refused.
 const PASSED_FACTS = [
   {

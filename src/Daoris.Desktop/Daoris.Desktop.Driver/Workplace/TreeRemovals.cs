@@ -242,7 +242,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             }
         }
 
-        // Nothing was removed: the ref this call kept a detached tree's commit on goes again, as before it; a branch's is made only as it goes.
+        // Nothing is removed: the ref this call kept a detached tree's commit on goes again, as before it; a branch's is made only as it goes.
         async Task<TreeRemoval> KeptAsync(string said)
         {
             if (recovery is not null) await ContentHolds.DropKeptVerifiedAsync(root, recovery, judged!, rests, CancellationToken.None).ConfigureAwait(false);

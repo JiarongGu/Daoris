@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal static partial class StashDropSteps
 {
-    /// <summary>A stash step that drops the stash commit <paramref name="id"/>, whose message was <paramref name="message"/>.</summary>
+    /// <summary>A stash step that drops the stash commit <paramref name="id"/>, whose message is <paramref name="message"/>.</summary>
     public static ActStepPlan Step(string id, string message)
     {
         var said = new JsonObject { ["mode"] = "drop", ["id"] = id, ["message"] = message }.ToJsonString();
@@ -38,7 +38,7 @@ internal static partial class StashDropSteps
         var named = Dropped().Match(run.Stdout).Groups["id"].Value;
         if (named.Length == 0 || named == id) return run.End($"git dropped the stash `{id}`");
 
-        // Another tree saved or dropped in between, so the place moved: put back what was dropped, by its commit.
+        // Another tree saved or dropped in between, so the place moved: put back what it dropped, by its commit.
         var other = listed.FirstOrDefault(each => each.Id == named).Message ?? "";
         var back = await launch.HeldGitAsync(launch.Root, step.Ordinal, ["stash", "store", "-m", other, named], null, null).ConfigureAwait(false);
         return new ActStepEnd(1, false, back.Exit == 0

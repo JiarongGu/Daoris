@@ -1,9 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// *Set up…*'s review, measured (SETUPUX1k; the setup-UX design §2.2 and §5 row k): the review's order holds at every width, in two columns at
+// *Set up…*'s review, measured (the setup-UX design §2.2 and §5 row k): the review's order holds at every width, in two columns at
 // 80 rem and one below it, and Apply sits last, wholly inside the main area, under every part, at 680 px (39 rem) and the 400 px floor (25 rem)
 // as at 1546 px. jsdom lays nothing out, so no unit test can hold this.
-//
 // `npm --prefix src/Daoris.Web run e2e:measured -- review.spec`.
 
 /** Each story, with the main-area width it is drawn at. */

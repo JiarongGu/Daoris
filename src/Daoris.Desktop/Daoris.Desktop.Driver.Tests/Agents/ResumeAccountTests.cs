@@ -5,11 +5,11 @@ using static Daoris.Desktop.Driver.Tests.AccountRotationWalkTests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MSG1g (D137 §2.2's account paragraph, point 7): a resume asks for its record's own account, since a harness keeps a
-/// conversation in the configuration home of the account it ran on (D131 §1). Ready, the resume runs there, whatever the walk
-/// would choose for a start. Cooling, the words wait for its reset (D125 §2), and the person may choose a new session instead.
+/// A resume asks for its record's own account, since a harness keeps a
+/// conversation in the configuration home of the account it ran on. Ready, the resume runs there, whatever the walk
+/// would choose for a start. Cooling, the words wait for its reset, and the person may choose a new session instead.
 /// Unable to run there at all (gone from the machine, off the list, kept for conversations, refused, signed out), the words are
-/// carried on at once on the walk's pick, saying why, by TOOL6e's codes (<see cref="NextHold"/>).
+/// carried on at once on the walk's pick, saying why, by the walk's hold codes (<see cref="NextHold"/>).
 /// </summary>
 /// <remarks>
 /// The judgement is pure; the roster's half asks it with what it knows before any probe and asks the agent's word on a sign-in
@@ -46,7 +46,7 @@ public sealed class ResumeAccountTests : IDisposable
         Assert.Equal(NextHold.Ready, Judge(account, scope));
     }
 
-    /// <summary>A scope with no list is its one account, or the tool's own sign-in where it names none (D130 §3.1, D125 §3.7).</summary>
+    /// <summary>A scope with no list is its one account, or the tool's own sign-in where it names none.</summary>
     [Fact]
     public void A_scope_with_no_list_is_its_one_account_or_the_tool_s_own_sign_in()
     {
@@ -56,7 +56,7 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// A record begun in the person's own sign-in is judged against no scope (POOL1a, D197 point 3; the account-pool design §3 point 5,
+    /// A record begun in the person's own sign-in is judged against no scope (the account-pool design §3 point 5,
     /// Fable's F1): the set, whose order names every account of Daoris's, never displaces it; its cooling, refused and signed-out
     /// branches carry its words as before.
     /// </summary>
@@ -73,7 +73,7 @@ public sealed class ResumeAccountTests : IDisposable
         Assert.Equal(NextHold.Outside, Judge("c", "a b"));
     }
 
-    /// <summary>Cooling, the words wait for its reset (D125 §2): a time, which passes by itself.</summary>
+    /// <summary>Cooling, the words wait for its reset: a time, which passes by itself.</summary>
     [Fact]
     public void A_cooling_account_holds_its_words_for_its_reset()
     {
@@ -84,7 +84,7 @@ public sealed class ResumeAccountTests : IDisposable
     /// <summary>
     /// 🔴 What cannot run there at all wins over a cool-off: an account the list no longer names, one gone from the machine, one
     /// kept for conversations or one its provider refused would still be unable once its cool-off passed, so waiting for it
-    /// would wait for nothing (D130: the list is the whole set; D125 §2.3).
+    /// would wait for nothing (the list is the whole set).
     /// </summary>
     [Theory]
     [InlineData("d", "a b c", AccountReadiness.Cooling, null, NextHold.Outside)]
@@ -99,7 +99,7 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// A conversation's account is asked for as its picker names one (D130 point 4's exception): a list that does not name it, or
+    /// A conversation's account is asked for as its picker names one: a list that does not name it, or
     /// keeps it for conversations, does not stop a conversation going on; a gone, refused or cooling one does.
     /// </summary>
     [Fact]
@@ -121,8 +121,8 @@ public sealed class ResumeAccountTests : IDisposable
     // ——— What is said.
 
     /// <summary>
-    /// Each way its own account cannot carry the words has its line, coded (LANG1a) after the reason's own: the reason stays
-    /// <c>account</c>, and the line says why, naming no account, since the note it joins travels (D125 §3.6).
+    /// Each way its own account cannot carry the words has its line, coded after the reason's own: the reason stays
+    /// <c>account</c>, and the line says why, naming no account, since the note it joins travels.
     /// </summary>
     [Theory]
     [InlineData(NextHold.SignedOut, false, "account.resume-signed-out", "That account is not signed in any more.")]
@@ -207,8 +207,8 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// CONVNOTE2g: the wait's line by code, its English the same to the byte, since the sessions listing and the driver read it
-    /// by its prefix: the account by its owner and its id, never by the name the person gave it (D152's UX7d-1 note), until
+    /// The wait's line by code, its English the same to the byte, since the sessions listing and the driver read it
+    /// by its prefix: the account by its owner and its id, never by the name the person gave it, until
     /// when as a moment, why by a cool-off's reason; the tool's own sign-in a line of its own, its refresh another.
     /// </summary>
     [Fact]
@@ -242,7 +242,7 @@ public sealed class ResumeAccountTests : IDisposable
         Assert.Equal(ResumeWords.Waits(cooling, TimeZoneInfo.Utc, names), ResumeWords.Waiting(cooling, TimeZoneInfo.Utc, names).Note);
     }
 
-    /// <summary>CONVNOTE2g: each door out of the wait is a line of its own, by code, the session its command names a value.</summary>
+    /// <summary>Each door out of the wait is a line of its own, by code, the session its command names a value.</summary>
     [Fact]
     public void Each_door_out_of_the_wait_is_coded_with_its_english_unchanged()
     {
@@ -259,8 +259,8 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// CONVNOTE2g: the conversation's line while its words wait is its wait's line, then its door, as it was always written; a
-    /// wait nothing coded keeps that English with no parts, never half of it worded (D152's UX7d-1 note).
+    /// The conversation's line while its words wait is its wait's line, then its door, as it is always written; a
+    /// wait nothing coded keeps that English with no parts, never half of it worded.
     /// </summary>
     [Fact]
     public void The_line_while_the_words_wait_is_the_wait_then_the_door_or_the_english_alone()
@@ -331,8 +331,8 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// ROSTERREFUSE1: the roster's refusal is the held note's reason by code where the selection carries its parts, between the lead
-    /// and the tail, its English the line it always was; where it carries none, or its parts say something else, its words.
+    /// The roster's refusal is the held note's reason by code where the selection carries its parts, between the lead
+    /// and the tail, its English unchanged; where it carries none, or its parts say something else, its words.
     /// </summary>
     [Fact]
     public void The_roster_s_refusal_is_the_held_note_by_code_where_the_selection_has_its_parts()
@@ -394,7 +394,7 @@ public sealed class ResumeAccountTests : IDisposable
         AccountCooling.Cool(_home, new CoolingEntry("fake", account, Seen.AddHours(hours), true, "session", Seen.AddMinutes(-5), "s1"), Seen);
 
     /// <summary>
-    /// 🔴 The owner's goal (D130) chooses a start's account; a resume asks for its record's own. The walk would take
+    /// 🔴 The owner's goal chooses a start's account; a resume asks for its record's own. The walk would take
     /// <c>account-3</c>, which Daoris has not started on yet, and a resume of a session that ran on <c>account-1</c> takes
     /// <c>account-1</c>, chosen by no step of the walk.
     /// </summary>
@@ -419,7 +419,7 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH1 (D137's note of 2026-10-25, amending point 7): its own account cooling with another of the line's accounts ready,
+    /// A conversation's own account cooling with another of the line's accounts ready,
     /// the words go on now there, as a limited record's do, in a new part: the walk's pick carries them, the reason says the account
     /// held them, and nothing waits for the own account's reset.
     /// </summary>
@@ -439,7 +439,7 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH1: with none of the line's accounts ready the words wait, until the earliest reset of any of them as D206 point 2
+    /// With none of the line's accounts ready the words wait, until the earliest reset of any of them as the wait rule
     /// computes it, never the own account's alone: here account-2's, before account-1's, and the hold says whose.
     /// </summary>
     [Fact]
@@ -464,8 +464,8 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH1: a conversation that does not ask the switch (Ask Daoris's room, which goes elsewhere only at a limit, D205 §3.5(e)) walks
-    /// nothing, and its words wait for the account it ran on while another is ready, as before.
+    /// A conversation that does not ask the switch (Ask Daoris's room, which goes elsewhere only at a limit) walks
+    /// nothing, and its words wait for the account it ran on while another is ready.
     /// </summary>
     [Fact]
     public async Task A_conversation_that_does_not_switch_still_waits_for_its_account_with_another_ready()
@@ -481,7 +481,7 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH2 (D137's note of 2026-10-25): an ended conversation whose own account cools with another account of its agent ready
+    /// 🔴 An ended conversation whose own account cools with another account of its agent ready
     /// goes on there now, as a driven record does: the walk's pick carries its words, the reason says the account held them, and nothing
     /// waits. The ended move that opens it walks and counts the start once, so this judgement counts none (<c>walkCounts</c> false).
     /// </summary>
@@ -504,8 +504,8 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH2: with none of an ended conversation's accounts ready its words wait until the earliest reset of any of them, D206
-    /// point 2's computation, never the own account's alone: account-2's, before account-1's, said in the held words, whose conversation
+    /// 🔴 With none of an ended conversation's accounts ready its words wait until the earliest reset of any of them, by the
+    /// wait rule's computation, never the own account's alone: account-2's, before account-1's, said in the held words, whose conversation
     /// line leads with <i>it does not go on yet</i>.
     /// </summary>
     [Fact]
@@ -527,7 +527,7 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH2: where the own account is the earliest to reset, an ended conversation's wait says what it always said, its conversation
+    /// Where the own account is the earliest to reset, an ended conversation's wait says its conversation
     /// being there, and the earliest reset is its own.
     /// </summary>
     [Fact]
@@ -546,7 +546,7 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH2's bound (D137 §2.2): a conversation whose own account is refused, signed out or gone is still the person's press, not a
+    /// The bound: a conversation whose own account is refused, signed out or gone is still the person's press, not a
     /// switch: nothing is walked or counted, and the answer says what holds it, each by its own reason.
     /// </summary>
     [Fact]
@@ -575,8 +575,8 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH1's bound: a driven record whose line cannot carry its words to a new part by itself (a closed quest's session) keeps
-    /// the wait for its own account while another is ready, as before.
+    /// The bound: a driven record whose line cannot carry its words to a new part by itself (a closed quest's session) keeps
+    /// the wait for its own account while another is ready.
     /// </summary>
     [Fact]
     public async Task A_resume_of_a_line_that_cannot_switch_still_waits_for_its_own_account()
@@ -592,8 +592,8 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// A record a limit ended behaves as before (LIMITRESUME1b): its words go where the line goes, never waiting, and the switch is not
-    /// what carried them, so the planner's reading of a limited line is the one it always was.
+    /// A record a limit ended: its words go where the line goes, never waiting, and the switch is not
+    /// what carried them, so the planner reads it as any limited line.
     /// </summary>
     [Fact]
     public async Task A_limited_record_goes_on_elsewhere_as_before()
@@ -610,7 +610,7 @@ public sealed class ResumeAccountTests : IDisposable
 
     /// <summary>
     /// Cooling with nothing else ready, the resume is held, not moved: the hold carries the account's cool-off, so the look says the
-    /// wait once and a screen shows the quest waiting for an account (TOOL4g's shape), and its sentence names the reset. Nothing is
+    /// wait once and a screen shows the quest waiting for an account, and its sentence names the reset. Nothing is
     /// counted as a start chosen. Where the own account is the earliest to reset, the hold keeps saying its conversation is there.
     /// </summary>
     [Fact]
@@ -630,14 +630,14 @@ public sealed class ResumeAccountTests : IDisposable
             $"the `fake` account `account-1` is cooling until {CoolingWords.When(Seen.AddHours(2), TimeZoneInfo.Utc)}, as the agent said",
             resume.Selection.Refusal);
         Assert.Null(resume.Elsewhere);
-        // CONVNOTE2g: and the conversation's line while it waits, by code, its English the hold's after *it does not go on yet*.
+        // And the conversation's line while it waits, by code, its English the hold's after *it does not go on yet*.
         Assert.Equal(ResumeWords.NotYet + resume.Selection.Refusal, resume.Waiting!.Note);
         Assert.Equal(("waits.account", "account-1"), (resume.Waiting.Parts[0].Code, resume.Waiting.Parts[0].Value("account")));
     }
 
     /// <summary>
     /// The person chose a new session while it cools (*Go on in a new session*): the walk's pick carries the words, which
-    /// passes the cooling account by itself, and the reason says it was their choice.
+    /// passes the cooling account by itself, and the reason says the person chose it.
     /// </summary>
     [Fact]
     public async Task A_new_session_the_person_chose_takes_the_walk_s_pick_while_its_account_cools()
@@ -655,8 +655,8 @@ public sealed class ResumeAccountTests : IDisposable
 
     /// <summary>
     /// An account that cannot run there at all carries the words on at once, on the walk's pick, saying why: gone from the machine,
-    /// refused by its provider. Rewritten by POOL1a2 (D197 point 1): an account the stored list left out was off the list and
-    /// carried on elsewhere (<c>account.resume-outside</c>); it is in the set now, so its record goes on on it, and no account is off.
+    /// refused by its provider. No account is off the list, so none carries on elsewhere for it
+    /// (<c>account.resume-outside</c>): a record goes on on its own account.
     /// </summary>
     [Fact]
     public async Task A_resume_whose_account_cannot_run_there_takes_the_walk_s_pick_at_once_saying_why()
@@ -681,9 +681,9 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// MODELROLE1c2 (D205 §3.5(a), D175 point 3's note): a resume whose own account refused its asked model cannot carry the words, which
+    /// A resume whose own account refused its asked model cannot carry the words, which
     /// go to a new record on another account of the same choice, the own account passed by its reading and never cooled; another model,
-    /// or account default, resumes on the own account as before.
+    /// or account default, resumes on the own account.
     /// </summary>
     [Fact]
     public async Task A_resume_whose_own_account_refused_its_model_carries_its_words_to_another_account()
@@ -706,7 +706,7 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// A conversation is never carried on by itself (D137 §2.2), so where its own account cannot run, nothing is walked and
+    /// A conversation is never carried on by itself, so where its own account cannot run, nothing is walked and
     /// nothing counted: the answer says what holds it, and the chat runner says why it cannot go on.
     /// </summary>
     [Fact]

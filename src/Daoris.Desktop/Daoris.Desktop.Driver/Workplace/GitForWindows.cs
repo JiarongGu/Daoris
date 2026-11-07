@@ -68,7 +68,7 @@ public static class GitForWindows
     }
 
     /// <summary>
-    /// The variables the launcher sets for its child, read from the environment it was started with: <c>MSYSTEM</c> named
+    /// The variables the launcher sets for its child, read from the environment it is started with: <c>MSYSTEM</c> named
     /// for its prefix over any; <c>PLINK_PROTOCOL</c> <c>ssh</c> where unset; <c>HOME</c> where unset, from
     /// <c>HOMEDRIVE</c> and <c>HOMEPATH</c> where that is a folder other than the system's, else <c>USERPROFILE</c>; and
     /// its two folders and <c>HOME</c>'s <c>bin</c> before <c>PATH</c>. A variable set empty counts as set.
@@ -107,7 +107,7 @@ public static class GitForWindows
     /// <summary>
     /// Start the real git where <paramref name="info"/> names the launcher, handed the launcher's variables over the
     /// environment <paramref name="info"/> already holds (the tools' <c>PATH</c> included); true where it now does.
-    /// Any other start is left as it was, and so is one whose <c>PATH</c> would pass <see cref="LongestVariable"/>.
+    /// Any other start is left unchanged, and so is one whose <c>PATH</c> would pass <see cref="LongestVariable"/>.
     /// </summary>
     public static bool Direct(ProcessStartInfo info)
     {

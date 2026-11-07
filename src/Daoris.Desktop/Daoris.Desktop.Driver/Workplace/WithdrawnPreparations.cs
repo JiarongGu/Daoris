@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// A delivery whose landing made nothing: every entry a preparation its landing withdrew, as a refusal such as a replay's conflict ends
 /// one. Only its unit's next landing would go on from it, and one that never comes would leave it unresolved, holding every going back
 /// to an older build (<see cref="InstallRollback"/>), so the reconciler's look settles it withdrawn. A preparation the look itself reads
-/// withdrawn after a stop is not one: its landing was cut, not refused, and it goes on for its unit's next landing.
+/// withdrawn after a stop is not one: its landing is cut, not refused, and it goes on for its unit's next landing.
 /// </summary>
 public static class WithdrawnPreparations
 {

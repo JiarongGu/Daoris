@@ -1,14 +1,12 @@
-// The kit's half of a plugin that works (FABRIC-PERFORM1e; the fabric events design §D3, §D6, §D9): what Daoris's plugin kit
+// The kit's half of a plugin that works: what Daoris's plugin kit
 // promises every plugin at the work points, so its author writes only the external calls, in plugin.mjs.
-//
 // Daoris's plugin kit wrote this file, and `daoris plugin new` writes it again for a newer build: change plugin.mjs, not
 // this. README.md says what each part promises; `node --test` here checks it (plugin.test.mjs, plugin.contract.test.mjs).
-//
 // What it keeps, it keeps in the plugin's data folder, in `work-journal.json`, written whole before anything it records is said:
-//   - each attempt by its idempotency key, written BEFORE the external call, so a redelivered key never calls it twice;
-//   - each attempt's outcome, so `work/reconcile` answers from it and a resync sends the same event again;
-//   - each resource's cleanup, so a repeated cleanup is `already-gone`, never a second removal;
-//   - each observation it reported, so the same one is never reported under a new id.
+//  - each attempt by its idempotency key, written BEFORE the external call, so a redelivered key never calls it twice;
+//  - each attempt's outcome, so `work/reconcile` answers from it and a resync sends the same event again;
+//  - each resource's cleanup, so a repeated cleanup is `already-gone`, never a second removal;
+//  - each observation it reported, so the same one is never reported under a new id.
 // A journal that does not read stops the plugin rather than starting afresh: forgetting an attempt is how an effect happens twice.
 import { createHash } from 'node:crypto';
 import { appendFileSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
@@ -34,7 +32,7 @@ const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
 export function work({ data, send, say, act, check, remove, observe }) {
   const world = process.env.DAORIS_PLUGIN_WORLD ? standIn(process.env.DAORIS_PLUGIN_WORLD) : null;
   const calls = world ?? { act, check, remove, observe };
-  // This process's life: an attempt begun under another was begun by a process that has since gone.
+  // This process's life: an attempt begun under another is one begun by a process that has since gone.
   const life = `${process.pid}-${Date.now()}`;
 
   mkdirSync(data, { recursive: true });

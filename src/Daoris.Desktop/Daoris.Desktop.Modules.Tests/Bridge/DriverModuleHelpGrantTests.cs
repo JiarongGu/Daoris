@@ -162,7 +162,7 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
 
     /// <summary>
     /// The state says what has not reached a running conversation yet: each grant's <c>pending</c>, while
-    /// an Ask Daoris conversation running here was handed another choice of it, and <c>helpSwapping</c>, the conversations running under
+    /// an Ask Daoris conversation running here is handed another choice of it, and <c>helpSwapping</c>, the conversations running under
     /// another access than the one chosen, pushed with what runs. With none running, nothing is pending, before and after a choice.
     /// </summary>
     [Fact]

@@ -24,9 +24,9 @@ function overflow(row: HTMLElement): number {
  * **Measured, since no CSS rule can say it.** CSS can hide a name at a width it is told in advance,
  * but the width the names need changes with the tabs, a file's name and the language.
  * - With the names drawn, it reads whether the row's lists overflow. If they do, it remembers the row's
- *   width plus what they lacked, which is the width the names need, and turns to icons.
+ * width plus what they lacked, which is the width the names need, and turns to icons.
  * - With the icons drawn, the names are not there to measure, so it compares the row's width with
- *   that remembered need and turns back to names once the row holds them.
+ * that remembered need and turns back to names once the row holds them.
  *
  * **No flicker loop.** The row is a line of the region, so its width never depends on what its tabs
  * show. Turning to icons therefore never resizes it, and the observer is not told again. Each turn is

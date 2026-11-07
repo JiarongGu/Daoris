@@ -7,10 +7,10 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="Repository">The repository whose line declares an integration.</param>
 /// <param name="Workspace">The workspace of the checkout read.</param>
-/// <param name="Line">The line whose tip was read.</param>
+/// <param name="Line">The line whose tip is read.</param>
 /// <param name="Blob">The declaration's blob at that tip.</param>
 /// <param name="State"><see cref="IntegrationAcceptance.Unaccepted"/> or <see cref="IntegrationAcceptance.Changed"/>: integration goes on under the last accepted blob in the second.</param>
-/// <param name="Since">When this blob was first read here as owed.</param>
+/// <param name="Since">When this blob is first read here as owed.</param>
 public sealed record DeclarationOwed(string Repository, string Workspace, string Line, string Blob, string State, DateTimeOffset Since);
 
 /// <summary>
@@ -41,7 +41,7 @@ public sealed class IntegrationOwed
 
     /// <summary>
     /// One look: each repository of <paramref name="registry"/> with a checkout here, its declaration read where its line's tip moved, its
-    /// state judged against <paramref name="config"/>'s acceptance. A repository whose tip cannot be read keeps what it was last read as.
+    /// state judged against <paramref name="config"/>'s acceptance. A repository whose tip cannot be read keeps the state last read for it.
     /// </summary>
     public async Task LookAsync(DriverConfig config, IEnumerable<RepoView> registry, DateTimeOffset now, CancellationToken ct)
     {

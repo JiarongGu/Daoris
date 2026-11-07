@@ -26,7 +26,7 @@ public sealed record ResourceTool(
 /// <param name="Origin">How sentences name it: an address, or <see cref="ToolResources.BuiltIn"/>.</param>
 /// <param name="Integrity">What vouches for it: <c>built in</c>, <c>this machine</c>, or the host; null for text read on its own.</param>
 /// <param name="Path">The file read; null for text.</param>
-/// <param name="Sha256">The sha256 of the bytes read, as the screen shows it; null when nothing was read.</param>
+/// <param name="Sha256">The sha256 of the bytes read, as the screen shows it; null when nothing is read.</param>
 /// <param name="Tools">The declared tools it names, in ordinal order.</param>
 /// <param name="Unknown">The ids it names that this build does not run: never offered.</param>
 /// <param name="Notes">What it skips, and why.</param>

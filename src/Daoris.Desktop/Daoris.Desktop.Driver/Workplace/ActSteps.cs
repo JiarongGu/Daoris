@@ -311,7 +311,7 @@ internal static class ActSteps
                 }
 
                 if (source is null && (to is null || target?.Text == ActConfig.Renamed(text, to))) return ActOutcomes.Done;
-                // A removal asked and the section stands, whatever it now says: it was not removed.
+                // A removal asked and the section stands, whatever it now says: it is not removed.
                 if (to is null && source is not null) return ActOutcomes.NotDone;
                 return source?.Text == text && target is null ? ActOutcomes.NotDone : ActOutcomes.Unknown;
             }
@@ -510,7 +510,7 @@ internal static partial class ActConfig
         return null;
     }
 
-    /// <summary>The section's text with its header renamed to <paramref name="to"/>, everything after the header as it was.</summary>
+    /// <summary>The section's text with its header renamed to <paramref name="to"/>, everything after the header unchanged.</summary>
     public static string Renamed(string text, string to)
     {
         var header = Header().Match(text);

@@ -101,7 +101,7 @@ public sealed class SystemRoutes(DriverContext context)
     private static object? Said(SetupResult result) => new { result.Done, result.Changed, result.Why, result.Message };
 
     // The Disk space card's read through the driver library's `SystemSpace`, the reader
-    // `daoris space` calls too: the free space, and each kind's size with when it was counted, its rule, its next and last clean,
+    // `daoris space` calls too: the free space, and each kind's size with when it is counted, its rule, its next and last clean,
     // and the run lock's holder. A read: it declares nothing and removes nothing. `{ measure: true }` counts every kind, `{ measure: [ids] }`
     // those, each a bounded walk in the background, one kind after another; each kind's end tells `wiring`, so the card fills in kind by
     // kind. The open walks nothing. Off the window's thread; the reader's own JSON whole, so a null stays a field.
@@ -209,7 +209,7 @@ public sealed class SystemRoutes(DriverContext context)
     // each is judged again from the files as they stand right before it goes, and one kept, held by a program or gone since is said in
     // the answer. What it moves: This Daoris's sizes, and the Tools' and agents' pages that say which versions are downloaded.
     // The downloads' one act, each version judged under the use files' locks, held to its rename, and kept while a
-    // running session was handed it.
+    // running session is handed it.
     [DriverRoute("SYSTEM_DOWNLOADS_CLEAR", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SYSTEM_DOWNLOADS_CLEAR", None = OwnerNone.MachineSetting)]
     [GroundRead("SYSTEM_DOWNLOADS_CLEAR", nameof(PipeReads.Downloads))]

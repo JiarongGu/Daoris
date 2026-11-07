@@ -188,7 +188,7 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
 
     /// <summary>
     /// <c>ROLE_STRUCTURE</c>, each place's role per work as a start finds it, its rule with
-    /// where it was set, and each choice's state from the last readings alone, by name and never a path.
+    /// where it is set, and each choice's state from the last readings alone, by name and never a path.
     /// </summary>
     [Fact]
     public async Task The_structure_answers_each_place_s_role_rule_and_choices_by_name_alone()

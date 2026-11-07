@@ -159,7 +159,7 @@ public sealed class LookStages
 
         internal long Began { get; }
 
-        /// <summary>How long of it was spent waiting for a gate (a queue for a place, a semaphore), said apart from its hold.</summary>
+        /// <summary>How long of it is spent waiting for a gate (a queue for a place, a semaphore), said apart from its hold.</summary>
         public void Queued(TimeSpan queued) => Interlocked.Add(ref _queued, (long)queued.TotalMilliseconds);
 
         /// <summary>
@@ -174,7 +174,7 @@ public sealed class LookStages
 
         /// <summary>
         /// A start of its work waits for a place, until what this returns is disposed. A wait still open as the span ends is said
-        /// nowhere: the work it was made for has ended without it.
+        /// nowhere: the work it serves has ended without it.
         /// </summary>
         internal IDisposable Waiting()
         {

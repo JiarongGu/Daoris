@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// for either, and says it could not read.
 /// </summary>
 /// <param name="Hold">Where the work is held; null where it is not, or where <paramref name="Unread"/> says git could not tell.</param>
-/// <param name="Unread">Why git could not tell, or null where the proof was read through.</param>
+/// <param name="Unread">Why git could not tell, or null where the proof is read through.</param>
 internal sealed record ContentProof(ContentHold? Hold, string? Unread)
 {
     /// <summary>The proof read through and found nothing holding the work.</summary>
@@ -24,7 +24,7 @@ internal sealed record ContentProof(ContentHold? Hold, string? Unread)
     /// <summary>
     /// The commits the line lacks, as a landing reads them (<see cref="ReplayHolds"/>), where the work is not held and the line
     /// holds some of its commits under ids of their own: what a session told to rebase after its landing still has to land. Null where that
-    /// reading was not asked (the line has not moved since the branch left it) or lacks none of them.
+    /// reading is not asked (the line has not moved since the branch left it) or lacks none of them.
     /// </summary>
     internal IReadOnlyList<LandingCommit>? Lacks { get; init; }
 

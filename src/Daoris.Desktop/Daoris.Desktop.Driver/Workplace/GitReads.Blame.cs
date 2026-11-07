@@ -184,7 +184,7 @@ public sealed class GitBlameSplit
 
     private static string Address(string mail) => mail.Length >= 2 && mail[0] == '<' && mail[^1] == '>' ? mail[1..^1] : mail;
 
-    /// <summary>A porcelain time: seconds since the epoch and the zone it was made in (<c>+1100</c>), or null where either does not read.</summary>
+    /// <summary>A porcelain time: seconds since the epoch and the zone it is made in (<c>+1100</c>), or null where either does not read.</summary>
     private static DateTimeOffset? Time(string? seconds, string? zone)
     {
         if (!long.TryParse(seconds, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var at)) return null;

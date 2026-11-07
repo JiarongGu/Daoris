@@ -70,7 +70,7 @@ public sealed record InventoryFacts(
 
     /// <summary>
     /// What the clean-up would keep each unfollowed tree for, by the tree's full path, read by <see cref="WorkInventories"/>
-    /// with the judgement the press makes. A tree not here is one the clean-up would take, or one nothing was asked of.
+    /// with the judgement the press makes. A tree not here is one the clean-up would take, or one nothing is asked of.
     /// </summary>
     public IReadOnlyDictionary<string, TreeKeep> TreeKeeps { get; init; } = new Dictionary<string, TreeKeep>();
 }

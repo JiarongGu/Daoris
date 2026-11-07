@@ -21,7 +21,7 @@ public sealed record AskChannel(string Ask, string Workspace, bool Teammate, Cha
 /// or not, never the person's own nor a line: its first line, who wrote it, its level and whether it is to everyone.</para>
 ///
 /// <para><b>A watermark per ask</b>: the messages of an ask its last judgement saw, by id, so one mirrored late with an older moment
-/// is still new. An ask's first judgement records what it holds and says nothing, whether it was there at the start or came after, so a
+/// is still new. An ask's first judgement records what it holds and says nothing, whether it is there at the start or came after, so a
 /// restart repeats nothing and an ask is never a backlog. Each later judgement says each message past it that is urgent, to everyone,
 /// and an agent's or a teammate's, then moves it; an urgent one followed by an ordinary one before the next judgement is still said, and
 /// a judgement that sees nothing new says nothing. A message with no level reads as ordinary. An ask no longer listed is

@@ -17,7 +17,7 @@ public static class LandingAdvance
     /// the squashed tip is another tree's, which the replay does not hold.
     /// </summary>
     /// <param name="squash">The rule squashes the work into one commit.</param>
-    /// <param name="replayed">The work was replayed onto the branch's tip, rather than being the session's own tip.</param>
+    /// <param name="replayed">The work is replayed onto the branch's tip, rather than being the session's own tip.</param>
     public static string? GrewFrom(LandedBranch? recorded, bool squash, bool replayed) =>
         squash && !replayed ? recorded?.Squashed ?? recorded?.Tip : recorded?.Tip;
 
@@ -30,7 +30,7 @@ public static class LandingAdvance
 
         if (facts.Completed is { } where)
         {
-            // The transport's own integration (the rule's integrate): no pull request or plugin was in it.
+            // The transport's own integration (the rule's integrate): no pull request or plugin is in it.
             if (facts.Recorded is { Integrate: not null, Pushed: false, PullRequest: null })
             {
                 return new TreeLanding(false,

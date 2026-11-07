@@ -128,7 +128,7 @@ public static class GitSshFiles
         }
     }
 
-    /// <summary>When an identity was last used, or null.</summary>
+    /// <summary>The latest use of an identity, or null.</summary>
     public static DateTimeOffset? LastUsed(string home, string id)
     {
         var path = Path.Combine(DaorisHome.Entry(home, HomeEntry.GitUsed), id);

@@ -12,7 +12,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// <summary>What a replay's own tree's folder name starts with, beside a session tree's <c>s-</c> and an opinion's copy's <c>o-</c>.</summary>
     internal const string Prefix = "r-";
 
-    /// <summary>A branch the press replayed: where it was, where it went, and where its own commits started.</summary>
+    /// <summary>A branch the press replayed: where it stood, where it went, and where its own commits started.</summary>
     internal sealed record Replayed(string OldTip, string NewTip, string Cut);
 
     /// <summary>
@@ -28,12 +28,12 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
     /// <summary>
     /// Replay one branch's own commits onto the line, in a tree of Daoris's own, then prove its own work
-    /// survived before the branch moves. A conflict aborts, and the branch is left as it was.
+    /// survived before the branch moves. A conflict aborts, and the branch is left where it stood.
     /// </summary>
     /// <remarks>
-    /// <para><b>The replay happens detached, and the branch moves last</b>, from the commit it was judged at: a session's
+    /// <para><b>The replay happens detached, and the branch moves last</b>, from the commit it is judged at: a session's
     /// tree is detached where it stands, a landing's branch is replayed in a tree made for it. Only once the new
-    /// commit is proven does the ref move, so a refusal at any step leaves the branch where it was.</para>
+    /// commit is proven does the ref move, so a refusal at any step leaves the branch where it stood.</para>
     ///
     /// <para>🔴 <b>The proof</b>: between the old tip and the new one, only files the
     /// line itself changed between the cut and where the branch now grows from may differ — everything else of the
@@ -105,7 +105,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
                 + "is as it was.");
         }
 
-        // Only from the commit it was judged at: git refuses the move if it is elsewhere now.
+        // Only from the commit it is judged at: git refuses the move if it is elsewhere now.
         var (moved, _, moveErr) = await WorkingTree.GitAsync(
             root, ["update-ref", "-m", $"daoris: bring {item.Branch} up to date onto {line}", $"refs/heads/{item.Branch}", now, tip], ct)
             .ConfigureAwait(false);
@@ -224,7 +224,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         return skips.Count == 0 ? null : Stretches(rest, skips);
     }
 
-    /// <summary>A session's tree put back on its branch after a replay that was not kept — true where it is on it, at the commit judged.</summary>
+    /// <summary>A session's tree put back on its branch after a replay not kept — true where it is on it, at the commit judged.</summary>
     private static async Task<bool> BackOnAsync(string tree, string branch, string tip, CancellationToken ct)
     {
         await WorkingTree.GitAsync(tree, ["rebase", "--abort"], ct).ConfigureAwait(false);
@@ -396,7 +396,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
             if (made.Lined.Count == 0) return made;
             // Each file a line rule settled is written again by its accepted writer. No rule keeps one side's copy, so a
-            // writer that fails refuses the replay as the conflict it was, for the session to settle in its own tree.
+            // writer that fails refuses the replay as the conflict it is, for the session to settle in its own tree.
             var lineWriters = made.Lined.Select(each => new GeneratedWriters.Writer(each.Path, each.Run)).ToList();
             var lineWritten = await GeneratedWriters.WriteAsync(aside, lineWriters, [.. made.Lined.Select(each => each.Path)], ct).ConfigureAwait(false);
             if (lineWritten.Failed is { } failed) return new(null, LineRules.Unwritten(made.Lined, failed), true);

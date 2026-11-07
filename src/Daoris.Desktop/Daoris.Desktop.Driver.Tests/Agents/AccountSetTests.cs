@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An agent's accounts as one set (POOL1a, D197; <c>docs/2026-10-21-account-pool-design.md</c> §2, §6): the fold's table of shapes,
+/// An agent's accounts as one set (<c>docs/2026-10-21-account-pool-design.md</c> §2, §6): the fold's table of shapes,
 /// <see cref="HarnessSettings.Change"/> folding before every edit, the receipts said by id, the come-up a held lock refuses, and an
 /// older build's reading of a folded file.
 /// </summary>
@@ -199,7 +199,7 @@ public sealed class AccountSetTests : IDisposable
         Assert.Equal("2.0.0", twice.Versions[Agent]);
     }
 
-    /// <summary>A change makes no fold (NOCOMPAT1): a workspace's list the file still holds is the migration's, and the edit leaves it.</summary>
+    /// <summary>A change makes no fold: a workspace's list the file still holds is the migration's, and the edit leaves it.</summary>
     [Fact]
     public void A_change_folds_nothing_and_makes_the_order_whole()
     {
@@ -305,7 +305,7 @@ public sealed class AccountSetTests : IDisposable
         Assert.Contains(lines, line => line.Contains("\"accounts.pooled\"") && line.Contains("\"held\":true"));
     }
 
-    /// <summary>The folder the install held (POOLSTRAY1): a start whose path carried an unexpanded <c>$a</c> left it beside the agents.</summary>
+    /// <summary>The folder the install held: a start whose path carried an unexpanded <c>$a</c> left it beside the agents.</summary>
     private const string Stray = "claude-code$a";
 
     private void StrayFolder()
@@ -320,7 +320,7 @@ public sealed class AccountSetTests : IDisposable
     }
 
     /// <summary>
-    /// POOLSTRAY1: a scratch home holding a folder no agent Daoris knows names folds to the known agents alone, every reader passing
+    /// A scratch home holding a folder no agent Daoris knows names folds to the known agents alone, every reader passing
     /// it over; the folder is said once to the machine log, however many folds see it, and is never touched.
     /// </summary>
     [Fact]
@@ -350,7 +350,7 @@ public sealed class AccountSetTests : IDisposable
     }
 
     /// <summary>
-    /// POOLSTRAY1: a wiring a fold wrote over a stray folder, its order and its receipt under the stray agent, loses both at the next
+    /// A wiring a fold wrote over a stray folder, its order and its receipt under the stray agent, loses both at the next
     /// fold, with its <c>accounts.strayDropped</c> line as the receipt; the known agent's order, and what a person wrote for the stray
     /// agent elsewhere, stay; a second fold writes nothing.
     /// </summary>
@@ -385,7 +385,7 @@ public sealed class AccountSetTests : IDisposable
     }
 
     /// <summary>
-    /// POOLSTRAY1: the agents Daoris knows are the build's, each agent a door runs as, and every installed plugin's harness, a disabled
+    /// The agents Daoris knows are the build's, each agent a door runs as, and every installed plugin's harness, a disabled
     /// one's too, so turning a plugin off drops none of its wiring.
     /// </summary>
     [Fact]

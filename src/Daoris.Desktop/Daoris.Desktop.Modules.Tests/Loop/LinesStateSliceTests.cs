@@ -85,7 +85,7 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
     private static JsonObject Line(SlicePush push) =>
         JsonSerializer.SerializeToNode(push.Data, IpcJson.Options)!["lines"]!.AsArray().Single()!.AsObject();
 
-    /// <summary>The branch the newest push of a repository says, or null where none was pushed or it says none.</summary>
+    /// <summary>The branch the newest push of a repository says, or null where none is pushed or it says none.</summary>
     private string? Branch(string repository) =>
         Pushed(repository) is { Count: > 0 } pushed && pushed[^1].Status == StateSlice.Ready ? Line(pushed[^1])["branch"]?.GetValue<string>() : null;
 
@@ -521,7 +521,7 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
             set => Volatile.Write(ref _registry, value);
         }
 
-        /// <summary>How often the registry was read: once each judgement of the service's answers, and each pull.</summary>
+        /// <summary>How often the registry is read: once each judgement of the service's answers, and each pull.</summary>
         public int RegistryReads => Volatile.Read(ref _registryReads);
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)

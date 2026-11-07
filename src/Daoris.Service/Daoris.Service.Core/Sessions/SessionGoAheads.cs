@@ -14,7 +14,6 @@ public sealed class SessionGoAheads(QuestStore quests, SessionStore sessions, As
     /// <para><b>The ask is derived, never passed</b>: it is the session's entry origin, the one the channel's
     /// speaker reads, so a quest a sibling of the ask published is on the ask too. A line whose origin is no ask (a quest one
     /// repository asked of another, a conversation), is on none, and the answer says what to do instead.</para>
-    ///
     /// <para><b>One go-ahead per act</b> (<see cref="GoAheadAct"/>): the same kind, the same place, and every word of what
     /// the earlier act touches. Where the words share some but cannot tell, the request is asked once more as its own,
     /// naming the near one, so the person's yes never covers an act they did not read. Among several it joins, the one
@@ -174,13 +173,11 @@ public sealed class SessionGoAheads(QuestStore quests, SessionStore sessions, As
     /// <para><b>Only the sessions that asked this go-ahead</b>, and of those only this machine's driven parks: a session still
     /// working, or one that ended, is handed the answer at its next start as before, and an intake is answered through its
     /// ask.</para>
-    ///
     /// <para><b>Once.</b> Only the person's first answer to a go-ahead can be the last a park waited on, so a changed answer
     /// wakes nothing. A park that already holds words goes on with them and is handed these answers beside them, so nothing
     /// is kept twice. Judged and kept under the store's lock, as an answer is, so the driver taking the park up and
     /// a second door never both read it waiting.</para>
-    ///
-    /// <para><b>The answers are not written as the person's words</b> (KNOWUSE1a2): the record keeps the blank answer, and the
+    /// <para><b>The answers are not written as the person's words</b>: the record keeps the blank answer, and the
     /// go-aheads' answers reach the session beneath it, quoted as the person gave them.</para>
     /// </remarks>
     /// <param name="answered">What the ask's go-ahead door kept: the go-ahead as it now stands, and the ask with every other.</param>

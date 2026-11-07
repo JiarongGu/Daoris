@@ -232,12 +232,12 @@ public static class AttentionStateSlice
             Keyed = true,
             WakesOn = WakesOn,
             Hears = hears,
-            // A file unreadable: the windows keep what was judged, and the next wake judges again.
+            // A file unreadable: the windows keep what is judged, and the next wake judges again.
             Failed = error => log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
 
     /// <summary>
-    /// One judgement: the rows, the parks and the sessions the driver runs, each keyed and picked to the allow-list; null where an input was never judged,
+    /// One judgement: the rows, the parks and the sessions the driver runs, each keyed and picked to the allow-list; null where an input is never judged,
     /// which judges nothing. Judged empty, each partition is pushed empty, never gone.
     /// </summary>
     public static IReadOnlyList<SliceJudged>? Judge(AttentionFacts? facts)
@@ -345,7 +345,7 @@ public static class AttentionStateSlice
 
     /// <summary>
     /// The inputs the other slices hold, each as last judged: the records of the sessions, the quests and the asks, the groups' rows, the
-    /// work's units and held attempts; and the registry. Null while any of them was never judged.
+    /// work's units and held attempts; and the registry. Null while any of them is never judged.
     /// </summary>
     public static AttentionFacts? Gather(StateSlices slices, IReadOnlyList<RepoView>? registry)
     {

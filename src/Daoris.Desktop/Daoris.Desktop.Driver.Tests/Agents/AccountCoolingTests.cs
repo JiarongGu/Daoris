@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4d (D125 §2.3): an account's cool-off, kept per account in <c>cooling.json</c> under the home, written when a
+/// An account's cool-off, kept per account in <c>cooling.json</c> under the home, written when a
 /// limit is read and read before any probe, so a start on a spent account is held with nothing spawned.
 /// </summary>
 /// <remarks>
@@ -51,7 +51,7 @@ public sealed class AccountCoolingTests : IDisposable
         string? window = "weekly", bool assumedZone = false, bool notBelieved = false) =>
         new(agent, account, until ?? Until, stated, window, Seen, "3f9c2a71", assumedZone, notBelieved);
 
-    /// <summary>The agent's accounts, a folder each under the account homes: the set every start reads (POOL1a2, D197 point 1).</summary>
+    /// <summary>The agent's accounts, a folder each under the account homes: the set every start reads.</summary>
     private void Accounts(string agent, params string[] names)
     {
         foreach (var name in names) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, name));
@@ -77,7 +77,7 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal("3f9c2a71", named["session"]!.GetValue<string>());
         Assert.Equal(["until", "stated", "window", "seen", "session"], named.Select(field => field.Key));
 
-        // The tool's own configuration home is `""`, AGT3b's key; a window it did not name is not written.
+        // The tool's own configuration home is `""`, its key; a window it does not name is not written.
         var own = written["claude-code"]![""]!.AsObject();
         Assert.False(own["stated"]!.GetValue<bool>());
         Assert.False(own.ContainsKey("window"));
@@ -127,7 +127,7 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL6e: a cool-off that ended within the last day, which the file still holds, says when its account was offered
+    /// A cool-off that ended within the last day, which the file still holds, says when its account is offered
     /// again; one still cooling, one that ended longer ago, and one a later write dropped say nothing.
     /// </summary>
     [Fact]
@@ -249,14 +249,14 @@ public sealed class AccountCoolingTests : IDisposable
 
         var account = HarnessKeys.Add(_home, "fake", "sk-test-0000-wxyz");
 
-        // ACCT2: a fresh id, never a removed account's name, so it starts with no cool-off of another's.
+        // A fresh id, never a removed account's name, so it starts with no cool-off of another's.
         Assert.NotEqual("account-1", account);
         Assert.Null(AccountCooling.Of(_home, "fake", account, DateTimeOffset.UtcNow));
         Assert.NotNull(AccountCooling.Of(_home, "fake", "account-1", DateTimeOffset.UtcNow));
     }
 
     /// <summary>
-    /// TOOL4e: an account removed takes its cool-off with it, as the CLI's <c>profile remove</c> does — an account made
+    /// An account removed takes its cool-off with it, as the CLI's <c>profile remove</c> does — an account made
     /// later under its name by <c>profile add</c> must not start out cooling.
     /// </summary>
     [Fact]
@@ -300,7 +300,7 @@ public sealed class AccountCoolingTests : IDisposable
             said);
     }
 
-    /// <summary>Why a cool-off lasts, as <c>daoris agent list</c> says it (TOOL4e; the CLI's twin left with its list, PUSH1f2e4).</summary>
+    /// <summary>Why a cool-off lasts, as <c>daoris agent list</c> says it (the CLI's twin left with its list).</summary>
     [Theory]
     [InlineData(true, false, false, "as the agent said")]
     [InlineData(false, false, false, "Daoris's default: the agent named no time")]
@@ -314,8 +314,8 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// The note travels, so it names no account (D125 §3.6). It names whose accounts they are, the agent's, and the kind of
-    /// limit where the reset named one (AGT3d), as the page words them from the line's values.
+    /// The note travels, so it names no account. It names whose accounts they are, the agent's, and the kind of
+    /// limit where the reset named one, as the page words them from the line's values.
     /// </summary>
     [Fact]
     public void The_record_s_note_names_no_account_since_the_note_travels()
@@ -339,7 +339,7 @@ public sealed class AccountCoolingTests : IDisposable
 
     /// <summary>
     /// A harness whose presence is a PATH look, so asking it starts nothing. A test double whose own home is nobody's
-    /// (<see cref="DoorHome.OwnHome"/>, OWNSPACE1a): the own home's cool-off is this file's subject, which a real
+    /// (<see cref="DoorHome.OwnHome"/>): the own home's cool-off is this file's subject, which a real
     /// agent meets only on a resume begun there.
     /// </summary>
     private static TestAgent Present(string? accountOf = null, LimitWords? limits = null) => new(
@@ -375,7 +375,7 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// ROSTERREFUSE1: the roster's refusal carries its coded parts beside the English, which is unchanged to the byte: a cooling
+    /// The roster's refusal carries its coded parts beside the English, which is unchanged to the byte: a cooling
     /// account by its owner and id (never its name), the tool's own sign-in with its refresh line, and an agent not installed.
     /// </summary>
     [Fact]
@@ -390,7 +390,7 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal("fake", own.RefusalNote.Parts[0].Value("owner"));
 
         Assert.True(roster.Ready("fake", null));
-        // An agent with its own tooling names that command, which may hold a path (ROSTERREFUSE2): the command is a words part of
+        // An agent with its own tooling names that command, which may hold a path: the command is a words part of
         // the program's, never a value, between the lead and the line that says Daoris never installs.
         var ownTooling = await roster.SelectAsync("fake", Config, null, null);
         Assert.Equal(AgentAbsence.NotInstalled, ownTooling.Absent);
@@ -416,7 +416,7 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// Rewritten by POOL1a2 (D197 point 1; the account-pool design §2.4, §6.1 rule 3): the machine's account and a workspace's were
+    /// Rewritten by POOL1a2: the machine's account and a workspace's were
     /// each a scope's one account, so the machine's cool-off held its start and not the workspace's. Both are the set now, used
     /// <c>order</c> from the machine's first: every start passes the cooling account to the next, and a pick of it is held.
     /// </summary>
@@ -439,7 +439,7 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MIXAGENT1a-ii (D163 point 1): a quest handed over names an account, tried first as a pick is; where it cannot run, the walk
+    /// 🔴 A quest handed over names an account, tried first as a pick is; where it cannot run, the walk
     /// goes on within the NAMED agent's accounts, never back to the old agent, and the answer says which account it passed.
     /// </summary>
     [Fact]
@@ -497,7 +497,7 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITRESUME1b (D206; the limit-resume design §3.1, round 3's Codex 10; D125 point 3 amended): a cool-off whose write fails is
+    /// 🔴 A cool-off whose write fails is
     /// still the limit read, kept in this process's memory, so the account is passed until its <c>until</c> as a written one is, and
     /// each read tries the write again until it lands; <i>Try now</i> ends it as it ends a written one.
     /// </summary>
@@ -564,7 +564,7 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal(limited.Value.Entry, AccountCooling.Of(_home, "fake", "account-1", _now));
     }
 
-    /// <summary>TOOL4e: the default a limit naming no time takes is the one the caller hands over, the machine's <c>cooloff</c>.</summary>
+    /// <summary>The default a limit naming no time takes is the one the caller hands over, the machine's <c>cooloff</c>.</summary>
     [Fact]
     public void A_limit_that_names_no_time_cools_for_the_cool_off_handed_over_and_an_hour_without_one()
     {
@@ -597,11 +597,11 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.NotNull(roster.CoolingOf("fake", "account-1"));
     }
 
-    // ——— The protocol stub (TOOL4j, D125 §1.3 rule 4): a door onto the stub, as Claude Code's protocol door is onto
+    // ——— The protocol stub: a door onto the stub, as Claude Code's protocol door is onto
     // Claude Code, so a limit is gated over the protocol door with no account behind it, on the stub's named accounts.
 
     /// <summary>
-    /// It runs as the stub's accounts (AGT7): the stub's directories through the stub's variable, the stub's limit table,
+    /// It runs as the stub's accounts: the stub's directories through the stub's variable, the stub's limit table,
     /// and nothing of its own to sign in with. Present by a file look, since the agent it runs waits on its stdin.
     /// </summary>
     [Fact]
@@ -632,7 +632,7 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal(("stub", "account-1", Until), (limited!.Value.Entry.Agent, limited.Value.Entry.Account, limited.Value.Entry.Until));
         Assert.Equal(limited.Value.Entry, AccountCooling.Of(_home, "stub", "account-1", _now));
         // One account, spent: neither way onto it starts it, and another account of the stub is not held. Rewritten by POOL1a2: the
-        // set's starts pass it to account-2 (D197 point 1), so the hold is the pick's on each door.
+        // set's starts pass it to account-2, so the hold is the pick's on each door.
         var door = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Actors = StaffedRoles.On("acp-stub") }, null, "account-1");
         var pipe = await roster.SelectAsync("stub", DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, null, "account-1");
         Assert.Equal(limited.Value.Entry, door.Cooling);

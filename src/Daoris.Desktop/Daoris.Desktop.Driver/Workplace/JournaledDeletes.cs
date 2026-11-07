@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>What a delete Daoris judged came to: its act, whether the branch went, and the clause that keeps it where it did not.</summary>
-/// <param name="Act">The journal's record, which <c>GIT_REF_UNDO</c> undoes; null where the act was refused before anything was written.</param>
+/// <param name="Act">The journal's record, which <c>GIT_REF_UNDO</c> undoes; null where the act is refused before anything is written.</param>
 /// <param name="Kept">Why the branch stays, in a clause; null where it went.</param>
 /// <param name="Said">git's or the act's own words where its ref step did not finish, which the caller reads for why.</param>
 internal sealed record JournaledDelete(string? Act, string? Kept, string? Said);
@@ -81,7 +81,7 @@ internal static class JournaledDeletes
         if (run.Outcome is ActOutcomes.Done) return new(run.Act, null, null);
         var refStep = runs.Journal.Steps(run.Act!).FirstOrDefault(each => each.Kind == ActStepKinds.Ref);
         var said = refStep?.Said ?? run.Said;
-        // A transaction git ended refusing, its branch standing neither where it was judged nor gone: the caller reads on git's own word what
+        // A transaction git ended refusing, its branch standing neither at its judged commit nor gone: the caller reads on git's own word what
         // stands, the branch moved since or unread.
         return run.Outcome == ActOutcomes.NotDone || refStep is { ExitCode: not (null or 0), Outcome: ActOutcomes.Unknown }
             ? new(run.Act, null, said)

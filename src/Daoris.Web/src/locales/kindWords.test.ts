@@ -4,7 +4,7 @@ import { kindKeys, nodeKinds, readNodeKinds, unwordedKinds } from '../../scripts
 import { load } from '../../scripts/names-check.mjs';
 
 /**
- * The words of each node kind (D247): the names check reads the generated `NODE_KINDS` as JSON and requires each kind's two titles and each
+ * The words of each node kind: the names check reads the generated `NODE_KINDS` as JSON and requires each kind's two titles and each
  * outcome it routes on in every language, so a kind the driver's kit declares with no words fails the build.
  */
 describe('the node kinds\' words', () => {

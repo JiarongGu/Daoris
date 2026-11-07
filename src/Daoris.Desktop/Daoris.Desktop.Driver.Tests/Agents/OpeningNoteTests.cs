@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// UX7d-1 (D152's UX7d-1 note, D142 points 2–4): a conversation's first line, which names the account a start opened on and
+/// A conversation's first line, which names the account a start opened on and
 /// why, carries its lines by code beside its English, so the page words it in the reader's language. The English stays byte
 /// for byte what the terminal, the trace and an older page read; each step of the walk is a reason with its own values (a
 /// moment, a percent, an account), never a sentence; and a line the codes cannot say is written with no parts at all.
@@ -36,27 +36,27 @@ public sealed class OpeningNoteTests : IDisposable
     {
         // { ran on, step, over, workspace, facts, why, values }
         { "account-2", WalkStep.Fewest, null, "work", "", OpeningWhy.Fewest, "" },
-        // Over its curve (SWITCH1b-ii): the window it is tightest on, what it used there, and the curve's value there now.
+        // Over its curve: the window it is tightest on, what it used there, and the curve's value there now.
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:S95", OpeningWhy.OverCurve, "over=account-1 window=session used=95 curve=90" },
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:S30,W70@+4d", OpeningWhy.OverCurve, "over=account-1 window=weekly used=70 curve=63" },
-        // Its pace warning alone is no reason to pass it (USAGEREAD3a): a step that names it says only that it is near.
+        // Its pace warning alone is no reason to pass it: a step that names it says only that it is near.
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:N", OpeningWhy.Near, "over=account-1" },
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:X", OpeningWhy.NearReached, "over=account-1 window=weekly" },
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:C", OpeningWhy.NearCredits, "over=account-1" },
         { "account-2", WalkStep.Near, "account-1", "work", "", OpeningWhy.Near, "over=account-1" },
-        // Both near, it the least over: the other's own reason for going last, as where one said no number (ACCTWALK3).
+        // Both near, it the least over: the other's own reason for going last, as where one said no number.
         { "account-2", WalkStep.Room, "account-1", "work", "account-1:S99 account-2:S95", OpeningWhy.OverCurve, "over=account-1 window=session used=99 curve=90" },
         { "account-2", WalkStep.Room, "account-1", "work", "account-1:X account-2:S99", OpeningWhy.NearReached, "over=account-1 window=weekly" },
         // Most room under its curve (step 5): its own room on its tightest window; where it has none to say, the other's over.
         { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W40@+4d account-2:W10@+4d", OpeningWhy.MostRoom, "room=53 window=weekly" },
         { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W40@+4d account-2:S70,W10@+4d", OpeningWhy.MostRoom, "room=20 window=session" },
         { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W95@+4d account-2:W90@+4d", OpeningWhy.OverCurve, "over=account-1 window=weekly used=95 curve=63" },
-        // What would lapse (USAGERESET1): the week that won, how much of it is unused, its reset and when it was read.
+        // What would lapse: the week that won, how much of it is unused, its reset and when it is read.
         { "account-2", WalkStep.Lapsing, null, "work", "account-2:W60@+20h", OpeningWhy.Lapses, "window=weekly unused=40 at=2026-10-03T08:00:00Z seen=2026-10-02T11:50:00Z" },
         { "account-2", WalkStep.LeastRecent, null, "work", "account-2:s-1d", OpeningWhy.LeastRecent, "" },
         { "account-2", WalkStep.LeastRecent, null, "work", "", OpeningWhy.NotStarted, "" },
         { "account-1", WalkStep.List, null, "work", "", OpeningWhy.First, "workspace=work" },
-        // POOL1c (D197; the account-pool design §4.3): a start reads the set's one scope, so the order's first is said as that.
+        // A start reads the set's one scope, so the order's first is said as that.
         { "account-1", WalkStep.List, null, null, "", OpeningWhy.FirstOrder, "" },
         { "account-1", WalkStep.Kept, null, "work", "", OpeningWhy.KeptSelf, "" },
         { "account-2", WalkStep.Kept, null, "work", "", OpeningWhy.Kept, "over=account-1" },
@@ -79,7 +79,7 @@ public sealed class OpeningNoteTests : IDisposable
     }
 
     /// <summary>
-    /// SWITCH1b-ii: the curve's two reasons in English, and, under <c>switch: off</c>, step 5's pace as D130 said it
+    /// The curve's two reasons in English, and, under <c>switch: off</c>, step 5's pace
     /// (<c>behind</c>, <c>ahead</c>), still written there. <c>near-used</c> and <c>room</c> stay declared for the records
     /// already on machines, and nothing writes them now.
     /// </summary>
@@ -112,7 +112,7 @@ public sealed class OpeningNoteTests : IDisposable
     }
 
     /// <summary>
-    /// USAGERESET1: step 4 says what would lapse, the winning window, its unused share, when it resets and how old its reading
+    /// Step 4 says what would lapse, the winning window, its unused share, when it resets and how old its reading
     /// is, where it said only that its week reset first. <c>lapsing</c> stays declared for the lines already on machines.
     /// </summary>
     [Theory]
@@ -135,7 +135,7 @@ public sealed class OpeningNoteTests : IDisposable
             Assert.Single(RotationWords.Steps(new WalkChoice(step), "claude-code", ran, scope, workspace, passed, new Dictionary<string, AccountFacts>(), kind, Now, TimeZoneInfo.Utc));
 
         Assert.Equal((OpeningWhy.Default, "workspace=work"), (One(WalkStep.List, "account-2", Scope("account-2"), "work").Why, Values(One(WalkStep.List, "account-2", Scope("account-2"), "work"))));
-        // POOL1c: the set's scope has no default beside its order (D197 point 2), so its first is the order's first, never
+        // The set's scope has no default beside its order, so its first is the order's first, never
         // *this machine's default*; `default-here` and `first-here` stay declared for the notes already on machines.
         Assert.Equal(
             ("it comes first in the order of Daoris's accounts", OpeningWhy.FirstOrder),
@@ -156,7 +156,7 @@ public sealed class OpeningNoteTests : IDisposable
         var signedOut = One(WalkStep.SignedOut, "account-2", Scope(), "work", new AccountState("account-1", AccountReadiness.SignedOut));
         Assert.Equal((OpeningWhy.SignedOut, "agent=claude-code over=account-1"), (signedOut.Why, Values(signedOut)));
 
-        // LOCKPASSED1: an account passed for its lock is a reason of its own, never one the goal ranked another ahead of it for.
+        // An account passed for its lock is a reason of its own, never one the goal ranked another ahead of it for.
         var locked = One(WalkStep.Locked, "account-2", Scope(), "work", new AccountState("account-1", AccountReadiness.Ready) { Locked = true });
         Assert.Equal(("the `claude-code` account `account-1` is being asked about by another question", OpeningWhy.Locked, "agent=claude-code over=account-1"), (locked.Text, locked.Why, Values(locked)));
     }
@@ -178,7 +178,7 @@ public sealed class OpeningNoteTests : IDisposable
         Assert.Equal(RotationWords.Clause(choice, "claude-code", "account-2", Scope(), "work", passed, facts, StartKind.Driven, Now, TimeZoneInfo.Utc), RotationWords.Text(steps));
     }
 
-    /// <summary>What each account said is a line per account and one per thing it said, each inside the English, which stays as it was.</summary>
+    /// <summary>What each account said is a line per account and one per thing it said, each inside the English, which stays as it is.</summary>
     [Fact]
     public void What_each_account_said_is_an_account_s_line_and_one_per_thing_it_said()
     {
@@ -200,7 +200,7 @@ public sealed class OpeningNoteTests : IDisposable
         Assert.Equal(("account-1", "2026-10-02T11:50:00Z"), (said.Parts[0].Value("account"), said.Parts[0].Value("seen")));
         Assert.Equal((95, "session"), (said.Parts[1].Value("used"), said.Parts[1].Value("window")));
         Assert.Equal((30, "weekly"), (said.Parts[2].Value("used"), said.Parts[2].Value("window")));
-        // Over its session's curve, the smart one's flat 90 (SWITCH1b-ii).
+        // Over its session's curve, the smart one's flat 90.
         Assert.Equal(("session", 90), (said.Parts[3].Value("window"), said.Parts[3].Value("curve")));
         Assert.Equal("account-2", said.Parts[4].Value("account"));
         Assert.Equal("session", said.Parts[6].Value("window"));
@@ -208,7 +208,7 @@ public sealed class OpeningNoteTests : IDisposable
     }
 
     /// <summary>
-    /// USAGEREAD3a: the agent's pace warning is said as its own line, never as near; a warned account near by its number says
+    /// The agent's pace warning is said as its own line, never as near; a warned account near by its number says
     /// both. The line and the reason a note written before said it by (<c>opening.said-near</c>, <c>near-word</c>) stay
     /// declared, so a record already on a machine keeps being worded, and nothing writes them now.
     /// </summary>
@@ -230,7 +230,7 @@ public sealed class OpeningNoteTests : IDisposable
         Assert.Equal("opening.said-near", StartNoteCodes.OpeningSaidNear.Code);
         Assert.Equal(["window"], StartNoteCodes.OpeningSaidNear.Values);
         Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.NearWord);
-        // `near at 90%` is no longer written (SWITCH1b-ii): over its curve says the window and the curve's value now.
+        // `near at 90%` is no longer written: over its curve says the window and the curve's value now.
         Assert.Equal("opening.said-near-at", StartNoteCodes.OpeningSaidNearAt.Code);
         Assert.Equal(["near"], StartNoteCodes.OpeningSaidNearAt.Values);
         Assert.Equal(["window", "curve"], StartNoteCodes.OpeningSaidOver.Values);
@@ -252,7 +252,7 @@ public sealed class OpeningNoteTests : IDisposable
     }
 
     /// <summary>
-    /// The kept note's English is the line it always was, and its parts say it by code: the account it opened on and the first
+    /// The kept note's English is its own line, and its parts say it by code: the account it opened on and the first
     /// step, the rest's step, the refused turn, and what each account said.
     /// </summary>
     [Fact]

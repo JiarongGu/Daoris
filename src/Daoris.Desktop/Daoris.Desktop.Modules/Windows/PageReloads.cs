@@ -3,7 +3,7 @@ namespace Daoris.Desktop;
 /// <summary>A window that can reload the page its browser shows: a main window or a secondary one.</summary>
 public interface IReloadableWindow
 {
-    /// <summary>The window's name in the machine log: <c>main:1</c> for the first main window, else the name it was opened under.</summary>
+    /// <summary>The window's name in the machine log: <c>main:1</c> for the first main window, else the name it is opened under.</summary>
     string Name { get; }
 
     /// <summary>

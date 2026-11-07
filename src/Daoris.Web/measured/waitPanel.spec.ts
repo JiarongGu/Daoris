@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The waiting panel, measured (WAITPANEL1): its top edge dragged in a real browser, the height kept for the viewer and the
+// The waiting panel, measured: its top edge dragged in a real browser, the height kept for the viewer and the
 // conversation's floor held; and the conversation's *To the top* and *Back to bottom* above the panel's edge, the topmost thing
 // at their own centres, in both languages and both themes. jsdom lays nothing out and stacks nothing, so `WaitPanel.test.tsx`
 // holds the arithmetic and the arrangement, and this the boxes. The stories are `work/waits/WaitPanel.stories.tsx`.
@@ -92,7 +92,7 @@ test.describe('the waiting panel', () => {
     expect(at.main.height).toBeGreaterThanOrEqual(CONVERSATION - 4);
   });
 
-  // QUESTIONUI1a (the supervisor design §8.4): six long answers at the panel's floor scroll within the park's part, and the box's field
+  // Six long answers at the panel's floor scroll within the park's part, and the box's field
   // and *Send*, outside every part, stay in sight in the column under it.
   for (const story of ['SixLongAtTheFloor', 'SixLongAtTheFloorChineseDark']) {
     test(`keeps the field and its send in sight under six long answers at the floor: ${story}`, async ({ page }) => {

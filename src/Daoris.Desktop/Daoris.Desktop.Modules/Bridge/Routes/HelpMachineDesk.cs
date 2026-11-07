@@ -35,7 +35,7 @@ internal sealed class HelpMachineDesk(DriverContext context)
     /// <summary>
     /// The room's reading for a start or a conversation going on: the facts the judges keep, as last
     /// judged, at once, and this machine's file as it is now. Where the service's answers were never judged it waits for their first
-    /// judgement, which the start bounds and does not wait for at all where a room was written before.
+    /// judgement, which the start bounds and does not wait for at all where a room is already written.
     /// </summary>
     public static async Task<HelpMachine?> HelpMachineNowAsync(DriverContext context, CancellationToken cancellationToken)
     {

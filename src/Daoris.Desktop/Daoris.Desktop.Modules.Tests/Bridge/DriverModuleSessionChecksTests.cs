@@ -32,7 +32,7 @@ public sealed class DriverModuleSessionChecksTests : DriverModuleBridge
         Assert.Empty(DriverConfig.Load(DriverConfigPath).SessionChecks);
     }
 
-    /// <summary>A value that is no choice, or no repository, is refused in the door's words, and the file is as it was.</summary>
+    /// <summary>A value that is no choice, or no repository, is refused in the door's words, and the file is unchanged.</summary>
     [Fact]
     public async Task A_value_that_is_no_choice_is_refused_in_the_doors_words_and_nothing_is_written()
     {

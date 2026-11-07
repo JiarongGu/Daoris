@@ -357,8 +357,8 @@ public sealed class InstallHomeTests : IDisposable
     /// <summary>
     /// A second install started with the account's variable in its environment — the
     /// variable the first install set — runs on its OWN `data/`, and says so. The account's variable
-    /// is left exactly as it was: it is the person's, and a start that rewrote it would move every
-    /// terminal to whichever install was opened last.
+    /// is left untouched: it is the person's, and a start that rewrote it would move every
+    /// terminal to whichever install is opened last.
     /// </summary>
     [Fact]
     public void A_second_install_runs_on_its_own_data_over_the_home_its_account_names_and_says_so()
@@ -529,7 +529,7 @@ public sealed class InstallHomeTests : IDisposable
 
     /// <summary>
     /// A shell standing in its install's <c>app/</c>, or below it, stands in the install's root instead, so a
-    /// child that names no working folder does not hold <c>app/</c>; a working folder elsewhere is left as it was.
+    /// child that names no working folder does not hold <c>app/</c>; a working folder elsewhere is left unchanged.
     /// </summary>
     [Fact]
     public void A_shell_standing_in_the_install_s_app_folder_stands_in_the_install_s_root()
@@ -677,7 +677,7 @@ public sealed class InstallHomeTests : IDisposable
 
     /// <summary>
     /// The first-start move holds the home's lease while it moves, so it never moves files under a verb acting
-    /// alone. A verb holding the home for the whole of its wait: nothing moves, the older home stays where it was, and the notice
+    /// alone. A verb holding the home for the whole of its wait: nothing moves, the older home stays where it is, and the notice
     /// says which act held it; the next start moves it.
     /// </summary>
     [Fact]

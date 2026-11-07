@@ -53,7 +53,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
 
     /// <summary>
     /// What the press lists of the set-aside folders, read and never written: each folder with when it
-    /// was moved and when its days end; whether the purge takes it now (past its days, nothing written in it since), whether its slim is
+    /// moved and when its days end; whether the purge takes it now (past its days, nothing written in it since), whether its slim is
     /// due, and whether it holds files of its own (something written in it after the move, or a link in it, which the purge keeps it for).
     /// </summary>
     internal IReadOnlyList<SetAsideListed> List(KeepPolicy policy, DateTimeOffset now)
@@ -146,7 +146,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
             if (manifest.State == SlimStates.Judged && manifest.Finished is not null) continue;
             if (manifest.State == SlimStates.Judged)
             {
-                // Left between the move and its `moved`: what was authorized is unknown, so the folder is kept whole for its days.
+                // Left between the move and its `moved`: what is authorized is unknown, so the folder is kept whole for its days.
                 Drop(file);
                 continue;
             }
@@ -317,7 +317,7 @@ internal sealed record SetAsideListed(
 /// <param name="Slims">Each folder whose slim did something this pass.</param>
 internal sealed record SetAsideRun(IReadOnlyList<SetAside> Purged, IReadOnlyList<SlimResult> Slims)
 {
-    /// <summary>The budget was spent, or a stop asked, before everything due was done: the next pass takes up the rest.</summary>
+    /// <summary>The budget is spent, or a stop asked, before everything due is done: the next pass takes up the rest.</summary>
     public bool Stopped { get; init; }
 }
 
@@ -333,6 +333,6 @@ internal sealed record SlimResult(
     /// <summary>Step 1 kept it whole: the purge's clause saying why.</summary>
     public string? Said { get; init; }
 
-    /// <summary>Its folder could not be read: why, in a clause; nothing of it was touched.</summary>
+    /// <summary>Its folder could not be read: why, in a clause; nothing of it is touched.</summary>
     public string? Unread { get; init; }
 }

@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// each second until the run has ended. Where Daoris stops first, how it ended is not known: exit 2. <b>Alone</b> it holds no lease,
 /// takes the home's run lock, which a desktop starting meanwhile finds held, and is refused from a session's environment:
 /// <c>--yes</c> is the person's word at their own terminal and grants a session nothing.</para>
-/// <para>Exit codes keep the family contract: 0 listed, or every unit removed · 1 something named was kept, the person refused it in the
+/// <para>Exit codes keep the family contract: 0 listed, or every unit removed · 1 something named is kept, the person refused it in the
 /// window, or a session's terminal · 2 could not: a word it does not answer, a read that failed, the run lock held, the run stopped, or
 /// Daoris stopped while it ran.</para>
 /// </remarks>

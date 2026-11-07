@@ -50,7 +50,7 @@ internal sealed class ContentHolds(TreeContext context)
     /// holder must not have; git compares them as blobs, so the same means byte for byte as the repository stores it.</para>
     ///
     /// <para>🔴 <b>Every comparison is between object ids read once</b>: the tip is the caller's, and its tree is
-    /// read from that id, so a commit made meanwhile is never half of what was judged; each holder is read once too. A branch
+    /// read from that id, so a commit made meanwhile is never half of what is judged; each holder is read once too. A branch
     /// a landing made and recorded never holds another's work here, since the clean-up removes it on its own proof: one that
     /// vouched for a session branch would leave that work on no ref once it went.</para>
     /// </remarks>
@@ -296,7 +296,7 @@ internal sealed class ContentHolds(TreeContext context)
     /// </remarks>
     /// <param name="repository">The repository the journal's record names, which <c>GIT_REF_UNDO</c> undoes it in.</param>
     /// <param name="held">What the proof rested on, each ref at the commit the proof read it at, as the proof returned it: the holder by ancestry, the ref holding the work by content, a squashing landing's branch, the landing a landed branch is
-    /// inside and what that one rests on, the form of the line a merge or a pull request's merge was found on. Verified exactly, and never
+    /// inside and what that one rests on, the form of the line a merge or a pull request's merge is found on. Verified exactly, and never
     /// looked for again here. Empty is no proof, and keeps the branch.</param>
     /// <param name="keep">The recovery ref the door's rule keeps the commits on (the proof compared files, so a message, an empty
     /// commit and history the final tree does not show are held nowhere else), made in the delete's own transaction; null keeps none.</param>
@@ -334,7 +334,7 @@ internal sealed class ContentHolds(TreeContext context)
 
     /// <summary>
     /// Why git refused the transaction: the branch gone already (nothing left to delete, null), moved since
-    /// it was judged, or a ref the proof rested on no longer at its commit; else git's own words. Nothing was deleted.
+    /// it is judged, or a ref the proof rests on no longer at its commit; else git's own words. Nothing is deleted.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>Gone only on git's own word</b>: any failure to read is never "gone": the branch is said kept, unread, and any
@@ -383,7 +383,7 @@ internal sealed class ContentHolds(TreeContext context)
         var err = run.Said;
         if (run.Done) return $"{why}, so it was put back where it was";
         var (exists, now, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], none).ConfigureAwait(false);
-        // Another restorer made it at the same commit: it stands where it was.
+        // Another restorer made it at the same commit: it stands where that restorer put it.
         if (exists == 0 && now.Trim() == judged) return $"{why}, so it was put back where it was";
         var standing = exists == 0 ? $"a branch of that name was made at {Short(now.Trim())} meanwhile" : FirstLine(err);
         return $"{why}, and Daoris could not put it back at {Short(judged)} ({standing}); its commits stay where its proof found them held";
@@ -399,7 +399,7 @@ internal sealed class ContentHolds(TreeContext context)
     /// <remarks>
     /// 🔴 <b>An ignored path the registered checkout holds too goes with the tree</b>: it is what the repository leaves in any
     /// checkout it is built in (installed dependencies, a build's output), and the checkout keeps its own. One only the session's
-    /// tree holds (a local database, an export) was made there alone, and nothing says it can be made again, so it keeps the
+    /// tree holds (a local database, an export) exists there alone, and nothing says it can be made again, so it keeps the
     /// tree, named. Null is git unable to say, which keeps the tree too. 🔴 <b>Except a session's own scratch in such a folder</b>:
     /// under a build folder (<see cref="TreeScratch.BuildFolders"/>) the path goes as ever; under any other, each file the tree
     /// wrote after it opened that the checkout does not hold as written (absent, or different bytes) is the tree's own, as an ignored path only it holds is.

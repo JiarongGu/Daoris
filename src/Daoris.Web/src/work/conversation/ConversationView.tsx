@@ -47,7 +47,7 @@ const AskedCards = createContext<{ exchanges: Exchanges; onOpenHelper?: (session
  * - **A long run reads from its ask**: the ask comes first, and *load earlier* sits where
  *   the events the page does not hold belong.
  * - **The agent's words are Markdown**; the person's are shown as written. Both are content, never
- *   translated (translation-parity).
+ * translated (translation-parity).
  * - **A session whose door carries only text** has no conversation to draw, and says so, pointing at
  *   the console, wherever it stands.
  * - **Words said after it parked or ended wait at its foot**, saying the same session

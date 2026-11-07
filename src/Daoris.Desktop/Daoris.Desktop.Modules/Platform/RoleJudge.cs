@@ -65,7 +65,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
     /// its role's table and the role's <c>authority</c>, its own form exact, and the act admitted once, its id drawn here. Anything
     /// uncovered is refused, never asked.
     /// </summary>
-    /// <param name="nonce">The connection's hello's nonce, taken for this act (each is used once), or null where it was used or expired.</param>
+    /// <param name="nonce">The connection's hello's nonce, taken for this act (each is used once), or null where it is used or expired.</param>
     public RoleJudgement JudgeRole(string module, string route, JsonElement? payload, PipeClientProcess? client, string? nonce)
     {
         RoleJudgement judged;

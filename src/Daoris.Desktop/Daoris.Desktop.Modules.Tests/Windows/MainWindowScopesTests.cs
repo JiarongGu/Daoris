@@ -73,7 +73,7 @@ public sealed class MainWindowScopesTests
         Assert.Equal("main:2", scopes.Pick(""));
     }
 
-    /// <summary>A window told again holds what it was told last; a window closed is never picked, and nothing told is the first.</summary>
+    /// <summary>A window told again holds what it is told last; a window closed is never picked, and nothing told is the first.</summary>
     [Fact]
     public void A_window_closed_is_never_picked_and_one_told_again_holds_its_last()
     {

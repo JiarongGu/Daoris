@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The Map's Tab order measured on both levels (MAPUX1; the map UX design §12), in a real browser: Tab walks the toolbar's controls and
+// The Map's Tab order measured on both levels, in a real browser: Tab walks the toolbar's controls and
 // then the drawing is one stop, whichever of its cards and lines is current, never one stop each; the list is one tree row.
 
 const ready = (page: Page) => page.waitForFunction(

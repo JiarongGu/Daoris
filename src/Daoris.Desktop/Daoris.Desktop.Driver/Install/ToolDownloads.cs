@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>What one managed tool's downloaded version came to when the delete asked for it to go (<see cref="IToolDownloads.ClearAsync"/>).</summary>
 /// <param name="Outcome"><c>removed</c>, <c>kept</c>, <c>gone</c> or <c>unfinished</c>, as the clearing says it of the one row asked.</param>
-/// <param name="Keeps">Where the version was kept: why, as the clearing judged it right before it would have gone (<c>used</c>, <c>running</c>, <c>named</c>, <c>unread</c>); null where nothing kept it.</param>
+/// <param name="Keeps">Where the version is kept: why, as the clearing judges it right before it would go (<c>used</c>, <c>running</c>, <c>named</c>, <c>unread</c>); null where nothing keeps it.</param>
 /// <param name="By">What kept it: a session's id, the file that names it, or the sessions that could not be read.</param>
 public sealed record ToolVersionCleared(string Outcome, string? Keeps, IReadOnlyList<string> By);
 
@@ -35,7 +35,7 @@ public static class ToolDownloads
     private static IToolDownloads? _current;
 
     /// <summary>The clearing in force.</summary>
-    /// <exception cref="InvalidOperationException">None was installed: the assembly's own initializer has not run.</exception>
+    /// <exception cref="InvalidOperationException">None is installed: the assembly's own initializer has not run.</exception>
     public static IToolDownloads Current
     {
         get => _current ?? throw new InvalidOperationException("no download clearing is installed: the workplace installs it when the driver loads");

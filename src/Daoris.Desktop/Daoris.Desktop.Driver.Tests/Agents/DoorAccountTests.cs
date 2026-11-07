@@ -4,18 +4,16 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 <b>A door runs as its owner's accounts</b> (AGT7).
+/// 🔴 <b>A door runs as its owner's accounts</b>.
 /// </summary>
 /// <remarks>
-/// <para><c>accountOf</c> has said since ACP2 that the protocol door runs as the agent's account — and
-/// the page groups a tool's doors on it — but the driver resolved a door's accounts, defaults and keys
-/// under the DOOR's own name: <c>harnesses/claude-code-acp/…</c>. So an account made for Claude Code
-/// was invisible to Claude Code over the protocol door, a Codex account never reached
-/// <c>codex-acp</c>, and a key account (AGT3) worked on the direct door only. Found while designing
-/// the key accounts, 2026-09-23.</para>
-///
+/// <para><c>accountOf</c> says the protocol door runs as the agent's account — and
+/// the page groups a tool's doors on it — so the driver resolves a door's accounts, defaults and keys
+/// under the OWNER's name, never the DOOR's own: <c>harnesses/claude-code-acp/…</c>. So an account made for Claude Code
+/// is visible to Claude Code over the protocol door, a Codex account reaches
+/// <c>codex-acp</c>, and a key account works on both doors.</para>
 /// <para>What stays the door's own: its <b>pin</b>. A door is a different package at a different
-/// version (ACP2), and one pin for both would install the wrong thing under a trusted name.</para>
+/// version, and one pin for both would install the wrong thing under a trusted name.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class DoorAccountTests : IDisposable
@@ -84,7 +82,7 @@ public sealed class DoorAccountTests : IDisposable
         Assert.True(selection.Allowed, selection.Refusal);
         Assert.Equal("work", selection.Profile);
         Assert.Equal(work, selection.ProfileHome);
-        // Nothing was made under the door's own name.
+        // Nothing is made under the door's own name.
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.AgentHomes, "owner-acp")));
     }
 
@@ -101,7 +99,7 @@ public sealed class DoorAccountTests : IDisposable
         Assert.Equal("office", selection.Profile);
     }
 
-    /// <summary>A key account (AGT3) reaches the door with the OWNER's key variable — the door declares none.</summary>
+    /// <summary>A key account reaches the door with the OWNER's key variable — the door declares none.</summary>
     [Fact]
     public async Task A_key_account_reaches_the_door_through_the_owner_s_key_variable()
     {
@@ -117,7 +115,7 @@ public sealed class DoorAccountTests : IDisposable
     /// <summary>
     /// A signed-out owner account refuses the door's spawn by the owner's own login question, naming
     /// the OWNER's login — the door has no login flow, which is what <c>accountOf</c> declared. Read by
-    /// a press through the door (ROSTER1: a look reads no account), which asks the way its owner asks.
+    /// a press through the door (a look reads no account), which asks the way its owner asks.
     /// </summary>
     [Fact]
     public async Task A_signed_out_owner_account_refuses_the_door_naming_the_owner_s_login()
@@ -149,7 +147,7 @@ public sealed class DoorAccountTests : IDisposable
     /// <summary>
     /// An owner this build carries no adapter for (`codex` behind `codex-acp`) still owns the
     /// accounts: they are directories under its name, and the door runs in them. Nothing to ask about
-    /// the login, so it is unknown and permissive (SES3), and no key is handed (none was measured).
+    /// the login, so it is unknown and permissive, and no key is handed (none is measured).
     /// </summary>
     [Fact]
     public async Task A_door_whose_owner_has_no_adapter_still_runs_in_the_owner_s_accounts()
@@ -165,7 +163,7 @@ public sealed class DoorAccountTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 An account its provider refused is not spent again (AGT3b): each further session would sit
+    /// 🔴 An account its provider refused is not spent again: each further session would sit
     /// through the tool's own minutes of retries to fail the same way. The refusal holds the start,
     /// naming the fix, and it is the ACCOUNT's — on either door onto it — until a person looks again.
     /// </summary>
@@ -191,11 +189,11 @@ public sealed class DoorAccountTests : IDisposable
         Assert.True((await roster.SelectAsync("owner", Config(), null, null)).Allowed);
     }
 
-    /// <summary>The door's pin stays the door's: a different package, a different version (ACP2).</summary>
+    /// <summary>The door's pin stays the door's: a different package, a different version.</summary>
     [Fact]
     public async Task The_door_s_pin_is_still_its_own()
     {
-        // A Daoris account of the owner's to start on (OWNSPACE1a), so the pin is what is judged.
+        // A Daoris account of the owner's to start on, so the pin is what is judged.
         var work = HarnessSettings.ProfileHome(_home, "owner", "work");
         Directory.CreateDirectory(work);
         File.WriteAllText(Path.Combine(work, "credentials.json"), "{}");

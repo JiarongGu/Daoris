@@ -38,7 +38,7 @@ public enum SetupCase
 /// <param name="Index">The generator the index quest names (<see cref="IndexForms"/>); required for <see cref="SetupCase.Index"/> alone.</param>
 /// <param name="Builds">What it builds (<see cref="SetupBuilds"/>), which shapes the safe work's checks; null for none said.</param>
 /// <param name="Standing">The person's standing answer for it on this machine, which a reconcile's quest carries among its items; null for none.</param>
-/// <param name="Doctrine">What the doctrine tool's status said of the checkout before a reconcile was asked, which its body says; null where unread.</param>
+/// <param name="Doctrine">What the doctrine tool's status said of the checkout before a reconcile is asked, which its body says; null where unread.</param>
 public sealed record SetupBriefInput(
     SetupCase Case, DateOnly Day, string Repository, LayoutFacts Facts, string Version,
     RepositoryDescription? Description, IReadOnlyList<string> Entries, IReadOnlyList<string> Neighbours,

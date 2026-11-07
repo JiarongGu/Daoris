@@ -87,7 +87,7 @@ public sealed class DriverModuleReviewTests : DriverModuleBridge
         Assert.True(nowhere.GetProperty("reviewed").GetProperty("unchecked").GetBoolean());
     }
 
-    /// <summary>Each repository the registry holds, the rule standing for it and where it was set; nothing set is absent.</summary>
+    /// <summary>Each repository the registry holds, the rule standing for it and where it is set; nothing set is absent.</summary>
     [Fact]
     public async Task The_lines_answer_what_each_repository_resolves_to_and_from_where()
     {

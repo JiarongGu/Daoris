@@ -205,7 +205,7 @@ public sealed class LinesRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The person's delete of the recovery refs the page listed, each at the commit it was shown at, which are kept at any age until
+    /// The person's delete of the recovery refs the page listed, each at the commit shown, which are kept at any age until
     /// they say so. The holders are read again at the delete: a ref now held, moved or gone is in `skipped` with why.
     /// </summary>
     [DriverRoute("RECOVERY_DROP", PipeClass.Person, Drain = PipeDrain.Waits)]
@@ -236,7 +236,7 @@ public sealed class LinesRoutes(DriverContext context)
             : throw new ArgumentException("each of `refs` must be `{ ref, commit }`."))];
     }
 
-    /// <summary>What a delete of recovery refs became on the wire: what went, what was kept and why, and the sentence the terminal says.</summary>
+    /// <summary>What a delete of recovery refs becomes on the wire: what went, what is kept and why, and the sentence the terminal says.</summary>
     public static object RecoveryDropAnswer(string repository, RecoveryDrops done) => new
     {
         Repository = repository,
@@ -277,7 +277,7 @@ public sealed class LinesRoutes(DriverContext context)
 
     /// <summary>
     /// Each unit of work's milestone, the page's read of what
-    /// `daoris work state` says: whether its end was reached, the result kept, the cleanup pending (what waits and
+    /// `daoris work state` says: whether its end is reached, the result kept, the cleanup pending (what waits and
     /// why) or completed (what went), and the recovery retained until its date, each with the inventory entries it is read from.
     /// Derived at each read from the records the tree lifecycle keeps, never stored; a look that changes nothing, so it declares
     /// nothing. With `unit`, the units that name picks (its id, session or branch). The work slice pushes the same
@@ -626,7 +626,7 @@ public sealed class LinesRoutes(DriverContext context)
         return DriverRoutes.State(_loop);
     }
 
-    /// <summary>The git access levels in the file <paramref name="config"/> was read from (<see cref="LinesWires.GitLevelsOf"/>).</summary>
+    /// <summary>The git access levels read from the file <paramref name="config"/> (<see cref="LinesWires.GitLevelsOf"/>).</summary>
     internal static GitAccessLevels GitLevelsOf(DriverConfig config) => LinesWires.GitLevelsOf(config);
 
     /// <summary>A level's git access as set (<see cref="LinesWires.GitClassesWire"/>).</summary>

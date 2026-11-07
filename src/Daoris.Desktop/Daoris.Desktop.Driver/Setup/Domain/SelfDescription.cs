@@ -39,7 +39,7 @@ public static class SelfDescription
     private static readonly string[] Readmes = ["README.md", "readme.md", "Readme.md", "README.MD", "README"];
 
     /// <summary>
-    /// The paragraphs that say which tool made the folder, or that nothing was written yet — the first
+    /// The paragraphs that say which tool made the folder, or that nothing is written yet — the first
     /// real workspace had four generator paragraphs, and a bare link is somebody's bookmark.
     /// </summary>
     private static readonly Regex SaysNothing = new(
@@ -168,7 +168,7 @@ public static class SelfDescription
     /// <summary>A gathered paragraph, when it says something; cleared either way.</summary>
     /// <param name="describing">
     /// Set false by a paragraph that opens with a step: it says how, as a heading of that word would,
-    /// and so does the rest of its section — the first real README of that shape was steps to the end.
+    /// and so does the rest of its section — a README of that shape is steps to the end.
     /// </param>
     private static string? Settle(List<string> paragraph, ref bool describing)
     {

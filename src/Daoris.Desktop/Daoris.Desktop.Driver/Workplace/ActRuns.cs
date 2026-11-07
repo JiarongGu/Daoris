@@ -38,7 +38,7 @@ public sealed record ActPlan(string Kind, string Press, string Repository, strin
     public Func<int, Task<string?>>? After { get; init; }
 }
 
-/// <summary>What an act's run answered: the act and its outcome (<see cref="ActOutcomes"/>), or that it was refused before anything was written, in words.</summary>
+/// <summary>What an act's run answered: the act and its outcome (<see cref="ActOutcomes"/>), or that it is refused before anything is written, in words.</summary>
 public sealed record ActRun(string? Act, string? Outcome, string Said, bool Refused)
 {
     /// <summary>What the act's door adds in plain words beside the record's sentence (a commit's hook's rewrite, a hook's refusal); null where it has none.</summary>

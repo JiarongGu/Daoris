@@ -17,7 +17,7 @@ public sealed record RecoveryGone(string Ref, string Commit, string Holder);
 /// (no reflog is written outside <c>refs/heads/</c>): it goes only on the same rule, its commit kept by the person's own ref.
 /// <para><b>Dated from the journal's act</b>: every door keeps its ref through an act the journal records
 /// (<see cref="RecoveryKeeps"/>), and a ref a record names is dated from that act. <b>Transitional:</b> the dating from a ref's reflog remains
-/// only for a ref no record names, one a door kept before every keep was journaled, which <see cref="RecoveryCensus"/> counts. It ends when
+/// only for a ref no record names, one a door kept before every keep is journaled, which <see cref="RecoveryCensus"/> counts. It ends when
 /// that census reads zero in every repository on the install, and goes with <see cref="RecoveryDropping"/>.</para>
 /// </remarks>
 public static class RecoveryRetention
@@ -26,9 +26,9 @@ public static class RecoveryRetention
     public static readonly TimeSpan Kept = TimeSpan.FromDays(30);
 
     /// <summary>
-    /// The date from which the look removes it, where a branch or a tag holds its commit and its date was read; null otherwise. Counted from
+    /// The date from which the look removes it, where a branch or a tag holds its commit and its date is read; null otherwise. Counted from
     /// the act that kept it; for a ref no record names, from its reflog's first entry, else from its commit's date, so it may
-    /// go sooner after it was made, and loses nothing, since the holder keeps every commit and message it kept.
+    /// go sooner after its making, and loses nothing, since the holder keeps every commit and message it kept.
     /// </summary>
     public static DateTimeOffset? Until(RecoveryRef each) => each is { Held: true, Dated: { } dated } ? dated + Kept : null;
 

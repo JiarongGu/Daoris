@@ -55,7 +55,7 @@ internal static class ActWorkSteps
         if (Applies(plan))
         {
             var applied = await launch.HeldGitAsync(launch.Root, step.Ordinal, ["stash", "apply", plan["id"]!.GetValue<string>()], null, null).ConfigureAwait(false);
-            // A conflict exits 1 with the files in conflict; the stash is not dropped. The checkout decides what it was, never the exit code.
+            // A conflict exits 1 with the files in conflict; the stash is not dropped. The checkout decides the outcome, never the exit code.
             var said = string.Join(' ', new[] { applied.Stderr, applied.Stdout }.Select(each => each.Trim()).Where(each => each.Length > 0));
             return applied.End(applied.Exit == 0 ? "git applied the stash" : $"git applied the stash with a stop ({ContentHolds.Said(said)})");
         }
@@ -110,7 +110,7 @@ internal static class ActWorkSteps
 
     /// <summary>
     /// An Apply is done where the clean checkout it found now holds tracked changes, a file in conflict or the stash's untracked files; not done
-    /// where it is as clean as it was; null where git could not say.
+    /// where it stays as clean; null where git could not say.
     /// </summary>
     private static async Task<string?> ReadApplyAsync(string root, string id, CancellationToken ct)
     {

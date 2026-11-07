@@ -5,7 +5,7 @@ using static Daoris.Driver.TreeWorktrees;
 namespace Daoris.Driver;
 
 /// <summary>A folder the look moved aside, met by a later look's purge: deleted, or kept and why.</summary>
-/// <param name="Moved">When it was moved aside, read from its name.</param>
+/// <param name="Moved">When it is moved aside, read from its name.</param>
 /// <param name="Kept">Kept: why, in a clause.</param>
 /// <param name="Code">Kept: why, as the machine log's code (<see cref="SetAsideKept"/>).</param>
 internal sealed record SetAside(string Folder, DateTimeOffset Moved, bool Purged, string? Kept, string? Code = null)
@@ -16,6 +16,6 @@ internal sealed record SetAside(string Folder, DateTimeOffset Moved, bool Purged
     /// <summary>Its class when the purge met it (<see cref="SetAsideClass"/>).</summary>
     public string Class { get; init; } = SetAsideClass.Unmarked;
 
-    /// <summary>It was met by the hour's rule, an hour after its record, not its days.</summary>
+    /// <summary>It is met by the hour's rule, an hour after its record, not its days.</summary>
     public bool Hour { get; init; }
 }

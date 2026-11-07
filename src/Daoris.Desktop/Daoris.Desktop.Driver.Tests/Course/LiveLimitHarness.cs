@@ -5,8 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The live limit move, and the curve's (FOUNDATION1f-iii part b), across a killed shell (FOUNDATION1f-ii part b, D212; the foundation design
-/// §13.5's downgrade table, §19.3, §19.4): one
+/// The live limit move, and the curve's, across a killed shell: one
 /// home, one in-process ledger, and two kinds of shell over them. The <b>killed shell</b> runs the live move (<see cref="LimitMove.MoveAsync"/>)
 /// under a run of its own, its new part's door a stand-in that writes nothing but tells the case each write, and is stopped at a boundary of
 /// <see cref="Cuts"/> by blocking there for good, as a killed process never leaves it; its run is then declared dead the way the lease tells a
@@ -144,7 +143,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     }
 
     /// <summary>
-    /// The curve's twin of <see cref="RunShellAsync"/> (FOUNDATION1f-iii part b): a live conversation <c>c1</c> on account-1, past its curve and
+    /// The curve's twin of <see cref="RunShellAsync"/>: a live conversation <c>c1</c> on account-1, past its curve and
     /// its last turn ended, the person's word kept on it; the curve's move (<see cref="CurveMove.MoveAsync"/>) run by a shell of run
     /// <see cref="Killed"/>, stopped for good at <paramref name="cut"/>. Its brief is the one message the move writes; the word the open moves
     /// waits on the new part for its own go-on, and no write of the move's carries it.
@@ -190,7 +189,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     }
 
     /// <summary>
-    /// The conversation's hand-over, the third of this harness's moves (FOUNDATION1f-v part b): a conversation <c>c1</c> on account-1 of <c>talk</c>,
+    /// The conversation's hand-over, the third of this harness's moves: a conversation <c>c1</c> on account-1 of <c>talk</c>,
     /// its last turn ended, the person's word kept on it, handed to <c>acp-stub</c> on account-2 by Daoris (<see cref="HandOverWhy.Near"/>, which asks
     /// the outgoing agent no closing note) through <see cref="ChatHandOver.HandOverAsync"/>, run by a shell of run <see cref="Killed"/> and stopped
     /// for good at <paramref name="cut"/>. It passes every boundary of <see cref="Cuts.All"/> as the curve's move does, the one brief its only message.
@@ -230,7 +229,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     }
 
     /// <summary>
-    /// The ended move's twin of <see cref="RunShellAsync"/> (FOUNDATION1f-vi part b): an ended conversation <c>c1</c> on account-1, nothing of it
+    /// The ended move's twin of <see cref="RunShellAsync"/>: an ended conversation <c>c1</c> on account-1, nothing of it
     /// running, its last turn refused by its limit and its account cooling, the person's word waiting on it; the ended move
     /// (<see cref="LimitMove.MoveEndedAsync"/>) run by a shell of run <see cref="Killed"/>, stopped for good at <paramref name="cut"/>. It passes
     /// eight of <see cref="Cuts.All"/>, never <see cref="Cuts.OldEnded"/>, an ended record having no part to end, and at <see cref="Cuts.Decided"/>
@@ -374,7 +373,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         /// <summary>The live limit move or the ended one the shell ran, where it ran one (the ended one has no live part, so no <see cref="Old"/>).</summary>
         public LimitMove? Limit { get; init; }
 
-        /// <summary>The curve's move the shell ran, where it ran one (FOUNDATION1f-iii part b).</summary>
+        /// <summary>The curve's move the shell ran, where it ran one.</summary>
         public CurveMove? Curve { get; init; }
     }
 
@@ -486,7 +485,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
             ready: () => Task.FromResult(true),
             take: (message, sent) =>
             {
-                // The moved words' events are recorded under their ids before the write (FOUNDATION1d-ii part 3), so an older build's
+                // The moved words' events are recorded under their ids before the write, so an older build's
                 // come-up finds a moved word shown and writes no `lost` note for it.
                 if (shows)
                 {
@@ -509,7 +508,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     {
         public Turned? Opened { get; private set; }
 
-        /// <summary>Whether the old part's turn runs, so a hand-over asked waits at <c>quiescing</c> for its end (FOUNDATION1f-v part b).</summary>
+        /// <summary>Whether the old part's turn runs, so a hand-over asked waits at <c>quiescing</c> for its end.</summary>
         public bool Busy { get; init; }
 
         public async Task<ChatStart> StartAsync(

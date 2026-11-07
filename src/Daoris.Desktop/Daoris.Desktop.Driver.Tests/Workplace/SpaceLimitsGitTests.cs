@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPSIZE1d over real git (D195's keep-size note): the set-aside folders over their size limit lose the oldest recorded one first, and
+/// Over real git: the set-aside folders over their size limit lose the oldest recorded one first, and
 /// never a folder whose commits no ref holds nor one whose record is not kept. The limit is counted in a few kilobytes here
 /// (<see cref="SpaceLimits.PassAsync"/>'s <c>unit</c>); the downloads' and the choices' proofs are <see cref="SpaceLimitsTests"/>'.
 /// </summary>
@@ -79,7 +79,7 @@ public sealed class SpaceLimitsGitTests : KeepSizeFixture
         var (world, _) = WorldOf(root, 1);
         var pass = await SpaceLimits.PassAsync(world, KeepingRun.Look, "run-1", CancellationToken.None, 1_000);
 
-        // The recorded folder was asked for, and its holding check, run right before it would go, kept it.
+        // The recorded folder is asked for, and its holding check, run right before it would go, keeps it.
         var kind = Assert.Single(pass.Kinds);
         Assert.Equal(0, kind.Removed);
         Assert.NotEmpty(kind.Kept);

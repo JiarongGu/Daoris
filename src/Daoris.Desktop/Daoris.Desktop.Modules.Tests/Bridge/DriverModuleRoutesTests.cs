@@ -40,7 +40,7 @@ public sealed partial class DriverModuleRoutesTests
     private sealed record PageCall(string Route, string File);
 
     /// <summary>
-    /// Every route the page sends this module, and how many sends pass on a route the caller was given
+    /// Every route the page sends this module, and how many sends pass on a route the caller is given
     /// rather than naming one: each of those is a forwarding helper, whose own callers name the route.
     /// </summary>
     private static (List<PageCall> Calls, int Forwarded) PageCalls()

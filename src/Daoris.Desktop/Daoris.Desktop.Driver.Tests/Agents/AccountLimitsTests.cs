@@ -3,8 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An account's limit, read from the agent's own words on the door that refused (TOOL4a, D125 §1.3, §1.5,
-/// §2.1). The reader is pure, so this table is the whole contract: which failures are a limit, what the
+/// An account's limit, read from the agent's own words on the door that refused. The reader is pure, so this table is the whole contract: which failures are a limit, what the
 /// reset they name reads as, and when the default stands in.
 /// </summary>
 /// <remarks>
@@ -32,11 +31,11 @@ public sealed class AccountLimitsTests
     // ——— §2.1's rows.
 
     /// <summary>
-    /// A stated reset is the first such moment after the limit was seen, in the zone it names, plus the
+    /// A stated reset is the first such moment after the limit is seen, in the zone it names, plus the
     /// 2-minute margin: a time of day within a day, a date when days away, and the next year when the
     /// date has passed this one. A time of day just past is TOMORROW's (FIX 2026-10-02): the agent prints
     /// the date only when the reset is a day or more away, and its refusal says the reset has not come. Only
-    /// a dated reset gets the grace: up to 15 minutes before it was seen is two clocks disagreeing, so the
+    /// a dated reset gets the grace: up to 15 minutes before it is seen is two clocks disagreeing, so the
     /// account waits only the margin.
     /// </summary>
     [Theory]
@@ -77,7 +76,7 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// A zone that is not an IANA name, or none at all, is the machine's own: the harness printed the
-    /// time for the machine it runs on, which is this one. The reading says the zone was assumed.
+    /// time for the machine it runs on, which is this one. The reading says the zone is assumed.
     /// </summary>
     [Theory]
     [InlineData("resets 7am (PST)")]
@@ -111,7 +110,7 @@ public sealed class AccountLimitsTests
         Assert.False(limit.AssumedZone);
     }
 
-    /// <summary>No reset clause is Daoris's default, which a setting may replace (TOOL4e), and is not stated.</summary>
+    /// <summary>No reset clause is Daoris's default, which a setting may replace, and is not stated.</summary>
     [Fact]
     public void No_reset_clause_is_the_default()
     {
@@ -158,9 +157,9 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// The sentence the install recorded on 2 October (FIX 2026-10-02), at 16:12 in the zone it named: the
-    /// weekly reset was the next day's 4pm, which the same account's sentence the day before had dated
+    /// weekly reset fell on the next day's 4pm, which the same account's sentence the day before had dated
     /// <i>Oct 3, 4pm</i>. Read as today's 4pm in the grace, it cooled the account for two minutes, and every
-    /// start after was refused on it again.
+    /// start after met its refusal again.
     /// </summary>
     [Fact]
     public void A_time_of_day_just_past_is_tomorrow_s_as_the_install_recorded()
@@ -187,7 +186,7 @@ public sealed class AccountLimitsTests
     }
 
     /// <summary>
-    /// A weekday and a time (TOOL4k; the maker documents <i>resets Mon 12:00am</i>, limit-signals evidence §2) is the first
+    /// A weekday and a time (the maker documents <i>resets Mon 12:00am</i>, limit-signals evidence §2) is the first
     /// moment after the refusal on that weekday at that time, with no grace, as a time of day is: the agent names the day
     /// only once the date is dropped, and its refusal says the reset has not come, so one just past is next week's.
     /// 2 October 2026 is a Friday.
@@ -223,7 +222,7 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// The marker is a clause that ENDS <i>You've hit your &lt;what&gt; limit</i>, whatever a door put before
-    /// it; what was hit and the window the reset names are kept for the record.
+    /// it; what limit is hit and the window the reset names are kept for the record.
     /// </summary>
     [Theory]
     [InlineData("Internal error: You've hit your individual spend limit · your session limit resets 7am", "individual spend", "session")]
@@ -276,12 +275,12 @@ public sealed class AccountLimitsTests
         Assert.Null(AccountLimits.Read(Claude, null, seen, Machine));
     }
 
-    // ——— Codex's words (TOOL4k, limit-signals evidence §4): one sentence of sentences, its time the machine's, no zone.
+    // ——— Codex's words (limit-signals evidence §4): one sentence of sentences, its time the machine's, no zone.
 
     /// <summary>Codex's entry, read where its door reads it: `codex-acp`'s own (it has no `codex` adapter to own it).</summary>
     private static LimitWords Codex => ProviderRegistry.Built().AgentNamed("codex-acp")!.Tables.Limits!;
 
-    /// <summary>The refusal as the protocol door says it once it keeps the error's data (ACPDATA1).</summary>
+    /// <summary>The refusal as the protocol door says it once it keeps the error's data.</summary>
     private const string CodexDoor = "the ACP agent refused the call: Internal error: ";
 
     /// <summary>
@@ -353,7 +352,7 @@ public sealed class AccountLimitsTests
     }
 
     /// <summary>
-    /// 🔴 CODEXCREDITS1: the workspace's credits are spent, as three driven sessions met it on the install. It is a limit whose sentence
+    /// 🔴 The workspace's credits are spent, as three driven sessions met it on the install. It is a limit whose sentence
     /// names no reset (the owner refills), so the default stands in, said as unstated.
     /// </summary>
     [Fact]
@@ -404,8 +403,7 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// Every recorded sentence, in the zone this test chose, is recognised by its own entry and its reset
-    /// read as stated: the five of D125 §0.2 each named a time, and so does the weekday the maker documents
-    /// (TOOL4k), which its page prints with no zone, so the machine's stands in.
+    /// read as stated: the five recorded each named a time, and so does the weekday the maker documents, which its page prints with no zone, so the machine's stands in.
     /// </summary>
     [Fact]
     public void Every_recorded_sentence_is_recognised_and_its_reset_read()
@@ -454,7 +452,7 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// A recorded sentence carries the zone as a placeholder, at most once, and never a zone of its own. Codex prints
-    /// none (TOOL4k), and neither does the maker's page for the weekday; each of the five observations printed one.
+    /// none, and neither does the maker's page for the weekday; each of the five observations printed one.
     /// </summary>
     [Fact]
     public void A_recorded_sentence_carries_no_zone_of_its_own()
@@ -471,8 +469,8 @@ public sealed class AccountLimitsTests
     /// <summary>
     /// Only an agent whose limit's words are recorded declares an entry: Claude Code; the stub that mirrors its
     /// words as it mirrors <c>Refused</c>, so a rehearsal can gate a limit with no account; and Codex's door, whose
-    /// sentences TOOL4b read in Codex's source (TOOL4k), since no <c>codex</c> adapter exists to own them. A door onto
-    /// Claude Code reads its owner's (AGT7); dsh and a plugin have none, and read every failure as a failure.
+    /// sentences are read in Codex's source, since no <c>codex</c> adapter exists to own them. A door onto
+    /// Claude Code reads its owner's; dsh and a plugin have none, and read every failure as a failure.
     /// </summary>
     [Fact]
     public void Only_an_agent_seen_hitting_a_limit_declares_an_entry()

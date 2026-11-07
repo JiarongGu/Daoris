@@ -214,7 +214,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
 
     /// <summary>
     /// A session's move pushes its row alone, a delta on the number held, and its entry alone; a working session whose record moved
-    /// only when it was last written, which its group is not ordered by, pushes nothing.
+    /// only in its last-written time, which its group is not ordered by, pushes nothing.
     /// </summary>
     [Fact]
     public async Task One_session_s_move_pushes_its_row_and_its_entry_alone_and_a_working_record_s_write_pushes_nothing()

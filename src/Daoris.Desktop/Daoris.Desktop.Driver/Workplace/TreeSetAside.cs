@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// What the look's own tidy decides of one session branch and does to its tree (out of
 /// <c>SessionTrees.Auto.cs</c>): which branches it takes without a press, its last guards right before one goes, the tree's folder
-/// moved aside rather than deleted, and the later purge of what was moved. Over the trees' context alone: the clean-up's sweep
+/// moved aside rather than deleted, and the later purge of what moved. Over the trees' context alone: the clean-up's sweep
 /// (<see cref="TreeSweeps"/>) takes it for its by-itself path, and the look's pass (<see cref="AutoTidies"/>) takes the sweep.
 /// </summary>
 internal sealed class TreeSetAside(TreeContext context)
@@ -34,7 +34,7 @@ internal sealed class TreeSetAside(TreeContext context)
     /// <summary>The folder under the trees home the look's own tidy moves a tree's folder aside into.</summary>
     internal const string SetAsideFolder = ".tidied";
 
-    /// <summary>How a folder moved aside is named after its tree: the tree's name, then the moment it was moved, in UTC.</summary>
+    /// <summary>How a folder moved aside is named after its tree: the tree's name, then the moment of the move, in UTC.</summary>
     internal const string SetAsideStamp = "yyyyMMdd'T'HHmmssfff'Z'";
 
     /// <summary>Where the look's own tidy keeps the folders it moved aside: <c>trees/.tidied/&lt;workspace&gt;/&lt;repository&gt;/</c>.</summary>
@@ -260,7 +260,7 @@ internal sealed class TreeSetAside(TreeContext context)
 
     /// <summary>
     /// The manifest of a folder about to move, written <c>judged</c> beside where it goes; its path, or null where it
-    /// was not written, so the folder moves whole as before. Never written where that folder is reached through a link, which the move
+    /// is not written, so the folder moves whole. Never written where that folder is reached through a link, which the move
     /// refuses too.
     /// </summary>
     private string? Judged(string to, string repository, string branch, IReadOnlyList<string> slim, FinishedTree? finished = null)
@@ -313,7 +313,7 @@ internal sealed class TreeSetAside(TreeContext context)
 
     /// <summary>
     /// The folders the look moved aside that have waited <paramref name="after"/>: each deleted where nothing in it
-    /// was written after it was moved, and kept, saying why, where something was, or where it holds a link outside a build folder,
+    /// is written after it moved, and kept, saying why, where something is, or where it holds a link outside a build folder,
     /// is reached through one, or cannot be read.
     /// </summary>
     /// <remarks>
@@ -395,7 +395,7 @@ internal sealed class TreeSetAside(TreeContext context)
             var last = before.GetValueOrDefault(Path.GetFullPath(folder));
             if (only is not null && !only(folder))
             {
-                // Not this press's: what the last pass kept of it stays kept, as it was said.
+                // Not this press's: what the last pass kept of it stays kept, as the pass said.
                 if (last.Why is { } why) failed.Add((folder, why, last.Tried));
                 continue;
             }
@@ -443,7 +443,7 @@ internal sealed class TreeSetAside(TreeContext context)
     /// <para>🔴 Where it would go is reached through no link: a link on the way into <c>.going</c>, asked
     /// before the folders are made and again after, keeps the folder where it is, <c>linked</c>, as <see cref="MoveFolderAside"/> keeps a move.</para>
     /// <para>A record of the removal goes beside it in <c>.going</c> before the rename (its door, when, the
-    /// threshold, and whether its delete began), and its manifest stays where it was until the delete ends, so a stop at any moment is
+    /// threshold, and whether its delete began), and its manifest stays where it is until the delete ends, so a stop at any moment is
     /// resumed by <see cref="ResumeGoingAsync"/> with the folder's identity whole.</para>
     /// </summary>
     /// <param name="door">Which door removes it: <see cref="GoingDoors"/>.</param>
@@ -484,7 +484,7 @@ internal sealed class TreeSetAside(TreeContext context)
         try
         {
             // The rules' doors read the folder again under `.going`, where nothing writes by its old name, so a
-            // write between the purge's read and the rename puts it back whole; the press removes what its list disclosed and was chosen.
+            // write between the purge's read and the rename puts it back whole; the press removes what its list disclosed and is chosen.
             if (door != GoingDoors.Press
                 && SetAsideKeeps.WrittenSince(going, threshold, SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest, top) is { } late)
             {
@@ -511,7 +511,7 @@ internal sealed class TreeSetAside(TreeContext context)
     /// <summary>
     /// What a stop left under one place's <c>.tidied/.going</c>, each folder within the budget: one whose
     /// delete never began, or whose record does not read, goes back to its place whole; one whose delete began finishes only where no file
-    /// in it was written since its removal began and, for the hour's door, its holding check passes now; else what remains goes back, the
+    /// in it is written since its removal began and, for the hour's door, its holding check passes now; else what remains goes back, the
     /// result says why, and a finished folder's manifest ends <c>unmarked</c> with that why. 🔴 A folder
     /// reached through a link on the way, <c>.going</c> or any level below it included, is never touched.
     /// </summary>

@@ -18,7 +18,7 @@ public static class OpenFolders
 {
     /// <summary>
     /// Open <paramref name="folder"/> once the start gate has a place, on the thread pool: the launcher starts
-    /// the file manager's process, and a route's call to it before its first wait was a start on the window's thread. Its
+    /// the file manager's process, and a route's call to it before its first wait is a start on the window's thread. Its
     /// refusal is thrown as the launcher threw it.
     /// </summary>
     public static Task OpenAsync(this OpenFolder open, string folder, CancellationToken ct) =>

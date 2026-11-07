@@ -95,10 +95,10 @@ public enum StateScopes
 
 /// <summary>
 /// What a route declares a successful answer changed: its scopes, and the payload field naming the session the
-/// change was about, where it is one session's.
+/// change is about, where it is one session's.
 /// </summary>
 /// <param name="Scopes">What a successful answer changed.</param>
-/// <param name="Session">The payload field naming the session the change was about.</param>
+/// <param name="Session">The payload field naming the session the change is about.</param>
 /// <param name="Subject">The payload field naming the entry or ask the press is for, where it is no one session's.</param>
 public sealed record StateChange(StateScopes Scopes, string? Session = null, string? Subject = null);
 
@@ -106,7 +106,7 @@ public sealed record StateChange(StateScopes Scopes, string? Session = null, str
 /// <c>STATE_CHANGED</c> on the wire: what moved, never what it is now; no words, no answer, no machine path.
 /// </summary>
 /// <param name="Scopes">The scopes' names, in the page's words.</param>
-/// <param name="Sessions">The sessions the change was about, where the route named one; absent is any.</param>
+/// <param name="Sessions">The sessions the change is about, where the route named one; absent is any.</param>
 public sealed record StateChanged(
     IReadOnlyList<string> Scopes,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<string>? Sessions);
@@ -297,7 +297,7 @@ public static class StatePublisher
     /// <summary>
     /// A change the driver makes itself, with no press behind it: words taken up by a conversation, a
     /// proposal written, a size landed. Published as a press's change is, in the same words, so the page's one hub asks again what
-    /// it names; <paramref name="session"/> narrows it to the one session it was about. Not awaited, as the publisher's own is not.
+    /// it names; <paramref name="session"/> narrows it to the one session it is about. Not awaited, as the publisher's own is not.
     /// </summary>
     public static void Publish(IEventBus bus, StateScopes scopes, string? session = null)
     {

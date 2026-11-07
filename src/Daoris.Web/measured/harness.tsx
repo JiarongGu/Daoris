@@ -31,10 +31,10 @@ import * as mapWorld from '../src/map/MapWorld.stories';
 import * as code from '../src/map/code/CodeMap.stories';
 import { applyZoom } from '../src/design/zoom';
 
-// The measured-box checks' page (FLOWCHART1a1; the flowchart design §7, trap 3; UIFIT1, the UI/UX design §5's first trap):
+// The measured-box checks' page (the flowchart design §7, trap 3, the UI/UX design §5's first trap):
 // one story, composed as Storybook composes it, with the project's decorators, the shipped tokens and catalogues, and drawn
 // alone in a real browser so `measure.ts` can measure every box of a flow, `settingRows.ts` every row's value against
-// its track, and `recordHead.ts` how far down the record's head puts the conversation (MILESTONEUX1).
+// its track, and `recordHead.ts` how far down the record's head puts the conversation.
 // `?story=flow/Lifecycle` names the stories file, by its book below, and the story.
 
 setProjectAnnotations(preview);
@@ -42,51 +42,51 @@ setProjectAnnotations(preview);
 const books: Record<string, Record<string, ComponentType>> = {
   flow: composeStories(flow) as unknown as Record<string, ComponentType>,
   quest: composeStories(quest) as unknown as Record<string, ComponentType>,
-  // A session's states (FLOWCHART1b): the return on its lane, the outcomes as one node.
+  // A session's states: the return on its lane, the outcomes as one node.
   session: composeStories(session) as unknown as Record<string, ComponentType>,
-  // A session's parts (FLOWCHART1b): a fork and a retry, an asked part from a faint node, the landing plan as a dashed node.
+  // A session's parts: a fork and a retry, an asked part from a faint node, the landing plan as a dashed node.
   parts: composeStories(parts) as unknown as Record<string, ComponentType>,
-  // How a landed branch landed (FLOWCHART1c): tries and advances stacked, the push and the pull request hung apart from the landing.
+  // How a landed branch landed: tries and advances stacked, the push and the pull request hung apart from the landing.
   landing: composeStories(landing) as unknown as Record<string, ComponentType>,
-  // A workflow and its run (FLOWCHART1d): its steps a rank each under their sections, a failure path, the run lit.
+  // A workflow and its run: its steps a rank each under their sections, a failure path, the run lit.
   workflow: composeStories(workflow) as unknown as Record<string, ComponentType>,
-  // One drawing of a workflow graph (SETUPUX1n): the release graph down at 80 and 39rem, the rail at 25rem.
+  // One drawing of a workflow graph: the release graph down at 80 and 39rem, the rail at 25rem.
   graph: composeStories(graph) as unknown as Record<string, ComponentType>,
-  // A run's view (SETUPUX1u): a release run of each outcome and a review waiting on you, at 300 px, 25rem and 45% of the window.
+  // A run's view: a release run of each outcome and a review waiting on you, at 300 px, 25rem and 45% of the window.
   runview: composeStories(runView) as unknown as Record<string, ComponentType>,
-  // Settings' rows on their tracks (UIFIT1): the atoms' story, This Daoris, Driver and AI features whole, and a workspace's Setup.
+  // Settings' rows on their tracks: the atoms' story, This Daoris, Driver and AI features whole, and a workspace's Setup.
   ui: composeStories(ui) as unknown as Record<string, ComponentType>,
   wiring: composeStories(wiring) as unknown as Record<string, ComponentType>,
   driver: composeStories(driver) as unknown as Record<string, ComponentType>,
   ai: composeStories(ai) as unknown as Record<string, ComponentType>,
   workspace: composeStories(workspace) as unknown as Record<string, ComponentType>,
-  // The record head with every block, at the main area's three widths (MILESTONEUX1): how far down the conversation starts.
+  // The record head with every block, at the main area's three widths: how far down the conversation starts.
   head: composeStories(head) as unknown as Record<string, ComponentType>,
-  // The window at each zoom level (ZOOM1): the frame's bars at their own size, the content scaled.
+  // The window at each zoom level: the frame's bars at their own size, the content scaled.
   zoom: composeStories(zoom) as unknown as Record<string, ComponentType>,
-  // The waiting panel (WAITPANEL1): its edge dragged and kept, and the conversation's presses above it, never under it.
+  // The waiting panel: its edge dragged and kept, and the conversation's presses above it, never under it.
   waitPanel: composeStories(waitPanel) as unknown as Record<string, ComponentType>,
-  // The roles' diagram (COMPANYVIEW1f): across at 80rem with its detail beside, its list at 39 and 25rem.
+  // The roles' diagram: across at 80rem with its detail beside, its list at 39 and 25rem.
   roles: composeStories(roles) as unknown as Record<string, ComponentType>,
-  // A place's page (SETUPUX1h): the head and the three section lines within the first 400 px at the three widths.
+  // A place's page: the head and the three section lines within the first 400 px at the three widths.
   place: composeStories(place) as unknown as Record<string, ComponentType>,
-  // *Set up…*'s review (SETUPUX1k): two columns at 80rem, one below, and where Apply sits at 680 px (39rem).
+  // *Set up…*'s review: two columns at 80rem, one below, and where Apply sits at 680 px (39rem).
   review: composeStories(setUpReview) as unknown as Record<string, ComponentType>,
-  // A place's Workflow section on its own (SETUPUX1o): the chart in its column at 80rem, one press away at 39 and 25rem.
+  // A place's Workflow section on its own: the chart in its column at 80rem, one press away at 39 and 25rem.
   placeWorkflow: composeStories(placeWorkflow) as unknown as Record<string, ComponentType>,
-  // The workflow editor (FLOWCHART2b): its chart drawn at 80 and 39rem with a ＋ on each way, and the rail at 25rem.
+  // The workflow editor: its chart drawn at 80 and 39rem with a ＋ on each way, and the rail at 25rem.
   editor: composeStories(editor) as unknown as Record<string, ComponentType>,
-  // Ask Daoris's proposal on the editor's chart (FLOWCHART2f): the union drawn and marked at 80 and 39rem, the rail at 25rem.
+  // Ask Daoris's proposal on the editor's chart: the union drawn and marked at 80 and 39rem, the rail at 25rem.
   proposal: composeStories(proposal) as unknown as Record<string, ComponentType>,
-  // The driver's refusals on the editor's chart (FLOWCHART2c, CANVAS1b): an outline and a chip, no box moved.
+  // The driver's refusals on the editor's chart: an outline and a chip, no box moved.
   judgement: composeStories(judgement) as unknown as Record<string, ComponentType>,
-  // The canvas (CANVAS1a): a flow in the viewport at the three widths, the dense graph whole, and the synthetic worlds measured for frames.
+  // The canvas: a flow in the viewport at the three widths, the dense graph whole, and the synthetic worlds measured for frames.
   canvas: composeStories(canvas) as unknown as Record<string, ComponentType>,
-  // The large positioned worlds (CANVAS1d): 100, 1,000, 5,000 and 10,000 nodes in the viewport, tiers, culling, the minimap, find.
+  // The large positioned worlds: 100, 1,000, 5,000 and 10,000 nodes in the viewport, tiers, culling, the minimap, find.
   large: composeStories(large) as unknown as Record<string, ComponentType>,
-  // The reference map on the canvas (CANVAS1e): the ring, the layers, several workspaces and a chosen line at the three widths.
+  // The reference map on the canvas: the ring, the layers, several workspaces and a chosen line at the three widths.
   map: composeStories(mapWorld) as unknown as Record<string, ComponentType>,
-  // The code map on the canvas (CANVAS1f): this repository's, a cycle, long ids, and 500 and 5,000 modules on their closed folders.
+  // The code map on the canvas: this repository's, a cycle, long ids, and 500 and 5,000 modules on their closed folders.
   code: composeStories(code) as unknown as Record<string, ComponentType>,
 };
 
@@ -101,7 +101,7 @@ const root = document.getElementById('root')!;
 performance.mark('story-render');
 const mounted = Story ? createRoot(root) : null;
 if (Story) mounted?.render(<Story />);
-// The page can open and close its story again, for the checks that nothing is retained across opens (CANVAS1d, trap 22).
+// The page can open and close its story again, for the checks that nothing is retained across opens (trap 22).
 (window as unknown as { setOpen: (open: boolean) => void }).setOpen = (open) => {
   if (!Story) return;
   if (open) { performance.mark('story-render'); mounted?.render(<Story />); } else mounted?.render(null);

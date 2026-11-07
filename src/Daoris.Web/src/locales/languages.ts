@@ -8,7 +8,7 @@ export function pageLanguage(language: string): string {
 }
 
 /**
- * A language named in itself (D222), so a person who cannot read the page's current language can still find theirs: the name its own
+ * A language named in itself, so a person who cannot read the page's current language can still find theirs: the name its own
  * catalogue gives (`language.<tag>`), else the platform's name for the tag, else the tag.
  */
 export function languageName(tag: string): string {

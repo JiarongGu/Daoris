@@ -9,7 +9,7 @@ namespace Daoris.Desktop;
 /// <c>daoris session hand-over &lt;id&gt;</c> calls. Where that judge says the session is a conversation, a closed quest's, or Ask Daoris's,
 /// which nothing carries on by itself, the press is *Go on with Daoris's brief*: a new part in its tree on its agent and account, handed
 /// the brief and then the words (<see cref="ChatRunner.GoOnBriefedAsync"/>). One answer for both, <c>{sessionId, kept, why, message}</c>:
-/// <c>kept</c> is that the choice is kept (a go-on-new) or the new part was opened (a brief), <c>sessionId</c> is the new part where one
+/// <c>kept</c> is that the choice is kept (a go-on-new) or the new part is opened (a brief), <c>sessionId</c> is the new part where one
 /// opened and null where the next look opens it, and a refusal is <c>kept: false</c> with its code and the driver's sentence.
 /// </summary>
 internal static class GoOnPress

@@ -532,7 +532,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
     /// <summary>
     /// Each scope answers which account its next start would take, the step that chose it and the
-    /// account it was weighed against, and what holds each other account of the agent's — a cool-off until when, an account
+    /// account it is weighed against, and what holds each other account of the agent's — a cool-off until when, an account
     /// the scope does not use — read from the walk's own pieces, with nothing probed.
     /// </summary>
     [Fact]
@@ -569,7 +569,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
     /// <summary>
     /// A next start ranked by what would lapse carries, beside its reset in <c>when</c>,
-    /// the window that won, the whole percent of it unused and when that reading was made, as the start's line says them.
+    /// the window that won, the whole percent of it unused and when that reading is made, as the start's line says them.
     /// </summary>
     [Fact]
     public async Task A_next_start_ranked_by_what_would_lapse_carries_its_window_its_unused_share_and_its_reading_s_moment()
@@ -723,7 +723,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     /// <summary>
     /// The screen's <i>Read now</i>, asked by a press alone, asks each account's agent its use
     /// only where the reading is older than its question's floor, so an account read within it is asked nothing and keeps its
-    /// reading. Answered with the door it was asked through.
+    /// reading. Answered with the door it is asked through.
     /// </summary>
     [Fact]
     public async Task Read_now_asks_no_account_read_within_the_floor_and_keeps_its_reading()

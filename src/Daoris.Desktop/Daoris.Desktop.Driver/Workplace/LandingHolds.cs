@@ -76,7 +76,7 @@ internal static class LandingHolds
 
     /// <summary>Hold the tree for one landing, waiting while another landing of it holds it, here or in another process.</summary>
     /// <param name="by">Who holds it, for a door that waits behind it to name; null names nobody.</param>
-    /// <returns>The hold, which knows whether it waited and what the one before kept; null where it was held for the whole of <paramref name="within"/>.</returns>
+    /// <returns>The hold, which knows whether it waited and what the one before kept; null where another held it for the whole of <paramref name="within"/>.</returns>
     public static Task<LandingHold?> TakeAsync(
         string home, string tree, CancellationToken ct = default, TimeSpan? within = null, LandingHolder? by = null) =>
         HoldAsync(home, TreeKey(tree), ct, within, by);
@@ -314,7 +314,7 @@ internal static class LandingHolds
 
     /// <summary>
     /// Remove the home's landing holds no door has held for longer than <see cref="Wait"/> before <paramref name="now"/>.
-    /// One held does not open and stays; one held since it was listed reads as recent through the sweep's own handle and stays.
+    /// One held does not open and stays; one held since the listing reads as recent through the sweep's own handle and stays.
     /// </summary>
     /// <returns>How many it removed. Never throws: a file that will not go is swept next time.</returns>
     internal static int Sweep(string home, DateTime now)
@@ -484,7 +484,7 @@ internal sealed class LandingHold(Action release, FileStream file, LandingHolder
 
 /// <summary>
 /// What one landing or push came to, kept in its hold's file for the door waiting behind it: the commit, so the
-/// one behind compares what it would land or push with what was, and the plugin's answer, so a failure is said rather than hidden.
+/// one behind compares what it would land or push with what landed, and the plugin's answer, so a failure is said rather than hidden.
 /// </summary>
 /// <param name="Branch">The branch the work is on.</param>
 /// <param name="Tip">

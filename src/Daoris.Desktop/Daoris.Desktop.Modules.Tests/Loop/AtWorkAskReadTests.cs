@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// An ask's read, from the <c>groups</c> slice's entries whose origin is the ask, the <c>quests</c> and
 /// <c>sessions</c> slices, and the <c>asks</c> slice as an existence dependency: its health, its fence and its wakes. A held ask with nothing
-/// at work, an ask the slice does not hold, and an ask deleted after it was opened are told apart.
+/// at work, an ask the slice does not hold, and an ask deleted after opening are told apart.
 /// </summary>
 public sealed class AtWorkAskReadTests : IDisposable
 {

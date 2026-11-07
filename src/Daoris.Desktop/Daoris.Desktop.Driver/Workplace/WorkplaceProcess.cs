@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// </summary>
 public interface IWorkplaceProcess
 {
-    /// <summary>Whether a named workflow governs this work: its run was bound to one.</summary>
+    /// <summary>Whether a named workflow governs this work: its run is bound to one.</summary>
     bool Named { get; }
 
     /// <summary>How the work is said to follow it: <c>`docs-to-pr` v2</c>, or Current.</summary>
@@ -17,7 +17,7 @@ public interface IWorkplaceProcess
     /// <summary>The landing rule the work lands by: the declared rule, or the version's landing step over it.</summary>
     Landing Landing { get; }
 
-    /// <summary>Why the named workflow its run was bound to cannot be read here; else null.</summary>
+    /// <summary>Why the named workflow its run is bound to cannot be read here; else null.</summary>
     string? Problem { get; }
 
     /// <summary>Why it could not be read whether a named workflow governs this work; else null.</summary>
@@ -79,7 +79,7 @@ public interface IWorkplaceProcess
 /// <param name="Message">Its <c>message</c> template rendered for the work; null where it names none, so its commits say today's words.</param>
 /// <param name="Ticket">The ticket the work is for, where its message names one.</param>
 /// <param name="Options">Its options as the bind resolved them, the JSON its authorization keeps.</param>
-/// <param name="Graph">The digest of the version its run was bound to.</param>
+/// <param name="Graph">The digest of the version its run is bound to.</param>
 /// <param name="Authority">The standing authority's scope an automatic delivery names: the workflow, its version and the repository.</param>
 public sealed record BoundLand(
     string Method, string? Target, bool Squash, string? Message, string? Ticket, string Options, string Graph, string Authority);

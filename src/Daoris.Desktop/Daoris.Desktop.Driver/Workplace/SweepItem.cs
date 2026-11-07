@@ -63,7 +63,7 @@ public sealed record SweepItem(
 
     /// <summary>
     /// Which hold the judgement found keeps its commits: <c>line</c>, <c>landing</c>,
-    /// <c>squash</c>, <c>content</c>, <c>carried</c>, <c>empty</c>, or <c>branch</c> for a branch of the person's; null where none was found.
+    /// <c>squash</c>, <c>content</c>, <c>carried</c>, <c>empty</c>, or <c>branch</c> for a branch of the person's; null where none is found.
     /// </summary>
     public string? Hold { get; init; }
 

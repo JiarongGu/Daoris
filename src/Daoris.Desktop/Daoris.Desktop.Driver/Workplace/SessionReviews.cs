@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// <param name="FromBranch">Read from the landed branch in the repository's checkout, the tree no longer readable.</param>
 /// <param name="Landed">The standing landing's review (read from the tree), or the landed review the files came from.</param>
 /// <param name="TreeGone">Whether the session's tree is gone from this machine.</param>
-/// <param name="Uncommitted">The tree's uncommitted work, where it was read.</param>
+/// <param name="Uncommitted">The tree's uncommitted work, where it is read.</param>
 /// <param name="Behind">How the tree stands against its line, where the committed range read it.</param>
 /// <param name="TreeBranch">The branch the tree's HEAD names; null where detached or not read.</param>
 /// <param name="Offer">What the driver would land of the tree, where it offers anything.</param>

@@ -23,7 +23,7 @@ internal static class SetAsideMarks
 
     /// <summary>
     /// A finished tree's manifest marked at a step after its move: <c>deleted</c> with when, or
-    /// <c>refused</c>. Only a schema-2 manifest at <c>moved</c>, <c>judged</c> or <c>refused</c>; one that does not write stays as it was, and
+    /// <c>refused</c>. Only a schema-2 manifest at <c>moved</c>, <c>judged</c> or <c>refused</c>; one that does not write stays unchanged, and
     /// the resume reads git again at the next pass.
     /// </summary>
     internal static void Mark(string path, string state, DateTimeOffset at)
@@ -35,7 +35,7 @@ internal static class SetAsideMarks
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // Left as it was: the resume finds the branch gone at the next pass and marks it then.
+            // Left unchanged: the resume finds the branch gone at the next pass and marks it then.
         }
     }
 
@@ -59,7 +59,7 @@ internal static class SetAsideMarks
         }
     }
 
-    /// <summary>When a folder moved aside was moved, read from its name (<c>&lt;name&gt;-&lt;moment&gt;</c>); null where its name says none.</summary>
+    /// <summary>The time of a folder's move aside, read from its name (<c>&lt;name&gt;-&lt;moment&gt;</c>); null where its name says none.</summary>
     internal static DateTimeOffset? MovedAt(string name)
     {
         var dash = name.LastIndexOf('-');

@@ -71,7 +71,7 @@ public static class HistoryClearing
     /// it tidied; one log line for the press. A unit that changed since is kept and counted, never refused for the rest.
     /// </summary>
     /// <param name="door"><see cref="PluginEvents.Screen"/> or <see cref="PluginEvents.Terminal"/>, which the log line names.</param>
-    /// <exception cref="DriverException">The service did not answer, or has no history door, before anything was removed.</exception>
+    /// <exception cref="DriverException">The service did not answer, or has no history door, before anything is removed.</exception>
     public static async Task<HistoryOutcome> ClearAsync(
         HistoryWorld world, HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, string door, CancellationToken ct = default)
     {
@@ -201,7 +201,7 @@ public static class HistoryClearing
 
     /// <summary>
     /// The units a press sent, each once, by a kind the door knows and an id; for one quest's, one ask's or one quest's failed
-    /// sessions, only that unit, since the press was offered on its page.
+    /// sessions, only that unit, since the press is offered on its page.
     /// </summary>
     private static List<HistoryUnitName> Listed(HistoryScope scope, string named, IReadOnlyList<HistoryUnitName> units)
     {

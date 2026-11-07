@@ -29,7 +29,6 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
     /// (<see cref="Lines.WalkAsync"/>), so no part opens between the judgement and the keep; a line that loops or runs past
     /// <see cref="Lines.Bound"/> is refused <see cref="SessionSayRefusal.Unplaced"/>. A key's word waiting at the head answers a retry named
     /// to an earlier part settled; one waiting on a part the line has left is answered by the door as it stands.</para>
-    ///
     /// <para><b>The words are this machine's alone</b>, like a transcript: on an ended record nothing that travels changes,
     /// so no revision is written. A park's answer line is on its note, which travels.</para>
     ///
@@ -208,7 +207,6 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
     /// memory of the id its own release is answered with, never this word's fields. So nothing here grants: a word kept by another
     /// caller is unattributed by the driver, quarantined and taken back. No answered line is written on the note, so a forged word
     /// leaves nothing that asserts authority; the supervisor's line is the driver's, for an attributed word.</para>
-    ///
     /// <para><b>The key's retry compares</b> its author, decision, question, choice and text, so a lost response is recovered with the
     /// word already kept and a different say under the same key is refused (<see cref="SessionSayRefusal.KeyMismatch"/>). A word claiming
     /// the decision under another key is never the release's (<see cref="SessionSayRefusal.DecisionTaken"/>).</para>

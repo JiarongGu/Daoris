@@ -113,7 +113,7 @@ public static class GroupsStateSlice
             Keyed = true,
             WakesOn = WakesOn,
             Hears = [wake => HearLedger(loop, wake), wake => HearTrees(loop.Facts, wake)],
-            // The service away or refusing: the windows keep what was judged, and the next wake looks again.
+            // The service away or refusing: the windows keep the last judgement, and the next wake looks again.
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
 

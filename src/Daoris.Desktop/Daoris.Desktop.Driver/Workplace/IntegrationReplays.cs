@@ -39,20 +39,20 @@ internal sealed record IntegrationReplayRun(string Kind, string Said)
 
     public IReadOnlyList<IntegrationMember> Members { get; init; } = [];
 
-    /// <summary>The line's integration tree, where it was made or found; null where none was reached.</summary>
+    /// <summary>The line's integration tree, where it is made or found; null where none is reached.</summary>
     public string? Tree { get; init; }
 }
 
 /// <summary>What a form-and-replay answers.</summary>
 internal static class IntegrationReplayRuns
 {
-    /// <summary>No open request of the line stands outside a candidate: nothing was written.</summary>
+    /// <summary>No open request of the line stands outside a candidate: nothing is written.</summary>
     public const string Idle = "idle";
 
-    /// <summary>A candidate stands for the line already, held by another claim: nothing was written and no claim made.</summary>
+    /// <summary>A candidate stands for the line already, held by another claim: nothing is written and no claim is made.</summary>
     public const string Standing = "standing";
 
-    /// <summary>git could not say where the line stands, or the queue moved while the candidate was formed: nothing was written.</summary>
+    /// <summary>git could not say where the line stands, or the queue moved while the candidate is formed: nothing is written.</summary>
     public const string Unread = "unread";
 
     /// <summary>
@@ -61,7 +61,7 @@ internal static class IntegrationReplayRuns
     /// </summary>
     public const string Held = "held";
 
-    /// <summary>Every member was judged: replayed, contained, or handed back. The candidate goes on to its gates (row f), or ended with nothing to promote.</summary>
+    /// <summary>Every member is judged: replayed, contained, or handed back. The candidate goes on to its gates, or ends with nothing to promote.</summary>
     public const string Replayed = "replayed";
 
     /// <summary>A resume of a candidate found something other than a step to run again (it ended, git could not say, the line holds its tip).</summary>
@@ -226,7 +226,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
                 member.Request, candidate.Base, ct).ConfigureAwait(false);
             if (ended.Outcome == IntegrationStepOutcomes.Held) return Answer(IntegrationReplayRuns.Held, ended.Said ?? "a step could not go on.", claim, tree);
 
-            // An end that left the member where it was would be run again for ever.
+            // An end that leaves the member where it stands would be run again for ever.
             var after = store.Members(claim.Candidate).FirstOrDefault(each => each.Request == member.Request);
             if (after is { Stands: true } && after.State == next.State)
             {
@@ -249,7 +249,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     // ——— The form step's effect: the line's integration tree, made or found, at the candidate's base.
 
     /// <summary>
-    /// The commit the line's integration tree was found, bound-checked and put back at, clean, by the step this very run just ended, or null: the
+    /// The commit the line's integration tree is found, bound-checked and put back at, clean, by the step this very run just ended, or null: the
     /// next step of the same run begins from it without finding the tree and putting it back again. Any step that begins on it clears it first,
     /// and a run that resumes a candidate never has it, so a step a crash cut still begins from a tree put back.
     /// </summary>
@@ -339,7 +339,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
             if (await ResetAsync(tree, onto, ct).ConfigureAwait(false) is { } notReset) return Held(notReset);
         }
 
-        // A merge rule's press was judged by the landing against the line's commits just before it was asked, so ancestry alone is read again here.
+        // A merge rule's press is judged by the landing against the line's commits just before it is asked, so ancestry alone is read again here.
         var ancestryOnly = request.Route == IntegrationRoutes.Merge;
 
         // 1. What the line holds, whole, is settled at once: nothing to merge and nothing to gate.
@@ -369,7 +369,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
             };
         }
 
-        // 3. The rest merged `--no-ff` onto the candidate so far, the second parent the frozen tip. A merge rule's press is merged as it was.
+        // 3. The rest merged `--no-ff` onto the candidate so far, the second parent the frozen tip. A merge rule's press is merged the same way.
         if (request.Route == IntegrationRoutes.Merge) return await PressedAsync(tree, onto, member, request, ask, ct).ConfigureAwait(false);
         var (merged, mergeOut, mergeErr) = await WorkingTree.GitAsync(tree, ["merge", "--no-ff", "--no-commit", request.Tip], ct).ConfigureAwait(false);
         IReadOnlyList<string> paths = [];
@@ -461,7 +461,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
 
     /// <summary>
     /// The conflict step: a conflict of meaning goes by the member's request's <c>conflicts</c>, the word it carries as the
-    /// rule stood when it was asked, never read again. <c>session</c> tells the member's session to rebase onto the line in the landing's own
+    /// rule stands at the ask, never read again. <c>session</c> tells the member's session to rebase onto the line in the landing's own
     /// words, through the say door under the key <see cref="RebaseKeys.Of"/> gives the session and the frozen tip, so a tip is told once, and
     /// hands the member back with its request closed, for the session's next landing to request again. <c>hold</c>, and a session that cannot be
     /// told (no session, no door, a door that kept nothing), sets the member aside as <see cref="IntegrationMemberStates.Held"/>: its request stays
@@ -570,7 +570,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     }
 
     /// <summary>
-    /// The candidate ends with nothing to promote where the member leaving it was the last that could: no other standing member is yet to be
+    /// The candidate ends with nothing to promote where the member leaving it is the last that could: no other standing member is yet to be
     /// replayed, replayed, or awaiting its hand-back. A member contained provisionally needs a replayed member to hold it, so none is left.
     /// </summary>
     private static string? EndIfNothingLeft(IReadOnlyList<IntegrationMember> members, string leaving) =>

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPSIZE1e (D195's keep-size note): the browser's caches a kind with a size limit and no days. The limit judged by the one door and stored
+/// The browser's caches a kind with a size limit and no days. The limit judged by the one door and stored
 /// as a shape; the daily pass clearing them over the limit while the browser does not run; the browser's start clearing them over the limit
 /// and leaving them within it. Files only, in a home under <c>_fixtures/</c>.
 /// </summary>

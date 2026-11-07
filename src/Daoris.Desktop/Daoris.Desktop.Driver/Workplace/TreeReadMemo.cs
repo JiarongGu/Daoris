@@ -37,7 +37,7 @@ internal sealed class TreeReadMemo
     // Each tree's last kept read, by its full path.
     private readonly ConcurrentDictionary<string, Kept> _trees = new(StringComparer.OrdinalIgnoreCase);
 
-    // The refs each kept read was taken at, by their version, so a later pass can tell whether they only moved forward.
+    // The refs each kept read is taken at, by their version, so a later pass can tell whether they only moved forward.
     private readonly ConcurrentDictionary<string, CountedRefs> _versions = new(StringComparer.Ordinal);
 
     /// <summary>The memo of <paramref name="home"/>'s trees, one for the process.</summary>
@@ -46,7 +46,7 @@ internal sealed class TreeReadMemo
     /// <summary>One read of some trees through <paramref name="trees"/>: each repository's refs and the home's records read once.</summary>
     internal TreeReadPass Begin(SessionTrees trees, LookTimes? times = null)
     {
-        // What no kept read rests on any more is let go: a gone tree's read, then a version no read was taken at.
+        // What no kept read rests on any more is let go: a gone tree's read, then a version no read is taken at.
         foreach (var tree in _trees.Keys)
         {
             if (!Directory.Exists(tree)) _trees.TryRemove(tree, out _);
@@ -73,7 +73,7 @@ internal sealed class TreeReadMemo
 
     internal CountedRefs? Version(string version) => _versions.GetValueOrDefault(version);
 
-    /// <summary>A tree's kept read: its own stamp, its repository's refs version and the home's stamp it was taken at, and its work.</summary>
+    /// <summary>A tree's kept read: its own stamp, its repository's refs version and the home's stamp it is taken at, and its work.</summary>
     internal sealed record Kept(string Tree, string Refs, string Home, TreeWork Work)
     {
         /// <summary>A held tree's repository's declared output, once read; it rests on what <see cref="Refs"/> and <see cref="Home"/> hold.</summary>
@@ -293,7 +293,7 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
     }
 
     /// <summary>
-    /// Whether the refs at <paramref name="was"/> only moved forward to <paramref name="now"/>: none went, and each that moved stands
+    /// Whether the refs of the older version only moved forward to the newer one: none went, and each that moved stands
     /// on a descendant of where it stood, as git says. Asked once a pass for each version.
     /// </summary>
     private Task<bool> ForwardAsync(string was, CountedRefs now, string cwd, CancellationToken ct)

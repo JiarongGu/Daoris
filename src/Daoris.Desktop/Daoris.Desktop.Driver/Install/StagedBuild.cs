@@ -23,7 +23,7 @@ public static class UpdateMode
     public static readonly IReadOnlyList<string> All = [WhenIdle, Now, NotNow];
 }
 
-/// <summary>The person's word on a staged build: its mode, the build it was said of (null for whatever is staged), and when.</summary>
+/// <summary>The person's word on a staged build: its mode, the build it is said of (null for whatever is staged), and when.</summary>
 public sealed record UpdateRequest(string Mode, string? Build, DateTimeOffset? At);
 
 /// <summary>
@@ -63,7 +63,7 @@ public static class UpdateRequests
     }
 
     /// <summary>
-    /// The mode that holds for the build staged now: the request's, where it was said of this build or of whatever is
+    /// The mode that holds for the build staged now: the request's, where it is said of this build or of whatever is
     /// staged; when idle otherwise, so a newer stage drains again after a *Not now*.
     /// </summary>
     public static string ModeFor(UpdateRequest? request, string? staged) =>
@@ -77,7 +77,7 @@ public sealed record StagedFile(string Path, long Size, string Sha256);
 
 /// <summary>
 /// What <c>update/staged/build.json</c> says of the build beside it: its id, the release version it
-/// was packed at, the commit it was built from where the publish could read one, when, and every file it carries.
+/// is packed at, the commit it is built from where the publish can read one, when, and every file it carries.
 /// </summary>
 public sealed record StagedManifest(string Id, string Version, string? Commit, DateTimeOffset? At, IReadOnlyList<StagedFile> Files);
 
@@ -119,7 +119,7 @@ public sealed record SwapRecord(
 /// The entry found held, relative to the install's root: the folder moved itself, or a file within it; null
 /// where Windows could not tell, and on a journal written before it.
 /// </param>
-/// <param name="By">The processes found holding <paramref name="Held"/>, each <c>name (pid n)</c>; null where none was found.</param>
+/// <param name="By">The processes found holding <paramref name="Held"/>, each <c>name (pid n)</c>; null where none is found.</param>
 /// <param name="Holders">
 /// The same processes in full, each with when it started and its command line: the journal's alone, never a log line's,
 /// since a command line carries paths.
@@ -128,7 +128,7 @@ public sealed record SwapHold(
     string From, string To, long Ms, int Tries, bool Released, string? Held = null, string? By = null, string? Holders = null)
 {
     /// <summary>
-    /// The hold in a terminal's words: <c>app for 12.3 s</c>, what held it where that was found, and whether it never gave
+    /// The hold in a terminal's words: <c>app for 12.3 s</c>, what held it where that is found, and whether it never gave
     /// way.
     /// </summary>
     public string Said =>
@@ -469,7 +469,7 @@ public static class StagedBuild
     /// <summary>
     /// The new application says it came up: a journal at <see cref="SwapPhase.Started"/> becomes
     /// <see cref="SwapPhase.Confirmed"/>, which the waiting launcher reads. True when this start confirmed a swap, so the
-    /// application says once that it was updated; false for every other start, and for a journal a roll-back stopped part
+    /// application says once that it has been updated; false for every other start, and for a journal a roll-back stopped part
     /// way through, which carries its reason and is finished at the next start, never confirmed.
     /// </summary>
     public static bool Confirm(string install, int pid)
@@ -530,7 +530,7 @@ public static class StagedBuild
                 }
                 catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException)
                 {
-                    // Another account's, or a process that ended as it was asked: not one of the install's.
+                    // Another account's, or a process that ended as asked: not one of the install's.
                 }
             }
         }
@@ -572,7 +572,7 @@ public static class StagedBuild
 }
 
 /// <summary>How a swap ended, for the launcher to act on: the application to start, and what the journal now says.</summary>
-/// <param name="Phase">The journal's phase at the end: installed, rolled back or refused; or null when nothing was staged or the install was busy.</param>
+/// <param name="Phase">The journal's phase at the end: installed, rolled back or refused; or null when nothing is staged or the install is busy.</param>
 /// <param name="StartOld">True when the launcher must still start the application in <c>app/</c>, which is the build before it.</param>
 public sealed record SwapOutcome(string? Phase, string? Reason, bool StartOld)
 {

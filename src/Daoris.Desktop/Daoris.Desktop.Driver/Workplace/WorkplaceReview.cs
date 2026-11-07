@@ -59,18 +59,18 @@ internal static class LandingDoors
 public interface IWorkplaceGate
 {
     /// <summary>
-    /// The tree's tip the gate was judged at, where the door pins it: the landing lands exactly that commit, or refuses where the tree
+    /// The tree's tip the gate is judged at, where the door pins it: the landing lands exactly that commit, or refuses where the tree
     /// moved past it. Null lands the tree as it stands, as the person's press does.
     /// </summary>
     string? Tip { get; }
 
-    /// <summary>The gate pinned to <paramref name="tip"/>, every other part as it was.</summary>
+    /// <summary>The gate pinned to <paramref name="tip"/>, every other part unchanged.</summary>
     IWorkplaceGate WithTip(string? tip);
 
     /// <summary>The first part that holds, as a landing's refusal: its sentence and its code; null where all let go.</summary>
     TreeLanding? Refusal { get; }
 
-    /// <summary>The process the gate was read with, which the landing lands by; null where none was read.</summary>
+    /// <summary>The process the gate is read with, which the landing lands by; null where none is read.</summary>
     IWorkplaceProcess? Process { get; }
 
     /// <summary>What the review's gate keeps of the set-up that let the work go; null where it asked none.</summary>

@@ -94,7 +94,7 @@ public static class GitGlobalFile
 
     /// <summary>
     /// Hand <paramref name="info"/> the file where git carries a key and its git is not known too old for it, written first where it is
-    /// not as Daoris writes it; the path handed, or null where none was. Never a reason a start fails: a file that cannot be written is
+    /// not as Daoris writes it; the path handed, or null where none is handed. Never a reason a start fails: a file that cannot be written is
     /// not handed.
     /// </summary>
     public static string? Hand(ProcessStartInfo info, ToolsRead read, string home)

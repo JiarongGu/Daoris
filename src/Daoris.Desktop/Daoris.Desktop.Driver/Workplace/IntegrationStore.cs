@@ -260,7 +260,7 @@ public sealed class IntegrationStore(
     }
 
     /// <summary>
-    /// Close an open request that stands in no candidate (its requester's drop, before it is formed); whether it was open. A request standing
+    /// Close an open request that stands in no candidate (its requester's drop, before it is formed); whether it stood open. A request standing
     /// in a candidate closes with that candidate's step, under its claim (<see cref="IntegrationStepEnd.Closes"/>).
     /// </summary>
     /// <exception cref="IntegrationRefusedException">The request stands in a candidate: nothing is written.</exception>
@@ -388,7 +388,7 @@ public sealed class IntegrationStore(
 
     /// <summary>
     /// The candidate of a repository's line that ended last, or null where none has: what the next form reads to know the
-    /// last one was split, so it takes one member. Read by the end's own moment; the later formed of two that ended together.
+    /// last one split, so it takes one member. Read by the end's own moment; the later formed of two that ended together.
     /// </summary>
     public IntegrationCandidate? LastEnded(string repository, string line) =>
         Reading(reader => reader.Query(

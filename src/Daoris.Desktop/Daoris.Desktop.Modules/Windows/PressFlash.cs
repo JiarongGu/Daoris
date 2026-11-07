@@ -10,7 +10,7 @@ namespace Daoris.Desktop;
 /// minutes to be found with the person away (2026-10-21); the button stays lit while they wait. A press is never named on it.</para>
 ///
 /// <para><b>Lit once per press.</b> A press asked while a main window is in front is said there (the bell's hue and its toast),
-/// and lights nothing; a press the button was lit for lights it no more once a main window came forward. A utility window (the
+/// and lights nothing; a press the button is lit for lights it no more once a main window comes forward. A utility window (the
 /// monitor, a detached session) in front is the person at Daoris but not where the card is, so the main window is still lit.</para>
 ///
 /// <para>Told from any thread: the pipe tells what waits on the thread that changed it, and each window its focus on its own; one
@@ -75,7 +75,7 @@ public sealed class PressFlash(Action<string, bool> flash)
         if (stop is not null) flash(stop, false);
     }
 
-    /// <summary>A window went behind another, or was minimized: no main window is in front, until one comes forward.</summary>
+    /// <summary>A window goes behind another, or is minimized: no main window is in front, until one comes forward.</summary>
     public void WentBehind(string window)
     {
         if (!IsMain(window)) return;

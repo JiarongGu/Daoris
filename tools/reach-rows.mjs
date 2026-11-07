@@ -1,7 +1,7 @@
 /**
- * Reach rows kept beside `tools/merge-branch.mjs`, which is over its size budget, until MERGETOOL1 moves the table whole.
+ * Reach rows kept beside `tools/merge-branch.mjs`, which is over its size budget, until the table moves whole.
  *
- * A provider's own sources (D251): the tools' provider census runs the contracts' generator,
+ * A provider's own sources: the tools' provider census runs the contracts' generator,
  * which reads each provider's sources (the words its vocabulary names) and the registry's reader of them, so a change there
  * reaches the driver's own readers and the tool tests.
  */
@@ -33,7 +33,7 @@ const canonVersion = (driverReaders) => ({
   why: 'the release version every desktop assembly is stamped with, which the driver test BuildVersionTests reads beside the stage manifest',
 });
 
-/** The build settings every .NET project builds with, each tree's importing them: where the commit is stamped (BUILDSTAMP1). */
+/** The build settings every .NET project builds with, each tree's importing them: where the commit is stamped. */
 const rootBuild = (driverReaders) => ({
   paths: ['Directory.Build.props'],
   gates: [...driverReaders, 'service', 'service-process', 'devkit', 'code-map'],

@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>What the look reads of an operation's head from the records each time.</summary>
 /// <param name="HeadRecord">The record the head's line ends at now.</param>
-/// <param name="OpenedByOwnWord">That record was opened from the operation's head record by the operation's keyed word.</param>
+/// <param name="OpenedByOwnWord">That record is opened from the operation's head record by the operation's keyed word.</param>
 /// <param name="MoveWhy">Why the line moved otherwise (<see cref="TogetherWhy"/>); null reads as another word.</param>
 /// <param name="HeadRunning">The head's turn is running.</param>
 /// <param name="LineTip">The line's tip, or its name: the start of the range a landing replays.</param>

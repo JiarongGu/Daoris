@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class PieceKeptStates
 {
-    /// <summary>The import was refused: the copy is kept for the person's look and <i>Discard…</i>.</summary>
+    /// <summary>The import is refused: the copy is kept for the person's look and <i>Discard…</i>.</summary>
     internal const string Held = "held";
 
     /// <summary>The keeper's commit is in the repository, frozen as <see cref="PieceRefs.Of"/>.</summary>

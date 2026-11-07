@@ -90,7 +90,7 @@ public static class PlaceDigests
         {
             parts.Add(["repository", row.Repository, row.Workspace]);
             // The copy's saving is its own operation, done once; the choice that names it is in the digest, so a plan read again after the
-            // copy is saved is the plan that was read.
+            // copy is saved is the plan read.
             parts.AddRange(row.Changes.Where(change => change.Key != PlacePlans.WorkflowSaveKey)
                 .Select(change => (string[])["change", change.Key, change.Part, change.Said, change.Before, change.After]));
             if (row.Declaration is { } declaration)
@@ -118,7 +118,7 @@ public sealed class PlaceReceipts(string home)
 
     public string PathOf(string digest) => DaorisHome.Entry(home, HomeEntry.PlaceReceipts, digest + ".json");
 
-    /// <summary>The receipt of <paramref name="digest"/>, or null where none was written.</summary>
+    /// <summary>The receipt of <paramref name="digest"/>, or null where none is written.</summary>
     /// <exception cref="DriverException">A file is there and does not read.</exception>
     public PlaceReceipt? Read(string digest)
     {

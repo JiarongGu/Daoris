@@ -233,7 +233,7 @@ internal sealed class TreeDelivering
 
     /// <summary>
     /// The landing as its delivery lands it: the method's form and squash the intent's; no switch, since the delivery's authorization holds it. A
-    /// delivery the door wrote (<see cref="Door"/>) was read from the run's bound <c>land</c> a moment ago, so that landing stands whole.
+    /// delivery the door writes (<see cref="Door"/>) is read from the run's bound <c>land</c> a moment ago, so that landing stands whole.
     /// </summary>
     public Landing Over(Landing live) => Door ? live with { Squash = Squash } :
         live with

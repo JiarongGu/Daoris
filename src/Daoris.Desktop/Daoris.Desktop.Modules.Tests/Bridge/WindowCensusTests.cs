@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// The census that holds the rule that nothing the window asks for waits on work. Every read of the driver's
 /// module either reads only what is held in memory, named in <see cref="Held"/> with what it reads, or is marked
 /// <c>[ByEvent]</c>, answered from what is held while its work is told as <c>DAORIS.ANSWERED</c>. A read that is neither is
-/// refused, unless it is one of the <see cref="Owed"/> reads that were computed on the window's request when the rule was set,
+/// refused, unless it is one of the <see cref="Owed"/> reads still computed on the window's request,
 /// which this census lets only shrink.
 /// </summary>
 /// <remarks>
@@ -49,7 +49,7 @@ public sealed class WindowCensusTests
         "TREES_SYNC_SCOPE", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_LANDED", "WORKFLOW_RUN", "WORK_PLAN", "WORK_RECORDS_FOLDER", "WORK_STATE",
     };
 
-    /// <summary>The count of <see cref="Owed"/> when the rule was set: it falls as reads move, and never rises.</summary>
+    /// <summary>The count of <see cref="Owed"/> at the rule's start: it falls as reads move, and never rises.</summary>
     private const int OwedAtTheRule = 88;
 
     /// <summary>Every route of the driver's module that declares no change: a read, or an act that moves nothing the page reads.</summary>

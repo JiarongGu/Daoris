@@ -21,7 +21,7 @@ internal sealed class SessionsMoveDesk(DriverContext context)
         // 🔴 Unless the record says it still runs and nothing on this machine runs it — a chat
         // left behind by an application that closed, or a crash. Then the person's stop is how
         // it ends.
-        // Which of the three it was is part of the answer: the page says it, and an orphan's
+        // Which of the three applies is part of the answer: the page says it, and an orphan's
         // ending is not the person's — its record says nothing ran it.
         // 🔴 And when another Daoris process on this machine runs it — a terminal's chat — this
         // host can neither stop it nor call it ended: the record still says working.

@@ -12,7 +12,7 @@ public static class RebaseTelling
     /// <summary>The say door for Daoris's words under a key; null where there is none, and nothing is said.</summary>
     public delegate Task<SayAnswer?> Say(string session, string text, string key, CancellationToken ct);
 
-    /// <summary>The words said at <paramref name="tip"/>; the door's answer, or null where there was no tip or no door answered.</summary>
+    /// <summary>The words said at <paramref name="tip"/>; the door's answer, or null where there is no tip or no door answered.</summary>
     public static async Task<SayAnswer?> TellAsync(Say say, string session, string? tip, LandingConflict conflict, CancellationToken ct)
     {
         if (tip is null) return null;
@@ -29,7 +29,7 @@ public static class RebaseTelling
 
     /// <summary>
     /// A terminal's landing: the words said at the tree's HEAD, and the sentence the terminal says after the refusal: that
-    /// the session was asked and the landing can be run again once it has, or why it was not, with the words for the person to pass on.
+    /// the session is asked and the landing can be run again once it has, or why it is not, with the words for the person to pass on.
     /// </summary>
     public static async Task<string> TellTreeAsync(Say say, string session, string tree, LandingConflict conflict, CancellationToken ct = default)
     {

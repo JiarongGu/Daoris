@@ -14,7 +14,6 @@ namespace Daoris.Knowledge;
 /// <para><b>Transcript-class, never over HTTP</b>: what a session said and did can carry machine paths and a repository's
 /// code, so only the stdio connector of a session on this machine reads it, for the parts of that session's own line, and no host route
 /// is handed it.</para>
-///
 /// <para><b>The driver's file, read with code of its own.</b> The driver's <c>SessionEvents</c> writes the file and this shares no code
 /// with it, since the connector references the service alone; each side's tests hold the same text
 /// (<c>LineEventsShapeTests</c>, the driver's <c>LineEventFilesTests</c>), as the helpers' box and files are held.

@@ -104,7 +104,7 @@ public static class GitFormats
         return commits;
     }
 
-    /// <summary>One commit's fields and message, or null where git's answer was not one whole commit.</summary>
+    /// <summary>One commit's fields and message, or null where git's answer is not one whole commit.</summary>
     public static GitCommitDetail? ParseCommit(string stdout)
     {
         var fields = stdout.Split('\0');

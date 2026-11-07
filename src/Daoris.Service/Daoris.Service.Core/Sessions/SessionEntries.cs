@@ -35,7 +35,6 @@ public sealed class StoreEntryFacts(QuestStore quests, SessionStore sessions) : 
 /// <c>quest:&lt;id&gt;</c>. A conversation that took the quest (rule 2) comes right after the ask. <b>Of a session</b>: an intake is the ask's, <c>ask:&lt;id&gt;/intake</c>; a helper or a reviewer is its own;
 /// a session on a quest takes the quest's; a conversation handed over, or started from another's words, takes the one it continues; and
 /// any other conversation is its own, <c>session:&lt;id&gt;</c>.</para>
-///
 /// <para><b>A fact that is gone</b> (a quest a clear forgot, a publisher's record never mirrored) passes to the next rule, and a record
 /// left with none is its own entry. No ask is looked up: the quest's own sender names it, so a teammate's mirror of the quest answers as
 /// this machine does, though asks are this machine's.</para>

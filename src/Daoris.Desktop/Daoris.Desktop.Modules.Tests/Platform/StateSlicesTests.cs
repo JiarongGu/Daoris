@@ -109,7 +109,7 @@ public sealed class StateSlicesTests
 
     /// <summary>
     /// A judgement that pushed something tells its hearers once, its snapshot already holding it, so a slice judged from this
-    /// one's memory reads what was pushed; one that moved nothing tells nothing, and a hearer's failure is said and stops no other.
+    /// one's memory reads what is pushed; one that moved nothing tells nothing, and a hearer's failure is said and stops no other.
     /// </summary>
     [Fact]
     public async Task A_judgement_that_pushed_tells_its_hearers_once_and_one_that_moved_nothing_tells_none()
@@ -482,7 +482,7 @@ public sealed class StateSlicesTests
         Assert.Equal("a@1:ready,b@1:ready", Versions(slice.Snapshot()));
         Assert.Equal(StateSlice.Ready, slice.Snapshot().Status);
 
-        // Once judged, a judgement with nothing to judge from keeps what was judged: nothing is pushed gone.
+        // Once judged, a judgement with nothing to judge from keeps what is judged: nothing is pushed gone.
         landed = false;
         await slice.JudgeAsync();
         Assert.Equal(2, Pushes().Count);

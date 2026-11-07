@@ -1,20 +1,17 @@
-// GitHub pull request (`github-pull-request`): a plugin that opens and reads a pull request through GitHub's REST API (D241 point 5).
-//
+// GitHub pull request (`github-pull-request`): a plugin that opens and reads a pull request through GitHub's REST API.
 // It runs no git and no CLI. Daoris pushed the branch before this step ran (a `push` node, through its own doors); this process is
 // handed the API token of the git identity serving origin, for this process alone, in DAORIS_HOST_TOKEN, and is not started where
 // no identity serves origin, the identity is read only, git access denies Write, or the identity has no API token.
-//
 // Two things it answers, both over JSON-RPC 2.0, one frame per line, on stdin and stdout (stdout is the wire; stderr is its console):
-//   - `work/perform` for its one step, `pull-request`: opens the pull request from the pushed branch, or finds the one already
-//     open for it, once per idempotency key (the kit's work.mjs keeps that), and reports its address as evidence and as its
-//     `pullRequest` output. The branch and checkout come from the units `work/watch` tells it; the step's attempt names its unit
-//     by the tip it was made at.
-//   - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words.
-//
-//   DAORIS_PLUGIN_DATA  the data folder (the kit's journal)
-//   DAORIS_HOST_TOKEN   the identity's API token: never logged, never written, sent only to the API
-//   DAORIS_HOST_API     the API's base address where it is not GitHub's (a test's stand-in); else api.github.com, or
-//                       https://<host>/api/v3 for a GitHub Enterprise host the origin names
+//  - `work/perform` for its one step, `pull-request`: opens the pull request from the pushed branch, or finds the one already
+//  open for it, once per idempotency key (the kit's work.mjs keeps that), and reports its address as evidence and as its
+//  `pullRequest` output. The branch and checkout come from the units `work/watch` tells it; the step's attempt names its unit
+//  by the tip it is made at.
+//  - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words.
+//  DAORIS_PLUGIN_DATA the data folder (the kit's journal)
+//  DAORIS_HOST_TOKEN the identity's API token: never logged, never written, sent only to the API
+//  DAORIS_HOST_API the API's base address where it is not GitHub's (a test's stand-in); else api.github.com, or
+//  https://<host>/api/v3 for a GitHub Enterprise host the origin names
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -200,7 +197,7 @@ const kit = work({
     if (String(attempt.step).split('/').pop() !== 'pull-request') return failed('unknown-step', `no step ${attempt.step}`);
     return pullRequest(attempt);
   },
-  // An attempt an earlier process began: the pull request open from its branch says whether it was made.
+  // An attempt an earlier process began: the pull request open from its branch says whether the attempt made one.
   check: async (attempt) => {
     const unit = units.find((each) => each.tip === attempt.subjectRevision);
     if (!unit) return null;

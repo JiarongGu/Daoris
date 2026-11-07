@@ -1,6 +1,6 @@
 /**
- * **How far down the record's head puts the conversation, page-side** (MILESTONEUX1; the UI/UX design §3.7 and §9 row 6; UX7's
- * budget, the UX7 design §6.2): from the main area's top, which holds the pinned page head, to the top of the conversation's
+ * **How far down the record's head puts the conversation, page-side**:
+ * from the main area's top, which holds the pinned page head, to the top of the conversation's
  * first box, as the browser laid it out, and each block between them with its own height so a run that passes the budget says
  * which block costs it.
  *

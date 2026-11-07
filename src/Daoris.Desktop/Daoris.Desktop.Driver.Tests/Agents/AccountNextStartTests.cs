@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6e (D130 §3–§4, D125 §3.7) through <see cref="HarnessRoster.Next"/>: which account the next start of a scope would
+/// Through <see cref="HarnessRoster.Next"/>: which account the next start of a scope would
 /// take and why, read from the walk's own pieces — the scope <see cref="HarnessRoster.SelectAsync"/> reads, what it knows of
 /// each account, its order, each account's cool-off and refusal — so the screen and the start never disagree, and asking
 /// counts nothing.
@@ -75,7 +75,7 @@ public sealed class AccountNextStartTests : IDisposable
         roster.Look(
         [
             new SessionStarted("fake", "account-1", Seen.AddMinutes(-5), Running: true),
-            // A door's session runs on its owner's account (AGT7).
+            // A door's session runs on its owner's account.
             new SessionStarted("fake-door", "account-2", Seen.AddMinutes(-4), Running: true),
         ], roster.Mark());
 
@@ -115,7 +115,7 @@ public sealed class AccountNextStartTests : IDisposable
     }
 
     /// <summary>
-    /// Rewritten by POOL1a2 (D197 point 1; the account-pool design §2.4): a workspace's own list once held its starts to its own
+    /// Rewritten by POOL1a2: a workspace's own list once held its starts to its own
     /// accounts, the machine's outside it, and another workspace read the machine's list with the workspace's account outside.
     /// Read as the set now, one order of every account (the machine's list, then the workspace's), and no account is outside.
     /// </summary>
@@ -146,7 +146,7 @@ public sealed class AccountNextStartTests : IDisposable
     }
 
     /// <summary>
-    /// OWNSPACE1a (D175 point 2, amending D125 point 5): nothing named takes the agent's Daoris account, never the tool's own
+    /// Nothing named takes the agent's Daoris account, never the tool's own
     /// sign-in, whose cool-off then holds nothing; the rule's own cases are <c>OwnSpaceTests</c>'.
     /// </summary>
     [Fact]

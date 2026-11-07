@@ -33,7 +33,7 @@ public sealed class LandPresses(DriverLoop loop, IEventBus bus)
     /// <summary>The press kept the person's Accept, and the pass lands it.</summary>
     public const string Accepted = "accepted";
 
-    /// <summary>The press was answered before it ended, and goes on.</summary>
+    /// <summary>The press answered before it ended, and goes on.</summary>
     public const string Held = "held";
 
     /// <summary>The press landed nothing, and its sentence says why.</summary>
@@ -156,7 +156,7 @@ public sealed class LandPresses(DriverLoop loop, IEventBus bus)
         /// <summary>The bound came first: true where the press had not ended, so it is held.</summary>
         public bool Hold() => Interlocked.CompareExchange(ref _state, HeldAlready, Running) == Running;
 
-        /// <summary>The press ended: true where it was held already, so its end came after its answer.</summary>
+        /// <summary>The press ended: true where it is already held, so its end came after its answer.</summary>
         public bool End() => Interlocked.CompareExchange(ref _state, Answered, Running) == HeldAlready;
     }
 }

@@ -104,7 +104,7 @@ public sealed class BrowserModuleTests : Bridge
         Assert.False(File.Exists(BrowserSettings.FilePath(Home)));
     }
 
-    /// <summary>A file that could not be read is never written over: refused by code, left as it was.</summary>
+    /// <summary>A file that could not be read is never written over: refused by code, left unchanged.</summary>
     [Fact]
     public async Task A_file_that_cannot_be_read_is_refused_and_left_as_it_was()
     {

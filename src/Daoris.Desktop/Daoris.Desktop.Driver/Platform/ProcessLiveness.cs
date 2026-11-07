@@ -9,9 +9,9 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para>A process is alive while its id runs under a start time within a second of the one it named; an id no process has, or one that
-/// exited as it was looked at, is gone; an id running under another start time is another process, so the one named is gone.</para>
+/// exited as it is looked at, is gone; an id running under another start time is another process, so the one named is gone.</para>
 /// <para><b>A start time it may not read counts as alive</b>: nothing can tell, and the lease's <i>cannot tell</i> holds, so neither a lease
-/// nor a move is ever taken from a process merely because its start was hidden.</para>
+/// nor a move is ever taken from a process merely because its start is hidden.</para>
 /// <para>The home is one machine's: an id of another machine's process reads as gone. Compiled into the launcher with the lease,
 /// so it uses the base library alone.</para>
 /// </remarks>

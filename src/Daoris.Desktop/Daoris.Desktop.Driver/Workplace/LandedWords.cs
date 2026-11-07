@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 public static class LandedWords
 {
     /// <summary>
-    /// The row: what proved it or keeps it, and on a row that is kept what its pull request's answer was and why it does not
+    /// The row: what proved it or keeps it, and on a row that is kept what its pull request's answer is and why it does not
     /// clear the branch, or why nothing is asked. A row that goes says what proved it, and no more.
     /// </summary>
     public static string Describe(LandedItem item) => Proof(item)

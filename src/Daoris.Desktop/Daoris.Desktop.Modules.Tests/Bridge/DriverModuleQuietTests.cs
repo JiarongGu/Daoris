@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// <c>SET_QUIET</c>, the window's door onto <c>quietMinutes</c>, the one quiet setting: answered with the state, set to whole minutes in
-/// its bounds, and refused out of them with the file as it was.
+/// its bounds, and refused out of them with the file unchanged.
 /// </summary>
 public sealed class DriverModuleQuietTests : DriverModuleBridge
 {

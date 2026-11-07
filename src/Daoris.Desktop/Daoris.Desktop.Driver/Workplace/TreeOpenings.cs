@@ -72,12 +72,12 @@ internal static class TreeOpenings
     /// goes as a link first, where the open made the folder or git may keep it as this tree (one git cannot list may be). A tree whose
     /// links cannot all go is left, with its branch, for the look, which moves its folder aside whole (<see cref="TreeStrays"/>).
     /// </remarks>
-    /// <param name="ours">Whether the open made the folder: one that was there before the add is never deleted.</param>
+    /// <param name="ours">Whether the open made the folder: one already there before the add is never deleted.</param>
     /// <param name="keepBranch">Whether the branch stands: a tree made again is cut off with the session's commits on its
     /// branch, which only an open that made the branch itself takes back.</param>
     /// <remarks>A tree git binds to another checkout is left too, with its branch and its opening's lock, and the look
     /// says why each time it meets it (<see cref="TreeStrays"/>).</remarks>
-    /// <param name="unused">Whether the open made the tree a moment ago and nothing was recorded, copied or told of it: the opening's own
+    /// <param name="unused">Whether the open made the tree a moment ago and nothing is recorded, copied or told of it: the opening's own
     /// refusal of a tree git binds elsewhere lets go of it so, since git's own removal names a tree by its record and deletes that
     /// folder alone, where the look would leave it for the person to meet.</param>
     internal static async Task UndoAsync(string root, string path, string branch, bool ours, bool keepBranch = false, bool unused = false)

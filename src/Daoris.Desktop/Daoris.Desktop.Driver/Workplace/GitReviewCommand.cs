@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris git review</c> was asked: whose review, and in which form.</summary>
+/// <summary>What <c>daoris git review</c> is asked: whose review, and in which form.</summary>
 /// <param name="Session">The session whose review is read.</param>
 /// <param name="Json">The review written as JSON, its files without their patches, rather than said.</param>
 /// <param name="Time">Each git start the read made, with its node, budget, gate wait, creation and run, and <c>review.read</c> written.</param>

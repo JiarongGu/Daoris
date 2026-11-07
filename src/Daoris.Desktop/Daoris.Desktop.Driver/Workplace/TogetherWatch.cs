@@ -92,7 +92,7 @@ internal sealed class TogetherWatch(string home, Func<DateTimeOffset> now, Func<
     }
 
     /// <summary>
-    /// Whether a landing record or advance of the attempt's target was written at or after it; null where the records do not read.
+    /// Whether a landing record or advance of the attempt's target is written at or after it; null where the records do not read.
     /// </summary>
     internal static bool? Recorded(string home, string repository, TogetherAttempt attempt)
     {
@@ -111,7 +111,7 @@ internal sealed class TogetherWatch(string home, Func<DateTimeOffset> now, Func<
 
     /// <summary>
     /// What the records say of the head now: the record its line ends at, whether its own keyed word opened that one (a successor of
-    /// the head's record opened by words while the operation was still <i>asked</i>, its word waiting there), why it moved otherwise,
+    /// the head's record opened by words while the operation is still <i>asked</i>, its word waiting there), why it moved otherwise,
     /// and whether its turn runs. Null where the head's record is not read.
     /// </summary>
     internal static TogetherFacts? FactsOf(TogetherOperation operation, IReadOnlyDictionary<string, SessionRecord> records, string? line)

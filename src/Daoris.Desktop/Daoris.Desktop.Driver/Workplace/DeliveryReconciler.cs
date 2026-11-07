@@ -8,7 +8,7 @@ public static class DeliveryStandings
     /// <summary>Its method's reaching phase is done, and it is settled delivered: its <c>land</c> is reached.</summary>
     public const string Delivered = "delivered";
 
-    /// <summary>It was settled before, as <see cref="DeliveryRecord.Settled"/> says; nothing was written.</summary>
+    /// <summary>It is settled already, as <see cref="DeliveryRecord.Settled"/> says; nothing is written.</summary>
     public const string Settled = "settled";
 
     /// <summary>What it did so far is certain, and its landing goes on from <see cref="DeliveryReconciled.Next"/> under this run's claim.</summary>
@@ -65,7 +65,7 @@ public sealed record DeliveryReconciled(string Key, string Standing, string Said
 /// unknown, held and said for the person. Neither a timeout nor another Accept repeats an uncertain effect, and nothing here writes git.
 /// </summary>
 /// <remarks>
-/// <para><b>A merge</b> keeps no landing record: the line holding its commit is its record. One whose press left its request waiting was
+/// <para><b>A merge</b> keeps no landing record: the line holding its commit is its record. One whose press left its request waiting is
 /// withdrawn by its landing; the line may take it later, so it waits while the request does, and is reached once the line holds the commit.</para>
 /// <para><b>A plugin's phases</b> (<c>plugin-dispatched</c>, <c>plugin-answered</c>) are a delivery the retired <c>work/land</c> wire wrote: they are
 /// read, never sent again, and a delivery whose git phases are done is left as it stands, said.</para>
@@ -108,7 +108,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
     /// <summary>
     /// After a line's run closed a request: each merge into <paramref name="line"/> whose press left its request waiting settled by
     /// phase now, so the one the line took is recorded reached as it is taken rather than at the next start. One still waiting, or a live run's,
-    /// stands as it was.
+    /// stands unchanged.
     /// </summary>
     public static async Task TakenAsync(string home, string root, string repository, string line, CancellationToken ct)
     {
@@ -211,7 +211,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
         {
             if (open.Phase is DeliveryPhases.PluginDispatched or DeliveryPhases.PluginAnswered) return await PluginAsync(delivery, claim, ct).ConfigureAwait(false);
             (string Outcome, string? Evidence, string Said)? reading;
-            // A preparation cut before any ref was written ahead reads nothing of git, so it needs no checkout.
+            // A preparation cut before any ref is written ahead reads nothing of git, so it needs no checkout.
             if (open.Phase == DeliveryPhases.Prepared) reading = Cut;
             else if (checkout(delivery) is not { } root) return Said(delivery, DeliveryStandings.Held, $"`{delivery.Intent.Repository}`'s checkout is not here, so its refs are read at the next look", claim);
             else reading = await ReadAsync(delivery, phases, open.Phase, root, ct).ConfigureAwait(false);
@@ -257,7 +257,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
                 };
             }
 
-            // The line took the press's request after its press stopped waiting: what the press was refused with is reached now.
+            // The line took the press's request after its press stopped waiting: what the press refused with is reached now.
             store.Begin(claim, DeliveryPhases.RefWritten, $"`refs/heads/{intent.Line}` to hold {commit}");
             store.End(claim, DeliveryPhases.RefWritten, DeliveryOutcomes.Done, tip, $"`{intent.Line}` holds {commit}, taken by its line after its press");
         }
@@ -280,7 +280,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
     /// <summary>
     /// The open entry of <paramref name="phase"/> after its preparation read: a ref done where it stands at the intended tip, withdrawn
     /// where it is absent or stands where its record had it or at the tip judged, else unknown; a record done where it holds the branch at the
-    /// tip its ref was written at, else withdrawn, to be written again. Null where git cannot say.
+    /// tip its ref is written at, else withdrawn, to be written again. Null where git cannot say.
     /// </summary>
     private async Task<(string Outcome, string? Evidence, string Said)?> ReadAsync(
         DeliveryRecord delivery, IReadOnlyList<DeliveryPhase> phases, string phase, string root, CancellationToken ct)

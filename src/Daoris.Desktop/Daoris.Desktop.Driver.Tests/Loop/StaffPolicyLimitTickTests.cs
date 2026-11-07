@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1e2 (D226; the staff policy design §4, §9 row e) through REAL ticks, the limit condition's <c>wait</c> and <c>ask</c>: a driven
+/// STAFFPOLICY1e2 (the staff policy design §4, §9 row e) through REAL ticks, the limit condition's <c>wait</c> and <c>ask</c>: a driven
 /// run on Build's first choice (the stub's agent, both its accounts at their limit) while the second choice (another agent) is ready. With
 /// <c>wait</c> the line holds for the first choice's reset though the second is ready, and goes on in its own conversation at the reset; with
 /// <c>upTo</c> it walks to the second choice once that many minutes have passed on the held clock; with <c>ask</c> it holds for the person's yes
@@ -188,7 +188,7 @@ public sealed class StaffPolicyLimitTickTests : IDisposable
         Assert.Equal((RetryDecision.Approved, "build"), (QuestRetry.Decide("q1", verdicts).Did, QuestRetry.Decide("q1", verdicts).Approve));
         Assert.Empty(Moves());
 
-        // The yes through the terminal's door (REVIEW2 T2), which writes the one approval; the window's route is held by DriverModuleRetryTests.
+        // The yes through the terminal's door, which writes the one approval; the window's route is held by DriverModuleRetryTests.
         var said = new StringWriter();
         var world = new DriverChoicesWorld
         {

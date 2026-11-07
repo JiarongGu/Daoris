@@ -4,22 +4,22 @@ import { GO_ON_BRIEF, HAND_OVER, NEVER, NEW_SESSION_REFUSED, START_FROM } from '
 import { en, zh } from '.';
 
 /**
- * The codes a refused go-on, start-from or say answers by are a twin (MSG1g3, D142 point 4, LANG1b's pattern;
+ * The codes a refused go-on, start-from or say answers by are a twin (see
  * `.claude/knowledge/twins.md`): the driver declares them as `public const string` in `GoOnNew`, `WordsNever` and `StartFrom`,
  * and this page words them in `work/say.ts`'s three tables, with no code shared. This side reads the driver's source and holds
  * the tables and both catalogues to it, so a code the driver adds or renames can never reach the page unworded. The held line
- * itself is coded already (CONVNOTE2g/2g2); what this holds is the page's refusals beside it.
+ * itself is coded already; what this holds is the page's refusals beside it.
  */
 
 /**
- * The file that declares each class an alias may name, read by name: Agents' `ContinueWhy` forwards Events' `ContinueCodes`
- * (FOUNDATION1 mod-ix), and `HandOverAskWhy` is the Events-owned hand-over vocabulary.
+ * The file that declares each class an alias may name, read by name: Agents' `ContinueWhy` forwards Events' `ContinueCodes`,
+ * and `HandOverAskWhy` is the Events-owned hand-over vocabulary.
  */
 const ALIASED: Record<string, () => string> = {
   ContinueWhy: () => driverSource('ContinueReason.cs'),
   ContinueCodes: () => driverSource('ContinueCodes.cs'),
   HandOverAskWhy: () => driverSource('HandOverAskWhy.cs'),
-  // FOUNDATION1d-ii part 1: `WordsNever.Continued` forwards the say door's answer's own word, which a record declares.
+  // `WordsNever.Continued` forwards the say door's answer's own word, which a record declares.
   SayAnswer: () => driverSource('ServiceAnswers.cs'),
 };
 
@@ -40,7 +40,7 @@ function codesOf(file: string, className: string): string[] {
   return codesIn(driverSource(file), className);
 }
 
-/** The codes one class declares in a source text, which a stand-in source may be (CENSUSRULES1). */
+/** The codes one class declares in a source text, which a stand-in source may be. */
 function codesIn(text: string, className: string): string[] {
   const block = new RegExp(`static class ${className}\\b\\s*\\{([\\s\\S]*?)\\n\\}`).exec(text)?.[1] ?? '';
   return [...block.matchAll(/public const string \w+ = (?:"(?<code>[^"]+)"|(?<alias>\w+)\.(?<name>\w+));/g)].map((match) => {
@@ -51,7 +51,7 @@ function codesIn(text: string, className: string): string[] {
   });
 }
 
-/** The codes the page words that the driver does not declare: the page's own (D137 §5.1). */
+/** The codes the page words that the driver does not declare: the page's own. */
 const PAGE_OWN: Record<string, string[]> = {
   // A second opinion's reviewer is the page's to say; `WordsNever` has no code for it.
   never: ['opinion'],
@@ -65,9 +65,9 @@ const tables = [
   { name: 'NEVER', table: NEVER, file: 'SessionSay.cs', className: 'WordsNever', own: PAGE_OWN.never },
   { name: 'START_FROM', table: START_FROM, file: 'ChatRunner.StartFrom.cs', className: 'StartFrom', own: PAGE_OWN.startFrom },
   { name: 'NEW_SESSION_REFUSED', table: NEW_SESSION_REFUSED, file: 'GoOnNew.cs', className: 'GoOnNew', own: PAGE_OWN.newSession },
-  // MIXAGENT1b-i: the hand-over's own codes; what never goes on is `NEVER`'s, said through `neverSentence`.
+  // The hand-over's own codes; what never goes on is `NEVER`'s, said through `neverSentence`.
   { name: 'HAND_OVER', table: HAND_OVER, file: 'HandOver.cs', className: 'HandOver', own: PAGE_OWN.handOver },
-  // SESSCTX1c part B: *Go on with Daoris's brief*'s own codes; the rest are `START_FROM`'s, the hand-over's tree and `NEVER`'s.
+  // *Go on with Daoris's brief*'s own codes; the rest are `START_FROM`'s, the hand-over's tree and `NEVER`'s.
   { name: 'GO_ON_BRIEF', table: GO_ON_BRIEF, file: 'BriefedMove.cs', className: 'GoOnBrief', own: PAGE_OWN.goOnBrief },
 ];
 

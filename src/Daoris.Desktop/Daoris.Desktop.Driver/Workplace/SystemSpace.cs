@@ -160,7 +160,7 @@ public sealed class SpaceSizes
 
     /// <summary>
     /// Walk <paramref name="kinds"/> in the background, each after the one under way, in the card's order; a kind already waiting or
-    /// counting is not asked twice. True where a walk began or was queued; false where nothing was asked.
+    /// counting is not asked twice. True where a walk begins or is queued; false where nothing is asked.
     /// </summary>
     public bool Start(string home, IEnumerable<string> kinds, WiringBudget budget)
     {
@@ -195,7 +195,7 @@ public sealed class SpaceSizes
 
     /// <summary>
     /// The look's pass: each kind never counted in this process, or counted a day ago or more, and each kind this run
-    /// removed from, walked in the background. True where any was asked.
+    /// removed from, walked in the background. True where any is asked.
     /// </summary>
     public bool StartDue(string home, DateTimeOffset now, IEnumerable<string> removed, WiringBudget budget)
     {
@@ -338,7 +338,7 @@ public sealed record SpaceWorld(string Home)
 
 /// <summary>
 /// This Daoris's <i>Disk space</i> read: <c>SYSTEM_SPACE</c>'s answer and
-/// <c>daoris space</c>'s, one reader. The free space of the Daoris folder's volume; each kind's size with when it was counted, its
+/// <c>daoris space</c>'s, one reader. The free space of the Daoris folder's volume; each kind's size with when it is counted, its
 /// rule, its next and its last clean; and the run lock's holder, a run under way or one a crash cut short. It walks nothing: sizes are
 /// the kinds' last walks (<see cref="SpaceSizes"/>), and a kind never counted says so. It changes nothing.
 /// </summary>
@@ -578,7 +578,7 @@ public static class SystemSpace
 
     /// <summary>
     /// When a kind's rule next takes something, from the disk and the policy: the earliest day, how many go that day, and their bytes where
-    /// the walk knows them. Null where nothing waits, or where it was not read, with why.
+    /// the walk knows them. Null where nothing waits, or where it is not read, with why.
     /// </summary>
     private static (JsonObject? Next, string? Why) Next(
         SpaceWorld world, SpaceKind kind, KeepPolicy policy, KeepingFile record, KindReading? reading, DateTimeOffset now)
@@ -709,7 +709,7 @@ public static class SystemSpace
         return (new JsonObject { ["at"] = Moments.Write(at), ["count"] = counts[oldest], ["bytes"] = days[oldest] }, null);
     }
 
-    /// <summary>The earliest day anything goes: how many go that UTC day, and their bytes where every one of them was measured.</summary>
+    /// <summary>The earliest day anything goes: how many go that UTC day, and their bytes where every one of them is measured.</summary>
     private static (JsonObject? Next, string? Why) Earliest(
         IReadOnlyList<(DateTimeOffset At, string Folder)> goes, IReadOnlyDictionary<string, long>? sizes, DateTimeOffset? now = null)
     {

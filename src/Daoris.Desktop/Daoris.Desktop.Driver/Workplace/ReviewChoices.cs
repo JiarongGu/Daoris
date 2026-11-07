@@ -14,7 +14,7 @@ internal static class ReviewChoices
 
     /// <summary>
     /// The record's base where the tree's history holds it; else the branch's grown base where that is; else null
-    /// (<c>RecordedBaseAsync</c>'s order). Each held flag is null where it was not asked.
+    /// (<c>RecordedBaseAsync</c>'s order). Each held flag is null where it is not asked.
     /// </summary>
     internal static string? RecordedBase(string recorded, bool? recordHeld, string? grown, bool? grownHeld) =>
         Id(recorded) && recordHeld == true ? recorded
@@ -61,7 +61,7 @@ internal static class ReviewChoices
 
     /// <summary>
     /// git's guess at an unset line in <c>DefaultBranchAsync</c>'s order: origin's <c>HEAD</c> where <c>symbolic-ref</c> named it,
-    /// else <c>main</c>, else <c>master</c>, where each answered 0; null where none did. A code is null where it was not asked.
+    /// else <c>main</c>, else <c>master</c>, where each answered 0; null where none did. A code is null where it is not asked.
     /// </summary>
     internal static string? Guess(int originCode, string originOut, int? mainCode, int? masterCode)
     {

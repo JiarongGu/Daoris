@@ -22,7 +22,7 @@ namespace Daoris.Desktop;
 /// <see cref="AskMessages.ArrivedType"/>, while the switch is on.</para>
 ///
 /// <para><b>Read in every process, whoever drives</b>: at its start, at each change its home watch hears
-/// (<see cref="HomeWatch.ForNotices"/>) and at the topic's deadline behind a missed one. A read that fails keeps what was pushed, and
+/// (<see cref="HomeWatch.ForNotices"/>) and at the topic's deadline behind a missed one. A read that fails keeps the last push, and
 /// waits for the next wake; a reader never sets a record aside, which <see cref="Notices"/>' writer alone does.</para>
 ///
 /// <para><b>The writer pushes its own write</b> (<see cref="Record"/>, <see cref="MarkRead"/>, <see cref="Dismiss"/>): a stamp this
@@ -92,7 +92,7 @@ public sealed class NoticesStateSlice
     /// <param name="notify">Whether the person is told (the notify switch), read at each arrival; told where none is given.</param>
     /// <param name="channels">
     /// Every live ask's channel and every teammate's, as the person reads them; null where the service does not answer yet,
-    /// which keeps what was pushed. None given, the slice has no <see cref="Messages"/> partition.
+    /// which keeps the last push. None given, the slice has no <see cref="Messages"/> partition.
     /// </param>
     /// <param name="hears">Where the channels are heard moving (<see cref="ChannelsMoved"/>), beside the record's own wakes.</param>
     public NoticesStateSlice(
@@ -294,8 +294,8 @@ public sealed class NoticesStateSlice
     }
 
     /// <summary>
-    /// One judgement: the record read, each notice younger than a week under its id; null where the record does not read, so what was
-    /// pushed stands. Each id not read before is an arrival, said once, but on the first read. Beside it <i>Messages</i>
+    /// One judgement: the record read, each notice younger than a week under its id; null where the record does not read, so
+    /// the last push stands. Each id not read before is an arrival, said once, but on the first read. Beside it <i>Messages</i>
     /// (<see cref="Messages"/>), its channels read again only where they moved or past <see cref="ChannelsDeadline"/>.
     /// </summary>
     public async Task<IReadOnlyList<SliceJudged>?> JudgeAsync(CancellationToken ct = default)
@@ -320,7 +320,7 @@ public sealed class NoticesStateSlice
     }
 
     /// <summary>
-    /// <i>Messages</i> as last read, read again where the channels moved or the deadline passed: null while none was read, which names no
+    /// <i>Messages</i> as last read, read again where the channels moved or the deadline passed: null while none has been read, which names no
     /// partition. A read the service did not answer, or that failed, keeps the last one, said once in the log, and is asked again at the
     /// next judgement. Each urgent message to everyone that arrived is said, while the switch is on.
     /// </summary>
@@ -365,7 +365,7 @@ public sealed class NoticesStateSlice
     /// <summary>
     /// The notices read now that no read before held, claimed in the said-set: one claimed before,
     /// by this process or another or before a restart, is never said again, and the first run on a home takes what stands as said. Claimed
-    /// whatever the switch says, so turning it on later announces nothing that happened while it was off.
+    /// whatever the switch says, so turning it on later announces nothing that happened while it is off.
     /// </summary>
     private List<Notice> Arrived(IReadOnlyList<Notice> read)
     {

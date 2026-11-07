@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A cool-off scoped to a model (MODELROLE1k, D205 §14 row k): an account at a model family's weekly limit cools as account plus
+/// A cool-off scoped to a model: an account at a model family's weekly limit cools as account plus
 /// model, so a start asking that family is passed and a start asking another runs; an account-wide limit still cools every start.
 /// </summary>
 /// <remarks>Nothing here starts a process: the roster's harness is a PATH look for a command no machine has.</remarks>

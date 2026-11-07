@@ -3,11 +3,11 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>How a tool's download, use or update ended.</summary>
-/// <param name="Version">The version it planned, or null when there was nothing to do.</param>
+/// <param name="Version">The version it planned, or null when there is nothing to do.</param>
 /// <param name="ExitCode">0 done; 1 refused by a check (<paramref name="Check"/>); 2 a tool error; -1 stopped.</param>
-/// <param name="Problem">Why it did not do what it was asked.</param>
-/// <param name="Stopped">The person stopped it: nothing was kept, and nothing switched.</param>
-/// <param name="Nothing">Why there was nothing to do, when there was not.</param>
+/// <param name="Problem">Why it did not do what it is asked.</param>
+/// <param name="Stopped">The person stopped it: nothing is kept, and nothing switches.</param>
+/// <param name="Nothing">Why there is nothing to do, where that is the case.</param>
 public sealed record ToolEnd(
     string Tool, string Action, string? Version, int ExitCode, string? Check, string? Problem, bool Stopped, string? Nothing);
 

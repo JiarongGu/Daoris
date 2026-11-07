@@ -66,7 +66,7 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
 
     /// <summary>
     /// A list the mapping would not read is refused whole, in the words every door says (<see cref="HeavyMapping.Problem"/>), and the
-    /// file is as it was: no name, no command, a name twice in any case, a folder not under the repository's root, no repository.
+    /// file is unchanged: no name, no command, a name twice in any case, a folder not under the repository's root, no repository.
     /// </summary>
     [Fact]
     public async Task A_list_it_would_not_read_is_refused_in_the_mappings_words_and_nothing_is_written()

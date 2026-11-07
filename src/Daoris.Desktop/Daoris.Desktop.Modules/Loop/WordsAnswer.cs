@@ -22,7 +22,7 @@ public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
     /// <summary>
     /// The person's *Send now* is carried out: steered into the running turn (reach
     /// <c>now</c>), held with the turn stopped so they go next (<c>turn-end</c>), or taken at once because no turn ran. False
-    /// where it was not asked, and where the door could do neither, with <see cref="Why"/> saying why.
+    /// where it is not asked, and where the door can do neither, with <see cref="Why"/> saying why.
     /// </summary>
     public bool Now { get; init; }
 
@@ -58,7 +58,7 @@ public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
 
     /// <summary>
     /// The person's words waiting on its record, where the record is read: what the queue lists when
-    /// nothing here holds the session, so the composer's *Edit* and *Remove* reach them. Null where the record was not read (a
+    /// nothing here holds the session, so the composer's *Edit* and *Remove* reach them. Null where the record is not read (a
     /// session running here, or nothing known); empty on a record that runs again, whose run is taking them.
     /// </summary>
     public IReadOnlyList<WaitingWord>? Waiting { get; init; }

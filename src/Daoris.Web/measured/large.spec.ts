@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The large positioned worlds measured (CANVAS1d; D224, the canvas design §4.1, traps 11 and 22): the synthetic scenes of 100, 1,000,
-// 5,000 and 10,000 nodes drawn in a real browser. Each figure it times is printed as a `large:` line, which D224's note of 2026-11-02
-// records: the first usable frame, the frames of a scripted pan and zoom, and what stays in the DOM.
+// The large positioned worlds measured (the canvas design §4.1, traps 11 and 22): the synthetic scenes of 100, 1,000,
+// 5,000 and 10,000 nodes drawn in a real browser. Each figure it times is printed as a `large:` line:
+// the first usable frame, the frames of a scripted pan and zoom, and what stays in the DOM.
 
 const ready = (page: Page) => page.waitForFunction(
   () => (window as unknown as { flowReady?: boolean }).flowReady === true && document.querySelector('[data-canvas-world] [data-flow-node]') !== null,
@@ -66,7 +66,7 @@ const SIZES: Record<string, { nodes: number; target: number }> = {
   Ten: { nodes: 10_000, target: 33.3 },
 };
 
-// MEASUREDALONE1: a claim bound to the wall clock is a timed spec; the merge tool re-runs a timed spec that failed, alone, as a Process class is.
+// A claim bound to the wall clock is a timed spec; the merge tool re-runs a timed spec that failed, alone, as a Process class is.
 test.describe('timed', () => {
 for (const [story, { nodes, target }] of Object.entries(SIZES)) {
   test(`large/${story}: ${nodes} nodes, p95 frame within ${target} ms while panning and zooming, the DOM bounded`, async ({ page }) => {

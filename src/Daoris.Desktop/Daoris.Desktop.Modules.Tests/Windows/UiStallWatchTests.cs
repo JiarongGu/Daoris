@@ -34,7 +34,7 @@ public sealed class UiStallWatchTests : Bridge
             return true;
         }), Bus, () => _now, () => _collections);
 
-    /// <summary>The window's thread takes up what was posted to it.</summary>
+    /// <summary>The window's thread takes up what is posted to it.</summary>
     private void Answer()
     {
         while (_posted.TryDequeue(out var action)) action();

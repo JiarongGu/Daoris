@@ -5,19 +5,19 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1a (D176 points 1-4 and 8): a brainstorm's whole round trip on the real path, with no model. A request about a
+/// A brainstorm's whole round trip on the real path, with no model. A request about a
 /// repository whose checkout real git reads is frozen at a look (no service: the declared index's files answer), sent, and run on
 /// two real processes, the native stub and the ACP stub; the native stub synthesizes; the document is kept with each member's
-/// provenance, the rooms go, and the asker's checkout is untouched. BRAINSTORM1a2: the ACP stub answers as a real maker does, by
-/// calling `brainstorm_give` on the one connector its turn was handed, over MCP, the development build's connector; the native stub
+/// provenance, the rooms go, and the asker's checkout is untouched. The ACP stub answers as a real maker does, by
+/// calling `brainstorm_give` on the one connector its turn is handed, over MCP, the development build's connector; the native stub
 /// still writes the file the tool writes.
 /// </summary>
 /// <remarks>
-/// Real git and real processes, so the class is in the real-process half (MOD8): a branch's worktree does not run it, the parent
+/// Real git and real processes, so the class is in the real-process half: a branch's worktree does not run it, the parent
 /// runs it on the merge. The service is a port nobody holds: a brainstorm asks it only for a search, and does without. It needs
 /// `Daoris.Service.Mcp` built, as <see cref="KnowledgeConnectorStartTests"/> does, and hands the driver an environment naming its own
-/// scratch for home, connector and store (ENVSEAM1), so the connector it starts never opens another home. It sets nothing of this
-/// process's, so it runs beside the rest of the Process half (PROCPAR1).
+/// scratch for home, connector and store, so the connector it starts never opens another home. It sets nothing of this
+/// process's, so it runs beside the rest of the Process half.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class BrainstormProcessTests : IDisposable
@@ -25,7 +25,7 @@ public sealed class BrainstormProcessTests : IDisposable
     private readonly GitTree _repository = new("brainstorm-pass");
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-brainstorm-pass-" + Guid.NewGuid().ToString("N")[..8]);
 
-    /// <summary>The environment the driver is handed (ENVSEAM1): this run's scratch, and nothing of this process's.</summary>
+    /// <summary>The environment the driver is handed: this run's scratch, and nothing of this process's.</summary>
     private readonly Dictionary<string, string> _variables = new(StringComparer.Ordinal);
 
     public BrainstormProcessTests()
@@ -74,7 +74,7 @@ public sealed class BrainstormProcessTests : IDisposable
     /// folder, then answer: <c>work</c> writes the file the result tool writes (a generator one proposal, the synthesis one group of
     /// all), and <c>give</c> calls <c>brainstorm_give</c> on the turn's connector over MCP, started from its entry's own variables
     /// alone as Codex starts one: first an answer the validator refuses, then the same answer whole, each tool answer kept under
-    /// the home's <c>tool</c> folder with the servers the turn was handed.
+    /// the home's <c>tool</c> folder with the servers the turn is handed.
     /// </summary>
     private string Work()
     {
@@ -248,7 +248,7 @@ public sealed class BrainstormProcessTests : IDisposable
         var passTurns = UsageHistory.ReadTurns(_home).Turns.Where(turn => turn.Session.StartsWith($"brainstorm-{id}-", StringComparison.Ordinal)).ToList();
         Assert.NotEmpty(passTurns);
         Assert.All(passTurns, turn => Assert.NotNull(turn.Agent));
-        // BRAINSTORM1c (D176 point 7): and they name the brainstorm they were spent for, as no quest's or session's.
+        // And they name the brainstorm they were spent for, as no quest's or session's.
         Assert.All(passTurns, turn => Assert.Equal(id, turn.Brainstorm));
 
         // One packet, byte for byte, in every room; each room the packet and its instruction (and the synthesis's proposals) alone.
@@ -269,8 +269,8 @@ public sealed class BrainstormProcessTests : IDisposable
             members.Select(member => (member!["pass"]!.GetValue<string>(), member["door"]!.GetValue<string>(), member["idea"]!.GetValue<string>())));
         Assert.Contains("stubs are no maker diversity", files.DocumentText(id)!, StringComparison.Ordinal);
 
-        // BRAINSTORM1a2: the ACP stub's generator answered through `brainstorm_give` on its one connector, over MCP. The connector
-        // carried the turn whole; the validator's refusal came back as the tool's answer, by code; the answer given whole again was
+        // The ACP stub's generator answered through `brainstorm_give` on its one connector, over MCP. The connector
+        // carried the turn whole; the validator's refusal came back as the tool's answer, by code; the answer given whole again got
         // kept in the tool's own shape, and the driver read it from the file the tool wrote. Its pass took one turn, no repair.
         var tool = JsonNode.Parse(File.ReadAllText(Path.Combine(_home, "tool", "g2.json")))!;
         Assert.Equal(["daoris-knowledge"], tool["servers"]!.AsArray().Select(name => name!.GetValue<string>()));
@@ -284,22 +284,22 @@ public sealed class BrainstormProcessTests : IDisposable
         var pass = JsonNode.Parse(File.ReadAllText(files.PathOf(id, "passes", "g2.json")))!;
         Assert.Equal(("answered", 1), (pass["state"]!.GetValue<string>(), pass["turns"]!.GetValue<int>()));
         Assert.Equal("brainstorm", pass["actor"]!.GetValue<string>());
-        // MODELROLE1e (D205 §4.0): an agent the request names that the actor has no entry for runs at account default as `rule-default`.
+        // An agent the request names that the actor has no entry for runs at account default as `rule-default`.
         Assert.Equal("rule-default", pass["choice"]!.GetValue<string>());
         Assert.Equal("acp-stub", pass["asked"]!["agent"]!.GetValue<string>());
         Assert.Equal("brainstorm-reported", pass["ran"]!["models"]![0]!.GetValue<string>());
         Assert.Contains("brainstorm-reported", files.DocumentText(id)!, StringComparison.Ordinal);
 
-        // The rooms went, and the asker's checkout is as it was: no commit, no branch, no change.
+        // The rooms went, and the asker's checkout is untouched: no commit, no branch, no change.
         Assert.False(Directory.Exists(files.Rooms(id)));
         Assert.Equal(refs, _repository.Output("for-each-ref --format=\"%(refname) %(objectname)\""));
         Assert.Equal("", _repository.Output("status --porcelain"));
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1g part b (the foundation design §1g): a brainstorm pass whose agent refuses its prompt with a limit cools its account as a
+    /// 🔴 A brainstorm pass whose agent refuses its prompt with a limit cools its account as a
     /// driven run's and a conversation's do, whether the refusal says it in a sentence the adapter's table reads (<c>Stated</c>) or by its
-    /// code alone (<c>rate_limit</c>, a sentence no table reads: cooled for D125's unstated default). The pass starts once more on the
+    /// code alone (<c>rate_limit</c>, a sentence no table reads: cooled for the unstated default). The pass starts once more on the
     /// next account and answers, and the other maker's turn is untouched.
     /// </summary>
     [Theory]
@@ -382,7 +382,7 @@ public sealed class BrainstormProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 BRAINSTORM1b (D176 point 6): a real agent past its pass's minutes is stopped, its process ended, and its pass said as
+    /// 🔴 A real agent past its pass's minutes is stopped, its process ended, and its pass said as
     /// timed out; the other maker's answer is still synthesized and ranked, and the document says who did not answer. The minute is
     /// shortened to a second, so the five-minute pass ends in five seconds while the agent would hold its turn for two minutes.
     /// </summary>
@@ -421,7 +421,7 @@ public sealed class BrainstormProcessTests : IDisposable
         Assert.Equal(("failed", "timed-out"), (pass["state"]!.GetValue<string>(), string.Join(",", pass["codes"]!.AsArray().Select(code => code!.GetValue<string>()))));
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(60), $"the brainstorm took {clock.Elapsed}");
 
-        // The agent's process was ended with its pass, not left holding its turn.
+        // The agent's process is ended with its pass, not left holding its turn.
         var pid = int.Parse(File.ReadAllText(Path.Combine(_home, "hanging.pid")), System.Globalization.CultureInfo.InvariantCulture);
         Assert.True(Gone(pid), $"the hanging agent's process {pid} still runs");
 

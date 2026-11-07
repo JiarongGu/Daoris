@@ -12,7 +12,6 @@ namespace Daoris.Knowledge;
 /// <c>DAORIS_SESSION_ID</c> on both harnesses: Claude Code's subagent through the parent's very connection, Codex's thread
 /// through a process started from the parent's entry. What tells calls apart is what the harness writes on each one. The
 /// arguments are the model's, so nothing there is read.</para>
-///
 /// <para><b>What each harness writes</b> is its own file's (<see cref="ICallKeys"/>), read in <see cref="Readers"/>' order: the
 /// first key a call carries is the one read, so a call carrying both is read as the first agent's. A harness that writes none
 /// has no lineage here, which is said as none, never guessed (canary 9).</para>

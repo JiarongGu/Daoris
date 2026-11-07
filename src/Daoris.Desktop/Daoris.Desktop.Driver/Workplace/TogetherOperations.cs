@@ -115,7 +115,7 @@ public sealed record TogetherAttempt(string Form, string Target, string? Expecte
     /// <summary>The tip the target came to, once known.</summary>
     public string? Resulting { get; init; }
 
-    /// <summary>The integration request the attempt was admitted as, once known.</summary>
+    /// <summary>The integration request the attempt is admitted as, once known.</summary>
     public string? Request { get; init; }
 }
 
@@ -129,7 +129,7 @@ public sealed record TogetherOperation(
     /// <summary>The head's tip the last proved check accounted every member change at.</summary>
     public string? Checked { get; init; }
 
-    /// <summary>The head's tip the last check was tried at, proved or not: a failed check is not tried again there.</summary>
+    /// <summary>The head's tip the last check is tried at, proved or not: a failed check is not tried again there.</summary>
     public string? Tried { get; init; }
 
     /// <summary>The last check's accounting, every member path; empty before one ran.</summary>
@@ -226,7 +226,7 @@ public sealed class TogetherOperations(string home)
     /// The open operation binding <paramref name="tree"/>, read under the record lock as every landing, sync, update and discard reads
     /// it; null where none.
     /// </summary>
-    /// <exception cref="IOException">The lock was held past its wait, or the file does not read: the caller binds nothing it could not read.</exception>
+    /// <exception cref="IOException">The lock is held past its wait, or the file does not read: the caller binds nothing it cannot read.</exception>
     public TogetherOperation? Binding(string tree)
     {
         lock (Gate)
@@ -237,7 +237,7 @@ public sealed class TogetherOperations(string home)
     }
 
     /// <summary>The open operation binding <paramref name="branch"/> of <paramref name="repository"/>, read under the record lock; null where none.</summary>
-    /// <exception cref="IOException">The lock was held past its wait, or the file does not read.</exception>
+    /// <exception cref="IOException">The lock is held past its wait, or the file does not read.</exception>
     public TogetherOperation? BindingBranch(string repository, string branch)
     {
         lock (Gate)

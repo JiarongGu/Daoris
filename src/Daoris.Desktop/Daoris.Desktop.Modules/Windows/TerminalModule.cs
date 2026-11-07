@@ -32,7 +32,7 @@ namespace Daoris.Desktop;
 /// and each shell's job object ends with this process besides.</para>
 ///
 /// <para><b>A shell starts through the start gate</b> (<see cref="ProcessStarts"/>), never on the window's
-/// thread; one whose terminal was ended while it waited there is ended as it starts.</para>
+/// thread; one whose terminal is ended while it waits there is ended as it starts.</para>
 /// </remarks>
 [WindowModule]
 public sealed class TerminalModule : ModuleBase, IDisposable

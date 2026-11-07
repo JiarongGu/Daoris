@@ -18,7 +18,7 @@ public sealed record ServiceConfirmationsNow(long Seq, IReadOnlyList<JsonElement
 /// one list and no window polls. The bridge's <c>SERVICE_CONFIRMATIONS</c> reads it for a window that opens mid-wait.
 /// </summary>
 /// <remarks>
-/// <para><b>Told at a change, once.</b> An answer that holds what was told already tells nothing: a wait answered at its bound, a
+/// <para><b>Told at a change, once.</b> An answer that holds what is told already tells nothing: a wait answered at its bound, a
 /// ninth wait, a restarted service whose new cursor finds the same list.</para>
 ///
 /// <para><b>An older service keeps a poll here</b>, not in each window: a host with no <see cref="ConfirmationDoors.Waiting"/> door
@@ -26,7 +26,7 @@ public sealed record ServiceConfirmationsNow(long Seq, IReadOnlyList<JsonElement
 ///
 /// <para><b>Never a hot loop</b>, as the ledger's change stream is read: the next ask is never sooner than <see cref="Floor"/> after
 /// the last began; a refused or dropped ask, and an early answer that moved nothing, are backed off from a second to
-/// <see cref="LongestBackOff"/>. Meanwhile the windows keep what was told: a service gone took its confirmations with it, and the
+/// <see cref="LongestBackOff"/>. Meanwhile the windows keep what they are told: a service gone takes its confirmations with it, and the
 /// next answer says so.</para>
 /// </remarks>
 public sealed class ServiceConfirmations(IEventBus? bus, MachineLog? log = null)
@@ -60,8 +60,8 @@ public sealed class ServiceConfirmations(IEventBus? bus, MachineLog? log = null)
     }
 
     /// <summary>
-    /// Take <paramref name="waiting"/> as what waits now: where it differs from what was told, numbered and told to every window.
-    /// True where it was told.
+    /// Take <paramref name="waiting"/> as what waits now: where it differs from what is told, numbered and told to every window.
+    /// True where it is told.
     /// </summary>
     public bool Tell(IReadOnlyList<JsonElement> waiting)
     {

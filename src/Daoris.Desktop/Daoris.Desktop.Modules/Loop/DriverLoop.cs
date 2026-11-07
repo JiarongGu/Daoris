@@ -264,7 +264,7 @@ public sealed class DriverLoop(
     /// </summary>
     public HostSupervisor Host => supervisor;
 
-    /// <summary>The address this loop's service is at, as the window was handed it (<c>DAORIS_SERVICE_URL</c> or the default).</summary>
+    /// <summary>The address this loop's service is at, as the window is handed it (<c>DAORIS_SERVICE_URL</c> or the default).</summary>
     public string ServiceUrl => serviceUrl;
 
     /// <summary>Whether this window set its own home on this start: This Daoris says the variable's source is Daoris.</summary>
@@ -614,7 +614,7 @@ public sealed class DriverLoop(
     public const string PartEndedType = "PART_ENDED";
 
     /// <summary>
-    /// Whether this process's journal reader was last answered by a host that keeps the journal: false before its first answer, against a
+    /// Whether the last answer to this process's journal reader came from a host that keeps the journal: false before its first answer, against a
     /// host from before it, and while the host refuses or drops the ask, when a reader of <see cref="PartEndedType"/> keeps its old surface.
     /// </summary>
     public bool HearsJournal => _state.HearsJournal;

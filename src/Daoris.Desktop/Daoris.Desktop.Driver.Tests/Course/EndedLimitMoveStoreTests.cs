@@ -6,11 +6,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-vi part a (D212; the foundation design §3.3, §13.4, §13.5): the ended limit move keeps its move record and writes no
+/// The ended limit move keeps its move record and writes no
 /// <c>&lt;s&gt;.limit-move.json</c> box beside it. Decided at <c>old-ended</c>, an ended record having no part to end, under this run's claim;
 /// <c>opening</c> under the key its keyed open is sent with; <c>opened</c> with every word the open moved; <c>delivering</c> and the prompt's
 /// mark before the hand; each handed word's <c>sent</c> as the turn's write returns, then the take, then <c>delivered</c>. Against a host
-/// that moves nothing the move is one of no word whose prompt's outcome closes it, and LIMITWORD1's word kept after the decision still reaches
+/// that moves nothing the move is one of no word whose prompt's outcome closes it, and a word kept after the decision still reaches
 /// the new part once. A box an older build wrote is imported once at the shell's come-up and set aside, and a box still in place keeps the
 /// go-on and the move off its record.
 /// </summary>
@@ -315,7 +315,7 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
     };
 
     /// <summary>
-    /// 🔴 FOUNDATION1h branch 5 (the foundation design §3.1, §14.2): the ended limit move decides through <c>CourseDecision.Decide</c>, each of
+    /// 🔴 The ended limit move decides through <c>CourseDecision.Decide</c>, each of
     /// its four entries by its own trigger: a limit's end, a restart or a conversation proven lost (the conversation lost), and a switch off a
     /// cooling account (the words kept). A move opens only where the course answers one; no account with room, or one the person picked
     /// whose conversation is not lost, is the course's hold and nothing opens.
@@ -407,7 +407,7 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITWORD1 against a host that moves nothing: a word the person kept on the old record after the move was decided, before its open, goes
+    /// 🔴 Against a host that moves nothing: a word the person kept on the old record after the move is decided, before its open, goes
     /// to the new part once with the rest, and leaves the old record named as taken by the new part.
     /// </summary>
     [Fact]
@@ -537,7 +537,7 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 An open the host refuses ends the move by its phase, the old part being an ended one that stays as it was: the open asked and no
+    /// 🔴 An open the host refuses ends the move by its phase, the old part being an ended one that stays as it is: the open asked and no
     /// answer recorded, held as an effect never recorded and closed at once, naming nothing; the words stay on the old record, no box left.
     /// </summary>
     [Fact]

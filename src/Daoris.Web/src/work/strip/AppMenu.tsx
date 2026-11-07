@@ -274,7 +274,7 @@ export const FOLD_OPEN = 'fold';
  *   bar from inside a menu and between the names. Escape closes a menu onto its name; Escape on a name hands the focus
  *   back to where it came from before the bar took it, as choosing a row does.
  * - **Which menu is open is the caller's** (`open`), which builds a menu's rows as it opens, so a row reads what is in
- *   front of the person at that moment rather than when the strip last drew.
+ * front of the person at that moment rather than when the strip last drew.
  * - Built on the dropdown the strip already had, so its names stay buttons that open a menu (`aria-haspopup`): a
  *   menubar primitive would have changed every name's role, and the tests across the page that open the View menu by it.
  * - **Narrower than its names need, it folds** (`compact`): one button, VS Code's ☰, whose menu's rows are the

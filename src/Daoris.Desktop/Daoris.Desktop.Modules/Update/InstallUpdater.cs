@@ -47,7 +47,7 @@ public static class UpdateStates
     /// <summary>Checked, the launcher started, and the application closing for it.</summary>
     public const string Applying = "applying";
 
-    /// <summary>The staged build failed its check, or the launcher would not start: nothing was replaced, and work goes on.</summary>
+    /// <summary>The staged build failed its check, or the launcher would not start: nothing is replaced, and work goes on.</summary>
     public const string Refused = "refused";
 }
 
@@ -184,7 +184,7 @@ public sealed class InstallUpdater(
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // A journal that cannot be read or written is no outcome to say; the swap's own record stays as it was.
+            // A journal that cannot be read or written is no outcome to say; the swap's own record stays unchanged.
         }
 
         try
@@ -478,7 +478,7 @@ public sealed class InstallUpdater(
         return applying;
     }
 
-    /// <param name="asked">The person's word it was refused under, which a new word replaces, trying again (<see cref="UpdateRefusals"/>).</param>
+    /// <param name="asked">The person's word it is refused under, which a new word replaces, trying again (<see cref="UpdateRefusals"/>).</param>
     private UpdateState Refuse(string id, UpdateBuild? staged, string? mode, UpdateRequest? asked, UpdateProblem problem)
     {
         lock (_gate)

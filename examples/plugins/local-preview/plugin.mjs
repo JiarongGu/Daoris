@@ -52,7 +52,7 @@ const kit = work({
     writeFileSync(join(folder, 'done'), `${new Date().toISOString()}\n`);
     return reached(call.invocation);
   },
-  // A preview with `done` was made; one without was begun and is cleared, so the redelivery makes it whole; none was never begun.
+  // A preview with `done` is complete; one without is a begun one and is cleared, so the redelivery makes it whole; a missing one is not begun.
   check: async (attempt) => {
     const folder = preview(attempt.invocation);
     if (existsSync(join(folder, 'done'))) return { state: 'done', outcome: reached(attempt.invocation) };
@@ -118,7 +118,7 @@ for await (const line of createInterface({ input: process.stdin })) {
     const declared = frame.params?.points ?? [];
     send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: Object.keys(points).filter((point) => declared.includes(point)), capabilities: kit.capabilities } });
   } else if (frame.method === 'shutdown') {
-    // The driver is stopping, or this plugin was switched off. Leave; the driver ends a process that stays.
+    // The driver is stopping, or this plugin is switched off. Leave; the driver ends a process that stays.
     process.exit(0);
   } else if (typeof frame.method === 'string' && frame.method.startsWith('hook/') && answers[frame.method.slice(5)]) {
     try {

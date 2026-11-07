@@ -51,8 +51,8 @@ internal static class ReleaseStandIn
 }
 
 /// <summary>
-/// A stand-in that waits on a file ends with the test that started it. The merge tool's owner found one still polling
-/// 51 hours after its test was killed, its file never written.
+/// A stand-in that waits on a file ends with the test that started it, so none polls on
+/// after its test is killed, its file never written.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class ReleaseStandInTests() : Bridge("release-stand-in"), IDisposable

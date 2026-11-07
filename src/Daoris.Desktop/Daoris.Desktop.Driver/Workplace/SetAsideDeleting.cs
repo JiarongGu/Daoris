@@ -6,7 +6,7 @@ internal static class SetAsideDeleting
     /// <summary>
     /// <paramref name="folder"/> deleted with everything in it, never following a link: a link goes as a link, its own
     /// entry alone, so what it points at stays wherever it is; a read-only file, as git's objects are, is made writable first, and
-    /// only a file that is one. A folder or file that cannot be deleted throws, and what was deleted before it stays deleted. A
+    /// only a file that is one. A folder or file that cannot be deleted throws, and what it deleted before it stays deleted. A
     /// tree's open discards an unfinished copy of its checkout's dependencies with it too. The bytes its files held.
     /// </summary>
     /// <remarks>

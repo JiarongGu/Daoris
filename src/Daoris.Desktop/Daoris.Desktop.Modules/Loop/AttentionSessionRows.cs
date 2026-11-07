@@ -46,7 +46,7 @@ internal static class AttentionSessionRows
         }
 
         // A session the watcher brings to the person: keyed by the session, since
-        // when it was last heard, its repository, its quest, and the minutes, whether it is busy (then offered no end), whether it is an
+        // when it is last heard, its repository, its quest, and the minutes, whether it is busy (then offered no end), whether it is an
         // intake and whether the person's words wait to reach it. Its turn stands still on the person while it is quiet.
         foreach (var wait in facts.Quiet)
         {

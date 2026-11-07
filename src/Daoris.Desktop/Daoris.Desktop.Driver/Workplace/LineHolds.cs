@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// it lacks: the one judgement a landing makes per commit, which an entry's Accept, a session going on in an old tree
 /// and <i>Bring up to date</i> ask as well.
 /// </summary>
-/// <param name="Onto">The line's commit the tree was judged against.</param>
+/// <param name="Onto">The line's commit the tree is judged against.</param>
 /// <param name="Leaves">Where the tree left the line: the newest commit it shares with <paramref name="Onto"/>.</param>
 /// <param name="Commits">Every commit beyond the line, oldest first, merges aside.</param>
 /// <param name="Kept">What the line lacks, oldest first: what a landing replays.</param>
@@ -198,7 +198,7 @@ internal static class LineHolds
             current = lines[0];
         }
 
-        // The tree the last step wrote, or the start's own where nothing was replayed, so two trials compare as trees.
+        // The tree the last step wrote, or the start's own where nothing is replayed, so two trials compare as trees.
         if (kept.Count > 0) return (current, null);
         var (treeCode, tree, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{onto}^{{tree}}"], ct).ConfigureAwait(false);
         return (treeCode == 0 ? tree.Trim() : null, null);

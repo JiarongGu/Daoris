@@ -34,7 +34,7 @@ public static class DeliveryPhases
     /// <summary>The plugin's answer kept.</summary>
     public const string PluginAnswered = "plugin-answered";
 
-    /// <summary>Every phase this build writes, in order: an entry at another was written by a newer build.</summary>
+    /// <summary>Every phase this build writes, in order: an entry at another comes from a newer build.</summary>
     public static IReadOnlyList<string> All { get; } = [Prepared, RefWritten, Recorded, PluginDispatched, PluginAnswered];
 
     /// <summary>The phase whose outcome reaches <c>land</c>: the plugin's answer for a push or a pull request, the landing record for the rest.</summary>
@@ -91,7 +91,7 @@ public sealed record DeliveryIntent(
 }
 
 /// <summary>
-/// What a delivery was authorized by and against: the person's Accept (<see cref="Accept"/>, its reference on the unit's record) or the
+/// What a delivery is authorized by and against: the person's Accept (<see cref="Accept"/>, its reference on the unit's record) or the
 /// standing automatic authority (<see cref="Scope"/>), each given against the unit's revision, the graph's digest, the resolved options
 /// (JSON) and the prerequisites' receipts (a JSON array).
 /// </summary>
@@ -146,13 +146,13 @@ public sealed record DeliveryPhase(string Delivery, int Ordinal, string Phase, s
 /// </summary>
 public sealed record DeliveryStart(DeliveryRecord? Delivery, DeliveryClaim? Claim, bool Started, string? Refused, string? Held = null);
 
-/// <summary>What a take answered: the delivery and the claim taken, or why it was refused, nothing written.</summary>
+/// <summary>What a take answered: the delivery and the claim taken, or why it is refused, nothing written.</summary>
 public sealed record DeliveryTaken(DeliveryRecord? Delivery, DeliveryClaim? Claim, string? Refused);
 
 /// <summary>Whether going back to a build older than the delivery record is allowed: refused while any delivery is unresolved, each named.</summary>
 public sealed record DeliveryRollback(bool Allowed, string? Refused, IReadOnlyList<DeliveryRecord> Unresolved);
 
-/// <summary>A delivery's write refused before anything was written.</summary>
+/// <summary>A delivery's write refused before anything is written.</summary>
 public sealed class DeliveryRefusedException(string key, string why) : Exception($"delivery {key}: {why}")
 {
     public string Key { get; } = key;
@@ -311,7 +311,7 @@ public sealed class DeliveryStore(
     }
 
     /// <summary>A phase's entry, written ahead of its effect: refused while an entry stands without its outcome, out of order, or after a done one.</summary>
-    /// <exception cref="DeliveryRefusedException">The phase may not be written ahead now; nothing was written.</exception>
+    /// <exception cref="DeliveryRefusedException">The phase may not be written ahead now; nothing is written.</exception>
     public DeliveryPhase Begin(DeliveryClaim claim, string phase, string? intended)
     {
         if (!DeliveryPhases.All.Contains(phase, StringComparer.Ordinal)) throw new DeliveryRefusedException(claim.Key, $"`{phase}` is no phase this build writes");
@@ -348,7 +348,7 @@ public sealed class DeliveryStore(
     /// The outcome of the entry standing for <paramref name="phase"/>, after its effect, with what it read. An outcome written again is the
     /// first's, and changes nothing.
     /// </summary>
-    /// <exception cref="DeliveryRefusedException">No entry of the phase was written ahead, or another phase's stands.</exception>
+    /// <exception cref="DeliveryRefusedException">No entry of the phase is written ahead, or another phase's stands.</exception>
     public DeliveryPhase End(DeliveryClaim claim, string phase, string outcome, string? evidence, string said)
     {
         if (!DeliveryOutcomes.All.Contains(outcome, StringComparer.Ordinal)) throw new DeliveryRefusedException(claim.Key, $"`{outcome}` is no outcome this build writes");
@@ -373,7 +373,7 @@ public sealed class DeliveryStore(
     /// The delivery settled <paramref name="how"/>: refused while an entry stands without its outcome, as delivered before its method's reaching
     /// phase is done, and as withdrawn where an effect past its preparation stands. Settled again the same way, nothing changes.
     /// </summary>
-    /// <exception cref="DeliveryRefusedException">It may not settle so; nothing was written.</exception>
+    /// <exception cref="DeliveryRefusedException">It may not settle so; nothing is written.</exception>
     public void Settle(DeliveryClaim claim, string how, string said)
     {
         if (!DeliverySettlements.All.Contains(how, StringComparer.Ordinal)) throw new DeliveryRefusedException(claim.Key, $"`{how}` is no settlement this build writes");
@@ -405,8 +405,8 @@ public sealed class DeliveryStore(
 
     /// <summary>
     /// Take up a delivery whose claim's run is dead by the lease's test, in one guarded update that writes this run and raises the generation:
-    /// refused, nothing written, where it is gone, held, settled or this run's own, the generation moved since <paramref name="generation"/>
-    /// was read, or its run lives or cannot be told dead.
+    /// refused, nothing written, where it is gone, held, settled or this run's own, the generation is no longer <paramref name="generation"/>,
+    /// or its run lives or cannot be told dead.
     /// </summary>
     public DeliveryTaken Take(string key, long generation)
     {

@@ -15,7 +15,7 @@ public sealed record ActHold(string Act, string Said);
 /// <remarks>
 /// <para><b>A live step refuses every writer</b>: one whose job, found by its name, still holds a process, or whose pid still runs under the
 /// start it journaled; a job that will not open is held live. Past its deadline the reconciler ends the job and awaits it empty, else says it
-/// <i>unended</i> with its pid and the Stop that ends it. A step with no end whose processes are gone was cut, said so, and its postconditions
+/// <i>unended</i> with its pid and the Stop that ends it. A step with no end whose processes are gone is cut, said so, and its postconditions
 /// decide with the rest.</para>
 /// <para><b>Held, never taken</b>: an act whose run still lives, one written by a newer build (its format, phase or step kind unknown here), and
 /// one the store would not let this run write for now (busy, or stamped by a newer build). Each is said, and asked again at the next look.</para>

@@ -90,7 +90,7 @@ public static class GitOwnInput
     }
 
     /// <summary>
-    /// The <c>own-input</c> hold on <paramref name="remote"/> where either case finds its cause, kept (its first time kept where it was
+    /// The <c>own-input</c> hold on <paramref name="remote"/> where either case finds its cause, kept (its first time kept where it is held already);
     /// held before); else null, with any such hold whose cause is gone lifted.
     /// </summary>
     public static async Task<GitHold?> HeldAsync(

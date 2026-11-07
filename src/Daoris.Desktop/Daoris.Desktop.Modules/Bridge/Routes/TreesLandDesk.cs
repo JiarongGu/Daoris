@@ -129,7 +129,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
             token => trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, token, run: chatRun), _loop.PassWholeAsync, cancellationToken,
             (review, _) => Task.FromResult(accepted = RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done));
         // A run whose `land` the runtime performs is landed by that node, never by this press: the
-        // press was the Accept (the review's word, above), and it waits within the bound for the landing the pass starts.
+        // press is the Accept (the review's word, above), and it waits within the bound for the landing the pass starts.
         if (gate.Process is WorkflowProcess { LandsByRuntime: true } performed)
         {
             return await PerformedPressAsync(asked, id, gate, performed, accepted, cancellationToken);
@@ -150,7 +150,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
     /// kept above, and it lands nothing and builds no plugin wire. It forgets a refusal nothing changed since (the press is the person's try
     /// again), asks a whole pass, and waits within <see cref="GraphPasses.Bound"/> for the landing that pass starts; it answers what the landing
     /// came to, or <i>accepted; landing</i> past the bound. A workflow with no review needs no Accept, and this press is only that try.
-    /// A gate held only by the review this press <paramref name="accepted"/> was read before the pass applied it, and holds nothing.
+    /// A gate held only by the review this press <paramref name="accepted"/> is read before the pass applies it, and holds nothing.
     /// </summary>
     private async Task<object?> PerformedPressAsync(LandAsk asked, string id, LandingGate gate, WorkflowProcess process, bool accepted, CancellationToken ct)
     {

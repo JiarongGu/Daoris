@@ -29,7 +29,7 @@ public sealed class LaterLaunchTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    /// <summary>The shell's half, stubbed: what was asked for, or a window that could not be made.</summary>
+    /// <summary>The shell's half, stubbed: what is asked for, or a window that could not be made.</summary>
     private sealed class Windows(Exception? failing = null) : ISecondaryWindows
     {
         public readonly List<(string Name, string Address)> Asked = [];
@@ -153,7 +153,7 @@ public sealed class LaterLaunchTests : IDisposable
         }
 
         Assert.Equal(("main:2", "/?window=main%3A2&host=http%3A%2F%2Flocalhost%3A5177"), windows.Asked.Single());
-        // Its arrival first, before anything was resolved or awaited, with how many arguments it carried and never them.
+        // Its arrival first, before anything is resolved or awaited, with how many arguments it carried and never them.
         var arrived = Index("window.launch");
         Assert.True(arrived >= 0, "the launch's arrival was not written");
         Assert.True(arrived < Index("window.launched"));

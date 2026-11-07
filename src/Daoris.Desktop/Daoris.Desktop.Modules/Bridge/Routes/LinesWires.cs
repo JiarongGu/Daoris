@@ -8,7 +8,7 @@ internal static class LinesWires
     /// <summary>
     /// What <c>LINES</c> answers for <paramref name="lines"/>: each repository's line and its policy, the language its
     /// sessions write in, where its work is reviewed, which other agent reads it, what a helper does, how its work is committed and
-    /// the access setup its sessions start under, each as it resolves from <paramref name="config"/> and where it was set, in arrays keyed by repository and workspace. The lines
+    /// the access setup its sessions start under, each as it resolves from <paramref name="config"/> and where it is set, in arrays keyed by repository and workspace. The lines
     /// slice pushes each repository's rows of it: one builder for both doors, so the pull and the push cannot drift.
     /// </summary>
     /// <param name="adapters">The loop's agents, the machine's plugins among them, which an opinion's <c>sameAgent</c> is judged by.</param>
@@ -19,7 +19,7 @@ internal static class LinesWires
         {
             // The policy that reaches each line (the Line row): its own, else its workspace's; left out where none is set.
             Lines = lines.Select(line => line with { Policy = IntegrateWire(config.LinePolicyOf(line.Repository, line.Workspace)) }).ToArray(),
-            // What each one's sessions are asked to write to the person in, and where that was set: the driver's
+            // What each one's sessions are asked to write to the person in, and where that is set: the driver's
             // resolution, read rather than recomputed by the page. None leaves the language and its source out.
             Languages = lines.Select(line => (line, language: SessionLanguages.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new
@@ -31,7 +31,7 @@ internal static class LinesWires
                     pair.language?.Source,
                 })
                 .ToArray(),
-            // Where each one's work is reviewed before it lands, and where that was set: the driver's resolution,
+            // Where each one's work is reviewed before it lands, and where that is set: the driver's resolution,
             // read rather than recomputed by the page. Nothing set anywhere leaves the rule and its source out.
             Reviews = lines.Select(line => (line, review: ReviewRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new
@@ -42,7 +42,7 @@ internal static class LinesWires
                     pair.review?.Source,
                 })
                 .ToArray(),
-            // Which other agent reads each one's work before it lands, and where that was set: the driver's
+            // Which other agent reads each one's work before it lands, and where that is set: the driver's
             // resolution, read rather than recomputed by the page. Nothing set anywhere leaves the rule and its source out.
             Opinions = lines.Select(line => (line, opinion: OpinionRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new
@@ -58,7 +58,7 @@ internal static class LinesWires
             Helpers = lines.Select(line => (line, helpers: HelperRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = HelperWire(pair.helpers.Rule), pair.helpers.Source })
                 .ToArray(),
-            // What an agent's ask to hand its session over does, with where it was set, `default` where
+            // What an agent's ask to hand its session over does, with where it is set, `default` where
             // nothing is: the driver's resolution, never null.
             HandOver = lines.Select(line => (line, handOver: HandOverRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = new { pair.handOver.Rule.Mode }, pair.handOver.Source })
@@ -77,7 +77,7 @@ internal static class LinesWires
                     Pauses = pair.access.Pauses.Select(pause => new { pause.Pause, pause.Value, pause.Source }).ToArray(),
                 })
                 .ToArray(),
-            // What a session's git may do on a remote, each class with its value and where it was set; the driver's
+            // What a session's git may do on a remote, each class with its value and where it is set; the driver's
             // resolution, `default` where nothing is set (Write then `as-today`).
             GitAccess = lines.Select(line => (line, access: GitAccessKeys.Resolve(gitLevels, line.Repository, line.Workspace)))
                 .Select(pair => new
@@ -137,7 +137,7 @@ internal static class LinesWires
         SameAgent = OpinionRules.SameAgent(rule, working, adapters),
     };
 
-    /// <summary>The git access levels in the file <paramref name="config"/> was read from; none where it holds none.</summary>
+    /// <summary>The git access levels read from the file <paramref name="config"/>; none where it holds none.</summary>
     public static GitAccessLevels GitLevelsOf(DriverConfig config)
     {
         try

@@ -19,7 +19,7 @@ public sealed class ConversationRoutes(DriverContext context)
     // A session's conversation: the newest page, an earlier one (`before`), or only
     // what is newer (`after`) — how a page opens a session after a restart, loads earlier
     // turns, and closes a gap in the live events. From the record under the home, so it
-    // answers whether or not this app was running when the session spoke.
+    // answers whether or not this app is running as the session speaks.
     [DriverRoute("SESSION_HISTORY", PipeClass.Open)]
     private object? SessionHistory(SessionHistoryRead press)
     {
@@ -128,7 +128,7 @@ public sealed class ConversationRoutes(DriverContext context)
         }
 
         // The workflow draft open in the person's editor, which the page sends where its fingerprint moved since this
-        // conversation was told: refused whole past its bound before anything is kept, else handed with these words beside the palette it is
+        // conversation is told: refused whole past its bound before anything is kept, else handed with these words beside the palette it is
         // composed from, which the room has no reader of.
         if (press.Draft is { } drafted && drafted.ValueKind != JsonValueKind.Null)
         {
@@ -153,7 +153,7 @@ public sealed class ConversationRoutes(DriverContext context)
         // once; the service's one owner-word operation took its released word back in the same step.
         if (said.Sent && asking is not null) await _loop.Supervisor.SupersedeAsync(id, asking, DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false);
         // `to`: the conversation a conversation handed over or moved went on in, where `why` is `continued`.
-        // `now`: the press was carried out; false where it was not asked, or the door could do neither, `why` saying so.
+        // `now`: the press is carried out; false where it is not asked, or the door could do neither, `why` saying so.
         return new { said.Sent, said.Reaches, said.Why, said.To, said.Now };
     }
 
@@ -299,7 +299,7 @@ public sealed class ConversationRoutes(DriverContext context)
     }
 
     // Finishing a conversation rather than cutting it off: the harness gets end-of-input, says
-    // what it was going to say, and exits on its own. `STOP_SESSION` is the other verb. Refused
+    // what it is going to say, and exits on its own. `STOP_SESSION` is the other verb. Refused
     // for a session that takes no input, for the same reason as a message.
     [DriverRoute("END_CHAT", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("END_CHAT", Session = "id")]
@@ -316,7 +316,7 @@ public sealed class ConversationRoutes(DriverContext context)
     }
 
     // Stopping the turn and keeping the conversation — the third verb, beside finishing
-    // and stopping the session. What was waiting comes back, so the page can hand it to the
+    // and stopping the session. What is waiting comes back, so the page can hand it to the
     // person rather than lose it. Refused for a session that takes no input, as a message is,
     // and for a door that carries only text, in the driver's words: it has no turn to stop. It publishes as a word said does:
     // a driven session's held words go as its next prompt. `keep: true` stops a conversation's
@@ -402,7 +402,7 @@ public sealed class ConversationRoutes(DriverContext context)
         }
 
         // Neither holds it: the record's words, which only the service can take back. A record that runs again
-        // answers taken there, so a word a live turn took a moment ago is still the answer it was. A level alone is never asked of
+        // answers taken there, so a word a live turn took a moment ago is still the answer given. A level alone is never asked of
         // the record: its words wait for no running turn, and a take-back with no words would remove them.
         if (edit == QueueEdit.Taken && (text is not null || level is null))
         {

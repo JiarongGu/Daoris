@@ -40,7 +40,7 @@ public enum PieceEntryKind
 /// <summary>
 /// The import's rules, pure over what the walk found and what the base holds: regular files only;
 /// a link, a junction or another reparse point, a submodule or a nested repository refused, and what the base held under it left as
-/// it was; a new file the repository's own ignore rules ignore left out; a file over <see cref="FileBound"/> refused, and a piece over
+/// it stands; a new file the repository's own ignore rules ignore left out; a file over <see cref="FileBound"/> refused, and a piece over
 /// <see cref="PieceBound"/> refused whole. Paths outside the piece's are kept and named beyond it, never refused.
 /// </summary>
 public static class PieceImport
@@ -61,7 +61,7 @@ public static class PieceImport
     /// <summary>What the import keeps and leaves.</summary>
     /// <param name="Changed">Each file kept that is new or differs from the base, with its mode.</param>
     /// <param name="Deleted">Each base file the copy no longer holds.</param>
-    /// <param name="Refused">True where the whole piece was refused (over its bound), so nothing is imported.</param>
+    /// <param name="Refused">True where the whole piece is refused (over its bound), so nothing is imported.</param>
     public sealed record Judged(
         IReadOnlyList<(PieceEntry Entry, string Mode)> Changed, IReadOnlyList<string> Deleted, IReadOnlyList<PieceLeftOut> LeftOut,
         bool Refused)

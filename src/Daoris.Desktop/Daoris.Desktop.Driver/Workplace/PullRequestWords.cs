@@ -23,7 +23,7 @@ public sealed record PullRequestAskedAgain(LandedBranch Entry)
     /// <summary>Whether the plugin answered this time.</summary>
     public bool Answered { get; init; }
 
-    /// <summary>Whether the kept answer is <c>completed</c>, which is final, so nothing was asked.</summary>
+    /// <summary>Whether the kept answer is <c>completed</c>, which is final, so nothing is asked.</summary>
     public bool Final { get; init; }
 
     /// <summary>
@@ -84,7 +84,7 @@ public static class PullRequestWords
 
     /// <summary>
     /// What a kept row adds of its pull request, each part after <c>; </c>: the answer and why it does not clear the branch, a
-    /// failed ask beside it, and why nothing was asked. Empty where nothing is kept and nothing was said.
+    /// failed ask beside it, and why nothing is asked. Empty where nothing is kept and nothing is said.
     /// </summary>
     public static string Row(PullRequestState? kept, string? code, PullRequestAskFailed? failed, PullRequestNotAsked? notAsked)
     {

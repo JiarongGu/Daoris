@@ -37,7 +37,7 @@ public static class GitOrigin
     /// <summary>The landing recorded a push, and origin holds no branch of its name now: deleted there, or pruned after its pull request merged.</summary>
     public const string Gone = "gone";
 
-    /// <summary>Origin holds no branch of its name, and no push was recorded.</summary>
+    /// <summary>Origin holds no branch of its name, and no push is recorded.</summary>
     public const string NotPushed = "not-pushed";
 
     /// <summary>Origin's copy differs, and git could not count how.</summary>
@@ -90,7 +90,7 @@ public sealed record GitLandedBranch(string Session, DateTimeOffset LandedAt, st
     /// <summary>The plugin that answered that it pushed it, or null.</summary>
     public string? Plugin { get; init; }
 
-    /// <summary>Whether a push was recorded.</summary>
+    /// <summary>Whether a push is recorded.</summary>
     public bool Pushed { get; init; }
 
     /// <summary>The pull request a plugin answered with: the link the landing kept, or null.</summary>
@@ -144,7 +144,7 @@ public sealed record GitBranch(string Name, string Kind, string Commit)
 }
 
 /// <summary>When this checkout last fetched: <c>FETCH_HEAD</c>'s time, git's own.</summary>
-/// <param name="Heard">False for an empty <c>FETCH_HEAD</c>: git empties it as a fetch begins, so one left empty was tried and heard nothing.</param>
+/// <param name="Heard">False for an empty <c>FETCH_HEAD</c>: git empties it as a fetch begins, so one left empty is tried and heard nothing.</param>
 public sealed record GitFetch(DateTimeOffset At, bool Heard);
 
 /// <summary>One repository's group in the list: its line, its last fetch, its branches by kind, and how git answered.</summary>
@@ -203,7 +203,7 @@ public delegate Task<(int Code, string Stdout, string Stderr)> GitRun(IReadOnlyL
 /// which runs the file Tools resolves by its path, so the page reads the git the agents run.</para>
 ///
 /// <para>🔴 <b>One process per repository, never one per branch</b> (a start costs about 100 ms, and a start per
-/// file was the measured cost). Three things add a call, each bounded by what is exceptional, and each is said in
+/// file is the measured cost). Three things add a call, each bounded by what is exceptional, and each is said in
 /// <see cref="RepositoryBranches.Commands"/>:</para>
 /// <list type="bullet">
 /// <item>a landed branch whose commit moved since its landing: one <c>merge-base --is-ancestor</c>, since it is the landing's

@@ -25,10 +25,10 @@ public sealed record TreesSyncPlanRead(string? Repository, string? Workspace, IR
 public sealed record TreesSyncPress(
     string? Repository, string? Workspace, IReadOnlyList<string>? Also, IReadOnlyList<string>? Only, bool All = false, bool Fetch = false, bool Follow = false);
 
-/// <summary>One recovery ref the page showed, at the commit it was shown at.</summary>
+/// <summary>One recovery ref the page showed, at the commit shown.</summary>
 public sealed record RecoveryRefAsked(string? Ref, string? Commit);
 
-/// <summary>The recovery refs of a repository deleted, each only at the commit it was shown at.</summary>
+/// <summary>The recovery refs of a repository deleted, each only at the commit shown.</summary>
 public sealed record RecoveryDropPress(string Repository, IReadOnlyList<RecoveryRefAsked>? Refs);
 
 /// <summary>A landing branch withdrawn, its commits kept on a recovery ref; <c>Plan</c> changes nothing.</summary>

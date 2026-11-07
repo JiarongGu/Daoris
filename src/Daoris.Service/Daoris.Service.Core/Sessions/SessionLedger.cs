@@ -20,7 +20,6 @@ namespace Daoris.Knowledge;
 /// repository has as many trees as it has, so the lock keys on the tree rather than on the name of the
 /// repository that owns it. A parked session still holds its tree: the person clearing it is the flow
 /// control, not an inconvenience to route around.</para>
-///
 /// <para><b>An unstated tree resolves through the registry</b>, at both doors — which is what makes two
 /// sessions in one tree collide by construction rather than by string comparison, and what keeps
 /// behaviour identical for every caller that has not learned about trees yet.</para>

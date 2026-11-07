@@ -16,7 +16,7 @@ namespace Daoris.Desktop;
 /// (<see cref="ServiceClient.SyncStandingAsync"/> over <see cref="Wired"/>, what each pass and <c>daoris remote sync status</c> read),
 /// not the pass's own result: a quest written here by any door and a conflict's press move what is ahead and in conflict too, and the
 /// passes' record stays outside the change stream, since a pass rewrites when it last tried at every tick. So a pushed standing is as
-/// fresh as the pull's. Null before the service answers, which keeps the slice not judged; a read that fails keeps what was judged, so
+/// fresh as the pull's. Null before the service answers, which keeps the slice not judged; a read that fails keeps the last judgement, so
 /// a slice judged once has judged every wired circle.</para>
 ///
 /// <para><b>A partition per wired circle</b>, named as the map names it, each the record the route answers for it
@@ -64,7 +64,7 @@ public static class SyncStateSlice
         {
             WakesOn = WakesOn,
             Hears = [wake => HearPasses(loop, wake), wake => HearLedger(loop, wake)],
-            // The service away or refusing: the windows keep what was judged, and the next wake reads it again.
+            // The service away or refusing: the windows keep the last judgement, and the next wake reads it again.
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
 

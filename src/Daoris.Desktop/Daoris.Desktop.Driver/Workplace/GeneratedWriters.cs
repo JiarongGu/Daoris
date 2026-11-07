@@ -35,7 +35,7 @@ internal static class GeneratedWriters
         public bool Holds(string path) => path == Folder || path.StartsWith(Folder + "/", StringComparison.Ordinal);
     }
 
-    /// <summary>What writing them again made: the files its commit changed and the commands run, or why it was not written.</summary>
+    /// <summary>What writing them again made: the files its commit changed and the commands run, or why it is not written.</summary>
     internal sealed record Written(IReadOnlyList<string> Paths, IReadOnlyList<string> Runs, string? Failed)
     {
         /// <summary>Nothing run: no writer accepted, or none holds a file taken.</summary>

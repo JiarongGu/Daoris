@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// READSHARE1: each reader of a record AtomicFile moves into place reads it while the move still holds it (<see cref="MoveHold"/>).
+/// Each reader of a record AtomicFile moves into place reads it while the move still holds it (<see cref="MoveHold"/>).
 /// </summary>
 public sealed class ReadShareAccountTests : IDisposable
 {
@@ -33,7 +33,7 @@ public sealed class ReadShareAccountTests : IDisposable
     /// <summary>
     /// The hold let go a second on, for a reader that writes after it reads: the read meets the hold at once, and the write's rename,
     /// which a hold refuses as it refuses any rename over the file, lands within its retries once the hold is gone. On a thread of its
-    /// own, not the pool's: a loaded run's starved pool let the hold go past the rename's four seconds of retries (FLAKE1, three cases
+    /// own, not the pool's: a loaded run's starved pool let the hold go past the rename's four seconds of retries (three cases
     /// at once on 2026-10-28), which is the pool's wait, not the reader's.
     /// </summary>
     private static Task ReleasedSoon(IDisposable hold) => Task.Factory.StartNew(() =>
@@ -42,7 +42,7 @@ public sealed class ReadShareAccountTests : IDisposable
         hold.Dispose();
     }, TaskCreationOptions.LongRunning);
 
-    /// <summary>READSHARE1: <c>AccountFileNodes.Read</c> reads an account file its move into place still holds.</summary>
+    /// <summary><c>AccountFileNodes.Read</c> reads an account file its move into place still holds.</summary>
     [Fact]
     public void An_account_file_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -58,7 +58,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>SessionUsage.Load</c> reads the usage file its move into place still holds.</summary>
+    /// <summary><c>SessionUsage.Load</c> reads the usage file its move into place still holds.</summary>
     [Fact]
     public void Usage_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -74,7 +74,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>AgentSettings.Load</c>, through <c>Read</c>, reads an account's settings its move into place still holds.</summary>
+    /// <summary><c>AgentSettings.Load</c>, through <c>Read</c>, reads an account's settings its move into place still holds.</summary>
     [Fact]
     public void An_account_s_settings_are_read_while_their_move_into_place_still_holds_them()
     {
@@ -91,7 +91,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>HarnessSettings.Load</c> reads the harness wiring its move into place still holds.</summary>
+    /// <summary><c>HarnessSettings.Load</c> reads the harness wiring its move into place still holds.</summary>
     [Fact]
     public void The_harness_wiring_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -107,7 +107,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>HarnessKeys.Read</c>, through <c>Of</c>, reads the keys file its move into place still holds.</summary>
+    /// <summary><c>HarnessKeys.Read</c>, through <c>Of</c>, reads the keys file its move into place still holds.</summary>
     [Fact]
     public void An_account_s_key_is_read_while_its_move_into_place_still_holds_the_keys()
     {
@@ -121,7 +121,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>ClaudeTrust.Accepted</c> reads the harness's config its move into place still holds.</summary>
+    /// <summary><c>ClaudeTrust.Accepted</c> reads the harness's config its move into place still holds.</summary>
     [Fact]
     public void A_folder_s_trust_is_read_while_the_move_into_place_still_holds_the_config()
     {
@@ -136,7 +136,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>ClaudeTrust.Grant</c> reads the harness's config its move into place still holds, and keeps what it held.</summary>
+    /// <summary><c>ClaudeTrust.Grant</c> reads the harness's config its move into place still holds, and keeps what it held.</summary>
     [Fact]
     public async Task A_grant_reads_the_config_its_move_into_place_still_holds()
     {
@@ -158,7 +158,7 @@ public sealed class ReadShareAccountTests : IDisposable
         Assert.Equal(3, (int?)JsonNode.Parse(File.ReadAllText(path))!["numStartups"]);
     }
 
-    /// <summary>READSHARE1: <c>DshProfile.Write</c> reads a profile Daoris wrote while its move into place still holds it, and rewrites it, never refusing it as not Daoris's.</summary>
+    /// <summary><c>DshProfile.Write</c> reads a profile Daoris wrote while its move into place still holds it, and rewrites it, never refusing it as not Daoris's.</summary>
     [Fact]
     public async Task A_held_profile_Daoris_wrote_is_rewritten_not_refused()
     {
@@ -179,7 +179,7 @@ public sealed class ReadShareAccountTests : IDisposable
         Assert.StartsWith(DshProfile.Header, File.ReadAllText(path), StringComparison.Ordinal);
     }
 
-    /// <summary>READSHARE1: <c>PermissionRules.Load</c> reads the permissions file its move into place still holds.</summary>
+    /// <summary><c>PermissionRules.Load</c> reads the permissions file its move into place still holds.</summary>
     [Fact]
     public void The_permission_rules_are_read_while_their_move_into_place_still_holds_them()
     {
@@ -210,7 +210,7 @@ public sealed class ReadShareAccountTests : IDisposable
         return Put(DaorisHome.Entry(_home, HomeEntry.RuleProposals, $"{id}.json"), node.ToJsonString() + "\n");
     }
 
-    /// <summary>READSHARE1: <c>RuleProposals.Parse</c>, through <c>Load</c>, reads a proposal its move into place still holds.</summary>
+    /// <summary><c>RuleProposals.Parse</c>, through <c>Load</c>, reads a proposal its move into place still holds.</summary>
     [Fact]
     public void A_rule_proposal_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -225,7 +225,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>RuleProposals.Mark</c>, through <c>Answer</c>, reads a proposal its move into place still holds and keeps its keys.</summary>
+    /// <summary><c>RuleProposals.Mark</c>, through <c>Answer</c>, reads a proposal its move into place still holds and keeps its keys.</summary>
     [Fact]
     public async Task A_rule_proposal_is_answered_while_its_move_into_place_still_holds_it()
     {
@@ -244,7 +244,7 @@ public sealed class ReadShareAccountTests : IDisposable
         Assert.Equal(("declined", "The session's own reason."), ((string?)root["state"], (string?)root["why"]));
     }
 
-    /// <summary>READSHARE1: <c>Tools.Load</c>, through <c>Read</c>, reads the tools file its move into place still holds.</summary>
+    /// <summary><c>Tools.Load</c>, through <c>Read</c>, reads the tools file its move into place still holds.</summary>
     [Fact]
     public void The_tools_file_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -260,7 +260,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>ToolResources.ReadFile</c> reads a resource list's bytes while its move into place still holds it.</summary>
+    /// <summary><c>ToolResources.ReadFile</c> reads a resource list's bytes while its move into place still holds it.</summary>
     [Fact]
     public void A_resource_list_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -277,7 +277,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>PluginFolders.ReadText</c> and <c>TextIfThere</c> read a file their move into place still holds.</summary>
+    /// <summary><c>PluginFolders.ReadText</c> and <c>TextIfThere</c> read a file their move into place still holds.</summary>
     [Fact]
     public void A_plugin_file_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -294,7 +294,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>HelpGrants.Approvals</c>, through <c>Withdraw</c>, reads the approvals its move into place still holds.</summary>
+    /// <summary><c>HelpGrants.Approvals</c>, through <c>Withdraw</c>, reads the approvals its move into place still holds.</summary>
     [Fact]
     public async Task The_help_approvals_are_read_while_their_move_into_place_still_holds_them()
     {
@@ -315,7 +315,7 @@ public sealed class ReadShareAccountTests : IDisposable
         Assert.Equal("tracker", (string?)Assert.Single(help)!["plugin"]);
     }
 
-    /// <summary>READSHARE1: <c>RemoteTarget.Load</c>, through <c>LoadFile</c>, reads the remotes map its move into place still holds.</summary>
+    /// <summary><c>RemoteTarget.Load</c>, through <c>LoadFile</c>, reads the remotes map its move into place still holds.</summary>
     [Fact]
     public void The_remotes_map_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -330,7 +330,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>RemoteFile.Load</c> reads the remotes map its move into place still holds, as an editor reads it.</summary>
+    /// <summary><c>RemoteFile.Load</c> reads the remotes map its move into place still holds, as an editor reads it.</summary>
     [Fact]
     public void The_remotes_file_is_read_for_an_edit_while_its_move_into_place_still_holds_it()
     {
@@ -347,7 +347,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>RegistryFollowing.TextIfThere</c>, through <c>Load</c> and <c>Due</c>, reads the lines moved its move into place still holds.</summary>
+    /// <summary><c>RegistryFollowing.TextIfThere</c>, through <c>Load</c> and <c>Due</c>, reads the lines moved its move into place still holds.</summary>
     [Fact]
     public void The_lines_moved_are_read_while_their_move_into_place_still_holds_them()
     {
@@ -362,7 +362,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>OpinionGateFiles.ReadDues</c> reads the opinions owed while their move into place still holds them.</summary>
+    /// <summary><c>OpinionGateFiles.ReadDues</c> reads the opinions owed while their move into place still holds them.</summary>
     [Fact]
     public void The_opinions_owed_are_read_while_their_move_into_place_still_holds_them()
     {
@@ -378,7 +378,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>OpinionGateFiles.ReadGates</c> reads a chain's gate record while its move into place still holds it.</summary>
+    /// <summary><c>OpinionGateFiles.ReadGates</c> reads a chain's gate record while its move into place still holds it.</summary>
     [Fact]
     public void A_chain_s_gate_record_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -397,7 +397,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>OpinionDeliveryFiles.Read</c> reads an opinion's delivery while its move into place still holds it.</summary>
+    /// <summary><c>OpinionDeliveryFiles.Read</c> reads an opinion's delivery while its move into place still holds it.</summary>
     [Fact]
     public void An_opinion_s_delivery_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -413,7 +413,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>WorkspaceSetupFile.ReadFile</c>, through <c>Load</c>, reads a workspace's plan while its move into place still holds it.</summary>
+    /// <summary><c>WorkspaceSetupFile.ReadFile</c>, through <c>Load</c>, reads a workspace's plan while its move into place still holds it.</summary>
     [Fact]
     public void A_workspace_s_setup_plan_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -430,7 +430,7 @@ public sealed class ReadShareAccountTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>UpdateRequests.Read</c> reads the person's update request while its move into place still holds it.</summary>
+    /// <summary><c>UpdateRequests.Read</c> reads the person's update request while its move into place still holds it.</summary>
     [Fact]
     public void An_update_request_is_read_while_its_move_into_place_still_holds_it()
     {

@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para>A session spawns only onto a clean tree: uncommitted changes are somebody's work in
-/// flight — the lesson `reaching-in` was written from — and a tree that is not a git repository at
+/// flight — the lesson `reaching-in` comes from — and a tree that is not a git repository at
 /// all cannot make that promise, so it refuses too.</para>
 ///
 /// <para>The provenance half exists because two checkouts of one repository are two points in its

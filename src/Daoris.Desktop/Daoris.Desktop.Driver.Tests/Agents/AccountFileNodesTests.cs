@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What the four account files (cooling, names, windows, reads) share when they read their JSON root (DEDUP5): a missing
+/// What the four account files (cooling, names, windows, reads) share when they read their JSON root: a missing
 /// or unreadable file is an empty root, a name is found without case, a child object is made when asked, and a moment
 /// reads only as ISO 8601 writes it.
 /// </summary>

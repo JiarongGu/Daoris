@@ -337,7 +337,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // The roles' structure: for each place asked (none is this machine) and each work asked
-    // (none is every work, one this build does not know left out), the role a start finds there, the work's rule with where it was set,
+    // (none is every work, one this build does not know left out), the role a start finds there, the work's rule with where it is set,
     // and each choice's state by the last readings alone. A read: it walks no account and asks no account or binary, so a view opening
     // probes nothing; names only.
     [DriverRoute("ROLE_STRUCTURE", PipeClass.Open)]
@@ -409,7 +409,7 @@ public sealed class DriverRoutes(DriverContext context)
     private static string? Trimmed(string? text) => text?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
 
     // The places: this machine, each workspace and a page of the driven repositories,
-    // each with its driving, its works' roles and rules, the values of its head's line with where each was set, and why it needs a look,
+    // each with its driving, its works' roles and rules, the values of its head's line with where each is set, and why it needs a look,
     // by the readers a start uses. The not-driven repositories are counts, and a page of one workspace's when its fold is asked. A read of
     // driver.json, the role store and the service's registry and quests (a set-up quest still open is an adoption running): it asks no git,
     // process or account, so opening a place probes nothing. `detail` answers one place whole, driven or not, and `members` a

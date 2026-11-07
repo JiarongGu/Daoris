@@ -193,8 +193,8 @@ export type StateGroup = { group: SessionGroupName; sessions: Session[] };
  * - **Archived is hidden unless shown**, but the attended session is never taken out from under its reader: it is
  *   listed under Archived alone.
  * - **A record the reader has not answered for yet** goes where its record alone puts it, after the reader's rows, or
- *   for an ended one before them, since it ended after the reader looked and the group goes newest first. The next
- *   answer places it, as every tick asks the reader again.
+ * for an ended one before them, since it ended after the reader looked and the group goes newest first. The next
+ * answer places it, as every tick asks the reader again.
  */
 export function sessionsByState(
   sessions: readonly Session[], groupings: readonly SessionGrouping[] | undefined,
@@ -292,8 +292,8 @@ export type NestedRow = { id: string; session: Session; under: Session[] };
  *
  * @remarks
  * - **Moved, never copied.** A row drawn under another leaves its own group, so no work has two rows, and a group it leaves
- *   empty is the caller's to leave out. Each group keeps its own rows in its order; what is drawn under a row keeps the order
- *   the list drew it in.
+ * empty is the caller's to leave out. Each group keeps its own rows in its order; what is drawn under a row keeps the order
+ * the list drew it in.
  * - **Its own place where its parent is not drawn**: a session the list does not hold, or does not draw (archived and hidden),
  *   and where the person must act on it (`keepOwn`), so nothing that waits on them is folded under something else.
  * - **The row that stands for it** (`standsFor`): one row per line of work, so a helper of a part that does not lead is

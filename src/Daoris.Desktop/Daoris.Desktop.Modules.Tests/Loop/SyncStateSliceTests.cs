@@ -273,7 +273,7 @@ public sealed partial class SyncStateSliceTests : DriverModuleBridge
     [GeneratedRegex(@"\b(?<name>[A-Z]\w*)\s*(?==|,|$)")]
     private static partial Regex ServiceField();
 
-    /// <summary>The service's <c>GET /api/sync</c> standing in: each circle's answer as a test sets it, and what was asked.</summary>
+    /// <summary>The service's <c>GET /api/sync</c> standing in: each circle's answer as a test sets it, and what is asked.</summary>
     private sealed class StandIn : HttpMessageHandler
     {
         private readonly Lock _gate = new();

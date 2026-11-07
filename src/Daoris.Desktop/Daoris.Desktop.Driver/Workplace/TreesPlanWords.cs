@@ -92,7 +92,7 @@ public static class TreesPlanWords
     /// <c>trees land &lt;session&gt; --plan</c>: where accepting would put the work, what the line already holds of it, the work it holds by
     /// content, what the gate says before the press, the review's reading of an earlier landing, and where it is due.
     /// </summary>
-    /// <param name="pluginLines">A plugin's own lines said while the plan was made, first, as the alone path says them as they come.</param>
+    /// <param name="pluginLines">A plugin's own lines said while the plan is made, first, as the alone path says them as they come.</param>
     public static async Task<TreesSaid> LandPlanAsync(
         SessionTrees landing, string home, string session, string tree, LandingPlan plan, IWorkplaceGate gate, LandedReview? before,
         IReadOnlyList<string> pluginLines, CancellationToken ct = default)

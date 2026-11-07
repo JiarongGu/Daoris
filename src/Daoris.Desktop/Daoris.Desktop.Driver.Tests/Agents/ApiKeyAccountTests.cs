@@ -4,15 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 <b>An account that is an API key</b> (AGT3, D67 §1: Daoris keeps the key).
+/// 🔴 <b>An account that is an API key</b> (Daoris keeps the key).
 /// </summary>
 /// <remarks>
 /// <para>Measured on Claude Code 2.1.280 with an invalid key and nothing spent: the key in
 /// <c>ANTHROPIC_API_KEY</c> is enough for <c>auth status</c> (logged in, by <c>api_key</c>, no email)
 /// and for a non-interactive run, with no prompt (<c>docs/2026-09-23-api-key-accounts.md</c>).</para>
-///
 /// <para>The key is kept <b>beside</b> the account in <c>keys.json</c> under the home, never inside the
-/// directory that is the tool's (D49 §4), shown back only as its last four characters, and handed to
+/// directory that is the tool's, shown back only as its last four characters, and handed to
 /// the agent at spawn through the variable its toolchain declares.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -58,11 +57,11 @@ public sealed class ApiKeyAccountTests : IDisposable
     {
         var account = HarnessKeys.Add(_home, "fake", "sk-test-0000-wxyz");
 
-        // A fresh id (ACCT2), never the first free `account-N`.
+        // A fresh id, never the first free `account-N`.
         Assert.Matches("^acct-[0-9a-f]{8}$", account);
         var directory = HarnessSettings.ProfileHome(_home, "fake", account);
         Assert.True(Directory.Exists(directory));
-        // The directory is the TOOL's (D49 §4): Daoris made it and put nothing in it.
+        // The directory is the TOOL's: Daoris made it and put nothing in it.
         Assert.Empty(Directory.EnumerateFileSystemEntries(directory));
         Assert.Equal("sk-test-0000-wxyz", HarnessKeys.Of(_home, "fake", account));
         Assert.True(File.Exists(DaorisHome.Entry(_home, HomeEntry.Keys)));
@@ -98,7 +97,7 @@ public sealed class ApiKeyAccountTests : IDisposable
         Assert.Empty(HarnessSettings.Profiles(_home, "fake"));
     }
 
-    /// <summary>Removing an account removes its key (D66 §3), and another account's key survives the edit.</summary>
+    /// <summary>Removing an account removes its key, and another account's key survives the edit.</summary>
     [Fact]
     public void Removing_an_account_removes_its_key_and_only_its_key()
     {

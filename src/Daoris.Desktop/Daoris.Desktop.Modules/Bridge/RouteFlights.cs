@@ -6,7 +6,7 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>Why.</b> The frozen window's stack held 22 clean-up lists at once, each a whole git fan-out on the machine's one
-/// process-start lock: every window, and every change the page heard, asked the list again while the last was still
+/// process-start lock: every window, and every change the page heard, asked the list again with the last one still
 /// running, and each new ask made the ones before it slower.</para>
 ///
 /// <para><b>Kept for no one past its end.</b> A flight is dropped from the table before its callers are answered, so an ask

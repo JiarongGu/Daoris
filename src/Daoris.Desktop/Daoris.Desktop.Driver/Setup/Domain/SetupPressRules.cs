@@ -116,7 +116,7 @@ public static partial class SetupPressRules
 
     /// <summary>
     /// Whether <c>daoris --version</c> printed a version: numbers and dots, as the CLI prints its own. Public so
-    /// the screen's plan says a version only where one was answered, as the terminal's does.
+    /// the screen's plan says a version only where one is answered, as the terminal's does.
     /// </summary>
     public static bool IsVersion(string? version) => version is not null && DaorisVersion().IsMatch(version.Trim());
 

@@ -388,7 +388,7 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Until every part the service's answers name was judged once, the slice answers not judged and pushes nothing: a window keeps
+    /// Until every part the service's answers name is judged once, the slice answers not judged and pushes nothing: a window keeps
     /// the pull, where units read from the parts judged so far would say there is nothing to clean up.
     /// </summary>
     [Fact]

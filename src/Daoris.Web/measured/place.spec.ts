@@ -1,10 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// A place's page, measured (SETUPUX1h; the setup-UX design §2.1 and §6 measure 2): the head and the three section lines within the first
+// A place's page, measured (the setup-UX design §2.1 and §6 measure 2): the head and the three section lines within the first
 // 400 px of the main area at 1546 px (80 rem) and 680 px (39 rem), in English and 中文, with the first section open on the size of body
 // the design draws for Workflow. At the 400 px floor (25 rem) the lines wrap more, so only the sideways fit is held there. jsdom lays
 // nothing out, so no unit test can hold this.
-//
 // `npm --prefix src/Daoris.Web run e2e:measured -- place.spec`.
 
 const FIRST_SCREEN = 400;
@@ -32,7 +31,7 @@ async function open(page: Page, story: string) {
   await page.waitForTimeout(150);
 }
 
-// SETUPUX1o: a place's Workflow on its own. At 80 rem the chart stands in a column of its own beside the routes; at 39 and 25 rem it is one
+// A place's Workflow on its own. At 80 rem the chart stands in a column of its own beside the routes; at 39 and 25 rem it is one
 // press away, and shown it fits the main area sideways. Both languages and both themes.
 const WORKFLOW: Record<string, 'wide' | 'half' | 'narrow'> = {
   'placeWorkflow/SavedDefault': 'wide',

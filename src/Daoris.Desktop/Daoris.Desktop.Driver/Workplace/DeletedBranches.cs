@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// One delete the journal holds: the act, what it deleted and at which commit, who pressed it, the recovery ref that keeps the
-/// commit where one was kept, and whether its Undo is open. <see cref="Closed"/> is a code the page words, null where the Undo is open.
+/// commit where one is kept, and whether its Undo is open. <see cref="Closed"/> is a code the page words, null where the Undo is open.
 /// </summary>
 public sealed record DeletedRef(string Act, string Kind, string Name, string Commit, DateTimeOffset At, string Press, string? Recovery, string? Closed);
 
@@ -18,7 +18,7 @@ public sealed record DeletedRefs(IReadOnlyList<DeletedRef> Rows)
 /// <summary>
 /// **A repository's deletes, read from the journal alone**: each done <c>ref.delete</c> act is a row, whoever pressed
 /// it (the person's <c>GIT_REF_DELETE</c> or a door of Daoris's through <see cref="JournaledDeletes"/>), with the Undo the act carries. A row
-/// reads the plan the act wrote: which delete it was, at which commit, which recovery ref kept the commit. git is asked only whether the Undo
+/// reads the plan the act wrote: which delete it planned, at which commit, which recovery ref kept the commit. git is asked only whether the Undo
 /// can still run (the name free, the commit still known), in a listing that also counts the recovery refs no journal record names.
 /// </summary>
 public static class DeletedBranches
@@ -26,7 +26,7 @@ public static class DeletedBranches
     /// <summary>How many deletes a read lists.</summary>
     public const int Listed = 50;
 
-    /// <summary>The Undo closed because the act was undone already.</summary>
+    /// <summary>The Undo closed because the act is undone already.</summary>
     public const string Undone = "undone";
 
     /// <summary>The Undo closed because the name stands again.</summary>

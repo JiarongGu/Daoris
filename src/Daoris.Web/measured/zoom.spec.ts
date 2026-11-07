@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The frame at its size while the content zooms, measured (ZOOM1, the UI/UX design §3.11): the window's stories at 50%, 100%,
+// The frame at its size while the content zooms, measured: the window's stories at 50%, 100%,
 // 110% and 200% drawn in a real browser, and the title strip, its caption room, the activity bar and the status bar measured at
 // each, with the content's heading and a glyph on each side. jsdom lays nothing out, so no unit test can hold it; `zoom.test.ts`
 // holds the arithmetic and `chrome.test.tsx` the classes. `npm --prefix src/Daoris.Web run e2e:measured -- --grep zoom`.

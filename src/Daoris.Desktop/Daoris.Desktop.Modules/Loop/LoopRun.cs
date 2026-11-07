@@ -166,7 +166,7 @@ internal sealed class LoopRun(
                 .ConfigureAwait(false);
         }
 
-        // The home's own news, which the person acts on once, and which a terminal opened before it was set does not see.
+        // The home's own news, which the person acts on once, and which a terminal opened before it is set does not see.
         if (home is { Worth: true })
         {
             await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = home.Notice })
@@ -235,7 +235,7 @@ internal sealed class LoopRun(
     {
         if (loop.Pipe is { } served)
         {
-            // A press taken back after it was shown, or lost at the close, is kept in Done and failed.
+            // A press taken back after being shown, or lost at the close, is kept in Done and failed.
             served.Confirmations.Noticed = loop.Notices.Ended;
             // A press no terminal waits on, told at `work/event` as it settles, after its record says how.
             served.Confirmations.Settled = SettledTelling.Of(() => shared.Hooks, () => DateTimeOffset.UtcNow);

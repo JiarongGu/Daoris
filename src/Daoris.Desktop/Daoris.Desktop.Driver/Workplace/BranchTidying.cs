@@ -31,14 +31,14 @@ public sealed class BranchTidying(string home)
 
     /// <summary>
     /// How long after the person's last word to a session the look's tidy leaves its tree. No window of a session's fits: the
-    /// watch's quiet is a running turn's silence, and a stray folder's quiet is writes. The pause seen was four minutes, under one pace;
+    /// watch's quiet is a running turn's silence, and a stray folder's quiet is writes. The pause seen is four minutes, under one pace;
     /// an hour covers a person stepping away, and past it the tree may go, since the next word goes on with Daoris's brief in a fresh one.
     /// </summary>
     public static readonly TimeSpan SpokenWithin = TimeSpan.FromHours(1);
 
     private readonly object _gate = new();
 
-    // What was said and is still so, by repository, branch and code: said again only after a pass where it was not.
+    // What is said and still so, by repository, branch and code: said again only after a pass where it is not.
     private HashSet<string> _said = new(StringComparer.OrdinalIgnoreCase);
 
     private DateTimeOffset? _began;

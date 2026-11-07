@@ -131,7 +131,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
 
         Assert.Equal(code, error.Code);
         Assert.Contains(code, Refusals.All);
-        // Each names what was asked for, in the words the page sent — never a machine path it was not told.
+        // Each names what is asked for, in the words the page sent — never a machine path it is not told.
         Assert.Equal("../other/secret.txt", error.Parameters!["path"]);
     }
 

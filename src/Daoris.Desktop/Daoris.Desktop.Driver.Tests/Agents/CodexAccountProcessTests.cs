@@ -3,13 +3,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CODEXACCT1's spawns: Codex's own sign-in and status question, run through the door the driver has onto it
+/// The spawns of Codex's own sign-in and status question, run through the door the driver has onto it
 /// (<c>codex-acp</c>) with <c>codex</c>'s binary and its <c>CODEX_HOME</c>. <c>codex</c> is a stand-in named in
 /// <c>driver.json</c>'s commands, as a person names one, answering in the words <c>codex login status</c> printed on the
 /// install (0.160.0, 2026-10-08): signed in where its home holds <c>auth.json</c>, which its <c>login</c> writes.
 /// </summary>
 /// <remarks>
-/// A real process, so the <c>Process</c> half (MOD8). The declaration, the words and the walk are <c>CodexAccountTests</c>.
+/// A real process, so the <c>Process</c> half. The declaration, the words and the walk are <c>CodexAccountTests</c>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class CodexAccountProcessTests : IDisposable
@@ -119,7 +119,7 @@ public sealed class CodexAccountProcessTests : IDisposable
 
     /// <summary>
     /// *Read again* on Agents → Codex reads each account by <c>codex login status</c>, under each account's <c>CODEX_HOME</c>,
-    /// and keeps each reading under <c>codex</c>. 🔴 It never asks the tool's own sign-in (POOL1a3, D197 point 3): no status
+    /// and keeps each reading under <c>codex</c>. 🔴 It never asks the tool's own sign-in: no status
     /// question runs with no <c>CODEX_HOME</c>, and the own sign-in stays *unknown · never read*.
     /// </summary>
     [Fact]
@@ -145,7 +145,7 @@ public sealed class CodexAccountProcessTests : IDisposable
     }
 
     /// <summary>
-    /// CODEXLOGIN1: *Add an account…*'s sign-in by the browser first, <c>codex login</c> into a new folder Daoris owns: the
+    /// *Add an account…*'s sign-in by the browser first, <c>codex login</c> into a new folder Daoris owns: the
     /// page to open reaches the relay while the tool waits on its port, and once the browser comes back to that port the
     /// tool ends signed in and the end's question reads it so. A page that comes back refused ends it with the tool's own
     /// line, exit 1, and nothing signed in.
@@ -194,9 +194,8 @@ public sealed class CodexAccountProcessTests : IDisposable
     }
 
     /// <summary>
-    /// *Add an account…*'s sign-in by its device code: <c>codex login --device-auth</c> (CODEXACCT2, now asked for,
-    /// CODEXLOGIN1) into a new folder Daoris owns, with that folder as its <c>CODEX_HOME</c>, and the end's question reads it
-    /// signed in. Never the tool's own home. SIGNIN1: the stand-in waits as Codex does, so the link and the code reach the
+    /// *Add an account…*'s sign-in by its device code: <c>codex login --device-auth</c> (now asked for) into a new folder Daoris owns, with that folder as its <c>CODEX_HOME</c>, and the end's question reads it
+    /// signed in. Never the tool's own home. The stand-in waits as Codex does, so the link and the code reach the
     /// relay as plain lines while it waits, and it ends once the code is entered.
     /// </summary>
     [Fact]

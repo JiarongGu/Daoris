@@ -10,8 +10,7 @@ import '../src/locales/i18n';
  *
  * A `Tooltip` outside one **throws**, so a component that gains a `Tip` breaks every story that
  * renders it — not visually, but at render, which `stories.test.tsx` catches as a story that cannot
- * render at all. That happened twice in one session (the status bar's items, then the toast's
- * clamped text), and both times the fix was to wrap one more story. Wrapping them all, once, is the
+ * render at all. Wrapping stories one at a time repeats with every new `Tip`. Wrapping them all, once, is the
  * fix that does not need repeating: a decorator here applies in Storybook and in
  * `composeStories`, which is what the test renders through.
  */

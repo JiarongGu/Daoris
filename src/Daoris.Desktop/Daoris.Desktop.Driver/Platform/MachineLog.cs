@@ -88,7 +88,7 @@ public sealed class MachineLog : IDisposable
         _cap = cap;
     }
 
-    /// <summary>A log that writes nothing, for code that runs where no log was handed in.</summary>
+    /// <summary>A log that writes nothing, for code that runs where no log is handed in.</summary>
     public static MachineLog None { get; } = new(null, "none");
 
     /// <summary>This process's log under the home the environment names, with its old files pruned.</summary>
@@ -253,8 +253,8 @@ public sealed class MachineLog : IDisposable
 
     /// <summary>
     /// Run a synchronous entry point's body (the desktop's <c>app.Run()</c>), writing the exception that
-    /// leaves it while this log is still open, and letting it go on as it was: the <c>using</c> that holds this log may close
-    /// it before the runtime raises that exception as unhandled, and the line was dropped.
+    /// leaves it while this log is still open, and letting it go on unchanged: the <c>using</c> that holds this log may close
+    /// it before the runtime raises that exception as unhandled, and the line would be dropped.
     /// </summary>
     /// <remarks>Written once: <see cref="WatchUnhandled"/>'s handler, if it is reached with this log still open, skips it.</remarks>
     public void RunWatched(Action body)
@@ -490,7 +490,7 @@ public sealed class EntryPointWatch
     /// <summary>The start is over: an exception that ends the process from now on is <c>unhandled</c>.</summary>
     public void Running() => Volatile.Write(ref _running, 1);
 
-    /// <summary>Write <paramref name="error"/>, when it was raised on the thread this watch was made on.</summary>
+    /// <summary>Write <paramref name="error"/>, when it is raised on the thread that made this watch.</summary>
     internal void Raised(Exception? error, bool terminating)
     {
         if (Environment.CurrentManagedThreadId != _thread) return;

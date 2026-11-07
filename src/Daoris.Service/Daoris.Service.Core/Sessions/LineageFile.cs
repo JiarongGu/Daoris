@@ -15,12 +15,10 @@ namespace Daoris.Knowledge;
 /// Claude Code (<c>lineage-hook.mjs</c>) writes <c>"by":"hook"</c> lines and the driver its own <c>"by":"stream"</c>,
 /// <c>"announced"</c>, <c>"start"</c> and <c>"end"</c> lines; the driver's <c>ChildLineage</c> reads them all. 🔴 Its <c>FileName</c> and folder are this
 /// file's, copied there.</para>
-///
 /// <para><b>Only for a session the driver started.</b> The session is the connector's <c>DAORIS_SESSION_ID</c> and the home
 /// its <c>DAORIS_RULES_HOME</c>, else the Daoris home, as a proposal's. A connector a person's own agent started
 /// names no session and writes nothing; neither does one whose session is not shaped as an id, so no variable makes it write
 /// anywhere else.</para>
-///
 /// <para><b>Several writers at once.</b> Codex starts a connector per thread from the same entry, and the hook runs as its
 /// own process. Each line is appended holding the file alone, and tried again while another writer holds it, so no line
 /// overwrites another's. A file that will not take a line costs the line, never the call.</para>

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from './i18n';
 import { ago, compact, elapsed, figure, list, sentence, sessionTool, sittingDays, size, span, stamp } from './format';
 
-/** ACCTNAME1 (D152 §4.2): a session's agent line names its account by the person's name where the roster's namer is handed. */
+/** A session's agent line names its account by the person's name where the roster's namer is handed. */
 describe('sessionTool', () => {
   const session = { door: 'claude-code', doorVersion: '2.1.288', profile: 'acct-3f9c1a2b' };
 
@@ -14,7 +14,7 @@ describe('sessionTool', () => {
   });
 });
 
-/** KEEP1c: a size in the unit a person reads it in, a disk's in gigabytes. */
+/** A size in the unit a person reads it in, a disk's in gigabytes. */
 describe('size', () => {
   it('says bytes, kilobytes, megabytes and gigabytes', () => {
     expect(size(812)).toBe('812 B');
@@ -24,7 +24,7 @@ describe('size', () => {
   });
 });
 
-/** CONV5: a turn's span, which is seconds where a session's is minutes. */
+/** A turn's span, which is seconds where a session's is minutes. */
 describe('span', () => {
   it('says a short turn to the tenth, a longer one in whole seconds, then minutes and seconds', () => {
     expect(span(1500)).toBe('1.5s');
@@ -98,7 +98,7 @@ describe('ago and sittingDays', () => {
 });
 
 /**
- * The fact `ago` cannot carry (D55): a session three minutes old and one three hours deep both read
+ * The fact `ago` cannot carry: a session three minutes old and one three hours deep both read
  * "moved 4m ago". Elapsed is a SPAN, so it says which of the two you are looking at.
  */
 describe('elapsed', () => {
@@ -126,10 +126,10 @@ describe('elapsed', () => {
   });
 
   /**
-   * A record mirrored from a machine whose clock is ahead arrives with a start in this machine's
-   * future (D47 §6 — records travel, clocks do not). It reads as brand new, never as a negative
-   * span, because "-4m" in a rail is a bug report the person cannot act on.
-   */
+ * A record mirrored from a machine whose clock is ahead arrives with a start in this machine's
+ * future (records travel, clocks do not). It reads as brand new, never as a negative
+ * span, because "-4m" in a rail is a bug report the person cannot act on.
+ */
   it('reads a start in the future as brand new rather than as a negative span', () => {
     expect(elapsed('2026-09-19T12:05:00Z')).toBe('under a minute');
   });
@@ -145,9 +145,9 @@ describe('elapsed', () => {
  * Two transports, two shapes, one rule: the person reads a sentence, never a code.
  *
  * The shell's bridge rejects with a structured `code` + `parameters` and expects the client to produce
- * the text; the HTTP service answers prose that this platform renders verbatim. Before this existed,
- * every bridge refusal reached the person as a generic failure — the module's sentence was dropped by
- * the host and nothing here looked for a code.
+ * the text; the HTTP service answers prose that this platform renders verbatim. Without this,
+ * every bridge refusal reaches the person as a generic failure — the module's sentence is dropped by
+ * the host and nothing here looks for a code.
  */
 describe('sentence', () => {
   it('renders a bridge refusal from its code, interpolating what it carries', () => {
@@ -175,9 +175,9 @@ describe('sentence', () => {
    * person is barely better than the generic failure this replaced, so it falls back to a sentence.
    */
   /**
-   * REV3 web-rest F7: the bridge framework's own codes had no sentences, so a request that timed out —
-   * the driver busy, the host slow — said "something on this machine refused", which it had not.
-   */
+ * The bridge framework's own codes had no sentences, so a request that timed out —
+ * the driver busy, the host slow — said "something on this machine refused", which it had not.
+ */
   it('says what the bridge itself failed at, in its own words for each', () => {
     const said = (code: string) => sentence(Object.assign(new Error('x'), { code, parameters: { module: 'DAORIS.DRIVER', type: 'STOP' } }));
     const refused = sentence(Object.assign(new Error('x'), { code: 'FROM_A_NEWER_HOST' }));
@@ -210,7 +210,7 @@ describe('sentence', () => {
 });
 
 /**
- * 🔴 UX5 U28: a date took the machine's locale whatever the page's language, so a 中文 drawer read
+ * 🔴 A date took the machine's locale whatever the page's language, so a 中文 drawer read
  * *23/09/2026, 1:58:49 pm*. Naming the page's bare language then wrote *9/24/2026, 8:17:19 AM* for an
  * English reader on a British machine, the US's habits. The language is the page's; the habits are
  * the machine's when the machine speaks that language.
@@ -240,7 +240,7 @@ describe('stamp and figure', () => {
   });
 });
 
-/** FLOWCHART1b: a list of alternatives is joined the way the reader's language says *or*, as a list of items is joined by *and*. */
+/** A list of alternatives is joined the way the reader's language says *or*, as a list of items is joined by *and*. */
 describe('list', () => {
   afterEach(() => vi.unstubAllGlobals());
 

@@ -30,7 +30,7 @@ public sealed class SpaceRun
 
     public DateTimeOffset? Ended { get; private set; }
 
-    /// <summary><c>done</c> (every unit went), <c>kept</c> (one was kept) or <c>stopped</c> (it ended before its last unit); null while it runs.</summary>
+    /// <summary><c>done</c> (every unit went), <c>kept</c> (one is kept) or <c>stopped</c> (it ended before its last unit); null while it runs.</summary>
     public string? Outcome { get; private set; }
 
     /// <summary>Each kind, in the order it runs.</summary>

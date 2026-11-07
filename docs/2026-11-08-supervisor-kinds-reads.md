@@ -600,3 +600,53 @@ The supervisor decided B, yet its write also restores A.
 I found **nothing further in row c**, including §2.2’s durable-door checks. In row e, I found no further defect in resolving the steward’s target as `ActAsync` does, settling its pending pipe entry once, holding an allowed `land` for the window, keeping deny-removing changes the person’s, placing default switches at the machine, or recovering `settling` without another save.
 
 No files changed; no builds or tests ran.
+
+
+## Opus (independent), round 4
+
+Read on 2026-11-08 by Claude Opus 5.5, read-only, from main at `e38ab6db63`: the passages marked *(R4-…)* for rows c and e, with
+the code they cite. D233's notes of 2026-11-08 and D214's principle note bound it. Nothing was built or run. Paths are under
+`src/Daoris.Desktop/`'s `Daoris.Desktop.Driver/`, or its `Daoris.Desktop.Modules/` where they begin `Modules/`.
+
+### Verdict
+
+- **c: ready to build.**
+- **e: ready to build.**
+- **Blocking findings: none.**
+
+### Round 3's findings
+
+- **Opus 1: answered.** The turn takes only the user tier, the handed file and Daoris's connector, on either door, as the holder's
+  terminal does (`Modules/Platform/HolderTerminal.cs:46-48`). Daoris offers the adapter no file system or terminal to serve as tools
+  (`Agents/AcpProtocol.cs:167-168`), and a helper's plugins carry skills alone (`Loop/Helpers/HelperTurn.cs:163-164`). The proof runs on
+  each door.
+- **Opus 2: answered.** The forms class widenings alone, and `Bash(npm:*)` and the option-first shape are among the rules they
+  match. The person's own allow stays theirs.
+- **Opus 3 and 4: answered.** `MultiEdit` is in the reviewer's list. A withdrawal in the window settles the one entry under the gate
+  (`Modules/Platform/PipeTakeBacks.cs:136-203`).
+- **Codex: answered.** One file holds every scope and `defaultsOff` (`Agents/Permissions.cs:303-307`), so the exclusions are judged
+  under one lock. The writers named are every caller of `PermissionRules.Save` at main, and the CLI writes no rule file.
+  `JsonKeeping.SaveHolding` (`Store/JsonKeeping.cs:121`) and the exemplar (`Agents/HarnessSettingsChange.cs:31-56`) stand as cited.
+  Taking the proposal's lock before the rule file's orders the two.
+
+### Not blocking
+
+1. **(c) A plugin the person enables.** *The person's other servers* holds only if `--strict-mcp-config` also drops the server of a
+   plugin enabled in the user tier, and nothing measured shows that. Add one to row c's proof beside the user tier's server.
+2. **(e) The forms' reach.** §2.8 names two shell tools. Read a `PowerShell(…)` widening against the forms as a `Bash(…)` one
+   (`PowerShell(npm publish:*)`), even though driven sessions' use of that tool still waits on its canary
+   (`Setup/SetupPress.cs:17-18`). The list also misses publishers the sentence covers: `uv publish`, `poetry publish`, `gem push`,
+   `docker push`.
+
+### Where I found nothing
+
+- The settlement: the `settling` mark and the rules' save made under one hold, the settled mark once it lets go, and the recovery
+  saving nothing.
+- An allowed `land` in its window: run at the window's end, or dropped on an overrule or a withdrawal, never both.
+
+
+## Codex, round 4
+
+Codex's confirming check of rows c and e, at `e38ab6db63`, run by the steward from outside the install, read-only; verbatim.
+
+Read at `e38ab6db63`: **the round-3 race is answered; rows c and e are ready to build.** §5.3’s `PermissionRules.Change` takes the permission-file lock before reading and judging the edit, saves without reacquiring it, and covers every existing production writer, including narrowing and setup rollback. The locked recheck and §9e’s two interleavings directly address approval of B restoring withdrawn A. For row c, §2.8 specifies source isolation on both Claude Code doors—user settings plus the handed file, and only Daoris’s connector—with corresponding proof against an allowed external write tool and a copy’s startup hook; `MultiEdit` also joins the denied writes. For row e, the publish-form overlap check keeps explicit and broader publishing widenings with the person while `no-publish` is on, and an allowed landing remains pending through its window so withdrawal or cancellation drops it without a card or landing. The named implementation rows and proof clauses carry these changes consistently. Against the specified D233 notes and D214 principle, **remaining blocking findings in these passages: none.** This confirms the design; no builds or tests ran, and no files changed.

@@ -5,12 +5,12 @@ namespace Daoris.Driver;
 /// <summary>
 /// The downloads' rule (6): a version nothing uses goes once its days have
 /// passed in its current unused stretch, through <see cref="DownloadClearing.ClearAsync"/>, each judged again under the
-/// use files' locks and kept while a running session was handed it. The look's Keeping pass runs it, holding the home's run lock.
+/// use files' locks and kept while a running session is handed it. The look's Keeping pass runs it, holding the home's run lock.
 /// </summary>
 /// <remarks>
 /// <para><b>The current unused stretch</b>: each pass lists the versions without measuring them and records, in
 /// <c>keeping.json</c>'s <c>unused</c>, when it first finds one nothing pins, uses or names; a pass that finds it pinned, used or named, or
-/// finds it gone, clears that time, so the next that finds it unused starts a new stretch. A version a running session was handed does not
+/// finds it gone, clears that time, so the next that finds it unused starts a new stretch. A version a running session is handed does not
 /// clear it: the session's own versions are the guard while it runs. One whose use cannot be read now (<c>unread</c>), or downloaded within
 /// the hour (<c>recent</c>), is left as it stands.</para>
 /// <para><b>Once a day</b>: the versions whose stretch is past the policy's days are removed; none under <c>never</c>, and
@@ -41,7 +41,7 @@ public static class DownloadKeeping
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
                                           || (error is TaskCanceledException && !ct.IsCancellationRequested))
         {
-            // Unkept, the record says nothing of what it was handed, and the rule keeps what went unused after it opened.
+            // Unkept, the record says nothing of what it is handed, and the rule keeps what went unused after it opened.
         }
     }
 
@@ -128,13 +128,13 @@ public static class DownloadKeeping
 }
 
 /// <summary>What one pass of the downloads' rule did (<see cref="DownloadKeeping.PassAsync"/>).</summary>
-/// <param name="Cleared">Each version past its days, and what became of it; none where the pass was not the day's.</param>
-/// <param name="Unwritten">Why <c>keeping.json</c> was not written or could not be read; null where it was, or needed nothing.</param>
+/// <param name="Cleared">Each version past its days, and what became of it; none where the pass is not the day's.</param>
+/// <param name="Unwritten">Why <c>keeping.json</c> is not written or could not be read; null where it is, or needed nothing.</param>
 public sealed record DownloadsPass(IReadOnlyList<DownloadCleared> Cleared, string? Unwritten)
 {
     /// <summary>Nothing listed, so nothing recorded and nothing removed.</summary>
     public static DownloadsPass Nothing { get; } = new([], null);
 
-    /// <summary>The budget was spent before every version past its days was reached: the next pass takes up the rest.</summary>
+    /// <summary>The budget is spent before every version past its days is reached: the next pass takes up the rest.</summary>
     public bool Cut { get; init; }
 }

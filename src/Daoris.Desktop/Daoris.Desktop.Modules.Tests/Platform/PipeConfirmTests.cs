@@ -102,7 +102,7 @@ public sealed class PipeConfirmTests : Bridge
         await UntilAsync(() => Raised.Any(each => each.Module == StatePublisher.Module && each.Type == PipeConfirmations.Event
             && each.Payload is PipeConfirmationsNow { Waiting: [{ Route: Land }] }));
 
-        // RESULT says it waits, with when it was asked and that this terminal waits on it.
+        // RESULT says it waits, with its ask's time and that this terminal waits on it.
         var waiting = await client.ResultAsync(id);
         Assert.Equal("waiting", waiting.GetProperty("state").GetString());
         Assert.True(waiting.GetProperty("waitedOn").GetBoolean());
@@ -327,7 +327,7 @@ public sealed class PipeConfirmTests : Bridge
         using var ___ = pipe;
         await using var ____ = client;
 
-        // The session moved on, then the press was asked, then confirmed with nothing moved since: it runs.
+        // The session moves on, then the press is asked, then confirmed with nothing moved since: it runs.
         grounds.Session("s1a2b3c4", "awaiting-person", minute: 9);
         var id = await client.SendAsync(DriverModule.Name, "SESSION_INPUT", new { id = "s1a2b3c4", text = "go on" });
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
@@ -702,7 +702,7 @@ public sealed class PipeConfirmTests : Bridge
     /// payload alone. A route the census makes open or the window's, a payload whose fingerprint is not its binding's, one of 257 values,
     /// a route with no grounds row, the eleventh waiting, a record that does not read: each ends lost, never asked, one notice for all. A
     /// passing record's card is made from its payload, whatever the record holds beside. A record begun answers <c>interrupted</c>; one
-    /// ended whose journal line was never written answers its ending; a newer one is left in place, not asked; a name that is no
+    /// ended whose journal line is never written answers its ending; a newer one is left in place, not asked; a name that is no
     /// confirmation's id is removed.
     /// </summary>
     [Fact]
@@ -880,7 +880,7 @@ public sealed class PipeConfirmTests : Bridge
     /// <summary>
     /// The terminal hears the id before the grounds are read, and
     /// <c>RESULT</c> says the press waits, checking. A withdrawal while the first read is held open ends it at once, journaled: no card ever
-    /// comes, no record is kept, and the id read again or sent again says it was taken back.
+    /// comes, no record is kept, and the id read again or sent again says it has been taken back.
     /// </summary>
     [Fact]
     public async Task A_withdrawal_while_the_grounds_are_first_read_leaves_no_card()
@@ -974,7 +974,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.False(pipe.Confirmations.Now().Waiting[0].WaitedOn);
     }
 
-    /// <summary>A conflict over an id the journal already ended leaves that ending as it was.</summary>
+    /// <summary>A conflict over an id the journal already ended leaves that ending unchanged.</summary>
     [Fact]
     public async Task A_restored_conflict_never_overwrites_an_ending_the_journal_holds()
     {

@@ -33,7 +33,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// <summary>What the host this supervisor started printed last on its standard error.</summary>
     private LastLines? _said;
 
-    /// <summary>How long a host whose input was closed is given to stop by itself before it is killed.</summary>
+    /// <summary>How long a host whose input is closed is given to stop by itself before it is killed.</summary>
     public TimeSpan StopWithin { get; init; } = TimeSpan.FromSeconds(5);
 
     /// <summary>
@@ -85,7 +85,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// <summary>
     /// Whether the host this supervisor started proved it holds <see cref="PersonKey"/>:
     /// its readiness probe asks <c>/api/status?prove=</c> a fresh nonce and checks the answer's <c>proof</c>. Null where nothing
-    /// was asked: no key was handed, or the host was adopted.
+    /// is asked: no key is handed, or the host is adopted.
     /// </summary>
     public bool? Proved { get; private set; }
 
@@ -229,7 +229,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             }
             catch (TimeoutException)
             {
-                // Something else still holds the stream: what was read by now is what is said.
+                // Something else still holds the stream: what is read by now is what is said.
             }
         }
 
@@ -258,7 +258,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// <param name="asksKey">Whether the host is asked to read its person key on its input's first line (<see cref="PersonKeyOnInput"/>).</param>
     public static ProcessStartInfo StartInfo(HostLocation location, bool asksKey = false)
     {
-        // Not the tools' environment (TOOLS5): the host is Daoris's own program, found by its own locator (D60, D93),
+        // Not the tools' environment: the host is Daoris's own program, found by its own locator,
         // and it starts no process; the knowledge feed's git is the checkout's driver's.
         var start = new ProcessStartInfo
         {
@@ -532,12 +532,12 @@ public sealed class HostStartClaim : IDisposable
 /// <summary>What <see cref="HostSupervisor.Stop"/> did.</summary>
 public enum HostStop
 {
-    /// <summary>Nothing this supervisor started was running: a host it adopted, or none at all.</summary>
+    /// <summary>Nothing this supervisor started is running: a host it adopted, or none at all.</summary>
     NotOwned,
 
-    /// <summary>The host went by itself once its input was closed, and wrote its own stop.</summary>
+    /// <summary>The host goes by itself once its input is closed, and writes its own stop.</summary>
     Exited,
 
-    /// <summary>It was still running after <see cref="HostSupervisor.StopWithin"/>, and was killed.</summary>
+    /// <summary>It still runs after <see cref="HostSupervisor.StopWithin"/>, and is killed.</summary>
     Killed,
 }

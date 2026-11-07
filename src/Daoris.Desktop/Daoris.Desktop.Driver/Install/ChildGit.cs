@@ -23,7 +23,7 @@ public static class ChildGit
     private static IChildGit? _current;
 
     /// <summary>The git wiring in force.</summary>
-    /// <exception cref="InvalidOperationException">None was installed: the assembly's own initializer has not run.</exception>
+    /// <exception cref="InvalidOperationException">None is installed: the assembly's own initializer has not run.</exception>
     public static IChildGit Current
     {
         get => _current ?? throw new InvalidOperationException("no git wiring is installed: the workplace installs it when the driver loads");

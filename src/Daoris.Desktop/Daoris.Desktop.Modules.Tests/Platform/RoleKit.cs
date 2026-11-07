@@ -110,7 +110,7 @@ internal static class RoleKit
     /// <summary>The start of the steward's terminal, <paramref name="share"/> the choice while a holder lives.</summary>
     public static HoldRequest Stewarding(string? share = "own") => new(AppointedRoles.Steward, share);
 
-    /// <summary>A role's terminal started, the tab a stand-in that keeps the key it was handed; null where none was handed.</summary>
+    /// <summary>A role's terminal started, the tab a stand-in that keeps the key it is handed; null where none is handed.</summary>
     public static (HoldChange Change, string? Key) Start(StandingConfirmation standing, HoldRequest request)
     {
         string? handed = null;

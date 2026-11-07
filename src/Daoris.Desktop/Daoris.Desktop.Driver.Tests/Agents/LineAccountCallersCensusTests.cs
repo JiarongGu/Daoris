@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1a-i's census of the account rule's callers, apart from <c>LineAccountTests</c>' cases so that the <c>censuses</c> gate runs it
-/// alone (REVIEW2 T6): every caller of the roster's resume, of <c>CoolingOf</c> and <c>CoolingsOf</c>, and every reader of
+/// The census of the account rule's callers, apart from <c>LineAccountTests</c>' cases so that the <c>censuses</c> gate runs it
+/// alone: every caller of the roster's resume, of <c>CoolingOf</c> and <c>CoolingsOf</c>, and every reader of
 /// <c>ResumeChoice.Waits</c>, reads <see cref="LineAccount"/> or is named <i>not yet moved</i> (X4-1.1).
 /// </summary>
 [Trait(Category.Name, Category.Census)]
@@ -14,7 +14,7 @@ public sealed class LineAccountCallersCensusTests
     /// <summary>
     /// The files that read a cooling account (<c>CoolingOf</c>, <c>CoolingsOf</c>), ask a resume (<c>ResumeAsync</c>) or read whether its words
     /// wait (<c>ResumeChoice.Waits</c>) and have not moved onto the rule. Each only hands the roster's reading of an account's cool-off to a
-    /// listing or a verb of the shell, which decides nothing by it (FOUNDATION1a-i's census; each moves with the row that moves its reader).
+    /// listing or a verb of the shell, which decides nothing by it; each moves with the row that moves its reader.
     /// The conversation's limit rule (<c>LimitRuled</c>) hands the cool-off's end to the supervisor rule's judgement, and the go-on press hands
     /// the roster's reading to the go-on-new ask.
     /// </summary>
@@ -29,7 +29,7 @@ public sealed class LineAccountCallersCensusTests
 
     /// <summary>
     /// The projects a caller of the account facts can be written in: the driver, its host, the modules and the app, each of whose sources
-    /// reaches this gate (the lane table's MOD9c), never the whole desktop tree, which spans lanes the census cannot place.
+    /// reaches this gate, never the whole desktop tree, which spans lanes the census cannot place.
     /// </summary>
     private static readonly string[] Projects = ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];
 

@@ -10,10 +10,10 @@ namespace Daoris.Desktop;
 /// <remarks>
 /// <para><b>Why.</b> The bridge dispatches each page request on the window's thread, and the kit's pipeline keeps the
 /// caller's context, so a route's every await came back to that thread. A sweep's look, once its service answer came back
-/// there, ran its whole git fan-out from it, and a process start waits on .NET's one process-start lock: the window was
-/// frozen for minutes while 51 threads queued on the lock behind a slow <c>CreateProcess</c>.</para>
+/// there, ran its whole git fan-out from it, and a process start waits on .NET's one process-start lock: the window froze
+/// for minutes while 51 threads queued on the lock behind a slow <c>CreateProcess</c>.</para>
 ///
-/// <para><b>The synchronous part stays where it was.</b> The context is taken away only for the call, on the same thread,
+/// <para><b>The synchronous part stays on the window's thread.</b> The context is taken away only for the call, on the same thread,
 /// and put back before the call returns: so the route's part before its first wait still runs inside the stall watch's
 /// call, timed and named, and the kit's pipeline outside this one still resumes on the window's thread to answer the page.</para>
 ///

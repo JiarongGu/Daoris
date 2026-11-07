@@ -68,7 +68,7 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
         var entries = SessionGroups.ReadEntries(look, ids).Select(SessionsGroupsWires.Entry).ToArray();
         if (!press.Said) return new { Sessions = sessions, Entries = entries };
 
-        // `daoris session list` asks for its own lines from this look (the group, the repository and `--json` it was given),
+        // `daoris session list` asks for its own lines from this look (the group, the repository and `--json` it is given),
         // which the alone path prints from a look of its own through the same function; the page asks for none.
         var ask = new SessionsAsk("list") { Group = press.Group, Repository = press.Repository, Json = press.Json };
         return new
