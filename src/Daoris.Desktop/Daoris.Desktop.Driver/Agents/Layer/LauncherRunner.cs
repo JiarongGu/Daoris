@@ -148,8 +148,8 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
         string command, IReadOnlyList<string> args, string? workingDirectory, IReadOnlyDictionary<string, string?>? environment,
         CancellationToken ct)
     {
-        // Not the tools' environment: the start's environment is the one its shell composed before the layer's door is registered
-        // the tools' among it, handed whole in the seat.
+        // Not the tools' environment (TOOLS5): the start's environment is the one its shell composed before the layer's door was registered
+        // (the tools' among it), handed whole in the seat.
         var info = new ProcessStartInfo(seat.Program?.File ?? command)
         {
             UseShellExecute = false,
