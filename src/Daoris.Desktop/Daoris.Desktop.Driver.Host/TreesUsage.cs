@@ -1,9 +1,9 @@
 namespace Daoris.Driver.Host;
 
-/// <summary>The usage `daoris tree` says where a word was not understood.</summary>
+/// <summary>The usage `daoris tree` says where a word is not understood.</summary>
 internal static class TreesUsage
 {
-    /// <summary>The verb's usage, after what was not understood where something was said; exit 2.</summary>
+    /// <summary>The verb's usage, after the problem when one is named; exit 2.</summary>
     public static int Say(string? problem)
     {
         if (problem is not null) Console.Error.WriteLine($"trees: {problem}");

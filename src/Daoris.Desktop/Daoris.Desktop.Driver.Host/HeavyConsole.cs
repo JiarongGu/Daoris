@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A repository's heavy gates from a terminal (HEAVYRUN1a, D180's HEAVYRUN1 note): <c>daoris gate run [--gate &lt;name&gt;]</c>,
+/// A repository's heavy gates from a terminal:<c>daoris gate run [--gate &lt;name&gt;]</c>,
 /// run in a checkout. The words, the slot and the run are the library's (<see cref="HeavyRun"/>); this hands it the home, this
 /// process's folder and environment, and Ctrl+C as its stop.
 /// </summary>
@@ -24,7 +24,7 @@ internal static class HeavyConsole
             return 2;
         }
 
-        // HEAVYSLOT1: a look reads the slot's records and runs nothing, so it has nothing to stop.
+        // A look reads the slot's records and runs nothing, so it has nothing to stop.
         if (ask.Look) return HeavyRun.Look(HeavyRunWorld.OfThisProcess(home), Console.Out);
 
         // Ctrl+C stops the run, never this process outright: what the gates started is ended and waited for, then the slot is let go.

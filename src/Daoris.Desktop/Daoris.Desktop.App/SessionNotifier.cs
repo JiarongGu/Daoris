@@ -5,24 +5,23 @@ using Shenora.Windows;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Bring another main window (<c>main:&lt;n&gt;</c>) in front of the person by its name, from any thread, never blocking (NOTIFY2c):
+/// Bring another main window (<c>main:&lt;n&gt;</c>) in front of the person by its name, from any thread, never blocking:
 /// false where it is not open. Resolved at call time, since the windows are made after the notifier is.
 /// </summary>
 public delegate bool BringForward(string window);
 
 /// <summary>
-/// The OS notification (SURF5b, working-surface design §4) — a session parked, or one that ended
-/// without the person asking for it, or a quest parked on its failed sessions (SESSUX1i).
+/// The OS notification — a session parked, or one that ended
+/// without the person asking for it, or a quest parked on its failed sessions.
 /// </summary>
 /// <remarks>
-/// <para><b>This closes driver design open question 5.</b> That question was whether a session
-/// parking while the window is closed should reach anybody, and its answer said the shell would have
-/// to grow its own toast because the runtime deliberately never learns what an operation is. It has.
-/// `TrayIcon` carries a menu and no balloon, so this is a <see cref="NotifyIcon"/> of its own —
-/// which is also what §4 means by "the shell's own code over the window toolkit it already has".</para>
+/// <para><b>The shell grows its own toast.</b> A session parking while the window is closed should
+/// reach somebody, and the runtime deliberately never learns what an operation is.
+/// `TrayIcon` carries a menu and no balloon, so this is a <see cref="NotifyIcon"/> of its own,
+/// the shell's own code over the window toolkit it already has.</para>
 ///
 /// <para><b>It decides nothing about what is worth saying.</b> `AttentionWatch` in the driver does,
-/// so a machine with no screen reaches the same answer (D50) and the judgement is testable where a
+/// so a machine with no screen reaches the same answer and the judgement is testable where a
 /// balloon is not. This is delivery, and only delivery.</para>
 ///
 /// <para><b>It is quiet while the person is looking.</b> The same event reaches the page over the
@@ -40,38 +39,38 @@ public sealed class SessionNotifier : IDisposable
     private readonly NotifyIcon _icon;
     private readonly IDisposable _subscription;
 
-    /// <summary>The session the last balloon was about — what clicking it opens.</summary>
+    /// <summary>The session the last balloon is about — what clicking it opens.</summary>
     private string? _about;
 
-    /// <summary>The quest the last balloon was about, where it names one (a quest's park): its workspace where its session's is not known.</summary>
+    /// <summary>The quest the last balloon is about, where it names one (a quest's park): its workspace where its session's is not known.</summary>
     private string? _aboutQuest;
 
-    /// <summary>Asked before the window is shown: a window put away is taken back first (MAINWINDOWS2). Null asks nothing.</summary>
+    /// <summary>Asked before the window is shown: a window put away is taken back first. Null asks nothing.</summary>
     private readonly Action? _takingBack;
 
-    /// <summary>Which main window a balloon's click opens, by the session and quest it is about (NOTIFY2c). Null: this window.</summary>
+    /// <summary>Which main window a balloon's click opens, by the session and quest it is about. Null: this window.</summary>
     private readonly Func<string?, string?, string>? _picking;
 
-    /// <summary>Brings another main window forward by its name (NOTIFY2c); false where it is not open. Null: none is.</summary>
+    /// <summary>Brings another main window forward by its name; false where it is not open. Null: none is.</summary>
     private readonly BringForward? _forwarding;
 
-    /// <summary>The words a main window's page handed, in its language (NOTIFY2d); null, or none told yet, says English.</summary>
+    /// <summary>The words a main window's page handed, in its language; null, or none told yet, says English.</summary>
     private readonly NoticeWords? _words;
 
-    /// <summary>A terminal's presses' balloons, at most one a minute across every press (CONFIRMWAIT1a-i, the confirm-wait design §8.2).</summary>
+    /// <summary>A terminal's presses' balloons, at most one a minute across every press.</summary>
     private readonly BalloonFold _fold;
 
     /// <param name="window">The first main window: the tray's, and what a click opens where no other is picked.</param>
     /// <param name="events">The bus the attention is told on.</param>
-    /// <param name="takingBack">Asked before the first is shown, so a window put away is taken back first (MAINWINDOWS2).</param>
+    /// <param name="takingBack">Asked before the first is shown, so a window put away is taken back first.</param>
     /// <param name="picking">
-    /// The main window a balloon's click opens (NOTIFY2c, the notification design §9): the one whose workspace holds what it is about,
+    /// The main window a balloon's click opens: the one whose workspace holds what it is about,
     /// or the main window last in front where none or several do (<see cref="MainWindowScopes"/>).
     /// </param>
     /// <param name="forwarding">Brings another main window forward by its name.</param>
     /// <param name="words">
-    /// The words each balloon is said in, as a main window's page handed them over <c>SET_NOTICE_WORDS</c> (NOTIFY2d, the notification
-    /// design §3.3): read at each balloon, so a change of language is said from the next.
+    /// The words each balloon is said in, as a main window's page handed them over <c>SET_NOTICE_WORDS</c>:
+    /// read at each balloon, so a change of language is said from the next.
     /// </param>
     public SessionNotifier(
         Form window, IEventBus events, Action? takingBack = null, Func<string?, string?, string>? picking = null, BringForward? forwarding = null,
@@ -91,12 +90,12 @@ public sealed class SessionNotifier : IDisposable
             Visible = true,
         };
 
-        // Double-click is the gesture every tray icon in Windows has taught people: the first main window, taken back where it was
-        // put away (MAINWINDOWS2). A balloon's click opens the main window holding what it is about (NOTIFY2c).
+        // Double-click is the gesture every tray icon in Windows has taught people: the first main window, taken back where it is
+        // put away. A balloon's click opens the main window holding what it is about.
         _icon.DoubleClick += (_, _) => Show(null);
         _icon.BalloonTipClicked += (_, _) => Open(_about, _aboutQuest);
 
-        // PAGELOOP1 (c, D217): the one surface outside the page that a blank window leaves. The browser's own reload of every open
+        // The one surface outside the page that a blank window leaves. The browser's own reload of every open
         // window's page; the host, the driver, the service and every session keep running. Worded as the balloons are, in the words
         // a main window's page last handed (English before one has), asked each time the menu opens so a change of language shows.
         if (reloading is not null)
@@ -142,7 +141,7 @@ public sealed class SessionNotifier : IDisposable
             Strikes = payload.GetType().GetProperty("Strikes")?.GetValue(payload) as int?,
             Module = Read(payload, "Module"),
             Route = Read(payload, "Route"),
-            // CONFIRMWAIT1a-ii (§7.2 step 7): how many presses a restart's one balloon names.
+            // How many presses a restart's one balloon names.
             Count = payload.GetType().GetProperty("Count")?.GetValue(payload) as int?,
         };
 
@@ -162,7 +161,7 @@ public sealed class SessionNotifier : IDisposable
 
             _about = session;
             _aboutQuest = quest;
-            // Its words and icon by kind are the modules' judgement (NOTIFY1d), in the words the page handed (NOTIFY2d): the window's
+            // Its words and icon by kind are the modules' judgement, in the words the page handed: the window's
             // language, the event's facts filled in, what a session wrote as written; English where no page has handed any.
             var said = SessionBalloon.Words(facts, _words?.Now);
             _icon.ShowBalloonTip(
@@ -176,8 +175,8 @@ public sealed class SessionNotifier : IDisposable
     }
 
     /// <summary>
-    /// A balloon's click (NOTIFY2c): the main window whose workspace holds what it was about comes forward on it, or the main window
-    /// last in front where none or several do; the first main window, as before, where that is the one or another cannot come.
+    /// A balloon's click: the main window whose workspace holds what it is about comes forward on it, or the main window
+    /// last in front where none or several do; the first main window where that is the one or another cannot come.
     /// </summary>
     private void Open(string? session, string? quest)
     {
@@ -191,7 +190,7 @@ public sealed class SessionNotifier : IDisposable
         Show(session);
     }
 
-    /// <summary>Bring the first main window forward, and attend that session if one was named.</summary>
+    /// <summary>Bring the first main window forward, and attend that session if one is named.</summary>
     /// <remarks>
     /// A notification is a door (design §4: every attention row is one), so clicking it lands on the
     /// session rather than on whatever the person last had open. The page is told over the bridge,
@@ -201,7 +200,7 @@ public sealed class SessionNotifier : IDisposable
     {
         if (_window.IsDisposed) return;
 
-        // The person asked for it: where the first main window was put away it is theirs again (MAINWINDOWS2), said before it
+        // The person asked for it: where the first main window is put away it is theirs again, said before it
         // is shown, so its showing is not read as a later launch's.
         _takingBack?.Invoke();
 
@@ -213,7 +212,7 @@ public sealed class SessionNotifier : IDisposable
 
     /// <summary>
     /// Asked to attend a session, from a balloon the person clicked: the session, and the main window brought forward on it, whose page
-    /// alone attends it (NOTIFY2c).
+    /// alone attends it.
     /// </summary>
     public event Action<string, string>? Attend;
 
@@ -231,7 +230,7 @@ public sealed class SessionNotifier : IDisposable
     {
         try
         {
-            // 🔴 ANY of this application's windows (REV3): a secondary window — the monitor, a detached
+            // 🔴 ANY of this application's windows: a secondary window — the monitor, a detached
             // session — carries the same page, which raises its own toast, so testing the main window
             // alone sent the same news twice, as a balloon and as a toast.
             var foreground = GetForegroundWindow();

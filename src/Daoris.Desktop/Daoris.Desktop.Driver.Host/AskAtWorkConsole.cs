@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Who is at work on an ask from a terminal (COWORKVIEW1d): <c>daoris ask at-work &lt;id&gt; [--json]</c>. The words and the doors are the
+/// Who is at work on an ask from a terminal:<c>daoris ask at-work &lt;id&gt; [--json]</c>. The words and the doors are the
 /// library's (<see cref="AskAtWorkVerb"/>); this wires the real world as <c>sessions</c> does, the running Daoris's read where one answers.
 /// </summary>
 internal static class AskAtWorkConsole

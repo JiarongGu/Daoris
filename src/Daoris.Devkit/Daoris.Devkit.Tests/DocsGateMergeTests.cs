@@ -3,12 +3,12 @@ using Daoris.Devkit;
 namespace Daoris.Devkit.Tests;
 
 /// <summary>
-/// GATE1b: with a merge open, the docs gate dates each side from the commit the merge would make, not from HEAD.
+/// With a merge open, the docs gate dates each side from the commit the merge would make, not from HEAD.
 /// </summary>
 /// <remarks>
 /// A merge gated before it is committed still has HEAD at the branch it merges into. Dated from HEAD, a README a day
-/// behind the source the merge brought passed every gate and failed `verify` once committed (FIX-LOG, GATE1: the
-/// TOOL4e merge). Each case is a real repository, so the dates are the ones git will log, not a fake's.
+/// behind the source the merge brings would pass every gate and fail `verify` once committed.
+/// Each case is a real repository, so the dates are the ones git will log, not a fake's.
 /// </remarks>
 public sealed class DocsGateMergeTests : IDisposable
 {
@@ -38,7 +38,7 @@ public sealed class DocsGateMergeTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL4e's shape: main holds the README and its source from day 1; the branch `work` changes the source on day
+    /// Main holds the README and its source from day 1; the branch `work` changes the source on day
     /// 5; main then changes <paramref name="onMain"/> on <paramref name="mainDay"/>. The merge is left open, as the
     /// merge tool leaves it while it gates; with the source changed on main too, it stops on the conflict.
     /// </summary>
@@ -83,7 +83,7 @@ public sealed class DocsGateMergeTests : IDisposable
     }
 
     /// <summary>
-    /// The failure GATE1 recorded, seen by the devkit itself: HEAD dates both sides day 1, and the commit the merge
+    /// The failure seen by the devkit itself: HEAD dates both sides day 1, and the commit the merge
     /// would make dates the source day 5, from the branch's commit, as `git log` will once it is made.
     /// </summary>
     [Fact]
@@ -150,7 +150,7 @@ public sealed class DocsGateMergeTests : IDisposable
     }
 
     /// <summary>
-    /// Outside a merge the gate is what it was, word for word: it reads HEAD, so a change not yet committed is not
+    /// Outside a merge the gate speaks plainly, word for word: it reads HEAD, so a change not yet committed is not
     /// dated at all, and what it says carries nothing about a merge.
     /// </summary>
     [Fact]

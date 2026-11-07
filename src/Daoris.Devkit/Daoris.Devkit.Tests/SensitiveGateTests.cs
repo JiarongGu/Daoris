@@ -16,10 +16,10 @@ public sealed class SensitiveGateTests : IDisposable
     /// </summary>
     /// <remarks>
     /// A test proving the scanner catches a machine path cannot do so by putting a machine path in a
-    /// tracked file — that is the exact thing `sensitive-info` forbids, and this gate caught both of
-    /// these the first time it was run over this repository. Which is the gate working, not misfiring.
+    /// tracked file — that is the exact thing `sensitive-info` forbids, and this gate would catch it
+    /// when run over this repository. That is the gate working, not misfiring.
     ///
-    /// The alternative was an ignore-list for test files, and that is worse: a structural scanner that
+    /// An ignore-list for test files would be worse: a structural scanner that
     /// can be silenced with "it is only a test" is how leaks reach history in the first place.
     /// Assembling the strings keeps the scanner honest and the test exact — what the gate sees at
     /// runtime is byte-for-byte what it is meant to catch.
@@ -42,9 +42,9 @@ public sealed class SensitiveGateTests : IDisposable
     }
 
     /// <summary>
-    /// REV3 tools F6: the pre-commit scan listed the STAGED paths and then read each file's working copy.
-    /// A leak staged, then cleaned in the working copy without re-staging, was committed by a scan that
-    /// passed. What is scanned is what the commit will hold.
+    /// A pre-commit scan that lists the STAGED paths and then reads each file's working copy lets through a
+    /// leak staged, then cleaned in the working copy without re-staging. What is scanned is what the commit
+    /// will hold.
     /// </summary>
     [Fact]
     public void A_staged_scan_reads_what_is_staged_not_the_working_copy()
@@ -61,8 +61,8 @@ public sealed class SensitiveGateTests : IDisposable
     }
 
     /// <summary>
-    /// REV3 tools F7: git quotes a path outside ASCII (`"\346\226\207.md"`), the quoted name matched no
-    /// file on disk, and its content was never read — only the path, which says nothing.
+    /// Git quotes a path outside ASCII (`"\346\226\207.md"`), and the quoted name matches no
+    /// file on disk, so its content would go unread — only the path, which says nothing.
     /// </summary>
     [Fact]
     public void A_file_named_outside_ascii_is_read_not_skipped()
@@ -79,9 +79,9 @@ public sealed class SensitiveGateTests : IDisposable
     }
 
     /// <summary>
-    /// The property the eleven copies were inconsistent about. A missing private list used to print a
-    /// notice and continue, so on a fresh clone the half of the guard that knows the private names
-    /// silently did not run — and nothing in the output distinguished that from a clean scan.
+    /// A missing private list that only printed a notice and continued would leave, on a fresh clone, the
+    /// half of the guard that knows the private names silently not running — and nothing in the output
+    /// would distinguish that from a clean scan.
     /// </summary>
     [Fact]
     public void A_missing_private_pattern_list_fails_rather_than_quietly_scanning_less()
@@ -95,9 +95,9 @@ public sealed class SensitiveGateTests : IDisposable
     }
 
     /// <summary>
-    /// REV3: a Windows home written in a JSON, JS or C# literal has two backslashes between its parts,
-    /// and a normalized one has forward slashes. The pattern held only the single-backslash spelling, and
-    /// this repository's own gate file carried the escaped one past it.
+    /// A Windows home written in a JSON, JS or C# literal has two backslashes between its parts,
+    /// and a normalized one has forward slashes; the pattern must hold each spelling, not only the
+    /// single-backslash one.
     /// </summary>
     [Theory]
     [InlineData(@"\")]
@@ -186,7 +186,7 @@ public sealed class SensitiveGateTests : IDisposable
         Assert.Contains("GitHub token", result.Detail);
     }
 
-    /// <summary>GITAUTH1a: GitHub's fine-grained token and GitLab's personal one are refused as the classic shapes are, and not printed.</summary>
+    /// <summary>GitHub's fine-grained token and GitLab's personal one are refused as the classic shapes are, and not printed.</summary>
     [Theory]
     [InlineData("github", "_pat_", "GitHub fine-grained token")]
     [InlineData("glpat", "-", "GitLab token")]
@@ -204,7 +204,7 @@ public sealed class SensitiveGateTests : IDisposable
     }
 
     /// <summary>
-    /// GITAUTH1c's row (the git-auth design §14 row 3): a file planted with both shapes is refused for each, neither printed, and a file
+    /// A file planted with both shapes is refused for each, neither printed, and a file
     /// naming their prefixes alone, as a document about them does, passes.
     /// </summary>
     [Fact]

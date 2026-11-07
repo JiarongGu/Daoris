@@ -3,7 +3,7 @@ using Daoris.Devkit;
 namespace Daoris.Devkit.Tests;
 
 /// <summary>
-/// The tool producer of a repository's code map (MAP3c, <c>docs/2026-09-23-map-design.md</c> §3): the
+/// The tool producer of a repository's code map: the
 /// modules are the repository's projects and packages, and the dependencies it draws are the ones its
 /// project files declare — exact, with no compiler. What the files do not say is a person's, and kept.
 /// </summary>
@@ -93,7 +93,7 @@ public sealed class CodeMapProducerTests : IDisposable
     /// <summary>
     /// The tool owns the kinds it derives; any other kind is a person's (a service called over HTTP,
     /// say) and is kept while both its ends are still modules. A derived kind is never kept from the
-    /// file: a reference that was removed from the project is gone from the map.
+    /// file: a reference removed from the project is gone from the map.
     /// </summary>
     [Fact]
     public void A_dependency_of_a_kind_the_tool_does_not_derive_is_kept_while_both_ends_remain()
@@ -226,7 +226,7 @@ public sealed class CodeMapProducerTests : IDisposable
     }
 
     /// <summary>
-    /// `--check` is a FACT (D54): the committed map either is what the project files say or it is not.
+    /// `--check` is a FACT: the committed map either is what the project files say or it is not.
     /// Stale, it names what differs and the command that fixes it, and it writes nothing.
     /// </summary>
     [Fact]

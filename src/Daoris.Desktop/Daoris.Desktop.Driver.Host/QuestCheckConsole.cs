@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A done's evidence read again from a terminal (EVID1b, D144 §5, D50): <c>daoris quest check &lt;id&gt; [--commit
+/// A done's evidence read again from a terminal:<c>daoris quest check &lt;id&gt; [--commit
 /// &lt;sha&gt;]</c>. The words are the library's (<see cref="QuestCheckCommand"/>); this wires the real world: the service, the
 /// git Daoris runs, and this host's machine log, where the read's <c>evidence.checked</c> line goes.
 /// </summary>

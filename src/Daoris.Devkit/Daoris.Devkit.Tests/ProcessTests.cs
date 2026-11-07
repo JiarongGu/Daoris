@@ -1,10 +1,10 @@
 namespace Daoris.Devkit.Tests;
 
 /// <summary>
-/// Starting a command the way a person would type it (REV3 tools F10). The doctrine gate's default
+/// Starting a command the way a person would type it. The doctrine gate's default
 /// command is `daoris`, and on Windows npm installs that as `daoris.cmd`: started without a shell,
-/// .NET looks for `daoris.exe` only, and the gate said the tool "could not be run" on every Windows
-/// machine that had installed it.
+/// .NET looks for `daoris.exe` only, so the gate would say the tool "could not be run" on every Windows
+/// machine that installs it.
 /// </summary>
 public sealed class ProcessTests : IDisposable
 {

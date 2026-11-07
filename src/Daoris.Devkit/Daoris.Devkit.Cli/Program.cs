@@ -128,8 +128,8 @@ int InstallHooks()
                + "Bypass a hook deliberately with 'git commit --no-verify'.");
 }
 
-// The code map from the project files (MAP3c). `--check` is the gate a repository declares: whether the
-// committed map is what its project files say is a fact, and a fact gates (D54). Not a universal gate —
+// The code map from the project files. `--check` is the gate a repository declares: whether the
+// committed map is what its project files say is a fact, and a fact gates. Not a universal gate —
 // a map another producer wrote (an agent, a person, another stack's tool) is not this tool's to judge.
 int Map()
 {

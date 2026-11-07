@@ -55,14 +55,14 @@ internal static partial class RemoteConsole
                 + "The workspace name keys the map; the url and the key are what speak to its server."));
         }
 
-        // An address with no scheme parses as a scheme of its own, and every sync with it failed at the service's door (REV3).
+        // An address with no scheme parses as a scheme of its own, and every sync with it fails at the service's door.
         if (!Scheme().IsMatch(url))
         {
             return Say(FileSaid.Refused($"`{url}` is not an address a deployment answers at — one starts http:// or https://, "
                 + "e.g. `--url https://team.example.com`."));
         }
 
-        // An edit needs a place to land: the override, or the home's file, never a default under the user profile (D63).
+        // An edit needs a place to land: the override, or the home's file, never a default under the user profile.
         var target = Required(path);
         Console.WriteLine(RemoteWords.Wiring(workspace));
         var key = Flag(flags, "--key");

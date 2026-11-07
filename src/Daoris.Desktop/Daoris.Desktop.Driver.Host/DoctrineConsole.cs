@@ -69,7 +69,7 @@ internal static class DoctrineConsole
         }
     }
 
-    /// <summary>The tools' Node.js (TOOLS5): the home's choice where there is a home, else the one <c>PATH</c> finds; or why none runs.</summary>
+    /// <summary>The tools' Node.js: the home's choice where there is a home, else the one <c>PATH</c> finds; or why none runs.</summary>
     private static (string? File, string? Why) Node(string? home)
     {
         if (home is null) return (CommandPresence.Resolve("node", startable: true), null);

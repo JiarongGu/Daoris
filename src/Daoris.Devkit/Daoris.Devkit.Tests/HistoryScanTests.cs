@@ -75,7 +75,7 @@ public sealed class HistoryScanTests : IDisposable
     /// <summary>
     /// A leak that survived a hundred commits produces a hundred findings that are all the same leak,
     /// and printing every one buries the second distinct problem. Truncating SILENTLY would be worse —
-    /// a report that stops without saying so reads as "that was all of it".
+    /// a report that stops without saying so reads as "that is all of it".
     /// </summary>
     [Fact]
     public void Many_findings_are_capped_and_the_cap_is_stated()

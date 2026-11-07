@@ -48,7 +48,7 @@ public sealed class VersionAndDocsGateTests : IDisposable
 
     /// <summary>
     /// The failure the gate actually exists for. A hand-bumped version leaves every file consistent —
-    /// consistency was never the property at risk, authorship was — and the tell is that the release
+    /// consistency is not the property at risk, authorship is — and the tell is that the release
     /// tooling never stamped a changelog heading for it.
     /// </summary>
     [Fact]

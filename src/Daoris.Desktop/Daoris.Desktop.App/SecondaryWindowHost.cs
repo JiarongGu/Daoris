@@ -7,7 +7,7 @@ using Shenora.Windows;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The shell's half of <see cref="ISecondaryWindows"/> (SURF8): named windows, each on its own STA
+/// The shell's half of <see cref="ISecondaryWindows"/>: named windows, each on its own STA
 /// thread, each carrying the same platform bundle at its own route.
 /// </summary>
 /// <remarks>
@@ -19,8 +19,8 @@ namespace Daoris.Desktop;
 /// its own message pump, so the framework marshals with a non-blocking <c>BeginInvoke</c> — a
 /// blocking <c>Invoke</c> from here would deadlock the UI.</para>
 ///
-/// <para><b>These windows keep their native frame</b> (D55 §b); <see cref="SecondaryForm"/> carries
-/// the reason. Another main window, opened for a later launch (ONEINSTANCE1, D171 point 2), wears the
+/// <para><b>These windows keep their native frame</b>; <see cref="SecondaryForm"/> carries
+/// the reason. Another main window, opened for a later launch, wears the
 /// main window's own chrome instead.</para>
 /// </remarks>
 public sealed class SecondaryWindowHost(
@@ -29,16 +29,16 @@ public sealed class SecondaryWindowHost(
     SecondaryWindows windows,
     IColorScheme colorScheme,
     Microsoft.Extensions.Logging.ILogger<ChromiumView>? log = null,
-    // Each window's showing and closing, by its name, so the last main window ends the application (MAINWINDOWS2).
+    // Each window's showing and closing, by its name, so the last main window ends the application.
     MainWindows? mains = null,
-    // The count each other main window's own page told, worn on its own button and in its title (NOTIFY2c).
+    // The count each other main window's own page told, worn on its own button and in its title.
     WaitingCount? waiting = null,
-    // The loop each other main window's focus is told to, as the first one's is (FABRIC-END6a, §A4.3): a moment to ask about an open pull
-    // request, bounded by D148's minute in the driver. The container hands it, as it hands the first window its own.
+    // The loop each other main window's focus is told to, as the first one's is: a moment to ask about an open pull
+    // request, bounded by the driver's minute. The container hands it, as it hands the first window its own.
     DriverLoop? focused = null,
-    // Which main window's taskbar button a terminal's press waiting unshown lights (NOTIFY2b): each other main window's focus, told.
+    // Which main window's taskbar button a terminal's press waiting unshown lights: each other main window's focus, told.
     PressFlash? flash = null,
-    // Which main window a notification's click opens (NOTIFY2c): each other main window's focus and close, told.
+    // Which main window a notification's click opens: each other main window's focus and close, told.
     MainWindowScopes? scopes = null) : ISecondaryWindows, IDisposable
 {
 
@@ -50,33 +50,33 @@ public sealed class SecondaryWindowHost(
     private readonly HashSet<string> _asked = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// Each open window's form, by name, so its page can tell it the theme (WINDOW2). Removed as the
+    /// Each open window's form, by name, so its page can tell it the theme. Removed as the
     /// form closes, so a closed window is never told anything.
     /// </summary>
     private readonly Dictionary<string, SecondaryForm> _forms = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// The other main windows now open (MAINWINDOWS2c), for the picker's owner where the page that asked has none: any thread.
+    /// The other main windows now open, for the picker's owner where the page that asked has none: any thread.
     /// </summary>
     public IReadOnlyList<Form> MainForms()
     {
         lock (_forms) return [.. _forms.Where(entry => SecondaryWindow.IsMain(entry.Key)).OrderBy(entry => entry.Key, StringComparer.Ordinal).Select(entry => (Form)entry.Value)];
     }
 
-    /// <summary>Every window open now, main or not, for the tray's reload (PAGELOOP1 c): any thread.</summary>
+    /// <summary>Every window open now, main or not, for the tray's reload: any thread.</summary>
     public IReadOnlyList<IReloadableWindow> Reloadable()
     {
         lock (_forms) return [.. _forms.OrderBy(entry => entry.Key, StringComparer.Ordinal).Select(entry => (IReloadableWindow)entry.Value)];
     }
 
-    /// <summary>The open window opened under <paramref name="name"/> (a picker's owner, MAINWINDOWS2c), or null: any thread.</summary>
+    /// <summary>The open window opened under <paramref name="name"/> (a picker's owner), or null: any thread.</summary>
     public Form? FormNamed(string name)
     {
         lock (_forms) return _forms.TryGetValue(name, out var form) ? form : null;
     }
 
     /// <summary>
-    /// The main window opened under <paramref name="name"/> wears the count its own page last told (NOTIFY2c), on its own button and
+    /// The main window opened under <paramref name="name"/> wears the count its own page last told, on its own button and
     /// in its title. Any thread; the window draws on its own.
     /// </summary>
     public void ShowWaiting(string name)
@@ -90,7 +90,7 @@ public sealed class SecondaryWindowHost(
     }
 
     /// <summary>
-    /// Bring the main window opened under <paramref name="name"/> in front of the person (NOTIFY2c): a notification's click about what
+    /// Bring the main window opened under <paramref name="name"/> in front of the person: a notification's click about what
     /// its workspace holds. Un-minimized before it is activated, then brought forward on the OS's side too, on its own thread. False
     /// where it is not open. Any thread, never blocking.
     /// </summary>
@@ -113,7 +113,7 @@ public sealed class SecondaryWindowHost(
         }
     }
 
-    /// <summary>The workspace the page of the main window opened under <paramref name="name"/> holds, worn in its title (MAINWINDOWS3b). Any thread.</summary>
+    /// <summary>The workspace the page of the main window opened under <paramref name="name"/> holds, worn in its title. Any thread.</summary>
     public void ShowWorkspace(string name, string? workspace)
     {
         if (!SecondaryWindow.IsMain(name)) return;
@@ -132,29 +132,29 @@ public sealed class SecondaryWindowHost(
             // once the geometry has been applied.
             CreateForm = () =>
             {
-                // Until its page speaks, the viewer's choice as the app's scheme holds it now (THEMESTART1).
+                // Until its page speaks, the viewer's choice as the app's scheme holds it now.
                 var form = new SecondaryForm(
                     name, address, engine, log ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ChromiumView>.Instance,
                     () => KeptScheme.StartsDark(colorScheme.Scheme, MainForm.OperatingSystemPrefersDark));
                 lock (_forms) _forms[name] = form;
-                // FABRIC-END6a: another main window's focus is the person looking at the platform, as the first one's is; a utility
+                // Another main window's focus is the person looking at the platform, as the first one's is; a utility
                 // window's (the monitor, a detached session) is not. A hint that returns at once, so this window's thread waits on nothing.
                 if (focused is not null && SecondaryWindow.IsMain(name)) form.Activated += (_, _) => focused.Focused();
-                // NOTIFY2b: another main window coming forward is the person at a main window, which stops a lit button and is the
+                // Another main window coming forward is the person at a main window, which stops a lit button and is the
                 // one lit next; going behind leaves none in front. A utility window's focus moves nothing here.
                 if (flash is not null && SecondaryWindow.IsMain(name))
                 {
                     form.Activated += (_, _) => flash.CameForward(name);
                     form.Deactivate += (_, _) => flash.WentBehind(name);
                 }
-                // NOTIFY2c: the main window last in front is the one a notification about nobody's workspace opens.
+                // The main window last in front is the one a notification about nobody's workspace opens.
                 if (scopes is not null && SecondaryWindow.IsMain(name)) form.Activated += (_, _) => scopes.CameForward(name);
                 // Counted once it is on the screen, since only a window that loaded is ever told closed: one whose making
-                // failed would otherwise keep a put-away first main window hidden with nothing else open (MAINWINDOWS2).
+                // failed would otherwise keep a put-away first main window hidden with nothing else open.
                 form.Load += (_, _) =>
                 {
                     mains?.Opened(name);
-                    // What its page told before the window came up, worn at once (NOTIFY2c).
+                    // What its page told before the window came up, worn at once.
                     ShowWaiting(name);
                 };
                 form.FormClosed += (_, _) =>
@@ -165,10 +165,10 @@ public sealed class SecondaryWindowHost(
                     }
 
                     // Its count and its workspace go with it: one opened again under its name wears and holds nothing until its page
-                    // tells it (NOTIFY2c).
+                    // tells it.
                     waiting?.Closed(name);
                     scopes?.Closed(name);
-                    // The last main window closing, the first put away, ends the application (MAINWINDOWS2).
+                    // The last main window closing, the first put away, ends the application.
                     mains?.Closed(name);
                 };
                 return form;
@@ -179,7 +179,7 @@ public sealed class SecondaryWindowHost(
             // `MinimumSize`, so they outrank anything the form sets for itself. A utility window
             // pinned to a main window's floor cannot be parked narrow beside something else on a
             // second screen, which is most of what a monitor is for. Another main window
-            // (ONEINSTANCE1) carries the whole platform, and keeps the main window's floor.
+            // carries the whole platform, and keeps the main window's floor.
             StateOptions = SecondaryWindow.IsMain(name)
                 ? new WindowStateOptions { DefaultWidth = 1280, DefaultHeight = 800, MinWidth = 960, MinHeight = 600 }
                 : new WindowStateOptions

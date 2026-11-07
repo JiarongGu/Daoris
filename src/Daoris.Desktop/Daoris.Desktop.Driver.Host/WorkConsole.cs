@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Pausing, resuming and abandoning a work from a terminal (PAUSE1b, PAUSE1d, D132 §7.2, D50): <c>daoris ask
+/// Pausing, resuming and abandoning a work from a terminal:<c>daoris ask
 /// --pause|--resume|--abandon</c> and <c>quest pause|resume|abandon</c>. The words are the library's (<see cref="WorkCommand"/>);
 /// this wires the real world: the service, the home and its file, the home's process markers (this host runs no session here,
 /// so a live one is reached through the request its loop takes), the configured agent's wire, this host's machine log, where
@@ -10,7 +10,7 @@ namespace Daoris.Driver.Host;
 internal static class WorkConsole
 {
     /// <summary>
-    /// The milestone of every unit this home names (FABRIC-MILESTONE1a, D50), read-only: the home's records, the trees, and each repository's
+    /// The milestone of every unit this home names, read-only: the home's records, the trees, and each repository's
     /// recovery refs and the sessions in use from the service. A service that does not answer is said, with what that leaves unread: a tree a
     /// session holds then reads as idle, and no recovery ref is listed.
     /// </summary>
@@ -20,7 +20,7 @@ internal static class WorkConsole
         return (units, unread);
     }
 
-    /// <summary><see cref="ReadAsync"/>, with Daoris's own recoveries no unit names (CLEANUP1, <see cref="WorkInventory.Recoveries"/>).</summary>
+    /// <summary><see cref="ReadAsync"/>, with Daoris's own recoveries no unit names (<see cref="WorkInventory.Recoveries"/>).</summary>
     internal static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery, IReadOnlyList<string> Unread)> ReadStateAsync(string home)
     {
         var unread = new List<string>();
@@ -41,9 +41,9 @@ internal static class WorkConsole
                 if (!string.IsNullOrEmpty(session.Tree)) inUse.Add(session.Tree);
             }
 
-            // OVERVIEWNOISE1b: each tree joined to the session that recorded it, as the page's work reads it.
+            // Each tree joined to the session that recorded it, as the page's work reads it.
             recorded = WorkInventories.RecordedOf(await service.SessionRecordsAsync().ConfigureAwait(false));
-            // LANDRETIRE1 part 2: which quests the landings the line does not hold name are closed, read once and only where one asks.
+            // Which quests the landings the line does not hold name are closed, read once and only where one asks.
             closed = await LandedStanding.ClosedAsync(new LandedBranches(home).Entries(), service.EveryQuestAsync, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or TaskCanceledException)
@@ -56,9 +56,9 @@ internal static class WorkConsole
     }
 
     /// <summary>
-    /// <c>daoris work state [&lt;unit&gt;] [--entries]</c> (FABRIC-MILESTONE1a, D50): each unit's milestone, from the inventory the
-    /// records derive; a unit named by its id, its session or its branch. A look: it changes nothing and tells no window. The page's
-    /// is MILESTONE1b's. Exit 0 clean; 1 where the unit named is none; 2 for words not understood.
+    /// <c>daoris work state [&lt;unit&gt;] [--entries]</c>: each unit's milestone, from the inventory the
+    /// records derive; a unit named by its id, its session or its branch. A look: it changes nothing and tells no window.
+    /// Exit 0 clean; 1 where the unit named is none; 2 for words not understood.
     /// </summary>
     public static async Task<int> MilestonesAsync(string[] args)
     {
@@ -82,7 +82,7 @@ internal static class WorkConsole
         }
 
         foreach (var line in WorkWords.All(units, entries || words.Count == 1)) Console.WriteLine(line);
-        // CLEANUP1: the recoveries no unit names, each by its rule, after the units; a named unit's look says only that unit.
+        // The recoveries no unit names, each by its rule, after the units; a named unit's look says only that unit.
         if (words.Count == 0 && recovery.Count > 0)
         {
             Console.WriteLine();
@@ -93,11 +93,11 @@ internal static class WorkConsole
     }
 
     /// <summary>
-    /// <c>daoris work recovery drop &lt;ref&gt;... --repository &lt;name&gt; | --unheld [--repository &lt;name&gt;] [--plan]</c> (RECOVERYDROP1,
-    /// D50): the person's delete of the recovery refs nothing holds, the screen's <c>RECOVERY_DROP</c> being the other door. Only the
+    /// <c>daoris work recovery drop &lt;ref&gt;... --repository &lt;name&gt; | --unheld [--repository &lt;name&gt;] [--plan]</c>:
+    /// the person's delete of the recovery refs nothing holds, the screen's <c>RECOVERY_DROP</c> being the other door. Only the
     /// lease's holder acts (<see cref="RecoveryDropping.WithoutHome"/>); <c>--plan</c> lists what it would do and changes nothing, and counts
     /// the refs no journal record names (<see cref="RecoveryCensus"/>), with their sum over every checkout read. Exit
-    /// 0 clean; 1 where it was refused or a ref named was kept; 2 for words not understood or a service that did not answer.
+    /// 0 clean; 1 where refused or a ref named is kept; 2 for words not understood or a service that does not answer.
     /// </summary>
     public static async Task<int> RecoveryDropAsync(string[] args)
     {
@@ -174,14 +174,14 @@ internal static class WorkConsole
         var config = DriverConfig.Load(configPath);
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();
-        // The machine's remotes, re-read as every pass reads them (SYNC0d): a workspace with none answers null, and its
+        // The machine's remotes, re-read as every pass reads them: a workspace with none answers null, and its
         // declines travel nowhere.
         using var sync = RemoteSyncSet.FromEnvironment(service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable));
         var world = new WorkWorld(service, home, configPath, new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids)))
         {
             Unadopted = SetupWorld.Unadopted(config, home),
             Log = log,
-            // RPC1e: the running Daoris's client where one answers, the person's presses confirmed in its window.
+            // The running Daoris's client where one answers, the person's presses confirmed in its window.
             Instance = InstanceHost.World(home, "daoris"),
             Sync = async (workspace, ct) => sync.Workspaces.Contains(RemoteTarget.Workspace(workspace), StringComparer.OrdinalIgnoreCase)
                 ? await sync.RunOnceAsync(workspace, ct).ConfigureAwait(false)

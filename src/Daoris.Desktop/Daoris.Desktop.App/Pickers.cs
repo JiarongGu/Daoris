@@ -1,7 +1,7 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The system's folder and file pickers, owned by a window (MAINWINDOWS2c, D171 point 2): the one whose page asked, which
+/// The system's folder and file pickers, owned by a window: the one whose page asked, which
 /// <see cref="Owner"/> finds, rather than the first main window, which is hidden while put away.
 /// </summary>
 /// <remarks>
@@ -24,7 +24,7 @@ internal static class Pickers
 
     private static bool Usable(Form window) => !window.IsDisposed && window.IsHandleCreated && window.Visible;
 
-    /// <summary>The native folder dialog, for adding a repository (D48 §7). Null is the person cancelling.</summary>
+    /// <summary>The native folder dialog, for adding a repository. Null is the person cancelling.</summary>
     public static string? Folder(Form owner)
     {
         if (owner.InvokeRequired) return (string?)owner.Invoke(() => Folder(owner));
@@ -39,7 +39,7 @@ internal static class Pickers
         return dialog.ShowDialog(owner) == DialogResult.OK ? dialog.SelectedPath : null;
     }
 
-    /// <summary>The system's file picker, for a tool named as a file (TOOLS7): the program chosen, or null when cancelled.</summary>
+    /// <summary>The system's file picker, for a tool named as a file: the program chosen, or null when cancelled.</summary>
     public static string? File(Form owner, string? title)
     {
         if (owner.InvokeRequired) return (string?)owner.Invoke(() => File(owner, title));

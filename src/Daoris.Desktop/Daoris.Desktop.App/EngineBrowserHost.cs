@@ -6,9 +6,9 @@ using Shenora.Chromium;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The shell's half of <see cref="IInAppBrowser"/> (D78): the browser the settings choose, either
-/// Daoris's own on the engine it ships (D85, CHR3) — `daoris-browser`, a process of its own showing the
-/// engine's own window — or the person's Edge on a profile under the home (BRW12). It answers the
+/// The shell's half of <see cref="IInAppBrowser"/>: the browser the settings choose, either
+/// Daoris's own on the engine it ships — `daoris-browser`, a process of its own showing the
+/// engine's own window — or the person's Edge on a profile under the home. It answers the
 /// chosen one's loopback endpoint.
 /// </summary>
 /// <remarks>
@@ -16,7 +16,7 @@ namespace Daoris.Desktop;
 /// its process (`docs/2026-09-28-chromium-embedding-evidence.md` §1), so the port lives in that
 /// process and this one, which holds the bridge, has none.</para>
 ///
-/// <para><b>This executable, started through the kit</b> (CHR8, D99). The browser is the application
+/// <para><b>This executable, started through the kit</b>. The browser is the application
 /// started with <see cref="EngineBrowser.Argument"/>, so every build carries it, and it is started with
 /// <see cref="ChromiumBrowserProcess.Start"/>, never <c>Process.Start</c>: the latter hands the child every
 /// handle inheritable at that moment, a pipe end of Chromium's among them, and a browser that outlives
@@ -28,9 +28,9 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>Focus is Windows' decision.</b> An agent's first connection asks for the first window in the
 /// background, and the person's press asks for it in front. Measured both ways: Windows' own foreground
-/// rules decided, not the ask (CHR3, 2026-09-28).</para>
+/// rules decided, not the ask.</para>
 ///
-/// <para><b>Handed at a start, brought up at a connection (BROWSERSTART1).</b> A session is handed
+/// <para><b>Handed at a start, brought up at a connection.</b> A session is handed
 /// <see cref="EndpointAsync"/>'s port, held by the shell for its life, and the browser comes up when something
 /// first connects to it; a session's start and the come-up after a restart bring up no window.</para>
 /// </remarks>
@@ -44,7 +44,7 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
     /// <summary>The port Daoris's own engine listens on. Not the one a session is handed: that is <see cref="_front"/>'s.</summary>
     private readonly int _port = InAppBrowser.FreePort();
 
-    /// <summary>The endpoint sessions are handed (BROWSERSTART1), made when the first is: it brings the chosen browser up at its first connection.</summary>
+    /// <summary>The endpoint sessions are handed, made when the first is: it brings the chosen browser up at its first connection.</summary>
     private LazyEndpoint? _front;
 
     private readonly object _frontMade = new();
@@ -55,11 +55,11 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
     /// <summary>How often Edge's session cookies are read while it runs: its closing is the person's, and unannounced.</summary>
     private static readonly TimeSpan KeepEvery = TimeSpan.FromSeconds(30);
 
-    /// <summary>Edge's kept sign-in (BRW13), sealed to the account. Daoris's own engine keeps its own.</summary>
+    /// <summary>Edge's kept sign-in, sealed to the account. Daoris's own engine keeps its own.</summary>
     private readonly BrowserSessionCookies _edgeSignIn = new(home, new DpapiSeal());
     private System.Threading.Timer? _keeper;
 
-    /// <summary>Which browser the settings choose (BRW12), read each time: a terminal may have changed it.</summary>
+    /// <summary>Which browser the settings choose, read each time: a terminal may have changed it.</summary>
     private bool EdgeChosen => BrowserSettings.Read(home).Browser == BrowserChoice.Edge;
 
     public void Show() => _ = Task.Run(async () =>
@@ -77,8 +77,8 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
     });
 
     /// <summary>
-    /// A link on Daoris's page, in whichever browser the settings choose (BRW7): brought up as the
-    /// person's press brings it up, then the page in a tab of its own, in front. A browser that was not
+    /// A link on Daoris's page, in whichever browser the settings choose: brought up as the
+    /// person's press brings it up, then the page in a tab of its own, in front. A browser not
     /// running opens on its start page first, and the link's tab beside it.
     /// </summary>
     public void Open(string address) => _ = Task.Run(async () =>
@@ -110,13 +110,13 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
             return InAppBrowser.Endpoint(await BringUpEdgeAsync(activate: false, ct).ConfigureAwait(false));
         }
 
-        // Every build carries Daoris's own, being this executable (CHR8).
+        // Every build carries Daoris's own, being this executable.
         await BringUpAsync(background: true, activate: false, ct).ConfigureAwait(false);
         return InAppBrowser.Endpoint(_port);
     }
 
     /// <summary>
-    /// What a session's servers are handed (BROWSERSTART1): the front's endpoint, one port for the shell's life, with no browser
+    /// What a session's servers are handed: the front's endpoint, one port for the shell's life, with no browser
     /// brought up. The browser the settings choose comes up, in the background, at the first connection to it.
     /// </summary>
     public Task<string?> EndpointAsync(CancellationToken ct = default)
@@ -139,7 +139,7 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
     }
 
     /// <summary>
-    /// The browser's caches cleared while it is not running (KEEP1e, the cleanup design §3.2): its start gate held through the clear, so
+    /// The browser's caches cleared while it is not running: its start gate held through the clear, so
     /// no browser starts meanwhile, and nothing run where the browser this host started still runs. The clear itself checks the profile's
     /// lock too, for a browser this host did not start.
     /// </summary>
@@ -176,7 +176,7 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
                 await running.WaitForExitAsync(ct).WaitAsync(Going, ct).ConfigureAwait(false);
             }
 
-            // KEEPSIZE1e: no browser runs here, and the gate is held, so a cache over its limit is cleared before the engine opens it.
+            // No browser runs here, and the gate is held, so a cache over its limit is cleared before the engine opens it.
             _ = await Task.Run(() => BrowserCacheStart.Check(home), ct).ConfigureAwait(false);
             var options = new EngineBrowserOptions(EngineBrowser.ProfileFolder(home), _port, Environment.ProcessId, background);
             try
@@ -211,9 +211,9 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
     }
 
     /// <summary>
-    /// The person's Edge (BRW12): the one Daoris started before when it still answers as an Edge, or a
+    /// The person's Edge: the one Daoris started before when it still answers as an Edge, or a
     /// new one on the profile under the home, its port recorded beside it. Its port is the endpoint:
-    /// Edge announces its own tabs as pages, so it needs no relay (CHR6).
+    /// Edge announces its own tabs as pages, so it needs no relay.
     /// </summary>
     private async Task<int> BringUpEdgeAsync(bool activate, CancellationToken ct)
     {
@@ -253,7 +253,7 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
             // starts none of the tools.
             var start = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = true };
             foreach (var argument in EdgeBrowser.Arguments(profile, port)) start.ArgumentList.Add(argument);
-            // Through the start gate (PROCSTART2), as every start of the desktop's is; held by no job (D249): this Edge is recorded and
+            // Through the start gate, as every start of the desktop's is; held by no job: this Edge is recorded and
             // reused by the next shell.
             (await ProcessStarts.Shared.StartAsync(start, ProcessPurpose.Outlives, CancellationToken.None).ConfigureAwait(false))?.Dispose();
             Daoris.Driver.AtomicFile.WriteText(record, EdgeBrowser.Record(port));

@@ -13,9 +13,9 @@ namespace Daoris.Devkit;
 /// committed alongside anything it describes is more likely to be newly declared than stale. The first
 /// run of a new declaration should not fail the build.</para>
 ///
-/// <para>🔴 <b>With a merge open, the last commit is the one the merge would make</b> (GATE1b). A merge gated
-/// before it is committed still has HEAD at the branch it merges into, where neither side has moved, so the
-/// gate passed a README the merge left behind and failed it once committed (FIX-LOG, GATE1). The history
+/// <para>🔴 <b>With a merge open, the last commit is the one the merge would make</b>. A merge gated
+/// before it is committed still has HEAD at the branch it merges into, where neither side has moved, so a
+/// README the merge leaves behind would pass the gate and fail it once committed. The history
 /// says what it read from, and the verdict carries it.</para>
 /// </remarks>
 public sealed class DocsGate(IGitHistory history) : IGate
@@ -66,7 +66,7 @@ public sealed class DocsGate(IGitHistory history) : IGate
             }
         }
 
-        // GATE1b: dates read from a commit nobody has made yet are said to be, or a person holding the verdict
+        // Dates read from a commit nobody has made yet are said to be, or a person holding the verdict
         // against `git log` finds dates that are not there.
         var basis = history.Basis;
         return problems.Count == 0
@@ -110,7 +110,7 @@ public sealed class CommandLineGitHistory(string repositoryRoot) : IGitHistory
     public string? Basis => _merge.Value?.Said;
 }
 
-/// <summary>The commit an open merge would make, built without making it (GATE1b).</summary>
+/// <summary>The commit an open merge would make, built without making it.</summary>
 /// <remarks>
 /// <para>Its tree is the checkout's content as `git add -A` would stage it, staged into a copy of the index
 /// so an unstaged fix made in the merge is in it; its parents are HEAD and each MERGE_HEAD; no ref names
@@ -119,8 +119,8 @@ public sealed class CommandLineGitHistory(string repositoryRoot) : IGitHistory
 /// Dating every path the merge changes as now would pass a branch whose README had already fallen behind.</para>
 ///
 /// <para>The person's index, HEAD and open merge are never written; the commit and the blobs it adds are
-/// unreachable objects git collects in time. `tools/as-merged.mjs` builds the same commit for any command
-/// (GATE1), and under it this sees no merge, since the git folder it is handed holds none.</para>
+/// unreachable objects git collects in time. `tools/as-merged.mjs` builds the same commit for any command,
+/// and under it this sees no merge, since the git folder it is handed holds none.</para>
 /// </remarks>
 internal sealed record ProposedMerge(string Commit, string Head, IReadOnlyList<string> Merging)
 {

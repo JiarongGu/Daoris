@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A main window's taskbar button lit while a terminal's press waits unshown, and stopped (NOTIFY2b, the notification design §3.3).
+/// A main window's taskbar button lit while a terminal's press waits unshown, and stopped.
 /// Which window and when is <see cref="PressFlash"/>'s judgement, tested in the modules; this is the shell call alone.
 /// </summary>
 /// <remarks>

@@ -6,7 +6,7 @@ namespace Daoris.Driver.Host;
 /// <remarks>
 /// <para><b>Why here and not in the `daoris` CLI.</b> The tree lifecycle is git spawned against real
 /// checkouts, and the CLI's discipline is that it spawns nothing but this program (`driverprogram.ts`) — so the verbs live
-/// on the binary that already owns git (D50's parity is between surfaces, not between packages). The
+/// on the binary that already owns git (parity is between surfaces, not between packages). The
 /// standing OPT-IN is the CLI's (`daoris place trees &lt;repo&gt; on|off`), because that is a file
 /// edit; the trees themselves are this side's, because they are processes and disk.</para>
 ///
@@ -15,14 +15,14 @@ namespace Daoris.Driver.Host;
 internal static class TreesConsole
 {
     /// <summary>
-    /// What a press changed, told to the open windows (STATEHUB1e, D169 point 8): this process has no bus of the desktop's, so it leaves
+    /// What a press changed, told to the open windows: this process has no bus of the desktop's, so it leaves
     /// a note in the request folder, and the shell's loop publishes the change the window's press of <paramref name="route"/> declares
     /// at its next look. Told once the press has answered, whatever it answered; never a failure of the press.
     /// </summary>
     internal static void Told(string home, string route, string? session = null) =>
         new PressesTold(home).Tell(new PressTold(route, session, DateTimeOffset.UtcNow));
 
-    /// <summary>A tree named by its path, as `remove` always took one, rather than a session or its branch (LAND3).</summary>
+    /// <summary>A tree named by its path, as `remove` takes one, rather than a session or its branch.</summary>
     internal static bool LooksLikePath(string named) => SessionBranchDoors.NamesAPath(named);
 
     /// <summary>The service this terminal finds, or none where it finds none: a verb that can judge from the files alone goes on.</summary>
@@ -38,12 +38,12 @@ internal static class TreesConsole
         }
     }
 
-    /// <summary>What a `trees land` says once before it waits behind another landing or push (LANDHOLD2).</summary>
+    /// <summary>What a `trees land` says once before it waits behind another landing or push.</summary>
     internal const string WaitingBehind = "trees: waiting for another landing of this work to end…";
 
     /// <summary>
-    /// What a `trees land` says while it waits (LANDHOLD2): naming the session and branch it waits behind where that
-    /// one said who it is (LANDHOLD3), else <see cref="WaitingBehind"/>.
+    /// What a `trees land` says while it waits: naming the session and branch it waits behind where that
+    /// one said who it is, else <see cref="WaitingBehind"/>.
     /// </summary>
     internal static string WaitingLine(LandingHolder? behind) => behind is null
         ? WaitingBehind
@@ -67,7 +67,7 @@ internal static class TreesConsole
     }
 
     /// <summary>
-    /// The lines this press moved, registered from the line at once (WSSETUP5, D124 §3.1) rather than at a loop's next
+    /// The lines this press moved, registered from the line at once rather than at a loop's next
     /// look, so a terminal's landing reads as registered when it returns; each outcome to this host's log. What changed or
     /// must be fixed is said. A service that did not answer leaves them due, for the next loop to follow.
     /// </summary>
@@ -78,14 +78,14 @@ internal static class TreesConsole
         foreach (var line in followed.Error) Console.Error.WriteLine(line);
     }
 
-    /// <param name="log">This host's machine log: a landing's and a hand-off's plugin frame is written there (PLUGUI1d).</param>
+    /// <param name="log">This host's machine log: a landing's and a hand-off's plugin frame is written there.</param>
     public static async Task<int> RunAsync(string[] args, MachineLog? log = null)
     {
         var configPath = DriverConfig.ResolvePath();
         var home = DriverConfig.HomeOf(configPath);
         var trees = new SessionTrees(home);
-        // The looks that may ask a plugin about a pull request (PLUGHOOK1a/1c): its lines said under its name and its frames written
-        // to the machine log, as a landing's are (D64 §4, PLUGUI1d).
+        // The looks that may ask a plugin about a pull request: its lines said under its name and its frames written
+        // to the machine log, as a landing's are.
         var asking = new SessionTrees(home, new LandingPlugins(home, say: (id, line) => Console.WriteLine($"  plugin:{id}  {line}"), log: log));
 
         switch (args)
@@ -101,11 +101,11 @@ internal static class TreesConsole
                     return 0;
                 }
 
-                // KEEP1a: the days are the one effective policy's, as the purge reads them.
+                // The days are the one effective policy's, as the purge reads them.
                 var days = KeepPolicy.Of(home).SetAside.Days;
                 foreach (var tree in listed)
                 {
-                    // AUTOTIDY2c: a folder the look moved aside is listed so, with when, until the purge deletes it.
+                    // A folder the look moved aside is listed so, with when, until the purge deletes it.
                     Console.WriteLine(tree.MovedAside is { } moved
                         ? $"  {tree.Workspace}/{tree.Repository}  {tree.Branch} on {moved.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}, "
                           + $"deleted once it is left untouched for {days.TotalDays:0} days"
@@ -123,11 +123,11 @@ internal static class TreesConsole
             case ["clean", ..]:
                 return await TreesCleanVerb.RunAsync(args, home, trees, asking).ConfigureAwait(false);
 
-            // Bringing repositories up to date after a pull request merged (WSR6, D109): the list first — it fetches
+            // Bringing repositories up to date after a pull request merged: the list first — it fetches
             // each line, which moves only origin's refs — and with --yes the press. A workspace's Branches tab is the
-            // other door (D50), and --workspace takes that workspace's checkouts alone, as the tab does (BRSCOPE1a). The
-            // checkouts and the sessions in use are the service's. It takes the repositories holding Daoris's branches
-            // (D112): --all takes every one, and a repository named is taken.
+            // other door, and --workspace takes that workspace's checkouts alone, as the tab does. The
+            // checkouts and the sessions in use are the service's. It takes the repositories holding Daoris's branches:
+            // --all takes every one, and a repository named is taken.
             case ["sync", ..]:
             {
                 if (TreesCommand.Read(args, out var problem) is not { } ask) return Usage(problem);
@@ -151,8 +151,8 @@ internal static class TreesConsole
 
                 if (!ask.Yes)
                 {
-                    // RPCOPEN1: the list is the running Daoris's where one answers (TREES_SYNC_PLAN: its fetch and its plugin asks, as the
-                    // person's look, D148, which this verb still is), in the words the alone path prints from the same function.
+                    // The list is the running Daoris's where one answers (TREES_SYNC_PLAN: its fetch and its plugin asks, as the
+                    // person's look, which this verb is), in the words the alone path prints from the same function.
                     if (await InstanceDoor.TryReadAsync(
                             OpenRoutes.TreesSyncPlan, new { repository = ask.Repository, workspace = ask.Workspace, all = ask.All, said = true },
                             TreesSaid.ReadWords(Console.Out, Console.Error), InstanceHost.World(home, "trees")).ConfigureAwait(false) is { } listed)
@@ -160,22 +160,22 @@ internal static class TreesConsole
                         return listed;
                     }
 
-                    // Its fetch first, then its plugin asks where git cannot tell (PLUGHOOK1c, design §2.1 occasion 3).
+                    // Its fetch first, then its plugin asks where git cannot tell.
                     var plan = await asking.SyncPlanAsync(repositories, inUse, fetch: true, scope: scope).ConfigureAwait(false);
-                    // What was not fetched, said once and first (WSR7), rather than at the end of every row.
+                    // What is not fetched, said once and first, rather than at the end of every row.
                     var listing = TreesPlanWords.SyncPlan(plan, ask, DateTimeOffset.UtcNow);
                     listing.Print(Console.Out, Console.Error);
                     return listing.Code;
                 }
 
-                // The sessions in use, asked again while each repository's trees are held for its replays (LEFT2).
+                // The sessions in use, asked again while each repository's trees are held for its replays.
                 var done = await trees.SyncAsync(repositories, inUse, only: null, fetch: true,
                     inUseNow: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                         .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
                         .ToHashSet(StringComparer.OrdinalIgnoreCase), scope: scope,
                     beside: token => BranchTidying.BesideAsync(service, token)).ConfigureAwait(false);
                 Told(home, PressesTold.TreesSync);
-                // The words are the route's too (RPC1b3): what was not fetched, each row, what was left apart, the registry's
+                // The words are the route's too: what is not fetched, each row, what is left apart, the registry's
                 // following of the lines moved, and the count, 1 where something the proofs cleared did not happen.
                 var followed = await TreesWords.FollowMovedAsync(service, home, () => DriverConfig.Load(DriverConfig.ResolvePath()), log).ConfigureAwait(false);
                 var said = TreesWords.Sync(done, DateTimeOffset.UtcNow, followed);
@@ -186,14 +186,14 @@ internal static class TreesConsole
             case ["land", "--entry" or "--ask", ..]:
                 return await TreesEntryLandVerb.RunAsync(args, home, configPath, log).ConfigureAwait(false);
 
-            // Accepting a session's work (WSR1, D87): the review's Accept, from a terminal — D50's second door. The run's `land` lands it
-            // (D228), so the press keeps the word for the pass and lands nothing itself, and --plan says where it would go and does nothing.
+            // Accepting a session's work: the review's Accept, from a terminal — its second door. The run's `land` lands it,
+            // so the press keeps the word for the pass and lands nothing itself, and --plan says where it would go and does nothing.
             case ["land", var session, ..]:
             {
-                // LANDNAME1a: the name the person enters replaces the rule's. A --branch with no name is the usage, not the rule's name.
+                // The name the person enters replaces the rule's. A --branch with no name is the usage, not the rule's name.
                 var entered = Option(args, "--branch");
                 if (args.Contains("--branch") && entered is null) return Usage("`--branch` takes a branch name.");
-                // RPCOPEN1: the plan is the running Daoris's where one answers (LANDING), in the alone path's words.
+                // The plan is the running Daoris's where one answers (LANDING), in the alone path's words.
                 if (args.Contains("--plan") && await InstanceDoor.TryReadAsync(
                         OpenRoutes.Landing, new { id = session, branch = entered, said = true },
                         TreesSaid.ReadWords(Console.Out, Console.Error), InstanceHost.World(home, "trees")).ConfigureAwait(false) is { } viaInstance)
@@ -204,9 +204,9 @@ internal static class TreesConsole
                 using var service = ServiceClient.FromEnvironment();
                 var (tree, _) = await service.SessionGroundAsync(session).ConfigureAwait(false);
 
-                // A session whose review reads as landed (REVIEW2, D113) — its landed branch stands, or its tree is gone —
+                // A session whose review reads as landed — its landed branch stands, or its tree is gone —
                 // is said as the review says it, and lands nothing again: the review offers no Accept there at all.
-                // The reading is the route's too (RPC1b4): both doors refuse a second landing in the same words.
+                // The reading is the route's too: both doors refuse a second landing in the same words.
                 var before = await TreesWords.LandedBeforeAsync(trees, service, session).ConfigureAwait(false);
                 var gone = TreeFolders.TreeGone(tree);
                 if (before is not null && before.ReadsAsLanded(gone))
@@ -231,7 +231,7 @@ internal static class TreesConsole
                     return none.Code;
                 }
 
-                // COAGENT1b (D199 point 3): a partner's record lands nothing; its piece lands through its lead.
+                // A partner's record lands nothing; its piece lands through its lead.
                 if (TreesWords.PartnerLands(await service.SessionRecordsAsync().ConfigureAwait(false), session) is { } partner)
                 {
                     partner.Print(Console.Out, Console.Error);
@@ -239,14 +239,14 @@ internal static class TreesConsole
                 }
 
                 var recordsJson = await service.SessionRecordsJsonAsync().ConfigureAwait(false);
-                // CHATFLOW1i: a chat that took a quest is gated by that quest's chain, as the window's press reads it.
+                // A chat that took a quest is gated by that quest's chain, as the window's press reads it.
                 var questId = await service.SessionQuestAsync(session).ConfigureAwait(false) ?? ChatRuns.TakenOf(session, recordsJson);
                 var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
-                // No plugin wire: this verb lands nothing (CHATFLOW1g, D228), so no plugin is told.
+                // No plugin wire: this verb lands nothing, so no plugin is told.
                 var landing = new SessionTrees(home);
 
-                // CHATFLOW1d (the chat-flow design §5.2 point 1, Codex's finding 11): a chat in a tree of its own is gated by its chat run, and
-                // its press is the driver's one press operation, as the window's is; its plan reads that gate and writes nothing (point 5).
+                // A chat in a tree of its own is gated by its chat run, and
+                // its press is the driver's one press operation, as the window's is; its plan reads that gate and writes nothing.
                 var chatRun = questId is null ? ChatRuns.ChatOf(session, recordsJson, landing.Holds) : null;
                 if (chatRun is not null && !args.Contains("--plan"))
                 {
@@ -255,12 +255,12 @@ internal static class TreesConsole
                         session, tree, chatRun, recordsJson, entered).ConfigureAwait(false);
                 }
 
-                // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review, read once for the plan, and handed to
+                // The landing gate: the second opinion, then the review, read once for the plan, and handed to
                 // the landing, which refuses the first that holds.
                 var gate = await landing.GateAsync(tree, questId, new ServiceReviewWorld(service), session, run: chatRun).ConfigureAwait(false);
-                // Named for the chain's first quest (WSR5), as the review's press names it, and a part of an entry with others for its
-                // entry's first part, on the entry's one branch (ACCEPTALL1f, D167's 2026-10-15 amendment point 2): the driver's one call.
-                // FABRIC-CLOSE1h3: its quests read once, as the route reads them.
+                // Named for the chain's first quest, as the review's press names it, and a part of an entry with others for its
+                // entry's first part, on the entry's one branch: the driver's one call.
+                // Its quests are read once, as the route reads them.
                 var quests = new PressQuests(service.FindQuestAsync);
                 var subject = await landing.OwnSubjectAsync(
                     tree, session, questId, await service.SessionRecordsAsync().ConfigureAwait(false), quest => quests.FindAsync(quest),
@@ -269,16 +269,16 @@ internal static class TreesConsole
 
                 if (args.Contains("--plan"))
                 {
-                    // How it lands, by the process the gate read (WORKFLOW1f): a named workflow's landing step, or the rule.
+                    // How it lands, by the process the gate read: a named workflow's landing step, or the rule.
                     var plan = await landing.PlanAsync(tree, subject, process: gate.Process).ConfigureAwait(false);
                     // The plan's lines, which the route answers as `said` too: what the line holds of it, the gate, the review's reading of
-                    // an earlier landing and where it is due (RPCOPEN1, §7.3).
+                    // an earlier landing and where it is due.
                     var planned = await TreesPlanWords.LandPlanAsync(landing, home, session, tree, plan, gate, before, []).ConfigureAwait(false);
                     planned.Print(Console.Out, Console.Error);
                     return planned.Code;
                 }
 
-                // WORKFLOWCLEAN1 1c (the cleanup design §2.1), CHATFLOW1g (D228): a terminal with no loop lands nothing. It keeps the word under
+                // A terminal with no loop lands nothing. It keeps the word under
                 // the verb's lease for a run whose `land` the runtime performs, which the running Daoris lands at its next pass; any other is held.
                 var accepted = TreesWords.AcceptedForPass(home, gate);
                 accepted.Print(Console.Out, Console.Error);
@@ -303,7 +303,7 @@ internal static class TreesConsole
         }
     }
 
-    /// <summary>The verb's usage, after what was not understood where something was said; exit 2.</summary>
+    /// <summary>The verb's usage, after any problem the words had; exit 2.</summary>
     internal static int Usage(string? problem) => TreesUsage.Say(problem);
 
     /// <summary>The word after <paramref name="name"/>, or null where it is absent or ends the line.</summary>

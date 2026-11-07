@@ -45,12 +45,12 @@ public enum ScanScope
 /// <para><b>It fails closed when the private pattern list is missing.</b> The structural patterns here
 /// are publishable by construction — a Windows user-home path is a leak in any repository. The tokens
 /// that are actually secret cannot live in the repository being scanned, so they load from a gitignored
-/// file. When that file was absent the earlier version printed a notice and continued with the
-/// built-ins, which means on a fresh clone and in CI the half of the guard that knew the private names
-/// silently did not run. Opting out is now explicit.</para>
+/// file. When that file is absent, continuing with the
+/// built-ins would mean that on a fresh clone and in CI the half of the guard that knows the private names
+/// silently does not run. Opting out is explicit.</para>
 ///
 /// <para><b>Renames count as changes.</b> `--diff-filter=ACM` misses the R that `git mv` produces, so a
-/// file renamed INTO a banned name was never scanned.</para>
+/// file renamed INTO a banned name would go unscanned.</para>
 ///
 /// <para><b>Commit messages are scanned.</b> They are history, they are rarely reviewed, and nothing
 /// looked at them at all.</para>
@@ -70,12 +70,12 @@ public sealed class SensitiveGate(
     /// </summary>
     private static readonly (Regex Pattern, string Why)[] Builtins =
     [
-        // Every spelling a Windows home takes in a tracked file (REV3): one backslash in prose, two in a
-        // JSON, JS or C# literal, a forward slash in a URI or a normalized path. Only the first was held.
+        // Every spelling a Windows home takes in a tracked file: one backslash in prose, two in a
+        // JSON, JS or C# literal, a forward slash in a URI or a normalized path.
         (new Regex(@"[A-Za-z]:(?:\\{1,2}|/)Users(?:\\{1,2}|/)[A-Za-z0-9._-]+", RegexOptions.IgnoreCase), "Windows user-home absolute path"),
         (new Regex(@"/(?:home|Users)/[a-z][a-z0-9._-]+", RegexOptions.IgnoreCase), "Unix home absolute path"),
         (new Regex(@"\b(?:ghp|gho|ghs|ghu)_[A-Za-z0-9]{20,}"), "GitHub token"),
-        // GITAUTH1a (the git-auth design §10): GitHub's fine-grained token and GitLab's personal one, which git's words are cut of too.
+        // GitHub's fine-grained token and GitLab's personal one, which git's words are cut of too.
         (new Regex(@"\bgithub_pat_[A-Za-z0-9_]{20,}"), "GitHub fine-grained token"),
         (new Regex(@"\bglpat-[A-Za-z0-9_\-]{20,}"), "GitLab token"),
         (new Regex(@"\bsk-[A-Za-z0-9]{20,}"), "API secret key"),
@@ -118,7 +118,7 @@ public sealed class SensitiveGate(
         // Capped, and the cap is STATED. A history audit on a leak that survived a hundred commits
         // produces a hundred findings that are all the same leak; printing every one buries the second
         // distinct problem. Silently truncating would be worse — a report that stops without saying so
-        // reads as "that was all of it".
+        // reads as "that is all of it".
         var shown = findings.Take(FindingsShown).ToList();
         var extra = findings.Count - shown.Count;
         if (extra > 0) shown.Add($"…and {extra} more finding(s), not shown. Fix these and re-run.");
@@ -166,9 +166,9 @@ public sealed class SensitiveGate(
             // whose bytes may be perfectly innocent.
             yield return ($"{relative} (path)", relative);
 
-            // 🔴 Staged means the STAGED content (REV3): the working copy is what the next commit
+            // 🔴 Staged means the STAGED content: the working copy is what the next commit
             // might hold, the index is what this one will. A leak staged and then cleaned in the
-            // working copy passed a scan of the copy and was committed.
+            // working copy would pass a scan of the copy and still be committed.
             if (scope == ScanScope.Staged)
             {
                 if (git.StagedText(relative) is { } staged && !staged.Contains('\0')) yield return (relative, staged);
@@ -259,8 +259,8 @@ public sealed class CommandLineGit(string repositoryRoot) : IGit
     }
 
     /// <summary>
-    /// Paths NUL-separated (`-z`), which git never quotes (REV3). One a line, a path outside ASCII came
-    /// back quoted and escaped, matched no file on disk, and its content was never scanned — by this
+    /// Paths NUL-separated (`-z`), which git never quotes. One a line, a path outside ASCII comes
+    /// back quoted and escaped, matches no file on disk, and its content goes unscanned — by this
     /// gate, or by the links gate that reads the same list.
     /// </summary>
     private IReadOnlyList<string> Paths(params string[] arguments)

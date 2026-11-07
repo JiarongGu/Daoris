@@ -1,14 +1,14 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Where this host's verbs look for the running Daoris (RPCOPEN1, the terminal RPC design §7.4): the process's own environment and
+/// Where this host's verbs look for the running Daoris: the process's own environment and
 /// output, on the home the verb acts on. One place, so no console builds its own and every verb says its sentences under its own name.
 /// </summary>
 internal static class InstanceHost
 {
     /// <summary>
-    /// How long a press waits on its Confirm, as the entry took it from the words (<c>--wait</c>, <c>--no-wait</c>; CONFIRMWAIT1b, the
-    /// confirm-wait design §4.1), set once there for every world made below; null where none was said, the default.
+    /// How long a press waits on its Confirm, as the entry took it from the words (<c>--wait</c>, <c>--no-wait</c>),
+    /// set once there for every world made below; null where none is given, the default.
     /// </summary>
     public static TimeSpan? Wait { get; set; }
 

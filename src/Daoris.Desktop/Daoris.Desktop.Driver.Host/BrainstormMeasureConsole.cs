@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The room measurement from a terminal (BRAINSTORM1c, D176 point 2, D53): <c>daoris brainstorm measure &lt;agent&gt; [--run]</c>.
+/// The room measurement from a terminal:<c>daoris brainstorm measure &lt;agent&gt; [--run]</c>.
 /// Without <c>--run</c> it walks the agent's accounts and says which it would take, starting nothing; with it, one probe pass runs on that
 /// account, which is a spend, and the evidence is kept. Daoris starts it only on this press, and runs it in this process, which is the one
 /// holding the loop's records for the run's length: it spawns the agent as the look's passes do, through the same walk, posture and connector.

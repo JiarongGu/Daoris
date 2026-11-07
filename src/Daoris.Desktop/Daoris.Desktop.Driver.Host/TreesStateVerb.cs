@@ -4,7 +4,7 @@ namespace Daoris.Driver.Host;
 internal static class TreesStateVerb
 {
     /// <summary>
-    /// The milestone of every unit (D50): end reached, result kept, cleanup pending or completed, recovery retained, derived read-only
+    /// The milestone of every unit: end reached, result kept, cleanup pending or completed, recovery retained, derived read-only
     /// from the records the tree lifecycle already keeps. Before the plugin's ask, which takes a name.
     /// </summary>
     public static async Task<int> AllAsync(string[] args, string home)
@@ -16,10 +16,10 @@ internal static class TreesStateVerb
     }
 
     /// <summary>
-    /// Ask again (D148 point 2, design §2.1 occasion 4): the review's press, from a terminal (D50). The landed branch's plugin is asked
+    /// Ask again: the review's press, from a terminal. The landed branch's plugin is asked
     /// about its pull request whatever the kept answer's age, the answer kept, and what it proves here said. Named by the session that
     /// landed it or by the branch, standing or a trace. It removes nothing: the clean-up and bringing up to date act on what it kept.
-    /// Exempt from Ask Daoris as a read (D110 §4).
+    /// Exempt from Ask Daoris as a read.
     /// </summary>
     public static async Task<int> AskAgainAsync(string[] args, string named, string home, SessionTrees trees, SessionTrees asking)
     {

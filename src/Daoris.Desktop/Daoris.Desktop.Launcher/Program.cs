@@ -6,12 +6,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Launcher;
 
 /// <summary>
-/// The one executable at an install's root (D93). It starts the application from <c>app/</c> with the
-/// arguments it was given, then exits: the application finds the install above its own folder
+/// The one executable at an install's root. It starts the application from <c>app/</c> with the
+/// arguments it is given, then exits: the application finds the install above its own folder
 /// (<c>InstallHome.RootOf</c>), so nothing is handed over but the arguments and the environment.
 /// </summary>
 /// <remarks>
-/// <para><b>And the one program that can replace the application</b> (UPDATE1, D139 §5): while nothing runs from
+/// <para><b>And the one program that can replace the application</b>: while nothing runs from
 /// <c>app/</c>, a build staged in <c>update/staged/</c> is checked and swapped in, journalled in <c>update/swap.json</c>,
 /// and rolled back when it will not come up. The application asks for it with <c>--update --after &lt;pid&gt;</c> as it
 /// closes; a start finding a build staged does the same first. The swap is <c>StagedBuild.cs</c>, compiled in.</para>
@@ -20,7 +20,7 @@ namespace Daoris.Desktop.Launcher;
 /// and of the application's assembly name: the script lays the application out where this looks, and a
 /// test reads this file for the names.</para>
 ///
-/// <para>And of the application's <c>TaskbarIdentity</c> (TASKBAR1, D108): this file's name is what an
+/// <para>And of the application's <c>TaskbarIdentity</c>: this file's name is what an
 /// install's window names as the command a pin starts, and <see cref="AppId"/> is the id the window
 /// carries. <c>TaskbarIdentityTests</c> reads this file and its project for both.</para>
 /// </remarks>
@@ -32,18 +32,18 @@ public static class Launcher
     /// <summary>The application: Chromium's launcher, named from the app's assembly less <c>.App</c>.</summary>
     public const string ShellExe = "Daoris.Desktop.exe";
 
-    /// <summary>The application's library, whose product version is the build's (D233 choice 6).</summary>
+    /// <summary>The application's library, whose product version is the build's.</summary>
     private const string AppLibrary = "Daoris.Desktop.App.dll";
 
     /// <summary>
-    /// The application id Windows groups Daoris's taskbar button by (D108): the same as the window's,
+    /// The application id Windows groups Daoris's taskbar button by: the same as the window's,
     /// because a launcher and the process it starts are one application to Windows, and so a refusal
     /// below sits with the person's pinned Daoris rather than on a button of its own.
     /// </summary>
     public const string AppId = "Daoris.Desktop";
 
     /// <summary>
-    /// The application's word that it has closed for an update (UPDATE1, D139 §5): <c>--update --after &lt;pid&gt;</c>, first,
+    /// The application's word that it has closed for an update: <c>--update --after &lt;pid&gt;</c>, first,
     /// then whatever the application is to be started with.
     /// </summary>
     public const string UpdateArgument = "--update";
@@ -56,7 +56,7 @@ public static class Launcher
     [STAThread]
     public static int Main(string[] args)
     {
-        // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
+        // The holder key leaves this process first, so no start it builds can copy it.
         Environment.SetEnvironmentVariable("DAORIS_ROLE_KEY", null);
         // The inbox's variables leave with it (the event hook design §6.3).
         Environment.SetEnvironmentVariable("CLAUDE_CODE_MESSAGING_SOCKET", null);
@@ -70,13 +70,13 @@ public static class Launcher
         var shell = Path.Combine(root, AppFolder, ShellExe);
         var (updating, after, rest) = Read(args);
 
-        // The swap (D139 §5) happens only while nothing runs from `app/`: the application cannot be replaced while it runs,
+        // The swap happens only while nothing runs from `app/`: the application cannot be replaced while it runs,
         // and a start beside a running one is the person opening Daoris again, which the running one answers.
         try
         {
             if (updating) WaitForClose(after, Path.Combine(root, AppFolder));
             var running = StagedBuild.RunningFrom(Path.Combine(root, AppFolder)).Count > 0;
-            // A swap a launcher left part way is put back under the home's lease (SWAPLEASE2), as the swap below holds it. An
+            // A swap a launcher left part way is put back under the home's lease, as the swap below holds it. An
             // act holding the home for the whole of the wait leaves it to the next start, and `app/` may be half moved: nothing
             // is started on it, and the person is told who held it.
             var swap = new InstallSwap(root, start: arguments => Start(shell, arguments), alive: Alive)
@@ -93,11 +93,11 @@ public static class Launcher
             }
             else if (!running && StagedBuild.IsStaged(root) && (updating || Wanted(root)))
             {
-                // The swap holds the home's lease (HOMELEASE1, the terminal RPC design §5) from before its first move until the
+                // The swap holds the home's lease from before its first move until the
                 // new application has confirmed, so no verb the install carries acts alone from a folder being replaced; the new
                 // application's loop takes it once the swap lets go. Where an act holds the home for the whole of the wait (a
                 // verb, a migration), nothing is replaced, as when something still runs from `app/`. The install's `data/` names the
-                // install (D172 point 2), and the compiled-in table places the lease (HOMELAYOUT3): taken at `run/home.lease` as the
+                // install, and the compiled-in table places the lease: taken at `run/home.lease` as the
                 // application takes it, an older build's live lease in `data/` holding it still.
                 using var lease = HomeLease.Await(
                     Path.Combine(root, "data"), LeaseKind.Swap, null, HomeLease.Wait, out var holder);
@@ -117,7 +117,7 @@ public static class Launcher
         {
             // Whatever the update met, the launcher's last act is starting Daoris: one that died here would leave no window
             // after the application had closed for the update. A swap under way is put right first from its journal, with
-            // the reason it was undoing for, and never refused over (SWAP2); what that cannot put back, the next start does.
+            // the reason it undoes for, and never refused over; what that cannot put back, the next start does.
             // With none under way, an update asked for still consumes what is staged, as `error`, so the application is not
             // closed for the same build again.
             try
@@ -178,9 +178,9 @@ public static class Launcher
     }
 
     /// <summary>
-    /// Whether a start should install what is staged (D139 §5): unless the person said *Not now* of it, in the request under
+    /// Whether a start should install what is staged: unless the person said *Not now* of it, in the request under
     /// the home the application runs on — the install's own <c>data/</c>, or a home named for this start alone, as the
-    /// application decides it (D63, D105).
+    /// application decides it.
     /// </summary>
     private static bool Wanted(string root)
     {
@@ -189,7 +189,7 @@ public static class Launcher
     }
 
     /// <summary>
-    /// The home the application runs on, as it decides it (D63, D105): the install's own <c>data/</c>, or a home named for this start
+    /// The home the application runs on, as it decides it: the install's own <c>data/</c>, or a home named for this start
     /// alone, a process value that differs from the account's.
     /// </summary>
     private static string HomeOf(string root)
@@ -204,7 +204,7 @@ public static class Launcher
     }
 
     /// <summary>
-    /// Why the build in <c>app/</c> may not start (D233 choice 6): it is older than the newest that has run on its home, whose records it
+    /// Why the build in <c>app/</c> may not start: it is older than the newest that has run on its home, whose records it
     /// cannot read. Null where it may, and where its version or the home's does not read.
     /// </summary>
     private static string? Older(string root)
@@ -220,11 +220,11 @@ public static class Launcher
         if (!File.Exists(shell) || Older(Path.GetDirectoryName(Path.GetDirectoryName(shell)!)!) is not null) return null;
 
         // Not the tools' environment (TOOLS5): the application is Daoris's own program, and every child it starts is
-        // handed the tools' environment there, read at each start; its own environment is never rewritten (§2.4).
-        // Through the shell (UPDATE1): a start that does not go through it hands the application every inheritable handle
+        // handed the tools' environment there, read at each start; its own environment is never rewritten.
+        // Through the shell: a start that does not go through it hands the application every inheritable handle
         // this launcher holds, which it inherited from the application that asked for the update, so the new one found the
         // engine's DevTools port held by the builds before it. The shell's start inherits none and still hands the
-        // environment. In the install's root, never `app/` (APPCWD1): what the application starts naming no working folder
+        // environment. In the install's root, never `app/`: what the application starts naming no working folder
         // inherits it, and one standing in `app/` holds the swap's move of it.
         var start = new ProcessStartInfo(shell)
         {
@@ -257,7 +257,7 @@ public static class Launcher
         }
     }
 
-    /// <summary>A swap left part way that an act's hold on the home kept from being put back (SWAPLEASE2).</summary>
+    /// <summary>A swap left part way that an act's hold on the home kept from being put back.</summary>
     private static string Unrecovered(LeaseHolder holder) =>
         $"Daoris could not put back an update that stopped part way: {holder.Named} held its home. "
         + "Start Daoris again once that has finished.";

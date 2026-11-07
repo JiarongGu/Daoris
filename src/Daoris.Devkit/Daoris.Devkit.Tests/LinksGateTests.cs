@@ -20,7 +20,7 @@ public sealed class LinksGateTests : IDisposable
 
     /// <summary>
     /// The failure this exists for: nothing compiles a link, the page still renders, and the reader
-    /// concludes the thing it pointed at was never important.
+    /// concludes the thing it points at never mattered.
     /// </summary>
     [Fact]
     public void A_link_to_a_missing_file_is_reported_with_both_ends()

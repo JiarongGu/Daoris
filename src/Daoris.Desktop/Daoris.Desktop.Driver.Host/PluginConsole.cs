@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// This machine's plugins from a terminal (PUSH1f2f, D194, D50): <c>daoris plugin</c>, the words <c>daoris plugin …</c> hands this
+/// This machine's plugins from a terminal:<c>daoris plugin</c>, the words <c>daoris plugin …</c> hands this
 /// program, beside the host's own <c>plugins</c> (the kit, a package, a plugin's page). The grammar, the switch and the words are the
 /// library's (<see cref="PluginCommand"/>); this hands it the process's terminal and the home the host resolves.
 /// </summary>

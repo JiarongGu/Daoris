@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A repository's integration from a terminal (INTEGRATE1h): <c>daoris integrate &lt;repository&gt;</c> reads the record. The words are the
+/// A repository's integration from a terminal:<c>daoris integrate &lt;repository&gt;</c> reads the record. The words are the
 /// library's (<see cref="IntegrateCommand"/>); an act is the owner's card in the running window, pressed over the pipe and waited on.
 /// </summary>
 internal static class IntegrateConsole

@@ -1,10 +1,10 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Where a piece of work stands in its workflow, from a terminal (WORKFLOW1c2, D157, D50): <c>daoris workflow run</c>, the
+/// Where a piece of work stands in its workflow, from a terminal:<c>daoris workflow run</c>, the
 /// twin of the session's <i>Workflow</i> view. The words are the library's (<see cref="WorkflowRunCommand"/>); this wires the real
 /// world: the service, the home and the person's choices. It writes nothing: the host routes it before the machine log opens,
-/// since that open prunes old files. <c>workflow keep</c> (WORKFLOW1f, <see cref="WorkflowKeepCommand"/>) keeps a kind's workflow for
+/// since that open prunes old files. <c>workflow keep</c> (<see cref="WorkflowKeepCommand"/>) keeps a kind's workflow for
 /// a session's work on its run, and writes nothing to the log either.
 /// </summary>
 internal static class WorkflowConsole
@@ -23,8 +23,8 @@ internal static class WorkflowConsole
             return 2;
         }
 
-        // Its own catch, since it runs before the host's: a missing home or service, or a driver file that does not read
-        // (CONFIGREAD1), is exit 2 and a sentence.
+        // Its own catch, since it runs before the host's: a missing home or service, or a driver file that does not read,
+        // is exit 2 and a sentence.
         try
         {
             using var service = ServiceClient.FromEnvironment();
@@ -45,7 +45,7 @@ internal static class WorkflowConsole
     }
 
     /// <summary>
-    /// <c>workflow skip|stop &lt;run&gt; &lt;node&gt; ["…"]</c> (FABRIC-CUTOVER1f): the person's word on a run's node, the running Daoris's client where
+    /// <c>workflow skip|stop &lt;run&gt; &lt;node&gt; ["…"]</c>: the person's word on a run's node, the running Daoris's client where
     /// one answers, confirmed in its window; alone, kept on the run's record under the lease the host holds for it. It asks no service.
     /// </summary>
     private static async Task<int> NodeAsync(string[] args)

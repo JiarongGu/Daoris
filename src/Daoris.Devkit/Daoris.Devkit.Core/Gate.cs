@@ -4,7 +4,7 @@ namespace Daoris.Devkit;
 /// <param name="Name">The gate's name, as it appears in the run log.</param>
 /// <param name="Passed">False fails the whole run.</param>
 /// <param name="Detail">
-/// What was wrong and where. Written for someone who has just been stopped from committing, so it
+/// What is wrong and where. Written for someone who has just been stopped from committing, so it
 /// names files and lines rather than describing a category of problem.
 /// </param>
 /// <param name="Skipped">
