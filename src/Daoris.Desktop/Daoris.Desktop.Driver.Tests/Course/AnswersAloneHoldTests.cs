@@ -83,6 +83,25 @@ public sealed class AnswersAloneHoldTests : IDisposable
         Assert.Equal("codex-acp", held.Parts![0].Value("agent"));
     }
 
+    /// <summary>
+    /// The number a line is held at is handed on before the hold marks or says anything, so the course's answer a go-on gives with it is heard
+    /// before the hold's note: a reader of the note has the answer too. A line already waiting hands it on again.
+    /// </summary>
+    [Fact]
+    public void The_held_number_is_handed_on_before_the_hold_marks_or_says_anything()
+    {
+        GoneOn("s1", 2);
+        var asker = Asker(said: [Answer("w9")]);
+        var records = Records(asker, HelperRecord);
+        var heard = new List<(int? At, bool Marked, int Said)>();
+        void Held(int? at) => heard.Add((at, Marks.Read("s1") is not null, Notes("s1", HeldNoteCodes.AnswersHeld.Code).Count));
+
+        Assert.True(Hold.Holds(asker, records, At, heldAt: Held));
+        Assert.True(Hold.Holds(asker, records, At.AddMinutes(1), heldAt: Held));
+
+        Assert.Equal([(Hold.At("s1", records), false, 0), (Hold.At("s1", records), true, 1)], heard);
+    }
+
     [Fact]
     public void CONTEXTDRIVE1s_a_hold_is_one_act_at_the_count_its_admission_read_and_a_new_answer_while_it_waits_adds_none()
     {

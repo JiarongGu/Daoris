@@ -36,9 +36,6 @@ public sealed class AnswersAloneHold(
         return SupervisorRuleBook.AnswersAloneAt(RuledLine.Of(home, records.GetValueOrDefault(session)).In(book));
     }
 
-    /// <summary>The number a held line was held at: its rule's; null where no rule holds it now, which nothing then names.</summary>
-    public int? HeldAt(string session, IReadOnlyDictionary<string, PriorSession> records) => At(session, records);
-
     /// <summary>
     /// Whether going on with <paramref name="words"/> on <paramref name="record"/> now would take its line on by answers alone past the
     /// bound; where it would, every answer waiting on it is marked (once, with its note), and true. Where it would not, the go-on is
@@ -46,12 +43,18 @@ public sealed class AnswersAloneHold(
     /// </summary>
     /// <param name="records">The service's records by id, for the line's parts and the agent that answered; none read, the record alone.</param>
     /// <param name="words">The words going on now: the record's waiting words where null, or the one answer an open conversation's turn takes.</param>
+    /// <param name="heldAt">
+    /// Told the number a held line is held at (its rule's; null where no rule holds it now) before anything is marked or said, so the
+    /// course's answer its caller gives with it is heard before the hold's note.
+    /// </param>
     public bool Holds(
-        PriorSession record, IReadOnlyDictionary<string, PriorSession> records, DateTimeOffset at, IReadOnlyList<SaidWordView>? words = null)
+        PriorSession record, IReadOnlyDictionary<string, PriorSession> records, DateTimeOffset at, IReadOnlyList<SaidWordView>? words = null,
+        Action<int?>? heldAt = null)
     {
         words ??= record.Waiting;
         if (record.Teammate || !SessionEventText.IsLocalId(record.Session) || words.Count == 0 || !words.All(AnswersAlone.Solicited)) return false;
         if (Admission(record, records, words) is not { Admitted: false } refused) return false;
+        heldAt?.Invoke(At(record.Session, records));
 
         // Every answer waiting on it, those handed under another ask included: going on with any of them alone would be the same third.
         var answers = record.Waiting.Concat(words).Where(AnswersAlone.Solicited).Select(word => word.Id).OfType<string>()
