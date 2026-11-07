@@ -229,7 +229,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 35. Capacity is estimated from Daoris's own turns and the readings, with weights that are dated ratios, never prices.
     Acting on the estimate waits. (from D179)
 36. A door's failure is read by one reader into four kinds, in order: limit, access, transient, fatal. It reads the door's
-    own tables first, then its owner's. The agent's own message is never read, but for one: a driven protocol turn's last
+    own tables first, then its owner's for the error words; its limit, sign-in and refused tables are its owner's only where it has none. The agent's own message is never read, but for one: a driven protocol turn's last
     message, with no step of the agent's after it, is handed to the same reader as a refused prompt's words (`TurnEndLimits`),
     since Claude Code's adapter ends a turn `end_turn` with its account's limit said as that message. Read as a limit, it ends the
     run there as the turn's failure (`AcpTurnLimited`), the machine log says `agent.error` as for a refused prompt, nothing more is
@@ -310,7 +310,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     provider folder's `Layer/` and their tests compile only under `DaorisLyntaiLayer`. There Codex's usage question is read through
     the layer (`LayerUsageRead`, bound when the driver loads), and Claude Code's too, Lyntai's reader keeping the installed server's
     null-id model scope; without it today's readers read both. A layer door's failure enters as a `NormalizedFailure`, built in
-    `Agents/Layer/` alone and answered by `AgentErrors.OfNormalized` with no table read. (from D213, D248)
+    `Agents/Layer/` alone (`LayerFailures`), and `AgentErrors.OfNormalized` answers it with no table read; nothing but tests calls that answer yet, so a layer door's failure does not reach the one reader today, and `HarnessRoster.LimitedTrusted` has no caller either. (from D213, D248)
 
 ## Where a change goes
 
