@@ -30,6 +30,12 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         var (sessionId, keyed, fenced, continues) = (state.Opened.SessionId, state.Opened.Keyed, state.Opened.Fenced, state.Opened.Continues);
         var (carry, workTree, runBound, setUp) = (state.Carry, state.WorkTree, state.Bound, state.SetUp);
         var prior = carryingOn ? start.Resumes : null;
+        if (await CutLimitPart.BehindAsync(context, prior, ct).ConfigureAwait(false) is { } ended)
+        {
+            prior = ended;
+            continues = continues is null ? null : continues with { Session = ended.Session, Why = HandOverWhy.Limit };
+        }
+
         var refusedHanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var endings = new RunEndings(wiring, run, sessionId, agent, workTree, state.Opened.LocksTree);
         try

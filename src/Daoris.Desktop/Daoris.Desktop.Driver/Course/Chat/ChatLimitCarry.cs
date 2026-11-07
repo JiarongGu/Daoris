@@ -54,6 +54,8 @@ internal sealed class ChatLimitCarry(
     /// <summary>The carry's code where the move asked to carry and is briefed instead; null where it carries or asked nothing.</summary>
     public static string? NotCarried(CarryPlan? plan) => (plan as CarryPlan.Briefed)?.Why;
 
+    public void Bound(string to) => context.Conversations.Keep(to, door.Id.Value, carried.Conversation);
+
     /// <summary>
     /// The new part's run, its record open: the move's fence first, then its record moved to working and its run handed the carried
     /// conversation to resume. A fence that holds takes the copy back out and runs the part with nothing handed, its words waiting there.

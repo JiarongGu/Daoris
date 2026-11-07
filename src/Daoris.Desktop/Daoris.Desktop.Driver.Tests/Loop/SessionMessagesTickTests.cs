@@ -1420,8 +1420,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         /// <summary>
         /// A keyed open, under the stand-in's lock: the record the words leave, the open's <c>from</c> or its moves' own, refused
         /// while it runs; then the open, and at a mark of 2 the move: each word the moves name that still waits, and each of the person's kept there
-        /// since the read and never attempted, off that record and onto the new one in their order, each keeping its id, its key and its fields,
-        /// its attempt left behind, as the service's one step moves them.
+        /// since the read and never attempted, off that record and onto the new one in their order, each keeping its id, key and fields.
         /// </summary>
         private (int, string) KeyedOpen(string key, JsonObject body)
         {
@@ -1434,7 +1433,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
             }
 
             var session = NewSession(body);
-            session["from"] = body["from"]?.GetValue<string>();
+            foreach (var k in new[] { "from", "fromWhy", "fromBy" }) session[k] = body[k]?.GetValue<string>();
             var transfer = new JsonArray();
             if (moves is not null && left is not null)
             {

@@ -253,7 +253,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     `resume-refused` where the door would not resume the copied conversation before any prompt: the same start, or the chat's same
     part once its refused run let go, takes the copy out of that account's home (`IConversationCarry.Remove`) and goes on in the
     brief, a second `session.moved` saying so) and
-    `session.moved` saying `carry` (`whole`, `compacted` or that code) beside `briefed`; else it waits showing the earliest reset.
+    `session.moved` saying `carry` (`whole`, `compacted` or that code) beside `briefed`; a restart that cuts a carried move off before
+    its new part runs leaves it going on in the same conversation (conversations and context, Open); else it waits showing the earliest reset.
     Measured on the install (a Sonnet session on the protocol door cut off at 155,233 tokens of a 1,000,000 window): a driven
     session starts at about 64,500 tokens and its briefed successor at 67,838, so a carry writes about 87,400 more tokens to the
     new account's cache at its first request and reads them back at each later one, about 200,000 input tokens' worth over the

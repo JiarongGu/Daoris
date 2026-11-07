@@ -42,6 +42,7 @@ public sealed class LimitCarryTickTests : IDisposable
 
     public void Dispose()
     {
+        foreach (var gate in _gates) gate.Set();
         GitSeed.Discard(_home);
     }
 
@@ -160,15 +161,7 @@ public sealed class LimitCarryTickTests : IDisposable
         var client = new ServiceClient(service.Url, null);
         client.AccountLined += line => { lock (lines) lines.Add(line); };
         var adapters = ProviderRegistry.Built();
-        var config = DriverConfig.Empty with
-        {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On("acp-stub"),
-            TestBound = 1,
-            PollSeconds = 1,
-            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode], ["stub"] = ["node", TextAgent()] },
-        };
+        var config = ConfigFor(mode);
         var driver = new Daoris.Driver.Driver(
             client, config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone });
@@ -178,6 +171,153 @@ public sealed class LimitCarryTickTests : IDisposable
         Assert.Contains("\"limit\":true", service.Record("s1"), StringComparison.Ordinal);
         Assert.Equal(Account("account-1"), Text(Heard().First(line => line["method"]!.GetValue<string>() == "session/new"), "account"));
         return (service, lines, driver);
+    }
+
+    private DriverConfig ConfigFor(string mode) =>
+        DriverConfig.Empty with
+        {
+            Drivable = ["engine"],
+            Trees = ["engine"],
+            Actors = StaffedRoles.On("acp-stub"),
+            TestBound = 1,
+            PollSeconds = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode], ["stub"] = ["node", TextAgent()] },
+        };
+
+    /// <summary>
+    /// The carry-on of the cut-off line run by a loop of a run that is stopped for good as it opens the new part, then killed as a restart
+    /// kills it: its run dead, the records it left live ended; and a watch coming up over the same home, which takes its move up.
+    /// </summary>
+    private async Task<(Task Watching, CancellationTokenSource Closing, Task<TickReport> Looking)> CutAndComeUpAsync(
+        SessionMessagesTickTests.SaidStandIn service, string mode, Action? beforeComeUp = null)
+    {
+        service.Opens = 2;
+        var adapters = ProviderRegistry.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var gate = new ManualResetEventSlim(false);
+        _gates.Add(gate);
+        var holder = new ConversationMoves(
+            _home, new ServiceClient(service.Url, null), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)),
+            store: new MoveStore(_home, () => StoreSettled.Yes, run: "run-killed", kind: StoreProcess.Host), scope: MoveTakeUpScope.LeaseHolder)
+        {
+            Cut = name =>
+            {
+                if (name != Cuts.Opened) return;
+                reached.TrySetResult();
+                gate.Wait();
+                throw new OperationCanceledException();
+            },
+        };
+        var killed = new Daoris.Driver.Driver(
+            new ServiceClient(service.Url, null), ConfigFor(mode), adapters, _home, processes: new SessionProcesses(), harnesses: roster)
+        {
+            Moves = holder,
+        };
+        var looking = Task.Run(() => killed.RunOnceAsync());
+        await Poll.Until(() => reached.Task.IsCompleted || looking.IsCompleted, () => $"the loop reached nothing, its look {looking.Status}: {service.Record("s1")}");
+        Assert.True(reached.Task.IsCompleted, $"the look ended before the new part's record was kept: {service.Record("s1")}");
+
+        using (var store = DesktopStore.Open(DesktopStore.LocationIn(_home), new DesktopStoreOptions { Settled = () => StoreSettled.Yes }))
+        {
+            store.Write("probe", write => write.Execute("UPDATE store_runs SET started = 1 WHERE run = $run", ("$run", "run-killed")));
+        }
+
+        using var http = new HttpClient();
+        for (var at = 1; at <= service.SessionCount; at++)
+        {
+            if (service.State($"s{at}") is not ("queued" or "starting" or "working")) continue;
+            using var response = await http.PostAsync(
+                $"{service.Url}/api/sessions/s{at}/state", new StringContent("""{"state":"stopped","interrupted":true}""", System.Text.Encoding.UTF8, "application/json"));
+            Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        beforeComeUp?.Invoke();
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        ConfigFor(mode).Save(path);
+        var closing = new CancellationTokenSource();
+        var watch = new DriverWatch(new ServiceClient(service.Url, null), path, _home, new SessionProcesses(), sync: null, harnesses: roster);
+        var watching = Task.Run(async () =>
+        {
+            try
+            {
+                await watch.RunAsync((_, _) => Task.CompletedTask, onError: null, closing.Token);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        });
+        return (watching, closing, looking);
+    }
+
+    private readonly List<ManualResetEventSlim> _gates = [];
+
+    private string Trace(SessionMessagesTickTests.SaidStandIn service) =>
+        $"states {string.Join(",", Enumerable.Range(1, service.SessionCount).Select(at => $"s{at}:{service.State($"s{at}")}"))}\n"
+        + $"s2: {service.Record("s2")}\n"
+        + $"s2 events: {string.Join(" | ", new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s2", 0).Events.Select(e => $"{e.Kind}:{e.Text}"))}\n"
+        + $"heard: {string.Join("\n", Heard().Select(h => h.ToJsonString()[..Math.Min(300, h.ToJsonString().Length)]))}";
+
+    private async Task StopAsync(Task watching, CancellationTokenSource closing)
+    {
+        await closing.CancelAsync();
+        try
+        {
+            await watching.WaitAsync(Poll.Patience);
+        }
+        catch (Exception error) when (error is OperationCanceledException or TimeoutException)
+        {
+        }
+
+        closing.Dispose();
+    }
+
+    /// <summary>
+    /// 🔴 A carried limit move cut off by a restart after its new part's record is kept and before it runs: the watch that comes up goes on
+    /// in the carried conversation on the other account, resumed by its id, and no brief is written.
+    /// </summary>
+    [Fact]
+    public async Task A_carried_move_cut_by_a_restart_goes_on_in_the_carried_conversation_after_the_come_up()
+    {
+        var (service, _, _) = await LimitedAsync("small");
+        await using var _ = service;
+        var (watching, closing, _) = await CutAndComeUpAsync(service, "small");
+        try
+        {
+            await Poll.Until(
+                () => Heard().Any(line => line["method"]!.GetValue<string>() == "session/prompt" && Text(line, "account") == Account("account-2")),
+                () => Trace(service));
+            var heard = Heard();
+            var resumed = heard.Where(line => line["method"]!.GetValue<string>() is "session/resume" or "session/load").ToList();
+            Assert.True(resumed.Count == 1, Trace(service));
+            Assert.Equal(("conv-s1", Account("account-2")), (Text(resumed[0], "conversation"), Text(resumed[0], "account")));
+            Assert.DoesNotContain(heard, line => line["method"]!.GetValue<string>() == "session/prompt" && Blocks(line).Contains("carrying on quest", StringComparison.Ordinal));
+        }
+        finally
+        {
+            await StopAsync(watching, closing);
+        }
+    }
+
+    /// <summary>🔴 The same cut where the carried copy is gone by the come-up: the line goes on by the brief, which says why.</summary>
+    [Fact]
+    public async Task A_carried_move_cut_by_a_restart_whose_copy_is_gone_goes_on_by_the_brief_after_the_come_up()
+    {
+        var (service, _, _) = await LimitedAsync("small");
+        await using var _ = service;
+        var (watching, closing, _) = await CutAndComeUpAsync(
+            service, "small", () => File.Delete(Path.Combine(Home("account-1"), StubConversationHome.Folder, "conv-s1")));
+        try
+        {
+            await Poll.Until(
+                () => Heard().Any(line => line["method"]!.GetValue<string>() == "session/prompt" && Blocks(line).Contains("carrying on quest", StringComparison.Ordinal)),
+                () => Trace(service));
+            Assert.Contains(Codes("s3"), part => part.Code == "moved.not-carried" && Equals(part.Value("reason"), LimitCarry.Missing));
+        }
+        finally
+        {
+            await StopAsync(watching, closing);
+        }
     }
 
     private string Account(string account) => Path.GetFileName(Home(account));
