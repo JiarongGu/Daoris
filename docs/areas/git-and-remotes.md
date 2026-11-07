@@ -44,7 +44,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | The person's acts | `GitFetchActs.cs`, `GitPushActs.cs`, `GitRefActs.cs`, `GitHistoryEdits.cs`, `StageActs.cs`, `ActCommits.cs`, `GitConflicts.cs`, `StashDrops.cs`, each `Git*Command.cs` | Fetch, push, refs, pick/revert/rebase, stage, commit, resolve, switch, stash (save, apply, drop); each with its terminal twin where one exists |
 | The push | `GitPushActs.cs`, `ActPushSteps.cs`, `GitPushCommand.cs`, `src/Daoris.Web/src/projects/git/PushRef.tsx` | One ref to origin under a grant the step writes and drops; `GIT_PUSH`, `GIT_PUSH_PLAN`, `git push`; *Push* and *Push tag* |
 | Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO`; where the door's rule keeps the commits, the recovery ref is made in the delete's own transaction, its record names it, and the Undo takes it back |
-| Every keep | `RecoveryKeeps.cs`, `RecoveryCensus.cs` | A recovery ref's one naming; a keep that deletes nothing as one `ref.keep` act; each ref a journal record names, dated from its act; the census of the refs no record names |
+| Every keep | `RecoveryKeeps.cs`, `RecoveryCensus.cs`, `RecoveryWorks.cs` | A recovery ref's one naming; a keep that deletes nothing as one `ref.keep` act; each ref a journal record names, dated from its act; the census of the refs no record names; what an unheld ref's work is to the repository's line |
 | The deletes' list | `DeletedBranches.cs`, `GIT_DELETES`, `projects/git/DeletedRefs.tsx` | Every done `ref.delete` act of a repository from the journal alone, each with its Undo open or shut (undone, name stands again, commit gone), under the Branches tab in en and zh |
 | Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs` | The page's git reads through Tools' git, cached by commit id |
 | Line fetch, bring up to date | `TreeRefs.cs`, `TreeSync.cs` | `fetch origin <line>` past the doors and holds; ff-only, replay, delete what merged |
@@ -369,7 +369,12 @@ catalogues (`i18n:check`).
   recovery ref is kept through the journal's act and dated from it (`RecoveryKeeps`). Left: `RecoveryRetention`'s dating from a ref's reflog
   and `RecoveryDropping`'s press stay for the refs under `refs/daoris/discarded/` no journal record names, which
   `daoris work recovery drop --unheld --plan` counts (`RecoveryCensus`) and the Branches tab says under the deletes; once it reads zero on the
-  install, ONEWAY1af deletes both and the census (BL84).
+  install, ONEWAY1af deletes both and the census (BL84). The plan says of each unheld ref its age, its commit count and what its work is to the
+  repository's line (`RecoveryWorks`): every commit on the line by patch (`git cherry`), else every file it changed held on the line (the line
+  carries the ref's content or has changed the file since their merge base), else the commits and files the line lacks. The line is the one
+  set for the repository or its workspace, else `main`, else `master`, never a remote's `HEAD`; where none exists every ref is kept and the
+  plan says so. `--unheld` drops only the refs whose work the line holds, each as before, and lists the rest as kept with why; a ref named by
+  hand drops whatever the line holds of it.
 - **G9:** the pull-request plugins open and read through their services' REST APIs with `DAORIS_HOST_TOKEN` and run no git; the loop
   starts each one per place with that place's origin identity's token (D242). `gh` and `az` are no declared tool (`Tools.Declared`,
   `resources.json`), and no web fixture, story, test or sample plugin-tool message names either as a sample tool.

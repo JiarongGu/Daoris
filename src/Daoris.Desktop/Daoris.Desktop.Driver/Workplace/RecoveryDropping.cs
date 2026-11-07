@@ -100,51 +100,82 @@ public static class RecoveryDropping
         return new(dropped, skipped);
     }
 
-    /// <summary>Every recovery ref nothing holds, read now and deleted at the commit read.</summary>
+    /// <summary>
+    /// Every recovery ref nothing holds whose work <paramref name="line"/> holds (<see cref="RecoveryWorks"/>: by patch, else by content),
+    /// read now and deleted at the commit read. A ref that holds work the line lacks, and every ref where no line is known, is kept and said.
+    /// </summary>
     public static async Task<RecoveryDrops> DropUnheldAsync(
-        string root, string repository, IReadOnlyCollection<string> landed, CancellationToken ct, IReadOnlyDictionary<string, DateTimeOffset>? recorded = null)
+        string root, string repository, IReadOnlyCollection<string> landed, string? line, CancellationToken ct, IReadOnlyDictionary<string, DateTimeOffset>? recorded = null)
     {
         var (refs, unread) = await RecoveryRetention.ReadAsync(root, repository, landed, ct, recorded).ConfigureAwait(false);
         if (refs is null) return new([], [new(ContentHolds.DiscardedPrefix, $"git could not list `{repository}`'s recovery refs ({unread}), so none is deleted.")]);
-        return await DropAsync(
-            root, repository, landed, [.. refs.Where(each => each.Held == false && each.Commit is not null).Select(each => new RecoveryDrop(each.Ref, each.Commit))], ct, recorded)
-            .ConfigureAwait(false);
+        var unheld = refs.Where(each => each.Held == false && each.Commit is not null).ToList();
+        var held = new List<RecoverySkipped>();
+        var asked = new List<RecoveryDrop>();
+        foreach (var each in unheld)
+        {
+            var work = line is null ? null : await RecoveryWorks.ReadAsync(root, line, each.Commit!, ct).ConfigureAwait(false);
+            if (work is { OnLine: true }) asked.Add(new(each.Ref, each.Commit));
+            else held.Add(new(each.Ref, work is null ? NoLine : $"{work.Words}, so it is kept."));
+        }
+
+        var dropped = await DropAsync(root, repository, landed, asked, ct, recorded).ConfigureAwait(false);
+        return new([.. dropped.Dropped], [.. held, .. dropped.Skipped]);
     }
+
+    /// <summary>Why every unheld ref is kept where the repository's line is not known here.</summary>
+    internal const string NoLine = "the repository's line is not known here (no line set, and no `main` or `master`), so its work cannot be compared with it and it is kept.";
 
     /// <summary>
     /// The press of both doors: refused unless this process holds the home, else <paramref name="asked"/> or, where null, every unheld ref
-    /// of <paramref name="repository"/>, in its checkout <paramref name="root"/> (null where it has none here).
+    /// of <paramref name="repository"/> whose work <paramref name="line"/> holds (<see cref="DropUnheldAsync"/>), in its checkout
+    /// <paramref name="root"/> (null where it has none here).
     /// </summary>
     public static async Task<RecoveryDrops> PressAsync(
-        string home, string? root, string repository, IReadOnlyList<RecoveryDrop>? asked, CancellationToken ct)
+        string home, string? root, string repository, IReadOnlyList<RecoveryDrop>? asked, CancellationToken ct, string? line = null)
     {
         if (WithoutHome(home) is { } refused) return new([], []) { Refused = refused };
         if (root is null) return new([], []) { Refused = $"`{repository}` has no checkout on this machine, so its recovery refs cannot be deleted here." };
         var landed = RecoveryRetention.Made(new LandedBranches(home).Entries(), repository);
         var recorded = RecoveryKeeps.Recorded(home, repository);
         return asked is null
-            ? await DropUnheldAsync(root, repository, landed, ct, recorded).ConfigureAwait(false)
+            ? await DropUnheldAsync(root, repository, landed, line, ct, recorded).ConfigureAwait(false)
             : await DropAsync(root, repository, landed, asked, ct, recorded).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// What a press would do now, a line each recovery ref of <paramref name="repository"/> (<c>--plan</c>), then the census of those no
-    /// journal record names (<see cref="RecoveryCensus"/>): it changes nothing, so it needs no lease.
+    /// What a press would do now, a line each recovery ref of <paramref name="repository"/> (<c>--plan</c>): for an unheld ref its age and
+    /// commit count and what its work is to <paramref name="line"/> (<see cref="RecoveryWorks"/>), then the census of those no journal
+    /// record names (<see cref="RecoveryCensus"/>). It changes nothing, so it needs no lease.
     /// </summary>
-    public static async Task<IReadOnlyList<string>> PlanAsync(string home, string root, string repository, CancellationToken ct)
+    public static async Task<IReadOnlyList<string>> PlanAsync(string home, string root, string repository, string? line, CancellationToken ct)
     {
         var (refs, unread) = await RecoveryRetention.ReadAsync(
             root, repository, RecoveryRetention.Made(new LandedBranches(home).Entries(), repository), ct, RecoveryKeeps.Recorded(home, repository)).ConfigureAwait(false);
         var census = RecoveryCensus.Words(await RecoveryCensus.CountAsync(home, root, repository, ct).ConfigureAwait(false));
         if (refs is null) return [$"git could not list `{repository}`'s recovery refs ({unread}).", census];
-        return refs.Count == 0
-            ? [$"`{repository}` has no recovery ref.", census]
-            : [.. refs.Select(each => each.Held switch
+        if (refs.Count == 0) return [$"`{repository}` has no recovery ref.", census];
+
+        var now = DateTimeOffset.UtcNow;
+        var lines = new List<string>();
+        foreach (var each in refs)
+        {
+            if (each.Held != false || each.Commit is null)
             {
-                false => $"would delete `{each.Ref}` in `{repository}`: no branch or tag of yours holds its commit.",
-                true => $"would keep `{each.Ref}` in `{repository}`: a branch or a tag of yours holds its commit.",
-                _ => $"would keep `{each.Ref}` in `{repository}`: whether a branch or a tag of yours holds its commit was not read.",
-            }), census];
+                lines.Add(each.Held == true
+                    ? $"would keep `{each.Ref}` in `{repository}`: a branch or a tag of yours holds its commit."
+                    : $"would keep `{each.Ref}` in `{repository}`: whether a branch or a tag of yours holds its commit was not read.");
+                continue;
+            }
+
+            var work = line is null ? null : await RecoveryWorks.ReadAsync(root, line, each.Commit, ct).ConfigureAwait(false);
+            var facts = string.Join(", ", new[] { RecoveryWorks.Age(each.Dated, now), work is null ? null : RecoveryWork.Count(work.Commits, "commit") }.OfType<string>());
+            lines.Add($"would {(work is { OnLine: true } ? "delete" : "keep")} `{each.Ref}` in `{repository}`{(facts.Length > 0 ? $" ({facts})" : "")}: "
+                + (work is null ? NoLine : work.Words) + ".");
+        }
+
+        lines.Add(census);
+        return lines;
     }
 
     /// <summary>The words of an answer, a line each: what was deleted and what was skipped and why.</summary>

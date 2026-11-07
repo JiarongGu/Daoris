@@ -106,7 +106,7 @@ public sealed class RecoveryDropGitTests : LandedFixture
         await GitAsync(root, "update-ref", $"{Prefix}daoris/s-held", held);
         await GitAsync(root, "update-ref", "refs/heads/feature/keeps-it", held);
 
-        var drops = await RecoveryDropping.DropUnheldAsync(root, "engine", NoneMade, CancellationToken.None);
+        var drops = await RecoveryDropping.DropUnheldAsync(root, "engine", NoneMade, "main", CancellationToken.None);
 
         Assert.Equal([new RecoveryDropped($"{Prefix}daoris/s-alone", alone)], drops.Dropped);
         Assert.Empty(drops.Skipped);
@@ -139,7 +139,7 @@ public sealed class RecoveryDropGitTests : LandedFixture
         using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
         {
             Assert.Contains("no checkout", (await RecoveryDropping.PressAsync(Home, null, "engine", null, CancellationToken.None)).Refused);
-            var held = await RecoveryDropping.PressAsync(Home, root, "engine", null, CancellationToken.None);
+            var held = await RecoveryDropping.PressAsync(Home, root, "engine", null, CancellationToken.None, "main");
             Assert.Null(held.Refused);
             Assert.Equal([new RecoveryDropped($"{Prefix}daoris/s-alone", alone)], held.Dropped);
         }

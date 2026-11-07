@@ -109,14 +109,14 @@ internal static class WorkConsole
         }
 
         var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
-        IReadOnlyList<(string Repository, string Root)> checkouts;
+        IReadOnlyList<(string Repository, string Root, string? Workspace)> checkouts;
         try
         {
             using var service = ServiceClient.FromEnvironment();
             checkouts = [.. (await service.RegistryAsync().ConfigureAwait(false))
                 .Where(row => !string.IsNullOrWhiteSpace(row.Root) && Directory.Exists(row.Root)
                               && (ask.Repository is null || string.Equals(row.Repository, ask.Repository, StringComparison.OrdinalIgnoreCase)))
-                .Select(row => (row.Repository, row.Root!)).DistinctBy(row => row.Repository, StringComparer.OrdinalIgnoreCase)];
+                .Select(row => (row.Repository, row.Root!, (string?)row.Workspace)).DistinctBy(row => row.Repository, StringComparer.OrdinalIgnoreCase)];
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or TaskCanceledException)
         {
@@ -133,19 +133,21 @@ internal static class WorkConsole
         var kept = false;
         var dropped = 0;
         var (unrecorded, unread) = (0, 0);
-        foreach (var (repository, root) in checkouts)
+        var config = DriverConfig.Load(DriverConfig.ResolvePath());
+        foreach (var (repository, root, workspace) in checkouts)
         {
+            var line = await RecoveryWorks.LineAsync(root, CanonicalLine.Choose(config, repository, workspace, guess: null).Branch, CancellationToken.None).ConfigureAwait(false);
             if (ask.Plan)
             {
-                foreach (var line in await RecoveryDropping.PlanAsync(home, root, repository, CancellationToken.None).ConfigureAwait(false)) Console.WriteLine(line);
+                foreach (var said in await RecoveryDropping.PlanAsync(home, root, repository, line, CancellationToken.None).ConfigureAwait(false)) Console.WriteLine(said);
                 var count = await RecoveryCensus.CountAsync(home, root, repository, CancellationToken.None).ConfigureAwait(false);
                 (unrecorded, unread) = (unrecorded + (count.Unrecorded?.Count ?? 0), unread + (count.Unread is null ? 0 : 1));
                 continue;
             }
 
             var done = await RecoveryDropping.PressAsync(
-                home, root, repository, ask.Unheld ? null : [.. ask.Refs.Select(each => new RecoveryDrop(each, null))], CancellationToken.None).ConfigureAwait(false);
-            foreach (var line in RecoveryDropping.Words(repository, done)) Console.WriteLine(line);
+                home, root, repository, ask.Unheld ? null : [.. ask.Refs.Select(each => new RecoveryDrop(each, null))], CancellationToken.None, line).ConfigureAwait(false);
+            foreach (var said in RecoveryDropping.Words(repository, done)) Console.WriteLine(said);
             dropped += done.Dropped.Count;
             kept |= done.Refused is not null || (!ask.Unheld && done.Skipped.Count > 0);
         }
