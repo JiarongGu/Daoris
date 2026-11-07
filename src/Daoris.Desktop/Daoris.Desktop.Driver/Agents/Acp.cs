@@ -83,6 +83,8 @@ public sealed class AcpSession(
     /// </summary>
     public Func<bool>? SetupChanged { get; set; }
 
+    public Func<string, bool>? LimitSaid { get; set; }
+
     /// <summary>
     /// Whether this client asks the agent for typed session failures: set for an agent whose toolchain declares it marks a terminal
     /// failure for such a client alone (<see cref="ErrorWords.TypedFailures"/>).

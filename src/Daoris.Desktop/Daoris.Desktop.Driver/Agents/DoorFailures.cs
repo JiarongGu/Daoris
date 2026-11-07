@@ -23,4 +23,6 @@ public static class DoorFailures
 
     /// <summary>The native door's failed <c>result</c>: its own words, the wire carrying no code and no kind there.</summary>
     public static DoorFailure OfResult(string words) => new("native", null, null, null, words, DoorWhere.Result);
+
+    public static DoorFailure OfTurnEnd(string words) => new("protocol", null, null, null, words, DoorWhere.Prompt);
 }

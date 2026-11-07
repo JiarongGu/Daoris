@@ -59,7 +59,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | The turn's stages | `Turn/`, listed in `docs/index/registered.md` | Each stage a module registers (`[TurnStage(name, phase, after)]`, `ITurnStage`), run in the kit's order at its phase's anchor in `AcpReader` (Update: each `session/update`, until a stage takes it; Request: the stage that takes the method, else not implemented), built once per session with the session as its `ITurnWiring`; `RefusedCalls` is the state two stages share |
 | `AcpReplay`, `AcpWatch`, `AcpHeard`, `AcpSubagent` | same names | The first Update stages, in that order: a load's replay passed over; the update counted and read by the background work and the wake; a word an error left untold taken once the agent goes on; a subagent's update routed to its own stream and taken there |
 | `AcpConsole` | same name | The console's lines joined from the agent's streamed words, ended when anything else is said or the words go quiet |
-| `AcpMeasure`, `AcpRender`, `AcpPermission` | same names | The stages: the context's high-water mark, the account's windows, the turn's models and the options the agent changed; each update as the record's event and the console's line, and the readings of an update the door's other units call; a permission request refused, or held for the person, and released |
+| `AcpMeasure`, `AcpRender`, `AcpLimitTurn`, `AcpPermission` | same names | The stages: the context's high-water mark, the account's windows, the turn's models and the options the agent changed; each update as the record's event and the console's line, and the readings of an update the door's other units call; the agent's last message, which `AcpRun` hands its door's reader at each turn's end for its account's limit (`AcpTurnLimited`); a permission request refused, or held for the person, and released |
 | `HarnessCapture`, `ClaudeStreams`, `NativePrompt`; `StreamMapped`, `IStreamMapper`, `IStreamsReader`, `ClaudeStreamJson` | same names; the last four in `StructuredOutput.cs` | The native door: capture, `stream-json` mapping, the prompt written on stdin |
 | `NativeFrame` | `NativeFrame.cs` | A native stdout line parsed once: the capture reads each line into one frame, which the children and background tasks it says (`NativeChildren`, `NativeTasks`), the streams beside (`ClaudeStreams`, for a child's words and a command's output path) and the dialect's mapper each take, none parsing the text again |
 | `NativeChildren` | `NativeChildren.cs` | The children a native stream says: a subagent's `task_started` and its `task_notification`, each read once per child into one `ChildSeen` (the call its lines name among it) or `ChildEnded` reading on the run's sink, in the wire's own words; the protocol door's `AcpStreams` says its announcements and ends the same way |
@@ -225,7 +225,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 35. Capacity is estimated from Daoris's own turns and the readings, with weights that are dated ratios, never prices.
     Acting on the estimate waits. (from D179)
 36. A door's failure is read by one reader into four kinds, in order: limit, access, transient, fatal. It reads the door's
-    own tables first, then its owner's. The agent's own message is never read. Anything unread is fatal. An access failure
+    own tables first, then its owner's. The agent's own message is never read, but for one: a driven protocol turn's last
+    message, with no step of the agent's after it, is handed to the same reader as a refused prompt's words (`TurnEndLimits`),
+    since Claude Code's adapter ends a turn `end_turn` with its account's limit said as that message. Read as a limit, it ends the
+    run there as the turn's failure (`AcpTurnLimited`), the machine log says `agent.error` as for a refused prompt, nothing more is
+    prompted, and the conclusion cools the account; any other reading leaves the turn's end alone. Anything unread is fatal. An access failure
     carries how it was read (a refused credential, a sign-in's words, or a code the door declares), and a refused resume's
     open and the conclusion's sign-out read that, never the name of the entry. (from D210, D125)
 37. A limit cools that account until the reset the agent named, plus 2 minutes, with 15 minutes' grace and nothing believed
@@ -370,6 +374,11 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
 
 ## Open
 
+- A start's account by the allowance left on its five-hour window: the smart curve holds that window flat at 90% (D165 point 2),
+  so an account at 75% of it is not near, and rule 29 puts fewest before room, so concurrent starts spread onto it while another
+  stands at 10%. Weighing it waits on a choice against D165: a pace-aware smart session curve, as the week's is, which moves the
+  shared curve table (`fixtures/usage-curves.json`, read by the driver, the modules and the page), the page's words for the smart
+  curve and every running conversation's switch; or a walk step that ranks session room before fewest for a start alone.
 - A model family's cool-off: no sentence naming a family's limit is recorded yet (`ClaudeLimits.Words.Recorded`), and
   `get_usage` has answered the families' weeks null on every account read so far (`docs/2026-10-12-usage-read-evidence.md`).
   The listings and counts that show every cool-off of an account (`AccountsRoutes`, the terminal's agent list, `Offered`) read
@@ -575,7 +584,8 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
 - **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1e**: what remains of point 8 (the
   native door's live, driven and one-turn tries). 1d is built.
 - **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
-  Waits on a recorded native limit, the owner's yes, which is all that remains of D210's row 1c. A failed native `result` is one
+  The session limit's sentence is recorded on the protocol door (2026-11-07), and a failed native `result` saying it reads as that
+  limit; what waits is one native session seen ending on it, the owner's yes, which is all that remains of D210's row 1c. A failed native `result` is one
   `WireReading.Failed` (`native`, `DoorWhere.Result`, the result's own words) on the run's sink, and `NativeLimits`, a sink part composed in
   `SessionHold` and `ChatWatch`, reads it through `AgentErrors.Read` and holds a limit as the limit its turn ended on. A run concludes on it
   as on the protocol door's refused turn: a driven run's conclusion reads it as the turn's failure (`NativeLimits.TurnFailed`), so

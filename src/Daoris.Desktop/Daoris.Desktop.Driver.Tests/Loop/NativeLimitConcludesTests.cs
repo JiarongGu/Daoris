@@ -33,6 +33,20 @@ public sealed class NativeLimitConcludesTests
     }
 
     [Fact]
+    public void The_recorded_session_limit_on_a_failed_native_result_is_its_limit_until_the_reset_in_its_named_zone()
+    {
+        var built = ProviderRegistry.Built();
+        var seen = new DateTimeOffset(2026, 11, 7, 14, 8, 34, TimeSpan.Zero);
+        var limits = new NativeLimits(failure => AgentErrors.Read(built, built.Door("claude-code"), failure, seen, TimeZoneInfo.Utc));
+
+        limits.Read(Failed("You've hit your session limit · resets 3am (Australia/Sydney)"));
+        limits.Read(TurnEnded("success"));
+
+        Assert.Equal(AgentErrorKind.Limit, limits.Ended?.Kind);
+        Assert.Equal(new DateTimeOffset(2026, 11, 8, 3, 2, 0, TimeSpan.FromHours(11)), limits.Ended!.Limit!.Until);
+    }
+
+    [Fact]
     public void A_failed_native_result_that_is_no_limit_stays_the_harness_s_own_words_and_concludes_on_no_turn_failure()
     {
         var limits = Reading();
