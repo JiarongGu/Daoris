@@ -63,7 +63,7 @@ web paths are under `src/Daoris.Web/src/`.
    that sends it. A refusal the person can act on is answered as data with a code the page words. The mark carries the
    route's pipe class and, for a person's or a role's press, its drain. Beside it, `[Owner]` says what a person's or a
    window's route marks owner-set, `[ClassedBy]` names a payload's look form, and `[NotAlready]` says why a setting is never
-   already; a person's press says its grounds (`[Ground…]` or `[Timeless]`) and the values its card names (`[Says]`). Another module's routes are marked on its class (`[ModuleRoute]`, `[WindowModule]`). The pipe's census and owner
+   already; a person's press says its grounds (`[Ground…]` or `[Timeless]`; `[GroundRefusal]` the route's own refusal of the state it acts on, answered at the ask before any Confirm) and the values its card names (`[Says]`). Another module's routes are marked on its class (`[ModuleRoute]`, `[WindowModule]`). The pipe's census and owner
    rows are read from the marks at start, and a route whose marks are incomplete fails that first use. (from D169, D182, D231)
 4. A press declares the scopes it changed with `[Publishes]`. `StatePublisher` raises `STATE_CHANGED {scopes, sessions?}`
    after a successful answer, including a refusal answered as data. No handler raises it by hand. A read declares nothing. (from D169)

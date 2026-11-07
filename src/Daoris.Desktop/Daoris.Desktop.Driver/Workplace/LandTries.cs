@@ -23,6 +23,9 @@ public static class LandTries
         _ => false,
     };
 
+    public static bool Landed(LandEntry entry, string? tip) =>
+        entry.Last is { Code: LandingCode.Landed or LandingCode.Advanced, Tip: { } at } && string.Equals(at, tip, StringComparison.OrdinalIgnoreCase);
+
     /// <summary>
     /// A tree's <c>git status --porcelain</c> as a fact a try is kept with: <c>clean</c>, or a fingerprint of what git listed,
     /// so a later look can tell whether it moved without keeping a path.

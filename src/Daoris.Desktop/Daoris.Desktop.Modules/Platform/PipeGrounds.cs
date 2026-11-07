@@ -397,7 +397,7 @@ public sealed class ReadGround(
 public sealed class LoopGround(PipeGroundKind kind, string what, IReadOnlyList<string> fields, TimeSpan? bound = null) : PipeGround(kind, bound)
 {
     /// <summary>The waits <see cref="IPipeGroundWorld.HeldAsync"/> reads.</summary>
-    public static readonly IReadOnlyList<string> Waits = ["opinion", "workflow-node", "go-ahead", "git-ask", "trust", "help"];
+    public static readonly IReadOnlyList<string> Waits = ["opinion", "workflow-node", "go-ahead", "git-ask", "trust", "help", "hand-over"];
 
     /// <summary>The files <see cref="IPipeGroundWorld.FingerprintAsync"/> reads.</summary>
     public static readonly IReadOnlyList<string> Files =
@@ -405,6 +405,11 @@ public sealed class LoopGround(PipeGroundKind kind, string what, IReadOnlyList<s
 
     /// <summary>A wait the loop holds, by the payload's <paramref name="fields"/>.</summary>
     public static LoopGround Wait(string wait, params string[] fields) => new(PipeGroundKind.Wait, wait, fields);
+
+    /// <summary>A wait whose reading is the route's own refusal of the state it acts on, answered at the ask before any Confirm.</summary>
+    public static LoopGround Refusal(string wait, params string[] fields) => new(PipeGroundKind.Wait, wait, fields, PageBound) { Refuses = true };
+
+    public bool Refuses { get; private init; }
 
     /// <summary>What the press's files are, by the payload's <paramref name="fields"/>; a plugin's or a tree's within the page's bound.</summary>
     public static LoopGround Plan(string files, TimeSpan bound, params string[] fields) => new(PipeGroundKind.Plan, files, fields, bound);
@@ -479,6 +484,11 @@ public sealed class PipeGroundRow(IReadOnlyList<PipeGround> grounds, string? tim
     public bool Already(IReadOnlyList<PipeReading> read, JsonElement? payload) =>
         Grounds.OfType<ReadGround>().Any(ground =>
             ground.Already([.. read.Where(each => each.Kind == ground.Kind && each.Subject == ground.Route)], payload));
+
+    public string? Refusal(IReadOnlyList<PipeReading> read) =>
+        Grounds.OfType<LoopGround>().Where(ground => ground.Refuses)
+            .Select(ground => read.FirstOrDefault(each => each.Kind == ground.Kind && each.Subject == ground.What)?.Value)
+            .FirstOrDefault(words => !string.IsNullOrEmpty(words));
 
     /// <summary>
     /// The readings at the ask compared with those now: the first ground whose reading moved, as the reason the person and the

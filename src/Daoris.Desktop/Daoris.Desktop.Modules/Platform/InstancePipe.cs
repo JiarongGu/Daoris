@@ -111,6 +111,8 @@ public sealed class InstancePipe : IDisposable
     /// <summary>A setting the press sets is already as it asks: nothing is asked, and the world is as asked.</summary>
     public const string Already = "already";
 
+    public const string NotAllowed = "not-allowed";
+
     /// <summary>A person's press whose route names no grounds: Daoris cannot wait for the person on it, so nothing is asked.</summary>
     public const string Ungrounded = "ungrounded";
 
